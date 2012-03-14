@@ -1,0 +1,29 @@
+<assembly>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <fileSets>
+    <fileSet>
+      <directory>target/generated-sources/output</directory>
+      <outputDirectory>/rf2</outputDirectory>
+      <includes>
+        <include>**/*.txt</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>destination</directory>
+      <outputDirectory>/destination</outputDirectory>
+      <includes>
+        <include>**/Full/*.txt</include>
+        <include>**/Snapshot/*.txt</include>
+        <include>**/Delta/*.txt</include>
+      </includes>
+    </fileSet>    
+    <fileSet>
+      <directory>target/generated-resources/berkeley-db</directory>
+      <outputDirectory>/berkeley-db</outputDirectory>
+    </fileSet>
+  </fileSets>
+  <includeBaseDirectory>false</includeBaseDirectory>
+</assembly>
+
