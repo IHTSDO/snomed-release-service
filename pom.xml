@@ -7,11 +7,11 @@
 	</parent>
 	
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.ihtsdo</groupId>
+	<groupId>org.ihtsdo.intl.release.process</groupId>
 	<artifactId>wb-release-process</artifactId>	
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>WB Release Process</name>
+	<name>WB International Release Process</name>
 	<url>http://maven.apache.org</url>
 
 	<scm>
