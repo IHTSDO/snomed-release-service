@@ -9,15 +9,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.ihtsdo</groupId>
 	<artifactId>wb-release-process</artifactId>	
-	<version>test.rel-1-SNAPSHOT</version>
+	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>WB Release Process</name>
 	<url>http://maven.apache.org</url>
 
 	<scm>
-		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-test</connection>
-		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-test</developerConnection>
-		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-test</url>
+		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</connection>
+		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</developerConnection>
+		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</url>
 	</scm>
 	
 	
