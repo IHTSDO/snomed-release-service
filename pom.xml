@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	
 	<parent>
 		<groupId>org.ihtsdo</groupId>
@@ -10,15 +9,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.ihtsdo</groupId>
 	<artifactId>production-release-process</artifactId>	
-	<version>1.0-SNAPSHOT</version>
+	<version>dev.rel-1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Production Release Process Test</name>
 	<url>http://maven.apache.org</url>
 
 	<scm>
-		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</connection>
-		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</developerConnection>
-		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</url>
+		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</connection>
+		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</developerConnection>
+		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</url>
 	</scm>
 	
 	
@@ -601,7 +600,7 @@
 								</goals>
 								<configuration>
 									<database>${project.database}</database>
-									<database></database>
+									<database />
 									<workingCopyStr>${project.build.directory}/generated-resources/berkeley-db</workingCopyStr>
 									<releaseDate>${project.releaseDate}</releaseDate>
 									<exportFolder>${project.exportFolder}</exportFolder>
@@ -686,7 +685,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -732,7 +731,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -776,7 +775,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -798,7 +797,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -820,7 +819,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -842,7 +841,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_DESCRIPTION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -864,7 +863,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_TEXTDEFINITION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -886,7 +885,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -910,7 +909,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -933,7 +932,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_DESCRIPTION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -957,7 +956,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -979,7 +978,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_STATEDRELATIONSHIP</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1003,7 +1002,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1025,7 +1024,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_TEXTDEFINITION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1047,7 +1046,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1070,7 +1069,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1092,7 +1091,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1114,7 +1113,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_DESCRIPTION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1136,7 +1135,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_TEXTDEFINITION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1158,7 +1157,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1182,7 +1181,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1204,7 +1203,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_DESCRIPTION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1228,7 +1227,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1254,7 +1253,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1277,7 +1276,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_STATEDRELATIONSHIP</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1301,7 +1300,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1323,7 +1322,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_TEXTDEFINITION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1345,7 +1344,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1368,7 +1367,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1390,7 +1389,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 
@@ -1414,7 +1413,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_DESCRIPTION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1436,7 +1435,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_TEXTDEFINITION</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 										<RF2IdentifierFile>
@@ -1458,7 +1457,7 @@
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
-												<idMapFile></idMapFile>
+												<idMapFile />
 											</sctidparam>
 										</RF2IdentifierFile>
 									</rf2Files>
