@@ -21,11 +21,20 @@
 	</scm>
 	
 	<properties>
+	<!--  DEPENDENT PARAMS OF BUILD MODE  -->
+		<!-- Web service for ID Generation -->
+		<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
+		<project.ws.username>root</project.ws.username>
+		<project.ws.password>snomed11</project.ws.password>
 	
+		<!-- Tool kit trek version -->
 		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-97-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
 		
 		<!-- Mode For test[test], development[dev] or production[prod] -->
 		<project.execMode>prod</project.execMode>
+	
+	<!-- SHARED PARAMS BETWEEN BUILD MODES -->	
+		
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		
 		<!-- For wb-release-mojo -->
@@ -50,10 +59,6 @@
 		<project.rf2.packaging.folder>packaging</project.rf2.packaging.folder>
 		<!-- location where folders and files are stored for packaging -->
 		<project.rf2.zip.folder>zip</project.rf2.zip.folder>
-		<!-- Below settings are used for id-creation current Testing Server-->
-		<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
-		<project.ws.username>root</project.ws.username>
-		<project.ws.password>snomed11</project.ws.password>
 		<!--Below file Parameters are optional if not specifies defaults will be used-->
 		<project.rF2Format>false</project.rF2Format>
 		<project.invokeDroolsRules>false</project.invokeDroolsRules>
