@@ -15,9 +15,9 @@
 	<url>http://maven.apache.org</url>
 
 	<scm>
-		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</connection>
-		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</developerConnection>
-		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</url>
+		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</connection>
+		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</developerConnection>
+		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/branches/wb-release-process-daily-dev</url>
 	</scm>
 	
 	
