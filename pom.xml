@@ -22,17 +22,48 @@
 	
 	<properties>
 	<!--  DEPENDENT PARAMS OF BUILD MODE  -->
-		<!-- Web service for ID Generation -->
-		<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
-		<project.ws.username>root</project.ws.username>
-		<project.ws.password>snomed11</project.ws.password>
 	
-		<!-- Tool kit trek version -->
-		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-97-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+		<!-- DEV PARAMS-->
+			<!-- Web service for ID Generation -->
+			<!--	<project.endpointURL>http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator</project.endpointURL>
+					<project.ws.username>termmed</project.ws.username>
+					<project.ws.password>termmed</project.ws.password>
+			-->
+			<!-- Tool kit trek version -->
+			<!--	<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+			-->
+			<!-- Mode For test[test], development[dev] or production[prod] -->
+			<!--<project.execMode>dev</project.execMode>
+			-->
+		<!-- END DEV PARAMS -->
 		
-		<!-- Mode For test[test], development[dev] or production[prod] -->
-		<project.execMode>prod</project.execMode>
-	
+		<!-- TEST PARAMS-->
+			<!-- Web service for ID Generation -->
+			<!-- 	<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
+					<project.ws.username>termmed</project.ws.username>
+					<project.ws.password>termmed</project.ws.password> 
+			-->
+			<!-- Tool kit trek version -->
+			<!--	<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+			-->
+			<!-- Mode For test[test], development[dev] or production[prod] 
+			-->
+			<!--	<project.execMode>test</project.execMode> -->
+		<!-- END TEST PARAMS -->
+		
+		<!-- PROD PARAMS -->
+			<!-- Web service for ID Generation -->
+			<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
+			<project.ws.username>root</project.ws.username>
+			<project.ws.password>snomed11</project.ws.password>
+		
+			<!-- Tool kit trek version -->
+			<org.ihtsdo.wb-toolkit.version>2.6.0-trek-97-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+			
+			<!-- Mode For test[test], development[dev] or production[prod] -->
+			<project.execMode>prod</project.execMode>
+		<!-- END PROD PARAMS -->
+		
 	<!-- SHARED PARAMS BETWEEN BUILD MODES -->	
 		
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
