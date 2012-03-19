@@ -11,7 +11,7 @@
 	<artifactId>wb-release-process</artifactId>	
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>WB International Release Process</name>
+	<name>WB International Release Process Production</name>
 	<url>http://maven.apache.org</url>
 
 	<scm>
@@ -25,54 +25,52 @@
 	
 		<!-- DEV PARAMS-->
 			<!-- Web service for ID Generation -->
-			<!--	<project.endpointURL>http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator</project.endpointURL>
-					<project.ws.username>termmed</project.ws.username>
-					<project.ws.password>termmed</project.ws.password>
+			<!--
+			<project.endpointURL>http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator</project.endpointURL>
+			<project.ws.username>termmed</project.ws.username>
+			<project.ws.password>termmed</project.ws.password>
 			-->
 			<!-- Tool kit trek version -->
-			<!--	<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
-			-->
+			<!--<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
+			
 			<!-- Mode For test[test], development[dev] or production[prod] -->
-			<!--<project.execMode>dev</project.execMode>
-			-->
+			<!--<project.execMode>dev</project.execMode>-->
 		<!-- END DEV PARAMS -->
+		
 		
 		<!-- TEST PARAMS-->
 			<!-- Web service for ID Generation -->
-			<!-- 	<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
-					<project.ws.username>termmed</project.ws.username>
-					<project.ws.password>termmed</project.ws.password> 
-			-->
+			<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
+			<project.ws.username>termmed</project.ws.username>
+			<project.ws.password>termmed</project.ws.password> 
+			
 			<!-- Tool kit trek version -->
-			<!--	<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
-			-->
-			<!-- Mode For test[test], development[dev] or production[prod] 
-			-->
-			<!--	<project.execMode>test</project.execMode> -->
+			<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+			<!-- Mode For test[test], development[dev] or production[prod]-->
+			<project.execMode>test</project.execMode>
 		<!-- END TEST PARAMS -->
 		
 		<!-- PROD PARAMS -->
 			<!-- Web service for ID Generation -->
+			<!--
 			<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
 			<project.ws.username>root</project.ws.username>
 			<project.ws.password>snomed11</project.ws.password>
-		
+			-->
 			<!-- Tool kit trek version -->
-			<org.ihtsdo.wb-toolkit.version>2.6.0-trek-97-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+			<!--<org.ihtsdo.wb-toolkit.version>2.6.0-trek-100-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			
 			<!-- Mode For test[test], development[dev] or production[prod] -->
-			<project.execMode>prod</project.execMode>
+			<!--<project.execMode>prod</project.execMode>-->
 		<!-- END PROD PARAMS -->
 		
-	<!-- SHARED PARAMS BETWEEN BUILD MODES -->	
-		
+	<!-- SHARED PARAMS BETWEEN BUILD MODES -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		
 		<!-- For wb-release-mojo -->
 		<project.releaseDate>20120731</project.releaseDate>
 		<project.previousReleaseDate>20120131</project.previousReleaseDate>
 		<project.releaseTimeInDatabase>2012.07.31 23:00:00</project.releaseTimeInDatabase>
-		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>		
+		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>	
 		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
 		<project.outputFolder>${project.build.directory}/generated-sources/output</project.outputFolder>
