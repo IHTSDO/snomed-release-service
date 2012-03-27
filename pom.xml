@@ -31,7 +31,7 @@
 			<project.ws.password>termmed</project.ws.password>
 			-->
 			<!-- Tool kit trek version -->
-			<!--<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
+			<!--<org.ihtsdo.wb-toolkit.version>2.6.2-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			
 			<!-- Mode For test[test], development[dev] or production[prod] -->
 			<!--<project.execMode>dev</project.execMode>-->
@@ -40,28 +40,28 @@
 		
 		<!-- TEST PARAMS-->
 			<!-- Web service for ID Generation -->
-			<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
-			<project.ws.username>termmed</project.ws.username>
-			<project.ws.password>termmed</project.ws.password> 
+<!--			<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>-->
+<!--			<project.ws.username>termmed</project.ws.username>-->
+<!--			<project.ws.password>termmed</project.ws.password> -->
 			
 			<!-- Tool kit trek version -->
-			<org.ihtsdo.wb-toolkit.version>2.6.0-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+<!--			<org.ihtsdo.wb-toolkit.version>2.6.2-trek-termmed-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			<!-- Mode For test[test], development[dev] or production[prod]-->
-			<project.execMode>test</project.execMode>
+<!--			<project.execMode>test</project.execMode>-->
 		<!-- END TEST PARAMS -->
 		
 		<!-- PROD PARAMS -->
-			<!-- Web service for ID Generation -->
-			<!--
+<!--			 Web service for ID Generation -->
+			
 			<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
 			<project.ws.username>root</project.ws.username>
 			<project.ws.password>snomed11</project.ws.password>
-			-->
-			<!-- Tool kit trek version -->
-			<!--<org.ihtsdo.wb-toolkit.version>2.6.0-trek-100-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			
-			<!-- Mode For test[test], development[dev] or production[prod] -->
-			<!--<project.execMode>prod</project.execMode>-->
+<!--			 Tool kit trek version -->
+			<org.ihtsdo.wb-toolkit.version>2.6.1-trek-termmed-101</org.ihtsdo.wb-toolkit.version>
+			
+<!--			 Mode For test[test], development[dev] or production[prod] -->
+			<project.execMode>prod</project.execMode>
 		<!-- END PROD PARAMS -->
 		
 	<!-- SHARED PARAMS BETWEEN BUILD MODES -->
@@ -189,7 +189,8 @@
 								</goals>
 								<configuration>
 									<workingCopyStr>${project.build.directory}/generated-sources/rf2full</workingCopyStr>
-									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/wb-release-pa/rf2-full-release-files/src/main</repositoryUrlStr>
+									<!-- <repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/wb-release-pa/rf2-full-release-files/src/main</repositoryUrlStr> -->
+									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</repositoryUrlStr>
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
 								</configuration>
