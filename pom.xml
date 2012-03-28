@@ -89,7 +89,7 @@
 		<!-- location where folders and files are stored for packaging -->
 		<project.rf2.zip.folder>zip</project.rf2.zip.folder>
 		<!--Below file Parameters are optional if not specifies defaults will be used-->
-		<project.rF2Format>false</project.rF2Format>
+		<project.rF2Format>true</project.rF2Format>
 		<project.invokeDroolsRules>false</project.invokeDroolsRules>
 		<project.incrementalRelease>false</project.incrementalRelease>
 		<project.fileExtension>txt</project.fileExtension>
