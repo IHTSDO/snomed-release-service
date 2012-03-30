@@ -52,15 +52,10 @@
 		
 		<!-- PROD PARAMS -->
 <!--			 Web service for ID Generation -->
-			<!--
+
 			<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
 			<project.ws.username>root</project.ws.username>
 			<project.ws.password>snomed11</project.ws.password>
-			-->
-			
-			<project.endpointURL>http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
-			<project.ws.username>termmed</project.ws.username>
-			<project.ws.password>termmed</project.ws.password>
 
 <!--			 Tool kit trek version -->
 			<org.ihtsdo.wb-toolkit.version>2.6.1-trek-termmed-101</org.ihtsdo.wb-toolkit.version>
