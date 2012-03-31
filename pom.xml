@@ -53,7 +53,7 @@
 		<!-- PROD PARAMS -->
 <!--			 Web service for ID Generation -->
 
-			<project.endpointURL>http://mgr.servers.aceworkspace.net:50042/axis2/services/id_generator</project.endpointURL>
+			<project.endpointURL>http://cu025.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
 			<project.ws.username>root</project.ws.username>
 			<project.ws.password>snomed11</project.ws.password>
 
