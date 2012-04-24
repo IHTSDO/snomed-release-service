@@ -198,8 +198,10 @@
 									<workingCopyStr>${project.build.directory}/generated-sources/rf2full</workingCopyStr>
 									<!-- <repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/wb-release-pa/rf2-full-release-files/src/main</repositoryUrlStr> -->
 									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</repositoryUrlStr>
+<!--
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
+-->
 								</configuration>
 							</execution>
 							<execution>
@@ -211,8 +213,10 @@
 								<configuration>
 									<workingCopyStr>${project.build.directory}/generated-sources/not-published-ids</workingCopyStr>
 									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</repositoryUrlStr>
+<!--
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
+-->
 								</configuration>
 							</execution>
 							<execution>
@@ -636,8 +640,10 @@
 								<configuration>
 									<workingCopyStr>${project.build.directory}/generated-sources/not-published-ids</workingCopyStr>
 									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</repositoryUrlStr>
+<!--
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
+-->
 								</configuration>
 							</execution>
 						</executions>
