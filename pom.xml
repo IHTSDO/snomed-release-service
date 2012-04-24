@@ -165,7 +165,40 @@
 							</execution>
 						</executions>
 					</plugin>
-
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-scm-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>rf2full-checkout</id>
+								<phase>initialize</phase>
+								<goals>
+									<goal>checkout</goal>
+									<goal>update</goal>
+								</goals>
+								<configuration>
+									<skipCheckoutIfExists>true</skipCheckoutIfExists>
+									<checkoutDirectory>${project.build.directory}/generated-sources/rf2full</checkoutDirectory>
+									<workingDirectory>${project.build.directory}/generated-sources/rf2full</workingDirectory>
+									<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl>
+								</configuration>
+							</execution>
+							<execution>
+								<id>not-published-ids-checkout</id>
+								<phase>initialize</phase>
+								<goals>
+									<goal>checkout</goal>
+									<goal>update</goal>
+								</goals>
+								<configuration>
+									<skipCheckoutIfExists>true</skipCheckoutIfExists>
+									<checkoutDirectory>${project.build.directory}/generated-sources/not-published-ids</checkoutDirectory>
+									<workingDirectory>${project.build.directory}/generated-sources/not-published-ids</workingDirectory>
+									<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</connectionUrl>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 					<plugin>
 						<groupId>org.ihtsdo</groupId>
 						<artifactId>wb-mojo</artifactId>
@@ -188,6 +221,7 @@
 						</configuration>
 
 						<executions>
+<!--
 							<execution>
 								<id>rf2full-checkout</id>
 								<phase>initialize</phase>
@@ -196,12 +230,10 @@
 								</goals>
 								<configuration>
 									<workingCopyStr>${project.build.directory}/generated-sources/rf2full</workingCopyStr>
-									<!-- <repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/wb-release-pa/rf2-full-release-files/src/main</repositoryUrlStr> -->
+									<!- - <repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/wb-release-pa/rf2-full-release-files/src/main</repositoryUrlStr> - ->
 									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</repositoryUrlStr>
-<!--
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
--->
 								</configuration>
 							</execution>
 							<execution>
@@ -213,12 +245,11 @@
 								<configuration>
 									<workingCopyStr>${project.build.directory}/generated-sources/not-published-ids</workingCopyStr>
 									<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</repositoryUrlStr>
-<!--
 									<username>${demo.sync.ci.user}</username>
 									<password>${demo.sync.ci.pwd}</password>
--->
 								</configuration>
 							</execution>
+-->
 							<execution>
 								<id>vodb-open0</id>
 								<phase>generate-sources</phase>
