@@ -31,7 +31,7 @@
 			<project.ws.password>termmed</project.ws.password>
 			-->
 			<!-- Tool kit trek version -->
-			<!--<org.ihtsdo.wb-toolkit.version>2.6.2-trek-96-termmed-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
+			<!--<org.ihtsdo.wb-toolkit.version>2.6.3-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			
 			<!-- Mode For test[test], development[dev] or production[prod] -->
 			<!--<project.execMode>dev</project.execMode>-->
@@ -45,7 +45,7 @@
 <!--			<project.ws.password>termmed</project.ws.password> -->
 			
 			<!-- Tool kit trek version -->
-<!--			<org.ihtsdo.wb-toolkit.version>2.6.2-trek-termmed-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
+<!--			<org.ihtsdo.wb-toolkit.version>2.6.3-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>-->
 			<!-- Mode For test[test], development[dev] or production[prod]-->
 <!--			<project.execMode>test</project.execMode>-->
 		<!-- END TEST PARAMS -->
@@ -58,7 +58,7 @@
 			<project.ws.password>snomed11</project.ws.password>
 
 <!--			 Tool kit trek version -->
-			<org.ihtsdo.wb-toolkit.version>2.6.2-trek-termmed-101</org.ihtsdo.wb-toolkit.version>
+			<org.ihtsdo.wb-toolkit.version>2.6.3-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
 			
 <!--			 Mode For test[test], development[dev] or production[prod] -->
 			<project.execMode>prod</project.execMode>
