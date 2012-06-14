@@ -70,13 +70,13 @@
 		<!-- For wb-release-mojo -->
 		<project.releaseDate>20130131</project.releaseDate>
 		<project.previousReleaseDate>20120731</project.previousReleaseDate>
-		<previousRelease.version>july2012-1.0-SNAPSHOT</previousRelease.version>
+		<previousRelease.version>july2012-beta-1.0-SNAPSHOT</previousRelease.version>
 		<project.releaseTimeInDatabase>2013.01.31 23:00:00</project.releaseTimeInDatabase>
 		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>
 		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
 		<project.outputFolder>${project.build.directory}/generated-sources/output</project.outputFolder>
-		<project.rf2fullFolder>${project.build.directory}/generated-sources/destination/full</project.rf2fullFolder>
+		<project.rf2fullFolder>${project.build.directory}/generated-resources/destination/full</project.rf2fullFolder>
 		<project.previousRelIdNotReleasedFile>prevRelIdNotReleased.txt</project.previousRelIdNotReleasedFile>
 		<!-- For rf2-file-delta-snapshot -->
 		<!-- location where the delta and snapshot stored -->
@@ -141,6 +141,7 @@
 			<groupId>org.ihtsdo.intl.release.process</groupId>
 			<artifactId>wb-release-process</artifactId>	
 			<version>${previousRelease.version}</version>
+			<type>zip</type>
 		</dependency>
 	</dependencies>
 	<profiles>
@@ -411,7 +412,7 @@
 									<releaseDate>${project.releaseDate}</releaseDate>
 									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
 									<exportFolder>${project.exportFolder}</exportFolder>
-									<rf2FullFolder>${project.build.directory}/generated-sources/rf2full</rf2FullFolder>
+									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
 									<outputFolder>${project.outputFolder}</outputFolder>
 								</configuration>
 							</execution>
