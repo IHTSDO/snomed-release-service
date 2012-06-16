@@ -76,7 +76,7 @@
 		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
 		<project.outputFolder>${project.build.directory}/generated-sources/output</project.outputFolder>
-		<project.rf2fullFolder>${project.build.directory}/generated-resources/destination/full</project.rf2fullFolder>
+		<project.rf2fullFolder>${project.build.directory}/generated-resources/destination/Full</project.rf2fullFolder>
 		<project.previousRelIdNotReleasedFile>prevRelIdNotReleased.txt</project.previousRelIdNotReleasedFile>
 		<!-- For rf2-file-delta-snapshot -->
 		<!-- location where the delta and snapshot stored -->
