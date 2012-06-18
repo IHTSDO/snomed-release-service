@@ -713,6 +713,18 @@
 						<version>${org.ihtsdo.wb-toolkit.version}</version>
 						<executions>
 							<execution>
+								<id>id-generator-connection-testing</id>
+								<phase>initialize</phase>
+								<goals>
+									<goal>id-generator-test-connection</goal>
+								</goals>
+								<configuration>
+									<endpointURL>${project.endpointURL}</endpointURL>
+									<username>${project.ws.username}</username>
+									<password>${project.ws.password}</password>
+								</configuration>
+							</execution>
+							<execution>
 								<id>rf2-id-generator</id>
 								<phase>process-test-sources</phase>
 								<goals>
