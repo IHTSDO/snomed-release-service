@@ -1691,7 +1691,9 @@
 								<id>package-output</id>
 								<configuration>
 									<descriptors>
-										<descriptor>src/main/assembly/output.xml</descriptor>
+										<descriptor>src/main/assembly/fulloutput.xml</descriptor>
+										<descriptor>src/main/assembly/snapshotoutput.xml</descriptor>
+										<descriptor>src/main/assembly/deltaoutput.xml</descriptor>
 									</descriptors>
 								</configuration>
 								<goals>
@@ -1724,12 +1726,45 @@
 								<configuration>
 									<artifacts>
 										<artifact>
-											<file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+											<file>${project.build.directory}/${project.artifactId}-${project.version}-full.zip</file>
+											<type>zip</type>
+											<classifier>daily</classifier>
+										</artifact>
+										<artifact>
+											<file>${project.build.directory}/${project.artifactId}-${project.version}-snapshot.zip</file>
+											<type>zip</type>
+											<classifier>daily</classifier>
+										</artifact>
+										<artifact>
+											<file>${project.build.directory}/${project.artifactId}-${project.version}-delta.zip</file>
 											<type>zip</type>
 											<classifier>daily</classifier>
 										</artifact>
 									</artifacts>
 								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>com.maestrodev</groupId>
+						<artifactId>collabnet-maven-plugin</artifactId>
+						<version>1.1</version>
+						<configuration>
+							<project>ihtsdo_migration_project</project>
+							<teamForgeUrl>https://csfe.aceworkspace.net/</teamForgeUrl>
+							<createRelease>true</createRelease>
+							<overwrite>true</overwrite>
+							<release>${project.version}-daily</release>
+							<releaseDescription>Daily Release ${project.version}</releaseDescription>
+							<teamForgeServerId>aceworkspace</teamForgeServerId>
+						</configuration>
+						<executions>
+							<execution>
+								<id>deploy</id>
+								<phase>package</phase>
+								<goals>
+									<goal>deploy-to-releases</goal>
+								</goals>
 							</execution>
 						</executions>
 					</plugin>

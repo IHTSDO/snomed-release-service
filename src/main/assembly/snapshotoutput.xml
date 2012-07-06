@@ -1,4 +1,5 @@
 <assembly>
+<id>snapshot</id>
   <formats>
     <format>zip</format>
   </formats>
@@ -7,9 +8,7 @@
       <directory>destination</directory>
       <outputDirectory>/destination</outputDirectory>
       <includes>
-        <include>**/Full/*.txt</include>
         <include>**/Snapshot/*.txt</include>
-        <include>**/Delta/*.txt</include>
       </includes>
     </fileSet>
   </fileSets>
