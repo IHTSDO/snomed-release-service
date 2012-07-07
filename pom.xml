@@ -1728,17 +1728,17 @@
 										<artifact>
 											<file>${project.build.directory}/${project.artifactId}-${project.version}-full.zip</file>
 											<type>zip</type>
-											<classifier>daily</classifier>
+											<classifier>full</classifier>
 										</artifact>
 										<artifact>
 											<file>${project.build.directory}/${project.artifactId}-${project.version}-snapshot.zip</file>
 											<type>zip</type>
-											<classifier>daily</classifier>
+											<classifier>snapshot</classifier>
 										</artifact>
 										<artifact>
 											<file>${project.build.directory}/${project.artifactId}-${project.version}-delta.zip</file>
 											<type>zip</type>
-											<classifier>daily</classifier>
+											<classifier>delta</classifier>
 										</artifact>
 									</artifacts>
 								</configuration>
