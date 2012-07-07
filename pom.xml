@@ -1755,13 +1755,13 @@
 							<createRelease>true</createRelease>
 							<overwrite>true</overwrite>
 							<release>${project.version}-daily</release>
-							<releaseDescription>Daily Release ${project.version}</releaseDescription>
-							<teamForgeServerId>aceworkspace</teamForgeServerId>
+							<releaseDescription>Daily Core Release ${project.version}</releaseDescription>
+							<teamForgeServerId>teamforge</teamForgeServerId>
 						</configuration>
 						<executions>
 							<execution>
 								<id>deploy</id>
-								<phase>package</phase>
+								<phase>deploy</phase>
 								<goals>
 									<goal>deploy-to-releases</goal>
 								</goals>
