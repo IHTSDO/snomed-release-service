@@ -70,7 +70,7 @@
 		<!-- For wb-release-mojo -->
 		<project.releaseDate>20130131</project.releaseDate>
 		<project.previousReleaseDate>20120731</project.previousReleaseDate>
-		<previousRelease.version>july2012-beta-1.0-SNAPSHOT</previousRelease.version>
+		<previousRelease.version>0.0.1-SNAPSHOT</previousRelease.version>
 		<project.releaseTimeInDatabase>2013.01.31 23:00:00</project.releaseTimeInDatabase>
 		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>
 		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
@@ -138,8 +138,8 @@
 			<type>zip</type>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.intl.release.process</groupId>
-			<artifactId>wb-release-process</artifactId>	
+			<groupId>org.ihtsdo</groupId>
+			<artifactId>previous-release-data</artifactId>
 			<version>${previousRelease.version}</version>
 			<type>zip</type>
 		</dependency>
@@ -160,7 +160,7 @@
 									<goal>unpack-dependencies</goal>
 								</goals>
 								<configuration>
-									<includeArtifactIds>profiles,project-bdb,wb-release-process</includeArtifactIds>
+									<includeArtifactIds>profiles,project-bdb,previous-release-data</includeArtifactIds>
 									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
 								</configuration>
 							</execution>
