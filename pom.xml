@@ -182,13 +182,22 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-scm-plugin</artifactId>
+						<version>1.7</version>
 						<executions>
-							<!--<execution> <id>rf2full-checkout</id> <phase>initialize</phase> 
-								<goals> <goal>checkout</goal> <goal>update</goal> </goals> <configuration> 
-								<skipCheckoutIfExists>true</skipCheckoutIfExists> <checkoutDirectory>${project.build.directory}/generated-sources/rf2full</checkoutDirectory> 
-								<workingDirectory>${project.build.directory}/generated-sources/rf2full</workingDirectory> 
-								<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl> 
-								</configuration> </execution> -->
+							<!-- <execution>
+	<id>rf2full-checkout</id>
+	<phase>initialize</phase>
+	<goals>
+		<goal>checkout</goal>
+		<goal>update</goal>
+	</goals>
+	<configuration>
+		<skipCheckoutIfExists>true</skipCheckoutIfExists>
+		<checkoutDirectory>${project.build.directory}/generated-sources/rf2full</checkoutDirectory>
+		<workingDirectory>${project.build.directory}/generated-sources/rf2full</workingDirectory>
+		<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl>
+	</configuration>
+</execution> -->
 							<execution>
 								<id>not-published-ids-checkout</id>
 								<phase>initialize</phase>
@@ -560,7 +569,7 @@
 									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
 									<exportFolder>${project.exportFolder}</exportFolder>
 									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
-									<outputFolder>${project.destinationFolder}</outputFolder>
+									<outputFolder>${project.outputFolder}</outputFolder>
 								</configuration>
 							</execution>
 							<execution>
@@ -998,7 +1007,28 @@
 												<idMapFile></idMapFile>
 											</sctidparam>
 										</RF2IdentifierFile>
-
+										<RF2IdentifierFile>
+											<fileName>${project.outputFolder}/Full/der2_cRefset_AttributeValueFull_INT_${project.releaseDate}.txt</fileName>
+											<sctIdFileName>${project.destinationFolder}/Full/der2_cRefset_AttributeValueFull_INT_${project.releaseDate}.txt</sctIdFileName>
+											<key>
+												<keyOrdinals>
+													<param>5</param>
+												</keyOrdinals>
+												<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
+											</key>
+											<sctidparam>
+												<namespaceId>0</namespaceId>
+												<partitionId>00</partitionId>
+												<releaseId>20130131</releaseId>
+												<executionId>Daily Build</executionId>
+												<moduleId>Concept (Core Component)</moduleId>
+												<componentType>Attribute Value Full (Core Component)</componentType>
+												<idSaveTolist>false</idSaveTolist>
+												<idType>RF2_CONCEPT</idType>
+												<idColumnIndex>-1</idColumnIndex>
+												<idMapFile></idMapFile>
+											</sctidparam>
+										</RF2IdentifierFile>
 										<RF2IdentifierFile>
 											<fileName>${project.outputFolder}/Delta/sct2_Concept_Delta_INT_${project.releaseDate}.txt</fileName>
 											<sctIdFileName>${project.destinationFolder}/Delta/sct2_Concept_Delta_INT_${project.releaseDate}.txt</sctIdFileName>
@@ -1264,6 +1294,28 @@
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Association Delta (Core Component)</componentType>
+												<idSaveTolist>false</idSaveTolist>
+												<idType>RF2_CONCEPT</idType>
+												<idColumnIndex>-1</idColumnIndex>
+												<idMapFile></idMapFile>
+											</sctidparam>
+										</RF2IdentifierFile>
+										<RF2IdentifierFile>
+											<fileName>${project.outputFolder}/Delta/der2_cRefset_AttributeValueDelta_INT_${project.releaseDate}.txt</fileName>
+											<sctIdFileName>${project.destinationFolder}/Delta/der2_cRefset_AttributeValueDelta_INT_${project.releaseDate}.txt</sctIdFileName>
+											<key>
+												<keyOrdinals>
+													<param>5</param>
+												</keyOrdinals>
+												<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
+											</key>
+											<sctidparam>
+												<namespaceId>0</namespaceId>
+												<partitionId>00</partitionId>
+												<releaseId>20130131</releaseId>
+												<executionId>Daily Build</executionId>
+												<moduleId>Concept (Core Component)</moduleId>
+												<componentType>Attribute Value Delta (Core Component)</componentType>
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
@@ -1564,6 +1616,28 @@
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Association Snapshot (Core Component)</componentType>
+												<idSaveTolist>false</idSaveTolist>
+												<idType>RF2_CONCEPT</idType>
+												<idColumnIndex>-1</idColumnIndex>
+												<idMapFile></idMapFile>
+											</sctidparam>
+										</RF2IdentifierFile>
+										<RF2IdentifierFile>
+											<fileName>${project.outputFolder}/Snapshot/der2_cRefset_AttributeValueSnapshot_INT_${project.releaseDate}.txt</fileName>
+											<sctIdFileName>${project.destinationFolder}/Snapshot/der2_cRefset_AttributeValueSnapshot_INT_${project.releaseDate}.txt</sctIdFileName>
+											<key>
+												<keyOrdinals>
+													<param>5</param>
+												</keyOrdinals>
+												<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
+											</key>
+											<sctidparam>
+												<namespaceId>0</namespaceId>
+												<partitionId>00</partitionId>
+												<releaseId>20130131</releaseId>
+												<executionId>Daily Build</executionId>
+												<moduleId>Concept (Core Component)</moduleId>
+												<componentType>Attribute Value Snapshot (Core Component)</componentType>
 												<idSaveTolist>false</idSaveTolist>
 												<idType>RF2_CONCEPT</idType>
 												<idColumnIndex>-1</idColumnIndex>
