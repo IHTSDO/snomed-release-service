@@ -431,14 +431,14 @@
 							</execution>
 							<execution>
 								<id>post-process-relationship-data</id>
-								<phase>compile</phase>
+								<phase>process-classes</phase>
 								<goals>
 									<goal>post-process-relationship</goal>
 								</goals>
 								<configuration>
 									<releaseDate>${project.releaseDate}</releaseDate>
 									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
-									<exportFolder>${project.exportFolder}</exportFolder>
+									<exportFolder>${project.exportFolder}/tmp</exportFolder>
 									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
 									<outputFolder>${project.outputFolder}</outputFolder>
 								</configuration>
@@ -710,6 +710,56 @@
 									<password>${project.ws.password}</password>
 								</configuration>
 							</execution>
+			<execution>
+				<id>rf2-id-inferred-db-retrieve</id>
+				<phase>compile</phase>
+				<goals>
+					<goal>rf2-relationship-id-list-creator</goal>
+				</goals>
+				<configuration>
+					<database>${project.database}</database>
+					<releaseDate>${project.releaseDate}</releaseDate>
+					<exportFolder>${project.exportFolder}</exportFolder>
+					<previousIdNotReleasedFile>${project.build.directory}/generated-sources/not-published-ids/${project.previousRelIdNotReleasedFile}</previousIdNotReleasedFile>
+					<endpointURL>${project.endpointURL}</endpointURL>
+					<username>${project.ws.username}</username>
+					<password>${project.ws.password}</password>
+					<rF2Format>${project.rF2Format}</rF2Format>
+					<invokeDroolsRules>${project.invokeDroolsRules}</invokeDroolsRules>
+					<incrementalRelease>${project.incrementalRelease}</incrementalRelease>
+					<fileExtension>${project.fileExtension}</fileExtension>
+					<flushCount>${project.flushCount}</flushCount>
+					<updateWbSctId>${project.updateWbSctId}</updateWbSctId>
+					<destinationFolder>destination</destinationFolder>
+					<componentType>nosctidcreate</componentType>
+					<rf2Files>
+						<RF2IdentifierFile>
+							<fileName>${project.exportFolder}/sct2_Relationship_Full_INT_${project.releaseDate}.txt</fileName>
+							<sctIdFileName>${project.exportFolder}/tmp/sct2_Relationship_Full_INT_${project.releaseDate}.txt</sctIdFileName>
+							<key>
+								<keyOrdinals>
+									<param>0</param>
+								</keyOrdinals>
+								<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
+							</key>
+							<sctidparam>
+								<namespaceId>0</namespaceId>
+								<partitionId>02</partitionId>
+								<releaseId>20130131</releaseId>
+								<executionId>Daily Build</executionId>
+								<moduleId>Inferred
+									Relationship (Core Component)</moduleId>
+								<componentType>Inferred Relationship
+									Snapshot (Core Component)</componentType>
+								<idSaveTolist>true</idSaveTolist>
+								<idType>RF2_INFERREDRELATIONSHIP</idType>
+								<idColumnIndex>0</idColumnIndex>
+								<idMapFile>${project.destinationFolder}/IdMap/prevRetrievingInfRels_Uuid_Id.txt</idMapFile>
+							</sctidparam>
+						</RF2IdentifierFile>
+					</rf2Files>
+				</configuration>
+			</execution>
 							<execution>
 								<id>rf2-id-generator</id>
 								<phase>process-test-sources</phase>
@@ -1702,6 +1752,7 @@
 									<flushCount>${project.flushCount}</flushCount>
 									<updateWbSctId>${project.updateWbSctId}</updateWbSctId>
 									<destinationFolder>destination</destinationFolder>
+									<componentType>sctidcreate</componentType>
 									<rf2Files>
 										<RF2IdentifierFile>
 											<fileName>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</fileName>
