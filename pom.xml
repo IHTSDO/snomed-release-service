@@ -56,7 +56,7 @@
 		<project.ws.password>snomed11</project.ws.password>
 
 		<!-- Tool kit trek version -->
-		<org.ihtsdo.wb-toolkit.version>2.6.3-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+		<org.ihtsdo.wb-toolkit.version>2.6.4-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
 
 		<!-- Mode For test[test], development[dev] or production[prod] -->
 		<project.execMode>prod</project.execMode>
@@ -68,7 +68,7 @@
 		<!-- For wb-release-mojo -->
 		<project.releaseDate>20130131</project.releaseDate>
 		<project.previousReleaseDate>20120731</project.previousReleaseDate>
-		<previousRelease.version>0.0.1-SNAPSHOT</previousRelease.version>
+		<previousRelease.version>0.0.2</previousRelease.version>
 		<project.releaseTimeInDatabase>2013.01.31 23:00:00</project.releaseTimeInDatabase>
 		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>
 		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
@@ -118,7 +118,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.sct</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.3-SNAPSHOT</version>
+			<version>1.3</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
@@ -130,7 +130,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.sct</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.3-SNAPSHOT</version>
+			<version>1.3</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
@@ -616,14 +616,14 @@
 							</execution>
 							<execution>
 								<id>post-process-simple-map-data</id>
-								<phase>compile</phase>
+								<phase>process-classes</phase>
 								<goals>
 									<goal>post-process-simple-map-refset</goal>
 								</goals>
 								<configuration>
 									<releaseDate>${project.releaseDate}</releaseDate>
 									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
-									<exportFolder>${project.exportFolder}</exportFolder>
+									<exportFolder>${project.exportFolder}/tmp</exportFolder>
 									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
 									<outputFolder>${project.outputFolder}</outputFolder>
 								</configuration>
@@ -710,6 +710,18 @@
 									<password>${project.ws.password}</password>
 								</configuration>
 							</execution>
+							<execution>
+			<id>patch-snomedid</id>
+			<phase>compile</phase>
+			<goals>
+			<goal>patch-snomedid-not-replaced</goal>
+			</goals>
+			<configuration>
+			<inputFile>${project.exportFolder}/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</inputFile>
+			<outputFile>${project.exportFolder}/tmp/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</outputFile>
+			<auxiliaryFile>snomedID_replace.txt</auxiliaryFile>
+			</configuration>
+			</execution>
 			<execution>
 				<id>rf2-id-inferred-db-retrieve</id>
 				<phase>compile</phase>
