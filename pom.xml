@@ -1710,7 +1710,7 @@
 								</configuration>
 							</execution>
 
-							<execution>
+							<!-- <execution>
 								<id>rf2-inferred-relationships-id-reassign-process</id>
 								<phase>generate-test-resources</phase>
 								<goals>
@@ -1741,7 +1741,7 @@
 									<outputFolder>${project.outputFolder}</outputFolder>
 									<exportedSnapshotFile>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</exportedSnapshotFile>
 								</configuration>
-							</execution>
+							</execution> -->
 							<execution>
 								<id>rf2-id-creator2</id>
 								<phase>process-test-resources</phase>
