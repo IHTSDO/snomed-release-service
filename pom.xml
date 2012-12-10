@@ -9,15 +9,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.ihtsdo.intl.release.process</groupId>
 	<artifactId>wb-release-process</artifactId>
-	<version>1.3</version>
+	<version>1.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>WB International Release Process Production</name>
 	<url>http://maven.apache.org</url>
 
 	<scm>
-		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/tags/wb-release-process-1.3</connection>
-		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/tags/wb-release-process-1.3</developerConnection>
-		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/tags/wb-release-process-1.3</url>
+		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</connection>
+		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</developerConnection>
+		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</url>
 	</scm>
 
 	<properties>
