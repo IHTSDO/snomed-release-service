@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<parent>
 		<groupId>org.ihtsdo</groupId>
@@ -55,7 +56,7 @@
 		<project.ws.password>snomed11</project.ws.password>
 
 		<!-- Tool kit trek version -->
-		<org.ihtsdo.wb-toolkit.version>2.6.5-trek-termmed-rb1-101</org.ihtsdo.wb-toolkit.version>
+		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-147-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
 
 		<!-- Mode For test[test], development[dev] or production[prod] -->
 		<project.execMode>prod</project.execMode>
@@ -69,8 +70,8 @@
 		<project.previousReleaseDate>20120731</project.previousReleaseDate>
 		<previousRelease.version>0.0.2</previousRelease.version>
 		<project.releaseTimeInDatabase>2013.01.31 23:00:00</project.releaseTimeInDatabase>
-		<project.releasePath>342cc1ef-d852-58f7-912f-668dffd4765c</project.releasePath>
-		<project.PathName>SCT ID PROD 2012 All release candidate path</project.PathName>
+		<project.releasePath>4532f852-d2d5-5ab3-87f8-3dfb3425b167</project.releasePath>
+		<project.PathName>IHTSDO ID October PROD Release development path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
 		<project.outputFolder>${project.build.directory}/generated-sources/output</project.outputFolder>
 		<project.rf2fullFolder>${project.build.directory}/generated-resources/destination/Full</project.rf2fullFolder>
@@ -115,9 +116,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.sct</groupId>
+			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.3</version>
+			<version>1.0-SNAPSHOT</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
@@ -127,9 +128,9 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.sct</groupId>
+			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.3</version>
+			<version>1.0-SNAPSHOT</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
@@ -183,20 +184,12 @@
 						<artifactId>maven-scm-plugin</artifactId>
 						<version>1.7</version>
 						<executions>
-							<!-- <execution>
-	<id>rf2full-checkout</id>
-	<phase>initialize</phase>
-	<goals>
-		<goal>checkout</goal>
-		<goal>update</goal>
-	</goals>
-	<configuration>
-		<skipCheckoutIfExists>true</skipCheckoutIfExists>
-		<checkoutDirectory>${project.build.directory}/generated-sources/rf2full</checkoutDirectory>
-		<workingDirectory>${project.build.directory}/generated-sources/rf2full</workingDirectory>
-		<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl>
-	</configuration>
-</execution> -->
+							<!-- <execution> <id>rf2full-checkout</id> <phase>initialize</phase> 
+								<goals> <goal>checkout</goal> <goal>update</goal> </goals> <configuration> 
+								<skipCheckoutIfExists>true</skipCheckoutIfExists> <checkoutDirectory>${project.build.directory}/generated-sources/rf2full</checkoutDirectory> 
+								<workingDirectory>${project.build.directory}/generated-sources/rf2full</workingDirectory> 
+								<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl> 
+								</configuration> </execution> -->
 							<execution>
 								<id>not-published-ids-checkout</id>
 								<phase>initialize</phase>
@@ -351,13 +344,8 @@
 									</editPaths>
 								</configuration>
 							</execution>
-							<execution>
-								<id>vodb-setup-isa-cache</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>vodb-setup-isa-cache</goal>
-								</goals>
-							</execution>
+							<!-- <execution> <id>vodb-setup-isa-cache</id> <phase>generate-resources</phase> 
+								<goals> <goal>vodb-setup-isa-cache</goal> </goals> </execution> -->
 
 							<execution>
 								<id>export-concept-data</id>
@@ -615,14 +603,14 @@
 							</execution>
 							<execution>
 								<id>post-process-simple-map-data</id>
-								<phase>process-classes</phase>
+								<phase>compile</phase>
 								<goals>
 									<goal>post-process-simple-map-refset</goal>
 								</goals>
 								<configuration>
 									<releaseDate>${project.releaseDate}</releaseDate>
 									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
-									<exportFolder>${project.exportFolder}/tmp</exportFolder>
+									<exportFolder>${project.exportFolder}</exportFolder>
 									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
 									<outputFolder>${project.outputFolder}</outputFolder>
 								</configuration>
@@ -709,68 +697,60 @@
 									<password>${project.ws.password}</password>
 								</configuration>
 							</execution>
+							<!-- <execution> <id>patch-snomedid</id> <phase>compile</phase> <goals> 
+								<goal>patch-snomedid-not-replaced</goal> </goals> <configuration> <inputFile>${project.exportFolder}/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</inputFile> 
+								<outputFile>${project.exportFolder}/tmp/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</outputFile> 
+								<auxiliaryFile>snomedID_replace.txt</auxiliaryFile> </configuration> </execution> -->
 							<execution>
-			<id>patch-snomedid</id>
-			<phase>compile</phase>
-			<goals>
-			<goal>patch-snomedid-not-replaced</goal>
-			</goals>
-			<configuration>
-			<inputFile>${project.exportFolder}/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</inputFile>
-			<outputFile>${project.exportFolder}/tmp/der2_sRefset_SimpleMapFull_INT_${project.releaseDate}.txt</outputFile>
-			<auxiliaryFile>snomedID_replace.txt</auxiliaryFile>
-			</configuration>
-			</execution>
-			<execution>
-				<id>rf2-id-inferred-db-retrieve</id>
-				<phase>compile</phase>
-				<goals>
-					<goal>rf2-relationship-id-list-creator</goal>
-				</goals>
-				<configuration>
-					<database>${project.database}</database>
-					<releaseDate>${project.releaseDate}</releaseDate>
-					<exportFolder>${project.exportFolder}</exportFolder>
-					<previousIdNotReleasedFile>${project.build.directory}/generated-sources/not-published-ids/${project.previousRelIdNotReleasedFile}</previousIdNotReleasedFile>
-					<endpointURL>${project.endpointURL}</endpointURL>
-					<username>${project.ws.username}</username>
-					<password>${project.ws.password}</password>
-					<rF2Format>${project.rF2Format}</rF2Format>
-					<invokeDroolsRules>${project.invokeDroolsRules}</invokeDroolsRules>
-					<incrementalRelease>${project.incrementalRelease}</incrementalRelease>
-					<fileExtension>${project.fileExtension}</fileExtension>
-					<flushCount>${project.flushCount}</flushCount>
-					<updateWbSctId>${project.updateWbSctId}</updateWbSctId>
-					<destinationFolder>destination</destinationFolder>
-					<componentType>nosctidcreate</componentType>
-					<rf2Files>
-						<RF2IdentifierFile>
-							<fileName>${project.exportFolder}/sct2_Relationship_Full_INT_${project.releaseDate}.txt</fileName>
-							<sctIdFileName>${project.exportFolder}/tmp/sct2_Relationship_Full_INT_${project.releaseDate}.txt</sctIdFileName>
-							<key>
-								<keyOrdinals>
-									<param>0</param>
-								</keyOrdinals>
-								<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
-							</key>
-							<sctidparam>
-								<namespaceId>0</namespaceId>
-								<partitionId>02</partitionId>
-								<releaseId>20130131</releaseId>
-								<executionId>Daily Build</executionId>
-								<moduleId>Inferred
-									Relationship (Core Component)</moduleId>
-								<componentType>Inferred Relationship
-									Snapshot (Core Component)</componentType>
-								<idSaveTolist>true</idSaveTolist>
-								<idType>RF2_INFERREDRELATIONSHIP</idType>
-								<idColumnIndex>0</idColumnIndex>
-								<idMapFile>${project.destinationFolder}/IdMap/prevRetrievingInfRels_Uuid_Id.txt</idMapFile>
-							</sctidparam>
-						</RF2IdentifierFile>
-					</rf2Files>
-				</configuration>
-			</execution>
+								<id>rf2-id-inferred-db-retrieve</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>rf2-relationship-id-list-creator</goal>
+								</goals>
+								<configuration>
+									<database>${project.database}</database>
+									<releaseDate>${project.releaseDate}</releaseDate>
+									<exportFolder>${project.exportFolder}</exportFolder>
+									<previousIdNotReleasedFile>${project.build.directory}/generated-sources/not-published-ids/${project.previousRelIdNotReleasedFile}</previousIdNotReleasedFile>
+									<endpointURL>${project.endpointURL}</endpointURL>
+									<username>${project.ws.username}</username>
+									<password>${project.ws.password}</password>
+									<rF2Format>${project.rF2Format}</rF2Format>
+									<invokeDroolsRules>${project.invokeDroolsRules}</invokeDroolsRules>
+									<incrementalRelease>${project.incrementalRelease}</incrementalRelease>
+									<fileExtension>${project.fileExtension}</fileExtension>
+									<flushCount>${project.flushCount}</flushCount>
+									<updateWbSctId>${project.updateWbSctId}</updateWbSctId>
+									<destinationFolder>destination</destinationFolder>
+									<componentType>nosctidcreate</componentType>
+									<rf2Files>
+										<RF2IdentifierFile>
+											<fileName>${project.exportFolder}/sct2_Relationship_Full_INT_${project.releaseDate}.txt</fileName>
+											<sctIdFileName>${project.exportFolder}/tmp/sct2_Relationship_Full_INT_${project.releaseDate}.txt</sctIdFileName>
+											<key>
+												<keyOrdinals>
+													<param>0</param>
+												</keyOrdinals>
+												<effectiveTimeOrdinal>1</effectiveTimeOrdinal>
+											</key>
+											<sctidparam>
+												<namespaceId>0</namespaceId>
+												<partitionId>02</partitionId>
+												<releaseId>20130131</releaseId>
+												<executionId>Daily Build</executionId>
+												<moduleId>Inferred
+													Relationship (Core Component)</moduleId>
+												<componentType>Inferred Relationship
+													Snapshot (Core Component)</componentType>
+												<idSaveTolist>true</idSaveTolist>
+												<idType>RF2_INFERREDRELATIONSHIP</idType>
+												<idColumnIndex>0</idColumnIndex>
+												<idMapFile>${project.destinationFolder}/IdMap/prevRetrievingInfRels_Uuid_Id.txt</idMapFile>
+											</sctidparam>
+										</RF2IdentifierFile>
+									</rf2Files>
+								</configuration>
+							</execution>
 							<execution>
 								<id>rf2-id-generator</id>
 								<phase>process-test-sources</phase>
@@ -1709,38 +1689,19 @@
 								</configuration>
 							</execution>
 
-							<!-- <execution>
-								<id>rf2-inferred-relationships-id-reassign-process</id>
-								<phase>generate-test-resources</phase>
-								<goals>
-									<goal>rf2-inferred-relationships-id-reassign</goal>
-								</goals>
-								<configuration>
-									<rF2Format>${project.rF2Format}</rF2Format>
-									<exportFolder>${project.destinationFolder}</exportFolder>
-									<releaseDate>${project.releaseDate}</releaseDate>
-									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
-									<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder>
-									<outputFolder>${project.outputFolder}</outputFolder>
-									<exportedSnapshotFile>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</exportedSnapshotFile>
-								</configuration>
-							</execution>
-							<execution>
-								<id>rf2-relationships-id-reassign-previous-not-released-process</id>
-								<phase>generate-test-resources</phase>
-								<goals>
-									<goal>rf2-relationships-id-reassign-previous-not-released</goal>
-								</goals>
-								<configuration>
-									<rF2Format>${project.rF2Format}</rF2Format>
-									<exportFolder>${project.destinationFolder}</exportFolder>
-									<releaseDate>${project.releaseDate}</releaseDate>
-									<previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate>
-									<previousIdNotReleasedFile>${project.build.directory}/generated-sources/not-published-ids/${project.previousRelIdNotReleasedFile}</previousIdNotReleasedFile>
-									<outputFolder>${project.outputFolder}</outputFolder>
-									<exportedSnapshotFile>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</exportedSnapshotFile>
-								</configuration>
-							</execution> -->
+							<!-- <execution> <id>rf2-inferred-relationships-id-reassign-process</id> 
+								<phase>generate-test-resources</phase> <goals> <goal>rf2-inferred-relationships-id-reassign</goal> 
+								</goals> <configuration> <rF2Format>${project.rF2Format}</rF2Format> <exportFolder>${project.destinationFolder}</exportFolder> 
+								<releaseDate>${project.releaseDate}</releaseDate> <previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate> 
+								<rf2FullFolder>${project.rf2fullFolder}</rf2FullFolder> <outputFolder>${project.outputFolder}</outputFolder> 
+								<exportedSnapshotFile>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</exportedSnapshotFile> 
+								</configuration> </execution> <execution> <id>rf2-relationships-id-reassign-previous-not-released-process</id> 
+								<phase>generate-test-resources</phase> <goals> <goal>rf2-relationships-id-reassign-previous-not-released</goal> 
+								</goals> <configuration> <rF2Format>${project.rF2Format}</rF2Format> <exportFolder>${project.destinationFolder}</exportFolder> 
+								<releaseDate>${project.releaseDate}</releaseDate> <previousReleaseDate>${project.previousReleaseDate}</previousReleaseDate> 
+								<previousIdNotReleasedFile>${project.build.directory}/generated-sources/not-published-ids/${project.previousRelIdNotReleasedFile}</previousIdNotReleasedFile> 
+								<outputFolder>${project.outputFolder}</outputFolder> <exportedSnapshotFile>${project.destinationFolder}/tmp/sct2_Relationship1_Snapshot_INT_${project.releaseDate}.txt</exportedSnapshotFile> 
+								</configuration> </execution> -->
 							<execution>
 								<id>rf2-id-creator2</id>
 								<phase>process-test-resources</phase>
@@ -1790,13 +1751,6 @@
 										</RF2IdentifierFile>
 									</rf2Files>
 								</configuration>
-							</execution>
-							<execution>
-							<id>patch-bundle-duplicated-desc-lang-id</id>
-							<phase>prepare-package</phase>
-							<goals>
-							<goal>patch-bundle-duplicated-desc-lang</goal>
-							</goals>
 							</execution>
 						</executions>
 					</plugin>
