@@ -172,7 +172,7 @@
 									<goal>unpack-dependencies</goal>
 								</goals>
 								<configuration>
-									<includeArtifactIds>profiles,project-bdb,previous-release-data</includeArtifactIds>
+									<includeArtifactIds>profiles,project-bdb,wb-release-process</includeArtifactIds>
 									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
 								</configuration>
 							</execution>
