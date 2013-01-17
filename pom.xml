@@ -66,10 +66,10 @@
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- For wb-release-mojo -->
-		<project.releaseDate>20130131</project.releaseDate>
-		<project.previousReleaseDate>20120731</project.previousReleaseDate>
-		<previousRelease.version>0.0.2</previousRelease.version>
-		<project.releaseTimeInDatabase>2013.01.31 23:00:00</project.releaseTimeInDatabase>
+		<project.releaseDate>20130731</project.releaseDate>
+		<project.previousReleaseDate>20130131</project.previousReleaseDate>
+		<previousRelease.version>1.4</previousRelease.version>
+		<project.releaseTimeInDatabase>2013.07.31 23:00:00</project.releaseTimeInDatabase>
 		<project.releasePath>4532f852-d2d5-5ab3-87f8-3dfb3425b167</project.releasePath>
 		<project.PathName>IHTSDO ID October PROD Release development path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
@@ -118,7 +118,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>1.1-SNAPSHOT</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
@@ -130,12 +130,12 @@
 		<dependency>
 			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>1.1-SNAPSHOT</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo</groupId>
-			<artifactId>previous-release-data</artifactId>
+			<groupId>org.ihtsdo.intl.release.process</groupId>
+			<artifactId>wb-release-process</artifactId>
 			<version>${previousRelease.version}</version>
 			<type>zip</type>
 		</dependency>
@@ -736,7 +736,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>02</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Inferred
 													Relationship (Core Component)</moduleId>
@@ -791,7 +791,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Concept Full (Core Component)</componentType>
@@ -814,7 +814,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Description Full (Core Component)</componentType>
@@ -838,7 +838,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Description Full (Core Component)</componentType>
@@ -860,7 +860,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>02</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Stated relationship (Core Component)</moduleId>
 												<componentType>Stated relationship Full (Core Component)</componentType>
@@ -884,7 +884,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Stated relationship Full (Core Component)</componentType>
@@ -906,7 +906,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text definition (Core Component)</moduleId>
 												<componentType>Text definition Full (Core Component)</componentType>
@@ -928,7 +928,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Text definition Full (Core Component)</componentType>
@@ -950,7 +950,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Map Full (Core Component)</componentType>
@@ -972,7 +972,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Full (Core Component)</componentType>
@@ -994,7 +994,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Language Full (Core Component)</componentType>
@@ -1016,7 +1016,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text Definition (Core Component)</moduleId>
 												<componentType>Language Full (Core Component)</componentType>
@@ -1038,7 +1038,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Association Full (Core Component)</componentType>
@@ -1060,7 +1060,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Attribute Value Full (Core Component)</componentType>
@@ -1083,7 +1083,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Concept Delta (Core Component)</componentType>
@@ -1106,7 +1106,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Description Delta (Core Component)</componentType>
@@ -1130,7 +1130,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Description Delta (Core Component)</componentType>
@@ -1152,7 +1152,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>02</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Stated relationship (Core Component)</moduleId>
 												<componentType>Stated relationship Delta (Core Component)</componentType>
@@ -1176,7 +1176,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Stated relationship Delta (Core Component)</componentType>
@@ -1198,7 +1198,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text definition (Core Component)</moduleId>
 												<componentType>Text definition Delta (Core Component)</componentType>
@@ -1220,7 +1220,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Text definition Delta (Core Component)</componentType>
@@ -1243,7 +1243,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Map Delta (Core Component)</componentType>
@@ -1265,7 +1265,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Delta (Core Component)</componentType>
@@ -1287,7 +1287,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Language Delta (Core Component)</componentType>
@@ -1309,7 +1309,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text Definition (Core Component)</moduleId>
 												<componentType>Language Delta (Core Component)</componentType>
@@ -1331,7 +1331,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Association Delta (Core Component)</componentType>
@@ -1353,7 +1353,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Attribute Value Delta (Core Component)</componentType>
@@ -1377,7 +1377,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Concept Snapshot (Core Component)</componentType>
@@ -1399,7 +1399,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Description Snapshot (Core Component)</componentType>
@@ -1423,7 +1423,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Description Snapshot (Core Component)</componentType>
@@ -1448,7 +1448,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Inferred relationship Snapshot (Core
@@ -1472,7 +1472,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>02</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Stated relationship (Core Component)</moduleId>
 												<componentType>Stated relationship Snapshot (Core Component)</componentType>
@@ -1496,7 +1496,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Stated relationship Snapshot (Core Component)</componentType>
@@ -1518,7 +1518,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text definition (Core Component)</moduleId>
 												<componentType>Text definition Snapshot (Core Component)</componentType>
@@ -1540,7 +1540,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Text definition Snapshot (Core Component)</componentType>
@@ -1563,7 +1563,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Map Snapshot (Core Component)</componentType>
@@ -1585,7 +1585,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Simple Snapshot (Core Component)</componentType>
@@ -1609,7 +1609,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Description (Core Component)</moduleId>
 												<componentType>Language Snapshot (Core Component)</componentType>
@@ -1631,7 +1631,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>01</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Text Definition (Core Component)</moduleId>
 												<componentType>Language Snapshot (Core Component)</componentType>
@@ -1653,7 +1653,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Association Snapshot (Core Component)</componentType>
@@ -1675,7 +1675,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>00</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Concept (Core Component)</moduleId>
 												<componentType>Attribute Value Snapshot (Core Component)</componentType>
@@ -1738,7 +1738,7 @@
 											<sctidparam>
 												<namespaceId>0</namespaceId>
 												<partitionId>02</partitionId>
-												<releaseId>20130131</releaseId>
+												<releaseId>${project.releaseDate}</releaseId>
 												<executionId>Daily Build</executionId>
 												<moduleId>Inferred Relationship (Core Component)</moduleId>
 												<componentType>Inferred Relationship Snapshot (Core
@@ -1828,8 +1828,8 @@
 							<teamForgeUrl>https://csfe.aceworkspace.net/</teamForgeUrl>
 							<createRelease>true</createRelease>
 							<overwrite>true</overwrite>
-							<release>${project.version}-daily</release>
-							<releaseDescription>Daily Core Release ${project.version}</releaseDescription>
+							<release>${project.version}-${project.releaseDate}-daily</release>
+							<releaseDescription>Daily Core Release ${project.version} ${project.releaseDate}</releaseDescription>
 							<teamForgeServerId>teamforge</teamForgeServerId>
 						</configuration>
 						<executions>
