@@ -180,6 +180,33 @@
 						<artifactId>maven-dependency-plugin</artifactId>
 						<executions>
 							<execution>
+								<id>extract-dependencies2</id>
+								<phase>initialize</phase>
+								<goals>
+									<goal>unpack</goal>
+								</goals>
+								<configuration>
+									<artifactItems>
+										<artifactItem>
+											<groupId>org.ihtsdo.id.prod</groupId>
+											<artifactId>profiles</artifactId>
+											<type>zip</type>
+										</artifactItem>
+										<artifactItem>
+											<groupId>org.ihtsdo.id.prod</groupId>
+											<artifactId>project-bdb</artifactId>
+											<type>zip</type>
+										</artifactItem>
+										<artifactItem>
+											<groupId>org.ihtsdo.intl.release.process</groupId>
+											<artifactId>wb-release-process</artifactId>
+											<type>zip</type>
+										</artifactItem>
+									</artifactItems>
+									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
+								</configuration>
+							</execution>
+							<!-- <execution>
 								<id>unpack-dependencies-db-profiles</id>
 								<phase>initialize</phase>
 								<goals>
@@ -189,7 +216,7 @@
 									<includeArtifactIds>profiles,project-bdb,wb-release-process</includeArtifactIds>
 									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
 								</configuration>
-							</execution>
+							</execution> -->
 						</executions>
 					</plugin>
 
