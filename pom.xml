@@ -200,6 +200,7 @@
 										<artifactItem>
 											<groupId>org.ihtsdo.intl.release.process</groupId>
 											<artifactId>wb-release-process</artifactId>
+											<version>${previousRelease.version}</version>
 											<type>zip</type>
 										</artifactItem>
 									</artifactItems>
