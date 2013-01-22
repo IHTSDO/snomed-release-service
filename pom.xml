@@ -137,6 +137,7 @@
 			<groupId>org.ihtsdo.intl.release.process</groupId>
 			<artifactId>wb-release-process</artifactId>
 			<version>${previousRelease.version}</version>
+			<classifier>full</classifier>
 			<type>zip</type>
 		</dependency>
 	</dependencies>
