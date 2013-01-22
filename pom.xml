@@ -1871,8 +1871,8 @@
 							<teamForgeUrl>https://csfe.aceworkspace.net/</teamForgeUrl>
 							<createRelease>true</createRelease>
 							<overwrite>true</overwrite>
-							<release>${project.version}-${project.releaseDate}-daily</release>
-							<releaseDescription>Daily Core Release ${project.version} ${project.releaseDate}</releaseDescription>
+							<release>${project.artifactId}-${project.version}-${project.releaseDate}-daily</release>
+							<releaseDescription>Daily Core Release ${project.artifactId} ${project.version} ${project.releaseDate}</releaseDescription>
 							<teamForgeServerId>teamforge</teamForgeServerId>
 						</configuration>
 						<executions>
