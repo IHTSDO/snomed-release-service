@@ -140,7 +140,6 @@
 			<version>${previousRelease.version}</version>
 			<classifier>full</classifier>
 			<type>zip</type>
-			<scope>import</scope>
 		</dependency>
 	</dependencies>
 	<build>
