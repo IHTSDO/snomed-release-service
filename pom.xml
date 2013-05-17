@@ -141,7 +141,7 @@
 		<dependency>
 			<groupId>org.ihtsdo</groupId>
 			<artifactId>previous-release-data</artifactId>
-			<version>1.6-SNAPSHOT</version> <!-- January 2013 - 1.4 -->
+			<version>1.6</version> <!-- January 2013 - 1.4 -->
 			<classifier>full</classifier>
 			<type>zip</type>
 			<exclusions>
@@ -210,7 +210,7 @@
 										<artifactItem>
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>previous-release-data</artifactId>
-											<version>1.6-SNAPSHOT</version> <!-- January 2013 - 1.4 -->
+											<version>1.6</version> <!-- January 2013 - 1.4 -->
 											<classifier>full</classifier>
 											<type>zip</type>
 										</artifactItem>
