@@ -126,6 +126,10 @@
 					<artifactId>sct-bdb</artifactId>
 					<groupId>org.ihtsdo</groupId>
 				</exclusion>
+				<exclusion>
+					<artifactId>sct-id-bdb</artifactId>
+					<groupId>org.ihtsdo</groupId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -135,11 +139,17 @@
 			<type>zip</type>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.intl.release.process</groupId>
-			<artifactId>wb-release-process</artifactId>
-			<version>${previousRelease.version}</version>
+			<groupId>org.ihtsdo</groupId>
+			<artifactId>previous-release-data</artifactId>
+			<version>1.6-SNAPSHOT</version> <!-- January 2013 - 1.4 -->
 			<classifier>full</classifier>
 			<type>zip</type>
+			<exclusions>
+				<exclusion>
+					<artifactId>wb-release-process</artifactId>
+					<groupId>org.ihtsdo.intl.release.process</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<build>
@@ -198,9 +208,9 @@
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
-											<groupId>org.ihtsdo.intl.release.process</groupId>
-											<artifactId>wb-release-process</artifactId>
-											<version>${previousRelease.version}</version>
+											<groupId>org.ihtsdo</groupId>
+											<artifactId>previous-release-data</artifactId>
+											<version>1.6-SNAPSHOT</version> <!-- January 2013 - 1.4 -->
 											<classifier>full</classifier>
 											<type>zip</type>
 										</artifactItem>
@@ -208,17 +218,10 @@
 									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
 								</configuration>
 							</execution>
-							<!-- <execution>
-								<id>unpack-dependencies-db-profiles</id>
-								<phase>initialize</phase>
-								<goals>
-									<goal>unpack-dependencies</goal>
-								</goals>
-								<configuration>
-									<includeArtifactIds>profiles,project-bdb,wb-release-process</includeArtifactIds>
-									<outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
-								</configuration>
-							</execution> -->
+							<!-- <execution> <id>unpack-dependencies-db-profiles</id> <phase>initialize</phase> 
+								<goals> <goal>unpack-dependencies</goal> </goals> <configuration> <includeArtifactIds>profiles,project-bdb,wb-release-process</includeArtifactIds> 
+								<outputDirectory>${project.build.directory}/generated-resources</outputDirectory> 
+								</configuration> </execution> -->
 						</executions>
 					</plugin>
 
@@ -784,7 +787,8 @@
 												<moduleId>Inferred
 													Relationship (Core Component)</moduleId>
 												<componentType>Inferred Relationship
-													Snapshot (Core Component)</componentType>
+													Snapshot (Core
+													Component)</componentType>
 												<idSaveTolist>true</idSaveTolist>
 												<idType>RF2_INFERREDRELATIONSHIP</idType>
 												<idColumnIndex>0</idColumnIndex>
@@ -1872,7 +1876,8 @@
 							<createRelease>true</createRelease>
 							<overwrite>true</overwrite>
 							<release>${project.artifactId}-${project.version}-${project.releaseDate}-daily</release>
-							<releaseDescription>Daily Core Release ${project.artifactId} ${project.version} ${project.releaseDate}</releaseDescription>
+							<releaseDescription>Daily Core Release ${project.artifactId}
+								${project.version} ${project.releaseDate}</releaseDescription>
 							<teamForgeServerId>teamforge</teamForgeServerId>
 						</configuration>
 						<executions>
