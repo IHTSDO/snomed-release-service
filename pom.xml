@@ -117,7 +117,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>1.2</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
@@ -133,7 +133,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.id.prod</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>1.2</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
