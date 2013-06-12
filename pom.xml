@@ -1793,10 +1793,9 @@
 						</configuration>
 						<executions>
 							<execution>
-								<phase>compile</phase>
-								<id>bugfix-patches</id>
+								<phase>prepare-package</phase>
+								<id>patchmyfile</id>
 								<configuration>
-									<patchTrackingFile>diffs.txt</patchTrackingFile>
 									<naturalOrderProcessing>true</naturalOrderProcessing>
 								</configuration>
 								<goals>
