@@ -65,12 +65,12 @@
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- For wb-release-mojo -->
-		<project.releaseDate>20130731</project.releaseDate>
-		<project.previousReleaseDate>20130131</project.previousReleaseDate>
-		<previousRelease.version>1.4</previousRelease.version>
-		<project.releaseTimeInDatabase>2013.07.31 23:00:00</project.releaseTimeInDatabase>
-		<project.releasePath>4532f852-d2d5-5ab3-87f8-3dfb3425b167</project.releasePath>
-		<project.PathName>IHTSDO ID October PROD Release development path</project.PathName>
+		<project.releaseDate>20140131</project.releaseDate>
+		<project.previousReleaseDate>20130731</project.previousReleaseDate>
+		<previousRelease.version>1.7</previousRelease.version>
+		<project.releaseTimeInDatabase>2014.01.31 23:00:00</project.releaseTimeInDatabase>
+		<project.releasePath>ea6988c1-cc0b-558e-b21a-0da4b7b6da7c</project.releasePath>
+		<project.PathName>IHTSDO ID Workbench 3.0 Release development path</project.PathName>
 		<project.exportFolder>${project.build.directory}/export</project.exportFolder>
 		<project.outputFolder>${project.build.directory}/generated-sources/output</project.outputFolder>
 		<project.rf2fullFolder>${project.build.directory}/generated-resources/destination/Full</project.rf2fullFolder>
@@ -115,31 +115,32 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.id.prod</groupId>
+			<groupId>org.ihtsdo</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.2</version>
+			<version>1.2-SNAPSHOT</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
 					<artifactId>sct-bdb</artifactId>
 					<groupId>org.ihtsdo</groupId>
 				</exclusion>
-				<exclusion>
-					<artifactId>sct-id-bdb</artifactId>
-					<groupId>org.ihtsdo</groupId>
-				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.id.prod</groupId>
+			<groupId>org.ihtsdo</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.2</version>
+			<version>1.2-SNAPSHOT</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo</groupId>
+			<groupId>org.ihtsdo.intl.release.process</groupId>
+			<artifactId>wb-release-process</artifactId>
+			<version>1.7</version>
+			<classifier>full</classifier>
+			<type>zip</type>
+			<!-- <groupId>org.ihtsdo</groupId>
 			<artifactId>previous-release-data</artifactId>
-			<version>1.6</version> <!-- January 2013 - 1.4 -->
+			<version>1.6</version> 
 			<classifier>full</classifier>
 			<type>zip</type>
 			<exclusions>
@@ -147,7 +148,7 @@
 					<artifactId>wb-release-process</artifactId>
 					<groupId>org.ihtsdo.intl.release.process</groupId>
 				</exclusion>
-			</exclusions>
+			</exclusions> -->
 		</dependency>
 	</dependencies>
 	<build>
@@ -206,9 +207,12 @@
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
-											<groupId>org.ihtsdo</groupId>
+											<!-- <groupId>org.ihtsdo</groupId>
 											<artifactId>previous-release-data</artifactId>
-											<version>1.6</version> <!-- January 2013 - 1.4 -->
+											<version>1.6</version>  -->
+											<groupId>org.ihtsdo.intl.release.process</groupId>
+											<artifactId>wb-release-process</artifactId>
+											<version>1.7</version>
 											<classifier>full</classifier>
 											<type>zip</type>
 										</artifactItem>
