@@ -1786,7 +1786,7 @@
 						</executions>
 					</plugin>
 
-					<plugin>
+					<!-- <plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-patch-plugin</artifactId>
 						<version>1.1.1</version>
@@ -1807,7 +1807,7 @@
 								</goals>
 							</execution>
 						</executions>
-					</plugin>
+					</plugin> -->
 
 
 					<plugin>
