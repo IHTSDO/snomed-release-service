@@ -55,7 +55,7 @@
 		<project.ws.password>snomed11</project.ws.password>
 
 		<!-- Tool kit trek version -->
-		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-151-SNAPSHOT</org.ihtsdo.wb-toolkit.version>
+		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-147-patch-r201401</org.ihtsdo.wb-toolkit.version>
 
 		<!-- Mode For test[test], development[dev] or production[prod] -->
 		<project.execMode>prod</project.execMode>
