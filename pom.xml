@@ -68,7 +68,6 @@
 		<!-- For wb-release-mojo -->
 		<project.releaseDate>20140131</project.releaseDate>
 		<project.previousReleaseDate>20130731</project.previousReleaseDate>
-		<previousRelease.version>1.7</previousRelease.version>
 		<project.releaseTimeInDatabase>2014.01.31 23:00:00</project.releaseTimeInDatabase>
 		<project.releasePath>ea6988c1-cc0b-558e-b21a-0da4b7b6da7c</project.releasePath>
 		<project.PathName>IHTSDO ID Workbench 3.0 Release development path</project.PathName>
@@ -119,7 +118,7 @@
 		<dependency>
 			<groupId>org.ihtsdo</groupId>
 			<artifactId>project-bdb</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>1.3</version>
 			<type>zip</type>
 			<exclusions>
 				<exclusion>
@@ -131,19 +130,26 @@
 		<dependency>
 			<groupId>org.ihtsdo</groupId>
 			<artifactId>profiles</artifactId>
-			<version>1.2-SNAPSHOT</version>
+			<version>1.3</version>
 			<type>zip</type>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.intl.release.process</groupId>
+			<!-- <groupId>org.ihtsdo.intl.release.process</groupId>
 			<artifactId>wb-release-process</artifactId>
 			<version>1.7</version>
 			<classifier>full</classifier>
+			<type>zip</type> -->
+			<groupId>org.ihtsdo</groupId>
+			<artifactId>previous-release-data</artifactId>
+			<version>1.8</version>
+			<classifier>full</classifier>
 			<type>zip</type>
-			<!-- <groupId>org.ihtsdo</groupId> <artifactId>previous-release-data</artifactId> 
-				<version>1.6</version> <classifier>full</classifier> <type>zip</type> <exclusions> 
-				<exclusion> <artifactId>wb-release-process</artifactId> <groupId>org.ihtsdo.intl.release.process</groupId> 
-				</exclusion> </exclusions> -->
+			<exclusions>
+				<exclusion>
+					<artifactId>wb-release-process</artifactId>
+					<groupId>org.ihtsdo.intl.release.process</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<build>
@@ -194,19 +200,22 @@
 										<artifactItem>
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>profiles</artifactId>
+											<version>1.3</version>
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>project-bdb</artifactId>
+											<version>1.3</version>
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
-											<!-- <groupId>org.ihtsdo</groupId> <artifactId>previous-release-data</artifactId> 
-												<version>1.6</version> -->
-											<groupId>org.ihtsdo.intl.release.process</groupId>
+											<groupId>org.ihtsdo</groupId>
+											<artifactId>previous-release-data</artifactId>
+											<version>1.8</version>
+											<!-- <groupId>org.ihtsdo.intl.release.process</groupId>
 											<artifactId>wb-release-process</artifactId>
-											<version>1.7</version>
+											<version>1.7</version> -->
 											<classifier>full</classifier>
 											<type>zip</type>
 										</artifactItem>
