@@ -14,19 +14,23 @@
 	<name>WB International Release Process Production</name>
 	<url>http://maven.apache.org</url>
 
+    <!--
 	<scm>
 		<connection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</connection>
 		<developerConnection>scm:svn:https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</developerConnection>
 		<url>https://csfe.aceworkspace.net/svn/repos/wb-release-process/trunk</url>
 	</scm>
+    -->
 
 	<properties>
 		<!-- DEPENDENT PARAMS OF BUILD MODE -->
 
 		<!-- DEV PARAMS -->
 		<!-- Web service for ID Generation -->
-		<!-- <project.endpointURL>http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator</project.endpointURL> 
-			<project.ws.username>termmed</project.ws.username> <project.ws.password>termmed</project.ws.password> -->
+		<project.endpointURL>http://localhost:8080/axis2/services/id_generator</project.endpointURL>
+	    <project.ws.username>admin</project.ws.username>
+        <project.ws.password>axis2</project.ws.password>
+
 		<!-- Tool kit trek version -->
 		<!--<org.ihtsdo.wb-toolkit.version>2.6.3-trek-termmed-rb1-101-SNAPSHOT</org.ihtsdo.wb-toolkit.version> -->
 
@@ -49,10 +53,11 @@
 
 		<!-- PROD PARAMS -->
 		<!-- Web service for ID Generation -->
-
+<!--
 		<project.endpointURL>http://cu025.servers.aceworkspace.net:7080/axis2/services/id_generator</project.endpointURL>
 		<project.ws.username>root</project.ws.username>
 		<project.ws.password>snomed11</project.ws.password>
+-->
 
 		<!-- Tool kit trek version -->
 		<org.ihtsdo.wb-toolkit.version>2.6.0-trek-147-patch-r201401</org.ihtsdo.wb-toolkit.version>
@@ -254,7 +259,7 @@
 									<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</connectionUrl>
 								</configuration>
 							</execution>
-
+<!--
 							<execution>
 								<id>not-published-ids-checkin</id>
 								<phase>package</phase>
@@ -268,7 +273,7 @@
 									<connectionUrl>https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</connectionUrl>
 								</configuration>
 							</execution>
-
+-->
 						</executions>
 					</plugin>
 					<plugin>
@@ -1860,7 +1865,7 @@
 				</plugins>
 			</build>
 		</profile>
-
+<!--
 		<profile>
 			<id>attachdaily</id>
 			<build>
@@ -1958,6 +1963,6 @@
 				</plugins>
 			</build>
 		</profile>
-
+-->
 	</profiles>
 </project>
