@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.termmed.genid.data.SctIdIdentifierMapper">
+
+	<resultMap type="SctIdIdentifier" id="sctIdResultMap">
+		<result property="partitionId" column="partition_id"/>
+		<result property="namespaceId" column="namespace_id"/>
+		<result property="artifactId" column="artifact_id"/>
+		<result property="releaseId" column="release_id"/>
+		<result property="itemId" column="item_id"/>
+		<result property="sctId" column="sctid"/>
+		<result property="code" column="code"/>
+	</resultMap>	
+	
+	<select id="selectSctId" parameterType="SctIdIdentifier" resultMap="sctIdResultMap">
+		SELECT * FROM SCTID_IDENTIFIER where code=#{code} AND Partition_ID=#{partitionId} AND NAMESPACE_ID=#{namespaceId};
+	</select>
+	
+	<select id="selectSctIdByComponentUuid" parameterType="String" resultMap="sctIdResultMap" >
+		SELECT * FROM SCTID_IDENTIFIER where code=#{id}
+	</select>
+
+	<select id="getSctIdByComponentUuid" parameterType="String" resultType="Long">
+		SELECT SCTID FROM SCTID_IDENTIFIER where code=#{id} ;
+	</select>
+	
+	<insert id="insertSctIdIdentifier" parameterType="SctIdIdentifier">
+		INSERT INTO SCTID_IDENTIFIER 
+				(PARTITION_ID,
+	            NAMESPACE_ID,
+	            ARTIFACT_ID,
+	            RELEASE_ID,
+	            ITEM_ID,
+	            SCTID,
+	            CODE)
+			values
+				(#{partitionId},
+				#{namespaceId},
+				#{artifactId},
+				#{releaseId},
+				#{itemId},
+				#{sctId},
+				#{code})
+	</insert>
+	
+</mapper>

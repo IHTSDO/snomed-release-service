@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.termmed.genid.data.SctIdBaseMapper">
+	
+	<resultMap type="SctIdBase" id="sctIdBaseResultMap">
+		<result property="partitionNum" column="partitionnr"/>
+		<result property="namespace" column="namespace"/>
+		<result property="value" column="val"/>
+	</resultMap>
+	
+	<select id="selectVal" parameterType="SctIdBase" resultMap="sctIdBaseResultMap">
+		SELECT * FROM SCTID_BASE 
+			WHERE 	PARTITIONNR=#{partitionNum} AND
+					NAMESPACE=#{namespace};
+	</select>
+	
+	<update id="updateVal" parameterType="SctIdBase">
+		UPDATE SCTID_BASE SET VAL = #{value} WHERE PartitionNr=#{partitionNum} AND NAMESPACE=#{namespace};
+	</update>
+	
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.termmed.genid.data.IDBaseMapper">
+
+	<select id="selectIdBase" resultType="String">
+		select val from ID_BASE where Counter_Type='CTV3ID'
+	</select>
+	
+	<update id="updateIdBase" parameterType="String">
+		update ID_BASE set val=#{id} where Counter_Type='CTV3ID'
+	</update>
+	
+	<select id="selectSnomedIdBase" resultType="String">
+		select val from ID_BASE where Counter_Type='SNOMEDID'
+	</select>
+	
+	<update id="updateSnomedIdBase" parameterType="String">
+		update ID_BASE set val=#{id} where Counter_Type='SNOMEDID'
+	</update>
+	
+</mapper>

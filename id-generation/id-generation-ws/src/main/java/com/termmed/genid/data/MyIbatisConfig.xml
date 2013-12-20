@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	
+	<properties resource="properties/config.properties">
+		<property name="username" value="root" />
+		<property name="password" value="" />
+	</properties>
+	
+	<settings>
+		<setting name="cacheEnabled" value="true"/>
+		<setting name="defaultExecutorType" value="BATCH"/>
+		<setting name="defaultStatementTimeout" value="25000"/>
+	</settings>
+	
+	<typeAliases>
+		<typeAlias alias="SctIdBase" type="com.termmed.genid.data.SctIdBase" />
+		<typeAlias alias="SctIdIdentifier" type="com.termmed.genid.data.SctIdIdentifier" />
+		<typeAlias alias="ConidMap" type="com.termmed.genid.data.ConidMap" />
+		<typeAlias alias="SnomedIdRange" type="com.termmed.genid.data.SnomedIdRange" />
+	</typeAliases>
+	
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<property name="driver" value="${driver}" />
+				<property name="url" value="${url}" />
+				<property name="username" value="${username}" />
+				<property name="password" value="${password}" />
+			</dataSource>
+		</environment>
+	</environments>
+
+
+	<mappers>
+		<mapper resource="com/termmed/genid/data/SctIdBaseMapper.xml" />
+		<mapper resource="com/termmed/genid/data/SctIdIdentifierMapper.xml" />
+		<mapper resource="com/termmed/genid/data/ConidMapMapper.xml" />
+		<mapper resource="com/termmed/genid/data/IDBaseMapper.xml" />
+	</mappers>
+</configuration>

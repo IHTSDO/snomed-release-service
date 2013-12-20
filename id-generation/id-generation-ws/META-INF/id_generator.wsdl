@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.ihtsdo.org/idgen/id_generator/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="id_generator" targetNamespace="http://www.ihtsdo.org/idgen/id_generator/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.ihtsdo.org/idgen/id_generator/">
+      <xsd:element name="createSCTIDRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+          	<xsd:element name="namespaceId" type="xsd:integer" />
+          	<xsd:element name="partitionId" type="xsd:string"></xsd:element>
+          	<xsd:element name="moduleId" type="xsd:string">
+          	</xsd:element>
+          	<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+          	<xsd:element name="releaseId" type="xsd:string"></xsd:element>
+          	<xsd:element name="executionId" type="xsd:string"></xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSCTIDResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="sctId" type="xsd:integer" maxOccurs="1" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    
+      <xsd:complexType name="CodeParentSnomedIdType">
+      	<xsd:sequence>
+      		<xsd:element name="code" type="xsd:string"></xsd:element>
+      		<xsd:element name="parentSnomedId" type="xsd:string"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    
+      <xsd:complexType name="CodeSctIdType">
+      	<xsd:sequence>
+      		<xsd:element name="code" type="xsd:string"></xsd:element>
+      		<xsd:element name="sctid" type="xsd:integer"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+      <xsd:element name="CleanUpRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="codeSctid" type="tns:CodeSctIdType" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="cleanUpNonUsedIdsResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="out" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="sctid" type="xsd:integer" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SNOMEDIDRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SNOMEDIDResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="snomedid" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CTV3IDRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CTV3IDResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="ctv3id" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDListRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuidList" type="xsd:string" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDListResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="sctidList" type="tns:CodeSctIdType" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSNOMEDIDRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      			<xsd:element name="parentSnomedId" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSNOMEDIDResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="snomedId" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createCTV3IDRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createCTV3IDResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="ctv3id" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIdsRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      			<xsd:element name="parentSnomedId"
+      				type="xsd:string">
+      			</xsd:element>
+      			<xsd:element name="namespaceId" type="xsd:integer"></xsd:element>
+      			<xsd:element name="partitionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="releaseId" type="xsd:string"></xsd:element>
+      			<xsd:element name="executionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="moduleId" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIdsResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="conceptIds" type="tns:IDString" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    
+      <xsd:complexType name="IDString">
+      	<xsd:sequence>
+      		<xsd:element name="identifier" type="xsd:integer"></xsd:element>
+      		<xsd:element name="id" type="xsd:string"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+      <xsd:element name="createSCTIDListRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuidList"
+      				type="xsd:string" maxOccurs="unbounded" minOccurs="1">
+      			</xsd:element>
+      			<xsd:element name="namespaceId" type="xsd:integer"></xsd:element>
+      			<xsd:element name="partitionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="releaseId" type="xsd:string"></xsd:element>
+      			<xsd:element name="executionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="moduleId" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSCTIDListResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="sctidList" type="tns:CodeSctIdType" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIDListRequest">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="componentUuidList"
+      				type="tns:CodeParentSnomedIdType" maxOccurs="unbounded" minOccurs="1">
+      			</xsd:element>
+      			<xsd:element name="namespaceId" type="xsd:integer"></xsd:element>
+      			<xsd:element name="partitionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="releaseId" type="xsd:string"></xsd:element>
+      			<xsd:element name="executionId" type="xsd:string"></xsd:element>
+      			<xsd:element name="moduleId" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIDListResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="identifierConceptId" type="tns:ConceptIds" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSCTIDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createSCTIDFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSCTIDListFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createSCTIDListFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="SCTIDFault" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SNOMEDIDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="SNOMEDIDFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CTV3IDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="CTV3IDFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SCTIDListFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="SCTIDListFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createSNOMEDIDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createSNOMEDIDFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createCTV3IDFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createCTV3IDFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIdsFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createConceptIdsFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="createConceptIDListFault">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="createConceptIDListFault"
+      				type="xsd:string">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    
+      <xsd:complexType name="IdentifierConceptId">
+      	<xsd:sequence>
+      		<xsd:element name="identifier" type="xsd:integer"></xsd:element>
+      		<xsd:element name="conceptId" type="xsd:string"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    
+      <xsd:complexType name="ConceptIds">
+      	<xsd:sequence>
+      		<xsd:element name="componentUuid" type="xsd:string"></xsd:element>
+      		<xsd:element name="identifierConceptId" type="tns:IdentifierConceptId" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="createSCTIDRequest">
+    <wsdl:part element="tns:createSCTIDRequest" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDResponse">
+    <wsdl:part element="tns:createSCTIDResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDListRequest">
+  	<wsdl:part name="parameters" element="tns:createSCTIDListRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDListResponse">
+  	<wsdl:part name="parameters" element="tns:createSCTIDListResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="cleanUpNonUsedIdsRequest">
+  	<wsdl:part name="parameters" element="tns:CleanUpRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="cleanUpNonUsedIdsResponse">
+  </wsdl:message>
+  <wsdl:message name="getSCTIDRequest">
+  	<wsdl:part name="parameters" element="tns:SCTIDRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSCTIDResponse">
+  	<wsdl:part name="parameters" element="tns:SCTIDResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSNOMEDIDRequest">
+  	<wsdl:part name="parameters" element="tns:SNOMEDIDRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSNOMEDIDResponse">
+  	<wsdl:part name="parameters" element="tns:SNOMEDIDResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getCTV3IDRequest">
+  	<wsdl:part name="parameters" element="tns:CTV3IDRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getCTV3IDResponse">
+  	<wsdl:part name="parameters" element="tns:CTV3IDResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSCTIDListRequest">
+  	<wsdl:part name="parameters" element="tns:SCTIDListRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSCTIDListResponse">
+  	<wsdl:part name="parameters" element="tns:SCTIDListResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSNOMEDIDRequest">
+  	<wsdl:part name="parameters" element="tns:createSNOMEDIDRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSNOMEDIDResponse">
+  	<wsdl:part name="parameters" element="tns:createSNOMEDIDResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createCTV3IDRequest">
+  	<wsdl:part name="parameters" element="tns:createCTV3IDRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createCTV3IDResponse">
+  	<wsdl:part name="parameters" element="tns:createCTV3IDResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIdsRequest">
+  	<wsdl:part name="parameters" element="tns:createConceptIdsRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIdsResponse">
+  	<wsdl:part name="parameters" element="tns:createConceptIdsResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDListRequest">
+  	<wsdl:part name="parameters" element="tns:createSCTIDListRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDListResponse">
+  	<wsdl:part name="parameters" element="tns:createSCTIDListResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIDListRequest">
+  	<wsdl:part name="parameters" element="tns:createConceptIDListRequest"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIDListResponse">
+  	<wsdl:part name="parameters" element="tns:createConceptIDListResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDFault">
+  	<wsdl:part name="parameters" element="tns:createSCTIDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSCTIDListFault">
+  	<wsdl:part name="parameters" element="tns:createSCTIDListFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSCTIDFault">
+  	<wsdl:part name="parameters" element="tns:SCTIDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSNOMEDIDFault">
+  	<wsdl:part name="parameters" element="tns:SNOMEDIDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getCTV3IDFault">
+  	<wsdl:part name="parameters" element="tns:CTV3IDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getSCTIDListFault">
+  	<wsdl:part name="parameters" element="tns:SCTIDListFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createSNOMEDIDFault">
+  	<wsdl:part name="parameters" element="tns:createSNOMEDIDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createCTV3IDFault">
+  	<wsdl:part name="parameters" element="tns:createCTV3IDFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIdsFault">
+  	<wsdl:part name="parameters" element="tns:createConceptIdsFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createConceptIDListFault">
+  	<wsdl:part name="parameters" element="tns:createConceptIDListFault"></wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="id_generator">
+    <wsdl:operation name="createSCTID">
+      <wsdl:input message="tns:createSCTIDRequest"/>
+      <wsdl:output message="tns:createSCTIDResponse"/>
+            <wsdl:fault name="fault" message="tns:createSCTIDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="createSCTIDList">
+    	<wsdl:input message="tns:createSCTIDListRequest"></wsdl:input>
+    	<wsdl:output message="tns:createSCTIDListResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:createSCTIDListFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="getSCTID">
+    	<wsdl:input message="tns:getSCTIDRequest"></wsdl:input>
+    	<wsdl:output message="tns:getSCTIDResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getSCTIDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="getSNOMEDID">
+    	<wsdl:input message="tns:getSNOMEDIDRequest"></wsdl:input>
+    	<wsdl:output message="tns:getSNOMEDIDResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getSNOMEDIDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="getCTV3ID">
+    	<wsdl:input message="tns:getCTV3IDRequest"></wsdl:input>
+    	<wsdl:output message="tns:getCTV3IDResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getCTV3IDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="getSCTIDList">
+    	<wsdl:input message="tns:getSCTIDListRequest"></wsdl:input>
+    	<wsdl:output message="tns:getSCTIDListResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getSCTIDListFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="createSNOMEDID">
+    	<wsdl:input message="tns:createSNOMEDIDRequest"></wsdl:input>
+    	<wsdl:output message="tns:createSNOMEDIDResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:createSNOMEDIDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="createCTV3ID">
+    	<wsdl:input message="tns:createCTV3IDRequest"></wsdl:input>
+    	<wsdl:output message="tns:createCTV3IDResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:createCTV3IDFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="createConceptIds">
+    	<wsdl:input message="tns:createConceptIdsRequest"></wsdl:input>
+    	<wsdl:output message="tns:createConceptIdsResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:createConceptIdsFault"></wsdl:fault>
+        </wsdl:operation>
+    <wsdl:operation name="createConceptIDList">
+    	<wsdl:input message="tns:createConceptIDListRequest"></wsdl:input>
+    	<wsdl:output message="tns:createConceptIDListResponse"></wsdl:output>
+            <wsdl:fault name="fault" message="tns:createConceptIDListFault"></wsdl:fault>
+        </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="id_generatorSOAP" type="tns:id_generator">
+  	<soap:binding style="document"
+  		transport="http://schemas.xmlsoap.org/soap/http" />
+  	<wsdl:operation name="createSCTID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createSCTID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="createSCTIDList">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createSCTIDList" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="getSCTID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/getSCTID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="getSNOMEDID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/getSNOMEDID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="getCTV3ID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/getCTV3ID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="getSCTIDList">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/getSCTIDList" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="createSNOMEDID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createSNOMEDID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="createCTV3ID">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createCTV3ID" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="createConceptIds">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createConceptIds" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  	<wsdl:operation name="createConceptIDList">
+  		<soap:operation
+  			soapAction="http://www.ihtsdo.org/idgen/id_generator/createConceptIDList" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="fault">
+  			<soap:fault use="literal" name="fault" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="id_generator">
+        <wsdl:port name="id_generatorSOAP"
+        	binding="tns:id_generatorSOAP">
+        	<soap:address
+        		location="http://www.localhost:8080/axis2/services/id_generator" />
+        </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

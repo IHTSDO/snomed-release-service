@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.termmed.genid.data.ConidMapMapper">
+
+	<resultMap type="ConidMap" id="conidMapResultMap">
+		<result property="conceptId" column="conceptid"/>
+		<result property="ctv3Id" column="ctv3id"/>
+		<result property="snomedId" column="snomedid"/>
+		<result property="code" column="code"/>
+		<result property="gid" column="gid"/>
+		<result property="executionId" column="execution_id"/>
+	</resultMap>
+	
+	<insert id="insertConidMap" parameterType="ConidMap" statementType="PREPARED" >
+		INSERT INTO CONIDMAP
+			(CONCEPTID,
+			CTV3ID,
+			SNOMEDID,
+			CODE,
+			GID,
+			EXECUTION_ID) 
+		values
+			(#{conceptId},
+			#{ctv3Id},
+			#{snomedId},
+			#{code},
+			#{gid},
+			#{executionId})
+	</insert>
+	
+	<update id="updateConidmap" parameterType="ConidMap">
+		update CONIDMAP set
+			conceptid = #{conceptId},
+			ctv3id = #{ctv3Id},
+			snomedid = #{snomedId},
+			gid = #{gid},
+			execution_id = #{executionId}
+		where code = #{code}
+	</update>
+	
+	<select id="getConidMapByCode" resultMap="conidMapResultMap" parameterType="String">
+		select * from CONIDMAP
+		where code = #{id}
+	</select>
+	
+	<select id="countBySnomedId" parameterType="SnomedIdRange" resultType="Integer" >
+		select count(*) from CONIDMAP
+		where snomedid <![CDATA[ >= ]]> #{start}
+		and snomedid <![CDATA[ <= ]]> #{end}
+	</select>
+	
+	<select id="selectSnomedIdList" parameterType="SnomedIdRange" resultType="String">
+		select snomedid from CONIDMAP
+		where snomedid <![CDATA[ >= ]]> #{start}
+		and snomedid <![CDATA[ <= ]]> #{end}
+		order by snomedid
+		LIMIT #{startLine}, #{pageLenght}
+	</select>		
+	
+	<select id="getSnomedIdByComponentUuid" parameterType="String" resultType="String">
+		select snomedid from CONIDMAP
+		where code = #{id}
+	</select>		
+	
+	<select id="getCtv3idByComponentUuid" parameterType="String" resultType="String">
+		select ctv3id from CONIDMAP
+		where code = #{id}
+	</select>		
+</mapper>
