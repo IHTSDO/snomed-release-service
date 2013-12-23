@@ -59,7 +59,7 @@
 		<profile>
 			<id>generic</id>
 			<activation>
-				<activeByDefault>false</activeByDefault>
+				<activeByDefault>true</activeByDefault>
 			</activation>
 			<build>
 				<plugins>
@@ -96,8 +96,8 @@
 								<configuration>
 									<artifactItems>
 										<artifactItem>
-											<groupId>org.ihtsdo</groupId>
-											<artifactId>id-generation-ws</artifactId>
+											<groupId>${project.groupId}</groupId>
+											<artifactId>${project.artifactId}</artifactId>
 											<version>${project.version}</version>
 											<type>zip</type>
 										</artifactItem>
@@ -114,7 +114,7 @@
 								<configuration>
 									<artifactItems>
 										<artifactItem>
-											<groupId>org.ihtsdo</groupId>
+											<groupId>${project.groupId}</groupId>
 											<artifactId>id-generation-ws-client</artifactId>
 											<version>${project.version}</version>
 											<type>zip</type>
@@ -133,13 +133,6 @@
 								<phase>install</phase>
 								<goals>
 									<goal>aar</goal>
-								</goals>
-							</execution>
-							<execution>
-								<id>deploy aar</id>
-								<phase>install</phase>
-								<goals>
-									<goal>deployaar</goal>
 								</goals>
 							</execution>
 						</executions>
