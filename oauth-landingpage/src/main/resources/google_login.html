@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+(function() {
+  var po = document.createElement('script');
+  po.type = 'text/javascript'; po.async = true;
+  po.src = 'https://apis.google.com/js/client:plusone.js?onload=render';
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(po, s);
+})();
+
+function signinCallback(authResult) {
+	  if (authResult['status']['signed_in']) {
+	    // Update the app to reflect a signed in user
+	    // Hide the sign-in button now that the user is authorized, for example:
+	    document.getElementById('signinButton').setAttribute('style', 'display: none');
+	  } else {
+	    // Update the app to reflect a signed out user
+	    // Possible error values:
+	    //   "user_signed_out" - User is signed-out
+	    //   "access_denied" - User denied access to your app
+	    //   "immediate_failed" - Could not automatically log in the user
+	    console.log('Sign-in state: ' + authResult['error']);
+	  }
+	}
+
+/* Executed when the APIs finish loading */
+function render() {
+
+  // Additional params
+  var additionalParams = {
+    'theme' : 'dark'
+  };
+  alert ("Doing the button");
+  //gapi.signin.render('myButton', additionalParams);
+  gapi.signin.render('myButton', {
+      'callback': 'signinCallback',
+      'clientid': '499504425278.apps.googleusercontent.com',
+      'cookiepolicy': 'single_host_origin'
+    });
+  
+}
+</script>
+</head>
+<body>
+<!-- In the callback, you would hide the gSignInWrapper element on a successful sign in -->
+
+  <div id="myButton">
+    Sign in with Google
+  </div>
+
+</body>
+</html>
