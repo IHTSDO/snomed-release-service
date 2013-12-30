@@ -16,8 +16,8 @@
 	<modules>
 		<module>id-generation</module>
 		<module>wb-release-process</module>
-    	<module>oauth-landingpage</module>
-  </modules>
+		<module>oauth-landingpage</module>
+	</modules>
 
 	<dependencies>
 		<dependency>
