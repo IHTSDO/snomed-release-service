@@ -11,6 +11,10 @@
 	<artifactId>oauth-landingpage</artifactId>
 	<packaging>war</packaging>
 	<name>OAuth2.0 Login using Google+</name>
+	<properties>
+		<build.warname>ROOT</build.warname>
+	</properties>
+	
 
 	<dependencies>
 		<!-- Servlet 3.0 API -->
@@ -50,6 +54,7 @@
 				<version>2.3</version>
 				<configuration>
 					<failOnMissingWebXml>false</failOnMissingWebXml>
+					<warName>${build.warname}</warName>
 				</configuration>
 			</plugin>
 		</plugins>
