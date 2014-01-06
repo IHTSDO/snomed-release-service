@@ -13,16 +13,18 @@
 	<name>OAuth2.0 Login using Google+</name>
 	<properties>
 		<build.warname>ROOT</build.warname>
+		<project.google.api.version>1.17.0-rc</project.google.api.version>
 	</properties>
 	
 
 	<dependencies>
+
 		<!-- Servlet 3.0 API -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.0.1</version>
-			<scope>provided</scope>
+			<scope>provided</scope> <!-- but Google Dependency (Guice) also pulls in ServletAPI, causing CCE -->
 		</dependency>
 
 		<!-- Commons IO (previously apache commons-io)-->
@@ -31,7 +33,38 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.3</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20131018</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.google.http-client</groupId>
+			<artifactId>google-http-client-jackson2</artifactId>
+			<version>${project.google.api.version}</version>
+		</dependency>
 
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client-jetty</artifactId>
+			<version>${project.google.api.version}</version>
+			<exclusions>
+				<exclusion> <!-- Was conflicting with javax.servlet-api (scope=provided) above, leading to CCE in Servlets -->
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>			
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-plus</artifactId>
+			<version>v1-rev115-1.17.0-rc</version>
+		</dependency>
+
+	
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -47,6 +80,11 @@
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.2</version>
+				<configuration>
+					<port>8080</port>
+					<httpsPort>8443</httpsPort>
+					<keystorePass>changeit</keystorePass>
+				</configuration>				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -56,6 +94,29 @@
 					<failOnMissingWebXml>false</failOnMissingWebXml>
 					<warName>${build.warname}</warName>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.9.1</version>
+				<executions>
+					<execution>
+						<id>resource-bundles</id>
+						<phase>package</phase>
+						<goals>
+							<!-- produce source artifact for main project sources -->
+							<goal>resource-bundle</goal>
+							<!-- produce source artifact for project test sources -->
+							<goal>test-resource-bundle</goal>
+						</goals>
+						<configuration>
+							<detectOfflineLinks>false</detectOfflineLinks>
+							<includeDependencySources>true</includeDependencySources>
+							<dependencySourceIncludes>
+								<dependencySourceInclude>com.google.api:*</dependencySourceInclude>
+							</dependencySourceIncludes>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
