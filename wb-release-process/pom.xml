@@ -17,7 +17,7 @@
 
 		<!-- DEV PARAMS -->
 		<!-- Web service for ID Generation -->
-		<project.endpointURL>http://localhost:8080/axis2/services/id_generator</project.endpointURL>
+		<project.endpointURL>http://release.snomedtools.org/axis2/services/id_generator</project.endpointURL>
 	    <project.ws.username>admin</project.ws.username>
         <project.ws.password>axis2</project.ws.password>
 
