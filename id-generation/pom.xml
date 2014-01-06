@@ -12,6 +12,10 @@
 
 	<name>ID Generation</name>
 
+	<properties>
+		<axis-version>1.5.6</axis-version>
+	</properties>
+
 	<modules>
 		<module>id-generation-ws-client</module>
 		<module>id-generation-api</module>
