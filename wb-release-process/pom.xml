@@ -209,18 +209,21 @@
 								<configuration>
 									<artifactItems>
 										<artifactItem>
+											<!-- .eccs files from each workbench user -->
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>profiles</artifactId>
 											<version>1.3</version>
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
+											<!-- Berkley database, containing what? -->
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>project-bdb</artifactId>
 											<version>1.3</version>
 											<type>zip</type>
 										</artifactItem>
 										<artifactItem>
+											<!-- Previous Release RF2 txt files -->
 											<groupId>org.ihtsdo</groupId>
 											<artifactId>previous-release-data</artifactId>
 											<version>1.8</version>
@@ -253,6 +256,7 @@
 								<connectionUrl>scm:svn:https://csfe.aceworkspace.net/svn/repos/release-files-repository/src/main/java/org/ihtsdo/rf2/full</connectionUrl> 
 								</configuration> </execution> -->
 							<execution>
+								<!-- Checkout CSV of IDs from svn, what happens to these? -->
 								<id>not-published-ids-checkout</id>
 								<phase>initialize</phase>
 								<goals>
@@ -314,6 +318,7 @@
 								<repositoryUrlStr>https://csfe.aceworkspace.net/svn/repos/generated-id-not-published/release-${project.releaseDate}-${project.execMode}</repositoryUrlStr> 
 								</configuration> </execution> -->
 							<execution>
+								<!-- Sets up the database factory (using nasty singletons) -->
 								<id>vodb-open0</id>
 								<phase>generate-sources</phase>
 								<goals>
@@ -324,6 +329,7 @@
 								</configuration>
 							</execution>
 							<execution>
+								<!-- Read binary change set (.eccs files) and apply to database -->
 								<id>bcs-read-all0</id>
 								<phase>generate-sources</phase>
 								<goals>
@@ -334,13 +340,19 @@
 								</configuration>
 							</execution>
 							<execution>
+								<!-- Committing berkley db changes -->
 								<id>vodb-commit-csi0</id>
 								<phase>generate-sources</phase>
 								<goals>
 									<goal>vodb-commit</goal>
 								</goals>
 							</execution>
+
+							<!-- End of Workbench specific steps here? -->
+							<!-- If so let's split this build with RF2 export and import in between -->
+
 							<execution>
+								<!-- Hierarchy (Graph) Cycle Check (an ancestor should not also be a descendant) -->
 								<id>run-cycle-check</id>
 								<phase>process-sources</phase>
 								<goals>
