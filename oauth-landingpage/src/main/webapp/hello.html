@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://plus.google.com/js/client:platform.js" type="text/javascript"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> 
+<script src="jscript/prettyprint.js"></script>
+
+<script type="text/javascript">
+
+function debug (msg) {
+	if (window.console) console.log(msg);
+}
+
+function signinCallback(authResult) {
+	if (authResult['status']['signed_in']) {
+		// Update the app to reflect a signed in user
+		// Hide the sign-in button now that the user is authorized, for example:
+		debug ("SignIn OK! Hiding Button for " + authResult['access_token']);
+		//document.getElementById('clientLogin').setAttribute('style', 'display: none');
+		$(".toggle").toggle();
+		$("body").data("AccessToken", authResult['access_token']);
+		ppTable = prettyPrint(authResult, { styles: {'default': { table: { width: '90%' } } } });
+		document.body.appendChild(ppTable);
+		document.body.appendChild( document.createElement('br'));		
+	} else {
+		// Update the app to reflect a signed out user
+		// Possible error values:
+		//	 "user_signed_out" - User is signed-out
+		//	 "access_denied" - User denied access to your app
+		//	 "immediate_failed" - Could not automatically log in the user
+		console.log('Sign-in state: ' + authResult['error']);
+	}
+}
+
+
+</script>
+</head>
+
+<body>
+
+ <div id="clientLogin" class="toggle">
+ <div class="g-signin" data-callback="signinCallback"
+	data-approvalprompt="force"
+	data-clientid="499504425278-v1te1pbpfuusp0ev4h5q03bu19rd4fha.apps.googleusercontent.com"
+	data-accesstype="online"
+	data-scope="profile"
+	data-cookiepolicy="single_host_origin">
+  </div>
+</div>
+
+<div id="serverLogin" class="toggle" style="display: none">
+<button>Now Do Server Login</button>
+</div>
+<br/>
+
+<script>
+$("#serverLogin").click(function() {
+	debug ("Making Ajax Call");
+	$.ajax({
+			url: "serverLogin",
+			type: "POST",
+			dataType: "json",
+			cache: false,
+			data: { AccessToken: $("body").data("AccessToken")}
+		}).done(function( data ) {
+			debug ("Ajax call returned: " + data);
+			ppTable = prettyPrint(data, { styles: {'default': { table: { width: '50%' } } } });
+			document.body.appendChild(ppTable);
+			document.body.appendChild( document.createElement('br'));
+		}).fail(function ( jqXHR, textStatus) {
+			debug ("Ajax call failed: (" + textStatus + ") " + jqXHR.responseText);
+		});
+});
+</script>
+</body>
+</html>
