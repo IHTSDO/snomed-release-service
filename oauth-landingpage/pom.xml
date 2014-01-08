@@ -81,7 +81,7 @@
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.2</version>
 				<configuration>
-					<port>8080</port>
+					<port>8081</port>
 					<httpsPort>8443</httpsPort>
 					<keystorePass>changeit</keystorePass>
 				</configuration>				
