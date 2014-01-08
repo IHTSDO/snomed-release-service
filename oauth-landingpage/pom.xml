@@ -84,6 +84,7 @@
 					<port>8080</port>
 					<httpsPort>8443</httpsPort>
 					<keystorePass>changeit</keystorePass>
+					<path>/</path>
 				</configuration>				
 			</plugin>
 			<plugin>
