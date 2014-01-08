@@ -19,3 +19,9 @@ and then can by tested using a disposable tomcat installation using
 ```
 mvn tomcat7:run
 ```
+
+And (assuming you've set up your host file to point local.snomedtools.org to 127.0.0.1), accessed in your local browser via
+
+http://local.snomedtools.org:8080/oauth-landingpage/hello.html
+
+Note: There is also a version of the page served at /hello (Servlet based), but I couldn't get the Google javascript API to render my button properly, although clicking on the Div did work.  I'm parking that for the moment on my TODO list.
