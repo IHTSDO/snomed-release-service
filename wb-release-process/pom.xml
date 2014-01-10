@@ -772,6 +772,7 @@
 								</configuration>
 							</execution>
 							<execution>
+								<!-- Replace descriptions in inputFile using mapFile -->
 								<id>patch-kaiser-descriptions-changed</id>
 								<phase>compile</phase>
 								<goals>
@@ -783,6 +784,7 @@
 								</configuration>
 							</execution>
 							<execution>
+								<!-- Replace descriptions in inputFile using mapFile -->
 								<id>patch-kaiser-language-changed-2</id>
 								<phase>compile</phase>
 								<goals>
