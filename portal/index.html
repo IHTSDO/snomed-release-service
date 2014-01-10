@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" href="images/ihtsdo-logo.png">
+
+	<title>SNOMED CT Release Portal</title>
+
+	<!-- Bootstrap core CSS -->
+	<link href="dist/css/bootstrap.css" rel="stylesheet">
+
+	<link href="css/style.css" rel="stylesheet">
+
+	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!--[if lt IE 9]>
+	<script src="dist/js/html5shiv.js"></script>
+	<script src="dist/js/respond.min.js"></script>
+	<![endif]-->
+</head>
+
+<body>
+
+<!-- Fixed navbar -->
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+	<div class="container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="#">SNOMED CT Release Portal</a>
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+				<li><a href="#help">Help</a></li>
+			</ul>
+		</div><!--/.nav-collapse -->
+	</div>
+</div>
+
+<div class="container main-container">
+
+	<ol class="breadcrumb">
+		<li><a href="#">Home</a></li>
+		<li><a href="#">Products</a></li>
+		<li class="active">SNOMED CT International Release</li>
+	</ol>
+
+	<div class="row">
+		<div class="col-md-3">
+			<ul class="nav nav-pills nav-stacked">
+				<li class="active"><a href="#">Configuration</a></li>
+				<li><a href="#">Build Input</a></li>
+				<li><a href="#">Build Trigger</a></li>
+				<li><a href="#">Build Results</a></li>
+			</ul>
+		</div>
+		<div class="col-md-9">
+			<div class="well">
+				<form>
+					<h3>Manifest</h3>
+					<div class="form-group">
+						<label>Manifest File</label>
+						<input type="file">
+					</div>
+					<hr/>
+					<h3>Build Preconditions</h3>
+					<div class="checkbox">
+						<label>
+							<input type="checkbox"> Something
+						</label>
+					</div>
+					<div class="checkbox">
+						<label>
+							<input type="checkbox"> Something else
+						</label>
+					</div>
+					<button type="submit" class="btn btn-default">Save</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+</div> <!-- /container -->
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="dist/js/jquery-1.10.2.min.js"></script>
+<script src="dist/js/bootstrap.min.js"></script>
+</body>
+</html>
