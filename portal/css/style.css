@@ -1,3 +1,19 @@
 body {
     padding-top: 70px;
 }
+.well h3 {
+    margin-top: 0;
+}
+.nav .active a {
+    font-weight: bold;
+    border-right: 1px solid #428bca;
+}
+.nav .nav a {
+    margin-left: 30px;
+    font-size: 90%;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.nav .nav {
+    margin-bottom: 8px;
+}
