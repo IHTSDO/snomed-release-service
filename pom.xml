@@ -17,6 +17,7 @@
 		<module>id-generation</module>
 		<module>wb-release-process</module>
 		<module>oauth-landingpage</module>
+		<module>portal</module>
 	</modules>
 
 	<dependencies>
