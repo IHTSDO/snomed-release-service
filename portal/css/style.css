@@ -8,7 +8,7 @@ body {
 .well h3 {
     margin-top: 0;
 }
-.nav .active a {
+.nav a.active {
     font-weight: bold;
     border-right: 1px solid #428bca;
 }
