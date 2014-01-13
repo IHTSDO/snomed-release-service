@@ -2,7 +2,7 @@ body {
 	padding-top: 70px;
 }
 .navbar-brand {
-	background: url("/images/ihtsdo-logo-small.png") no-repeat 15px 0px;
+	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
 }
 .well h3 {
