@@ -1,0 +1,11 @@
+<h2>{{name}}</h2>
+<h3>Extensions</h3>
+<ul>
+	{{#each extensions}}
+	<li>
+		{{#link-to "extension" this}}
+		{{name}}
+		{{/link-to}}
+	</li>
+	{{/each}}
+</ul>

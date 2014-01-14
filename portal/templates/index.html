@@ -1,0 +1,17 @@
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+</ol>
+
+<h1>Welcome to SNOMED CT Release Portal</h1>
+<p>Please choose a Release Centre to get started.</p>
+
+<h2>Release Centres</h2>
+<ul>
+	{{#each releaseCentres}}
+	<li>
+		{{#link-to "release-centre" this}}
+		{{name}}
+		{{/link-to}}
+	</li>
+	{{/each}}
+</ul>
