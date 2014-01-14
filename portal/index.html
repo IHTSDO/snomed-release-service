@@ -48,9 +48,9 @@
 <div class="container main-container">
 
 	<ol class="breadcrumb">
-		<li><a href="#">Home</a></li>
-		<li><a href="#">Products</a></li>
-		<li class="active">International Release</li>
+		<li><a href="#">IHTSDO</a></li>
+		<li><a href="#">International Release</a></li>
+		<li class="active">Snomed CT</li>
 	</ol>
 
 	<div class="row">
@@ -64,6 +64,8 @@
 				-->
 				</li>
 				<li>{{#link-to 'build-input'}}Build Input{{/link-to}}
+				<li>{{#link-to 'pre-conditions'}}Pre-conditions{{/link-to}}
+				<li>{{#link-to 'post-conditions'}}Post-conditions{{/link-to}}
 				<li>{{#link-to 'build-trigger'}}Build Trigger{{/link-to}}
 				<li>{{#link-to 'build-results'}}Build Results{{/link-to}}
 			</ul>
@@ -98,6 +100,8 @@
 <script>
 	loadEmberTemplate('index');
 	loadEmberTemplate('configuration');
+	loadEmberTemplate('pre-conditions');
+	loadEmberTemplate('post-conditions');	
 	loadEmberTemplate('build-input');
 	loadEmberTemplate('build-trigger');
 	loadEmberTemplate('build-results');
