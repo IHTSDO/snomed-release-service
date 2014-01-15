@@ -2,16 +2,38 @@
 	<li><a href="#">Home</a></li>
 </ol>
 
-<h1>Welcome to SNOMED CT Release Portal</h1>
-<p>Please choose a Release Centre to get started.</p>
+<div class="jumbotron">
+	<h1>Welcome!</h1>
+	<p>Use the menu below to get started.</p>
+</div>
 
-<h2>Release Centres</h2>
-<ul>
-	{{#each releaseCentres}}
-	<li>
-		{{#link-to "release-centre" this}}
-		{{name}}
-		{{/link-to}}
-	</li>
-	{{/each}}
-</ul>
+{{#each releaseCentre in releaseCentres}}
+<div class="page-header">
+	<h2>{{releaseCentre.name}}</h2>
+</div>
+<h3>Extensions</h3>
+{{#each extension in releaseCentre.extensions}}
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4>{{extension.name}}</h4>
+	</div>
+	<div class="panel-body panel-products">
+		<h4>Products</h4>
+		<ul>
+			{{#each product in extension.products}}
+			<li>
+				{{#link-to 'product' releaseCentre extension product}}
+				{{product.name}}
+				{{/link-to}}
+			</li>
+			{{/each}}
+			<li>
+				<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
+			</li>
+		</ul>
+	</div>
+</div>
+{{/each}}
+<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
+{{/each}}
+<hr/>
