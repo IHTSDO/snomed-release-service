@@ -72,46 +72,46 @@ App.PackageRoute = Ember.Route.extend({
 // Static Data
 App.FIXTURES = [
 	{
-		id: 'international_release_centre',
+		id: 'international',
 		name: 'International Release Centre',
 		extensions: [
 			{
-				id: 'snomed_ct_international_edition',
+				id: 'international_edition',
 				name: 'SNOMED CT International Edition',
 				products: [
 					{
-						id: 'snomed_ct_international_edition',
+						id: 'international_edition',
 						name: 'SNOMED CT International Edition',
 						packages: [
 							{
-								id: 'snomedct_release_int',
-								name: 'SnomedCT Release INT'
+								id: 'release',
+								name: 'Release'
 							},
 							{
-								id: 'snomedct_rf1compatibilitypackage_int',
-								name: 'SnomedCT RF1CompatibilityPackage INT'
+								id: 'rf1compatibilitypackage',
+								name: 'RF1CompatibilityPackage'
 							},
 							{
-								id: 'snomedct_rf2torf1conversion_int',
-								name: 'SnomedCT RF2toRF1Conversion INT'
+								id: 'rf2torf1conversion',
+								name: 'RF2toRF1Conversion'
 							}
 						]
 					},
 					{
-						id: 'snomed_ct_spanish_edition',
+						id: 'spanish',
 						name: 'SNOMED CT Spanish Edition',
 						packages: [
 							{
-								id: 'snomedct_release_spa',
-								name: 'SnomedCT Release SPA'
+								id: 'release',
+								name: 'Release'
 							},
 							{
-								id: 'snomedct_rf1compatibilitypackage_spa',
-								name: 'SnomedCT RF1CompatibilityPackage SPA'
+								id: 'rf1compatibilitypackage',
+								name: 'RF1CompatibilityPackage'
 							},
 							{
-								id: 'snomedct_rf2torf1conversion_spa',
-								name: 'SnomedCT RF2toRF1Conversion SPA'
+								id: 'rf2torf1conversion',
+								name: 'RF2toRF1Conversion'
 							}
 						]
 					}
