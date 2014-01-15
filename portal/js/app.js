@@ -17,6 +17,59 @@ App.Router.map(function() {
 	});
 });
 
+// Index
+App.IndexRoute = Ember.Route.extend({
+	model: function() {
+		return {
+			releaseCentres: App.FIXTURES
+		}
+	}
+})
+
+// ReleaseCentre
+App.ReleaseCentreRoute = Ember.Route.extend({
+	model: function(params) {
+		return App.FIXTURES.findBy('id', params.releaseCentre_id);
+	}
+})
+App.ReleaseCentreIndexRoute = Ember.Route.extend({
+	model: function() {
+		return this.modelFor('release-centre');
+	}
+})
+
+// Extension
+App.ExtensionRoute = Ember.Route.extend({
+	model: function(params) {
+		return this.modelFor('release-centre').extensions.findBy('id', params.extension_id);
+	}
+})
+App.ExtensionIndexRoute = Ember.Route.extend({
+	model: function() {
+		return this.modelFor('extension');
+	}
+})
+
+// Product
+App.ProductRoute = Ember.Route.extend({
+	model: function(params) {
+		return this.modelFor('extension').products.findBy('id', params.product_id)
+	}
+})
+App.ProductIndexRoute = Ember.Route.extend({
+	model: function() {
+		return this.modelFor('product');
+	}
+})
+
+// Package
+App.PackageRoute = Ember.Route.extend({
+	model: function(params) {
+		return this.modelFor('product').packages.findBy('id', params.package_id)
+	}
+})
+
+// Static Data
 App.FIXTURES = [
 	{
 		id: 'international_release_centre',
@@ -67,55 +120,19 @@ App.FIXTURES = [
 		]
 	}
 ];
-
-App.IndexRoute = Ember.Route.extend({
-	model: function() {
-		return {
-			releaseCentres: App.FIXTURES
+// Add parent references to assist breadcrumb
+for (var rcIndex = 0; rcIndex < App.FIXTURES.length; rcIndex++) {
+	var rc = App.FIXTURES[rcIndex];
+	for (var eIndex = 0; eIndex < rc.extensions.length; eIndex++) {
+		var e = rc.extensions[eIndex];
+		e.parent = rc;
+		for (var productIndex = 0; productIndex < e.products.length; productIndex++) {
+			var product = e.products[productIndex];
+			product.parent = e;
+			for (var packageIndex = 0; packageIndex < product.packages.length; packageIndex++) {
+				var pack = product.packages[packageIndex];
+				pack.parent = product;
+			}
 		}
 	}
-})
-
-// ReleaseCentre
-App.ReleaseCentreRoute = Ember.Route.extend({
-	model: function(params) {
-		var releaseCentre = App.FIXTURES.findBy('id', params.releaseCentre_id);
-		return  releaseCentre;
-	}
-})
-App.ReleaseCentreIndexRoute = Ember.Route.extend({
-	model: function() {
-		return this.modelFor('release-centre');
-	}
-})
-
-// Extension
-App.ExtensionRoute = Ember.Route.extend({
-	model: function(params) {
-		return this.modelFor('release-centre').extensions.findBy('id', params.extension_id)
-	}
-})
-App.ExtensionIndexRoute = Ember.Route.extend({
-	model: function() {
-		return this.modelFor('extension');
-	}
-})
-
-// Product
-App.ProductRoute = Ember.Route.extend({
-	model: function(params) {
-		return this.modelFor('extension').products.findBy('id', params.product_id)
-	}
-})
-App.ProductIndexRoute = Ember.Route.extend({
-	model: function() {
-		return this.modelFor('product');
-	}
-})
-
-// Package
-App.PackageRoute = Ember.Route.extend({
-	model: function(params) {
-		return this.modelFor('product').packages.findBy('id', params.package_id)
-	}
-})
+}
