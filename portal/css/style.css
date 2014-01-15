@@ -1,8 +1,14 @@
 body {
 	padding-top: 70px;
 }
-.form-group {
+input {
 	float: left;
+}
+label {
+	display: block;
+}
+.form-control {
+	width: 95%;
 }
 .navbar-brand {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
@@ -28,17 +34,15 @@ body {
     list-style: none;
 }
 /*IE needs to use before or after in order to add content*/
-div[data-infoPoint]:after { 
+[data-infoPoint]:after { 
 	content: url("../images/info_icon_dead.png");
-	float: left;
-	padding-top: 15px;	
-
+	display: inline-block;	
 }
-div[data-infoPoint]:hover:after {
+[data-infoPoint]:hover:after {
 	content: url("../images/info_icon_alive.png");
 	cursor: pointer;
 }
 /*IE needs additional hover block in order to pick up hover:after above*/
-div[data-infoPoint]:hover { 
+[data-infoPoint]:hover { 
 		cursor: pointer;
 }
