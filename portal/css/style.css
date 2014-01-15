@@ -1,6 +1,9 @@
 body {
 	padding-top: 70px;
 }
+.form-group {
+	float: left;
+}
 .navbar-brand {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
@@ -23,4 +26,19 @@ body {
 }
 .panel-products li {
     list-style: none;
+}
+/*IE needs to use before or after in order to add content*/
+div[data-infoPoint]:after { 
+	content: url("../images/info_icon_dead.png");
+	float: left;
+	padding-top: 15px;	
+
+}
+div[data-infoPoint]:hover:after {
+	content: url("../images/info_icon_alive.png");
+	cursor: pointer;
+}
+/*IE needs additional hover block in order to pick up hover:after above*/
+div[data-infoPoint]:hover { 
+		cursor: pointer;
 }
