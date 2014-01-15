@@ -21,3 +21,6 @@ body {
 .nav .nav {
     margin-bottom: 8px;
 }
+.panel-products li {
+    list-style: none;
+}
