@@ -23,12 +23,12 @@ App.FIXTURES = [
 		name: 'International Release Centre',
 		extensions: [
 			{
-				id: 'snomedct_international',
-				name: 'SnomedCT International',
+				id: 'snomed_ct_international_edition',
+				name: 'SNOMED CT International Edition',
 				products: [
 					{
-						id: 'general_family_practice_reference_set',
-						name: 'General Family Practice Reference Set',
+						id: 'snomed_ct_international_edition',
+						name: 'SNOMED CT International Edition',
 						packages: [
 							{
 								id: 'snomedct_release_int',
@@ -41,6 +41,24 @@ App.FIXTURES = [
 							{
 								id: 'snomedct_rf2torf1conversion_int',
 								name: 'SnomedCT RF2toRF1Conversion INT'
+							}
+						]
+					},
+					{
+						id: 'snomed_ct_spanish_edition',
+						name: 'SNOMED CT Spanish Edition',
+						packages: [
+							{
+								id: 'snomedct_release_spa',
+								name: 'SnomedCT Release SPA'
+							},
+							{
+								id: 'snomedct_rf1compatibilitypackage_spa',
+								name: 'SnomedCT RF1CompatibilityPackage SPA'
+							},
+							{
+								id: 'snomedct_rf2torf1conversion_spa',
+								name: 'SnomedCT RF2toRF1Conversion SPA'
 							}
 						]
 					}
