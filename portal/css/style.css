@@ -33,6 +33,11 @@ label {
 .panel-products li {
     list-style: none;
 }
+.panel-build-input table {
+    width: 100%;
+}
+
+/** Help 'infoPoint' **/
 /*IE needs to use before or after in order to add content*/
 [data-infoPoint]:after { 
 	content: url("../images/info_icon_dead.png");
