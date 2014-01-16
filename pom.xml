@@ -11,12 +11,15 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<hibernate.version>3.6.10.Final</hibernate.version>
+		<spring.version>3.2.2.RELEASE</spring.version>
 	</properties>
 
 	<modules>
 		<module>id-generation</module>
 		<module>wb-release-process</module>
 		<module>oauth-landingpage</module>
+		<module>build-service</module>
 		<module>portal</module>
 	</modules>
 

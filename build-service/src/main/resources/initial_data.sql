@@ -1,0 +1,1 @@
+INSERT INTO `ReleaseCentre` (`id`, `name`, `webName`) VALUES ('1', 'International', 'international');
