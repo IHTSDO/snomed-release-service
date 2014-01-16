@@ -69,6 +69,12 @@ App.PackageRoute = Ember.Route.extend({
 	}
 })
 
+App.BuildInputRoute = Ember.Route.extend({
+	model: function(params) {
+		return this.modelFor('package');
+	}
+})
+
 // Static Data
 App.FIXTURES = [
 	{
@@ -85,7 +91,33 @@ App.FIXTURES = [
 						packages: [
 							{
 								id: 'release',
-								name: 'Release'
+								name: 'Release',
+								inputFiles: [
+									{
+										source: 'File',
+										operation: 'Fill-Placeholders',
+										name: 'readme.txt',
+										directory: '/'
+									},
+									{
+										source: 'File',
+										operation: '',
+										name: 'Icd10MapTechnicalGuideExemplars.xlsx',
+										directory: '/Documentation/'
+									},
+									{
+										source: 'File',
+										operation: '',
+										name: 'SnomedCTReleaseNotes.pdf',
+										directory: '/Documentation/'
+									},
+									{
+										source: 'Maven org.ihtsdo:snomedct-rf2:2015-06-01:zip',
+										operation: 'Extract',
+										name: '',
+										directory: '/RF2Release/'
+									}
+								]
 							},
 							{
 								id: 'rf1compatibilitypackage',
