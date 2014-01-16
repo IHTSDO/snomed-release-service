@@ -27,6 +27,9 @@ body {
 .panel-build-input table {
     width: 100%;
 }
+.btn {
+    margin-bottom: 10px;
+}
 .fade {
   opacity: 0;
   -webkit-transition: opacity 0.5s linear;
