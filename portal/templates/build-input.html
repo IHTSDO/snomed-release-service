@@ -4,25 +4,62 @@
 			<h3 class="panel-title">Build Input</h3>
 		</div>
 		<div class="panel-body">
-			<table>
-				<thead>
-					<th>Source</th>
-					<th>Operation</th>
-					<th>Destination</th>
-				</thead>
-				<tbody>
-					{{#each inputFiles}}
-					<tr>
-						<td>{{source}} {{name}}</td>
-						<td>{{operation}}</td>
-						<td>{{directory}}</td>
-					</tr>
-					{{/each}}
-				</tbody>
-			</table>
-			<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File</a>
+			<h4>File Sets</h4>
+
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<div class="panel-title">Documentation</div>
+				</div>
+				<div class="panel-body">
+					<table>
+						<thead>
+						<th>Name</th>
+						<th>Source</th>
+						</thead>
+						<tbody>
+						<tr>
+							<td>SnomedCTReleaseNotes.pdf</td>
+							<td>Uploaded</td>
+						</tr>
+						<tr>
+							<td>Icd10MapTechnicalGuideExemplars.xlsx</td>
+							<td>Uploaded</td>
+						</tr>
+						</tbody>
+					</table>
+					<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File</a>
+					<hr/>
+					<strong>Destination:</strong> /Documentation/ <a href="#" onclick="return false;">Change Destination</a>
+				</div>
+			</div>
+
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<div class="panel-title">SNOMED CT Deltas</div>
+				</div>
+				<div class="panel-body">
+					<table>
+						<thead>
+						<th>Name</th>
+						<th>Source</th>
+						</thead>
+						<tbody>
+						<tr>
+							<td>org.ihtsdo.workbench-export-rf2.zip</td>
+							<td>Maven</td>
+						</tr>
+						</tbody>
+					</table>
+					<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File</a>
+					<hr/>
+					<strong>Processing:</strong> Extract, Generate IDs, Patch Kaiser Descriptions <a href="#" onclick="return false;">Edit Steps</a>
+				</div>
+			</div>
+
+			<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File Set</a>
 			
 			<hr/>
+
 			<div class="form-group">
 				<label>Readme File</label>
 				  <input type="file" >
