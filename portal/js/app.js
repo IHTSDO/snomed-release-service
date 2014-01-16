@@ -168,3 +168,8 @@ for (var rcIndex = 0; rcIndex < App.FIXTURES.length; rcIndex++) {
 		}
 	}
 }
+
+//Initialise popovers for all elements that include the relevant attribute
+Ember.run.next(function() {
+	$("[data-toggle='popover']").popover();
+});
