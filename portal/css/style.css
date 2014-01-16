@@ -1,15 +1,6 @@
 body {
 	padding-top: 70px;
 }
-input {
-	float: left;
-}
-label {
-	display: block;
-}
-.form-control {
-	width: 95%;
-}
 .navbar-brand {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
@@ -36,18 +27,17 @@ label {
 .panel-build-input table {
     width: 100%;
 }
-
-/** Help 'infoPoint' **/
-/*IE needs to use before or after in order to add content*/
-[data-infoPoint]:after { 
-	content: url("../images/info_icon_dead.png");
-	display: inline-block;	
+.fade {
+  opacity: 0;
+  -webkit-transition: opacity 0.5s linear;
+  -moz-transition: opacity 0.5s linear;
+  -o-transition: opacity 0.5s linear;
+  transition: opacity 0.5s linear;
 }
-[data-infoPoint]:hover:after {
-	content: url("../images/info_icon_alive.png");
-	cursor: pointer;
-}
-/*IE needs additional hover block in order to pick up hover:after above*/
-[data-infoPoint]:hover { 
-		cursor: pointer;
+.fade.in {
+  opacity: 1;
+  -webkit-transition: opacity 0.5s linear;
+  -moz-transition: opacity 0.5s linear;
+  -o-transition: opacity 0.5s linear;
+  transition: opacity 0.5s linear;  
 }
