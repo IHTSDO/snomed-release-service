@@ -1,38 +1,32 @@
 package org.ihtsdo.buildcloud.entity;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.codehaus.jackson.map.annotate.JsonView;
 import org.ihtsdo.buildcloud.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.Set;
 
 @Entity
-@JsonPropertyOrder({"id"})
-public class ReleaseCentre {
+public class Extension {
 
 	@Id
 	@GeneratedValue
-	@JsonIgnore
 	private Long id;
-
-	@Column(unique = true)
-	@JsonProperty("id")
-	private String businessKey;
 
 	private String name;
 
-	@OneToMany(mappedBy = "releaseCentre")
-	@JsonIgnore
-	private Set<Extension> extensions;
+	@Column(unique = true)
+	private String businessKey;
 
-	public ReleaseCentre() {
+	@ManyToOne
+	@JsonIgnore
+	private ReleaseCentre releaseCentre;
+
+	public Extension() {
 	}
 
-	public ReleaseCentre(String name) {
+	public Extension(String name, ReleaseCentre releaseCentre) {
 		setName(name);
+		this.releaseCentre = releaseCentre;
 	}
 
 	public Long getId() {
@@ -56,11 +50,12 @@ public class ReleaseCentre {
 		return businessKey;
 	}
 
-	public Set<Extension> getExtensions() {
-		return extensions;
+	public ReleaseCentre getReleaseCentre() {
+		return releaseCentre;
 	}
 
-	public void setExtensions(Set<Extension> extensions) {
-		this.extensions = extensions;
+	public void setReleaseCentre(ReleaseCentre releaseCentre) {
+		this.releaseCentre = releaseCentre;
 	}
+
 }

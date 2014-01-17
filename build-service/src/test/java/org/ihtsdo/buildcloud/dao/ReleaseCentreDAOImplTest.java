@@ -19,7 +19,7 @@ public class ReleaseCentreDAOImplTest {
 	@Test
 	public void test() {
 		Assert.assertNotNull(dao);
-		Assert.assertEquals(1, dao.getReleaseCentres().size());
+		Assert.assertEquals(2, dao.findAll().size());
 	}
 
 }

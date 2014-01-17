@@ -4,6 +4,10 @@ import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 
 import java.util.List;
 
-public interface ReleaseCentreDAO extends DAO<ReleaseCentre> {
+public abstract interface DAO<T> {
+
+	List<T> findAll();
+	T find(String businessKey);
+	void save(T entity);
 
 }
