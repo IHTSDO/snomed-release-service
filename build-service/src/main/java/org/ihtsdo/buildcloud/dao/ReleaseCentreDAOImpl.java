@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
+import org.hibernate.Criteria;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.ReleaseCentre;
@@ -9,23 +11,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class ReleaseCentreDAOImpl extends AbstractDAOImpl<ReleaseCentre> implements ReleaseCentreDAO {
 
 	@Override
-	public List<ReleaseCentre> getReleaseCentres() {
-		return getCurrentSession().createQuery("from ReleaseCentre").list();
-	}
-
-	@Override
-	public void save(ReleaseCentre releaseCentre) {
-		getCurrentSession().save(releaseCentre);
-	}
-
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
+	protected String getEntityType() {
+		return ReleaseCentre.class.getName();
 	}
 
 }

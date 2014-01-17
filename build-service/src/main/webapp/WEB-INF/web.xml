@@ -10,9 +10,11 @@
 	</context-param>
 
 	<listener>
-		<listener-class>
-			org.springframework.web.context.ContextLoaderListener
-		</listener-class>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<listener>
+		<listener-class>org.ihtsdo.buildcloud.helper.H2ShutDownHelper</listener-class>
 	</listener>
 
 	<servlet>

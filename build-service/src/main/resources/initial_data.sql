@@ -1,1 +1,2 @@
-INSERT INTO `ReleaseCentre` (`id`, `name`, `webName`) VALUES ('1', 'International', 'international');
+insert into `ReleaseCentre` (`id`, `businessKey`, `name`) values ('1', 'international', 'International'), ('2', 'spanish_national', 'Spanish National');
+insert into `Extension` (`id`, `businessKey`, `name`, `releaseCentre_id`) values ('1', 'snomed_ct_international_edition', 'SNOMED CT International Edition', 1)
