@@ -9,9 +9,43 @@
 <ul>
 	{{#each packages}}
 	<li>
-		{{#link-to "package" this}}
-		{{name}}
-		{{/link-to}}
+			{{#link-to "package" this}}
+			{{name}}
+			{{/link-to}}
+			{{#link-to "build-results" this}}
+			<span {{bind-attr class=":big status"}}>
+				&bull;
+			</span>
+			{{/link-to}}
 	</li>
 	{{/each}}
 </ul>
+
+
+<div class="panel-body">
+	<div class="row">
+		<div class="col-md-2">
+				<button type="button" class="btn btn-default btn-lg">
+					<span class="glyphicon glyphicon-briefcase"></span> Create Bundle
+				</button>
+		</div>
+		<div class="col-md-1"> 
+			{{#link-to}}<span class="glyphicon big glyphicon-cog"></span>	{{/link-to}}
+		</div>	
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+				<button type="button" class="btn btn-default btn-lg">
+					<span class="glyphicon glyphicon-cloud-upload"></span> Publish
+				</button>
+		</div>
+	</div>
+</div>
+
+<div class="alert alert-warning">TODO: 
+	<ul>
+		<li>Add page to configure publishing location (different for different times in year?)</li>
+		<li>Add popup to explain that we're unable to "bundle" when packages are incomplete (or will we allow "warn" packages to bundle?)
+	</ul>
+</div>	
+
