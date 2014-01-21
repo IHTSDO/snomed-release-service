@@ -8,13 +8,12 @@ import java.io.IOException;
 
 public class SecurityFilter implements Filter {
 
-	private SecurityUtils securityUtils;
-
 	public void init(FilterConfig config) throws ServletException {
-		securityUtils = new SecurityUtils();
 	}
 
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws ServletException, IOException {
+		SecurityHelper.clearSubject();
+
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 		final String auth = httpRequest.getHeader("Authorization");
@@ -27,10 +26,22 @@ public class SecurityFilter implements Filter {
 			}
 			String credsString = new String(DatatypeConverter.parseBase64Binary(auth.substring(index)));
 			String[] credentials = credsString.split(":");
-			authenticatedId = securityUtils.authenticate(credentials, request);
+
+			// Todo: implement real login here
+			if (credentials != null && credentials.length > 0) {
+				authenticatedId = credentials[0];
+			}
 		}
+
 		if (authenticatedId != null) {
-			chain.doFilter(request, response);
+			try {
+				// Bind authenticated subject/user to thread
+				SecurityHelper.setSubject(authenticatedId);
+
+				chain.doFilter(request, response);
+			} finally {
+				SecurityHelper.clearSubject();
+			}
 		} else {
 			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API\"");
 			httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
