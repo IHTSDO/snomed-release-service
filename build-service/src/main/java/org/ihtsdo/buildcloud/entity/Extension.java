@@ -24,9 +24,8 @@ public class Extension {
 	public Extension() {
 	}
 
-	public Extension(String name, ReleaseCentre releaseCentre) {
+	public Extension(String name) {
 		setName(name);
-		this.releaseCentre = releaseCentre;
 	}
 
 	public Long getId() {
