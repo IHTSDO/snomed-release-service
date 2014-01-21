@@ -11,6 +11,7 @@ App.Router.map(function() {
 					this.resource('post-conditions');
 					this.resource('build-trigger');
 					this.resource('build-results');
+					this.resource('build-history');					
 				});
 			});
 		});
