@@ -44,3 +44,7 @@ body {
   -o-transition: opacity 0.5s linear;
   transition: opacity 0.5s linear;  
 }
+.centre {
+	text-align:center;
+	}
+}
