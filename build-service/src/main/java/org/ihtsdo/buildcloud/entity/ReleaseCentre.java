@@ -7,6 +7,7 @@ import org.codehaus.jackson.map.annotate.JsonView;
 import org.ihtsdo.buildcloud.helper.EntityHelper;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -29,10 +30,17 @@ public class ReleaseCentre {
 	private Set<Extension> extensions;
 
 	public ReleaseCentre() {
+		extensions = new HashSet<Extension>();
 	}
 
 	public ReleaseCentre(String name) {
+		this();
 		setName(name);
+	}
+
+	public void addExtension(Extension extension) {
+		extensions.add(extension);
+		extension.setReleaseCentre(this);
 	}
 
 	public Long getId() {
@@ -59,6 +67,7 @@ public class ReleaseCentre {
 	public Set<Extension> getExtensions() {
 		return extensions;
 	}
+
 
 	public void setExtensions(Set<Extension> extensions) {
 		this.extensions = extensions;
