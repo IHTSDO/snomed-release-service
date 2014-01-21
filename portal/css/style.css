@@ -46,5 +46,27 @@ body {
 }
 .centre {
 	text-align:center;
-	}
 }
+.status_ok{
+	color: green;
+}
+.status_warning{
+	color: orange;
+}
+.status_fail{
+	color: red;
+}
+.big{
+	font-size: 2em;
+}
+
+/* See http://stackoverflow.com/questions/18864070/bootstrap-tr-class-warning-doesnt-work-in-striped-table */
+td.success {
+	background-color: #dff0d8 !important;
+}
+td.danger {
+	background-color: #f2dede !important;
+}
+td.warning {
+	background-color: #fcf8e3 !important;
+

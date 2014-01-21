@@ -93,6 +93,7 @@ App.FIXTURES = [
 							{
 								id: 'release',
 								name: 'Release',
+								status: 'status_ok',
 								inputFiles: [
 									{
 										source: 'File',
@@ -122,11 +123,13 @@ App.FIXTURES = [
 							},
 							{
 								id: 'rf1compatibilitypackage',
-								name: 'RF1CompatibilityPackage'
+								name: 'RF1CompatibilityPackage',
+								status: 'status_ok'
 							},
 							{
 								id: 'rf2torf1conversion',
-								name: 'RF2toRF1Conversion'
+								name: 'RF2toRF1Conversion',
+								status: 'status_warning'
 							}
 						]
 					},
@@ -136,15 +139,18 @@ App.FIXTURES = [
 						packages: [
 							{
 								id: 'release',
-								name: 'Release'
+								name: 'Release',
+								status: 'status_ok'
 							},
 							{
 								id: 'rf1compatibilitypackage',
-								name: 'RF1CompatibilityPackage'
+								name: 'RF1CompatibilityPackage',
+								status: 'status_ok'
 							},
 							{
 								id: 'rf2torf1conversion',
-								name: 'RF2toRF1Conversion'
+								name: 'RF2toRF1Conversion',
+								status: 'status_ok'
 							}
 						]
 					}
