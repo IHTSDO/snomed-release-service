@@ -28,19 +28,19 @@ public class ReleaseCentreController {
 		}
 	};
 
-	@RequestMapping("/release-centres")
+	@RequestMapping("/centres")
 	public @ResponseBody List<ReleaseCentre> getReleaseCentres() {
 		String authenticatedId = SecurityHelper.getSubject();
 		return releaseCentreService.findAll(authenticatedId);
 	}
 
-	@RequestMapping("/release-centres/{releaseCentreBusinessKey}")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}")
 	public @ResponseBody ReleaseCentre getReleaseCentre(@PathVariable String releaseCentreBusinessKey) {
 		String authenticatedId = SecurityHelper.getSubject();
 		return releaseCentreService.find(releaseCentreBusinessKey, authenticatedId);
 	}
 
-	@RequestMapping("/release-centres/{releaseCentreBusinessKey}/extensions")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions")
 	public @ResponseBody Set<Extension> getExtensions(@PathVariable String releaseCentreBusinessKey) {
 		String authenticatedId = SecurityHelper.getSubject();
 		return releaseCentreService.find(releaseCentreBusinessKey, RELEASE_CENTRE_EXTENSION_INITIALIZER, authenticatedId).getExtensions();
