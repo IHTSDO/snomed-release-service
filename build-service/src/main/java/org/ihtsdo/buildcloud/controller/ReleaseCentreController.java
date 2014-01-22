@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.hibernate.Hibernate;
+import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Controller
@@ -20,6 +24,12 @@ public class ReleaseCentreController {
 
 	@Autowired
 	private ReleaseCentreService releaseCentreService;
+
+	@Autowired
+	private HypermediaGenerator hypermediaGenerator;
+
+	private static final String[] RELEASE_CENTRE_LINKS = {"extensions"};
+	private static final String[] EXTENSION_LINKS = {};
 
 	private static final LazyInitializer<ReleaseCentre> RELEASE_CENTRE_EXTENSION_INITIALIZER = new LazyInitializer<ReleaseCentre>() {
 		@Override
@@ -29,21 +39,27 @@ public class ReleaseCentreController {
 	};
 
 	@RequestMapping("/centres")
-	public @ResponseBody List<ReleaseCentre> getReleaseCentres() {
+	@ResponseBody
+	public List<Map<String, Object>> getReleaseCentres(HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		return releaseCentreService.findAll(authenticatedId);
+		List<ReleaseCentre> centres = releaseCentreService.findAll(authenticatedId);
+		return hypermediaGenerator.getEntityCollectionHypermedia(centres, request, RELEASE_CENTRE_LINKS);
 	}
 
 	@RequestMapping("/centres/{releaseCentreBusinessKey}")
-	public @ResponseBody ReleaseCentre getReleaseCentre(@PathVariable String releaseCentreBusinessKey) {
+	@ResponseBody
+	public Map getReleaseCentre(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		return releaseCentreService.find(releaseCentreBusinessKey, authenticatedId);
+		ReleaseCentre centre = releaseCentreService.find(releaseCentreBusinessKey, authenticatedId);
+		return hypermediaGenerator.getEntityHypermedia(centre, request, RELEASE_CENTRE_LINKS);
 	}
 
 	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions")
-	public @ResponseBody Set<Extension> getExtensions(@PathVariable String releaseCentreBusinessKey) {
+	@ResponseBody
+	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		return releaseCentreService.find(releaseCentreBusinessKey, RELEASE_CENTRE_EXTENSION_INITIALIZER, authenticatedId).getExtensions();
+		Set<Extension> extensions = releaseCentreService.find(releaseCentreBusinessKey, RELEASE_CENTRE_EXTENSION_INITIALIZER, authenticatedId).getExtensions();
+		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
 	}
 
 }
