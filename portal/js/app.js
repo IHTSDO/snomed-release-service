@@ -1,5 +1,15 @@
 window.App = Ember.Application.create();
 
+App.ApplicationController = Ember.Controller.extend({
+	routeChanged: function(){
+		//Initialise popovers for all elements that include the relevant attribute
+		//Needs to be repeated each time the DOM changes
+		Ember.run.scheduleOnce('afterRender', this, function() {
+			$("[data-toggle='popover']").popover();
+		});
+	}.observes('currentPath')
+});
+
 App.Router.map(function() {
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
@@ -175,8 +185,3 @@ for (var rcIndex = 0; rcIndex < App.FIXTURES.length; rcIndex++) {
 		}
 	}
 }
-
-//Initialise popovers for all elements that include the relevant attribute
-Ember.run.next(function() {
-	$("[data-toggle='popover']").popover();
-});
