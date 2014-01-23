@@ -27,18 +27,4 @@ public class ReleaseCentreServiceImpl implements ReleaseCentreService {
 		return dao.find(businessKey, oauthId);
 	}
 
-	@Override
-	public ReleaseCentre find(String businessKey, LazyInitializer<ReleaseCentre> lazyInitializer, String oauthId) {
-		ReleaseCentre entity = dao.find(businessKey, oauthId);
-		if (entity != null) {
-			lazyInitializer.initializeLazyRelationships(entity);
-		}
-		return entity;
-	}
-
-	@Override
-	public void save(ReleaseCentre releaseCentre) {
-		dao.save(releaseCentre);
-	}
-
 }

@@ -5,11 +5,9 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
-public class Extension {
+public class Product {
 
 	@Id
 	@GeneratedValue
@@ -24,24 +22,13 @@ public class Extension {
 
 	@ManyToOne
 	@JsonIgnore
-	private ReleaseCentre releaseCentre;
+	private Extension extension;
 
-	@OneToMany(mappedBy = "extension")
-	@JsonIgnore
-	private Set<Product> products;
-
-	public Extension() {
-		products = new HashSet<>();
+	public Product() {
 	}
 
-	public Extension(String name) {
-		this();
+	public Product(String name) {
 		setName(name);
-	}
-
-	public void addProduct(Product product) {
-		products.add(product);
-		product.setExtension(this);
 	}
 
 	public Long getId() {
@@ -65,19 +52,12 @@ public class Extension {
 		return businessKey;
 	}
 
-	public ReleaseCentre getReleaseCentre() {
-		return releaseCentre;
+	public Extension getExtension() {
+		return extension;
 	}
 
-	public void setReleaseCentre(ReleaseCentre releaseCentre) {
-		this.releaseCentre = releaseCentre;
+	public void setExtension(Extension extension) {
+		this.extension = extension;
 	}
 
-	public Set<Product> getProducts() {
-		return products;
-	}
-
-	public void setProducts(Set<Product> products) {
-		this.products = products;
-	}
 }

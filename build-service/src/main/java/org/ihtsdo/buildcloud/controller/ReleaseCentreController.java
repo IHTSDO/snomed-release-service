@@ -29,14 +29,6 @@ public class ReleaseCentreController {
 	private HypermediaGenerator hypermediaGenerator;
 
 	private static final String[] RELEASE_CENTRE_LINKS = {"extensions"};
-	private static final String[] EXTENSION_LINKS = {};
-
-	private static final LazyInitializer<ReleaseCentre> RELEASE_CENTRE_EXTENSION_INITIALIZER = new LazyInitializer<ReleaseCentre>() {
-		@Override
-		public void initializeLazyRelationships(ReleaseCentre entity) {
-			Hibernate.initialize(entity.getExtensions());
-		}
-	};
 
 	@RequestMapping("/centres")
 	@ResponseBody
@@ -52,14 +44,6 @@ public class ReleaseCentreController {
 		String authenticatedId = SecurityHelper.getSubject();
 		ReleaseCentre centre = releaseCentreService.find(releaseCentreBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(centre, request, RELEASE_CENTRE_LINKS);
-	}
-
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions")
-	@ResponseBody
-	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		Set<Extension> extensions = releaseCentreService.find(releaseCentreBusinessKey, RELEASE_CENTRE_EXTENSION_INITIALIZER, authenticatedId).getExtensions();
-		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
 	}
 
 }

@@ -2,13 +2,14 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.ReleaseCentre;
+import org.ihtsdo.buildcloud.service.helper.LazyInitializer;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ExtensionService {
 
-	List<Extension> findAll();
-	Extension find(String businessKey);
-	void save(Extension releaseCentre);
+	Set<Extension> findAll(String releaseCentreBusinessKey, String oauthId);
+	Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
 
 }

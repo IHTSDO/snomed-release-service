@@ -35,9 +35,11 @@ public class HypermediaGenerator {
 		if (!currentResource) {
 			url = url + "/" + entityMap.get("id");
 		}
-		entityMap.put("url", url);
-		for (String link : entityLinks) {
-			entityMap.put(link + "_url", url + "/" + link);
+		if (entityMap != null) {
+			entityMap.put("url", url);
+			for (String link : entityLinks) {
+				entityMap.put(link + "_url", url + "/" + link);
+			}
 		}
 		return entityMap;
 	}
@@ -46,6 +48,9 @@ public class HypermediaGenerator {
 		String contextPath = request.getContextPath();
 		String requestUrl = request.getRequestURL().toString();
 		requestUrl = requestUrl.replace(contextPath, "");
+		if (requestUrl.lastIndexOf('/') == requestUrl.length() - 1) {
+			requestUrl = requestUrl.substring(0, requestUrl.length() - 1);
+		}
 		return requestUrl;
 	}
 
