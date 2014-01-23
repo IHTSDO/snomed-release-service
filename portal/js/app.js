@@ -10,6 +10,34 @@ App.ApplicationController = Ember.Controller.extend({
 	}.observes('currentPath')
 });
 
+// Configure REST location
+DS.RESTAdapter.reopen({
+	namespace: 'rest'
+});
+
+// Define business model
+App.Centre = DS.Model.extend({
+	name: DS.attr(),
+	extensions: DS.hasMany('extension', { async: true })
+});
+App.Extension = DS.Model.extend({
+	parent: DS.belongsTo('centre'),
+	name: DS.attr(),
+	products: DS.hasMany('product', { async: true })
+});
+App.Product = DS.Model.extend({
+	parent: DS.belongsTo('extension'),
+	name: DS.attr(),
+	didLoad: function() {
+		// Add static mock-up data to product.
+		var product = this;
+		product.packages = $.extend(true, [], App.packages);
+		$.each(product.packages, function(index, aPackage) {
+			aPackage.parent = product;
+		})
+	}
+});
+
 App.Router.map(function() {
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
@@ -32,7 +60,7 @@ App.Router.map(function() {
 App.IndexRoute = Ember.Route.extend({
 	model: function() {
 		return {
-			releaseCentres: App.FIXTURES
+			releaseCentres: this.store.find('centre')
 		}
 	}
 })
@@ -40,7 +68,7 @@ App.IndexRoute = Ember.Route.extend({
 // ReleaseCentre
 App.ReleaseCentreRoute = Ember.Route.extend({
 	model: function(params) {
-		return App.FIXTURES.findBy('id', params.releaseCentre_id);
+		return this.store.find('centre', params.releaseCentre_id);
 	}
 })
 App.ReleaseCentreIndexRoute = Ember.Route.extend({
@@ -52,7 +80,12 @@ App.ReleaseCentreIndexRoute = Ember.Route.extend({
 // Extension
 App.ExtensionRoute = Ember.Route.extend({
 	model: function(params) {
-		return this.modelFor('release-centre').extensions.findBy('id', params.extension_id);
+		var centre = this.modelFor('release-centre');
+		return centre.get('extensions').then(function(extensions) {
+			var extension = extensions.findBy('id', params.extension_id);
+			extension.set('parent', centre);
+			return  extension;
+		});
 	}
 })
 App.ExtensionIndexRoute = Ember.Route.extend({
@@ -64,7 +97,12 @@ App.ExtensionIndexRoute = Ember.Route.extend({
 // Product
 App.ProductRoute = Ember.Route.extend({
 	model: function(params) {
-		return this.modelFor('extension').products.findBy('id', params.product_id)
+		var extension = this.modelFor('extension');
+		return extension.get('products').then(function(products) {
+			var product = products.findBy('id', params.product_id);
+			product.set('parent', extension);
+			return product;
+		});
 	}
 })
 App.ProductIndexRoute = Ember.Route.extend({
@@ -80,108 +118,82 @@ App.PackageRoute = Ember.Route.extend({
 	}
 })
 
-App.BuildInputRoute = Ember.Route.extend({
-	model: function(params) {
-		return this.modelFor('package');
-	}
-})
+// REST interface adapter. Adds JSON envelope.
+App.ApplicationSerializer = DS.RESTSerializer.extend({
+	normalizePayload: function(type, payload) {
 
-// Static Data
-App.FIXTURES = [
-	{
-		id: 'international',
-		name: 'International Release Centre',
-		extensions: [
-			{
-				id: 'international_edition',
-				name: 'SNOMED CT International Edition',
-				products: [
-					{
-						id: 'international_edition',
-						name: 'SNOMED CT International Edition',
-						packages: [
-							{
-								id: 'release',
-								name: 'Release',
-								status: 'status_ok',
-								inputFiles: [
-									{
-										source: 'File',
-										operation: 'Fill-Placeholders',
-										name: 'readme.txt',
-										directory: '/'
-									},
-									{
-										source: 'File',
-										operation: '',
-										name: 'Icd10MapTechnicalGuideExemplars.xlsx',
-										directory: '/Documentation/'
-									},
-									{
-										source: 'File',
-										operation: '',
-										name: 'SnomedCTReleaseNotes.pdf',
-										directory: '/Documentation/'
-									},
-									{
-										source: 'Maven org.ihtsdo:snomedct-rf2:2015-06-01:zip',
-										operation: 'Extract',
-										name: '',
-										directory: '/RF2Release/'
-									}
-								]
-							},
-							{
-								id: 'rf1compatibilitypackage',
-								name: 'RF1CompatibilityPackage',
-								status: 'status_ok'
-							},
-							{
-								id: 'rf2torf1conversion',
-								name: 'RF2toRF1Conversion',
-								status: 'status_warning'
-							}
-						]
-					},
-					{
-						id: 'spanish',
-						name: 'SNOMED CT Spanish Edition',
-						packages: [
-							{
-								id: 'release',
-								name: 'Release',
-								status: 'status_ok'
-							},
-							{
-								id: 'rf1compatibilitypackage',
-								name: 'RF1CompatibilityPackage',
-								status: 'status_ok'
-							},
-							{
-								id: 'rf2torf1conversion',
-								name: 'RF2toRF1Conversion',
-								status: 'status_ok'
-							}
-						]
-					}
-				]
-			}
-		]
+		App.ResolveHypermediaLinks(payload);
+
+		var o = {};
+		o[type.typeKey + 's'] = payload;
+		return o;
 	}
-];
-// Add parent references to assist breadcrumb
-for (var rcIndex = 0; rcIndex < App.FIXTURES.length; rcIndex++) {
-	var rc = App.FIXTURES[rcIndex];
-	for (var eIndex = 0; eIndex < rc.extensions.length; eIndex++) {
-		var e = rc.extensions[eIndex];
-		e.parent = rc;
-		for (var productIndex = 0; productIndex < e.products.length; productIndex++) {
-			var product = e.products[productIndex];
-			product.parent = e;
-			for (var packageIndex = 0; packageIndex < product.packages.length; packageIndex++) {
-				var pack = product.packages[packageIndex];
-				pack.parent = product;
+});
+
+App.ResolveHypermediaLinks = function(object) {
+	if($.isArray(object)) {
+		$(object).each(function(index, element) {
+			App.ResolveHypermediaLinks(element);
+		})
+	} else {
+		var links = {};
+		var linkFound = false;
+		for (var property in object) {
+			if (object.hasOwnProperty(property)) {
+				var urlPostfixIndex = property.indexOf('_url');
+				if (urlPostfixIndex > 0 && urlPostfixIndex == property.length - 4) {
+					links[property.substring(0, urlPostfixIndex)] = object[property];
+					linkFound = true;
+				}
 			}
+		}
+		if (linkFound) {
+			object.links = links;
 		}
 	}
 }
+
+// Static Data
+App.packages = [
+	{
+		id: 'release',
+		name: 'Release',
+		status: 'status_ok',
+		inputFiles: [
+			{
+				source: 'File',
+				operation: 'Fill-Placeholders',
+				name: 'readme.txt',
+				directory: '/'
+			},
+			{
+				source: 'File',
+				operation: '',
+				name: 'Icd10MapTechnicalGuideExemplars.xlsx',
+				directory: '/Documentation/'
+			},
+			{
+				source: 'File',
+				operation: '',
+				name: 'SnomedCTReleaseNotes.pdf',
+				directory: '/Documentation/'
+			},
+			{
+				source: 'Maven org.ihtsdo:snomedct-rf2:2015-06-01:zip',
+				operation: 'Extract',
+				name: '',
+				directory: '/RF2Release/'
+			}
+		]
+	},
+	{
+		id: 'rf1compatibilitypackage',
+		name: 'RF1CompatibilityPackage',
+		status: 'status_ok'
+	},
+	{
+		id: 'rf2torf1conversion',
+		name: 'RF2toRF1Conversion',
+		status: 'status_warning'
+	}
+];
