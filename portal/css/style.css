@@ -6,43 +6,43 @@ body {
 	padding-left: 75px;
 }
 .well h3 {
-    margin-top: 0;
+	margin-top: 0;
 }
 .nav a.active {
-    font-weight: bold;
-    border-right: 1px solid #428bca;
+	font-weight: bold;
+	border-right: 1px solid #428bca;
 }
 .nav .nav a {
-    margin-left: 30px;
-    font-size: 90%;
-    padding-top: 3px;
-    padding-bottom: 3px;
+	margin-left: 30px;
+	font-size: 90%;
+	padding-top: 3px;
+	padding-bottom: 3px;
 }
 .nav .nav {
-    margin-bottom: 8px;
+	margin-bottom: 8px;
 }
 .panel-products li {
-    list-style: none;
+	list-style: none;
 }
 .panel-build-input table {
-    width: 100%;
+	width: 100%;
 }
 .btn {
-    margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 .fade {
-  opacity: 0;
-  -webkit-transition: opacity 0.5s linear;
-  -moz-transition: opacity 0.5s linear;
-  -o-transition: opacity 0.5s linear;
-  transition: opacity 0.5s linear;
+	opacity: 0;
+	-webkit-transition: opacity 0.5s linear;
+	-moz-transition: opacity 0.5s linear;
+	-o-transition: opacity 0.5s linear;
+	transition: opacity 0.5s linear;
 }
 .fade.in {
-  opacity: 1;
-  -webkit-transition: opacity 0.5s linear;
-  -moz-transition: opacity 0.5s linear;
-  -o-transition: opacity 0.5s linear;
-  transition: opacity 0.5s linear;  
+	opacity: 1;
+	-webkit-transition: opacity 0.5s linear;
+	-moz-transition: opacity 0.5s linear;
+	-o-transition: opacity 0.5s linear;
+	transition: opacity 0.5s linear;	
 }
 .centre {
 	text-align:center;
@@ -69,4 +69,8 @@ td.danger {
 }
 td.warning {
 	background-color: #fcf8e3 !important;
-
+}
+#clientLogin {
+	margin-top: 1em;
+	float: right;
+}
