@@ -4,30 +4,33 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.Extension;
-import org.ihtsdo.buildcloud.entity.ReleaseCentre;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ExtensionDAOImpl implements ExtensionDAO {
+public class ProductDAOImpl implements ProductDAO {
 
 	@Autowired
 	private SessionFactory sessionFactory;
 
 	@Override
-	public Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) {
+	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
 		Query query = getCurrentSession().createQuery(
-				"select extension " +
+				"select product " +
 				"from ReleaseCentreMembership membership " +
 				"join membership.releaseCentre releaseCentre " +
 				"join releaseCentre.extensions extension " +
+				"join extension.products product " +
 				"where membership.user.oauthId = :oauthId " +
 				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey ");
+				"and extension.businessKey = :extensionBusinessKey " +
+				"and product.businessKey = :productBusinessKey ");
 		query.setString("oauthId", oauthId);
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
-		return (Extension) query.uniqueResult();
+		query.setString("productBusinessKey", productBusinessKey);
+		return (Product) query.uniqueResult();
 
 	}
 

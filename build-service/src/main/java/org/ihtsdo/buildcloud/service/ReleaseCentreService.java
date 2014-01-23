@@ -13,8 +13,4 @@ public interface ReleaseCentreService {
 
 	ReleaseCentre find(String businessKey, String oauthId);
 
-	ReleaseCentre find(String businessKey, LazyInitializer<ReleaseCentre> lazyInitializer, String oauthId);
-
-	void save(ReleaseCentre releaseCentre);
-
 }

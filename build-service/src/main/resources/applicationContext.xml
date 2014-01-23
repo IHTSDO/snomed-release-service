@@ -13,8 +13,13 @@
 	<tx:annotation-driven/>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.ReleaseCentreServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.ReleaseCentreServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ExtensionServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 
 	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator"/>

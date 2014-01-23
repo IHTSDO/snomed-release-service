@@ -18,8 +18,9 @@ public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
 	@Override
 	public List<ReleaseCentre> findAll(String oauthId) {
 		Query query = getCurrentSession().createQuery(
-				"select releaseCentre from ReleaseCentreMembership m " +
-						"where m.user.oauthId = :oauthId");
+				"select releaseCentre " +
+				"from ReleaseCentreMembership m " +
+				"where m.user.oauthId = :oauthId");
 		query.setString("oauthId", oauthId);
 		return query.list();
 	}
@@ -27,9 +28,10 @@ public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
 	@Override
 	public ReleaseCentre find(String businessKey, String oauthId) {
 		Query query = getCurrentSession().createQuery(
-				"select releaseCentre from ReleaseCentreMembership m " +
-						"where m.user.oauthId = :oauthId " +
-						"and m.releaseCentre.businessKey = :businessKey");
+				"select releaseCentre " +
+				"from ReleaseCentreMembership m " +
+				"where m.user.oauthId = :oauthId " +
+				"and m.releaseCentre.businessKey = :businessKey");
 		query.setString("oauthId", oauthId);
 		query.setString("businessKey", businessKey);
 		return (ReleaseCentre) query.uniqueResult();
