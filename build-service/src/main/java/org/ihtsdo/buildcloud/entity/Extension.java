@@ -18,7 +18,6 @@ public class Extension {
 
 	private String name;
 
-	@Column(unique = true)
 	@JsonProperty("id")
 	private String businessKey;
 

@@ -9,6 +9,6 @@ public interface ProductService {
 
 	Set<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
 
-	Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
+	Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId);
 
 }
