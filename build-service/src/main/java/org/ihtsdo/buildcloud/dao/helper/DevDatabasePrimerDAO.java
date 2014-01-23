@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao.helper;
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -20,16 +21,23 @@ public class DevDatabasePrimerDAO {
 			ReleaseCentre internationalReleaseCentre = new ReleaseCentre("International");
 			Extension extension = new Extension("SNOMED CT International Edition");
 			internationalReleaseCentre.addExtension(extension);
+
 			Product product1 = new Product("SNOMED CT International Edition");
+			Package package1 = new Package("Release");
+			product1.addPackage(package1);
 			extension.addProduct(product1);
+
 			Product product2 = new Product("SNOMED CT Spanish Edition");
+			Package package2 = new Package("Release");
+			product2.addPackage(package2);
 			extension.addProduct(product2);
 
 			session.save(internationalReleaseCentre);
 			session.save(extension);
 			session.save(product1);
+			session.save(package1);
 			session.save(product2);
-
+			session.save(package2);
 
 			User testUser = new User("test");
 			ReleaseCentreMembership releaseCentreMembership = new ReleaseCentreMembership(internationalReleaseCentre, testUser);

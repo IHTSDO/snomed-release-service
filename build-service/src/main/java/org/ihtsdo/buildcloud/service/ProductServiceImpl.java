@@ -30,8 +30,8 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
-		return productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
+		return productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, oauthId);
 	}
 
 }
