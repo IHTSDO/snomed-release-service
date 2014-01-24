@@ -32,13 +32,11 @@
 				<version>9.1.0.v20131115</version>
 				<configuration>
 					<webAppSourceDirectory>.</webAppSourceDirectory>
-					<connectors>
-						<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
-							<port>8081</port>
-							<maxIdleTime>60000</maxIdleTime>
-						</connector>
-					</connectors>
-					<scanIntervalSeconds>10</scanIntervalSeconds>
+					<httpConnector>
+						<port>8081</port>
+					</httpConnector>
+					<!--  This causes Windows to lock the files
+					<scanIntervalSeconds>10</scanIntervalSeconds> -->
 					<webApp>
 						<contextPath>/</contextPath>
 					</webApp>
