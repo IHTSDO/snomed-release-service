@@ -1,13 +1,17 @@
-window.App = Ember.Application.create();
+function debug (msg) {
+	if (window.console) console.log(msg);
+}
 
-App.ApplicationController = Ember.Controller.extend({
-	routeChanged: function(){
-		//Initialise popovers for all elements that include the relevant attribute
-		//Needs to be repeated each time the DOM changes
-		Ember.run.scheduleOnce('afterRender', this, function() {
-			$("[data-toggle='popover']").popover();
-		});
-	}.observes('currentPath')
+App = Ember.Application.create({
+	ApplicationController: Ember.Controller.extend({
+		routeChanged: function(){
+			//Initialise popovers for all elements that include the relevant attribute
+			//Needs to be repeated each time the DOM changes
+			Ember.run.scheduleOnce('afterRender', this, function() {
+				$("[data-toggle='popover']").popover();
+			});
+		}.observes('currentPath'),		
+	})
 });
 
 // Configure REST location
@@ -39,6 +43,7 @@ App.Product = DS.Model.extend({
 });
 
 App.Router.map(function() {
+	this.resource('pre-login');
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
@@ -56,29 +61,48 @@ App.Router.map(function() {
 	});
 });
 
+App.AbstractRoute = Ember.Route.extend({
+	init: function() {
+		debug ("Setting last known route in " + this);
+		App.set('lastKnownRoute', this);
+	}
+});
+
+App.AuthorisedRoute =  App.AbstractRoute.extend({
+	beforeModel: function() {
+		//Redirect user to login page if no authorisation token is stored.
+		if (sessionStorage.authorisationToken === undefined){
+			this.transitionTo('pre-login');
+		}
+	}
+});
+
+//Pre-Login
+App.PreLoginRoute = App.AbstractRoute.extend();
+
 // Index
-App.IndexRoute = Ember.Route.extend({
+App.IndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return {
 			releaseCentres: this.store.find('centre')
 		}
-	}
+	},
 })
 
 // ReleaseCentre
-App.ReleaseCentreRoute = Ember.Route.extend({
+App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.store.find('centre', params.releaseCentre_id);
 	}
 })
-App.ReleaseCentreIndexRoute = Ember.Route.extend({
+App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('release-centre');
-	}
+	},
 })
 
 // Extension
-App.ExtensionRoute = Ember.Route.extend({
+App.ExtensionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		var centre = this.modelFor('release-centre');
 		return centre.get('extensions').then(function(extensions) {
@@ -88,14 +112,14 @@ App.ExtensionRoute = Ember.Route.extend({
 		});
 	}
 })
-App.ExtensionIndexRoute = Ember.Route.extend({
+App.ExtensionIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('extension');
 	}
 })
 
 // Product
-App.ProductRoute = Ember.Route.extend({
+App.ProductRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		var extension = this.modelFor('extension');
 		return extension.get('products').then(function(products) {
@@ -105,14 +129,14 @@ App.ProductRoute = Ember.Route.extend({
 		});
 	}
 })
-App.ProductIndexRoute = Ember.Route.extend({
+App.ProductIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('product');
 	}
 })
 
 // Package
-App.PackageRoute = Ember.Route.extend({
+App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('product').packages.findBy('id', params.package_id)
 	}
@@ -121,6 +145,13 @@ App.PackageRoute = Ember.Route.extend({
 // REST interface adapter. Adds JSON envelope.
 App.ApplicationSerializer = DS.RESTSerializer.extend({
 	normalizePayload: function(type, payload) {
+
+App.BuildInputRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('package');
+	}
+})
+
 
 		App.ResolveHypermediaLinks(payload);
 
@@ -152,6 +183,7 @@ App.ResolveHypermediaLinks = function(object) {
 		}
 	}
 }
+
 
 // Static Data
 App.packages = [
@@ -197,3 +229,19 @@ App.packages = [
 		status: 'status_warning'
 	}
 ];
+
+function signinCallback(authResult) {
+	if (authResult['status']['signed_in']) {
+		//Store the token in session storage.  Note we can't store against Ember
+		//App or it will be lost on page reload.
+		sessionStorage.authorisationToken = authResult['access_token'];
+		
+		//And return the user to whatever page there were on when they got booted here
+		var currentRoute = App.get('lastKnownRoute');
+		currentRoute.transitionTo('index');
+	} else {
+		debug('Sign-in state: ' + authResult['error']);
+		sessionStorage.authorisationToken = "Athentication Failed in Client";
+	}
+}
+
