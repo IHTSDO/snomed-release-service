@@ -16,7 +16,7 @@ App = Ember.Application.create({
 
 // Configure REST location
 DS.RESTAdapter.reopen({
-	namespace: 'rest'
+	namespace: 'api/v1'
 });
 
 // Define business model
