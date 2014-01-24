@@ -45,9 +45,8 @@ public class HypermediaGenerator {
 	}
 
 	private String getUrl(HttpServletRequest request) {
-		String contextPath = request.getContextPath();
 		String requestUrl = request.getRequestURL().toString();
-		requestUrl = requestUrl.replace(contextPath, "");
+		// Remove any trailing slash
 		if (requestUrl.lastIndexOf('/') == requestUrl.length() - 1) {
 			requestUrl = requestUrl.substring(0, requestUrl.length() - 1);
 		}
