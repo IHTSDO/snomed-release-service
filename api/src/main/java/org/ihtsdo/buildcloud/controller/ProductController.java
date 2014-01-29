@@ -24,7 +24,7 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PRODUCT_LINKS = {"packages"};
+	private static final String[] PRODUCT_LINKS = {"releases"};
 
 	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products")
 	@ResponseBody
