@@ -16,10 +16,16 @@
 		<axis-version>1.5.6</axis-version>
 	</properties>
 
-	<modules>
-		<module>id-generation-ws-client</module>
-		<module>id-generation-api</module>
-		<module>id-generation-ws</module>
-	</modules>
+	<profiles>
+		<!-- id gen modules are only built under the id-gen profile as rarely used. -->
+		<profile>
+			<id>ig-gen</id>
+			<modules>
+				<module>id-generation-ws-client</module>
+				<module>id-generation-api</module>
+				<module>id-generation-ws</module>
+			</modules>
+		</profile>
+	</profiles>
 
 </project>

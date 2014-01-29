@@ -6,8 +6,10 @@ import java.util.Set;
 
 public interface PackageService {
 
-	Set<Package> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId);
+	Set<Package> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
+						 String releaseBusinessKey, String authenticatedId);
 
-	Package find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String packageBusinessKey, String oauthId);
+	Package find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
+				 String releaseBusinessKey, String packageBusinessKey, String authenticatedId);
 
 }

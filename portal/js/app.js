@@ -10,7 +10,7 @@ App = Ember.Application.create({
 			Ember.run.scheduleOnce('afterRender', this, function() {
 				$("[data-toggle='popover']").popover();
 			});
-		}.observes('currentPath'),		
+		}.observes('currentPath')
 	})
 });
 
@@ -72,7 +72,7 @@ App.AuthorisedRoute =  App.AbstractRoute.extend({
 	beforeModel: function() {
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
-			this.transitionTo('pre-login');
+//			this.transitionTo('pre-login');
 		}
 	}
 });
@@ -86,7 +86,7 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		return {
 			releaseCentres: this.store.find('centre')
 		}
-	},
+	}
 })
 
 // ReleaseCentre
@@ -98,7 +98,7 @@ App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
 App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('release-centre');
-	},
+	}
 })
 
 // Extension
