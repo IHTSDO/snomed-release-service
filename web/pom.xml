@@ -9,10 +9,10 @@
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>portal</artifactId>
+	<artifactId>web</artifactId>
 	<packaging>war</packaging>
 
-	<name>Portal</name>
+	<name>Web Front End</name>
 
 	<build>
 		<plugins>

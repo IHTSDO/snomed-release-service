@@ -23,7 +23,7 @@
 		<module>data-service</module>
 		<module>api</module>
 		<module>build-generation</module>
-		<module>portal</module>
+		<module>web</module>
 	</modules>
 
 	<dependencies>
