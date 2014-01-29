@@ -1,4 +1,4 @@
-Release Portal
+Web Front End
 ======================
 
 This project features an out-of-the-box Tomcat version, to aid local debugging.
@@ -20,11 +20,11 @@ TopTip: Ensure the Jetty Plugin is stopped before running a git pull because it 
 Server Installation
 -------------------
 
-We will be serving the portal on a webserver, using the following configuration:
+We will be serving the webapp, using the following configuration:
 
 * Git working directory in /home/www-data
-* Nginx configuration /etc/nginx/sites-available/<servername.domain-name>  root /var/www/portal
-* Symlinked ln -s /home/www-data/snomed-release-system/portal /var/www/portal
+* Nginx configuration /etc/nginx/sites-available/<servername.domain-name>  root /var/www/release
+* Symlinked ln -s /home/www-data/snomed-release-system/web /var/www/release
 * Start ssh agent to deliver ssh key:   eval "$(ssh-agent)"
 * ssh-add /home/www-data/.ssh/id_pub
 * Testing using  ssh -T git@github.com (note that username is always "git" for github)
