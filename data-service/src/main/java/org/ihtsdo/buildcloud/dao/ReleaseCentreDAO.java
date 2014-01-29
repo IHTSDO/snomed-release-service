@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface ReleaseCentreDAO {
 
-	List<ReleaseCentre> findAll(String oauthId);
+	List<ReleaseCentre> findAll(String authenticatedId);
 
-	ReleaseCentre find(String businessKey, String oauthId);
+	ReleaseCentre find(String businessKey, String authenticatedId);
 
 	void save(ReleaseCentre entity);
 

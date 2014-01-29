@@ -24,7 +24,7 @@ public class Package {
 
 	@ManyToOne
 	@JsonIgnore
-	private Product product;
+	private Release release;
 
 	public Package() {
 	}
@@ -54,11 +54,11 @@ public class Package {
 		return businessKey;
 	}
 
-	public Product getProduct() {
-		return product;
+	public Release getRelease() {
+		return release;
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
+	public void setRelease(Release release) {
+		this.release = release;
 	}
 }

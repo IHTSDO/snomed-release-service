@@ -26,21 +26,21 @@ public class PackageController {
 
 	private static final String[] PACKAGE_LINKS = {};
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/packages")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/releases/{releaseBusinessKey}/packages")
 	@ResponseBody
 	public List<Map<String, Object>> getPackages(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-												 @PathVariable String productBusinessKey, HttpServletRequest request) {
+												 @PathVariable String productBusinessKey, @PathVariable String releaseBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Set<Package> packages = packageService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		Set<Package> packages = packageService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, releaseBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(packages, request, PACKAGE_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/packages/{packageBusinessKey}")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/releases/{releaseBusinessKey}/packages/{packageBusinessKey}")
 	@ResponseBody
 	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-							@PathVariable String productBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+							@PathVariable String productBusinessKey, @PathVariable String releaseBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Package aPackage = packageService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, packageBusinessKey, authenticatedId);
+		Package aPackage = packageService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, releaseBusinessKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(aPackage, request, PACKAGE_LINKS);
 	}
 

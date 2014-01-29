@@ -22,7 +22,7 @@ public class BuildGeneratorTest {
 	public void setup() throws IOException {
 		buildGenerator = new BuildGenerator();
 		expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-pom.txt"), Charset.defaultCharset());
-		releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Release");
+		releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "July 2014", "Release");
 	}
 
 	@Test

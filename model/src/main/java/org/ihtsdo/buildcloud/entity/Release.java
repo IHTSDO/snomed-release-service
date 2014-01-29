@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-public class Product {
+public class Release {
 
 	@Id
 	@GeneratedValue
@@ -21,26 +21,28 @@ public class Product {
 	@JsonProperty("id")
 	private String businessKey;
 
+	private boolean current;
+
 	@ManyToOne
 	@JsonIgnore
-	private Extension extension;
+	private Product product;
 
-	@OneToMany(mappedBy = "product")
+	@OneToMany(mappedBy = "release")
 	@JsonIgnore
-	private Set<Release> releases;
+	private Set<Package> packages;
 
-	public Product() {
-		releases = new HashSet<>();
+	public Release() {
+		packages = new HashSet<>();
 	}
 
-	public Product(String name) {
+	public Release(String name) {
 		this();
 		setName(name);
 	}
 
-	public void addRelease(Release release) {
-		releases.add(release);
-		release.setProduct(this);
+	public void addPackage(Package aPackage) {
+		packages.add(aPackage);
+		aPackage.setRelease(this);
 	}
 
 	public Long getId() {
@@ -57,22 +59,34 @@ public class Product {
 
 	public void setName(String name) {
 		this.name = name;
-		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+		generateBusinessKey();
 	}
 
 	public String getBusinessKey() {
 		return businessKey;
 	}
 
-	public Extension getExtension() {
-		return extension;
+	public boolean isCurrent() {
+		return current;
 	}
 
-	public void setExtension(Extension extension) {
-		this.extension = extension;
+	public void setCurrent(boolean current) {
+		this.current = current;
 	}
 
-	public Set<Release> getReleases() {
-		return releases;
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
+
+	public Set<Package> getPackages() {
+		return packages;
+	}
+
+	private void generateBusinessKey() {
+		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 }

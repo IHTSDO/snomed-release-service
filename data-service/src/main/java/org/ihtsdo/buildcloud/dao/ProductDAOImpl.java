@@ -14,7 +14,7 @@ public class ProductDAOImpl implements ProductDAO {
 	private SessionFactory sessionFactory;
 
 	@Override
-	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
+	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
 				"from ReleaseCentreMembership membership " +
@@ -25,7 +25,7 @@ public class ProductDAOImpl implements ProductDAO {
 				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
 				"and extension.businessKey = :extensionBusinessKey " +
 				"and product.businessKey = :productBusinessKey ");
-		query.setString("oauthId", oauthId);
+		query.setString("oauthId", authenticatedId);
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		query.setString("productBusinessKey", productBusinessKey);

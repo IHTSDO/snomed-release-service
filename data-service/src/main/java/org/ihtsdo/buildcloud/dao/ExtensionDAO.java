@@ -4,6 +4,6 @@ import org.ihtsdo.buildcloud.entity.Extension;
 
 public interface ExtensionDAO {
 
-	Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
+	Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String authenticatedId);
 
 }

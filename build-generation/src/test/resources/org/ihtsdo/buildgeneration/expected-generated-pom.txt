@@ -3,7 +3,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>international_release_centre.international.spanish_edition.release</artifactId>
-	<version>1.0</version>
+	<version>july_2014</version>
 
 	<name>Release (Spanish Edition, International, International Release Centre)</name>
 

@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
-import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.ReleaseDAO;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,18 +18,18 @@ public class PackageServiceImpl implements PackageService {
 	private PackageDAO packageDAO;
 
 	@Autowired
-	private ProductDAO productDAO;
+	private ReleaseDAO releaseDAO;
 
 	@Override
-	public Set<Package> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
-		Set<Package> packages = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, oauthId).getPackages();
+	public Set<Package> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String releaseBusinessKey, String authenticatedId) {
+		Set<Package> packages = releaseDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, releaseBusinessKey, authenticatedId).getPackages();
 		Hibernate.initialize(packages);
 		return packages;
 	}
 
 	@Override
 	public Package find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-						String packageBusinessKey, String oauthId) {
-		return packageDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, packageBusinessKey, oauthId);
+						String releaseBusinessKey, String packageBusinessKey, String authenticatedId) {
+		return packageDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, releaseBusinessKey, packageBusinessKey, authenticatedId);
 	}
 }
