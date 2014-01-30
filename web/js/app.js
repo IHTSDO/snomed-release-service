@@ -44,7 +44,7 @@ App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
-			this.transitionTo('pre-login');
+//			this.transitionTo('pre-login');
 		}
 	}
 });
