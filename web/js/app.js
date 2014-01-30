@@ -17,14 +17,16 @@ App.Router.map(function() {
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
-				this.resource('package', { path: '/:package_id'}, function() {
-					this.resource('configuration');
-					this.resource('build-input');
-					this.resource('pre-conditions');
-					this.resource('post-conditions');
-					this.resource('build-trigger');
-					this.resource('build-results');
-					this.resource('build-history');					
+				this.resource('release', { path: '/:release_id' }, function() {
+					this.resource('package', { path: '/:package_id'}, function() {
+						this.resource('configuration');
+						this.resource('build-input');
+						this.resource('pre-conditions');
+						this.resource('post-conditions');
+						this.resource('build-trigger');
+						this.resource('build-results');
+						this.resource('build-history');
+					});
 				});
 			});
 		});
@@ -34,7 +36,6 @@ App.Router.map(function() {
 
 App.AbstractRoute = Ember.Route.extend({
 	init: function() {
-		debug ("Setting last known route in " + this);
 		App.set('lastKnownRoute', this);
 	}
 });
@@ -105,11 +106,37 @@ App.ProductIndexRoute = App.AuthorisedRoute.extend({
 		return this.modelFor('product');
 	}
 })
+App.ProductIndexController = Ember.ObjectController.extend({
+	selectedRelease: function() {
+		console.log('latestRelease func');
+		var controller = this;
+		this.get('model.releases').then(function(releases) {
+			console.log('releases = ' + releases);
+			var latestRelease = null;
+			releases.forEach(function(release) {
+				latestRelease = release;
+			})
+			controller.set('selectedRelease', latestRelease);
+		});
+	}.property('selectedRelease')
+})
+
+// Release
+App.ReleaseRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		var product = this.modelFor('product');
+		return product.get('releases').then(function(releases) {
+			var release = releases.findBy('id', params.release_id);
+			release.set('parent', product);
+			return release;
+		});
+	}
+})
 
 // Package
 App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		return this.modelFor('product').packages.findBy('id', params.package_id)
+		return this.modelFor('release').get('packages').findBy('id', params.package_id)
 	}
 })
 

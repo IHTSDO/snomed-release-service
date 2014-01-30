@@ -4,15 +4,21 @@
 	<li>{{#link-to "extension" parent}}{{parent.name}}{{/link-to}}</li>
 </ol>
 
-<h2>{{name}}</h2>
+<h2>{{name}}</h2>{{view Ember.Select
+	content=releases
+	optionValuePath="content.id"
+	optionLabelPath="content.name"
+	selection=selectedRelease
+}}
+
 <h3>Packages</h3>
 <ul>
-	{{#each packages}}
+	{{#each package in selectedRelease.packages}}
 	<li>
-			{{#link-to "package" this}}
-			{{name}}
+			{{#link-to "package" selectedRelease package}}
+			{{package.name}}
 			{{/link-to}}
-			{{#link-to "build-results" this}}
+			{{#link-to "build-results" selectedRelease package}}
 			<span {{bind-attr class=":big status"}} {{bind-attr title="status"}}>
 				&bull;
 			</span>
