@@ -16,6 +16,11 @@ App.Extension = DS.Model.extend({
 App.Product = DS.Model.extend({
 	parent: DS.belongsTo('extension'),
 	name: DS.attr(),
+	releases: DS.hasMany('release', { async: true })
+});
+App.Release = DS.Model.extend({
+	parent: DS.belongsTo('product'),
+	name: DS.attr(),
 	didLoad: function() {
 		// Add static mock-up data to product.
 		var product = this;
