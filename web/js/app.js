@@ -1,7 +1,10 @@
 
 App = Ember.Application.create({
 	ApplicationController: Ember.Controller.extend({
-		routeChanged: function(){
+		routeChanged: function() {
+			// Scroll top top of new page
+			window.scrollTo(0, 0);
+
 			//Initialise popovers for all elements that include the relevant attribute
 			//Needs to be repeated each time the DOM changes
 			Ember.run.scheduleOnce('afterRender', this, function() {
@@ -10,7 +13,6 @@ App = Ember.Application.create({
 		}.observes('currentPath')
 	})
 });
-
 
 App.Router.map(function() {
 	this.resource('pre-login');
