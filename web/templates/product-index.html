@@ -4,7 +4,7 @@
 	<li>{{#link-to "extension" parent}}{{parent.name}}{{/link-to}}</li>
 </ol>
 
-<h2>{{name}}</h2>{{view Ember.Select
+<h2>{{name}} <small>(Product)</small></h2>{{view Ember.Select
 	content=releases
 	optionValuePath="content.id"
 	optionLabelPath="content.name"
