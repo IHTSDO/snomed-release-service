@@ -38,8 +38,8 @@ public class PackageController {
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
-	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-							@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public Map getPackage(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
+						  @PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(aPackage, request, PACKAGE_LINKS);
