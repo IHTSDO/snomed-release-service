@@ -9,8 +9,10 @@ public class TestEntityFactory {
 		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreName);
 		Extension extension = new Extension(extensionName);
 		Product product = new Product(productName);
-		Package aPackage = new Package(packageName);
 		Build build = new Build(buildName);
+		Package aPackage = new Package(packageName);
+		InputFile inputFile = new InputFile("concepts.rf2");
+		aPackage.addInputFile(inputFile);
 		build.addPackage(aPackage);
 		product.addBuild(build);
 		extension.addProduct(product);

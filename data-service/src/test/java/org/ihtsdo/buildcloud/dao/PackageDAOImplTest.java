@@ -23,6 +23,7 @@ public class PackageDAOImplTest {
 				"biannual", "release", "test");
 		Assert.assertNotNull(aPackage);
 		Assert.assertEquals("Release", aPackage.getName());
+		Assert.assertEquals(1, aPackage.getInputFiles().size());
 	}
 
 }
