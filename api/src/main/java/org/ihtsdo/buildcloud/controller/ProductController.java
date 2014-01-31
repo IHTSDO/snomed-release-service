@@ -29,7 +29,7 @@ public class ProductController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getProducts(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Set<Product> products = productService.findAll(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
@@ -37,7 +37,7 @@ public class ProductController {
 
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
-	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map getProduct(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);

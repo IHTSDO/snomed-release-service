@@ -39,7 +39,7 @@ public class InputFileController {
 
 	@RequestMapping("/{inputFileBusinessKey}")
 	@ResponseBody
-	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
+	public Map getInputFile(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 							@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey,
 							@PathVariable String packageBusinessKey, @PathVariable String inputFileBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();

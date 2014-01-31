@@ -21,7 +21,7 @@ public class RootController {
 
 	@RequestMapping
 	@ResponseBody
-	public Map getReleaseCentre(HttpServletRequest request) {
+	public Map getRoot(HttpServletRequest request) {
 		return hypermediaGenerator.getEntityHypermedia(new HashMap<String, String>(), request, ROOT_LINK);
 	}
 
