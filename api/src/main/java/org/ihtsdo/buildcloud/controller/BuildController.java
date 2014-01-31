@@ -35,7 +35,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/releases/{buildBusinessKey}")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{buildBusinessKey}")
 	@ResponseBody
 	public Map getBuild(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 						@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, HttpServletRequest request) {

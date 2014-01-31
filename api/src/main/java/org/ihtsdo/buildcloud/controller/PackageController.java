@@ -26,7 +26,7 @@ public class PackageController {
 
 	private static final String[] PACKAGE_LINKS = {};
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/releases/{releaseBusinessKey}/packages")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{releaseBusinessKey}/packages")
 	@ResponseBody
 	public List<Map<String, Object>> getPackages(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 												 @PathVariable String productBusinessKey, @PathVariable String releaseBusinessKey, HttpServletRequest request) {
@@ -35,7 +35,7 @@ public class PackageController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(packages, request, PACKAGE_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/releases/{releaseBusinessKey}/packages/{packageBusinessKey}")
+	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{releaseBusinessKey}/packages/{packageBusinessKey}")
 	@ResponseBody
 	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 							@PathVariable String productBusinessKey, @PathVariable String releaseBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
