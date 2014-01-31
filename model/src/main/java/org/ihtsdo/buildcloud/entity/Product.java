@@ -27,10 +27,10 @@ public class Product {
 
 	@OneToMany(mappedBy = "product")
 	@JsonIgnore
-	private Set<Release> releases;
+	private Set<Build> builds;
 
 	public Product() {
-		releases = new HashSet<>();
+		builds = new HashSet<>();
 	}
 
 	public Product(String name) {
@@ -38,9 +38,9 @@ public class Product {
 		setName(name);
 	}
 
-	public void addRelease(Release release) {
-		releases.add(release);
-		release.setProduct(this);
+	public void addBuild(Build build) {
+		builds.add(build);
+		build.setProduct(this);
 	}
 
 	public Long getId() {
@@ -72,7 +72,7 @@ public class Product {
 		this.extension = extension;
 	}
 
-	public Set<Release> getReleases() {
-		return releases;
+	public Set<Build> getBuilds() {
+		return builds;
 	}
 }

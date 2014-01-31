@@ -22,13 +22,13 @@ public class BuildGeneratorTest {
 	public void setup() throws IOException {
 		buildGenerator = new BuildGenerator();
 		expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-pom.txt"), Charset.defaultCharset());
-		releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "July 2014", "Release");
+		releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Biannual", "RF2");
 	}
 
 	@Test
 	public void test() throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		buildGenerator.generate(new OutputStreamWriter(out), releasePackage);
+		buildGenerator.generate(new OutputStreamWriter(out), releasePackage.getBuild());
 		String actualPom = out.toString();
 
 		Assert.assertEquals(expectedPom, actualPom);

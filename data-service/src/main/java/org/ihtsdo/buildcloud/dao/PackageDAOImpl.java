@@ -15,29 +15,29 @@ public class PackageDAOImpl implements PackageDAO {
 
 	@Override
 	public Package find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-						String releaseBusinessKey, String packageBusinessKey, String authenticatedId) {
+						String buildBusinessKey, String packageBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select package " +
 				"from ReleaseCentreMembership membership " +
 				"join membership.releaseCentre releaseCentre " +
 				"join releaseCentre.extensions extension " +
 				"join extension.products product " +
-				"join product.releases release " +
-				"join release.packages package " +
+				"join product.builds build " +
+				"join build.packages package " +
 				"where membership.user.oauthId = :oauthId " +
 				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
 				"and extension.businessKey = :extensionBusinessKey " +
 				"and product.businessKey = :productBusinessKey " +
-				"and release.businessKey = :releaseBusinessKey " +
+				"and build.businessKey = :buildBusinessKey " +
 				"and package.businessKey = :packageBusinessKey ");
 		query.setString("oauthId", authenticatedId);
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		query.setString("productBusinessKey", productBusinessKey);
-		query.setString("releaseBusinessKey", releaseBusinessKey);
+		query.setString("buildBusinessKey", buildBusinessKey);
 		query.setString("packageBusinessKey", packageBusinessKey);
-		return (Package) query.uniqueResult();
 
+		return (Package) query.uniqueResult();
 	}
 
 	private Session getCurrentSession() {

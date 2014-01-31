@@ -2,7 +2,7 @@ package org.ihtsdo.buildgeneration;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -17,8 +17,8 @@ public class BuildGenerator {
 		projectMustache = mustacheFactory.compile("project.mustache");
 	}
 
-	public void generate(Writer writer, Package aPackage) throws IOException {
-		projectMustache.execute(writer, aPackage).flush();
+	public void generate(Writer writer, Build build) throws IOException {
+		projectMustache.execute(writer, build).flush();
 	}
 
 }
