@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.hibernate.Hibernate;
+import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,9 @@ import java.util.Set;
 public class InputFileServiceImpl implements InputFileService {
 
 	@Autowired
+	private InputFileDAO inputFileDAO;
+
+	@Autowired
 	private PackageDAO packageDAO;
 
 	@Override
@@ -21,5 +25,10 @@ public class InputFileServiceImpl implements InputFileService {
 		Set<InputFile> inputFiles = packageDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId).getInputFiles();
 		Hibernate.initialize(inputFiles);
 		return inputFiles;
+	}
+
+	@Override
+	public InputFile find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
+		return inputFileDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
 	}
 }
