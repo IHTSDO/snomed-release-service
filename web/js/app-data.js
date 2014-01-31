@@ -16,9 +16,9 @@ App.Extension = DS.Model.extend({
 App.Product = DS.Model.extend({
 	parent: DS.belongsTo('extension'),
 	name: DS.attr(),
-	releases: DS.hasMany('release', { async: true })
+	builds: DS.hasMany('build', { async: true })
 });
-App.Release = DS.Model.extend({
+App.Build = DS.Model.extend({
 	parent: DS.belongsTo('product'),
 	name: DS.attr(),
 	didLoad: function() {

@@ -19,7 +19,7 @@ App.Router.map(function() {
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
-				this.resource('release', { path: '/:release_id' }, function() {
+				this.resource('build', { path: '/:build_id' }, function() {
 					this.resource('package', { path: '/:package_id'}, function() {
 						this.resource('configuration');
 						this.resource('build-input');
@@ -109,28 +109,26 @@ App.ProductIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 App.ProductIndexController = Ember.ObjectController.extend({
-	selectedRelease: function() {
-		console.log('latestRelease func');
+	selectedBuild: function() {
 		var controller = this;
-		this.get('model.releases').then(function(releases) {
-			console.log('releases = ' + releases);
-			var latestRelease = null;
-			releases.forEach(function(release) {
-				latestRelease = release;
+		this.get('model.builds').then(function(builds) {
+			var lastBuild = null;
+			builds.forEach(function(build) {
+				lastBuild = build;
 			})
-			controller.set('selectedRelease', latestRelease);
+			controller.set('selectedBuild', lastBuild);
 		});
-	}.property('selectedRelease')
+	}.property('selectedBuild')
 })
 
 // Release
-App.ReleaseRoute = App.AuthorisedRoute.extend({
+App.BuildRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		var product = this.modelFor('product');
-		return product.get('releases').then(function(releases) {
-			var release = releases.findBy('id', params.release_id);
-			release.set('parent', product);
-			return release;
+		return product.get('builds').then(function(builds) {
+			var build = builds.findBy('id', params.build_id);
+			build.set('parent', product);
+			return build;
 		});
 	}
 })
@@ -138,7 +136,7 @@ App.ReleaseRoute = App.AuthorisedRoute.extend({
 // Package
 App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		return this.modelFor('release').get('packages').findBy('id', params.package_id)
+		return this.modelFor('build').get('packages').findBy('id', params.package_id)
 	}
 })
 

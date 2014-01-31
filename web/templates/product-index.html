@@ -5,20 +5,20 @@
 </ol>
 
 <h2>{{name}} <small>(Product)</small></h2>{{view Ember.Select
-	content=releases
+	content=builds
 	optionValuePath="content.id"
 	optionLabelPath="content.name"
-	selection=selectedRelease
+	selection=selectedBuild
 }}
 
 <h3>Packages</h3>
 <ul>
-	{{#each package in selectedRelease.packages}}
+	{{#each package in selectedBuild.packages}}
 	<li>
-			{{#link-to "package" selectedRelease package}}
+			{{#link-to "package" selectedBuild package}}
 			{{package.name}}
 			{{/link-to}}
-			{{#link-to "build-results" selectedRelease package}}
+			{{#link-to "build-results" selectedBuild package}}
 			<span {{bind-attr class=":big status"}} {{bind-attr title="status"}}>
 				&bull;
 			</span>
