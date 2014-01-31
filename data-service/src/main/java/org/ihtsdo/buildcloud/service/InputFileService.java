@@ -9,4 +9,6 @@ public interface InputFileService {
 	Set<InputFile> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
 						   String buildBusinessKey, String packageBusinessKey, String authenticatedId);
 
+	InputFile find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
+				   String buildBusinessKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId);
 }

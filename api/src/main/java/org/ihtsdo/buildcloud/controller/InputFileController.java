@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,5 +36,16 @@ public class InputFileController {
 		Set<InputFile> inputFiles = inputFileService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(inputFiles, request, INPUT_FILE_LINKS);
 	}
+
+	@RequestMapping("/{inputFileBusinessKey}")
+	@ResponseBody
+	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
+							@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey,
+							@PathVariable String packageBusinessKey, @PathVariable String inputFileBusinessKey, HttpServletRequest request) {
+		String authenticatedId = SecurityHelper.getSubject();
+		InputFile inputFile = inputFileService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
+		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
+	}
+
 
 }
