@@ -25,7 +25,7 @@ public class PackageController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PACKAGE_LINKS = {};
+	private static final String[] PACKAGE_LINKS = {"input-files"};
 
 	@RequestMapping
 	@ResponseBody

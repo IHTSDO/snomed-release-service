@@ -28,6 +28,8 @@ public class DevDatabasePrimerDAO {
 			product1.addBuild(build1);
 			Package package1 = new Package("Release");
 			build1.addPackage(package1);
+			InputFile inputFile1 = new InputFile("concepts.rf2");
+			package1.addInputFile(inputFile1);
 
 			Product product2 = new Product("SNOMED CT Spanish Edition");
 			extension.addProduct(product2);
@@ -35,15 +37,20 @@ public class DevDatabasePrimerDAO {
 			product2.addBuild(build2);
 			Package package2 = new Package("Release");
 			build2.addPackage(package2);
+			InputFile inputFile2 = new InputFile("concepts.rf2");
+			package2.addInputFile(inputFile2);
 
 			session.save(internationalReleaseCentre);
 			session.save(extension);
 			session.save(product1);
 			session.save(build1);
 			session.save(package1);
+			session.save(inputFile1);
+
 			session.save(product2);
 			session.save(build2);
 			session.save(package2);
+			session.save(inputFile2);
 
 			User testUser = new User("test");
 			ReleaseCentreMembership releaseCentreMembership = new ReleaseCentreMembership(internationalReleaseCentre, testUser);
