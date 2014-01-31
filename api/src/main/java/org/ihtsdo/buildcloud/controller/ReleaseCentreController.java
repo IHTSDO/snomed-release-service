@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
+@RequestMapping("/centres")
 public class ReleaseCentreController {
 
 	@Autowired
@@ -25,7 +26,7 @@ public class ReleaseCentreController {
 
 	private static final String[] RELEASE_CENTRE_LINKS = {"extensions"};
 
-	@RequestMapping("/centres")
+	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getReleaseCentres(HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
@@ -33,7 +34,7 @@ public class ReleaseCentreController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(centres, request, RELEASE_CENTRE_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}")
+	@RequestMapping("/{releaseCentreBusinessKey}")
 	@ResponseBody
 	public Map getReleaseCentre(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();

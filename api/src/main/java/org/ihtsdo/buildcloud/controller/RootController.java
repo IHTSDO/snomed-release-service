@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
+@RequestMapping
 public class RootController {
 
 	@Autowired
@@ -18,7 +19,7 @@ public class RootController {
 
 	private static final String[] ROOT_LINK = {"centres"};
 
-	@RequestMapping("/")
+	@RequestMapping
 	@ResponseBody
 	public Map getReleaseCentre(HttpServletRequest request) {
 		return hypermediaGenerator.getEntityHypermedia(new HashMap<String, String>(), request, ROOT_LINK);
