@@ -20,7 +20,7 @@ public class PackageDAOImplTest {
 	@Test
 	public void testInitialData() {
 		Package aPackage = dao.find("international", "snomed_ct_international_edition", "snomed_ct_spanish_edition",
-				"july_2014", "release", "test");
+				"biannual", "release", "test");
 		Assert.assertNotNull(aPackage);
 		Assert.assertEquals("Release", aPackage.getName());
 	}

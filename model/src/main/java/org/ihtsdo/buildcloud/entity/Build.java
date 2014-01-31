@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-public class Release {
+public class Build {
 
 	@Id
 	@GeneratedValue
@@ -21,28 +21,26 @@ public class Release {
 	@JsonProperty("id")
 	private String businessKey;
 
-	private boolean current;
-
 	@ManyToOne
 	@JsonIgnore
 	private Product product;
 
-	@OneToMany(mappedBy = "release")
+	@OneToMany(mappedBy = "build")
 	@JsonIgnore
 	private Set<Package> packages;
 
-	public Release() {
+	public Build() {
 		packages = new HashSet<>();
 	}
 
-	public Release(String name) {
+	public Build(String name) {
 		this();
 		setName(name);
 	}
 
 	public void addPackage(Package aPackage) {
 		packages.add(aPackage);
-		aPackage.setRelease(this);
+		aPackage.setBuild(this);
 	}
 
 	public Long getId() {
@@ -64,14 +62,6 @@ public class Release {
 
 	public String getBusinessKey() {
 		return businessKey;
-	}
-
-	public boolean isCurrent() {
-		return current;
-	}
-
-	public void setCurrent(boolean current) {
-		this.current = current;
 	}
 
 	public Product getProduct() {

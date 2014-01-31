@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.ihtsdo.snomed.release</groupId>
-	<artifactId>international_release_centre.international.spanish_edition.release</artifactId>
-	<version>july_2014</version>
+	<groupId>org.ihtsdo.release.international</groupId>
+	<artifactId>international.spanish_edition.biannual</artifactId>
+	<version>1.0</version>
 
-	<name>Release (Spanish Edition, International, International Release Centre)</name>
+	<name>Biannual (Spanish Edition, International, International Release Centre)</name>
 
 </project>
