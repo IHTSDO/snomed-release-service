@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
+@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds")
 public class BuildController {
 
 	@Autowired
@@ -26,7 +27,7 @@ public class BuildController {
 
 	private static final String[] BUILD_LINKS = {"packages"};
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds")
+	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 											   @PathVariable String productBusinessKey, HttpServletRequest request) {
@@ -35,7 +36,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{buildBusinessKey}")
+	@RequestMapping("/{buildBusinessKey}")
 	@ResponseBody
 	public Map getBuild(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
 						@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, HttpServletRequest request) {

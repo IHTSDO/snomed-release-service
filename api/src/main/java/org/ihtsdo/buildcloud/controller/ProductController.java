@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
+@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products")
 public class ProductController {
 
 	@Autowired
@@ -26,7 +27,7 @@ public class ProductController {
 
 	private static final String[] PRODUCT_LINKS = {"builds"};
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products")
+	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
@@ -34,7 +35,7 @@ public class ProductController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
-	@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}")
+	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
 	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
