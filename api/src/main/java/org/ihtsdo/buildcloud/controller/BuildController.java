@@ -13,10 +13,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds")
+@RequestMapping("/builds")
 public class BuildController {
 
 	@Autowired
@@ -29,19 +28,17 @@ public class BuildController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-											   @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getBuilds(HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Set<Build> builds = buildService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		List<Build> builds = buildService.findAll(authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
-	@RequestMapping("/{buildBusinessKey}")
+	@RequestMapping("/{buildCompositeKey}")
 	@ResponseBody
-	public Map getBuild(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-						@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, HttpServletRequest request) {
+	public Map getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Build build = buildService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedId);
+		Build build = buildService.find(buildCompositeKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(build, request, BUILD_LINKS);
 	}
 

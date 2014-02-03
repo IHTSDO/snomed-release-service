@@ -6,9 +6,7 @@ import java.util.Set;
 
 public interface InputFileService {
 
-	Set<InputFile> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-						   String buildBusinessKey, String packageBusinessKey, String authenticatedId);
+	Set<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId);
 
-	InputFile find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-				   String buildBusinessKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId);
+	InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId);
 }

@@ -4,6 +4,7 @@ import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +22,16 @@ public class InputFileServiceImpl implements InputFileService {
 	private PackageDAO packageDAO;
 
 	@Override
-	public Set<InputFile> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, String packageBusinessKey, String authenticatedId) {
-		Set<InputFile> inputFiles = packageDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId).getInputFiles();
+	public Set<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Set<InputFile> inputFiles = packageDAO.find(buildId, packageBusinessKey, authenticatedId).getInputFiles();
 		Hibernate.initialize(inputFiles);
 		return inputFiles;
 	}
 
 	@Override
-	public InputFile find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
-		return inputFileDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
+	public InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		return inputFileDAO.find(buildId, packageBusinessKey, inputFileBusinessKey, authenticatedId);
 	}
 }

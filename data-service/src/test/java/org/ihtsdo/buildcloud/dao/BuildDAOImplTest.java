@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,20 +9,25 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
-public class PackageDAOImplTest {
+public class BuildDAOImplTest {
 
 	@Autowired
-	private PackageDAO dao;
+	private BuildDAO dao;
 
 	@Test
 	public void testInitialData() {
-		Package aPackage = dao.find(1L, "release", "test");
-		Assert.assertNotNull(aPackage);
-		Assert.assertEquals("Release", aPackage.getName());
-		Assert.assertEquals(1, aPackage.getInputFiles().size());
+		List<Build> builds = dao.findAll("test");
+		Assert.assertNotNull(builds);
+		Assert.assertEquals(2, builds.size());
+
+		Assert.assertNotNull(dao.find(1L, "test"));
+		Assert.assertNotNull(dao.find(2L, "test"));
+		Assert.assertNull(dao.find(3L, "test"));
 	}
 
 }
