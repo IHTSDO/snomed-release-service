@@ -19,9 +19,9 @@ public class PackageDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		Package aPackage = dao.find(1L, "release", "test");
+		Package aPackage = dao.find(1L, "rf2_release", "test");
 		Assert.assertNotNull(aPackage);
-		Assert.assertEquals("Release", aPackage.getName());
+		Assert.assertEquals("RF2 Release", aPackage.getName());
 		Assert.assertEquals(1, aPackage.getInputFiles().size());
 	}
 

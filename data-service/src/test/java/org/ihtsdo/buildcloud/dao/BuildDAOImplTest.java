@@ -23,11 +23,11 @@ public class BuildDAOImplTest {
 	public void testInitialData() {
 		List<Build> builds = dao.findAll("test");
 		Assert.assertNotNull(builds);
-		Assert.assertEquals(2, builds.size());
+		Assert.assertEquals(8, builds.size());
 
 		Assert.assertNotNull(dao.find(1L, "test"));
 		Assert.assertNotNull(dao.find(2L, "test"));
-		Assert.assertNull(dao.find(3L, "test"));
+		Assert.assertNull(dao.find(9L, "test"));
 	}
 
 }
