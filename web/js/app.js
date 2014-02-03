@@ -29,6 +29,7 @@ App.Router.map(function() {
 						this.resource('build-results');
 						this.resource('build-history');
 					});
+					this.resource('pre-execution');
 				});
 			});
 		});
@@ -44,6 +45,7 @@ App.AbstractRoute = Ember.Route.extend({
 
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
+		debug ("Before Model in " + this);
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
 //			this.transitionTo('pre-login');
@@ -121,7 +123,15 @@ App.ProductIndexController = Ember.ObjectController.extend({
 	}.property('selectedBuild')
 })
 
-// Release
+// Build
+App.BuildIndexController = Ember.ObjectController.extend({
+	actions: {
+		initiateBuild: function (selectedBuild) {
+			this.transitionToRoute('pre-execution', selectedBuild);
+		}
+	}
+})
+
 App.BuildRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		var product = this.modelFor('product');
@@ -130,6 +140,18 @@ App.BuildRoute = App.AuthorisedRoute.extend({
 			build.set('parent', product);
 			return build;
 		});
+	}
+})
+
+App.BuildIndexRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('build');
+	}
+})
+
+App.PreExecutionRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('build')
 	}
 })
 
