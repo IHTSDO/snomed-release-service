@@ -28,6 +28,8 @@ public class Build {
 	@OneToMany(mappedBy = "build")
 	@JsonIgnore
 	private Set<Package> packages;
+	
+	private String config;
 
 	public Build() {
 		packages = new HashSet<>();
@@ -83,5 +85,14 @@ public class Build {
 
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+	}
+
+	public String getConfig() {
+		//return config;
+		return "Server side config to go here";
+	}
+
+	public void setConfig(String config) {
+		this.config = config;
 	}
 }
