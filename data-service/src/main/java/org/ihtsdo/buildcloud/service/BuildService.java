@@ -2,12 +2,11 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
 
-import java.util.Set;
+import java.util.List;
 
 public interface BuildService {
 
-	Set<Build> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
+	List<Build> findAll(String authenticatedId);
 
-	Build find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, String authenticatedId);
-
+	Build find(String buildCompositeKey, String authenticatedId);
 }

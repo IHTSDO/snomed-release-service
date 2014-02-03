@@ -15,7 +15,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	private SessionFactory sessionFactory;
 
 	@Override
-	public InputFile find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
+	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select inputFile " +
 				"from ReleaseCentreMembership membership " +
@@ -26,17 +26,11 @@ public class InputFileDAOImpl implements InputFileDAO {
 				"join build.packages package " +
 				"join package.inputFiles inputFile " +
 				"where membership.user.oauthId = :oauthId " +
-				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey " +
-				"and product.businessKey = :productBusinessKey " +
-				"and build.businessKey = :buildBusinessKey " +
+				"and build.id = :buildId " +
 				"and package.businessKey = :packageBusinessKey " +
 				"and inputFile.businessKey = :inputFileBusinessKey ");
 		query.setString("oauthId", authenticatedId);
-		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
-		query.setString("extensionBusinessKey", extensionBusinessKey);
-		query.setString("productBusinessKey", productBusinessKey);
-		query.setString("buildBusinessKey", buildBusinessKey);
+		query.setLong("buildId", buildId);
 		query.setString("packageBusinessKey", packageBusinessKey);
 		query.setString("inputFileBusinessKey", inputFileBusinessKey);
 

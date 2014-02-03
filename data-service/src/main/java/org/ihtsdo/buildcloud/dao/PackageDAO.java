@@ -3,8 +3,5 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Package;
 
 public interface PackageDAO {
-
-	Package find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-				 String buildBusinessKey, String packageBusinessKey, String authenticatedId);
-
+	Package find(Long buildId, String packageBusinessKey, String authenticatedId);
 }

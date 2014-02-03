@@ -7,6 +7,8 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public class BuildDAOImpl implements BuildDAO {
 
@@ -14,8 +16,21 @@ public class BuildDAOImpl implements BuildDAO {
 	private SessionFactory sessionFactory;
 
 	@Override
-	public Build find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey,
-						String buildBusinessKey, String authenticatedId) {
+	public List<Build> findAll(String authenticatedId) {
+		Query query = getCurrentSession().createQuery(
+				"select build " +
+				"from ReleaseCentreMembership membership " +
+				"join membership.releaseCentre releaseCentre " +
+				"join releaseCentre.extensions extension " +
+				"join extension.products product " +
+				"join product.builds build " +
+				"where membership.user.oauthId = :oauthId ");
+		query.setString("oauthId", authenticatedId);
+		return query.list();
+	}
+
+	@Override
+	public Build find(Long id, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select build " +
 				"from ReleaseCentreMembership membership " +
@@ -24,17 +39,10 @@ public class BuildDAOImpl implements BuildDAO {
 				"join extension.products product " +
 				"join product.builds build " +
 				"where membership.user.oauthId = :oauthId " +
-				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey " +
-				"and product.businessKey = :productBusinessKey " +
-				"and build.businessKey = :buildBusinessKey ");
+				"and build.id = :buildId ");
 		query.setString("oauthId", authenticatedId);
-		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
-		query.setString("extensionBusinessKey", extensionBusinessKey);
-		query.setString("productBusinessKey", productBusinessKey);
-		query.setString("buildBusinessKey", buildBusinessKey);
+		query.setLong("buildId", id);
 		return (Build) query.uniqueResult();
-
 	}
 
 	private Session getCurrentSession() {

@@ -13,10 +13,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{buildBusinessKey}/packages")
+@RequestMapping("/builds/{buildCompositeKey}/packages")
 public class PackageController {
 
 	@Autowired
@@ -29,19 +28,17 @@ public class PackageController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getPackages(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-												 @PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Set<Package> packages = packageService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedId);
+		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(packages, request, PACKAGE_LINKS);
 	}
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
-	public Map getPackage(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-						  @PathVariable String productBusinessKey, @PathVariable String buildBusinessKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public Map getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Package aPackage = packageService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId);
+		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(aPackage, request, PACKAGE_LINKS);
 	}
 

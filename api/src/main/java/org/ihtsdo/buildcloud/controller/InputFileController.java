@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds/{buildBusinessKey}/packages/{packageBusinessKey}/input-files")
+@RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}/input-files")
 public class InputFileController {
 
 	@Autowired
@@ -29,21 +29,19 @@ public class InputFileController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getInputFiles(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-												 @PathVariable String productBusinessKey, @PathVariable String buildBusinessKey,
-												 @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getInputFiles(@PathVariable String buildCompositeKey,
+												   @PathVariable String packageBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Set<InputFile> inputFiles = inputFileService.findAll(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, authenticatedId);
+		Set<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(inputFiles, request, INPUT_FILE_LINKS);
 	}
 
 	@RequestMapping("/{inputFileBusinessKey}")
 	@ResponseBody
-	public Map getInputFile(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey,
-							@PathVariable String productBusinessKey, @PathVariable String buildBusinessKey,
-							@PathVariable String packageBusinessKey, @PathVariable String inputFileBusinessKey, HttpServletRequest request) {
+	public Map getInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+							@PathVariable String inputFileBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		InputFile inputFile = inputFileService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
+		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
 	}
 

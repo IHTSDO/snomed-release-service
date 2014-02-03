@@ -18,7 +18,6 @@ public class Build {
 
 	private String name;
 
-	@JsonProperty("id")
 	private String businessKey;
 
 	@ManyToOne
@@ -41,6 +40,11 @@ public class Build {
 	public void addPackage(Package aPackage) {
 		packages.add(aPackage);
 		aPackage.setBuild(this);
+	}
+
+	@JsonProperty("id")
+	public String getCompositeKey() {
+		return id + "_" + businessKey;
 	}
 
 	public Long getId() {
