@@ -18,6 +18,7 @@ public class Build {
 
 	private String name;
 
+	@JsonIgnore
 	private String businessKey;
 
 	@ManyToOne

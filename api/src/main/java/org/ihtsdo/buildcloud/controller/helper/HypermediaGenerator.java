@@ -16,9 +16,16 @@ public class HypermediaGenerator {
 		mapper = new ObjectMapper();
 	}
 
-	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String... entityLinks) {
+	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
+		return  getEntityCollectionHypermedia(entities, request, entityLinks, null);
+	}
+
+	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
 		String url = getUrl(request);
 		String apiRootUrl = getApiRootUrl(url, request);
+		if (instanceRoot != null) {
+			url = apiRootUrl + instanceRoot;
+		}
 		List<Map<String, Object>> entitiesHypermedia = new ArrayList<>();
 		for (Object entity : entities) {
 			entitiesHypermedia.add(getEntityHypermedia(entity, false, url, apiRootUrl, entityLinks));
