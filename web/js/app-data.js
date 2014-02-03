@@ -27,7 +27,8 @@ App.Build = DS.Model.extend({
 		product.packages = $.extend(true, [], App.packages);
 		$.each(product.packages, function(index, aPackage) {
 			aPackage.parent = product;
-		})
+		});
+		this.config = 'Build Config to appear here';
 	}
 });
 
