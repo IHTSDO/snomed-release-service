@@ -21,6 +21,7 @@ App.Product = DS.Model.extend({
 App.Build = DS.Model.extend({
 	parent: DS.belongsTo('product'),
 	name: DS.attr(),
+	config: DS.attr(),
 	didLoad: function() {
 		// Add static mock-up data to product.
 		var product = this;
@@ -28,7 +29,6 @@ App.Build = DS.Model.extend({
 		$.each(product.packages, function(index, aPackage) {
 			aPackage.parent = product;
 		});
-		this.config = 'Build Config to appear here';
 	}
 });
 
