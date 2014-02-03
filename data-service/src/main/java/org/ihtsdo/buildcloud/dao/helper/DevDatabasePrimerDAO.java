@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
+import java.util.Set;
+
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
@@ -12,7 +14,23 @@ public class DevDatabasePrimerDAO {
 
 	@Autowired
 	private SessionFactory sessionFactory;
+	
+	private static String [] productNames = {	"SNOMED CT International Edition",
+												"SNOMED CT Spanish Edition"};		
+	
+	private static String [] buildNames = { "20130731 International Release",
+											"20140131 International Release - Biannual",
+											"20140131 International Release - Nightly",
+											"20140731 International Release - Biannual"};
+	
+	private static String [] packageNames = {	"RF2 Release",
+												"RF1CompatibilityPackage",
+												"RF2toRF1Conversion"};		
+	
+	private static String [] inputFileNames = { "concepts.rf2" };
+	
 
+	
 	public void primeDatabase() {
 		Session session = getSession();
 
@@ -22,35 +40,8 @@ public class DevDatabasePrimerDAO {
 			Extension extension = new Extension("SNOMED CT International Edition");
 			internationalReleaseCentre.addExtension(extension);
 
-			Product product1 = new Product("SNOMED CT International Edition");
-			extension.addProduct(product1);
-			Build build1 = new Build("Biannual");
-			product1.addBuild(build1);
-			Package package1 = new Package("Release");
-			build1.addPackage(package1);
-			InputFile inputFile1 = new InputFile("concepts.rf2");
-			package1.addInputFile(inputFile1);
-
-			Product product2 = new Product("SNOMED CT Spanish Edition");
-			extension.addProduct(product2);
-			Build build2 = new Build("Biannual");
-			product2.addBuild(build2);
-			Package package2 = new Package("Release");
-			build2.addPackage(package2);
-			InputFile inputFile2 = new InputFile("concepts.rf2");
-			package2.addInputFile(inputFile2);
-
-			session.save(internationalReleaseCentre);
-			session.save(extension);
-			session.save(product1);
-			session.save(build1);
-			session.save(package1);
-			session.save(inputFile1);
-
-			session.save(product2);
-			session.save(build2);
-			session.save(package2);
-			session.save(inputFile2);
+			addProductsToExtension(extension);		
+			save(internationalReleaseCentre);
 
 			User testUser = new User("test");
 			ReleaseCentreMembership releaseCentreMembership = new ReleaseCentreMembership(internationalReleaseCentre, testUser);
@@ -59,7 +50,54 @@ public class DevDatabasePrimerDAO {
 			session.save(releaseCentreMembership);
 		}
 	}
+	
+	private void addProductsToExtension (Extension extension) {
+		for (String productName : productNames) {
+			Product product = new Product (productName);
+			extension.addProduct(product);
+			for (String buildName : buildNames){
+				Build build = new Build(buildName);
+				product.addBuild(build);
+				for (String packageName: packageNames) {
+					Package pkg = new Package(packageName);
+					build.addPackage(pkg);
+					if (packageName.equals(packageNames[0])){
+						for (String inputFileName : inputFileNames){
+							InputFile inputFile = new InputFile(inputFileName);
+							pkg.addInputFile(inputFile);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	private void save (ReleaseCentre releaseCentre){
+		//Work down the hierarchy saving objects as we go
+		Session session = getSession();
+		session.save(releaseCentre);
+		Set <Extension> extensions = releaseCentre.getExtensions();
+		for (Extension extension : extensions) {
+			session.save(extension);
+			Set <Product> products = extension.getProducts();
+			for (Product product : products) {
+				session.save(product);
+				Set <Build> builds = product.getBuilds();
+				for (Build build : builds) {
+					session.save(build);
+					Set <Package> packages = build.getPackages();
+					for (Package pkg: packages){  //package is a reserved work
+						session.save(pkg);
+						Set <InputFile> inputFiles = pkg.getInputFiles();
+						for (InputFile inputFile : inputFiles) {
+							session.save(inputFile);
+						}
+					}
+				}
+			}
+		}
 
+	}
 	private Session getSession() {
 		return sessionFactory.getCurrentSession();
 	}
