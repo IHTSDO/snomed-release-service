@@ -37,6 +37,11 @@ public class InputFileDAOImpl implements InputFileDAO {
 		return (InputFile) query.uniqueResult();
 	}
 
+	@Override
+	public void save(InputFile inputFile) {
+		getCurrentSession().save(inputFile);
+	}
+
 	private Session getCurrentSession() {
 		return sessionFactory.getCurrentSession();
 	}
