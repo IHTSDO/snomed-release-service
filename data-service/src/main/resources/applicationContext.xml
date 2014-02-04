@@ -59,4 +59,17 @@
 		<property name="sessionFactory" ref="sessionFactory" />
 	</bean>
 
+	<bean class="com.amazonaws.services.s3.AmazonS3Client">
+		<constructor-arg>
+			<bean class="com.amazonaws.auth.BasicAWSCredentials">
+				<constructor-arg value="***REMOVED***" />
+				<constructor-arg value="***REMOVED***" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean class="java.lang.String" id="S3BucketName">
+		<constructor-arg value="ire.maven.release.ihtsdo" />
+	</bean>
+
 </beans>
