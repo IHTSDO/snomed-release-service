@@ -21,7 +21,7 @@ public class BuildGeneratorTest {
 	@Before
 	public void setup() throws IOException {
 		buildGenerator = new BuildGenerator();
-		expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-pom.txt"), Charset.defaultCharset());
+		expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 		releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Biannual", "RF2");
 	}
 
