@@ -29,6 +29,7 @@ App.Build = DS.Model.extend({
 		$.each(product.packages, function(index, aPackage) {
 			aPackage.parent = product;
 		});
+		this.configStr = JSON.stringify(this.get('config'));
 	}
 });
 

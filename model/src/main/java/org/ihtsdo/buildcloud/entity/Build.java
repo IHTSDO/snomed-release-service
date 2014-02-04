@@ -5,7 +5,10 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -29,8 +32,6 @@ public class Build {
 	@JsonIgnore
 	private Set<Package> packages;
 	
-	private String config;
-
 	public Build() {
 		packages = new HashSet<>();
 	}
@@ -87,12 +88,9 @@ public class Build {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 
-	public String getConfig() {
-		//return config;
-		return "Server side config to go here";
-	}
-
-	public void setConfig(String config) {
-		this.config = config;
+	public Map<String, Object> getConfig() {
+		Map<String, Object> config = new HashMap<String, Object>();
+		config.put("Hello", "World");
+		return config;
 	}
 }
