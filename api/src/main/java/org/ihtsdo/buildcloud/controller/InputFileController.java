@@ -8,11 +8,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +31,7 @@ public class InputFileController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] INPUT_FILE_LINKS = {};
+	public static final String[] INPUT_FILE_LINKS = {"file"};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 
@@ -59,10 +63,29 @@ public class InputFileController {
 		long size = file.getSize();
 		LOGGER.info("uploadInputFile. inputFileBusinessKey: {}, size: {}", inputFileBusinessKey, size);
 
+
 		InputFile inputFile = inputFileService.create(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, file.getInputStream(),
 				size, authenticatedId);
 
 		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
+	}
+
+	@RequestMapping(value = "/{inputFileBusinessKey}/file", produces="application/zip")
+	public void getInputFileContents(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+													@PathVariable String inputFileBusinessKey, HttpServletResponse response) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, authenticatedId);
+		if (inputFile != null) {
+			InputStream fileStream = inputFileService.getFileStream(inputFile);
+			if (fileStream != null) {
+				ServletOutputStream outputStream = response.getOutputStream();
+				FileCopyUtils.copy(fileStream, outputStream);
+				outputStream.flush();
+			}
+		}
+
+		// File not found
+		response.sendError(404);
 	}
 
 }
