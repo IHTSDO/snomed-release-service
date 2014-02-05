@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -88,9 +89,15 @@ public class Build {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 
+	@JsonIgnore
 	public Map<String, Object> getConfig() {
 		Map<String, Object> config = new HashMap<String, Object>();
-		config.put("Hello", "World");
+		ArrayList<Map<String,Object>> packagesConfig = new ArrayList<Map<String,Object>>();
+
+		for (Package pkg : getPackages()) {
+			packagesConfig.add(pkg.getConfig());
+		}
+		config.put("Packages", packagesConfig);
 		return config;
 	}
 }
