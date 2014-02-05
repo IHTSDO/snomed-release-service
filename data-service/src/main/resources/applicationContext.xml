@@ -59,6 +59,8 @@
 		<property name="sessionFactory" ref="sessionFactory" />
 	</bean>
 
+	<bean class="org.ihtsdo.buildcloud.service.maven.MavenGenerator"/>
+
 	<bean class="com.amazonaws.services.s3.AmazonS3Client">
 		<constructor-arg>
 			<bean class="com.amazonaws.auth.BasicAWSCredentials">

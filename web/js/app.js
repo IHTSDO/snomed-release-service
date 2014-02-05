@@ -7,9 +7,7 @@ App = Ember.Application.create({
 
 			//Initialise popovers for all elements that include the relevant attribute
 			//Needs to be repeated each time the DOM changes
-			Ember.run.scheduleOnce('afterRender', this, function() {
-				$("[data-toggle='popover']").popover();
-			});
+			Ember.run.scheduleOnce('afterRender', this, afterRender);
 		}.observes('currentPath')
 	})
 });
@@ -182,6 +180,15 @@ function signinCallback(authResult) {
 		debug('Sign-in state: ' + authResult['error']);
 		sessionStorage.authorisationToken = "Athentication Failed in Client";
 	}
+}
+
+function afterRender() {
+	$("[data-toggle='popover']").popover();
+
+	$('.panel-build-input form').submit(function() {
+
+	})
+
 }
 
 function debug(msg) {
