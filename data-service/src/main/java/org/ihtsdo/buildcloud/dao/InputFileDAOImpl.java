@@ -39,7 +39,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void save(InputFile inputFile) {
-		getCurrentSession().save(inputFile);
+		getCurrentSession().saveOrUpdate(inputFile);
 	}
 
 	private Session getCurrentSession() {

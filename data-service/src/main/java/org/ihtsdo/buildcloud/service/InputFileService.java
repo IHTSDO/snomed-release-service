@@ -14,4 +14,6 @@ public interface InputFileService {
 
 	InputFile create(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey,
 					 InputStream fileStream, long fileSize, String authenticatedId) throws IOException;
+
+	InputStream getFileStream(InputFile inputFile) throws IOException;
 }
