@@ -24,7 +24,7 @@ public class BuildController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] BUILD_LINKS = {"packages"};
+	static final String[] BUILD_LINKS = {"packages", "config"};
 
 	@RequestMapping
 	@ResponseBody
@@ -39,7 +39,16 @@ public class BuildController {
 	public Map getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Build build = buildService.find(buildCompositeKey, authenticatedId);
+
 		return hypermediaGenerator.getEntityHypermedia(build, request, BUILD_LINKS);
 	}
+	
+	@RequestMapping("/{buildCompositeKey}/config")
+	@ResponseBody
+	public Map getBuildConfig(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+		String authenticatedId = SecurityHelper.getSubject();
+		Map config = buildService.getConfig(buildCompositeKey, authenticatedId);
+		return config;
+	}	
 
 }

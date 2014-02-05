@@ -25,8 +25,6 @@ public class ProductBuildController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] BUILD_LINKS = {};
-
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCentreBusinessKey,
@@ -34,7 +32,7 @@ public class ProductBuildController {
 											   HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Set<Build> builds = buildService.findForProduct(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
-		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS, "/builds");
+		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
 	}
 
 }

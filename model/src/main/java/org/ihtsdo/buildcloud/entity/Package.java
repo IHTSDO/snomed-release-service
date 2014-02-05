@@ -5,7 +5,10 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -79,4 +82,12 @@ public class Package {
 	public void setInputFiles(Set<InputFile> inputFiles) {
 		this.inputFiles = inputFiles;
 	}
+	
+	@JsonIgnore
+	public Map<String, Object> getConfig() {
+		Map<String, Object> config = new HashMap<String, Object>();
+		config.put("Name", name);
+		return config;
+	}
+
 }

@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -31,6 +33,13 @@ public class BuildServiceImpl implements BuildService {
 	public Build find(String buildCompositeKey, String authenticatedId) {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		return buildDAO.find(id, authenticatedId);
+	}
+	
+	@Override
+	public 	Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
+		Long id = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build =  buildDAO.find(id, authenticatedId);
+		return build.getConfig();
 	}
 
 	@Override
