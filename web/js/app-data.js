@@ -21,16 +21,22 @@ App.Product = DS.Model.extend({
 App.Build = DS.Model.extend({
 	parent: DS.belongsTo('product'),
 	name: DS.attr(),
-	config: DS.attr(),
-	didLoad: function() {
-		// Add static mock-up data to product.
-		var product = this;
-		product.packages = $.extend(true, [], App.packages);
-		$.each(product.packages, function(index, aPackage) {
-			aPackage.parent = product;
-		});
-		this.configStr = JSON.stringify(this.get('config'));
-	}
+	config: DS.belongsTo('buildConfig', { async: true }),
+	packages: DS.hasMany('package', { async: true })
+});
+App.BuildConfig = DS.Model.extend({
+	parent: DS.belongsTo('build'),	
+	configStr: DS.attr()
+});
+App.Package = DS.Model.extend({
+	parent: DS.belongsTo('build'),
+	name: DS.attr(),
+	status: DS.attr(),
+	inputFiles: DS.hasMany('inputFile',{async: true})
+});
+App.InputFile = DS.Model.extend({
+	parent: DS.belongsTo('package'),
+	name: DS.attr()
 });
 
 // REST interface adapter. Adds JSON envelope.
@@ -38,6 +44,13 @@ App.ApplicationSerializer = DS.RESTSerializer.extend({
 	normalizePayload: function(type, payload) {
 
 		App.ResolveHypermediaLinks(payload);
+		
+		if (type == 'App.BuildConfig'){
+			var uniqueID = (Math.random()+ "").substring(2) + new Date().getTime();
+			payload['id'] = uniqueID;
+			var payloadJSON = JSON.stringify(payload,null,"\t");
+			payload['configStr'] = payloadJSON;
+		}		
 
 		var o = {};
 		o[type.typeKey + 's'] = payload;
@@ -67,48 +80,3 @@ App.ResolveHypermediaLinks = function(object) {
 		}
 	}
 }
-
-// Static Data
-App.packages = [
-	{
-		id: 'release',
-		name: 'Release',
-		status: 'status_ok',
-		inputFiles: [
-			{
-				source: 'File',
-				operation: 'Fill-Placeholders',
-				name: 'readme.txt',
-				directory: '/'
-			},
-			{
-				source: 'File',
-				operation: '',
-				name: 'Icd10MapTechnicalGuideExemplars.xlsx',
-				directory: '/Documentation/'
-			},
-			{
-				source: 'File',
-				operation: '',
-				name: 'SnomedCTReleaseNotes.pdf',
-				directory: '/Documentation/'
-			},
-			{
-				source: 'Maven org.ihtsdo:snomedct-rf2:2015-06-01:zip',
-				operation: 'Extract',
-				name: '',
-				directory: '/RF2Release/'
-			}
-		]
-	},
-	{
-		id: 'rf1compatibilitypackage',
-		name: 'RF1CompatibilityPackage',
-		status: 'status_ok'
-	},
-	{
-		id: 'rf2torf1conversion',
-		name: 'RF2toRF1Conversion',
-		status: 'status_warning'
-	}
-];

@@ -149,7 +149,7 @@ App.BuildIndexRoute = App.AuthorisedRoute.extend({
 
 App.PreExecutionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		return this.modelFor('build')
+		return this.modelFor('build');
 	}
 })
 
