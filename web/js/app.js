@@ -168,9 +168,21 @@ App.PackageRoute = App.AuthorisedRoute.extend({
 App.BuildInputRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('package');
+	},
+	setupController: function(controller, model) {
+		controller.set('model', model);
+		controller.set('inputfiles', model.get('inputfiles'));
 	}
 })
 
+App.BuildInputController = Ember.ObjectController.extend({
+	actions: {
+		reload: function() {
+			var inputfiles = this.get('inputfiles');
+			inputfiles.reloadLinks();
+		}
+	}
+})
 
 function signinCallback(authResult) {
 	if (authResult['status']['signed_in']) {
@@ -189,12 +201,52 @@ function signinCallback(authResult) {
 
 function afterRender() {
 	$("[data-toggle='popover']").popover();
-
-	$('.panel-build-input form').submit(function() {
-
-	})
-
+	initBuildInputFileUploadForm();
 }
+
+function initBuildInputFileUploadForm() {
+	var $button = $('.panel-build-input form .btn');
+	$('.panel-build-input form').submit(function () {
+		var $form = $(this);
+		if ($form.valid()) {
+			var actionPath = $('.actionpath', $form).text()
+			var shortName = $('input[name="shortName"]', $form).val();
+			var action = actionPath + shortName;
+			console.log('Upload url = "' + action + '"');
+			$form.attr('action', action);
+			$button.val('Uploading...');
+			$button.prop('disabled', true);
+			return true;
+		} else {
+			return false;
+		}
+	});
+	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
+		$button.val('Upload');
+		$button.prop('disabled', false);
+		$('.panel-build-input form')[0].reset();
+		$('.panel-build-input .reloadmodel').click();
+	});
+}
+
+// Set JQuery Validate defaults to match Bootstrap layout.
+$.validator.setDefaults({
+	highlight: function(element) {
+		$(element).closest('.form-group').addClass('has-error');
+	},
+	unhighlight: function(element) {
+		$(element).closest('.form-group').removeClass('has-error');
+	},
+	errorElement: 'span',
+	errorClass: 'help-block',
+	errorPlacement: function(error, element) {
+		if(element.parent('.input-group').length) {
+			error.insertAfter(element.parent());
+		} else {
+			error.insertAfter(element);
+		}
+	}
+});
 
 function debug(msg) {
 	if (window.console) console.log(msg);
