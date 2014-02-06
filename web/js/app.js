@@ -156,7 +156,12 @@ App.PreExecutionRoute = App.AuthorisedRoute.extend({
 // Package
 App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		return this.modelFor('build').get('packages').findBy('id', params.package_id)
+		var build = this.modelFor('build');
+		return build.get('packages').then(function(packages) {
+			var thePackage = packages.findBy('id', params.package_id);
+			thePackage.set('parent', build);
+			return thePackage;
+		});
 	}
 })
 
