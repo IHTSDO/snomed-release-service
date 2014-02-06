@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Controller
-@RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}/input-files")
+@RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}/inputfiles")
 public class InputFileController {
 
 	@Autowired
