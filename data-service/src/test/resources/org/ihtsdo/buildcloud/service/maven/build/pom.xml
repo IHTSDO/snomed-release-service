@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140131_international_release__biannual</groupId>
+	<artifactId>20140131_international_release__biannual</artifactId>
+	<version>1.0</version>
+	<packaging>pom</packaging>
+
+	<name>Biannual (Spanish Edition, International, International Release Centre)</name>
+
+	<modules>
+		<module>packageA</module>
+	</modules>
+
+	<repositories>
+		<repository>
+			<id>ihtsdo-release-repository</id>
+			<url>http://ire.maven.release.ihtsdo.s3.amazonaws.com/</url>
+		</repository>
+	</repositories>
+
+</project>
