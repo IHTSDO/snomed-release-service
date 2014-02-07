@@ -31,12 +31,20 @@
 					<execution>
 						<phase>package</phase>
 						<goals>
-							<goal>assembly</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
 	</build>
+
+	<servers>
+		<server>
+			<id>ihtsdo.release</id>
+			<username>***REMOVED***</username>
+			<password>***REMOVED***</password>
+		</server>
+	</servers>
 
 </project>
