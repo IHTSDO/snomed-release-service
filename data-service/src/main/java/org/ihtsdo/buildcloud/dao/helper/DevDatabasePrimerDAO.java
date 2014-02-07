@@ -4,44 +4,25 @@ import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Set;
 
 @Repository
-public class DevDatabasePrimerDAO {
+public class DevDatabasePrimerDAO extends TestEntityGenerator{
 
 	@Autowired
 	private SessionFactory sessionFactory;
 	
-	private static String [] productNames = {	"SNOMED CT International Edition",
-												"SNOMED CT Spanish Edition"};		
-	
-	private static String [] buildNames = { "20130731 International Release",
-											"20140131 International Release - Biannual",
-											"20140131 International Release - Nightly",
-											"20140731 International Release - Biannual"};
-	
-	private static String [] packageNames = {	"RF2 Release",
-												"RF1CompatibilityPackage",
-												"RF2toRF1Conversion"};		
-	
-	private static String [] inputFileNames = { "concepts.rf2" };
-	
 
-	
 	public void primeDatabase() {
 		Session session = getSession();
 
 		Long count = (Long) session.createQuery("select count(*) from ReleaseCentre").list().iterator().next();
 		if (count == 0) {
-			ReleaseCentre internationalReleaseCentre = new ReleaseCentre("International");
-			Extension extension = new Extension("SNOMED CT International Edition");
-			internationalReleaseCentre.addExtension(extension);
-
-			addProductsToExtension(extension);		
+			ReleaseCentre internationalReleaseCentre = createTestReleaseCentre();
 			save(internationalReleaseCentre);
 
 			User testUser = new User("test");
@@ -52,27 +33,8 @@ public class DevDatabasePrimerDAO {
 		}
 	}
 	
-	private void addProductsToExtension (Extension extension) {
-		for (String productName : productNames) {
-			Product product = new Product (productName);
-			extension.addProduct(product);
-			for (String buildName : buildNames){
-				Build build = new Build(buildName);
-				product.addBuild(build);
-				for (String packageName: packageNames) {
-					Package pkg = new Package(packageName);
-					build.addPackage(pkg);
-					if (packageName.equals(packageNames[0])){
-						for (String inputFileName : inputFileNames){
-							InputFile inputFile = new InputFile(inputFileName);
-							pkg.addInputFile(inputFile);
-						}
-					}
-				}
-			}
-		}
-	}
 	
+
 	private void save (ReleaseCentre releaseCentre){
 		//Work down the hierarchy saving objects as we go
 		Session session = getSession();
