@@ -14,5 +14,5 @@ public interface BuildService {
 	
 	Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId);
 
-	Set<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
+	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 }

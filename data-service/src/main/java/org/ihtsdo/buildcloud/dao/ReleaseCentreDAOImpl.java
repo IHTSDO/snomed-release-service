@@ -20,7 +20,8 @@ public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCentre " +
 				"from ReleaseCentreMembership m " +
-				"where m.user.oauthId = :oauthId");
+				"where m.user.oauthId = :oauthId " +
+				"order by m.releaseCentre.id ");
 		query.setString("oauthId", authenticatedId);
 		return query.list();
 	}
@@ -31,7 +32,8 @@ public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
 				"select releaseCentre " +
 				"from ReleaseCentreMembership m " +
 				"where m.user.oauthId = :oauthId " +
-				"and m.releaseCentre.businessKey = :businessKey");
+				"and m.releaseCentre.businessKey = :businessKey " +
+				"order by m.releaseCentre.id ");
 		query.setString("oauthId", authenticatedId);
 		query.setString("businessKey", businessKey);
 		return (ReleaseCentre) query.uniqueResult();

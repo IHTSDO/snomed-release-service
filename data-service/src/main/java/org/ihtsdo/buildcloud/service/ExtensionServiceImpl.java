@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.util.List;
 
 @Service
 @Transactional
@@ -21,8 +21,8 @@ public class ExtensionServiceImpl implements ExtensionService {
 	private ReleaseCentreDAO releaseCentreDAO;
 
 	@Override
-	public Set<Extension> findAll(String releaseCentreBusinessKey, String oauthId) {
-		Set<Extension> extensions = releaseCentreDAO.find(releaseCentreBusinessKey, oauthId).getExtensions();
+	public List<Extension> findAll(String releaseCentreBusinessKey, String oauthId) {
+		List<Extension> extensions = releaseCentreDAO.find(releaseCentreBusinessKey, oauthId).getExtensions();
 		Hibernate.initialize(extensions);
 		return extensions;
 	}
