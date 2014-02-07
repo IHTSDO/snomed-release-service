@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.util.List;
 
 @Service
 @Transactional
@@ -21,8 +21,8 @@ public class ProductServiceImpl implements ProductService {
 	private ExtensionDAO extensionDAO;
 
 	@Override
-	public Set<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) {
-		Set<Product> products = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, oauthId).getProducts();
+	public List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) {
+		List<Product> products = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, oauthId).getProducts();
 		Hibernate.initialize(products);
 		return products;
 	}

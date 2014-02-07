@@ -1,13 +1,14 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
-import java.util.Set;
-
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Set;
 
 @Repository
 public class DevDatabasePrimerDAO {
@@ -76,19 +77,19 @@ public class DevDatabasePrimerDAO {
 		//Work down the hierarchy saving objects as we go
 		Session session = getSession();
 		session.save(releaseCentre);
-		Set <Extension> extensions = releaseCentre.getExtensions();
+		List<Extension> extensions = releaseCentre.getExtensions();
 		for (Extension extension : extensions) {
 			session.save(extension);
-			Set <Product> products = extension.getProducts();
+			List <Product> products = extension.getProducts();
 			for (Product product : products) {
 				session.save(product);
-				Set <Build> builds = product.getBuilds();
+				List <Build> builds = product.getBuilds();
 				for (Build build : builds) {
 					session.save(build);
-					Set <Package> packages = build.getPackages();
+					List <Package> packages = build.getPackages();
 					for (Package pkg: packages){  //package is a reserved work
 						session.save(pkg);
-						Set <InputFile> inputFiles = pkg.getInputFiles();
+						List <InputFile> inputFiles = pkg.getInputFiles();
 						for (InputFile inputFile : inputFiles) {
 							session.save(inputFile);
 						}
@@ -96,8 +97,8 @@ public class DevDatabasePrimerDAO {
 				}
 			}
 		}
-
 	}
+
 	private Session getSession() {
 		return sessionFactory.getCurrentSession();
 	}

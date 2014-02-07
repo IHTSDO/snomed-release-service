@@ -4,7 +4,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 public class User {
@@ -16,7 +16,7 @@ public class User {
 	private String oauthId;
 
 	@OneToMany(mappedBy = "user")
-	private Set<ReleaseCentreMembership> releaseCentreMemberships;
+	private List<ReleaseCentreMembership> releaseCentreMemberships;
 
 	public User() {
 	}
@@ -42,11 +42,11 @@ public class User {
 		this.oauthId = oauthId;
 	}
 
-	public Set<ReleaseCentreMembership> getReleaseCentreMemberships() {
+	public List<ReleaseCentreMembership> getReleaseCentreMemberships() {
 		return releaseCentreMemberships;
 	}
 
-	public void setReleaseCentreMemberships(Set<ReleaseCentreMembership> releaseCentreMemberships) {
+	public void setReleaseCentreMemberships(List<ReleaseCentreMembership> releaseCentreMemberships) {
 		this.releaseCentreMemberships = releaseCentreMemberships;
 	}
 
