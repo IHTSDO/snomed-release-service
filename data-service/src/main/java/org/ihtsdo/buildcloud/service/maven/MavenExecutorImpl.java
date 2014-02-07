@@ -28,7 +28,7 @@ public class MavenExecutorImpl implements MavenExecutor {
 		downloadBuildFiles(buildBusinessKey, triggerDateString, workingDir);
 
 		// Run maven
-		String output = exec("mvn clean package", workingDir);
+		String output = exec("mvn clean deploy -s settings.xml", workingDir);
 		return output;
 	}
 
@@ -58,8 +58,8 @@ public class MavenExecutorImpl implements MavenExecutor {
 	// All hardcoded until we have pom generation done.
 	private void downloadBuildFiles(String buildBusinessKey, String triggerDateString, Path workingDir) throws IOException {
 		workingDir.resolve("packageA").toFile().mkdir();
-		ClassPathResource classPathResource = new ClassPathResource("/example-build/pom.xml");
-		Files.copy(classPathResource.getInputStream(), workingDir.resolve("pom.xml"));
+		Files.copy(new ClassPathResource("/settings.xml").getInputStream(), workingDir.resolve("settings.xml"));
+		Files.copy(new ClassPathResource("/example-build/pom.xml").getInputStream(), workingDir.resolve("pom.xml"));
 		Files.copy(new ClassPathResource("/example-build/packageA/pom.xml").getInputStream(), workingDir.resolve("packageA/pom.xml"));
 		Files.copy(new ClassPathResource("/example-build/packageA/assembly.xml").getInputStream(), workingDir.resolve("packageA/assembly.xml"));
 	}
