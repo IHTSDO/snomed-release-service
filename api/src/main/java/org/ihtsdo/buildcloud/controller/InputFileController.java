@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}/inputfiles")
@@ -40,7 +39,7 @@ public class InputFileController {
 	public List<Map<String, Object>> getInputFiles(@PathVariable String buildCompositeKey,
 												   @PathVariable String packageBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Set<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedId);
+		List<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(inputFiles, request, INPUT_FILE_LINKS);
 	}
 

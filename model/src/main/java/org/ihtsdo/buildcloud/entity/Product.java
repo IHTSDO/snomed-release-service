@@ -5,8 +5,8 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Product {
@@ -27,10 +27,10 @@ public class Product {
 
 	@OneToMany(mappedBy = "product")
 	@JsonIgnore
-	private Set<Build> builds;
+	private List<Build> builds;
 
 	public Product() {
-		builds = new HashSet<>();
+		builds = new ArrayList<>();
 	}
 
 	public Product(String name) {
@@ -72,7 +72,7 @@ public class Product {
 		this.extension = extension;
 	}
 
-	public Set<Build> getBuilds() {
+	public List<Build> getBuilds() {
 		return builds;
 	}
 }
