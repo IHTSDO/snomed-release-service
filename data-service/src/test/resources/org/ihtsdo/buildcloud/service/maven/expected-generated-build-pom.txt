@@ -9,9 +9,9 @@
 	<name>20140731 International Release - Biannual (SNOMED CT International Edition, SNOMED CT International Edition, International Release Centre)</name>
 
 	<modules>
-		<module>rf2torf1conversion</module>
-		<module>rf1compatibilitypackage</module>
 		<module>rf2_release</module>
+		<module>rf1compatibilitypackage</module>
+		<module>rf2torf1conversion</module>
 	</modules>
 
 	<repositories>
