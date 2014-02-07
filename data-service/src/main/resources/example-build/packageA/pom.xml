@@ -39,12 +39,4 @@
 		</plugins>
 	</build>
 
-	<servers>
-		<server>
-			<id>ihtsdo.release</id>
-			<username>***REMOVED***</username>
-			<password>***REMOVED***</password>
-		</server>
-	</servers>
-
 </project>
