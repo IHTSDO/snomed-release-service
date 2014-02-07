@@ -153,6 +153,18 @@ App.PreExecutionRoute = App.AuthorisedRoute.extend({
 	}
 })
 
+App.PreExecutionController = Ember.ObjectController.extend({
+	actions: {
+		runBuild: function (build) {
+			var url = 'api/v1/builds/' + build.id + '/run'
+			$.ajax({
+				url: url,
+				type: 'POST'
+			})
+		}
+	}
+});
+
 // Package
 App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {

@@ -5,10 +5,14 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +25,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private ProductDAO productDAO;
+
+	@Autowired
+	private MavenExecutor mavenExecutor;
 
 	@Override
 	public List<Build> findAll(String authenticatedId) {
@@ -45,6 +52,16 @@ public class BuildServiceImpl implements BuildService {
 		List<Build> builds = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
+	}
+
+	@Override
+	public String run(Build build) throws IOException {
+		Date triggerDate = new Date();
+
+		// Call generate poms
+		ClassPathResource buildFilesDirectory = new ClassPathResource("/example-build/");
+
+		return mavenExecutor.exec(build, buildFilesDirectory, triggerDate);
 	}
 
 }
