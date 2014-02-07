@@ -15,7 +15,7 @@
 	<repositories>
 		<repository>
 			<id>ihtsdo-release-repository</id>
-			<url>http://ire.maven.release.ihtsdo.s3.amazonaws.com/</url>
+			<url>http://ire.maven.release.ihtsdo.s3.amazonaws.com</url>
 		</repository>
 	</repositories>
 
@@ -29,6 +29,20 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<extensions>
+			<extension>
+				<groupId>org.kuali.maven.wagons</groupId>
+				<artifactId>maven-s3-wagon</artifactId>
+				<version>1.2.1</version>
+			</extension>
+		</extensions>
 	</build>
+
+	<distributionManagement>
+		<repository>
+			<id>ihtsdo.release</id>
+			<url>s3://ire.maven.release.ihtsdo</url>
+		</repository>
+	</distributionManagement>
 
 </project>
