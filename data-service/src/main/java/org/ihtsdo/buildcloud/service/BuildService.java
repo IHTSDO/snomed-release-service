@@ -16,6 +16,5 @@ public interface BuildService {
 
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
-	String run(Build build) throws IOException;
-
+	String run(String buildCompositeKey, String authenticatedId) throws IOException;
 }

@@ -55,11 +55,14 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public String run(Build build) throws IOException {
+	public String run(String buildCompositeKey, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
 
 		// Call generate poms
 		ClassPathResource buildFilesDirectory = new ClassPathResource("/example-build/");
+		Long id = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(id, authenticatedId);
+		Hibernate.initialize(build.getPackages());
 
 		return mavenExecutor.exec(build, buildFilesDirectory, triggerDate);
 	}
