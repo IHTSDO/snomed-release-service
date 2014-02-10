@@ -62,10 +62,9 @@ public class BuildController {
 	@ResponseBody
 	public Map runBuild(@PathVariable String buildCompositeKey) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Build build = buildService.find(buildCompositeKey, authenticatedId);
 		Map<String, String> results = new HashMap<>();
 		try {
-			String output = buildService.run(build);
+			String output = buildService.run(buildCompositeKey, authenticatedId);
 			results.put("output", output);
 		} catch (IOException e) {
 			LOGGER.error("Exception thrown during build.", e);
