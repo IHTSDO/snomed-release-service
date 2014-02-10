@@ -6,11 +6,12 @@ import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
+import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +28,9 @@ public class BuildServiceImpl implements BuildService {
 	private ProductDAO productDAO;
 
 	@Autowired
+	private MavenGenerator mavenGenerator;
+
+	@Autowired
 	private MavenExecutor mavenExecutor;
 
 	@Override
@@ -41,7 +45,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 	
 	@Override
-	public 	Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
+	public Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build =  buildDAO.find(id, authenticatedId);
 		return build.getConfig();
@@ -58,13 +62,13 @@ public class BuildServiceImpl implements BuildService {
 	public String run(String buildCompositeKey, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
 
-		// Call generate poms
-		ClassPathResource buildFilesDirectory = new ClassPathResource("/example-build/");
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build = buildDAO.find(id, authenticatedId);
 		Hibernate.initialize(build.getPackages());
 
-		return mavenExecutor.exec(build, buildFilesDirectory, triggerDate);
+		// Call generate poms
+		File buildSourceDirectory = mavenGenerator.generateBuildFiles(build);
+		return mavenExecutor.exec(build, buildSourceDirectory, triggerDate);
 	}
 
 }
