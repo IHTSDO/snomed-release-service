@@ -29,10 +29,10 @@ public class MavenGeneratorTest {
 		Build build = new TestEntityFactory().createBuild();
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
-		File parentPom = mavenGenerator.generateBuildPoms(build);
-		Assert.assertNotNull(parentPom);
+		File buildDirectory = mavenGenerator.generateBuildFiles(build);
+		Assert.assertNotNull(buildDirectory);
 		
-		String generatedPom = StreamUtils.copyToString(new FileInputStream(parentPom),Charset.defaultCharset()).replace("\r", "");
+		String generatedPom = StreamUtils.copyToString(new FileInputStream(new File(buildDirectory, "pom.xml")), Charset.defaultCharset()).replace("\r", "");
 		Assert.assertEquals(expectedPom, generatedPom);		
 	}
 
@@ -42,7 +42,7 @@ public class MavenGeneratorTest {
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-project-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
 		StringWriter writer = new StringWriter();
-		mavenGenerator.generateBuildPoms(writer, releasePackage.getBuild());
+		mavenGenerator.generateBuildFiles(writer, releasePackage.getBuild());
 		String actualPom = writer.toString();
 
 		Assert.assertEquals(expectedPom, actualPom);

@@ -2,20 +2,12 @@ package org.ihtsdo.buildcloud.service.maven;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
-
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.util.StreamUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Files;
 
 public class MavenGenerator {
@@ -40,28 +32,24 @@ public class MavenGenerator {
 		artifactPomMustache.execute(writer, artifact).flush();
 	}
 
-	public void generateBuildPoms(Writer writer, Build build) throws IOException {
-		buildPomMustache.execute(writer, build).flush();
-	}
-	
 	/*
 	 * @return the directory in which the parent pom has been generated
 	 */
-	public File generateBuildPoms(Build build) throws IOException {
+	public File generateBuildFiles(Build build) throws IOException {
 		//Create a randomly named temp directory to hold our parent build pom 
-		File tempDir = new File(System.getProperty("java.io.tmpdir"));
-		String buildDir	= Files.createTempDirectory(tempDir.toPath(),"srs_").toFile().getPath();
-		File parentPom = new File(buildDir + File.separator + "pom.xml");
+		File buildDir = Files.createTempDirectory("srs_").toFile();
+		File parentPom = new File(buildDir, "pom.xml");
 		
 		//Write the pom to it's newly minted location, filling in the build-pom.mustache template
 		FileWriter fw = new FileWriter(parentPom);
 		buildPomMustache.execute(fw, build).flush();
 		
 		//Now work through the child packages creating directory and poms for each one.
+		String buildDirPath = buildDir.getPath();
 		for (Package pkg : build.getPackages()) {
-			generatePackagePom(buildDir, pkg);
+			generatePackagePom(buildDirPath, pkg);
 		}
-		return parentPom;
+		return buildDir;
 	}
 	
 	private void generatePackagePom(String buildDir, Package pkg)  throws IOException {

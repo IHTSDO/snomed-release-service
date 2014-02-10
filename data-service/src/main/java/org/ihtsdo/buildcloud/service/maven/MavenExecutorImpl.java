@@ -6,36 +6,31 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MavenExecutorImpl implements MavenExecutor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MavenExecutorImpl.class);
 
-	private static final String BUILD_TRIGGER_DATE_FORMAT = "yyyy_MM_dd_HHmmss";
-
 	@Override
-	public String exec(Build build, ClassPathResource buildFilesDirectory, Date triggerDate) throws IOException {
-		String buildBusinessKey = build.getBusinessKey();
-		String triggerDateString = new SimpleDateFormat(BUILD_TRIGGER_DATE_FORMAT).format(triggerDate);
-		Path workingDir = Files.createTempDirectory(triggerDateString + "-" + buildBusinessKey);
+	public String exec(Build build, File buildFilesDirectory, Date triggerDate) throws IOException {
 
-		downloadBuildFiles(buildBusinessKey, triggerDateString, workingDir);
+		addSettingsFile(buildFilesDirectory.toPath());
 
 		// Run maven
-		String output = exec("mvn clean deploy -s settings.xml", workingDir);
+		String output = exec("mvn clean deploy -s settings.xml", buildFilesDirectory);
 		return output;
 	}
 
-	private String exec(String command, Path workingDir) throws IOException {
+	private String exec(String command, File workingDir) throws IOException {
 		LOGGER.info("Exec: '{}', in {}", command, workingDir);
 		Runtime runtime = Runtime.getRuntime();
-		Process process = runtime.exec(command, null, workingDir.toFile());
+		Process process = runtime.exec(command, null, workingDir);
 
 		String out = FileCopyUtils.copyToString(new InputStreamReader(process.getInputStream()));
 		if (out != null) {
@@ -56,12 +51,8 @@ public class MavenExecutorImpl implements MavenExecutor {
 	}
 
 	// All hardcoded until we have pom generation done.
-	private void downloadBuildFiles(String buildBusinessKey, String triggerDateString, Path workingDir) throws IOException {
-		workingDir.resolve("packageA").toFile().mkdir();
+	private void addSettingsFile(Path workingDir) throws IOException {
 		Files.copy(new ClassPathResource("/settings.xml").getInputStream(), workingDir.resolve("settings.xml"));
-		Files.copy(new ClassPathResource("/example-build/pom.xml").getInputStream(), workingDir.resolve("pom.xml"));
-		Files.copy(new ClassPathResource("/example-build/packageA/pom.xml").getInputStream(), workingDir.resolve("packageA/pom.xml"));
-		Files.copy(new ClassPathResource("/example-build/packageA/assembly.xml").getInputStream(), workingDir.resolve("packageA/assembly.xml"));
 	}
 
 }
