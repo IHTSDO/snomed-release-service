@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service.maven;
 
-import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
@@ -9,8 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.StreamUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -23,30 +20,18 @@ public class MavenGeneratorTest {
 	public void setup() {
 		mavenGenerator = new MavenGenerator();
 	}
-	
+
 	@Test
-	public void testGenerateBuildPoms() throws IOException {
-		Build build = new TestEntityFactory().createBuild();
-		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
-
-		File buildDirectory = mavenGenerator.generateBuildFiles(build);
-		Assert.assertNotNull(buildDirectory);
-		
-		String generatedPom = StreamUtils.copyToString(new FileInputStream(new File(buildDirectory, "pom.xml")), Charset.defaultCharset()).replace("\r", "");
-		Assert.assertEquals(expectedPom, generatedPom);		
-	}
-
-	/*@Test
 	public void testGenerateBuildPoms() throws IOException {
 		Package releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Biannual", "RF2");
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-project-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
 		StringWriter writer = new StringWriter();
-		mavenGenerator.generateBuildFiles(writer, releasePackage.getBuild());
+		mavenGenerator.generateBuildPoms(writer, releasePackage.getBuild());
 		String actualPom = writer.toString();
 
 		Assert.assertEquals(expectedPom, actualPom);
-	}*/
+	}
 
 	@Test
 	public void testGenerateArtifactPom() throws IOException {

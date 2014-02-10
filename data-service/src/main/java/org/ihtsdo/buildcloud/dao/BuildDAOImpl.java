@@ -24,8 +24,7 @@ public class BuildDAOImpl implements BuildDAO {
 				"join releaseCentre.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
-				"where membership.user.oauthId = :oauthId " +
-				"order by build.id ");
+				"where membership.user.oauthId = :oauthId ");
 		query.setString("oauthId", authenticatedId);
 		return query.list();
 	}
@@ -40,8 +39,7 @@ public class BuildDAOImpl implements BuildDAO {
 				"join extension.products product " +
 				"join product.builds build " +
 				"where membership.user.oauthId = :oauthId " +
-				"and build.id = :buildId " +
-				"order by build.id ");
+				"and build.id = :buildId ");
 		query.setString("oauthId", authenticatedId);
 		query.setLong("buildId", id);
 		return (Build) query.uniqueResult();

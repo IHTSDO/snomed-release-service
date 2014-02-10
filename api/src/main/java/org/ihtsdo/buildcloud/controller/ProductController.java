@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products")
@@ -30,7 +31,7 @@ public class ProductController {
 	@ResponseBody
 	public List<Map<String, Object>> getProducts(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		List<Product> products = productService.findAll(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
+		Set<Product> products = productService.findAll(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 

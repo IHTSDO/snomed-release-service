@@ -6,8 +6,8 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @JsonPropertyOrder({"id"})
@@ -26,10 +26,10 @@ public class ReleaseCentre {
 
 	@OneToMany(mappedBy = "releaseCentre")
 	@JsonIgnore
-	private List<Extension> extensions;
+	private Set<Extension> extensions;
 
 	public ReleaseCentre() {
-		extensions = new ArrayList<>();
+		extensions = new HashSet<Extension>();
 	}
 
 	public ReleaseCentre(String name) {
@@ -63,8 +63,12 @@ public class ReleaseCentre {
 		return businessKey;
 	}
 
-	public List<Extension> getExtensions() {
+	public Set<Extension> getExtensions() {
 		return extensions;
 	}
 
+
+	public void setExtensions(Set<Extension> extensions) {
+		this.extensions = extensions;
+	}
 }

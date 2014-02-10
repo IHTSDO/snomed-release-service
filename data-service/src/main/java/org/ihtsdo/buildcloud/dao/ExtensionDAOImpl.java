@@ -22,8 +22,7 @@ public class ExtensionDAOImpl implements ExtensionDAO {
 				"join releaseCentre.extensions extension " +
 				"where membership.user.oauthId = :oauthId " +
 				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey " +
-				"order by extension.id ");
+				"and extension.businessKey = :extensionBusinessKey ");
 		query.setString("oauthId", authenticatedId);
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
