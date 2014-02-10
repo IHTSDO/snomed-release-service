@@ -6,7 +6,11 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 public class Build {
@@ -27,10 +31,10 @@ public class Build {
 
 	@OneToMany(mappedBy = "build")
 	@JsonIgnore
-	private List<Package> packages;
+	private Set<Package> packages;
 	
 	public Build() {
-		packages = new ArrayList<>();
+		packages = new HashSet<>();
 	}
 
 	public Build(String name) {
@@ -77,7 +81,7 @@ public class Build {
 		this.product = product;
 	}
 
-	public List<Package> getPackages() {
+	public Set<Package> getPackages() {
 		return packages;
 	}
 

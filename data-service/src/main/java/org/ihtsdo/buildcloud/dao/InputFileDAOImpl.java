@@ -28,8 +28,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 				"where membership.user.oauthId = :oauthId " +
 				"and build.id = :buildId " +
 				"and package.businessKey = :packageBusinessKey " +
-				"and inputFile.businessKey = :inputFileBusinessKey " +
-				"order by inputFile.id ");
+				"and inputFile.businessKey = :inputFileBusinessKey ");
 		query.setString("oauthId", authenticatedId);
 		query.setLong("buildId", buildId);
 		query.setString("packageBusinessKey", packageBusinessKey);

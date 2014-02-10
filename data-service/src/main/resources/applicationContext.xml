@@ -26,8 +26,8 @@
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
+
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
-	<bean class="org.ihtsdo.buildcloud.service.maven.MavenExecutorImpl"/>
 
 	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
 		<property name="driverClassName" value="org.h2.Driver"/>

@@ -24,8 +24,7 @@ public class ProductDAOImpl implements ProductDAO {
 				"where membership.user.oauthId = :oauthId " +
 				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
 				"and extension.businessKey = :extensionBusinessKey " +
-				"and product.businessKey = :productBusinessKey " +
-				"order by product.id ");
+				"and product.businessKey = :productBusinessKey ");
 		query.setString("oauthId", authenticatedId);
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);

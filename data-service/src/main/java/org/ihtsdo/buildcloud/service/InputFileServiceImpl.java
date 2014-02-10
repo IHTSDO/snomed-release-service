@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
-import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -42,9 +42,9 @@ public class InputFileServiceImpl implements InputFileService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
 
 	@Override
-	public List<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
+	public Set<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		List<InputFile> inputFiles = packageDAO.find(buildId, packageBusinessKey, authenticatedId).getInputFiles();
+		Set<InputFile> inputFiles = packageDAO.find(buildId, packageBusinessKey, authenticatedId).getInputFiles();
 		Hibernate.initialize(inputFiles);
 		return inputFiles;
 	}

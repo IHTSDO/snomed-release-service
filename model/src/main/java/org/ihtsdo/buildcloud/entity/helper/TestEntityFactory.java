@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.entity.helper;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
-public class TestEntityFactory extends TestEntityGenerator {
+public class TestEntityFactory {
 
 	public Package createPackage(String releaseCentreName, String extensionName, String productName, String buildName, String packageName) {
 		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreName);
@@ -18,21 +18,6 @@ public class TestEntityFactory extends TestEntityGenerator {
 		extension.addProduct(product);
 		releaseCentre.addExtension(extension);
 		return aPackage;
-	}
-	
-	public Build createBuild(){
-		//TODO Once we have sets, we'll be able to use the test release centre directly, and navigate to find a build
-		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreNames[0]);
-		Extension extension = new Extension(extensionNames[0]);
-		Product product = new Product(productNames[0]);
-		Build build = new Build(buildNames[3]);
-
-		addPackagesToBuild(build);
-		product.addBuild(build);
-		extension.addProduct(product);
-		releaseCentre.addExtension(extension);
-		
-		return build;
 	}
 
 }

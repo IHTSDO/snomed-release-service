@@ -3,49 +3,18 @@
 		<h3 class="panel-title">Build Input</h3>
 	</div>
 	<div class="panel-body">
-
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<div class="panel-title">Input Files</div>
+		<form>
+			<div class="form-group">
+				<label>Build Input File</label>
+				<input type="file" name="file" class="form-control"/>
 			</div>
-			<div class="panel-body">
-				<table>
-					<thead>
-						<th>Name</th>
-						<th>Source</th>
-					</thead>
-					<tbody>
-						{{#each inputfiles}}
-						<tr>
-							<td>{{name}}</td>
-							<td>Uploaded</td>
-						</tr>
-						{{else}}
-						<tr>
-							<td>Empty</td>
-							<td></td>
-						</tr>
-						{{/each}}
-					</tbody>
-				</table>
-				<hr/>
-				<h4>Upload</h4>
-				<form method="post" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
-					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/inputfiles/</div>
-					<div class="form-group">
-						<label>Build Input File</label>
-						<input type="file" name="file" class="form-control" required/>
-					</div>
-					<div class="form-group">
-						<label>Short Name</label>
-						<input type="text" name="shortName" class="form-control" minlength="3" required/>
-					</div>
-					<input type="submit" class="btn btn-default" value="Upload"/>
-				</form>
-				<iframe id="buildInputFileUploadIframe" style="display: none;"/>
-				<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
+			<div class="form-group">
+				<label>Short Name</label>
+				<input type="text" name="name" class="form-control"/>
+				<!--<p class="help-block">Example: Blagh</p>-->
 			</div>
-		</div>
+			<input type="submit" class="btn btn-default" value="Upload"/>
+		</form>
 	</div>
 </div>
 

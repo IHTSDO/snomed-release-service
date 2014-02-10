@@ -5,17 +5,14 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
-import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -26,12 +23,6 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private ProductDAO productDAO;
-
-	@Autowired
-	private MavenGenerator mavenGenerator;
-
-	@Autowired
-	private MavenExecutor mavenExecutor;
 
 	@Override
 	public List<Build> findAll(String authenticatedId) {
@@ -45,30 +36,17 @@ public class BuildServiceImpl implements BuildService {
 	}
 	
 	@Override
-	public Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
+	public 	Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build =  buildDAO.find(id, authenticatedId);
 		return build.getConfig();
 	}
 
 	@Override
-	public List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
-		List<Build> builds = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
+	public Set<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
+		Set<Build> builds = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
-	}
-
-	@Override
-	public String run(String buildCompositeKey, String authenticatedId) throws IOException {
-		Date triggerDate = new Date();
-
-		Long id = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(id, authenticatedId);
-		Hibernate.initialize(build.getPackages());
-
-		// Call generate poms
-		File buildSourceDirectory = mavenGenerator.generateBuildFiles(build);
-		return mavenExecutor.exec(build, buildSourceDirectory, triggerDate);
 	}
 
 }

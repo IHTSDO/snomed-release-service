@@ -25,8 +25,7 @@ public class PackageDAOImpl implements PackageDAO {
 				"join build.packages package " +
 				"where membership.user.oauthId = :oauthId " +
 				"and build.id = :buildId " +
-				"and package.businessKey = :packageBusinessKey " +
-				"order by package.id ");
+				"and package.businessKey = :packageBusinessKey ");
 		query.setString("oauthId", authenticatedId);
 		query.setLong("buildId", buildId);
 		query.setString("packageBusinessKey", packageBusinessKey);
