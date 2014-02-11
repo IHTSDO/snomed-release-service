@@ -7,6 +7,8 @@ import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.File;
@@ -16,6 +18,8 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 
 public class MavenGeneratorTest {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
 	private MavenGenerator mavenGenerator;
 
@@ -33,7 +37,13 @@ public class MavenGeneratorTest {
 		Assert.assertNotNull(buildDirectory);
 		
 		String generatedPom = StreamUtils.copyToString(new FileInputStream(new File(buildDirectory, "pom.xml")), Charset.defaultCharset()).replace("\r", "");
-		Assert.assertEquals(expectedPom, generatedPom);		
+		Assert.assertEquals(expectedPom, generatedPom);	
+		
+		//We're expecting to have 10 things in that directory
+		//4 x pom.xml, 3 x assembly.xml, 3 x dir
+		int directoryItemCount = TestUtils.itemCount(buildDirectory);
+		LOGGER.debug ("Found " + directoryItemCount + " items in " + buildDirectory.getName());
+		Assert.assertEquals(directoryItemCount, 10);	
 	}
 
 	/*@Test
