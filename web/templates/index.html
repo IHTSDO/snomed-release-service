@@ -1,24 +1,20 @@
-<ol class="breadcrumb">
-	<li><a href="#">Home</a></li>
-</ol>
+<div class="front-page">
+	<ol class="breadcrumb">
+		<li><a href="#">Home</a></li>
+	</ol>
 
-<div class="jumbotron">
-	<h1>Welcome!</h1>
-	<p>Use the menu below to get started.</p>
-</div>
+	{{#each releaseCentre in releaseCentres}}
 
-{{#each releaseCentre in releaseCentres}}
-<div class="page-header">
-	<h2>{{releaseCentre.name}} Release Centre</h2>
-</div>
-<h3>Extensions</h3>
-{{#each extension in releaseCentre.extensions}}
-<div class="panel panel-default">
-	<div class="panel-heading">
-		<h4>{{extension.name}}</h4>
+	<div class="jumbotron">
+		<h1>Welcome</h1>
+		<p>{{releaseCentre.name}} Release Centre Dashboard</p>
+		<!--<p>Use the menu below to get started.</p>-->
 	</div>
-	<div class="panel-body panel-products">
-		<h4>Products</h4>
+
+	<div class="extensions">
+		{{#each extension in releaseCentre.extensions}}
+		<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
+		<h3>Products</h3>
 		<ul>
 			{{#each product in extension.products}}
 			<li>
@@ -27,13 +23,9 @@
 				{{/link-to}}
 			</li>
 			{{/each}}
-			<li>
-				<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
-			</li>
 		</ul>
+		{{/each}}
 	</div>
+	<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
+	{{/each}}
 </div>
-{{/each}}
-<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
-{{/each}}
-<hr/>

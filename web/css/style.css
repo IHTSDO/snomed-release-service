@@ -60,6 +60,20 @@ body {
 	font-size: 2em;
 }
 
+.front-page .extensions {
+    margin-bottom: 30px;
+}
+
+.container.main-container {
+    margin-bottom: 30px;
+}
+
+@media screen and (min-width: 768px) {
+    .container .jumbotron {
+        padding: 25px 40px;
+    }
+}
+
 /* See http://stackoverflow.com/questions/18864070/bootstrap-tr-class-warning-doesnt-work-in-striped-table */
 td.success {
 	background-color: #dff0d8 !important;
