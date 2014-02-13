@@ -24,7 +24,7 @@
 	.col-files {
 		border-right: 1px solid grey;
 	}
-	.col-table {
+	.col-table .header{
 		background-color: lightblue;
 	}
 </style>
@@ -71,19 +71,24 @@
 			e.preventDefault();
 			this.className = '';
 
-			var file = e.dataTransfer.files[0];
-			var reader = new FileReader();
-			reader.onload = function (event) {
-				console.log(event.target);
-				var fileData = event.target.result;
-				addFileItem(file.name, fileData);
-			};
-			reader.readAsText(file);
+			var files = e.dataTransfer.files;
+			for (var f = 0; f < files.length; f++) {
+				var file = files[f];
+				var reader = new FileReader();
+				reader.theFile = file;
+				reader.onload = function (event) {
+					var file = this.theFile;
+					console.log(event.target);
+					var fileData = event.target.result;
+					addFileItem(file.name, fileData);
+				};
+				reader.readAsText(file);
+			}
 		};
 	}
 	function addFileItem(fileName, fileData) {
 		var $nav = $('.nav');
-		var $item = $('<li>').append($('<a>').attr('href', '#').text(fileName)).click(function (e) {
+		var $item = $('<li>').append($('<a>').attr('href', '#').attr('title', fileName).text(fileName)).click(function (e) {
 			e.preventDefault();
 			var $item = $(this);
 			var fileData = $item.data('fileData');
