@@ -85,3 +85,13 @@ td.warning {
 	background-color: #fcf8e3 !important;
 }
 
+
+.post-conditions form {
+    margin-bottom: 20px;
+}
+.post-conditions form input {
+    width: 200px; display: inline-block; margin-left: 10px;
+}
+.post-conditions tbody td:nth-child(4) {
+    text-align: center;
+}
