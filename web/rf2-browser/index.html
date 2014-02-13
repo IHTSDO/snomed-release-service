@@ -1,0 +1,133 @@
+<link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet">
+<style>
+	#holder {
+		border: 3px dashed #ccc;
+		width: 100%;
+		height: 50px;
+		text-align: center;
+	}
+	#holder.hover {
+		border-color: #000;
+	}
+	table {
+		border: 1px solid lightblue;
+		width: 100%;
+	}
+	table.data tbody {
+		height: 250px;
+		overflow: scroll;
+		display: block;
+	}
+	td {
+		width: 230px;
+	}
+	.col-files {
+		border-right: 1px solid grey;
+	}
+	.col-table {
+		background-color: lightblue;
+	}
+</style>
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-xs-3 col-files">
+			<div id="holder">
+				<p>Drop RF2 files here</p>
+			</div>
+			<div>
+				<ul class="nav nav-pills nav-stacked">
+				</ul>
+			</div>
+		</div>
+		<div class="col-xs-9 col-table">
+			<table class="header"></table>
+			<table class="data"></table>
+		</div>
+	</div>
+</div>
+<script src="../libs/jquery-2.0.3.js" ></script>
+<script src="../libs/handlebars-1.1.2.js"></script>
+<script>
+
+	var fileTypes = [
+		{
+			title: 'Concept Delta',
+			columns: 'id,effectiveTime,active,moduleId,definitionStatusId'
+		}
+	]
+
+	function enable() {
+		var holder = $('#holder')[0];
+		var textarea = $('#fileData')[0];
+		holder.ondragover = function () {
+			this.className = 'hover';
+			return false;
+		};
+		holder.ondragend = function () {
+			this.className = '';
+			return false;
+		};
+		holder.ondrop = function (e) {
+			e.preventDefault();
+			this.className = '';
+
+			var file = e.dataTransfer.files[0];
+			var reader = new FileReader();
+			reader.onload = function (event) {
+				console.log(event.target);
+				var fileData = event.target.result;
+				addFileItem(file.name, fileData);
+			};
+			reader.readAsText(file);
+		};
+	}
+	function addFileItem(fileName, fileData) {
+		var $nav = $('.nav');
+		var $item = $('<li>').append($('<a>').attr('href', '#').text(fileName)).click(function (e) {
+			e.preventDefault();
+			var $item = $(this);
+			var fileData = $item.data('fileData');
+			loadFileData(fileData);
+			$nav.find('li').removeClass('active');
+			$item.addClass('active');
+		});
+		$item.data('fileData', fileData);
+		$nav.append($item);
+		if ($('.nav li').size() == 1) {
+			$item.click();
+		}
+	}
+	function loadFileData(fileData) {
+		var lines = fileData.split('\n');
+		var $headerTable = $('table.header');
+		var $table = $('table.data');
+		$headerTable.empty();
+		$table.empty();
+		if (lines.length > 1) {
+			var $headerRow = $('<tr>');
+
+			var headerCols = lines[0].split('\t');
+			addCols(headerCols, $headerRow);
+			$headerTable.append($headerRow);
+
+			for (var lineIndex = 1; lineIndex < lines.length && lineIndex < 20; lineIndex++) {
+				var $row = $('<tr>');
+				var cols = lines[lineIndex].split('\t');
+				addCols(cols, $row);
+				$table.append($row);
+			}
+		}
+	}
+
+	function addCols(cols, $row) {
+		for (var colIndex = 0; colIndex < cols.length; colIndex++) {
+			$row.append($('<td>').text(cols[colIndex]));
+		}
+	}
+
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+		enable();
+	} else {
+		alert("Your browser is not supported. Try Chrome.");
+	}
+</script>
