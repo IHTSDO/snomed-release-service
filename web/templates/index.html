@@ -14,16 +14,21 @@
 	<div class="extensions">
 		{{#each extension in releaseCentre.extensions}}
 		<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
-		<h3>Products</h3>
-		<ul>
-			{{#each product in extension.products}}
-			<li>
-				{{#link-to 'product' releaseCentre extension product}}
-				{{product.name}}
-				{{/link-to}}
-			</li>
-			{{/each}}
-		</ul>
+		<div class="row">
+			<div class="col-md-4 col-md-offset-1">
+				<h3>Products</h3>
+				<ul>
+					{{#each product in extension.products}}
+					<li>
+						{{#link-to 'product' releaseCentre extension product}}
+						{{product.name}}
+						{{/link-to}}
+					</li>
+					{{/each}}
+				</ul>
+				<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
+			</div>
+		</div>
 		{{/each}}
 	</div>
 	<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
