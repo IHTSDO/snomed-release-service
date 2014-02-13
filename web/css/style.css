@@ -101,7 +101,8 @@ li {
 
 @media screen and (min-width: 768px) {
     .container .jumbotron {
-        padding: 25px 5px 25px 40px;
+        /*padding: 25px 5px 25px 40px; */
+        padding: 3px 3px 10px 20px; 
     }
 }
 

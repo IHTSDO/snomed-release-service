@@ -6,11 +6,12 @@
 	{{#each releaseCentre in releaseCentres}}
 
 	<div class="jumbotron row">
-		<div class="col-md-5">
+		<!-- <div class="col-md-5">
 			<h1>Welcome</h1>
 			<p>{{releaseCentre.name}} Release Centre Dashboard</p>
 		</div>
-		<div class="col-md-6">
+		<div class="col-md-6"> -->
+			<h2 style="text-align: center">{{releaseCentre.name}} Release Centre Dashboard</h2>		
 			<h3>Recent Builds:</h3>
 			<ul class="tight">
 			<li>{{#link-to}}<span class=" glyphicon glyphicon-fire" title='Currently Running'></span> {{/link-to}}	
@@ -29,7 +30,7 @@
 			<li class="noBullet"> {{#link-to}}Show more...{{/link-to}}</li>
 			</ul>
 
-		</div>
+		<!-- </div>  -->
 	</div>
 
 	<div class="extensions">
