@@ -9,23 +9,49 @@
 	#holder.hover {
 		border-color: #000;
 	}
+	.nav > li > a {
+		padding: 5px;
+	}
 	table {
 		border: 1px solid lightblue;
 		width: 100%;
+		font-size: 0.9em;
+	}
+	.data {
+		height: 90%;
 	}
 	table.data tbody {
-		height: 250px;
+		height: 100%;
 		overflow: scroll;
 		display: block;
 	}
+	.row {
+		margin: 0;
+	}
 	td {
-		width: 230px;
+		padding-right: 3px;
+	}
+	tr:hover {
+		background-color: lightgreen;
 	}
 	.col-files {
 		border-right: 1px solid grey;
+		padding: 0px;
 	}
-	.col-table .header{
+	.col-table .header {
 		background-color: lightblue;
+	}
+	.col-table .header tr {
+		height: 20px;
+	}
+	.col-table .header td {
+		overflow: hidden;
+		position: absolute;
+		width: 0px;
+		border-right: 1px solid black;
+	}
+	.col-table .data td {
+		border-right: 1px solid lightgrey;
 	}
 </style>
 <div class="container-fluid">
@@ -112,15 +138,19 @@
 			var $headerRow = $('<tr>');
 
 			var headerCols = lines[0].split('\t');
-			addCols(headerCols, $headerRow);
+			for (var colIndex = 0; colIndex < headerCols.length; colIndex++) {
+				var headerCol = headerCols[colIndex];
+				$headerRow.append($('<td>').text(headerCol).attr('title', headerCol));
+			}
 			$headerTable.append($headerRow);
 
-			for (var lineIndex = 1; lineIndex < lines.length && lineIndex < 20; lineIndex++) {
+			for (var lineIndex = 1; lineIndex < lines.length; lineIndex++) {
 				var $row = $('<tr>');
 				var cols = lines[lineIndex].split('\t');
 				addCols(cols, $row);
 				$table.append($row);
 			}
+			setHeaderColWidths();
 		}
 	}
 
@@ -128,6 +158,21 @@
 		for (var colIndex = 0; colIndex < cols.length; colIndex++) {
 			$row.append($('<td>').text(cols[colIndex]));
 		}
+	}
+
+	function setHeaderColWidths() {
+		var $headerCols = $('.header td');
+		var leftColsWidth = 0;
+		$('.data').find('tr:first').find('td').each(
+			function(index) {
+				var dataColWidth = new Number($(this).css('width').replace('px', ''));
+				console.log(index + ' ' + dataColWidth);
+				var $headerCol = $($headerCols[index]);
+				$headerCol.css('width', dataColWidth + 'px');
+				$headerCol.css('margin-left', leftColsWidth + 'px');
+				leftColsWidth += dataColWidth;
+			}
+		);
 	}
 
 	if (window.File && window.FileReader && window.FileList && window.Blob) {
