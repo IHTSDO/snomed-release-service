@@ -5,30 +5,47 @@
 
 	{{#each releaseCentre in releaseCentres}}
 
-	<div class="jumbotron">
-		<h1>Welcome</h1>
-		<p>{{releaseCentre.name}} Release Centre Dashboard</p>
-		<!--<p>Use the menu below to get started.</p>-->
+	<div class="jumbotron row">
+		<div class="col-md-5">
+			<h1>Welcome</h1>
+			<p>{{releaseCentre.name}} Release Centre Dashboard</p>
+		</div>
+		<div class="col-md-6">
+			<h3>Recent Builds:</h3>
+			<ul class="tight">
+			<li>{{#link-to}}<span class=" glyphicon glyphicon-fire" title='Currently Running'></span> {{/link-to}}	
+				{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" title='Last Run: 20140213_15:03:15 UTC'}}20130731_international_release <span class=" glyphicon glyphicon-cog" title='Edit Configuration'></span>{{/link-to}}
+				{{#link-to 'pre-execution' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" }}<span class=" glyphicon glyphicon-repeat" title='ReRun Build'></span>{{/link-to}}
+				{{#link-to}} <span class=" glyphicon glyphicon-eye-open" title='View Output'></span> {{/link-to}}
+			</li>
+			<li>{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" title='Last Run: 20140212_12:02:14 UTC'}}20140131_international_release__nightly <span class=" glyphicon glyphicon-cog" title='Edit Configuration'></span>{{/link-to}}
+				{{#link-to 'pre-execution' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" }}<span class=" glyphicon glyphicon-repeat" title='ReRun Build'></span>{{/link-to}}
+				{{#link-to}} <span class=" glyphicon glyphicon-search" title='View Output'></span> {{/link-to}}				
+			</li>
+			<li>{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "7_20140131_international_release__biannual" title='Last Run: 20140211_10:01:13 UTC'}}20140131_international_release__biannual <span class=" glyphicon glyphicon-cog" title='Edit Configuration'></span>{{/link-to}}
+				{{#link-to 'pre-execution' releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "7_20140131_international_release__biannual" }}<span class=" glyphicon glyphicon-repeat" title='ReRun Build'></span>{{/link-to}}
+				{{#link-to}} <span class=" glyphicon glyphicon-search" title='View Output'></span> {{/link-to}}					
+			</li>			
+			<li class="noBullet"> {{#link-to}}Show more...{{/link-to}}</li>
+			</ul>
+
+		</div>
 	</div>
 
 	<div class="extensions">
 		{{#each extension in releaseCentre.extensions}}
 		<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
-		<div class="row">
-			<div class="col-md-4 col-md-offset-1">
-				<h3>Products</h3>
-				<ul>
-					{{#each product in extension.products}}
-					<li>
-						{{#link-to 'product' releaseCentre extension product}}
-						{{product.name}}
-						{{/link-to}}
-					</li>
-					{{/each}}
-				</ul>
-				<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
-			</div>
-		</div>
+			<h3>Products</h3>
+			<ul>
+				{{#each product in extension.products}}
+				<li>
+					{{#link-to 'product' releaseCentre extension product}}
+					{{product.name}}
+					{{/link-to}}
+				</li>
+				{{/each}}
+				<li class="noBullet"><a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Product</a></li>
+			</ul>
 		{{/each}}
 	</div>
 	<a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
