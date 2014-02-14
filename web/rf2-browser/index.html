@@ -179,7 +179,7 @@ function RF2Browser() {
 
 			var headerCols = lines[0].split('\t');
 			for (var colIndex = 0; colIndex < headerCols.length; colIndex++) {
-				var headerCol = headerCols[colIndex];
+				var headerCol = headerCols[colIndex].trim();
 				$headerRow.append($('<td>').text(headerCol).attr('title', headerCol));
 				headerIndexMap[headerCol] = colIndex;
 			}
@@ -193,36 +193,40 @@ function RF2Browser() {
 			}
 		}
 
-		console.log(fileType);
 		if (fileType && fileType.conceptLookupCols) {
 			var conceptLookupCols = fileType.conceptLookupCols;
 			for (var c = 0; c < conceptLookupCols.length; c++) {
 				var conceptLookupCol = conceptLookupCols[c];
-				console.log(conceptLookupCol);
 				var colIndex = headerIndexMap[conceptLookupCol];
-				var $conceptCols = $table.find('td:nth-child(' + (colIndex + 1) + ') span');
-				console.log("$conceptCols = " + $conceptCols.size())
-				$conceptCols.each(function() {
-					var $cell = $(this);
-					var text = $cell.text();
-					$cell.tooltip({
-						trigger: 'hover',
-						title: function() {
-							var result = '';
-							$.ajax({
-								async: false,
-								url: 'https://browser.snomedtools.com/version/1/concept/json/' + text,
-								success: function(object) {
-									result = object.fullySpecifiedName;
-								},
-								error: function() {
-									result = 'Could not load.'
-								}
-							})
-							return result;
-						}
-					})
-				});
+				if ($.isNumeric(colIndex)) {
+					var colSelectExpression = 'td:nth-child(' + (colIndex + 1) + ') span';
+					console.log('colSelectExpression = "' + colSelectExpression + '"');
+					var $conceptCols = $table.find(colSelectExpression);
+					console.log("$conceptCols = " + $conceptCols.size())
+					$conceptCols.each(function() {
+						var $cell = $(this);
+						var text = $cell.text();
+						$cell.tooltip({
+							trigger: 'hover',
+							title: function() {
+								var result = '';
+								$.ajax({
+									async: false,
+									url: 'https://browser.snomedtools.com/version/1/concept/json/' + text,
+									success: function(object) {
+										result = object.fullySpecifiedName;
+									},
+									error: function() {
+										result = 'Could not load.'
+									}
+								})
+								return result;
+							}
+						})
+					});
+				} else {
+					console.error('Failed to find column "' + conceptLookupCol + '"');
+				}
 			}
 		}
 
@@ -260,7 +264,6 @@ function RF2Browser() {
 		$fileView.find('.data').find('tr:first').find('td').each(
 			function(index) {
 				var dataColWidth = new Number($(this).css('width').replace('px', ''));
-				console.log(index + ' ' + dataColWidth);
 				var $headerCol = $($headerCols[index]);
 				$headerCol.css('width', dataColWidth + 'px');
 				$headerCol.css('margin-left', leftColsWidth + 'px');
