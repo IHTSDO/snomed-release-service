@@ -12,6 +12,9 @@
 	.nav > li > a {
 		padding: 5px;
 	}
+	.nav {
+		overflow: hidden;
+	}
 	table {
 		border: 1px solid lightblue;
 		width: 100%;
@@ -66,19 +69,29 @@
 			</div>
 		</div>
 		<div class="col-xs-9 col-table">
-			<table class="header"></table>
-			<table class="data"></table>
+			<div class="file-view" style="display: none;">
+				<table class="header"></table>
+				<table class="data"></table>
+			</div>
 		</div>
 	</div>
 </div>
 <script src="../libs/jquery-2.0.3.js" ></script>
 <script src="../libs/handlebars-1.1.2.js"></script>
+<script src="../libs/bootstrap/js/tooltip.js"></script>
+<script src="../libs/bootstrap/js/popover.js"></script>
 <script>
 
+	var conceptLookupKey = 'conceptLookup';
 	var fileTypes = [
 		{
-			title: 'Concept Delta',
-			columns: 'id,effectiveTime,active,moduleId,definitionStatusId'
+			key: 'concept',
+			match: 'sct2_Concept_.*',
+			links: [['moduleId', conceptLookupKey]]
+		},
+		{
+			key: 'desc',
+			match: 'sct2_Description_Delta_.*'
 		}
 	]
 
@@ -113,25 +126,43 @@
 		};
 	}
 	function addFileItem(fileName, fileData) {
+		loadFileData(fileName, fileData);
+
 		var $nav = $('.nav');
 		var $item = $('<li>').append($('<a>').attr('href', '#').attr('title', fileName).text(fileName)).click(function (e) {
 			e.preventDefault();
 			var $item = $(this);
-			var fileData = $item.data('fileData');
-			loadFileData(fileData);
+			var fileName = $item.data('fileName');
+			$('.file-view').hide();
+			var $fileView = $('.file-view[fileName="' + fileName + '"]');
+			$fileView.show();
+			setHeaderColWidths($fileView)
 			$nav.find('li').removeClass('active');
 			$item.addClass('active');
 		});
-		$item.data('fileData', fileData);
+		$item.data('fileName', fileName);
 		$nav.append($item);
 		if ($('.nav li').size() == 1) {
 			$item.click();
 		}
 	}
-	function loadFileData(fileData) {
+	function loadFileData(fileName, fileData) {
+		var thisFileType = null;
+		for (var fileType in fileTypes) {
+			if (fileName.match(fileType.match)) {
+				thisFileType = fileType;
+			}
+		}
+
+		// Create view div for this file
+		var $fileViewTemplate = $('.file-view');
+		var $fileView = $fileViewTemplate.first().clone();
+		$fileView.attr('fileName', fileName);
+		$fileViewTemplate.after($fileView);
+
 		var lines = fileData.split('\n');
-		var $headerTable = $('table.header');
-		var $table = $('table.data');
+		var $headerTable = $fileView.find('table.header');
+		var $table = $fileView.find('table.data');
 		$headerTable.empty();
 		$table.empty();
 		if (lines.length > 1) {
@@ -150,7 +181,6 @@
 				addCols(cols, $row);
 				$table.append($row);
 			}
-			setHeaderColWidths();
 		}
 	}
 
@@ -160,10 +190,10 @@
 		}
 	}
 
-	function setHeaderColWidths() {
-		var $headerCols = $('.header td');
+	function setHeaderColWidths($fileView) {
+		var $headerCols = $fileView.find('.header td');
 		var leftColsWidth = 0;
-		$('.data').find('tr:first').find('td').each(
+		$fileView.find('.data').find('tr:first').find('td').each(
 			function(index) {
 				var dataColWidth = new Number($(this).css('width').replace('px', ''));
 				console.log(index + ' ' + dataColWidth);
