@@ -1,62 +1,70 @@
-<link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet">
-<style>
-	#holder {
-		border: 3px dashed #ccc;
-		width: 100%;
-		height: 50px;
-		text-align: center;
-	}
-	#holder.hover {
-		border-color: #000;
-	}
-	.nav > li > a {
-		padding: 5px;
-	}
-	.nav {
-		overflow: hidden;
-	}
-	table {
-		border: 1px solid lightblue;
-		width: 100%;
-		font-size: 0.9em;
-	}
-	.data {
-		height: 90%;
-	}
-	table.data tbody {
-		height: 100%;
-		overflow: scroll;
-		display: block;
-	}
-	.row {
-		margin: 0;
-	}
-	td {
-		padding-right: 3px;
-	}
-	tr:hover {
-		background-color: lightgreen;
-	}
-	.col-files {
-		border-right: 1px solid grey;
-		padding: 0px;
-	}
-	.col-table .header {
-		background-color: lightblue;
-	}
-	.col-table .header tr {
-		height: 20px;
-	}
-	.col-table .header td {
-		overflow: hidden;
-		position: absolute;
-		width: 0px;
-		border-right: 1px solid black;
-	}
-	.col-table .data td {
-		border-right: 1px solid lightgrey;
-	}
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet">
+	<style>
+		html, body, body > .container-fluid, body > .container-fluid > .row, .col-table, .file-view {
+			height: 100%;
+		}
+		#holder {
+			border: 3px dashed #ccc;
+			width: 100%;
+			height: 50px;
+			text-align: center;
+		}
+		#holder.hover {
+			border-color: #000;
+		}
+		.nav > li > a {
+			padding: 5px;
+		}
+		.nav {
+			overflow: hidden;
+		}
+		table {
+			border: 1px solid lightblue;
+			width: 100%;
+			font-size: 0.9em;
+		}
+		.data {
+			height: 90%;
+		}
+		table.data tbody {
+			height: 100%;
+			overflow: scroll;
+			display: block;
+		}
+		.row {
+			margin: 0;
+		}
+		td {
+			padding-right: 3px;
+		}
+		tr:hover {
+			background-color: lightgreen;
+		}
+		.col-files {
+			border-right: 1px solid grey;
+			padding: 0px;
+		}
+		.col-table .header {
+			background-color: lightblue;
+		}
+		.col-table .header tr {
+			height: 20px;
+		}
+		.col-table .header td {
+			overflow: hidden;
+			position: absolute;
+			width: 0px;
+			border-right: 1px solid black;
+		}
+		.col-table .data td {
+			border-right: 1px solid lightgrey;
+		}
+	</style>
+</head>
+<body>
 <div class="container-fluid">
 	<div class="row">
 		<div class="col-xs-3 col-files">
@@ -82,22 +90,25 @@
 <script src="../libs/bootstrap/js/popover.js"></script>
 <script>
 
-	var conceptLookupKey = 'conceptLookup';
+function RF2Browser() {
+
+	this.init = function() {
+		if (window.File && window.FileReader && window.FileList && window.Blob) {
+			doInit();
+		} else {
+			alert("Your browser is not supported. Try Chrome.");
+		}
+	}
+
 	var fileTypes = [
 		{
-			key: 'concept',
 			match: 'sct2_Concept_.*',
-			links: [['moduleId', conceptLookupKey]]
-		},
-		{
-			key: 'desc',
-			match: 'sct2_Description_Delta_.*'
+			conceptLookupCols: ['moduleId', 'definitionStatusId']
 		}
-	]
+	];
 
-	function enable() {
+	function doInit() {
 		var holder = $('#holder')[0];
-		var textarea = $('#fileData')[0];
 		holder.ondragover = function () {
 			this.className = 'hover';
 			return false;
@@ -111,23 +122,119 @@
 			this.className = '';
 
 			var files = e.dataTransfer.files;
+			var readers = [];
+			var currentReader = null;
 			for (var f = 0; f < files.length; f++) {
 				var file = files[f];
 				var reader = new FileReader();
 				reader.theFile = file;
 				reader.onload = function (event) {
 					var file = this.theFile;
-					console.log(event.target);
 					var fileData = event.target.result;
 					addFileItem(file.name, fileData);
+
+					// Trigger next reader
+					currentReader = readers.shift();
+					if (currentReader) {
+						currentReader.readAsText(currentReader.theFile);
+					}
 				};
-				reader.readAsText(file);
+				readers.push(reader);
 			}
+			currentReader = readers.shift();
+			currentReader.readAsText(currentReader.theFile);
 		};
 	}
-	function addFileItem(fileName, fileData) {
-		loadFileData(fileName, fileData);
 
+	function addFileItem(fileName, fileData) {
+		console.log('addFileItem ' + fileName);
+		loadFileData(fileName, fileData);
+		addFileNav(fileName);
+	}
+
+	function loadFileData(fileName, fileData) {
+		var fileType = null;
+		for (var f = 0; f < fileTypes.length; f++) {
+			var aFileType = fileTypes[f];
+			if (fileName.match(aFileType.match)) {
+				fileType = aFileType;
+			}
+		}
+
+		// Create view div for this file
+		var $fileViewTemplate = $('.file-view').first();
+		var $fileView = $fileViewTemplate.clone();
+		$fileView.attr('fileName', fileName);
+		$fileViewTemplate.after($fileView);
+
+		var lines = fileData.split('\n');
+		var $headerTable = $fileView.find('table.header');
+		var $table = $fileView.find('table.data');
+		$headerTable.empty();
+		$table.empty();
+
+		var headerIndexMap = {};
+		if (lines.length > 1) {
+			var $headerRow = $('<tr>');
+
+			var headerCols = lines[0].split('\t');
+			for (var colIndex = 0; colIndex < headerCols.length; colIndex++) {
+				var headerCol = headerCols[colIndex];
+				$headerRow.append($('<td>').text(headerCol).attr('title', headerCol));
+				headerIndexMap[headerCol] = colIndex;
+			}
+			$headerTable.append($headerRow);
+
+			for (var lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+				var $row = $('<tr>');
+				var cols = lines[lineIndex].split('\t');
+				addCols(cols, $row);
+				$table.append($row);
+			}
+		}
+
+		console.log(fileType);
+		if (fileType && fileType.conceptLookupCols) {
+			var conceptLookupCols = fileType.conceptLookupCols;
+			for (var c = 0; c < conceptLookupCols.length; c++) {
+				var conceptLookupCol = conceptLookupCols[c];
+				console.log(conceptLookupCol);
+				var colIndex = headerIndexMap[conceptLookupCol];
+				var $conceptCols = $table.find('td:nth-child(' + (colIndex + 1) + ') span');
+				console.log("$conceptCols = " + $conceptCols.size())
+				$conceptCols.each(function() {
+					var $cell = $(this);
+					var text = $cell.text();
+					$cell.tooltip({
+						trigger: 'hover',
+						title: function() {
+							var result = '';
+							$.ajax({
+								async: false,
+								url: 'https://browser.snomedtools.com/version/1/concept/json/' + text,
+								success: function(object) {
+									result = object.fullySpecifiedName;
+								},
+								error: function() {
+									result = 'Could not load.'
+								}
+							})
+							return result;
+						}
+					})
+				});
+			}
+		}
+
+	}
+
+	function addCols(cols, $row) {
+		for (var colIndex = 0; colIndex < cols.length; colIndex++) {
+			$row.append($('<td>').append($('<span>').text(cols[colIndex])));
+		}
+	}
+
+	function addFileNav(fileName) {
 		var $nav = $('.nav');
 		var $item = $('<li>').append($('<a>').attr('href', '#').attr('title', fileName).text(fileName)).click(function (e) {
 			e.preventDefault();
@@ -146,49 +253,6 @@
 			$item.click();
 		}
 	}
-	function loadFileData(fileName, fileData) {
-		var thisFileType = null;
-		for (var fileType in fileTypes) {
-			if (fileName.match(fileType.match)) {
-				thisFileType = fileType;
-			}
-		}
-
-		// Create view div for this file
-		var $fileViewTemplate = $('.file-view');
-		var $fileView = $fileViewTemplate.first().clone();
-		$fileView.attr('fileName', fileName);
-		$fileViewTemplate.after($fileView);
-
-		var lines = fileData.split('\n');
-		var $headerTable = $fileView.find('table.header');
-		var $table = $fileView.find('table.data');
-		$headerTable.empty();
-		$table.empty();
-		if (lines.length > 1) {
-			var $headerRow = $('<tr>');
-
-			var headerCols = lines[0].split('\t');
-			for (var colIndex = 0; colIndex < headerCols.length; colIndex++) {
-				var headerCol = headerCols[colIndex];
-				$headerRow.append($('<td>').text(headerCol).attr('title', headerCol));
-			}
-			$headerTable.append($headerRow);
-
-			for (var lineIndex = 1; lineIndex < lines.length; lineIndex++) {
-				var $row = $('<tr>');
-				var cols = lines[lineIndex].split('\t');
-				addCols(cols, $row);
-				$table.append($row);
-			}
-		}
-	}
-
-	function addCols(cols, $row) {
-		for (var colIndex = 0; colIndex < cols.length; colIndex++) {
-			$row.append($('<td>').text(cols[colIndex]));
-		}
-	}
 
 	function setHeaderColWidths($fileView) {
 		var $headerCols = $fileView.find('.header td');
@@ -205,9 +269,10 @@
 		);
 	}
 
-	if (window.File && window.FileReader && window.FileList && window.Blob) {
-		enable();
-	} else {
-		alert("Your browser is not supported. Try Chrome.");
-	}
+}
+
+new RF2Browser().init();
+
 </script>
+</body>
+</html>
