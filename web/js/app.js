@@ -19,6 +19,7 @@ App.Router.map(function() {
 			this.resource('product', { path: '/:product_id' }, function() {
 				this.resource('build', { path: '/:build_id' }, function() {
 					this.resource('package', { path: '/:package_id' }, function() {
+//						this.resource('package-index');
 						this.resource('build-input');
 						this.resource('pre-conditions');
 						this.resource('post-conditions');
