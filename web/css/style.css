@@ -47,17 +47,21 @@ body {
 .centre {
 	text-align:center;
 }
-.status_ok{
-	color: green;
+.traffic-light {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    background-image: url('../images/traffic-lights.png');
+    background-size: cover;
 }
-.status_warning{
-	color: orange;
+.traffic-light-failure {
+    background-position: 0px -18px;
 }
-.status_fail{
-	color: red;
+.traffic-light-warning {
+    background-position: 0px -36px;
 }
-.big{
-	font-size: 2em;
+.traffic-light-success {
+    background-position: 0px -54px;
 }
 
 .front-page .extensions {
