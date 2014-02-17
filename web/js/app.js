@@ -213,6 +213,7 @@ function signinCallback(authResult) {
 
 function afterRender() {
 	$("[data-toggle='popover']").popover();
+	$("[data-toggle='tooltip']").tooltip();
 	initBuildInputFileUploadForm();
 }
 
@@ -239,6 +240,24 @@ function initBuildInputFileUploadForm() {
 		$('.panel-build-input form')[0].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
+	effectPulse($('.build-history .traffic-light-in-progress'));
+}
+
+function effectPulse($selection) {
+	window.setInterval(function() {
+
+	}, 1000)
+	if ($selection && $selection.size() > 0) {
+		$selection.animate({
+			opacity: 0
+		}, 500, function() {
+			$selection.animate({
+				opacity: 1
+			}, 500, function() {
+				effectPulse($selection);
+			})
+		})
+	}
 }
 
 // Set JQuery Validate defaults to match Bootstrap layout.

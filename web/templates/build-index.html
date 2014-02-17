@@ -21,28 +21,28 @@
 			{{/each}}
 		</ul>
 	</div>
-	<div class="col-xs-6">
+	<div class="col-xs-6 build-history">
 		<h3>Build History</h3>
 		<ul>
-			<li>
+			<li title="In Progress" data-toggle="tooltip" data-placement="right">
 				{{#link-to "build-results"  package}}
 				17 Feb, 2014 01:05:00 AM
-				<span class="traffic-light traffic-light-success"></span>
+				<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>
 				{{/link-to}}
 			</li>
-			<li>
+			<li title="Success" data-toggle="tooltip" data-placement="right">
 				{{#link-to "build-results"  package}}
 				16 Feb, 2014 01:05:00 AM
 				<span class="traffic-light traffic-light-success"></span>
 				{{/link-to}}
 			</li>
-			<li>
+			<li title="Warning" data-toggle="tooltip" data-placement="right">
 				{{#link-to "build-results"  package}}
 				15 Feb, 2014 01:05:00 AM
 				<span class="traffic-light traffic-light-warning"></span>
 				{{/link-to}}
 			</li>
-			<li>
+			<li title="Failure" data-toggle="tooltip" data-placement="right">
 				{{#link-to "build-results"  package}}
 				14 Feb, 2014 01:05:00 AM
 				<span class="traffic-light traffic-light-failure"></span>
