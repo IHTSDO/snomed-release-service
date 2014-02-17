@@ -5,6 +5,12 @@ body {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
 }
+ul {
+    display: inline-block;
+}
+li {
+    margin-bottom: 5px;
+}
 .well h3 {
 	margin-top: 0;
 }
@@ -53,6 +59,7 @@ body {
     display: inline-block;
     background-image: url('../images/traffic-lights.png');
     background-size: cover;
+    margin-bottom: -3px;
 }
 .traffic-light-failure {
     background-position: 0px -18px;
