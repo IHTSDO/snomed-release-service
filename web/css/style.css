@@ -65,6 +65,7 @@ li {
 .traffic-light-failure {
     background-position: 0px -18px;
 }
+
 .traffic-light-warning {
     background-position: 0px -36px;
 }
@@ -84,6 +85,10 @@ li {
     .container .jumbotron {
         padding: 25px 40px;
     }
+
+.big{
+	font-size: 2em;
+	line-height: 1.2em;	
 }
 
 .front-page .extensions {
@@ -96,7 +101,7 @@ li {
 
 @media screen and (min-width: 768px) {
     .container .jumbotron {
-        padding: 25px 40px;
+        padding: 25px 5px 25px 40px;
     }
 }
 
@@ -120,4 +125,14 @@ td.warning {
 }
 .post-conditions tbody td:nth-child(4) {
     text-align: center;
+}
+
+.noBullet {
+	list-style:none;
+}
+ul.tight {
+	margin-top: 0px;
+	margin-bottom: 2px;
+	line-height: 1.2em;
+	font-size: 0.8em;
 }
