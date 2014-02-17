@@ -5,9 +5,6 @@ body {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
 }
-ul {
-    display: inline-block;
-}
 li {
     margin-bottom: 5px;
 }
@@ -52,6 +49,10 @@ li {
 }
 .centre {
 	text-align:center;
+}
+
+.build-history ul {
+    display: inline-block;
 }
 .traffic-light {
     width: 18px;
