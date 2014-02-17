@@ -19,15 +19,17 @@ App.Router.map(function() {
 			this.resource('product', { path: '/:product_id' }, function() {
 				this.resource('build', { path: '/:build_id' }, function() {
 					this.resource('package', { path: '/:package_id' }, function() {
-//						this.resource('package-index');
 						this.resource('build-input');
 						this.resource('pre-conditions');
 						this.resource('post-conditions');
 						this.resource('build-trigger');
-						this.resource('build-results');
-						this.resource('build-history');
 					});
+					this.resource('build-trigger');
 					this.resource('pre-execution');
+					this.resource('build-history');
+					this.resource('execution', function() {
+						this.resource('build-results');
+					});
 				});
 			});
 		});
@@ -193,6 +195,14 @@ App.BuildInputController = Ember.ObjectController.extend({
 			var inputfiles = this.get('inputfiles');
 			inputfiles.reloadLinks();
 		}
+	}
+})
+
+App.ExecutionRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		var build = this.modelFor('build');
+		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
+		return pack;
 	}
 })
 
