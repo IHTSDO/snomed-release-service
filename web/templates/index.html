@@ -5,12 +5,12 @@
 
 	{{#each releaseCentre in releaseCentres}}
 
-	<div class="jumbotron row">
+	<div class="jumbotron">
 			<h2 style="text-align: center">{{releaseCentre.name}} Release Centre Dashboard</h2>		
 	</div>
 
 	<div class="row">
-		<div class="col-xs-6 build-history">
+		<div class="col-xs-6">
 			<div class="extensions">
 				{{#each extension in releaseCentre.extensions}}
 				<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
@@ -24,11 +24,12 @@
 					</li>
 					{{/each}}
 				</ul>
-				<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
+				<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
 				{{/each}}
 			</div>
 			<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
 		</div>
+		
 		<div class="col-xs-6 build-history">
 			<h2 class="page-header">Awesome Builds</h2>
 			<ul class="tight">
@@ -52,6 +53,5 @@
 			</ul>		
 		<div>		
 	</div>
-	
 	{{/each}}
 </div>
