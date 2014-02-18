@@ -26,7 +26,13 @@ li {
 }
 
 .add-button span {
-    margin-top: 10px;
+    margin: 10px 2px;
+}
+.list-align {
+    margin-left: 21px;
+}
+.no-bullet {
+    list-style: none;
 }
 
 .panel-products li {
@@ -86,14 +92,11 @@ li {
     .container .jumbotron {
         padding: 25px 40px;
     }
+}
 
 .big{
 	font-size: 2em;
 	line-height: 1.2em;	
-}
-
-.front-page .extensions {
-    margin-bottom: 30px;
 }
 
 .container.main-container {
