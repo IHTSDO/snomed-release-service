@@ -24,6 +24,11 @@ li {
 .nav .nav {
 	margin-bottom: 8px;
 }
+
+.add-button span {
+    margin-top: 10px;
+}
+
 .panel-products li {
 	list-style: none;
 }
@@ -71,10 +76,6 @@ li {
 }
 .traffic-light-success {
     background-position: 0px -54px;
-}
-
-.front-page .extensions {
-    margin-bottom: 30px;
 }
 
 .container.main-container {
@@ -126,10 +127,6 @@ td.warning {
 }
 .post-conditions tbody td:nth-child(4) {
     text-align: center;
-}
-
-.noBullet {
-	list-style:none;
 }
 ul.tight {
 	margin-top: 0px;
