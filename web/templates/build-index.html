@@ -27,8 +27,14 @@
 		<ul>
 			<li title="In Progress" data-toggle="tooltip" data-placement="right">
 				{{#link-to "execution"}}
-				17 Feb, 2014 01:05:00 (UTC)
+				18 Feb, 2014 01:05:00 (UTC)
 				<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>
+				{{/link-to}}
+			</li>
+			<li title="Success" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution"}}
+				17 Feb, 2014 01:05:00 (UTC)
+				<span class="traffic-light traffic-light-success"></span>
 				{{/link-to}}
 			</li>
 			<li title="Success" data-toggle="tooltip" data-placement="right">
@@ -49,6 +55,7 @@
 				<span class="traffic-light traffic-light-failure"></span>
 				{{/link-to}}
 			</li>
+			<li class="no-bullet"><a href="#" onclick="return false;">More...</a></li>
 		</ul>
 	</div>
 </div>
