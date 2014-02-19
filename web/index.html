@@ -57,12 +57,11 @@
 	// Ember.js template loading for dev.
 	// Templates should be precompiled for production.
 	function loadEmberTemplate(name) {
-		var id;
-		if (name.indexOf('-index', name.length - 6) == -1) {
-			id = name;
-		} else {
-			id = name.replace('-index', '/index');
+		var id = name;//.replace('/', '.');
+		if (id.indexOf('-index', name.length - 6) != -1) {
+			id = id.replace('-index', '/index');
 		}
+		console.log(id);
 		$.ajax({
 			async: false,
 			url: 'templates/' + name + '.html',
@@ -94,7 +93,9 @@
 	loadEmberTemplate('build-trigger');
 
 	loadEmberTemplate('execution');
-	loadEmberTemplate('execution-index');
+	loadEmberTemplate('execution/results');
+	loadEmberTemplate('execution/debug');
+	loadEmberTemplate('execution/output');
 
 </script>
 
