@@ -29,7 +29,10 @@ App.Router.map(function() {
 					this.resource('pre-execution');
 					this.resource('build-history');
 					this.resource('execution', function() {
-						this.resource('build-results');
+						this.route('results');
+						this.route('debug');
+						this.route('output');
+						this.route('publish');
 					});
 				});
 			});
@@ -46,7 +49,6 @@ App.AbstractRoute = Ember.Route.extend({
 
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
-		debug ("Before Model in " + this);
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
 //			this.transitionTo('pre-login');
@@ -204,6 +206,12 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 		var build = this.modelFor('build');
 		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
 		return pack;
+	}
+})
+
+App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
+	beforeModel: function() {
+		this.transitionTo('execution.results');
 	}
 })
 

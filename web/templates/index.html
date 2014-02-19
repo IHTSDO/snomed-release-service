@@ -9,11 +9,11 @@
 			<h2 style="text-align: center">{{releaseCentre.name}} Release Centre Dashboard</h2>		
 	</div>
 
-	<div class="row">
-		<div class="col-xs-6">
-			<div class="extensions">
-				{{#each extension in releaseCentre.extensions}}
-				<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
+	<div class="extensions">
+		{{#each extension in releaseCentre.extensions}}
+		<h2 class="page-header">{{extension.name}} <small>(Extension)</small></h2>
+		<div class="row">
+			<div class="col-sm-6">
 				<h3>Products</h3>
 				<ul>
 					{{#each product in extension.products}}
@@ -25,33 +25,32 @@
 					{{/each}}
 				</ul>
 				<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
-				{{/each}}
 			</div>
-			<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
+			<div class="col-sm-6">
+				<h3>Starred Builds <span class="glyphicon glyphicon-star"></span></h3>
+				<ul>
+					<li title="In Progress" data-toggle="tooltip" data-placement="right">
+						{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" }}20130731_international_release{{/link-to}}
+						{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>{{/link-to}}
+					</li>
+					<li title="Success" data-toggle="tooltip" data-placement="right">
+						{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" }}20140131_international_release__nightly{{/link-to}}
+						{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
+					</li>
+					<li title="Warning" data-toggle="tooltip" data-placement="right">
+						{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "2_20140131_international_release__biannual" }}20140131_international_release__biannual{{/link-to}}
+						{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "2_20140131_international_release__biannual" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-warning"></span>{{/link-to}}
+					</li>
+					<li title="Failure" data-toggle="tooltip" data-placement="right">
+						{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "8_20140731_international_release__biannual" }}20140731_international_release__biannual{{/link-to}}
+						{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "8_20140731_international_release__biannual" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-failure"></span>{{/link-to}}
+					</li>
+					<li class="no-bullet"> {{#link-to onclick="return false;"}}Show more...{{/link-to}}</li>
+				</ul>
+			<div>
 		</div>
-		
-		<div class="col-xs-6 build-history">
-			<h2 class="page-header">Awesome Builds</h2>
-			<ul class="tight">
-				<li title="In Progress" data-toggle="tooltip" data-placement="right">
-					{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" }}20130731_international_release{{/link-to}}
-					{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>{{/link-to}}
-				</li>
-				<li title="Success" data-toggle="tooltip" data-placement="right">
-					{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" }}20140131_international_release__nightly{{/link-to}}
-					{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "3_20140131_international_release__nightly" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
-				</li>
-				<li title="Warning" data-toggle="tooltip" data-placement="right">
-					{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "2_20140131_international_release__biannual" }}20140131_international_release__biannual{{/link-to}}
-					{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "2_20140131_international_release__biannual" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-warning"></span>{{/link-to}}
-				</li>
-				<li title="Failure" data-toggle="tooltip" data-placement="right">
-					{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "8_20140731_international_release__biannual" }}20140731_international_release__biannual{{/link-to}}
-					{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_spanish_edition" "8_20140731_international_release__biannual" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-failure"></span>{{/link-to}}
-				</li>						
-				<li class="no-bullet"> {{#link-to onclick="return false;"}}Show more...{{/link-to}}</li>
-			</ul>		
-		<div>		
+		{{/each}}
+		<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add an Extension</a>
 	</div>
 	{{/each}}
 </div>
