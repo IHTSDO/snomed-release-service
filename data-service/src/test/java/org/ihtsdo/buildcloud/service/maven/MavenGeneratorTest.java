@@ -1,18 +1,25 @@
 package org.ihtsdo.buildcloud.service.maven;
 
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 
 public class MavenGeneratorTest {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
 	private MavenGenerator mavenGenerator;
 
@@ -20,18 +27,36 @@ public class MavenGeneratorTest {
 	public void setup() {
 		mavenGenerator = new MavenGenerator();
 	}
-
+	
 	@Test
+	public void testGenerateBuildPoms() throws IOException {
+		Build build = new TestEntityFactory().createBuild();
+		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
+
+		File buildDirectory = mavenGenerator.generateBuildFiles(build);
+		Assert.assertNotNull(buildDirectory);
+		
+		String generatedPom = StreamUtils.copyToString(new FileInputStream(new File(buildDirectory, "pom.xml")), Charset.defaultCharset()).replace("\r", "");
+		Assert.assertEquals(expectedPom, generatedPom);	
+		
+		//We're expecting to have 10 things in that directory
+		//4 x pom.xml, 3 x assembly.xml, 3 x dir
+		int directoryItemCount = TestUtils.itemCount(buildDirectory);
+		LOGGER.debug ("Found " + directoryItemCount + " items in " + buildDirectory.getName());
+		Assert.assertEquals(directoryItemCount, 10);	
+	}
+
+	/*@Test
 	public void testGenerateBuildPoms() throws IOException {
 		Package releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Biannual", "RF2");
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-project-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
 		StringWriter writer = new StringWriter();
-		mavenGenerator.generateBuildPoms(writer, releasePackage.getBuild());
+		mavenGenerator.generateBuildFiles(writer, releasePackage.getBuild());
 		String actualPom = writer.toString();
 
 		Assert.assertEquals(expectedPom, actualPom);
-	}
+	}*/
 
 	@Test
 	public void testGenerateArtifactPom() throws IOException {

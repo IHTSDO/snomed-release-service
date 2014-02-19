@@ -10,11 +10,9 @@
 <ul>
 	{{#each builds}}
 	<li>
-		{{#link-to "build" this}}
-		{{name}}
-		{{/link-to}}
+		{{#link-to "build" this}}{{name}}{{/link-to}}
+		<a href="#" title="Star build to show on home page." data-toggle="tooltip" onclick="$(this).find('span').toggleClass('glyphicon-star-empty'); return false;"><span class="glyphicon glyphicon-star glyphicon-star-empty"></span></a>
 	</li>
 	{{/each}}
-	<li class="noBullet"><a class="add-button" href="#"><span class="glyphicon glyphicon-plus"></span> Add a Build</a></li>
 </ul>
-<br/>
+<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Build</a>

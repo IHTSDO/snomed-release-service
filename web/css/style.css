@@ -5,6 +5,9 @@ body {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
 }
+li {
+    margin-bottom: 5px;
+}
 .well h3 {
 	margin-top: 0;
 }
@@ -21,6 +24,17 @@ body {
 .nav .nav {
 	margin-bottom: 8px;
 }
+
+.add-button span {
+    margin: 10px 2px;
+}
+.list-align {
+    margin-left: 21px;
+}
+.no-bullet {
+    list-style: none;
+}
+
 .panel-products li {
 	list-style: none;
 }
@@ -47,22 +61,42 @@ body {
 .centre {
 	text-align:center;
 }
-.status_ok{
-	color: green;
+
+.build-history ul {
+    display: inline-block;
 }
-.status_warning{
-	color: orange;
+.traffic-light {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    background-image: url('../images/traffic-lights.png');
+    background-size: cover;
+    margin-bottom: -3px;
 }
-.status_fail{
-	color: red;
+.traffic-light-failure {
+    background-position: 0px -18px;
 }
+
+.traffic-light-warning {
+    background-position: 0px -36px;
+}
+.traffic-light-success {
+    background-position: 0px -54px;
+}
+
+.container.main-container {
+    margin-bottom: 30px;
+}
+
+@media screen and (min-width: 768px) {
+    .container .jumbotron {
+        padding: 25px 40px;
+    }
+}
+
 .big{
 	font-size: 2em;
 	line-height: 1.2em;	
-}
-
-.front-page .extensions {
-    margin-bottom: 30px;
 }
 
 .container.main-container {
@@ -97,13 +131,9 @@ td.warning {
 .post-conditions tbody td:nth-child(4) {
     text-align: center;
 }
-
-.noBullet {
-	list-style:none;
-}
 ul.tight {
 	margin-top: 0px;
 	margin-bottom: 2px;
 	line-height: 1.2em;
-	font-size: 0.8em;
+	/*font-size: 0.8em;*/
 }
