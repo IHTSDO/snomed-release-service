@@ -52,16 +52,15 @@
 <script src="libs/bootstrap/js/transition.js"></script>
 <script src="libs/bootstrap/js/tooltip.js"></script>
 <script src="libs/bootstrap/js/popover.js"></script>
+<script src="libs/bootstrap/js/dropdown.js"></script>
 
 <script>
 	// Ember.js template loading for dev.
 	// Templates should be precompiled for production.
 	function loadEmberTemplate(name) {
-		var id;
-		if (name.indexOf('-index', name.length - 6) == -1) {
-			id = name;
-		} else {
-			id = name.replace('-index', '/index');
+		var id = name;//.replace('/', '.');
+		if (id.indexOf('-index', name.length - 6) != -1) {
+			id = id.replace('-index', '/index');
 		}
 		$.ajax({
 			async: false,
@@ -72,6 +71,24 @@
 			}
 		});
 	}
+	
+	function loadEmberPartial(name) {
+		var partialName = "_" + name;
+		$.ajax({
+			async: false,
+			url: 'templates/' + name + '.html',
+			dataType: 'text',
+			success: function (html) {
+				var scriptPartial = $('<script>').attr('type', 'text/x-handlebars').attr('data-template-name', partialName).html(html);
+				//debug ("Adding script: " + scriptPartial[0].outerHTML);
+				$('body').append(scriptPartial);
+			}
+		});
+	}
+	
+	function debug(msg) {
+		if (window.console) console.log(msg);
+	}	
 </script>
 <script>
 	loadEmberTemplate('pre-login');
@@ -95,6 +112,14 @@
 
 	loadEmberTemplate('execution');
 	loadEmberTemplate('execution-index');
+
+	loadEmberTemplate('execution/results');
+	loadEmberTemplate('execution/debug');
+	loadEmberTemplate('execution/output');
+	loadEmberTemplate('execution/publish');
+	
+	loadEmberPartial('title-dropdown');	
+
 
 </script>
 
