@@ -61,7 +61,6 @@
 		if (id.indexOf('-index', name.length - 6) != -1) {
 			id = id.replace('-index', '/index');
 		}
-		console.log(id);
 		$.ajax({
 			async: false,
 			url: 'templates/' + name + '.html',
