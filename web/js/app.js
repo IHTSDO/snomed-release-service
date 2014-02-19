@@ -32,6 +32,7 @@ App.Router.map(function() {
 						this.route('results');
 						this.route('debug');
 						this.route('output');
+						this.route('publish');
 					});
 				});
 			});
