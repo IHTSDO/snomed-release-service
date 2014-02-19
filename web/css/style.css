@@ -136,9 +136,3 @@ td.warning {
 .post-conditions tbody td:nth-child(4) {
     text-align: center;
 }
-ul.tight {
-	margin-top: 0px;
-	margin-bottom: 2px;
-	line-height: 1.2em;
-	/*font-size: 0.8em;*/
-}
