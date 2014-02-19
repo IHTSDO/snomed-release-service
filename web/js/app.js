@@ -225,6 +225,7 @@ function signinCallback(authResult) {
 function afterRender() {
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
+	$("[data-toggle='dropdown']").dropdown();
 	initBuildInputFileUploadForm();
 }
 
@@ -290,6 +291,4 @@ $.validator.setDefaults({
 	}
 });
 
-function debug(msg) {
-	if (window.console) console.log(msg);
-}
+
