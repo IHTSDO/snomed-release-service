@@ -83,13 +83,13 @@ App.ResolveHypermediaLinks = function(object) {
 
 // Many Array Reload Extension
 var get = Ember.get;
-DS.ManyArray.reopen({
+DS.PromiseArray.reopen({
 	reloadLinks: function() {
 		var records = get(this, 'content'),
-			store = get(this, 'store'),
-			owner = get(this, 'owner'),
-			type = get(this, 'type'),
-			name = get(this, 'name'),
+			store = get(records, 'store'),
+			owner = get(records, 'owner'),
+			type = get(records, 'type'),
+			name = get(records, 'name'),
 			resolver = Ember.RSVP.defer();
 
 		var meta = owner.constructor.metaForProperty(name);
