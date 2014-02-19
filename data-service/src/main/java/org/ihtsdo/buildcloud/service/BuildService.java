@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface BuildService {
 
@@ -15,4 +15,7 @@ public interface BuildService {
 	Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId);
 
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
+
+	String run(String buildCompositeKey, String authenticatedId) throws IOException;
+
 }
