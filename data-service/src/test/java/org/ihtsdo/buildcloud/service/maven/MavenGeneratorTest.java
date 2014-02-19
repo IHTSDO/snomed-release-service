@@ -37,7 +37,7 @@ public class MavenGeneratorTest {
 		Assert.assertNotNull(buildDirectory);
 		
 		String generatedPom = StreamUtils.copyToString(new FileInputStream(new File(buildDirectory, "pom.xml")), Charset.defaultCharset()).replace("\r", "");
-		Assert.assertEquals(expectedPom, generatedPom);	
+		Assert.assertEquals(expectedPom, generatedPom);
 		
 		//We're expecting to have 10 things in that directory
 		//4 x pom.xml, 3 x assembly.xml, 3 x dir
