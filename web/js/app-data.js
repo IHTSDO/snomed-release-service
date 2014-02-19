@@ -32,7 +32,7 @@ App.Package = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	name: DS.attr(),
 	status: DS.attr(),
-	inputFiles: DS.hasMany('inputFile',{async: true})
+	inputfiles: DS.hasMany('inputFile', { async: true })
 });
 App.InputFile = DS.Model.extend({
 	parent: DS.belongsTo('package'),
@@ -80,3 +80,20 @@ App.ResolveHypermediaLinks = function(object) {
 		}
 	}
 }
+
+// Many Array Reload Extension
+var get = Ember.get;
+DS.PromiseArray.reopen({
+	reloadLinks: function() {
+		var records = get(this, 'content'),
+			store = get(records, 'store'),
+			owner = get(records, 'owner'),
+			type = get(records, 'type'),
+			name = get(records, 'name'),
+			resolver = Ember.RSVP.defer();
+
+		var meta = owner.constructor.metaForProperty(name);
+		var link = owner._data.links[meta.key];
+		store.findHasMany(owner, link, meta, resolver);
+	}
+});

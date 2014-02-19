@@ -24,10 +24,13 @@ App.Router.map(function() {
 						this.resource('pre-conditions');
 						this.resource('post-conditions');
 						this.resource('build-trigger');
-						this.resource('build-results');
-						this.resource('build-history');
 					});
+					this.resource('build-trigger');
 					this.resource('pre-execution');
+					this.resource('build-history');
+					this.resource('execution', function() {
+						this.resource('build-results');
+					});
 				});
 			});
 		});
@@ -153,6 +156,18 @@ App.PreExecutionRoute = App.AuthorisedRoute.extend({
 	}
 })
 
+App.PreExecutionController = Ember.ObjectController.extend({
+	actions: {
+		runBuild: function (build) {
+			var url = 'api/v1/builds/' + build.id + '/run'
+			$.ajax({
+				url: url,
+				type: 'POST'
+			})
+		}
+	}
+});
+
 // Package
 App.PackageRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
@@ -168,9 +183,29 @@ App.PackageRoute = App.AuthorisedRoute.extend({
 App.BuildInputRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('package');
+	},
+	setupController: function(controller, model) {
+		controller.set('model', model);
+		controller.set('inputfiles', model.get('inputfiles'));
 	}
 })
 
+App.BuildInputController = Ember.ObjectController.extend({
+	actions: {
+		reload: function() {
+			var inputfiles = this.get('inputfiles');
+			inputfiles.reloadLinks();
+		}
+	}
+})
+
+App.ExecutionRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		var build = this.modelFor('build');
+		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
+		return pack;
+	}
+})
 
 function signinCallback(authResult) {
 	if (authResult['status']['signed_in']) {
@@ -189,12 +224,71 @@ function signinCallback(authResult) {
 
 function afterRender() {
 	$("[data-toggle='popover']").popover();
-
-	$('.panel-build-input form').submit(function() {
-
-	})
-
+	$("[data-toggle='tooltip']").tooltip();
+	initBuildInputFileUploadForm();
 }
+
+function initBuildInputFileUploadForm() {
+	var $button = $('.panel-build-input form .btn');
+	$('.panel-build-input form').submit(function () {
+		var $form = $(this);
+		if ($form.valid()) {
+			var actionPath = $('.actionpath', $form).text()
+			var shortName = $('input[name="shortName"]', $form).val();
+			var action = actionPath + shortName;
+			console.log('Upload url = "' + action + '"');
+			$form.attr('action', action);
+			$button.val('Uploading...');
+			$button.prop('disabled', true);
+			return true;
+		} else {
+			return false;
+		}
+	});
+	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
+		$button.val('Upload');
+		$button.prop('disabled', false);
+		$('.panel-build-input form')[0].reset();
+		$('.panel-build-input .reloadmodel').click();
+	});
+	effectPulse($('.build-history .traffic-light-in-progress'));
+}
+
+function effectPulse($selection) {
+	window.setInterval(function() {
+
+	}, 1000)
+	if ($selection && $selection.size() > 0) {
+		$selection.animate({
+			opacity: 0
+		}, 500, function() {
+			$selection.animate({
+				opacity: 1
+			}, 500, function() {
+				effectPulse($selection);
+			})
+		})
+	}
+}
+
+// Set JQuery Validate defaults to match Bootstrap layout.
+$.validator.setDefaults({
+	highlight: function(element) {
+		$(element).closest('.form-group').addClass('has-error');
+	},
+	unhighlight: function(element) {
+		$(element).closest('.form-group').removeClass('has-error');
+	},
+	errorElement: 'span',
+	errorClass: 'help-block',
+	errorPlacement: function(error, element) {
+		if(element.parent('.input-group').length) {
+			error.insertAfter(element.parent());
+		} else {
+			error.insertAfter(element);
+		}
+	}
+});
 
 function debug(msg) {
 	if (window.console) console.log(msg);
