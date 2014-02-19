@@ -29,7 +29,10 @@ App.Router.map(function() {
 					this.resource('pre-execution');
 					this.resource('build-history');
 					this.resource('execution', function() {
-						this.resource('build-results');
+						this.route('results');
+						this.route('debug');
+						this.route('output');
+						this.route('publish');
 					});
 				});
 			});
@@ -46,7 +49,6 @@ App.AbstractRoute = Ember.Route.extend({
 
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
-		debug ("Before Model in " + this);
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
 //			this.transitionTo('pre-login');
@@ -207,6 +209,12 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 	}
 })
 
+App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
+	beforeModel: function() {
+		this.transitionTo('execution.results');
+	}
+})
+
 function signinCallback(authResult) {
 	if (authResult['status']['signed_in']) {
 		//Store the token in session storage.  Note we can't store against Ember
@@ -225,6 +233,7 @@ function signinCallback(authResult) {
 function afterRender() {
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
+	$("[data-toggle='dropdown']").dropdown();
 	initBuildInputFileUploadForm();
 }
 
@@ -290,6 +299,4 @@ $.validator.setDefaults({
 	}
 });
 
-function debug(msg) {
-	if (window.console) console.log(msg);
-}
+

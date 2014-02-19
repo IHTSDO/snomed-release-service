@@ -6,7 +6,7 @@
 	<li>{{name}}</li>
 </ol>
 
-<h2 class="page-header">{{name}} <small>(Product Build)</small></h2>
+<h2 class="page-header">{{partial "title-dropdown"}} {{name}} <small>(Product Build)</small></h2>
 
 <div class="row">
 	<div class="col-xs-6">
@@ -67,13 +67,6 @@
 		<div class="col-md-4">
 				<button {{action 'initiateBuild' selectedBuild}} type="button" class="btn btn-success btn-lg success">
 					<span class="glyphicon glyphicon-thumbs-up "></span> Go...
-				</button>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col-md-4">
-				<button type="button" class="btn btn-default btn-lg">
-					<span class="glyphicon glyphicon-cloud-upload"></span> Publish
 				</button>
 		</div>
 	</div>
