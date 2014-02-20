@@ -9,9 +9,11 @@ import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 
 public class TestEntityGenerator {
 
-	public static final String [] releaseCentreNames = {"International"};
-	
-	public static final String [] extensionNames = {"SNOMED CT International Edition"};	
+	public static final String [] releaseCentreNames = {"International Release Centre"};
+
+	public static final String [] releaseCentreShortNames = {"International"};
+
+	public static final String [] extensionNames = {"SNOMED CT International Edition"};
 	
 	public static final String [] productNames = {	"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};		
@@ -29,7 +31,7 @@ public class TestEntityGenerator {
 	
 	protected ReleaseCentre createTestReleaseCentre() {
 		
-		ReleaseCentre internationalReleaseCentre = new ReleaseCentre(releaseCentreNames[0]);
+		ReleaseCentre internationalReleaseCentre = new ReleaseCentre(releaseCentreNames[0], releaseCentreShortNames[0]);
 		Extension extension = new Extension(extensionNames[0]);
 		internationalReleaseCentre.addExtension(extension);
 
