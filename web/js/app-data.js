@@ -6,6 +6,7 @@ DS.RESTAdapter.reopen({
 // Define business model
 App.Centre = DS.Model.extend({
 	name: DS.attr(),
+	shortName: DS.attr(),
 	extensions: DS.hasMany('extension', { async: true })
 });
 App.Extension = DS.Model.extend({

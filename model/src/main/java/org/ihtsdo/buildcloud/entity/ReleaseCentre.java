@@ -24,6 +24,8 @@ public class ReleaseCentre {
 
 	private String name;
 
+	private String shortName;
+
 	@OneToMany(mappedBy = "releaseCentre")
 	@JsonIgnore
 	private List<Extension> extensions;
@@ -32,9 +34,10 @@ public class ReleaseCentre {
 		extensions = new ArrayList<>();
 	}
 
-	public ReleaseCentre(String name) {
+	public ReleaseCentre(String name, String shortName) {
 		this();
-		setName(name);
+		this.name = name;
+		setShortName(shortName);
 	}
 
 	public void addExtension(Extension extension) {
@@ -56,7 +59,15 @@ public class ReleaseCentre {
 
 	public void setName(String name) {
 		this.name = name;
-		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+	}
+
+	public String getShortName() {
+		return shortName;
+	}
+
+	public void setShortName(String shortName) {
+		this.shortName = shortName;
+		this.businessKey = EntityHelper.formatAsBusinessKey(shortName);
 	}
 
 	public String getBusinessKey() {
