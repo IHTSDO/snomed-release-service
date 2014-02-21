@@ -38,6 +38,9 @@ App.Router.map(function() {
 			});
 		});
 	});
+	this.resource('admin', function() {
+		this.resource('create-release-centre');
+	});
 });
 
 
@@ -49,9 +52,38 @@ App.AbstractRoute = Ember.Route.extend({
 
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
+		// Close any open modals
+		if ($('.modal').size() > 0) this.send('closeModal');
+
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
 //			this.transitionTo('pre-login');
+		}
+	}
+});
+
+App.ApplicationRoute = Ember.Route.extend({
+	actions: {
+		openModal: function(modalName) {
+			return this.render(modalName, {
+				into: 'application',
+				outlet: 'modal',
+				controller: modalName
+			});
+		},
+		modalInserted: function() {
+			var $modal = $('.modal');
+			var route = this;
+			$modal.on('hidden.bs.modal', function(e) {
+				route.disconnectOutlet({
+					outlet: 'modal',
+					parentView: 'application'
+				});
+			})
+			$modal.modal('show');
+		},
+		closeModal: function() {
+			$('.modal').modal('hide');
 		}
 	}
 });
@@ -215,6 +247,21 @@ App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 
+App.CreateReleaseCentreView = Ember.View.extend({
+	templateName: 'admin/create-release-centre',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+
+App.CreateReleaseCentreController = Ember.ObjectController.extend({
+	actions: {
+		create: function() {
+			this.send('closeModal');
+		}
+	}
+})
+
 function signinCallback(authResult) {
 	if (authResult['status']['signed_in']) {
 		//Store the token in session storage.  Note we can't store against Ember
@@ -299,4 +346,8 @@ $.validator.setDefaults({
 	}
 });
 
-
+Ember.EasyForm.Config.registerWrapper('default', {
+	inputTemplate: 'easyform-override/bootstrap-input',
+	inputClass: 'form-group',
+	hintClass: 'help-block'
+});

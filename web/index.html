@@ -40,6 +40,7 @@
 <script type="text/x-handlebars">
 	<div class="container main-container">
 		{{outlet}}
+		{{outlet modal}}
 	</div>
 </script>
 
@@ -49,6 +50,7 @@
 <script src="libs/handlebars-1.1.2.js"></script>
 <script src="libs/ember-1.4.0.js"></script>
 <script src="libs/ember-data.prod-1.0.0-beta.6.js"></script>
+<script src="libs/ember-easyForm-1.0.0.beta.1.js"></script>
 <script src="libs/bootstrap/js/bootstrap-3.1.1.min.js"></script>
 
 <script>
@@ -88,6 +90,9 @@
 	}	
 </script>
 <script>
+	loadEmberTemplate('easyform-override/bootstrap-input');
+	loadEmberTemplate('easyform-override/bootstrap-inputControls');
+
 	loadEmberTemplate('pre-login');
 	loadEmberTemplate('index');
 	loadEmberTemplate('release-centre');
@@ -112,8 +117,11 @@
 	loadEmberTemplate('execution/debug');
 	loadEmberTemplate('execution/output');
 	loadEmberTemplate('execution/publish');
-	
-	loadEmberPartial('title-dropdown');	
+
+	loadEmberPartial('title-dropdown');
+
+	loadEmberTemplate('admin');
+	loadEmberTemplate('admin/create-release-centre');
 
 
 </script>
