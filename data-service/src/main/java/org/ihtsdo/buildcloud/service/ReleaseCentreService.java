@@ -10,4 +10,6 @@ public interface ReleaseCentreService {
 
 	ReleaseCentre find(String businessKey, String oauthId);
 
+	ReleaseCentre create(String name, String shortName, String oauthId);
+
 }
