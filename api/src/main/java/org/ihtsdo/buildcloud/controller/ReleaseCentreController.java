@@ -5,12 +5,15 @@ import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCentreService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +35,18 @@ public class ReleaseCentreController {
 		String authenticatedId = SecurityHelper.getSubject();
 		List<ReleaseCentre> centres = releaseCentreService.findAll(authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(centres, request, RELEASE_CENTRE_LINKS);
+	}
+
+	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	public ResponseEntity<String> createReleaseCentre(@RequestBody(required = false) Map<String, String> json) throws IOException {
+		String name = json.get("name");
+		String shortName = json.get("shortName");
+
+		String authenticatedId = SecurityHelper.getSubject();
+		releaseCentreService.create(name, shortName, authenticatedId);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Content-Type", "application/json");
+		return new ResponseEntity<String>(headers, HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{releaseCentreBusinessKey}")

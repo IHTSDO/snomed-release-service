@@ -18,6 +18,8 @@
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreMembershipDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCentreServiceImpl"/>
