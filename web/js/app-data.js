@@ -3,6 +3,11 @@ DS.RESTAdapter.reopen({
 	namespace: 'api/v1'
 });
 
+$.ajaxSetup({
+	beforeSend: function(xhr) {
+		xhr.setRequestHeader('Authorization', 'Basic ' + btoa('test:'));
+	}
+})
 // Define business model
 App.Centre = DS.Model.extend({
 	name: DS.attr(),
