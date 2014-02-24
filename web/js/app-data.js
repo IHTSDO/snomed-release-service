@@ -16,6 +16,7 @@ App.Centre = App.DSModel.extend({
 	name: DS.attr(),
 	shortName: DS.attr(),
 	extensions: DS.hasMany('extension', { async: true }),
+	removed: DS.attr('boolean'),
 	validations: {
 		name: {
 			presence: true,

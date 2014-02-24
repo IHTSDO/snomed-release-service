@@ -64,9 +64,16 @@ App.AuthorisedRoute = App.AbstractRoute.extend({
 
 App.ApplicationRoute = Ember.Route.extend({
 	actions: {
-		openModal: function(modalName) {
+		removeEntity: function(model) {
+			console.log('removeEntity', model);
+			this.send('openModal', 'remove-entity', model);
+		},
+		openModal: function(modalName, model) {
+			console.log('openModal');
 			var controller = this.controllerFor(modalName);
-			var model = controller.getModel();
+			if (!model) {
+				model = controller.getModel();
+			}
 			controller.set('model', model);
 			return this.render(modalName, {
 				into: 'application',
@@ -98,7 +105,9 @@ App.PreLoginRoute = App.AbstractRoute.extend();
 App.IndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return {
-			releaseCentres: this.store.find('centre')
+			releaseCentres: this.store.filter('centre', {}, function(centre) {
+				return !centre.get('removed');
+			})
 		}
 	}
 })
@@ -271,6 +280,23 @@ App.CreateReleaseCentreController = Ember.ObjectController.extend({
 	actions: {
 		submit: function() {
 			var model = this.get('model');
+			model.save();
+			this.send('closeModal');
+		}
+	}
+})
+
+App.RemoveEntityView = Ember.View.extend({
+	templateName: 'remove-entity',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.RemoveEntityController = Ember.ObjectController.extend({
+	actions: {
+		submit: function() {
+			var model = this.get('model');
+			model.set('removed', true);
 			model.save();
 			this.send('closeModal');
 		}
