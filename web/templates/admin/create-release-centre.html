@@ -5,16 +5,16 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title" id="modalLabel">Create Release Centre</h4>
 			</div>
+			{{#form-for controller}}
 			<div class="modal-body">
-				{{#form-for model}}
-					{{input releaseCentreName hint='Example: International Release Centre'}}
-					{{input releaseCentreShortName hint='This is used in URLs and output filenames. Example: International'}}
-				{{/form-for}}
+					{{input name label='Release Centre Name' hint='Example: International Release Centre'}}
+					{{input shortName label='Release Centre Short Name' hint='This is used in URLs and output filenames. Example: International'}}
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" {{action 'create'}}>Create</button>
+				{{submit class='btn btn-primary'}}
 			</div>
+			{{/form-for}}
 		</div>
 	</div>
 </div>

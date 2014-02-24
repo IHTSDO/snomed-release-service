@@ -65,10 +65,13 @@ App.AuthorisedRoute = App.AbstractRoute.extend({
 App.ApplicationRoute = Ember.Route.extend({
 	actions: {
 		openModal: function(modalName) {
+			var controller = this.controllerFor(modalName);
+			var model = controller.getModel();
+			controller.set('model', model);
 			return this.render(modalName, {
 				into: 'application',
 				outlet: 'modal',
-				controller: modalName
+				controller: controller
 			});
 		},
 		modalInserted: function() {
@@ -254,9 +257,21 @@ App.CreateReleaseCentreView = Ember.View.extend({
 	}
 })
 
+App.CreateReleaseCentreRoute = App.AuthorisedRoute.extend({
+	setupController: function(controller) {
+		console.log('CreateReleaseCentreRoute setupController');
+		controller.set('model', this.store.createRecord('centre'));
+	}
+})
+
 App.CreateReleaseCentreController = Ember.ObjectController.extend({
+	getModel: function() {
+		return this.store.createRecord('centre');
+	},
 	actions: {
-		create: function() {
+		submit: function() {
+			var model = this.get('model');
+			model.save();
 			this.send('closeModal');
 		}
 	}
@@ -349,5 +364,7 @@ $.validator.setDefaults({
 Ember.EasyForm.Config.registerWrapper('default', {
 	inputTemplate: 'easyform-override/bootstrap-input',
 	inputClass: 'form-group',
-	hintClass: 'help-block'
+	hintClass: 'help-block',
+	fieldErrorClass: 'has-error',
+	errorClass: 'alert alert-danger'
 });

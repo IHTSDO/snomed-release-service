@@ -8,11 +8,24 @@ $.ajaxSetup({
 		xhr.setRequestHeader('Authorization', 'Basic ' + btoa('test:'));
 	}
 })
+
+App.DSModel = DS.Model.extend(Ember.Validations.Mixin);
+
 // Define business model
-App.Centre = DS.Model.extend({
+App.Centre = App.DSModel.extend({
 	name: DS.attr(),
 	shortName: DS.attr(),
-	extensions: DS.hasMany('extension', { async: true })
+	extensions: DS.hasMany('extension', { async: true }),
+	validations: {
+		name: {
+			presence: true,
+			length: { minimum: 3 }
+		},
+		shortName: {
+			presence: true,
+			length: { minimum: 3 }
+		}
+	}
 });
 App.Extension = DS.Model.extend({
 	parent: DS.belongsTo('centre'),
