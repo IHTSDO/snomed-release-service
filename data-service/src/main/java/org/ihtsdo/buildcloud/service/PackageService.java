@@ -4,7 +4,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 
 import java.util.List;
 
-public interface PackageService {
+public interface PackageService extends EntityService<Package> {
 
 	Package find(String buildCompositeKey, String packageBusinessKey, String authenticatedId);
 

@@ -30,6 +30,8 @@ public class ReleaseCentre {
 	@JsonIgnore
 	private List<Extension> extensions;
 
+	private boolean removed;
+
 	public ReleaseCentre() {
 		extensions = new ArrayList<>();
 	}
@@ -78,4 +80,11 @@ public class ReleaseCentre {
 		return extensions;
 	}
 
+	public boolean isRemoved() {
+		return removed;
+	}
+
+	public void setRemoved(boolean removed) {
+		this.removed = removed;
+	}
 }

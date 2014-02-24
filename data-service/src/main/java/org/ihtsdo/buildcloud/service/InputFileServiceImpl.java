@@ -22,7 +22,7 @@ import java.util.List;
 
 @Service
 @Transactional
-public class InputFileServiceImpl implements InputFileService {
+public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implements InputFileService {
 
 	@Autowired
 	private InputFileDAO inputFileDAO;
@@ -40,6 +40,11 @@ public class InputFileServiceImpl implements InputFileService {
 	private String s3BucketName;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
+
+	@Autowired
+	protected InputFileServiceImpl(InputFileDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public List<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {

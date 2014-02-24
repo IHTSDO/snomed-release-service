@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 @Transactional
-public class ReleaseCentreServiceImpl implements ReleaseCentreService {
+public class ReleaseCentreServiceImpl extends EntityServiceImpl<ReleaseCentre> implements ReleaseCentreService {
 
 	@Autowired
 	private ReleaseCentreDAO dao;
@@ -24,6 +24,11 @@ public class ReleaseCentreServiceImpl implements ReleaseCentreService {
 
 	@Autowired
 	private UserDAO userDAO;
+
+	@Autowired
+	public ReleaseCentreServiceImpl(ReleaseCentreDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public List<ReleaseCentre> findAll(String oauthId) {

@@ -12,13 +12,18 @@ import java.util.List;
 
 @Service
 @Transactional
-public class ProductServiceImpl implements ProductService {
+public class ProductServiceImpl extends EntityServiceImpl<Product> implements ProductService {
 
 	@Autowired
 	private ProductDAO productDAO;
 
 	@Autowired
 	private ExtensionDAO extensionDAO;
+
+	@Autowired
+	protected ProductServiceImpl(ProductDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) {
