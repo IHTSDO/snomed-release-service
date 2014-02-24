@@ -42,6 +42,8 @@ App.InputFile = DS.Model.extend({
 
 // REST interface adapter. Adds JSON envelope.
 App.ApplicationSerializer = DS.RESTSerializer.extend({
+
+	// Create json envelope when receiving
 	normalizePayload: function(type, payload) {
 
 		App.ResolveHypermediaLinks(payload);
@@ -56,6 +58,15 @@ App.ApplicationSerializer = DS.RESTSerializer.extend({
 		var o = {};
 		o[type.typeKey + 's'] = payload;
 		return o;
+	},
+
+	// We don't want a json envelope when sending
+	serializeIntoHash: function(hash, type, record, options) {
+		var root = Ember.String.camelize(type.typeKey);
+		var serialized = this.serialize(record, options);
+		$.extend(hash, serialized);
+		console.log('serializeIntoHash');
+		console.log(hash);
 	}
 });
 
