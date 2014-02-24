@@ -13,13 +13,18 @@ import java.util.List;
 
 @Service
 @Transactional
-public class PackageServiceImpl implements PackageService {
+public class PackageServiceImpl extends EntityServiceImpl<Package> implements PackageService {
 
 	@Autowired
 	private PackageDAO packageDAO;
 
 	@Autowired
 	private BuildDAO buildDAO;
+
+	@Autowired
+	protected PackageServiceImpl(PackageDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public Package find(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {

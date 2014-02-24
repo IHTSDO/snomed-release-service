@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public interface BuildService {
+public interface BuildService extends EntityService<Build> {
 
 	List<Build> findAll(String authenticatedId);
 

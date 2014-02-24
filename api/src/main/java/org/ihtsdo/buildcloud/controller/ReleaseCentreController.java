@@ -43,9 +43,24 @@ public class ReleaseCentreController {
 		String shortName = json.get("shortName");
 
 		String authenticatedId = SecurityHelper.getSubject();
-		ReleaseCentre releaseCentre = releaseCentreService.create(name, shortName, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(releaseCentre, request, RELEASE_CENTRE_LINKS);
+		ReleaseCentre centre = releaseCentreService.create(name, shortName, authenticatedId);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(centre, request, RELEASE_CENTRE_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+	}
+
+	@RequestMapping(value = "/{releaseCentreBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	public Map updateReleaseCentre(@PathVariable String releaseCentreBusinessKey,
+												   @RequestBody(required = false) Map<String, String> json,
+												   HttpServletRequest request) throws IOException {
+
+		String authenticatedId = SecurityHelper.getSubject();
+		ReleaseCentre centre = releaseCentreService.find(releaseCentreBusinessKey, authenticatedId);
+		centre.setName(json.get("name"));
+		centre.setShortName(json.get("shortName"));
+		centre.setRemoved("true".equalsIgnoreCase(json.get("removed")));
+		releaseCentreService.update(centre);
+		return hypermediaGenerator.getEntityHypermedia(centre, request, RELEASE_CENTRE_LINKS);
 	}
 
 	@RequestMapping("/{releaseCentreBusinessKey}")

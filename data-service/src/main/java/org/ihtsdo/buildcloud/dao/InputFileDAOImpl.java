@@ -9,10 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class InputFileDAOImpl implements InputFileDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputFileDAO {
 
 	@Override
 	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
@@ -38,12 +35,4 @@ public class InputFileDAOImpl implements InputFileDAO {
 		return (InputFile) query.uniqueResult();
 	}
 
-	@Override
-	public void save(InputFile inputFile) {
-		getCurrentSession().saveOrUpdate(inputFile);
-	}
-
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
-	}
 }

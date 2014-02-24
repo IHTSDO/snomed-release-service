@@ -19,7 +19,7 @@ import java.util.Map;
 
 @Service
 @Transactional
-public class BuildServiceImpl implements BuildService {
+public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildService {
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -32,6 +32,11 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private MavenExecutor mavenExecutor;
+
+	@Autowired
+	public BuildServiceImpl(BuildDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public List<Build> findAll(String authenticatedId) {
