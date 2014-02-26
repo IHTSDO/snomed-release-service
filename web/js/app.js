@@ -15,6 +15,10 @@ App = Ember.Application.create({
 App.Router.map(function() {
 	this.resource('pre-login');
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
+		this.resource('rule-sets', function() {
+//			this.resource('rule-set', { path: '/:ruleSet_id' });
+			this.resource('rule-set', { path: '/international-edition-only' });
+		});
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
 				this.resource('build', { path: '/:build_id' }, function() {
@@ -124,6 +128,23 @@ App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 
+// Rule Set
+App.RuleSetsRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('release-centre');
+	}
+})
+App.RuleSetsIndexRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('rule-sets');
+	}
+})
+App.RuleSetRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('rule-sets');
+	}
+})
+
 // Extension
 App.ExtensionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
@@ -201,7 +222,6 @@ App.PreExecutionRoute = App.AuthorisedRoute.extend({
 		return this.modelFor('build');
 	}
 })
-
 App.PreExecutionController = Ember.ObjectController.extend({
 	actions: {
 		runBuild: function (build) {
@@ -235,7 +255,6 @@ App.BuildInputRoute = App.AuthorisedRoute.extend({
 		controller.set('inputfiles', model.get('inputfiles'));
 	}
 })
-
 App.BuildInputController = Ember.ObjectController.extend({
 	actions: {
 		reload: function() {
@@ -244,6 +263,12 @@ App.BuildInputController = Ember.ObjectController.extend({
 		}
 	}
 })
+App.PostConditionsRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('package');
+	}
+})
+
 
 App.ExecutionRoute = App.AuthorisedRoute.extend({
 	model: function() {
