@@ -1,3 +1,58 @@
+DS.RESTAdapter.reopen({
+
+	// Configure API location
+	namespace: 'api/v1',
+
+	// Allow for nested resource REST URL by overriding:
+	//   createRecord, updateRecord, deleteRecord and buildNestedURL
+	createRecord: function(store, type, record) {
+		var data = {};
+		var serializer = store.serializerFor(type.typeKey);
+
+		serializer.serializeIntoHash(data, type, record, { includeId: true });
+
+		var url = this.buildNestedURL(record);
+		return this.ajax(url, "POST", { data: data });
+	},
+	updateRecord: function(store, type, record) {
+		var data = {};
+		var serializer = store.serializerFor(type.typeKey);
+
+		serializer.serializeIntoHash(data, type, record);
+
+		var id = get(record, 'id');
+
+		var url = this.buildNestedURL(record);
+		return this.ajax(url, "PUT", { data: data });
+	},
+	deleteRecord: function(store, type, record) {
+		var id = get(record, 'id');
+
+		var url = this.buildNestedURL(record);
+		return this.ajax(url, "DELETE");
+	},
+	buildNestedURL: function(record) {
+		var url;
+		var type = record.constructor.typeKey;
+		var id = get(record, 'id');
+
+		var parent = record.get('parent');
+		if (parent) {
+			var urlParts = [];
+
+			urlParts.push(this.buildNestedURL(parent));
+
+			urlParts.push(this.pathForType(type));
+			if (id) { urlParts.push(id); }
+
+			url = urlParts.join('/');
+		} else {
+			url = this.buildURL(type, id);
+		}
+		return url;
+	}
+});
+
 // REST interface adapter. Lets Ember Data communicate with our API as if the API used a JSON envelope.
 App.ApplicationSerializer = DS.RESTSerializer.extend({
 
