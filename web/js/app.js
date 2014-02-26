@@ -72,12 +72,10 @@ App.ApplicationRoute = Ember.Route.extend({
 			console.log('removeEntity', model);
 			this.send('openModal', 'remove-entity', model);
 		},
-		openModal: function(modalName, model) {
+		openModal: function(modalName, params) {
 			console.log('openModal');
 			var controller = this.controllerFor(modalName);
-			if (!model) {
-				model = controller.getModel();
-			}
+			var model = controller.getModel(params);
 			controller.set('model', model);
 			return this.render(modalName, {
 				into: 'application',
@@ -113,6 +111,11 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 				return !centre.get('removed');
 			})
 		}
+	},
+	actions: {
+		addProduct: function(extension) {
+			this.send('openModal', 'create-product', extension);
+		}
 	}
 })
 
@@ -125,6 +128,24 @@ App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
 App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('release-centre');
+	}
+})
+App.CreateReleaseCentreView = Ember.View.extend({
+	templateName: 'admin/create-release-centre',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateReleaseCentreController = Ember.ObjectController.extend({
+	getModel: function() {
+		return this.store.createRecord('centre');
+	},
+	actions: {
+		submit: function() {
+			var model = this.get('model');
+			model.save();
+			this.send('closeModal');
+		}
 	}
 })
 
@@ -189,6 +210,29 @@ App.ProductIndexController = Ember.ObjectController.extend({
 			controller.set('selectedBuild', lastBuild);
 		});
 	}.property('selectedBuild')
+})
+App.CreateProductView = Ember.View.extend({
+	templateName: 'product-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateProductController = Ember.ObjectController.extend({
+	getModel: function(extension) {
+		var product = this.store.createRecord('product', {
+			parent: extension
+		});
+		return  product;
+	},
+	actions: {
+		submit: function() {
+			var product = this.get('model');
+			var extension = product.get('parent');
+			extension.get('products').pushObject(product);
+			product.save();
+			this.send('closeModal');
+		}
+	}
 })
 
 // Build
@@ -284,33 +328,6 @@ App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 
-App.CreateReleaseCentreView = Ember.View.extend({
-	templateName: 'admin/create-release-centre',
-	didInsertElement: function() {
-		this.controller.send('modalInserted');
-	}
-})
-
-App.CreateReleaseCentreRoute = App.AuthorisedRoute.extend({
-	setupController: function(controller) {
-		console.log('CreateReleaseCentreRoute setupController');
-		controller.set('model', this.store.createRecord('centre'));
-	}
-})
-
-App.CreateReleaseCentreController = Ember.ObjectController.extend({
-	getModel: function() {
-		return this.store.createRecord('centre');
-	},
-	actions: {
-		submit: function() {
-			var model = this.get('model');
-			model.save();
-			this.send('closeModal');
-		}
-	}
-})
-
 App.RemoveEntityView = Ember.View.extend({
 	templateName: 'remove-entity',
 	didInsertElement: function() {
@@ -318,6 +335,9 @@ App.RemoveEntityView = Ember.View.extend({
 	}
 })
 App.RemoveEntityController = Ember.ObjectController.extend({
+	getModel: function(entity) {
+		return entity;
+	},
 	actions: {
 		submit: function() {
 			var model = this.get('model');
