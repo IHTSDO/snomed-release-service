@@ -17,7 +17,9 @@
 			</li>
 			{{/each}}
 		</ul>
-		<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Build</a>
+		<button class="btn btn-primary btn-md list-align" {{action 'addBuild' product}}>
+			<span class="glyphicon glyphicon-plus"></span> Add a build
+		</button>	
 	</div>
 	<div class="col-sm-6">
 		<h3>Tasks</h3>
