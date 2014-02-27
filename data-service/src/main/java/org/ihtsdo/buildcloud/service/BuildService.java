@@ -17,4 +17,7 @@ public interface BuildService extends EntityService<Build> {
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
 	String run(String buildCompositeKey, String authenticatedId) throws IOException;
+	
+	Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId);
+	
 }

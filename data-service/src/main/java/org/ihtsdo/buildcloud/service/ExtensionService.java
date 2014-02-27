@@ -8,5 +8,6 @@ public interface ExtensionService extends EntityService<Extension> {
 
 	List<Extension> findAll(String releaseCentreBusinessKey, String oauthId);
 	Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
+	Extension create(String releaseCentreBusinessKey, String name, String authenticatedId);
 
 }

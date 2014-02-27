@@ -113,7 +113,10 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 	actions: {
 		addProduct: function(extension) {
 			this.send('openModal', 'create-product', extension);
-		}
+		},
+		addExtension: function(releaseCentre) {
+			this.send('openModal', 'create-extension', releaseCentre);
+		}		
 	}
 })
 
@@ -126,6 +129,11 @@ App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
 App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('release-centre');
+	},
+	actions: {
+		addExtension: function(releaseCentre) {
+			this.send('openModal', 'create-extension', releaseCentre);
+		}			
 	}
 })
 App.CreateReleaseCentreView = Ember.View.extend({
@@ -178,6 +186,34 @@ App.ExtensionRoute = App.AuthorisedRoute.extend({
 App.ExtensionIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('extension');
+	},
+	actions: {
+		addProduct: function(extension) {
+			this.send('openModal', 'create-product', extension);
+		}			
+	}
+})
+App.CreateExtensionView = Ember.View.extend({
+	templateName: 'extension-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateExtensionController = Ember.ObjectController.extend({
+	getModel: function(releaseCentre) {
+		var extension = this.store.createRecord('extension', {
+			parent: releaseCentre
+		});
+		return  extension;
+	},
+	actions: {
+		submit: function() {
+			var extension = this.get('model');
+			var releaseCentre = extension.get('parent');
+			releaseCentre.get('extensions').pushObject(extension);
+			extension.save();
+			this.send('closeModal');
+		}
 	}
 })
 
@@ -195,7 +231,12 @@ App.ProductRoute = App.AuthorisedRoute.extend({
 App.ProductIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('product');
-	}
+	},
+	actions: {
+		addBuild: function(product) {
+			this.send('openModal', 'create-build', product);
+		}
+	}	
 })
 App.ProductIndexController = Ember.ObjectController.extend({
 	selectedBuild: function() {
@@ -238,7 +279,10 @@ App.BuildIndexController = Ember.ObjectController.extend({
 	actions: {
 		initiateBuild: function (selectedBuild) {
 			this.transitionToRoute('pre-execution', selectedBuild);
-		}
+		},
+		addPackage: function(build) {
+			this.send('openModal', 'create-package', build);
+		}			
 	}
 })
 
@@ -250,6 +294,29 @@ App.BuildRoute = App.AuthorisedRoute.extend({
 			build.set('parent', product);
 			return build;
 		});
+	}
+})
+App.CreateBuildView = Ember.View.extend({
+	templateName: 'build-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateBuildController = Ember.ObjectController.extend({
+	getModel: function(product) {
+		var build = this.store.createRecord('build', {
+			parent: product
+		});
+		return  build;
+	},
+	actions: {
+		submit: function() {
+			var build = this.get('model');
+			var product = build.get('parent');
+			product.get('builds').pushObject(build);
+			build.save();
+			this.send('closeModal');
+		}
 	}
 })
 
@@ -285,6 +352,29 @@ App.PackageRoute = App.AuthorisedRoute.extend({
 			thePackage.set('parent', build);
 			return thePackage;
 		});
+	}
+})
+App.CreatePackageView = Ember.View.extend({
+	templateName: 'package-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreatePackageController = Ember.ObjectController.extend({
+	getModel: function(build) {
+		var package = this.store.createRecord('package', {
+			parent: build
+		});
+		return  package;
+	},
+	actions: {
+		submit: function() {
+			var package = this.get('model');
+			var build = package.get('parent');
+			build.get('packages').pushObject(package);
+			package.save();
+			this.send('closeModal');
+		}
 	}
 })
 
