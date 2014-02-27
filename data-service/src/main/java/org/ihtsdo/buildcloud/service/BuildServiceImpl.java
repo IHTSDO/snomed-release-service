@@ -4,6 +4,8 @@ import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
@@ -75,5 +77,14 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 		File buildSourceDirectory = mavenGenerator.generateBuildFiles(build);
 		return mavenExecutor.exec(build, buildSourceDirectory, triggerDate);
 	}
+	
+	@Override
+	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) {
+		Product product = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		Build build = new Build(name);
+		product.addBuild(build);
+		buildDAO.save(build);
+		return build;
+	}	
 
 }
