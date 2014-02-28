@@ -1,0 +1,21 @@
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+	<li>{{#link-to "release-centre" parent.parent.parent.parent}}{{parent.parent.parent.parent.shortName}}{{/link-to}}</li>
+	<li>{{#link-to "extension" parent.parent.parent}}{{parent.parent.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "product" parent.parent}}{{parent.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "build" parent}}{{parent.name}}{{/link-to}}</li>
+	<li>{{name}}</li>
+</ol>
+
+<h3 class="page-header">28 Feb, 2014 12:00:00 (UTC) <small>(Execution)</small></h3>
+
+<div class="row">
+	<div class="col-md-3">
+		<ul class="nav">
+			<li>{{#link-to 'execution-review.configuration'}}Configuration{{/link-to}}</li>
+		</ul>
+	</div>
+	<div class="col-md-9">
+		{{outlet}}
+	</div>
+</div>

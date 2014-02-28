@@ -1,0 +1,42 @@
+<form>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Configuration</h3>
+		</div>
+		<div class="panel-body">
+			<p class="lead"><small>Please review the configuration before running the build.</small></p>
+
+			<h4>Execution Configuration</h4>
+<pre>{
+	"id" : "1_international_release",
+	"name" : "International Release",
+	"packages" : [ {
+		"id" : "rf2_release",
+		"name" : "RF2 Release",
+		"inputFiles" : [ {
+			"id" : "conceptsrf2",
+			"name" : "concepts.rf2"
+		} ]
+	} ],
+	"product" : {
+		"id" : "snomed_ct_international_edition",
+		"name" : "SNOMED CT International Edition",
+		"extension" : {
+			"id" : "snomed_ct_international_edition",
+			"name" : "SNOMED CT International Edition",
+			"releaseCentre" : {
+				"id" : "international",
+				"name" : "International Release Centre",
+				"shortName" : "International"
+			}
+		}
+	}
+}
+</pre>
+
+			<button type="button" class="btn btn-success btn-lg success">
+				<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
+			</button>
+		</div>
+	</div>
+</form>
