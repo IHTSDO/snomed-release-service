@@ -44,7 +44,7 @@ public class TestEntityGenerator {
 			Product product = new Product (productName);
 			extension.addProduct(product);
 			for (String buildName : buildNames){
-				Build build = new Build(buildName);
+				Build build = new Build(1L, buildName);
 				product.addBuild(build);
 				addPackagesToBuild(build);
 			}
