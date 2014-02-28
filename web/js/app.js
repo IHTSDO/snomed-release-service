@@ -7,7 +7,8 @@ App = Ember.Application.create({
 
 			//Initialise popovers for all elements that include the relevant attribute
 			//Needs to be repeated each time the DOM changes
-			Ember.run.scheduleOnce('afterRender', this, afterRender);
+			//Ember.run.scheduleOnce('afterRender', this, afterRender);
+			Ember.run.later(window, afterRender, 1000);
 		}.observes('currentPath')
 	})
 });
@@ -29,6 +30,7 @@ App.Router.map(function() {
 						this.resource('build-trigger');
 					});
 					this.resource('pre-execution');
+					this.resource('execution-history');
 					this.resource('build-history');
 					this.resource('execution', function() {
 						this.route('results');
@@ -452,9 +454,11 @@ function signinCallback(authResult) {
 }
 
 function afterRender() {
+	//alert ("AfterRender");
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
+	effectPulse($('.traffic-light-in-progress'));	
 	initBuildInputFileUploadForm();
 }
 
@@ -481,21 +485,20 @@ function initBuildInputFileUploadForm() {
 		$('.panel-build-input form')[0].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
-	effectPulse($('.build-history .traffic-light-in-progress'));
 }
 
 function effectPulse($selection) {
-	window.setInterval(function() {
-
-	}, 1000)
+	
 	if ($selection && $selection.size() > 0) {
+		$selection.stop();
+		$selection.clearQueue();
 		$selection.animate({
 			opacity: 0
-		}, 500, function() {
+		}, 900, function() {
 			$selection.animate({
 				opacity: 1
-			}, 500, function() {
-				effectPulse($selection);
+			}, 900, function() {
+				effectPulse($('.traffic-light-in-progress'));
 			})
 		})
 	}
