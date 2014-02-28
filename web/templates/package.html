@@ -1,13 +1,13 @@
 <ol class="breadcrumb">
 	<li><a href="#">Home</a></li>
-	<li>{{#link-to "release-centre" parent.parent.parent.parent}}{{parent.parent.parent.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "release-centre" parent.parent.parent.parent}}{{parent.parent.parent.parent.shortName}}{{/link-to}}</li>
 	<li>{{#link-to "extension" parent.parent.parent}}{{parent.parent.parent.name}}{{/link-to}}</li>
 	<li>{{#link-to "product" parent.parent}}{{parent.parent.name}}{{/link-to}}</li>
 	<li>{{#link-to "build" parent}}{{parent.name}}{{/link-to}}</li>
 	<li>{{name}}</li>
 </ol>
 
-<h3 class="page-header">{{partial "title-dropdown"}} {{name}} <small>(Package)</small></h3>
+<h3 class="page-header">{{name}} <small>(Package) {{partial "title-dropdown"}}</small></h3>
 
 <div class="row">
 	<div class="col-md-3">

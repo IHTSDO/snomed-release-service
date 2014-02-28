@@ -1,9 +1,10 @@
 <ol class="breadcrumb">
 	<li><a href="#">Home</a></li>
-	<li>{{#link-to "release-centre" parent}}{{parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "release-centre" parent}}{{parent.shortName}}{{/link-to}}</li>
+	<li>{{name}}</li>
 </ol>
 
-<h2>{{partial "title-dropdown"}} {{name}} <small>(Extension)</small></h2>
+<h2>{{name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
 <h3>Products</h3>
 <ul>
 	{{#each products}}
@@ -14,4 +15,6 @@
 	</li>
 	{{/each}}
 </ul>
-<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Product</a>
+<button class="btn btn-primary btn-md list-align" {{action 'addProduct' this}}>
+	<span class="glyphicon glyphicon-plus"></span> Add a Product
+</button>

@@ -1,17 +1,13 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ProductDAOImpl implements ProductDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO {
 
 	@Override
 	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
@@ -31,11 +27,6 @@ public class ProductDAOImpl implements ProductDAO {
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		query.setString("productBusinessKey", productBusinessKey);
 		return (Product) query.uniqueResult();
-
-	}
-
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
 	}
 
 }

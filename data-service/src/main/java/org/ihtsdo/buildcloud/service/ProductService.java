@@ -3,12 +3,13 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.entity.Product;
 
 import java.util.List;
-import java.util.Set;
 
-public interface ProductService {
+public interface ProductService extends EntityService<Product> {
 
 	List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
 
 	Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId);
+
+	Product create(String releaseCentreBusinessKey, String extensionBusinessKey, String name, String authenticatedId);
 
 }

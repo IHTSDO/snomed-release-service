@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public interface BuildService {
+public interface BuildService extends EntityService<Build> {
 
 	List<Build> findAll(String authenticatedId);
 
@@ -17,5 +17,6 @@ public interface BuildService {
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
 	String run(String buildCompositeKey, String authenticatedId) throws IOException;
-
+	
+	Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId);
 }

@@ -1,12 +1,22 @@
-// Configure REST location
-DS.RESTAdapter.reopen({
-	namespace: 'api/v1'
-});
+App.DSModel = DS.Model.extend(Ember.Validations.Mixin);
 
-// Define business model
-App.Centre = DS.Model.extend({
+// Models
+
+App.Centre = App.DSModel.extend({
 	name: DS.attr(),
-	extensions: DS.hasMany('extension', { async: true })
+	shortName: DS.attr(),
+	extensions: DS.hasMany('extension', { async: true }),
+	removed: DS.attr('boolean'),
+	validations: {
+		name: {
+			presence: true,
+			length: { minimum: 3 }
+		},
+		shortName: {
+			presence: true,
+			length: { minimum: 3 }
+		}
+	}
 });
 App.Extension = DS.Model.extend({
 	parent: DS.belongsTo('centre'),
@@ -39,61 +49,17 @@ App.InputFile = DS.Model.extend({
 	name: DS.attr()
 });
 
-// REST interface adapter. Adds JSON envelope.
-App.ApplicationSerializer = DS.RESTSerializer.extend({
-	normalizePayload: function(type, payload) {
 
-		App.ResolveHypermediaLinks(payload);
-		
-		if (type == 'App.BuildConfig'){
-			var uniqueID = (Math.random()+ "").substring(2) + new Date().getTime();
-			payload['id'] = uniqueID;
-			var payloadJSON = JSON.stringify(payload,null,"\t");
-			payload['configStr'] = payloadJSON;
-		}		
+// Configuration
 
-		var o = {};
-		o[type.typeKey + 's'] = payload;
-		return o;
-	}
+// Configure REST location
+DS.RESTAdapter.reopen({
+	namespace: 'api/v1'
 });
 
-App.ResolveHypermediaLinks = function(object) {
-	if($.isArray(object)) {
-		$(object).each(function(index, element) {
-			App.ResolveHypermediaLinks(element);
-		})
-	} else {
-		var links = {};
-		var linkFound = false;
-		for (var property in object) {
-			if (object.hasOwnProperty(property)) {
-				var urlPostfixIndex = property.indexOf('_url');
-				if (urlPostfixIndex > 0 && urlPostfixIndex == property.length - 4) {
-					links[property.substring(0, urlPostfixIndex)] = object[property];
-					linkFound = true;
-				}
-			}
-		}
-		if (linkFound) {
-			object.links = links;
-		}
+// API auto authentication
+$.ajaxSetup({
+	beforeSend: function(xhr) {
+		xhr.setRequestHeader('Authorization', 'Basic ' + btoa('test:'));
 	}
-}
-
-// Many Array Reload Extension
-var get = Ember.get;
-DS.PromiseArray.reopen({
-	reloadLinks: function() {
-		var records = get(this, 'content'),
-			store = get(records, 'store'),
-			owner = get(records, 'owner'),
-			type = get(records, 'type'),
-			name = get(records, 'name'),
-			resolver = Ember.RSVP.defer();
-
-		var meta = owner.constructor.metaForProperty(name);
-		var link = owner._data.links[meta.key];
-		store.findHasMany(owner, link, meta, resolver);
-	}
-});
+})

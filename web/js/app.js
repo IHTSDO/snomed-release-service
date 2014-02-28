@@ -7,7 +7,8 @@ App = Ember.Application.create({
 
 			//Initialise popovers for all elements that include the relevant attribute
 			//Needs to be repeated each time the DOM changes
-			Ember.run.scheduleOnce('afterRender', this, afterRender);
+			//Ember.run.scheduleOnce('afterRender', this, afterRender);
+			Ember.run.later(window, afterRender, 1000);
 		}.observes('currentPath')
 	})
 });
@@ -15,19 +16,21 @@ App = Ember.Application.create({
 App.Router.map(function() {
 	this.resource('pre-login');
 	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
+		this.resource('rule-sets', function() {
+//			this.resource('rule-set', { path: '/:ruleSet_id' });
+			this.resource('rule-set', { path: '/international-edition-only' });
+		});
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
 				this.resource('build', { path: '/:build_id' }, function() {
 					this.resource('package', { path: '/:package_id' }, function() {
-//						this.resource('package-index');
 						this.resource('build-input');
 						this.resource('pre-conditions');
 						this.resource('post-conditions');
 						this.resource('build-trigger');
 					});
-					this.resource('build-trigger');
 					this.resource('pre-execution');
-					this.resource('build-history');
+					this.resource('execution-history');
 					this.resource('execution', function() {
 						this.route('results');
 						this.route('debug');
@@ -37,6 +40,9 @@ App.Router.map(function() {
 				});
 			});
 		});
+	});
+	this.resource('admin', function() {
+		this.resource('create-release-centre');
 	});
 });
 
@@ -49,9 +55,46 @@ App.AbstractRoute = Ember.Route.extend({
 
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
+		// Close any open modals
+		if ($('.modal').size() > 0) this.send('closeModal');
+
 		//Redirect user to login page if no authorisation token is stored.
 		if (sessionStorage.authorisationToken === undefined){
 //			this.transitionTo('pre-login');
+		}
+	}
+});
+
+App.ApplicationRoute = Ember.Route.extend({
+	actions: {
+		removeEntity: function(model) {
+			console.log('removeEntity', model);
+			this.send('openModal', 'remove-entity', model);
+		},
+		openModal: function(modalName, params) {
+			console.log('openModal');
+			var controller = this.controllerFor(modalName);
+			var model = controller.getModel(params);
+			controller.set('model', model);
+			return this.render(modalName, {
+				into: 'application',
+				outlet: 'modal',
+				controller: controller
+			});
+		},
+		modalInserted: function() {
+			var $modal = $('.modal');
+			var route = this;
+			$modal.on('hidden.bs.modal', function(e) {
+				route.disconnectOutlet({
+					outlet: 'modal',
+					parentView: 'application'
+				});
+			})
+			$modal.modal('show');
+		},
+		closeModal: function() {
+			$('.modal').modal('hide');
 		}
 	}
 });
@@ -63,8 +106,18 @@ App.PreLoginRoute = App.AbstractRoute.extend();
 App.IndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return {
-			releaseCentres: this.store.find('centre')
+			releaseCentres: this.store.filter('centre', {}, function(centre) {
+				return !centre.get('removed');
+			})
 		}
+	},
+	actions: {
+		addProduct: function(extension) {
+			this.send('openModal', 'create-product', extension);
+		},
+		addExtension: function(releaseCentre) {
+			this.send('openModal', 'create-extension', releaseCentre);
+		}		
 	}
 })
 
@@ -77,6 +130,46 @@ App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
 App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('release-centre');
+	},
+	actions: {
+		addExtension: function(releaseCentre) {
+			this.send('openModal', 'create-extension', releaseCentre);
+		}			
+	}
+})
+App.CreateReleaseCentreView = Ember.View.extend({
+	templateName: 'admin/create-release-centre',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateReleaseCentreController = Ember.ObjectController.extend({
+	getModel: function() {
+		return this.store.createRecord('centre');
+	},
+	actions: {
+		submit: function() {
+			var model = this.get('model');
+			model.save();
+			this.send('closeModal');
+		}
+	}
+})
+
+// Rule Set
+App.RuleSetsRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('release-centre');
+	}
+})
+App.RuleSetsIndexRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('rule-sets');
+	}
+})
+App.RuleSetRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return this.modelFor('rule-sets');
 	}
 })
 
@@ -94,6 +187,34 @@ App.ExtensionRoute = App.AuthorisedRoute.extend({
 App.ExtensionIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('extension');
+	},
+	actions: {
+		addProduct: function(extension) {
+			this.send('openModal', 'create-product', extension);
+		}			
+	}
+})
+App.CreateExtensionView = Ember.View.extend({
+	templateName: 'extension-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateExtensionController = Ember.ObjectController.extend({
+	getModel: function(releaseCentre) {
+		var extension = this.store.createRecord('extension', {
+			parent: releaseCentre
+		});
+		return  extension;
+	},
+	actions: {
+		submit: function() {
+			var extension = this.get('model');
+			var releaseCentre = extension.get('parent');
+			releaseCentre.get('extensions').pushObject(extension);
+			extension.save();
+			this.send('closeModal');
+		}
 	}
 })
 
@@ -111,7 +232,12 @@ App.ProductRoute = App.AuthorisedRoute.extend({
 App.ProductIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('product');
-	}
+	},
+	actions: {
+		addBuild: function(product) {
+			this.send('openModal', 'create-build', product);
+		}
+	}	
 })
 App.ProductIndexController = Ember.ObjectController.extend({
 	selectedBuild: function() {
@@ -125,13 +251,39 @@ App.ProductIndexController = Ember.ObjectController.extend({
 		});
 	}.property('selectedBuild')
 })
+App.CreateProductView = Ember.View.extend({
+	templateName: 'product-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateProductController = Ember.ObjectController.extend({
+	getModel: function(extension) {
+		var product = this.store.createRecord('product', {
+			parent: extension
+		});
+		return  product;
+	},
+	actions: {
+		submit: function() {
+			var product = this.get('model');
+			var extension = product.get('parent');
+			extension.get('products').pushObject(product);
+			product.save();
+			this.send('closeModal');
+		}
+	}
+})
 
 // Build
 App.BuildIndexController = Ember.ObjectController.extend({
 	actions: {
 		initiateBuild: function (selectedBuild) {
 			this.transitionToRoute('pre-execution', selectedBuild);
-		}
+		},
+		addPackage: function(build) {
+			this.send('openModal', 'create-package', build);
+		}			
 	}
 })
 
@@ -145,19 +297,45 @@ App.BuildRoute = App.AuthorisedRoute.extend({
 		});
 	}
 })
+App.CreateBuildView = Ember.View.extend({
+	templateName: 'build-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreateBuildController = Ember.ObjectController.extend({
+	getModel: function(product) {
+		var build = this.store.createRecord('build', {
+			parent: product
+		});
+		return  build;
+	},
+	actions: {
+		submit: function() {
+			var build = this.get('model');
+			var product = build.get('parent');
+			product.get('builds').pushObject(build);
+			build.save();
+			this.send('closeModal');
+		}
+	}
+})
 
 App.BuildIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('build');
 	}
 })
-
+App.ExecutionHistoryRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('build');
+	}
+})
 App.PreExecutionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('build');
 	}
 })
-
 App.PreExecutionController = Ember.ObjectController.extend({
 	actions: {
 		runBuild: function (build) {
@@ -181,6 +359,29 @@ App.PackageRoute = App.AuthorisedRoute.extend({
 		});
 	}
 })
+App.CreatePackageView = Ember.View.extend({
+	templateName: 'package-maintenance',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.CreatePackageController = Ember.ObjectController.extend({
+	getModel: function(build) {
+		var package = this.store.createRecord('package', {
+			parent: build
+		});
+		return  package;
+	},
+	actions: {
+		submit: function() {
+			var package = this.get('model');
+			var build = package.get('parent');
+			build.get('packages').pushObject(package);
+			package.save();
+			this.send('closeModal');
+		}
+	}
+})
 
 App.BuildInputRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
@@ -191,7 +392,6 @@ App.BuildInputRoute = App.AuthorisedRoute.extend({
 		controller.set('inputfiles', model.get('inputfiles'));
 	}
 })
-
 App.BuildInputController = Ember.ObjectController.extend({
 	actions: {
 		reload: function() {
@@ -200,6 +400,12 @@ App.BuildInputController = Ember.ObjectController.extend({
 		}
 	}
 })
+App.PostConditionsRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('package');
+	}
+})
+
 
 App.ExecutionRoute = App.AuthorisedRoute.extend({
 	model: function() {
@@ -212,6 +418,26 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	beforeModel: function() {
 		this.transitionTo('execution.results');
+	}
+})
+
+App.RemoveEntityView = Ember.View.extend({
+	templateName: 'remove-entity',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.RemoveEntityController = Ember.ObjectController.extend({
+	getModel: function(entity) {
+		return entity;
+	},
+	actions: {
+		submit: function() {
+			var model = this.get('model');
+			model.set('removed', true);
+			model.save();
+			this.send('closeModal');
+		}
 	}
 })
 
@@ -231,9 +457,11 @@ function signinCallback(authResult) {
 }
 
 function afterRender() {
+	//alert ("AfterRender");
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
+	effectPulse($('.traffic-light-in-progress'));	
 	initBuildInputFileUploadForm();
 }
 
@@ -260,43 +488,21 @@ function initBuildInputFileUploadForm() {
 		$('.panel-build-input form')[0].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
-	effectPulse($('.build-history .traffic-light-in-progress'));
 }
 
 function effectPulse($selection) {
-	window.setInterval(function() {
-
-	}, 1000)
+	
 	if ($selection && $selection.size() > 0) {
+		$selection.stop();
+		$selection.clearQueue();
 		$selection.animate({
 			opacity: 0
-		}, 500, function() {
+		}, 900, function() {
 			$selection.animate({
 				opacity: 1
-			}, 500, function() {
-				effectPulse($selection);
+			}, 900, function() {
+				effectPulse($('.traffic-light-in-progress'));
 			})
 		})
 	}
 }
-
-// Set JQuery Validate defaults to match Bootstrap layout.
-$.validator.setDefaults({
-	highlight: function(element) {
-		$(element).closest('.form-group').addClass('has-error');
-	},
-	unhighlight: function(element) {
-		$(element).closest('.form-group').removeClass('has-error');
-	},
-	errorElement: 'span',
-	errorClass: 'help-block',
-	errorPlacement: function(error, element) {
-		if(element.parent('.input-group').length) {
-			error.insertAfter(element.parent());
-		} else {
-			error.insertAfter(element);
-		}
-	}
-});
-
-

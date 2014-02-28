@@ -10,10 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class ReleaseCentreDAOImpl extends EntityDAOImpl<ReleaseCentre> implements ReleaseCentreDAO {
 
 	@Override
 	public List<ReleaseCentre> findAll(String authenticatedId) {
@@ -39,13 +36,5 @@ public class ReleaseCentreDAOImpl implements ReleaseCentreDAO {
 		return (ReleaseCentre) query.uniqueResult();
 	}
 
-	@Override
-	public void save(ReleaseCentre entity) {
-		getCurrentSession().save(entity);
-	}
-
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
-	}
 
 }

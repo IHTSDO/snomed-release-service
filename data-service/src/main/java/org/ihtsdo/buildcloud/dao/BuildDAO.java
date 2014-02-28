@@ -4,7 +4,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 
 import java.util.List;
 
-public interface BuildDAO {
+public interface BuildDAO extends EntityDAO<Build> {
 
 	List<Build> findAll(String authenticatedId);
 

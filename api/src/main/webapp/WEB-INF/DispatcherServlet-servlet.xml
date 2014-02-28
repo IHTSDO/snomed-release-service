@@ -19,14 +19,19 @@
 			<!--http://docs.spring.io/spring/docs/3.2.2.RELEASE/javadoc-api/org/springframework/http/converter/json/Jackson2ObjectMapperFactoryBean.html -->
 			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
 				<property name="objectMapper">
-					<bean class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean"
-						p:IndentOutput="true" />
+					<bean class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
+						<property name="indentOutput" value="true"/>
+					</bean>
 				</property>
 			</bean>
 		</mvc:message-converters>
 	</mvc:annotation-driven>
 
-	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator"/>
+	<bean class="org.codehaus.jackson.map.ObjectMapper" id="objectMapper"/>
+
+	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator">
+		<constructor-arg ref="objectMapper"/>
+	</bean>
 
 	<bean id="multipartResolver"
 		  class="org.springframework.web.multipart.support.StandardServletMultipartResolver">

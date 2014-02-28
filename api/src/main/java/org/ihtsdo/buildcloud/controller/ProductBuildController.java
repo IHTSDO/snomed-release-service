@@ -5,12 +5,19 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -33,5 +40,20 @@ public class ProductBuildController {
 		List<Build> builds = buildService.findForProduct(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
 	}
+	
+	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	public ResponseEntity<Map> createBuild(@PathVariable String releaseCentreBusinessKey,
+											 @PathVariable String extensionBusinessKey,
+											 @PathVariable String productBusinessKey,											 
+											 @RequestBody(required = false) Map<String, String> json,
+												   HttpServletRequest request) throws IOException {
+
+		String name = json.get("name");
+
+		String authenticatedId = SecurityHelper.getSubject();
+		Build build = buildService.create(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, request, BuildController.BUILD_LINKS);
+		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+	}		
 
 }

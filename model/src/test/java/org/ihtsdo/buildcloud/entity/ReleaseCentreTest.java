@@ -7,9 +7,9 @@ public class ReleaseCentreTest {
 
 	@Test
 	public void testWebId() {
-		Assert.assertEquals("international", new ReleaseCentre("International").getBusinessKey());
-		Assert.assertEquals("the_other_one", new ReleaseCentre("The Other One").getBusinessKey());
-		Assert.assertEquals("kais", new ReleaseCentre("(Kai's)").getBusinessKey());
+		Assert.assertEquals("international", new ReleaseCentre("International Release Centre", "International").getBusinessKey());
+		Assert.assertEquals("other", new ReleaseCentre("The Other One", "Other").getBusinessKey());
+		Assert.assertEquals("kais", new ReleaseCentre("(Kai's)", "(Kai's)").getBusinessKey());
 	}
 
 }
