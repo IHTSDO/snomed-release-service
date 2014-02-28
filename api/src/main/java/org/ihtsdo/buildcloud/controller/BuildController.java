@@ -54,10 +54,9 @@ public class BuildController {
 	
 	@RequestMapping("/{buildCompositeKey}/config")
 	@ResponseBody
-	public Map getBuildConfig(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+	public String getBuildConfig(@PathVariable String buildCompositeKey) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
-		Map config = buildService.getConfig(buildCompositeKey, authenticatedId);
-		return config;
+		return buildService.getConfigJson(buildCompositeKey, authenticatedId);
 	}
 
 	@RequestMapping(value = "/{buildCompositeKey}/run", method = RequestMethod.POST)
