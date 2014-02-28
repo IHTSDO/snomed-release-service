@@ -33,10 +33,14 @@ public class Build {
 		packages = new ArrayList<>();
 	}
 
-	public Build(Long id, String name) {
+	public Build(String name) {
 		this();
-		this.id = id;
 		setName(name);
+	}
+
+	public Build(Long id, String name) {
+		this(name);
+		this.id = id;
 	}
 
 	public void addPackage(Package aPackage) {
