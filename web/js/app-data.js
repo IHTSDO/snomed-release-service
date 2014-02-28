@@ -59,6 +59,7 @@ DS.RESTAdapter.reopen({
 
 // API auto authentication
 $.ajaxSetup({
+	cache: false, //IE and FF cache API calls and will miss when we add entities
 	beforeSend: function(xhr) {
 		xhr.setRequestHeader('Authorization', 'Basic ' + btoa('test:'));
 	}
