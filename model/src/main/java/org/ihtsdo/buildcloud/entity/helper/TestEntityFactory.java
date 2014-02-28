@@ -24,7 +24,7 @@ public class TestEntityFactory extends TestEntityGenerator {
 		//TODO Once we have sets, we'll be able to use the test release centre directly, and navigate to find a build
 		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreNames[0], releaseCentreShortNames[0]);
 		Extension extension = new Extension(extensionNames[0]);
-		Product product = new Product(productNames[0]);
+		Product product = new Product(productNames[0][0]);
 		Build build = new Build(buildNames[3]);
 
 		addPackagesToBuild(build);
