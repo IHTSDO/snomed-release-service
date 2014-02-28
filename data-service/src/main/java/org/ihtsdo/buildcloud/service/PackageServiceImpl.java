@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +14,18 @@ import java.util.List;
 
 @Service
 @Transactional
-public class PackageServiceImpl implements PackageService {
+public class PackageServiceImpl extends EntityServiceImpl<Package> implements PackageService {
 
 	@Autowired
 	private PackageDAO packageDAO;
 
 	@Autowired
 	private BuildDAO buildDAO;
+
+	@Autowired
+	protected PackageServiceImpl(PackageDAO dao) {
+		super(dao);
+	}
 
 	@Override
 	public Package find(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
@@ -30,6 +36,17 @@ public class PackageServiceImpl implements PackageService {
 	@Override
 	public List<Package> findAll(String buildCompositeKey, String authenticatedId) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return new ArrayList(buildDAO.find(buildId, authenticatedId).getPackages());
+		return new ArrayList<Package>(buildDAO.find(buildId, authenticatedId).getPackages());
 	}
+	
+	@Override
+	public Package create(String buildCompositeKey, String name, String authenticatedId) {
+		
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(buildId, authenticatedId);
+		Package pkg = new Package(name);
+		build.addPackage(pkg);
+		packageDAO.save(pkg);
+		return pkg;
+	}	
 }

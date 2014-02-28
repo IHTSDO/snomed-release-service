@@ -20,20 +20,22 @@ public class ReleaseCentreDAOImplTest {
 	private ReleaseCentreDAO dao;
 
 	@Test
-	public void testInitialData() {
+	public void testFindAll() {
 		Assert.assertNotNull(dao);
 		List<ReleaseCentre> centres = dao.findAll("test");
 		Assert.assertEquals(1, centres.size());
 		ReleaseCentre internationalReleaseCentre = centres.get(0);
-		Assert.assertEquals("International", internationalReleaseCentre.getName());
+		Assert.assertEquals("International Release Centre", internationalReleaseCentre.getName());
+		Assert.assertEquals("International", internationalReleaseCentre.getShortName());
 		Assert.assertEquals("international", internationalReleaseCentre.getBusinessKey());
 	}
 
 	@Test
-	public void test() {
+	public void testFind() {
 		ReleaseCentre releaseCentre = dao.find("international", "test");
 		Assert.assertNotNull(releaseCentre);
-		Assert.assertEquals("International", releaseCentre.getName());
+		Assert.assertEquals("International Release Centre", releaseCentre.getName());
+		Assert.assertEquals("International", releaseCentre.getShortName());
 	}
 
 }

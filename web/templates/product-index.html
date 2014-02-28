@@ -1,18 +1,31 @@
 <ol class="breadcrumb">
 	<li><a href="#">Home</a></li>
-	<li>{{#link-to "release-centre" parent.parent}}{{parent.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "release-centre" parent.parent}}{{parent.parent.shortName}}{{/link-to}}</li>
 	<li>{{#link-to "extension" parent}}{{parent.name}}{{/link-to}}</li>
 	<li>{{name}}</li>
 </ol>
 
-<h2 class="page-header">{{partial "title-dropdown"}} {{name}} <small>(Product)</small></h2>
-<h3>Builds</h3>
-<ul>
-	{{#each builds}}
-	<li>
-		{{#link-to "build" this}}{{name}}{{/link-to}}
-		<a href="#" title="Star build to show on home page." data-toggle="tooltip" onclick="$(this).find('span').toggleClass('glyphicon-star-empty'); return false;"><span class="glyphicon glyphicon-star glyphicon-star-empty"></span></a>
-	</li>
-	{{/each}}
-</ul>
-<a class="add-button list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a Build</a>
+<h2 class="page-header">{{name}} <small>(Product) {{partial "title-dropdown"}}</small></h2>
+<div class="col">
+	<div class="col-sm-6">
+		<h3>Builds</h3>
+		<ul>
+			{{#each builds}}
+			<li>
+				{{#link-to "build" this}}{{name}}{{/link-to}}
+				<a href="#" title="Star this build to display it on the home page." data-toggle="tooltip" onclick="$(this).find('span').toggleClass('glyphicon-star-empty'); return false;"><span class="glyphicon glyphicon-star glyphicon-star-empty"></span></a>
+			</li>
+			{{/each}}
+		</ul>
+		<button class="btn btn-primary btn-md list-align" {{action 'addBuild' this}}>
+			<span class="glyphicon glyphicon-plus"></span> Add a build
+		</button>	
+	</div>
+	<div class="col-sm-6">
+		<h3>Tasks</h3>
+		<h4>Some Task</h4>
+		<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed quis felis gravida, consectetur velit vitae, aliquet quam. Curabitur nisi leo, bibendum ac augue quis, euismod auctor tellus. Donec vitae fringilla erat. Suspendisse id imperdiet mauris. Quisque fermentum convallis velit, sagittis feugiat ante malesuada luctus. </p>
+		<h4>Some Task</h4>
+		<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed quis felis gravida, consectetur velit vitae, aliquet quam. Curabitur nisi leo, bibendum ac augue quis, euismod auctor tellus. Donec vitae fringilla erat. Suspendisse id imperdiet mauris. Quisque fermentum convallis velit, sagittis feugiat ante malesuada luctus. </p>
+	</div>
+</div>

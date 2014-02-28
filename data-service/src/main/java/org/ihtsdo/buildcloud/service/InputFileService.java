@@ -5,9 +5,8 @@ import org.ihtsdo.buildcloud.entity.InputFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Set;
 
-public interface InputFileService {
+public interface InputFileService extends EntityService<InputFile> {
 
 	List<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId);
 

@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ExtensionDAOImpl implements ExtensionDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class ExtensionDAOImpl extends EntityDAOImpl<Extension> implements ExtensionDAO {
 
 	@Override
 	public Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String authenticatedId) {
@@ -28,11 +25,6 @@ public class ExtensionDAOImpl implements ExtensionDAO {
 		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		return (Extension) query.uniqueResult();
-
-	}
-
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
 	}
 
 }

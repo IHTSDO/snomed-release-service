@@ -10,10 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public class BuildDAOImpl implements BuildDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 
 	@Override
 	public List<Build> findAll(String authenticatedId) {
@@ -47,7 +44,4 @@ public class BuildDAOImpl implements BuildDAO {
 		return (Build) query.uniqueResult();
 	}
 
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
-	}
 }

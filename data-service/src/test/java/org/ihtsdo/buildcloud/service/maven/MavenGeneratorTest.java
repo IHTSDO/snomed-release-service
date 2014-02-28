@@ -22,15 +22,17 @@ public class MavenGeneratorTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
 	private MavenGenerator mavenGenerator;
+	private TestEntityFactory testEntityFactory;
 
 	@Before
 	public void setup() {
 		mavenGenerator = new MavenGenerator();
+		testEntityFactory = new TestEntityFactory();
 	}
-	
+
 	@Test
 	public void testGenerateBuildPoms() throws IOException {
-		Build build = new TestEntityFactory().createBuild();
+		Build build = testEntityFactory.createBuild();
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
 		File buildDirectory = mavenGenerator.generateBuildFiles(build);
@@ -45,18 +47,6 @@ public class MavenGeneratorTest {
 		LOGGER.debug ("Found " + directoryItemCount + " items in " + buildDirectory.getName());
 		Assert.assertEquals(directoryItemCount, 10);	
 	}
-
-	/*@Test
-	public void testGenerateBuildPoms() throws IOException {
-		Package releasePackage = new TestEntityFactory().createPackage("International", "International", "Spanish Edition", "Biannual", "RF2");
-		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-project-pom.txt"), Charset.defaultCharset()).replace("\r", "");
-
-		StringWriter writer = new StringWriter();
-		mavenGenerator.generateBuildFiles(writer, releasePackage.getBuild());
-		String actualPom = writer.toString();
-
-		Assert.assertEquals(expectedPom, actualPom);
-	}*/
 
 	@Test
 	public void testGenerateArtifactPom() throws IOException {
@@ -83,7 +73,7 @@ public class MavenGeneratorTest {
 
 	@Test
 	public void testGetArtifact() throws IOException {
-		Package aPackage = new TestEntityFactory().createPackage("centre", "ex", "prod", "build1", "myPackage");
+		Package aPackage = testEntityFactory.createPackage("the centre", "centre", "ex", "prod", "build1", "myPackage");
 		InputFile in1 = new InputFile("in1");
 		aPackage.addInputFile(in1);
 

@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class PackageDAOImpl implements PackageDAO {
-
-	@Autowired
-	private SessionFactory sessionFactory;
+public class PackageDAOImpl extends EntityDAOImpl<Package> implements PackageDAO {
 
 	@Override
 	public Package find(Long buildId, String packageBusinessKey, String authenticatedId) {
@@ -34,7 +31,4 @@ public class PackageDAOImpl implements PackageDAO {
 		return (Package) query.uniqueResult();
 	}
 
-	private Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
-	}
 }

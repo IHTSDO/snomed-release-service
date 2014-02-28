@@ -12,8 +12,8 @@ public class HypermediaGenerator {
 
 	private final ObjectMapper mapper;
 
-	public HypermediaGenerator() {
-		mapper = new ObjectMapper();
+	public HypermediaGenerator(ObjectMapper mapper) {
+		this.mapper = mapper;
 	}
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
