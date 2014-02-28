@@ -19,7 +19,7 @@ public class ProductDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		Product product = dao.find("international", "snomed_ct_international_edition", "snomed_ct_spanish_edition", "test");
+		Product product = dao.find("international", "snomed_ct_spanish_edition", "snomed_ct_spanish_edition", "test");
 		Assert.assertNotNull(product);
 		Assert.assertEquals("SNOMED CT Spanish Edition", product.getName());
 	}
