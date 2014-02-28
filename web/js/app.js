@@ -31,7 +31,6 @@ App.Router.map(function() {
 					});
 					this.resource('pre-execution');
 					this.resource('execution-history');
-					this.resource('build-history');
 					this.resource('execution', function() {
 						this.route('results');
 						this.route('debug');
@@ -327,7 +326,11 @@ App.BuildIndexRoute = App.AuthorisedRoute.extend({
 		return this.modelFor('build');
 	}
 })
-
+App.ExecutionHistoryRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('build');
+	}
+})
 App.PreExecutionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('build');
