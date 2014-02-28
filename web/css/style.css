@@ -138,3 +138,6 @@ td.warning {
 .post-conditions tbody td:nth-child(4) {
     text-align: center;
 }
+.extra-room {
+	margin: 30px;
+}

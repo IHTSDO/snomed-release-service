@@ -23,6 +23,11 @@
 		<button class="btn btn-primary btn-md list-align" {{action 'addPackage' this}}>
 			<span class="glyphicon glyphicon-plus"></span> Add a Package
 		</button>
+		<div class="extra-room">
+			<button {{action 'initiateBuild' this}} type="button" class="btn btn-success btn-lg success">
+				<span class="glyphicon glyphicon-thumbs-up "></span> Go...
+			</button>
+		</div>
 	</div>
 	<div class="col-xs-4 build-history">
 		<h3>Execution History</h3>
@@ -67,25 +72,4 @@
 		<h4>Some Task</h4>
 		<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed quis felis gravida, consectetur velit vitae, aliquet quam. Curabitur nisi leo, bibendum ac augue quis, euismod auctor tellus. Donec vitae fringilla erat. Suspendisse id imperdiet mauris. Quisque fermentum convallis velit, sagittis feugiat ante malesuada luctus. </p>
 	</div>
-
 </div>
-
-
-
-<div class="panel-body">
-	<div class="row">
-		<div class="col-md-4">
-				<button {{action 'initiateBuild' this}} type="button" class="btn btn-success btn-lg success">
-					<span class="glyphicon glyphicon-thumbs-up "></span> Go...
-				</button>
-		</div>
-	</div>
-</div>
-
-<div class="alert alert-warning">TODO: 
-	<ul>
-		<li>Add page to configure publishing location (different for different times in year?)</li>
-		<li>Add popup to explain that we're unable to "bundle" when packages are incomplete (or will we allow "warn" packages to bundle?)
-	</ul>
-</div>	
-
