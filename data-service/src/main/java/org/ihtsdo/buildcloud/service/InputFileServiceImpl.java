@@ -14,6 +14,7 @@ import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +37,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	@Autowired
 	private AmazonS3Client s3Client;
 
-	@Autowired
-	private String s3BucketName;
+	private String mavenS3BucketName;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
 
@@ -86,7 +86,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		String artifactPath = mavenGenerator.getPath(mavenArtifact);
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentLength(fileSize);
-		s3Client.putObject(s3BucketName, artifactPath, fileStream, metadata);
+		s3Client.putObject(mavenS3BucketName, artifactPath, fileStream, metadata);
 
 		// Generate input file pom
 		String pomPath = mavenGenerator.getPomPath(mavenArtifact);
@@ -97,7 +97,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		byte[] buf = out.toByteArray();
 		ObjectMetadata pomMetadata = new ObjectMetadata();
 		pomMetadata.setContentLength(buf.length);
-		s3Client.putObject(s3BucketName, pomPath, new ByteArrayInputStream(buf), pomMetadata);
+		s3Client.putObject(mavenS3BucketName, pomPath, new ByteArrayInputStream(buf), pomMetadata);
 
 		// Create database entry
 		inputFileDAO.save(inputFile);
@@ -108,7 +108,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	public InputStream getFileStream(InputFile inputFile) throws IOException {
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
 		String artifactPath = mavenGenerator.getPath(mavenArtifact);
-		S3Object s3Object = s3Client.getObject(s3BucketName, artifactPath);
+		S3Object s3Object = s3Client.getObject(mavenS3BucketName, artifactPath);
 		LOGGER.info("Serving S3 file. Path: {}, Size: {}", artifactPath, s3Object.getObjectMetadata().getContentLength());
 		if (s3Object != null) {
 			return s3Object.getObjectContent();
@@ -116,4 +116,10 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 			return null;
 		}
 	}
+
+	@Required
+	public void setMavenS3BucketName(String mavenS3BucketName) {
+		this.mavenS3BucketName = mavenS3BucketName;
+	}
+
 }
