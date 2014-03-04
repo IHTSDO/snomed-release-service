@@ -20,6 +20,9 @@
 	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreMembershipDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
+		<property name="executionS3BucketName" ref="ExecutionS3BucketName"/>
+	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCentreServiceImpl"/>
@@ -27,9 +30,12 @@
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
+	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl">
+		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
+	</bean>
+	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.maven.MavenExecutorImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 
 	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
 		<property name="driverClassName" value="org.h2.Driver"/>
@@ -72,8 +78,12 @@
 		</constructor-arg>
 	</bean>
 
-	<bean class="java.lang.String" id="S3BucketName">
+	<bean class="java.lang.String" id="MavenS3BucketName">
 		<constructor-arg value="ire.maven.release.ihtsdo" />
+	</bean>
+
+	<bean class="java.lang.String" id="ExecutionS3BucketName">
+		<constructor-arg value="ire.execution.release.ihtsdo" />
 	</bean>
 
 	<bean class="org.codehaus.jackson.map.ObjectMapper" factory-bean="ObjectMapperFactory" factory-method="createObjectMapper"/>

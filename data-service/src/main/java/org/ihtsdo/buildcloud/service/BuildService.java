@@ -11,10 +11,6 @@ public interface BuildService extends EntityService<Build> {
 
 	Build find(String buildCompositeKey, String authenticatedId);
 	
-	String getConfigJson(String buildCompositeKey, String authenticatedId) throws IOException;
-
-	String getConfigJson(Build build) throws IOException;
-
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
 	String run(String buildCompositeKey, String authenticatedId) throws IOException;

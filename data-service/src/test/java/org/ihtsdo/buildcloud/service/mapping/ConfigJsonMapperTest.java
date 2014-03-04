@@ -1,7 +1,6 @@
-package org.ihtsdo.buildcloud.service;
+package org.ihtsdo.buildcloud.service.mapping;
 
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.json.JSONException;
 import org.junit.Assert;
@@ -19,12 +18,12 @@ import java.io.InputStreamReader;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
-public class BuildServiceImplTest {
+public class ConfigJsonMapperTest {
 
 	@Autowired
-	private BuildService buildService;
+	private ConfigJsonMapper configJsonMapper;
 
-	private Package internationalPackage;
+	private org.ihtsdo.buildcloud.entity.Package internationalPackage;
 	private String expectedExport;
 
 	@Before
@@ -40,8 +39,7 @@ public class BuildServiceImplTest {
 		Assert.assertEquals(1, internationalPackage.getInputFiles().size());
 		Build build = internationalPackage.getBuild();
 
-		String actual = buildService.getConfigJson(build);
-		System.out.println(actual);
+		String actual = configJsonMapper.getJsonConfig(build);
 		JSONAssert.assertEquals(expectedExport, actual, false);
 	}
 

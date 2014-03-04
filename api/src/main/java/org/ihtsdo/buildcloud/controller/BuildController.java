@@ -52,13 +52,6 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermedia(build, request, BUILD_LINKS);
 	}
 	
-	@RequestMapping("/{buildCompositeKey}/config")
-	@ResponseBody
-	public String getBuildConfig(@PathVariable String buildCompositeKey) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
-		return buildService.getConfigJson(buildCompositeKey, authenticatedId);
-	}
-
 	@RequestMapping(value = "/{buildCompositeKey}/run", method = RequestMethod.POST)
 	@ResponseBody
 	public Map runBuild(@PathVariable String buildCompositeKey) {
