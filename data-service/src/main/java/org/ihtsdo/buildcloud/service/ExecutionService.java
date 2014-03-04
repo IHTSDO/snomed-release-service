@@ -13,4 +13,6 @@ public interface ExecutionService {
 
 	Execution find(String buildCompositeKey, String executionId, String authenticatedId);
 
+	String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
+
 }
