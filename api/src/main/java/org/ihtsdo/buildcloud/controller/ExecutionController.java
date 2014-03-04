@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -29,7 +30,7 @@ public class ExecutionController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	static final String[] EXECUTION_LINKS = {};
+	static final String[] EXECUTION_LINKS = { "configuration" };
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
@@ -37,6 +38,22 @@ public class ExecutionController {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedId);
 
+		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
+	}
+
+	@RequestMapping
+	@ResponseBody
+	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+		String authenticatedId = SecurityHelper.getSubject();
+		List<Execution> executions = executionService.findAll(buildCompositeKey, authenticatedId);
+		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
+	}
+
+	@RequestMapping("/{executionId}")
+	@ResponseBody
+	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletRequest request) {
+		String authenticatedId = SecurityHelper.getSubject();
+		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
 	}
 

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @Transactional
@@ -42,6 +43,20 @@ public class ExecutionServiceImpl implements ExecutionService {
 		dao.save(execution);
 
 		return execution;
+	}
+
+	@Override
+	public List<Execution> findAll(String buildCompositeKey, String authenticatedId) {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(buildId, authenticatedId);
+		return dao.findAll(build);
+	}
+
+	@Override
+	public Execution find(String buildCompositeKey, String executionId, String authenticatedId) {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(buildId, authenticatedId);
+		return dao.find(build, executionId);
 	}
 
 }
