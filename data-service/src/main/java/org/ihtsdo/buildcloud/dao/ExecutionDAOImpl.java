@@ -8,8 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +49,20 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		ArrayList<Execution> executions = findExecutions(executionDirectoryPath, build);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public String loadConfiguration(Build build, String executionId) throws IOException {
+		StringBuffer path = getDirectoryPath(build);
+		path.append(executionId).append(SEPARATOR).append(CONFIG_JSON);
+		String configFilePath = path.toString();
+		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
+		if (s3Object != null) {
+			S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			return FileCopyUtils.copyToString(new InputStreamReader(objectContent));
 		} else {
 			return null;
 		}

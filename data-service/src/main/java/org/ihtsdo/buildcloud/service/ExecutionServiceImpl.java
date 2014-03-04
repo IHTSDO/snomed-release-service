@@ -59,4 +59,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return dao.find(build, executionId);
 	}
 
+	@Override
+	public String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(buildId, authenticatedId);
+		return dao.loadConfiguration(build, executionId);
+	}
+
 }

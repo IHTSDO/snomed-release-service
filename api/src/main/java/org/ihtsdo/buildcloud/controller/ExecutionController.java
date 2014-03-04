@@ -57,4 +57,12 @@ public class ExecutionController {
 		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
 	}
 
+	@RequestMapping(value = "/{executionId}/configuration", produces="application/json")
+	@ResponseBody
+	public String getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedId);
+		return executionConfiguration;
+	}
+
 }
