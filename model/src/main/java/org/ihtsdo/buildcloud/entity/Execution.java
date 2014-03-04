@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.entity;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import java.util.Date;
 
@@ -14,20 +15,39 @@ public class Execution {
 
 	public static final FastDateFormat DATE_FORMAT = DateFormatUtils.ISO_DATETIME_FORMAT;
 
+	private final String creationTime;
+
 	private Status status;
-	private final String creationTimeString;
-	private final String jsonConfiguration;
+
+	@JsonIgnore
+	private String jsonConfiguration;
+
+	@JsonIgnore
 	private final Build build;
 
 	public static enum Status {
 		PRE_EXECUTION
 	}
 
+	public Execution(String creationTime, String statusString, Build build) {
+		this.creationTime = creationTime;
+		this.status = Status.valueOf(statusString);
+		this.build = build;
+	}
+
 	public Execution(Date creationTime, String jsonConfiguration, Build build) {
-		this.creationTimeString = DATE_FORMAT.format(creationTime);
+		this.creationTime = DATE_FORMAT.format(creationTime);
+		this.status = Status.PRE_EXECUTION;
 		this.jsonConfiguration = jsonConfiguration;
 		this.build = build;
-		this.status = Status.PRE_EXECUTION;
+	}
+
+	public String getId() {
+		return creationTime;
+	}
+
+	public String getCreationTime() {
+		return creationTime;
 	}
 
 	public Status getStatus() {
@@ -36,10 +56,6 @@ public class Execution {
 
 	public void setStatus(Status status) {
 		this.status = status;
-	}
-
-	public String getCreationTimeString() {
-		return creationTimeString;
 	}
 
 	public String getJsonConfiguration() {
