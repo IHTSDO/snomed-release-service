@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExtensionService;
@@ -10,14 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +53,7 @@ public class ExtensionController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Extension extension = extensionService.create(releaseCentreBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, request, EXTENSION_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(extension, request, EXTENSION_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}		
 
