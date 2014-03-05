@@ -30,8 +30,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 
 	@Override
-	public void save(Execution execution) {
-		putInBucket(execution);
+	public void save(Execution execution, String jsonConfig) {
+		saveToBucket(execution, jsonConfig);
 	}
 
 	@Override
@@ -77,7 +77,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 		for (S3ObjectSummary objectSummary : objectSummaries) {
 			String key = objectSummary.getKey();
-			LOGGER.info("Found key {}", key);
+			LOGGER.debug("Found key {}", key);
 			if (key.contains("/status:")) {
 				String[] keyParts = key.split("/");
 				String dateString = keyParts[2];
@@ -86,17 +86,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 				executions.add(execution);
 			}
 		}
-		LOGGER.info("Found {} Executions", executions.size());
-		LOGGER.debug("Found {} Executions debug", executions.size());
+		LOGGER.debug("Found {} Executions", executions.size());
 		return executions;
 	}
 
-	private void putInBucket(Execution execution) {
+	private void saveToBucket(Execution execution, String jsonConfig) {
 		StringBuffer directoryPath = getDirectoryPath(execution);
 
 		// Save config file
 		String configPath = new StringBuffer(directoryPath).append(CONFIG_JSON).toString();
-		putFile(configPath, execution.getJsonConfiguration());
+		putFile(configPath, jsonConfig);
 
 		// Save status file
 		String status = execution.getStatus().toString();

@@ -20,9 +20,6 @@ public class Execution {
 	private Status status;
 
 	@JsonIgnore
-	private String jsonConfiguration;
-
-	@JsonIgnore
 	private final Build build;
 
 	public static enum Status {
@@ -35,10 +32,9 @@ public class Execution {
 		this.build = build;
 	}
 
-	public Execution(Date creationTime, String jsonConfiguration, Build build) {
+	public Execution(Date creationTime, Build build) {
 		this.creationTime = DATE_FORMAT.format(creationTime);
 		this.status = Status.PRE_EXECUTION;
-		this.jsonConfiguration = jsonConfiguration;
 		this.build = build;
 	}
 
@@ -56,10 +52,6 @@ public class Execution {
 
 	public void setStatus(Status status) {
 		this.status = status;
-	}
-
-	public String getJsonConfiguration() {
-		return jsonConfiguration;
 	}
 
 	public Build getBuild() {

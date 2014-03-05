@@ -34,13 +34,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 		Date creationDate = new Date();
 
+		Execution execution = new Execution(creationDate, build);
+
 		// Create Build config export
 		String jsonConfig = configJsonMapper.getJsonConfig(build);
 
-		Execution execution = new Execution(creationDate, jsonConfig, build);
-
 		// Persist export
-		dao.save(execution);
+		dao.save(execution, jsonConfig);
 
 		return execution;
 	}
