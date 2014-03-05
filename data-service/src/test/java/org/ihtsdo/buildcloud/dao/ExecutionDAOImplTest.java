@@ -65,16 +65,16 @@ public class ExecutionDAOImplTest {
 		mocksControl.verify();
 
 		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/status:PRE_EXECUTION", statusPathCapture.getValue());
+		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 
 	@Test
 	public void testFindAll() {
 		ObjectListing objectListing = new ObjectListing();
 		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-02-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-02-04T10:30:01/status:PRE_EXECUTION");
+		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
 		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-03-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-03-04T10:30:01/status:PRE_EXECUTION");
+		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
@@ -84,10 +84,10 @@ public class ExecutionDAOImplTest {
 		Assert.assertEquals(2, all.size());
 
 		Assert.assertEquals("2014-02-04T10:30:01", all.get(0).getCreationTime());
-		Assert.assertEquals(Execution.Status.PRE_EXECUTION, all.get(0).getStatus());
+		Assert.assertEquals(Execution.Status.BEFORE_TRIGGER, all.get(0).getStatus());
 
 		Assert.assertEquals("2014-03-04T10:30:01", all.get(1).getCreationTime());
-		Assert.assertEquals(Execution.Status.PRE_EXECUTION, all.get(1).getStatus());
+		Assert.assertEquals(Execution.Status.BEFORE_TRIGGER, all.get(1).getStatus());
 	}
 
 	@Test
@@ -109,7 +109,7 @@ public class ExecutionDAOImplTest {
 		String executionId = "2014-02-04T10:30:01";
 		ObjectListing objectListing = new ObjectListing();
 		addObjectSummary(objectListing, "international/1_20130731_international_release/" + executionId + "/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/" + executionId + "/status:PRE_EXECUTION");
+		addObjectSummary(objectListing, "international/1_20130731_international_release/" + executionId + "/status:BEFORE_TRIGGER");
 		Capture<ListObjectsRequest> listObjectsRequestCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
@@ -120,7 +120,7 @@ public class ExecutionDAOImplTest {
 		Assert.assertNotNull(foundExecution);
 
 		Assert.assertEquals("2014-02-04T10:30:01", foundExecution.getCreationTime());
-		Assert.assertEquals(Execution.Status.PRE_EXECUTION, foundExecution.getStatus());
+		Assert.assertEquals(Execution.Status.BEFORE_TRIGGER, foundExecution.getStatus());
 	}
 
 	private void addObjectSummary(ObjectListing objectListing, String path) {
