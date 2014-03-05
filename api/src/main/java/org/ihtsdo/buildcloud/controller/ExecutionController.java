@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -59,10 +60,11 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/configuration", produces="application/json")
 	@ResponseBody
-	public String getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId) throws IOException {
+	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletResponse response) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedId);
-		return executionConfiguration;
+		response.setContentType("application/json");
+		response.getOutputStream().print(executionConfiguration);
 	}
 
 }
