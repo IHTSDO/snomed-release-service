@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.mapping.ConfigJsonMapper;
 import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -28,6 +28,9 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 	@Autowired
 	private ProductDAO productDAO;
+
+	@Autowired
+	private ConfigJsonMapper configJsonMapper;
 
 	@Autowired
 	private MavenGenerator mavenGenerator;
@@ -52,10 +55,15 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 	
 	@Override
-	public Map<String, Object> getConfig(String buildCompositeKey, String authenticatedId) {
+	public String getConfigJson(String buildCompositeKey, String authenticatedId) throws IOException {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build =  buildDAO.find(id, authenticatedId);
-		return build.getConfig();
+		return getConfigJson(build);
+	}
+
+	@Override
+	public String getConfigJson(Build build) throws IOException {
+		return configJsonMapper.getJsonConfig(build);
 	}
 
 	@Override
@@ -73,6 +81,9 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 		Build build = buildDAO.find(id, authenticatedId);
 		Hibernate.initialize(build.getPackages());
 
+		// todo: Generate Build config export
+
+		// todo: poms from config export
 		// Call generate poms
 		File buildSourceDirectory = mavenGenerator.generateBuildFiles(build);
 		return mavenExecutor.exec(build, buildSourceDirectory, triggerDate);

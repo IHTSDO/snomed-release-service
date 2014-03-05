@@ -38,6 +38,11 @@ public class Build {
 		setName(name);
 	}
 
+	public Build(Long id, String name) {
+		this(name);
+		this.id = id;
+	}
+
 	public void addPackage(Package aPackage) {
 		packages.add(aPackage);
 		aPackage.setBuild(this);
@@ -85,15 +90,4 @@ public class Build {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 
-	@JsonIgnore
-	public Map<String, Object> getConfig() {
-		Map<String, Object> config = new HashMap<String, Object>();
-		ArrayList<Map<String,Object>> packagesConfig = new ArrayList<Map<String,Object>>();
-
-		for (Package pkg : getPackages()) {
-			packagesConfig.add(pkg.getConfig());
-		}
-		config.put("Packages", packagesConfig);
-		return config;
-	}
 }

@@ -76,11 +76,4 @@ public class Package {
 		return inputFiles;
 	}
 
-	@JsonIgnore
-	public Map<String, Object> getConfig() {
-		Map<String, Object> config = new HashMap<String, Object>();
-		config.put("Name", name);
-		return config;
-	}
-
 }

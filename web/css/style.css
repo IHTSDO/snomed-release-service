@@ -63,7 +63,9 @@ li {
 .centre {
 	text-align:center;
 }
-
+.margin-top-big {
+    margin-top: 50px;
+}
 .glyphicon-cog {
     color: #999;
     font-size: 0.8em;
