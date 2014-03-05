@@ -48,7 +48,7 @@ public class ExecutionDAOImplTest {
 
 		build = buildDAO.find(1L, "test");
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
-		execution = new Execution(creationTime, "", build);
+		execution = new Execution(creationTime, build);
 	}
 
 	@Test
@@ -61,7 +61,7 @@ public class ExecutionDAOImplTest {
 		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(statusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
 
 		mocksControl.replay();
-		executionDAO.save(execution);
+		executionDAO.save(execution, "");
 		mocksControl.verify();
 
 		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
