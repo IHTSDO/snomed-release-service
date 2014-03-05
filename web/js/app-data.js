@@ -32,10 +32,11 @@ App.Build = DS.Model.extend({
 	product: DS.belongsTo('product'),
 	name: DS.attr(),
 	config: DS.belongsTo('buildConfig', { async: true }),
-	packages: DS.hasMany('package', { async: true })
+	packages: DS.hasMany('package', { async: true }),
+	executions: DS.hasMany('execution', { async: true })
 });
 App.BuildConfig = DS.Model.extend({
-	parent: DS.belongsTo('build'),	
+	parent: DS.belongsTo('build'),
 	configStr: DS.attr()
 });
 App.Package = DS.Model.extend({
@@ -47,6 +48,25 @@ App.Package = DS.Model.extend({
 App.InputFile = DS.Model.extend({
 	parent: DS.belongsTo('package'),
 	name: DS.attr()
+});
+App.Execution = DS.Model.extend({
+	parent: DS.belongsTo('build'),
+	creationTime: DS.attr(),
+	status: DS.attr(),
+	configuration: DS.belongsTo('executionConfiguration', { async: true }),
+	statusTitle: function() {
+		var status = this.get('status');
+		switch (status) {
+			case 'BEFORE_TRIGGER':
+				return 'Before Trigger'
+		}
+	}.property('status')
+});
+App.ExecutionConfiguration = DS.Model.extend({
+	dummy: DS.attr(),
+	json: function() {
+		return JSON.stringify(this._data, null, 2);
+	}.property('dummy')
 });
 
 

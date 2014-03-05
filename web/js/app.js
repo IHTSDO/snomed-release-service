@@ -37,7 +37,7 @@ App.Router.map(function() {
 						this.route('output');
 						this.route('publish');
 					});
-					this.resource('execution-review', function() {
+					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
 					});
 				});
@@ -281,8 +281,15 @@ App.CreateProductController = Ember.ObjectController.extend({
 // Build
 App.BuildIndexController = Ember.ObjectController.extend({
 	actions: {
-		initiateBuild: function (selectedBuild) {
-			this.transitionToRoute('execution-review', selectedBuild);
+		createExecution: function (selectedBuild) {
+			var execution = this.store.createRecord('execution', {
+				parent: selectedBuild
+			})
+			var controller = this;
+			execution.save().then(function(execution) {
+				execution.set('parent', selectedBuild);
+				controller.transitionToRoute('execution', execution);
+			})
 		},
 		addPackage: function(build) {
 			this.send('openModal', 'create-package', build);
@@ -423,16 +430,24 @@ App.ExecutionMockIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 
-App.ExecutionReviewRoute = App.AuthorisedRoute.extend({
-	model: function() {
+App.ExecutionRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
 		var build = this.modelFor('build');
-		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
-		return pack;
+		return build.get('executions').then(function(executions) {
+			var execution = executions.findBy('id', params.execution_id);
+			execution.set('parent', build);
+			return execution;
+		});
 	}
 })
-App.ExecutionReviewIndexRoute = App.AuthorisedRoute.extend({
+App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	beforeModel: function() {
-		this.transitionTo('execution-review.configuration');
+		this.transitionTo('execution.configuration');
+	}
+})
+App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('execution');
 	}
 })
 
