@@ -31,7 +31,7 @@ App.Router.map(function() {
 					});
 					this.resource('pre-execution');
 					this.resource('execution-history');
-					this.resource('execution', function() {
+					this.resource('execution-mock', function() {
 						this.route('results');
 						this.route('debug');
 						this.route('output');
@@ -410,16 +410,16 @@ App.PostConditionsRoute = App.AuthorisedRoute.extend({
 })
 
 
-App.ExecutionRoute = App.AuthorisedRoute.extend({
+App.ExecutionMockRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		var build = this.modelFor('build');
 		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
 		return pack;
 	}
 })
-App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
+App.ExecutionMockIndexRoute = App.AuthorisedRoute.extend({
 	beforeModel: function() {
-		this.transitionTo('execution.results');
+		this.transitionTo('execution-mock.results');
 	}
 })
 
