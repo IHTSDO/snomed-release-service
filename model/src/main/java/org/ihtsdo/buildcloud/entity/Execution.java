@@ -23,7 +23,7 @@ public class Execution {
 	private final Build build;
 
 	public static enum Status {
-		PRE_EXECUTION
+		BEFORE_TRIGGER
 	}
 
 	public Execution(String creationTime, String statusString, Build build) {
@@ -34,7 +34,7 @@ public class Execution {
 
 	public Execution(Date creationTime, Build build) {
 		this.creationTime = DATE_FORMAT.format(creationTime);
-		this.status = Status.PRE_EXECUTION;
+		this.status = Status.BEFORE_TRIGGER;
 		this.build = build;
 	}
 
