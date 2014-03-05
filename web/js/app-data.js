@@ -29,7 +29,7 @@ App.Product = DS.Model.extend({
 	builds: DS.hasMany('build', { async: true })
 });
 App.Build = DS.Model.extend({
-	parent: DS.belongsTo('product'),
+	product: DS.belongsTo('product'),
 	name: DS.attr(),
 	config: DS.belongsTo('buildConfig', { async: true }),
 	packages: DS.hasMany('package', { async: true })

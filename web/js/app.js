@@ -295,7 +295,7 @@ App.BuildRoute = App.AuthorisedRoute.extend({
 		var product = this.modelFor('product');
 		return product.get('builds').then(function(builds) {
 			var build = builds.findBy('id', params.build_id);
-			build.set('parent', product);
+			build.set('product', product);
 			return build;
 		});
 	}
