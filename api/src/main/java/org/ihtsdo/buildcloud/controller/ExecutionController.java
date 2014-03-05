@@ -39,7 +39,7 @@ public class ExecutionController {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedId);
 
-		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
+		return hypermediaGenerator.getEntityHypermediaJustCreated(execution, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping

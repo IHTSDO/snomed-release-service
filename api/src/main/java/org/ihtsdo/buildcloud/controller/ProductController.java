@@ -46,7 +46,7 @@ public class ProductController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Product product = productService.create(releaseCentreBusinessKey, extensionBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(product, request, PRODUCT_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 

@@ -44,7 +44,7 @@ public class ReleaseCentreController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		ReleaseCentre centre = releaseCentreService.create(name, shortName, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(centre, request, RELEASE_CENTRE_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(centre, request, RELEASE_CENTRE_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 

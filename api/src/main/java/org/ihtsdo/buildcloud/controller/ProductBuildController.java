@@ -52,7 +52,7 @@ public class ProductBuildController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Build build = buildService.create(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, request, BuildController.BUILD_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(build, request, BuildController.BUILD_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}		
 

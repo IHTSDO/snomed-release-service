@@ -66,7 +66,7 @@ public class InputFileController {
 		InputFile inputFile = inputFileService.create(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, file.getInputStream(),
 				size, authenticatedId);
 
-		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
+		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
 	}
 
 	@RequestMapping(value = "/{inputFileBusinessKey}/file", produces="application/zip")
