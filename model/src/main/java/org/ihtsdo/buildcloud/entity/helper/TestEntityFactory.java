@@ -9,7 +9,7 @@ public class TestEntityFactory extends TestEntityGenerator {
 		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreName, releaseCentreShortName);
 		Extension extension = new Extension(extensionName);
 		Product product = new Product(productName);
-		Build build = new Build(buildName);
+		Build build = new Build(1L, buildName);
 		Package aPackage = new Package(packageName);
 		InputFile inputFile = new InputFile("concepts.rf2");
 		aPackage.addInputFile(inputFile);

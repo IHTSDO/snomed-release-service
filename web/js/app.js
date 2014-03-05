@@ -37,6 +37,9 @@ App.Router.map(function() {
 						this.route('output');
 						this.route('publish');
 					});
+					this.resource('execution-review', function() {
+						this.route('configuration');
+					});
 				});
 			});
 		});
@@ -279,7 +282,7 @@ App.CreateProductController = Ember.ObjectController.extend({
 App.BuildIndexController = Ember.ObjectController.extend({
 	actions: {
 		initiateBuild: function (selectedBuild) {
-			this.transitionToRoute('pre-execution', selectedBuild);
+			this.transitionToRoute('execution-review', selectedBuild);
 		},
 		addPackage: function(build) {
 			this.send('openModal', 'create-package', build);
@@ -414,10 +417,22 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 		return pack;
 	}
 })
-
 App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	beforeModel: function() {
 		this.transitionTo('execution.results');
+	}
+})
+
+App.ExecutionReviewRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		var build = this.modelFor('build');
+		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
+		return pack;
+	}
+})
+App.ExecutionReviewIndexRoute = App.AuthorisedRoute.extend({
+	beforeModel: function() {
+		this.transitionTo('execution-review.configuration');
 	}
 })
 
