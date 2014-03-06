@@ -67,4 +67,10 @@ public class ExecutionController {
 		response.getOutputStream().print(executionConfiguration);
 	}
 
+	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
+	public void triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
+	}
+
 }

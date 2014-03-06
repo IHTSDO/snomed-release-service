@@ -1,17 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>{{> common-group-id}}</groupId>
-	<artifactId>{{businessKey}}</artifactId>
-	<version>1.0</version>
+	<groupId>{{> common-group-id build}}</groupId>
+	<artifactId>{{build.id}}</artifactId>
+	<version>{{id}}</version>
 	<packaging>pom</packaging>
 
-	<name>{{name}} ({{product.name}}, {{product.extension.name}}, {{product.extension.releaseCentre.name}})</name>
+	<name>{{build.name}} ({{build.product.name}}, {{build.product.extension.name}}, {{build.product.extension.releaseCentre.name}})</name>
 
-	<modules>
-	{{#packages}}
-		<module>{{businessKey}}</module>
-	{{/packages}}
+	<modules>{{#build.packages}}
+		<module>{{id}}</module>{{/build.packages}}
 	</modules>
 
 	<repositories>
