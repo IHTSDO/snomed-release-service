@@ -82,7 +82,7 @@
 
 	<bean class="org.codehaus.jackson.map.ObjectMapper" factory-bean="ObjectMapperFactory" factory-method="createObjectMapper"/>
 
-	<bean id="ObjectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.ObjectMapperFactory"/>
+	<bean id="ObjectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator"/>
 
