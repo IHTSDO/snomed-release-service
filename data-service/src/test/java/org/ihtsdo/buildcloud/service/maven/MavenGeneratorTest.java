@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.maven;
 
+import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.junit.Assert;
@@ -58,20 +60,19 @@ public class MavenGeneratorTest {
 		Assert.assertEquals(expectedPom, actualPom);
 	}
 
-//	todo: Test commented out pending object serialisation refactor.
-//	@Test
-//	public void testGetArtifact() throws IOException {
-//		Package aPackage = testEntityFactory.createPackage("the centre", "centre", "ex", "prod", "build1", "myPackage");
-//		InputFile in1 = new InputFile("in1");
-//		aPackage.addInputFile(in1);
-//		Assert.assertEquals("centre", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCentre().getBusinessKey());
-//
-//		MavenArtifact artifact = mavenGenerator.getArtifact(in1);
-//
-//		Assert.assertEquals("org.ihtsdo.release.centre.ex.prod.build1", artifact.getGroupId());
-//		Assert.assertEquals("mypackage.input.in1", artifact.getArtifactId());
-//		Assert.assertEquals("1.0", artifact.getVersion());
-//	}
+	@Test
+	public void testGetArtifact() throws IOException {
+		Package aPackage = testEntityFactory.createPackage("the centre", "centre", "ex", "prod", "build1", "myPackage");
+		InputFile in1 = new InputFile("in1");
+		aPackage.addInputFile(in1);
+		Assert.assertEquals("centre", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCentre().getBusinessKey());
+
+		MavenArtifact artifact = mavenGenerator.getArtifact(in1);
+
+		Assert.assertEquals("org.ihtsdo.release.centre.ex.prod.build1", artifact.getGroupId());
+		Assert.assertEquals("mypackage.input.in1", artifact.getArtifactId());
+		Assert.assertEquals("1.0", artifact.getVersion());
+	}
 
 	private String fileToString(File file) throws IOException {
 		return StreamUtils.copyToString(new FileInputStream(file), Charset.defaultCharset()).replace("\r", "");

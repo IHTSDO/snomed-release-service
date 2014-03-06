@@ -25,7 +25,8 @@ public class MavenGenerator {
 	private final Template buildPomHandlebars;
 	private final Template packagePomHandlebars;
 	private final Template commonGroupIdHandlebars;
-	private final Template inputFileArtifactIdHandlebars;
+	private final Template artifactGroupIdHandlebars;
+	private final Template artifactArtifactIdHandlebars;
 
 	private static final String POM_XML = "pom.xml";
 
@@ -36,7 +37,8 @@ public class MavenGenerator {
 		packagePomHandlebars = handlebars.compile("package-pom");
 		artifactPomHandlebars = handlebars.compile("artifact-pom");
 		commonGroupIdHandlebars = handlebars.compile("common-group-id");
-		inputFileArtifactIdHandlebars = handlebars.compile("input-file-artifact-id");
+		artifactGroupIdHandlebars = handlebars.compile("artifact-group-id");
+		artifactArtifactIdHandlebars = handlebars.compile("artifact-artifact-id");
 	}
 
 	public void generateArtifactPom(Writer writer, MavenArtifact artifact) throws IOException {
@@ -92,11 +94,11 @@ public class MavenGenerator {
 		Build build = aPackage.getBuild();
 
 		StringWriter groupIdWriter = new StringWriter();
-		commonGroupIdHandlebars.apply(build, groupIdWriter);
+		artifactGroupIdHandlebars.apply(build, groupIdWriter);
 		String groupId = groupIdWriter.toString();
 
 		StringWriter artifactIdWriter = new StringWriter();
-		inputFileArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
+		artifactArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
 		String artifactId = artifactIdWriter.toString();
 
 		String version = "1.0";
