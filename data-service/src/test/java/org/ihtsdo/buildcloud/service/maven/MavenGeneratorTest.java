@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.maven;
 
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
-import org.ihtsdo.buildcloud.service.mapping.ConfigJsonMapper;
+import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +24,7 @@ public class MavenGeneratorTest {
 	private TestEntityFactory testEntityFactory;
 
 	@Autowired
-	private ConfigJsonMapper configJsonMapper;
+	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
 	@Before
 	public void setup() {
@@ -33,7 +33,7 @@ public class MavenGeneratorTest {
 
 	@Test
 	public void testGenerateBuildScripts() throws IOException {
-		String jsonConfig = configJsonMapper.getJsonConfig(testEntityFactory.createExecution());
+		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(testEntityFactory.createExecution());
 		String expectedRootPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 		String expectedModulePom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-module-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 

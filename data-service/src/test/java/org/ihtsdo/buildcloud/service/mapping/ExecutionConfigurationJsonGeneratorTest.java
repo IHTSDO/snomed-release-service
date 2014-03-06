@@ -19,10 +19,10 @@ import java.util.GregorianCalendar;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
-public class ConfigJsonMapperTest {
+public class ExecutionConfigurationJsonGeneratorTest {
 
 	@Autowired
-	private ConfigJsonMapper configJsonMapper;
+	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
 	private org.ihtsdo.buildcloud.entity.Package internationalPackage;
 	private String expectedExport;
@@ -42,7 +42,7 @@ public class ConfigJsonMapperTest {
 	public void testGetConfig() throws IOException, JSONException {
 		Assert.assertEquals(1, internationalPackage.getInputFiles().size());
 
-		String actual = configJsonMapper.getJsonConfig(execution);
+		String actual = executionConfigurationJsonGenerator.getJsonConfig(execution);
 
 		JSONAssert.assertEquals(expectedExport, actual, false);
 	}

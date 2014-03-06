@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
-public class ConfigJsonMapper {
+public class ExecutionConfigurationJsonGenerator {
 
 	@Autowired
 	private ObjectMapper objectMapper;
