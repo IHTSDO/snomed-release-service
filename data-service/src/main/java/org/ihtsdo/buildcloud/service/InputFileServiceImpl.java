@@ -68,28 +68,30 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
 
 		InputFile inputFile = null;
-		// Find any existing input file with the same name
+		// Replace any existing input file of the same name with this new version
 		for (InputFile file : aPackage.getInputFiles()) {
 			if (file.getBusinessKey().equals(inputFileBusinessKey)) {
 				inputFile = file;
 			}
 		}
 
+		// If none existing create new and add to package
 		if (inputFile == null) {
 			inputFile = new InputFile(inputFileBusinessKey);
 			aPackage.addInputFile(inputFile);
 		}
 
+
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
 
 		// Upload input file to S3
-		String artifactPath = mavenGenerator.getPath(mavenArtifact);
+		String artifactPath = mavenArtifact.getPath();
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentLength(fileSize);
 		s3Client.putObject(mavenS3BucketName, artifactPath, fileStream, metadata);
 
 		// Generate input file pom
-		String pomPath = mavenGenerator.getPomPath(mavenArtifact);
+		String pomPath = mavenArtifact.getPomPath();
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		mavenGenerator.generateArtifactPom(new OutputStreamWriter(out), mavenArtifact);
 
@@ -107,7 +109,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	@Override
 	public InputStream getFileStream(InputFile inputFile) throws IOException {
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
-		String artifactPath = mavenGenerator.getPath(mavenArtifact);
+		String artifactPath = mavenArtifact.getPath();
 		S3Object s3Object = s3Client.getObject(mavenS3BucketName, artifactPath);
 		LOGGER.info("Serving S3 file. Path: {}, Size: {}", artifactPath, s3Object.getObjectMetadata().getContentLength());
 		if (s3Object != null) {

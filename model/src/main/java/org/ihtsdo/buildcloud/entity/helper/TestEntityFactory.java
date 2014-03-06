@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.entity.helper;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
+import java.util.GregorianCalendar;
+
 public class TestEntityFactory extends TestEntityGenerator {
 
 	public Package createPackage(String releaseCentreName, String releaseCentreShortName, String extensionName, String productName, String buildName, String packageName) {
@@ -33,6 +35,11 @@ public class TestEntityFactory extends TestEntityGenerator {
 		releaseCentre.addExtension(extension);
 		
 		return build;
+	}
+
+	public Execution createExecution() {
+		Build build = createBuild();
+		return new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), build);
 	}
 
 }

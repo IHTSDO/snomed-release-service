@@ -15,23 +15,34 @@ public class ConfigJsonMapper {
 	private ObjectMapper objectMapper;
 
 	private static final String ID = "id";
+	private static final String CREATION_TIME = "creationTime";
+	private static final String BUILD = "build";
 	private static final String NAME = "name";
 	private static final String SHORT_NAME = "shortName";
 	private static final String PACKAGES = "packages";
 	private static final String INPUT_FILES = "inputFiles";
 	private static final String PRODUCT = "product";
+	private static final String EXTENSION = "extension";
 	private static final String RELEASE_CENTRE = "releaseCentre";
 
-	public String getJsonConfig(Build build) throws IOException {
-		Map<String, Object> config = getConfig(build);
+	public String getJsonConfig(Execution execution) throws IOException {
+		Map<String, Object> config = getConfig(execution);
 		StringWriter writer = new StringWriter();
 		objectMapper.writeValue(writer, config);
 		return writer.toString();
 	}
 
+	private Map<String, Object> getConfig(Execution execution) {
+		Map<String, Object> config = new LinkedHashMap<>();
+		config.put(ID, execution.getId());
+		config.put(CREATION_TIME, execution.getCreationTime());
+		config.put(BUILD, getConfig(execution.getBuild()));
+		return config;
+	}
+
 	private Map<String, Object> getConfig(Build build) {
 		Map<String, Object> config = new LinkedHashMap<>();
-		config.put(ID, build.getCompositeKey());
+		config.put(ID, build.getBusinessKey());
 		config.put(NAME, build.getName());
 		config.put(PACKAGES, getPackagesConfig(build.getPackages()));
 		config.put(PRODUCT, getConfig(build.getProduct()));
@@ -42,7 +53,7 @@ public class ConfigJsonMapper {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, product.getBusinessKey());
 		config.put(NAME, product.getName());
-		config.put("extension", getConfig(product.getExtension()));
+		config.put(EXTENSION, getConfig(product.getExtension()));
 		return config;
 	}
 
@@ -84,7 +95,6 @@ public class ConfigJsonMapper {
 			configList.add(getConfig(inputFile));
 		}
 		return configList;
-
 	}
 
 	private Map<String, Object> getConfig(InputFile inputFile) {

@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
-
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.slf4j.Logger;
@@ -11,13 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,21 +45,6 @@ public class BuildController {
 		Build build = buildService.find(buildCompositeKey, authenticatedId);
 
 		return hypermediaGenerator.getEntityHypermedia(build, request, BUILD_LINKS);
-	}
-	
-	@RequestMapping(value = "/{buildCompositeKey}/run", method = RequestMethod.POST)
-	@ResponseBody
-	public Map runBuild(@PathVariable String buildCompositeKey) {
-		String authenticatedId = SecurityHelper.getSubject();
-		Map<String, String> results = new HashMap<>();
-		try {
-			String output = buildService.run(buildCompositeKey, authenticatedId);
-			results.put("output", output);
-		} catch (IOException e) {
-			LOGGER.error("Exception thrown during build.", e);
-			results.put("error", "true");
-		}
-		return results;
 	}
 	
 }

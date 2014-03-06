@@ -37,4 +37,23 @@ public class MavenArtifact {
 	public void setPackaging(String packaging) {
 		this.packaging = packaging;
 	}
+
+	public String getPath() {
+		return getPath(getPackaging());
+	}
+
+	public String getPomPath() {
+		return getPath("pom");
+	}
+
+	private String getPath(String packaging) {
+		String groupIdWithSlashes = withSlashes(groupId);
+		String artifactIdWithSlashes = withSlashes(artifactId);
+		return String.format("%s/%s/%s/%s-%3$s.%s", groupIdWithSlashes, artifactIdWithSlashes, version, artifactId, packaging);
+	}
+
+	private String withSlashes(String name) {
+		return name.replace(".", "/");
+	}
+
 }
