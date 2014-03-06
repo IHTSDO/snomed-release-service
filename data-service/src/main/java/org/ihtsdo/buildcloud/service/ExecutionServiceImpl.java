@@ -5,7 +5,7 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.ihtsdo.buildcloud.service.mapping.ConfigJsonMapper;
+import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private ConfigJsonMapper configJsonMapper;
+	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
 	@Autowired
 	private MavenGenerator mavenGenerator;
@@ -46,7 +46,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Execution execution = new Execution(creationDate, build);
 
 		// Create Build config export
-		String jsonConfig = configJsonMapper.getJsonConfig(execution);
+		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
 
 		// Persist export
 		dao.save(execution, jsonConfig);
