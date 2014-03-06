@@ -1,18 +1,12 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
-		xmlns:context="http://www.springframework.org/schema/context"
 		xmlns:mvc="http://www.springframework.org/schema/mvc"
-		xmlns:p="http://www.springframework.org/schema/p"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
-		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.2.xsd
 		http://www.springframework.org/schema/mvc
 		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
 		">
-
-	<context:component-scan base-package="org.ihtsdo.buildcloud.controller" />
 
 	<mvc:annotation-driven>
 		<mvc:message-converters>
@@ -27,11 +21,11 @@
 		</mvc:message-converters>
 	</mvc:annotation-driven>
 
-	<bean class="org.codehaus.jackson.map.ObjectMapper" id="objectMapper"/>
+	<bean class="org.codehaus.jackson.map.ObjectMapper" factory-bean="ObjectMapperFactory" factory-method="createObjectMapper"/>
 
-	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator">
-		<constructor-arg ref="objectMapper"/>
-	</bean>
+	<bean id="ObjectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>
+
+	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator"/>
 
 	<bean id="multipartResolver"
 		  class="org.springframework.web.multipart.support.StandardServletMultipartResolver">

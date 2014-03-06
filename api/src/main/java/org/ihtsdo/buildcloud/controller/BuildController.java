@@ -26,7 +26,7 @@ public class BuildController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	static final String[] BUILD_LINKS = {"packages", "executions"};
+	public static final String[] BUILD_LINKS = {"packages", "executions"};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildController.class);
 
