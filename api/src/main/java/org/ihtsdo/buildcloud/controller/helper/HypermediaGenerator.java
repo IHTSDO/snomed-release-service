@@ -1,17 +1,15 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 public class HypermediaGenerator {
 
-	private final ObjectMapper mapper;
-
-	public HypermediaGenerator(ObjectMapper mapper) {
-		this.mapper = mapper;
-	}
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
 		return  getEntityCollectionHypermedia(entities, request, entityLinks, null);
@@ -43,7 +41,7 @@ public class HypermediaGenerator {
 	}
 
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
-		Map<String,Object> entityMap = mapper.convertValue(entity, Map.class);
+		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
 		if (!currentResource) {
 			url = url + "/" + entityMap.get("id");
 		}
