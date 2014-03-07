@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -14,6 +15,7 @@ public interface ExecutionDAO {
 
 	Execution find(Build build, String executionId);
 
-	String loadConfiguration(Build build, String executionId) throws IOException;
+	String loadConfiguration(Execution execution) throws IOException;
 
+	void saveBuildScripts(File buildScriptsTmpDirectory, Execution execution);
 }

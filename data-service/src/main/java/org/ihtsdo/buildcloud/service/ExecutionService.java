@@ -15,6 +15,6 @@ public interface ExecutionService {
 
 	String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
 
-	void triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
+	Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
 
 }
