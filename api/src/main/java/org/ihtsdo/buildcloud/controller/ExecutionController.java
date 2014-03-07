@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -73,6 +74,15 @@ public class ExecutionController {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
+	}
+
+	@RequestMapping("/{executionId}/build-scripts.zip")
+	@ResponseBody
+	public void getBuildScrips(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletResponse response) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		response.setContentType("application/zip");
+		ServletOutputStream outputStream = response.getOutputStream();
+		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedId, outputStream);
 	}
 
 }

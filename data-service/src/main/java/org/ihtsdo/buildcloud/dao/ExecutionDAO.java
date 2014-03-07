@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 public interface ExecutionDAO {
@@ -18,4 +19,7 @@ public interface ExecutionDAO {
 	String loadConfiguration(Execution execution) throws IOException;
 
 	void saveBuildScripts(File buildScriptsTmpDirectory, Execution execution);
+
+	void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException;
+
 }

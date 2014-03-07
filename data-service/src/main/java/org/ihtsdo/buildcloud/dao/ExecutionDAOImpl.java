@@ -10,13 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StreamUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
@@ -72,6 +72,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		saveFiles(sourceDirectory, pathHelper.getBuildScriptsPath(execution));
 	}
 
+	@Override
+	public void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException {
+		StringBuffer buildScriptsPath = pathHelper.getBuildScriptsPath(execution);
+		streamS3FilesAsZip(buildScriptsPath.toString(), outputStream);
+	}
+
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
 		File[] files = sourceDirectory.listFiles();
 		for (File file : files) {
@@ -121,6 +127,25 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private PutObjectResult putFile(String filePath, String contents) {
 		return s3Client.putObject(executionS3BucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
+	}
+
+	private void streamS3FilesAsZip(String buildScriptsPath, OutputStream outputStream) throws IOException {
+		LOGGER.debug("Serving zip of files in {}", buildScriptsPath);
+		ObjectListing objectListing = s3Client.listObjects(executionS3BucketName, buildScriptsPath);
+		int buildScriptsPathLength = buildScriptsPath.length();
+
+		ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+			String key = summary.getKey();
+			String relativePath = key.substring(buildScriptsPathLength);
+			LOGGER.debug("Zip entry. S3Key {}, Entry path {}", key, relativePath);
+			zipOutputStream.putNextEntry(new ZipEntry(relativePath));
+			S3Object object = s3Client.getObject(executionS3BucketName, key);
+			try (InputStream objectContent = object.getObjectContent()) {
+				StreamUtils.copy(objectContent, zipOutputStream);
+			}
+		}
+		zipOutputStream.close();
 	}
 
 	public void setS3Client(AmazonS3Client s3Client) {
