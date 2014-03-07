@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
+import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -20,11 +22,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Autowired
 	private AmazonS3Client s3Client;
+
+	@Autowired
+	private ExecutionS3PathHelper pathHelper;
+
 	private String executionS3BucketName;
 
-	private static final String STATUS_PREFIX = "status:";
-	private static final String CONFIG_JSON = "configuration.json";
-	private static final String SEPARATOR = "/";
 	private static final String BLANK = "";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
@@ -36,16 +39,14 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public ArrayList<Execution> findAll(Build build) {
-		String buildDirectoryPath = getDirectoryPath(build).toString();
+		String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
 		ArrayList<Execution> executions = findExecutions(buildDirectoryPath, build);
 		return executions;
 	}
 
 	@Override
 	public Execution find(Build build, String executionId) {
-		StringBuffer path = getDirectoryPath(build);
-		path.append(executionId).append(SEPARATOR);
-		String executionDirectoryPath = path.toString();
+		String executionDirectoryPath = pathHelper.getExecutionPath(build, executionId).toString();
 		ArrayList<Execution> executions = findExecutions(executionDirectoryPath, build);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
@@ -55,16 +56,32 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public String loadConfiguration(Build build, String executionId) throws IOException {
-		StringBuffer path = getDirectoryPath(build);
-		path.append(executionId).append(SEPARATOR).append(CONFIG_JSON);
-		String configFilePath = path.toString();
+	public String loadConfiguration(Execution execution) throws IOException {
+		String configFilePath = pathHelper.getConfigFilePath(execution);
 		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
 			return FileCopyUtils.copyToString(new InputStreamReader(objectContent));
 		} else {
 			return null;
+		}
+	}
+
+	@Override
+	public void saveBuildScripts(File sourceDirectory, Execution execution) {
+		saveFiles(sourceDirectory, pathHelper.getBuildScriptsPath(execution));
+	}
+
+	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
+		File[] files = sourceDirectory.listFiles();
+		for (File file : files) {
+			StringBuffer filePath = new StringBuffer(targetDirectoryPath).append(file.getName());
+			if (file.isFile()) {
+				s3Client.putObject(executionS3BucketName, filePath.toString(), file);
+			} else if (file.isDirectory()) {
+				filePath.append(pathHelper.SEPARATOR);
+				saveFiles(file, filePath);
+			}
 		}
 	}
 
@@ -91,38 +108,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	private void saveToBucket(Execution execution, String jsonConfig) {
-		StringBuffer directoryPath = getDirectoryPath(execution);
-
 		// Save config file
-		String configPath = new StringBuffer(directoryPath).append(CONFIG_JSON).toString();
+		String configPath = pathHelper.getConfigFilePath(execution);
 		putFile(configPath, jsonConfig);
 
 		// Save status file
 		String status = execution.getStatus().toString();
-		String statusFilePath = new StringBuffer(directoryPath).append(STATUS_PREFIX).append(status).toString();
+		String statusFilePath = pathHelper.getStatusFilePath(execution, status);
 		putFile(statusFilePath, BLANK);
 	}
 
 	private PutObjectResult putFile(String filePath, String contents) {
 		return s3Client.putObject(executionS3BucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
-	}
-
-	private StringBuffer getDirectoryPath(Execution execution) {
-		StringBuffer path = getDirectoryPath(execution.getBuild());
-		path.append(execution.getCreationTime());
-		path.append(SEPARATOR);
-		return path;
-	}
-
-	private StringBuffer getDirectoryPath(Build build) {
-		String releaseCentreBusinessKey = build.getProduct().getExtension().getReleaseCentre().getBusinessKey();
-		StringBuffer path = new StringBuffer();
-		path.append(releaseCentreBusinessKey);
-		path.append(SEPARATOR);
-		path.append(build.getCompositeKey());
-		path.append(SEPARATOR);
-		return path;
 	}
 
 	public void setS3Client(AmazonS3Client s3Client) {

@@ -68,9 +68,11 @@ public class ExecutionController {
 	}
 
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
-	public void triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId) throws IOException {
+	@ResponseBody
+	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletRequest request) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
-		executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
+		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
+		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
 	}
 
 }

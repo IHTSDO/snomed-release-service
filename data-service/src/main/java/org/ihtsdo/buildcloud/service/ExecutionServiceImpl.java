@@ -72,21 +72,28 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build = buildDAO.find(buildId, authenticatedId);
-		return dao.loadConfiguration(build, executionId);
+		Execution execution = dao.find(build, executionId);
+		return dao.loadConfiguration(execution);
 	}
 
 	@Override
-	public void triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
+	public Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
 
-		String executionConfiguration = loadConfiguration(buildCompositeKey, executionId, authenticatedId);
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		Build build = buildDAO.find(buildId, authenticatedId);
+		Execution execution = dao.find(build, executionId);
+
+		String executionConfiguration = dao.loadConfiguration(execution);
 
 		// Generate poms from config export
 		File buildScriptsTmpDirectory = mavenGenerator.generateBuildScripts(executionConfiguration);
 
-		// todo: store generated poms in permanent storage
+		dao.saveBuildScripts(buildScriptsTmpDirectory, execution);
 
 		// todo: trigger build
+
+		return execution;
 	}
 
 }
