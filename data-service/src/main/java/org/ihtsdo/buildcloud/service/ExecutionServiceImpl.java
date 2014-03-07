@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -94,6 +95,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 		// todo: trigger build
 
 		return execution;
+	}
+
+	@Override
+	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, String authenticatedId, OutputStream outputStream) throws IOException {
+		Execution execution = find(buildCompositeKey, executionId, authenticatedId);
+		dao.streamBuildScriptsZip(execution, outputStream);
 	}
 
 }

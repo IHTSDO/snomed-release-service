@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.entity.Execution;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 public interface ExecutionService {
@@ -16,5 +17,7 @@ public interface ExecutionService {
 	String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
 
 	Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException;
+
+	void streamBuildScriptsZip(String buildCompositeKey, String executionId, String authenticatedId, OutputStream outputStream) throws IOException;
 
 }
