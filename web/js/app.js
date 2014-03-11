@@ -39,6 +39,7 @@ App.Router.map(function() {
 					});
 					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
+						this.route('debug');
 					});
 				});
 			});
@@ -446,6 +447,28 @@ App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	}
 })
 App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('execution');
+	},
+	actions: {
+		triggerBuild: function(execution) {
+			var store = this.store;
+			var adapter = store.adapterFor(App.Execution);
+			var build = execution.get('parent');
+			var url = adapter.buildNestedURL(execution);
+			url += '/trigger';
+			$.ajax({
+				url: url,
+				type: 'POST',
+				success: function(executionData) {
+					executionData.parent = build;
+					store.push(App.Execution, executionData, true);
+				}
+			})
+		}
+	}
+})
+App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('execution');
 	}

@@ -13,6 +13,9 @@
 	<div class="col-md-3">
 		<ul class="nav">
 			<li>{{#link-to 'execution.configuration'}}Configuration{{/link-to}}</li>
+			{{#if isTriggered}}
+			<li>{{#link-to 'execution.debug'}}Debug{{/link-to}}</li>
+			{{/if}}
 		</ul>
 	</div>
 	<div class="col-md-9">

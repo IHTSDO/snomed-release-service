@@ -53,15 +53,25 @@ App.Execution = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	creationTime: DS.attr(),
 	status: DS.attr(),
+	buildScripts_url: DS.attr(),
 	configuration: DS.belongsTo('executionConfiguration', { async: true }),
 	statusTitle: function() {
 		var status = this.get('status');
 		switch (status) {
-			case 'BEFORE_TRIGGER':
+			case App.ExecutionStatus.beforeTrigger:
 				return 'Before Trigger'
 		}
+	}.property('status'),
+	isNotTriggered: function() {
+		return this.get('status') == App.ExecutionStatus.beforeTrigger;
+	}.property('status'),
+	isTriggered: function() {
+		return this.get('status') != App.ExecutionStatus.beforeTrigger;
 	}.property('status')
 });
+App.ExecutionStatus = {
+	beforeTrigger: 'BEFORE_TRIGGER'
+}
 App.ExecutionConfiguration = DS.Model.extend({
 	dummy: DS.attr(),
 	json: function() {
