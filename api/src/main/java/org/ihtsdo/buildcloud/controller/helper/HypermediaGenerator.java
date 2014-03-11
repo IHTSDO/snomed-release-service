@@ -48,9 +48,16 @@ public class HypermediaGenerator {
 		if (entityMap != null) {
 			entityMap.put("url", url);
 			for (String link : entityLinks) {
+				String linkName;
+				if (link.contains("|")) {
+					String[] linkParts = link.split("\\|");
+					linkName = linkParts[0];
+					link = linkParts[1];
+				} else {
+					linkName = link.replace("/", "");
+				}
 				String linkUrl = (link.startsWith("/") ? apiRootUrl : (url + "/") ) + link;
-				link = link.replace("/", "");
-				entityMap.put(link + "_url", linkUrl);
+				entityMap.put(linkName + "_url", linkUrl);
 			}
 		}
 		return entityMap;
