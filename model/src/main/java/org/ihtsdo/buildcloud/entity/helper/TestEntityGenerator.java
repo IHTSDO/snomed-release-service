@@ -19,10 +19,14 @@ public class TestEntityGenerator {
 	public static final String [][] productNames = {{"SNOMED CT International Edition"},
 													{"SNOMED CT Spanish Edition"} };		
 	
-	public static final String [] buildNames = { "20130731 International Release",
-												 "20140131 International Release - Biannual",
-												 "20140131 International Release - Nightly",
-												 "20140731 International Release - Biannual"};
+	public static final String [][] buildNames = { {"20140731 International Release",
+													"20150131 International Release - Biannual",
+													"20150131 International Release - Nightly",
+													"20150731 International Release - Biannual"},
+												 {	"20141031 Spanish Release",
+													"20150430 Spanish Release - Semestral",
+													"20150430 Spanish Release - Nocturno",
+													"20150430 Spanish Release - Semestral"}};
 	
 	public static final String [] packageNames = {	"RF2 Release",
 													"RF1CompatibilityPackage",
@@ -44,7 +48,7 @@ public class TestEntityGenerator {
 			for (String productName : productNames[x]) {
 				Product product = new Product (productName);
 				extension.addProduct(product);
-				for (String buildName : buildNames){
+				for (String buildName : buildNames[x]){
 					Build build = new Build(buildName);
 					product.addBuild(build);
 					addPackagesToBuild(build);
