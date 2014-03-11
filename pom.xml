@@ -25,6 +25,7 @@
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
+		<module>builder</module>
 		<module>web</module>
 	</modules>
 
