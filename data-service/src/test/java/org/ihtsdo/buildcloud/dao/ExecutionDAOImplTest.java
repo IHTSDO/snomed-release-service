@@ -64,8 +64,8 @@ public class ExecutionDAOImplTest {
 		executionDAO.save(execution, "");
 		mocksControl.verify();
 
-		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		Assert.assertEquals("international/1_20130731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
+		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
+		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 
 	@Test
