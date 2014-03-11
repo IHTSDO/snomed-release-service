@@ -23,7 +23,7 @@ public class Execution {
 	private final Build build;
 
 	public static enum Status {
-		BEFORE_TRIGGER
+		BEFORE_TRIGGER, QUEUED
 	}
 
 	public Execution(String creationTime, String statusString, Build build) {

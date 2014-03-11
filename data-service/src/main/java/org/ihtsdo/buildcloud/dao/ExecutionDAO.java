@@ -22,4 +22,6 @@ public interface ExecutionDAO {
 
 	void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException;
 
+	void queueForBuilding(Execution execution);
+
 }

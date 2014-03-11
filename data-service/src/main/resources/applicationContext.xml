@@ -21,7 +21,7 @@
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreMembershipDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
-		<property name="executionS3BucketName" ref="ExecutionS3BucketName"/>
+		<property name="buildQueue" ref="buildQueue"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 
@@ -34,7 +34,6 @@
 		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.maven.MavenExecutorImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 
 	<jdbc:embedded-database id="dataSource"/>
@@ -76,7 +75,7 @@
 		<constructor-arg value="ire.maven.release.ihtsdo" />
 	</bean>
 
-	<bean class="java.lang.String" id="ExecutionS3BucketName">
+	<bean class="java.lang.String" id="executionS3BucketName">
 		<constructor-arg value="ire.execution.release.ihtsdo" />
 	</bean>
 
@@ -87,5 +86,11 @@
 	<bean class="org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator"/>
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper"/>
+
+	<bean id="hazelcastInstance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance"/>
+
+	<bean id="buildQueue" class="com.hazelcast.core.IQueue" factory-bean="hazelcastInstance" factory-method="getQueue" >
+		<constructor-arg value="org.ihtsdo.buildcloud.build.queue" />
+	</bean>
 
 </beans>

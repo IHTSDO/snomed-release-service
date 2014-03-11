@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
+import com.hazelcast.core.IQueue;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -26,7 +27,10 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private ExecutionS3PathHelper pathHelper;
 
+	@Autowired
 	private String executionS3BucketName;
+
+	private IQueue<String> buildQueue;
 
 	private static final String BLANK = "";
 
@@ -78,6 +82,14 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		streamS3FilesAsZip(buildScriptsPath.toString(), outputStream);
 	}
 
+	@Override
+	public void queueForBuilding(Execution execution) {
+		StringBuffer executionPath = pathHelper.getExecutionPath(execution);
+		execution.setStatus(Execution.Status.QUEUED);
+		saveStatus(execution);
+		buildQueue.add(executionPath.toString());
+	}
+
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
 		File[] files = sourceDirectory.listFiles();
 		for (File file : files) {
@@ -119,8 +131,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		putFile(configPath, jsonConfig);
 
 		// Save status file
-		String status = execution.getStatus().toString();
-		String statusFilePath = pathHelper.getStatusFilePath(execution, status);
+		saveStatus(execution);
+	}
+
+	private void saveStatus(Execution execution) {
+		String statusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus().toString());
 		putFile(statusFilePath, BLANK);
 	}
 
@@ -148,13 +163,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		zipOutputStream.close();
 	}
 
-	public void setS3Client(AmazonS3Client s3Client) {
-		this.s3Client = s3Client;
+	@Required
+	public void setBuildQueue(IQueue<String> buildQueue) {
+		this.buildQueue = buildQueue;
 	}
 
-	@Required
-	public void setExecutionS3BucketName(String executionS3BucketName) {
-		this.executionS3BucketName = executionS3BucketName;
+	public void setS3Client(AmazonS3Client s3Client) {
+		this.s3Client = s3Client;
 	}
 
 }
