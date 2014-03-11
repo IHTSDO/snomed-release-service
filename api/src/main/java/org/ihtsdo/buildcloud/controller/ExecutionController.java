@@ -32,7 +32,7 @@ public class ExecutionController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	static final String[] EXECUTION_LINKS = { "configuration" };
+	static final String[] EXECUTION_LINKS = { "configuration", "buildScripts|build-scripts.zip" };
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
