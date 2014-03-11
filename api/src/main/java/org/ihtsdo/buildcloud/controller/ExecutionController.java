@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,9 +24,6 @@ public class ExecutionController {
 
 	@Autowired
 	private ExecutionService executionService;
-
-	@Autowired
-	private BuildService buildService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -73,7 +69,7 @@ public class ExecutionController {
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletRequest request) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
-		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
+		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping("/{executionId}/build-scripts.zip")

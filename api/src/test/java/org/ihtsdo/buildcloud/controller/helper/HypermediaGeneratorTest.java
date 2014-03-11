@@ -65,7 +65,7 @@ public class HypermediaGeneratorTest {
 		mocksControl.verify();
 		Assert.assertNotNull(hypermedia);
 		String actual = toString(hypermedia);
-		System.out.println(actual);
+//		System.out.println(actual);
 		Assert.assertEquals(expected, actual);
 	}
 
@@ -78,8 +78,20 @@ public class HypermediaGeneratorTest {
 		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, mockServletRequest, new String[]{"configuration", linkNameAndUrl});
 
 		Assert.assertNotNull(hypermedia);
-		String actual = toString(hypermedia);
-		System.out.println(actual);
+//		System.out.println(toString(hypermedia));
+		Assert.assertEquals("http://localhost/api/v1/builds/something/exec/something/build-scripts.zip", hypermedia.get("buildScripts_url"));
+	}
+
+	@Test
+	public void testActionResponseUrl() throws IOException {
+		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/builds/something/exec/something/trigger")).anyTimes();
+		mocksControl.replay();
+
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(execution, mockServletRequest, new String[]{"configuration", "buildScripts|build-scripts.zip"});
+
+		Assert.assertNotNull(hypermedia);
+		System.out.println(toString(hypermedia));
+		Assert.assertEquals("http://localhost/api/v1/builds/something/exec/something", hypermedia.get("url"));
 		Assert.assertEquals("http://localhost/api/v1/builds/something/exec/something/build-scripts.zip", hypermedia.get("buildScripts_url"));
 	}
 
