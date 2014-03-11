@@ -2,11 +2,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release__biannual</groupId>
-	<artifactId>20140731_international_release__biannual</artifactId>
+	<artifactId>20150731_international_release__biannual</artifactId>
 	<version>2013-03-05T16:30:00</version>
 	<packaging>pom</packaging>
 
-	<name>20140731 International Release - Biannual (SNOMED CT International Edition, SNOMED CT International Edition, International Release Centre)</name>
+	<name>20150731 International Release - Biannual (SNOMED CT International Edition, SNOMED CT International Edition, International Release Centre)</name>
 
 	<modules>
 		<module>rf2_release</module>
