@@ -6,7 +6,6 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
-import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,9 +32,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private MavenGenerator mavenGenerator;
-
-	@Autowired
-	private MavenExecutor mavenExecutor;
 
 	@Override
 	public Execution create(String buildCompositeKey, String authenticatedId) throws IOException {
@@ -92,7 +88,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 		dao.saveBuildScripts(buildScriptsTmpDirectory, execution);
 
-		// todo: trigger build
+		// Queue the Execution for building
+		dao.queueForBuilding(execution);
 
 		return execution;
 	}
