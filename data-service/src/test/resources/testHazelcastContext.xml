@@ -4,7 +4,6 @@
 	    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
         ">
 
-	<import resource="hazelcastContext.xml"/>
-	<import resource="dataServiceContext.xml"/>
+	<bean id="buildQueue" class="org.ihtsdo.test.DummyHazelcastQueue"/>
 
 </beans>
