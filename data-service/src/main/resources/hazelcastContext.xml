@@ -4,7 +4,7 @@
 	    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
         ">
 
-	<bean id="hazelcastInstance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance"/>
+	<bean id="hazelcastInstance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance" destroy-method="shutdown"/>
 
 	<bean id="buildQueue" class="com.hazelcast.core.IQueue" factory-bean="hazelcastInstance" factory-method="getQueue" >
 		<constructor-arg value="org.ihtsdo.buildcloud.build.queue" />
