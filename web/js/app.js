@@ -112,7 +112,7 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		return {
 			releaseCentres: this.store.filter('centre', {}, function(centre) {
 				return !centre.get('removed');
-			})
+							})
 		}
 	},
 	actions: {
@@ -122,6 +122,17 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		addExtension: function(releaseCentre) {
 			this.send('openModal', 'create-extension', releaseCentre);
 		}		
+	}
+})
+
+// Admin
+App.AdminRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return {
+			releaseCentres: this.store.filter('centre', {}, function(centre) {
+				return !centre.get('removed');
+							})
+		}
 	}
 })
 

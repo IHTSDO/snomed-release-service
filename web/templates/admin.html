@@ -4,9 +4,15 @@
 </ol>
 
 <h2>Admin</h2>
-<a class="add-button" href="#" onclick="return false;"></a>
-
+<ul>
+{{#each releaseCentres}}
+	<li>
+		{{#link-to "release-centre" this}}{{name}}{{/link-to}}
+	</li>
+{{/each}}
+</ul>
+	
 <!-- Button trigger modal -->
-<button class="btn btn-primary btn-lg" {{action 'openModal' 'create-release-centre'}}>
+<button class="btn btn-primary btn-md list-align" {{action 'openModal' 'create-release-centre'}}>
 	<span class="glyphicon glyphicon-plus"></span> Add a Release Centre
 </button>
