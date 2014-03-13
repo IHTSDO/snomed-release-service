@@ -46,8 +46,8 @@ public class ProductBuildController {
 											 @PathVariable String extensionBusinessKey,
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException {
-
+												   HttpServletRequest request) throws Exception {
+		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		String name = json.get("name");
 
 		String authenticatedId = SecurityHelper.getSubject();

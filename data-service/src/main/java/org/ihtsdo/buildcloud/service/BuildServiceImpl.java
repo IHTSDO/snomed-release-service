@@ -46,8 +46,13 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) {
+	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{
 		Product product = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		
+		if (product == null) {
+			throw new Exception ("Unable to find product with path: " + releaseCentreBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
+		}
+		
 		Build build = new Build(name);
 		product.addBuild(build);
 		buildDAO.save(build);
