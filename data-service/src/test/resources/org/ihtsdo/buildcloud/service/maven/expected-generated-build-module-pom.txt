@@ -9,6 +9,7 @@
 
 	<artifactId>rf2_release</artifactId>
 
+	<!--
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -17,6 +18,7 @@
 			<type>zip</type>
 		</dependency>
 	</dependencies>
+	-->
 
 	<build>
 		<plugins>

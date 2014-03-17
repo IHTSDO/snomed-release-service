@@ -34,6 +34,7 @@ public class MavenGeneratorTest {
 	}
 
 	@Test
+	// ToDo: Uncomment dependencies in expected file.
 	public void testGenerateBuildScripts() throws IOException {
 		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(testEntityFactory.createExecution());
 		String expectedRootPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
