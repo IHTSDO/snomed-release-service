@@ -1,4 +1,4 @@
-snomed-release-system
-=====================
+snomed-release-service
+======================
 
-Cloud based 2.0 release system for SNOMED CT.
+Cloud based 2.0 release service for SNOMED CT.
