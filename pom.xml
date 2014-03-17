@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
-	<artifactId>snomed-release-system-parent</artifactId>
+	<artifactId>snomed-release-service-parent</artifactId>
 	<version>1.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
-	<name>SNOMED CT Release System</name>
+	<name>SNOMED CT Release Service</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
