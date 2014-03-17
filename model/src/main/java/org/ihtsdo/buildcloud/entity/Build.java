@@ -17,6 +17,8 @@ public class Build {
 	private Long id;
 
 	private String name;
+	
+	private boolean starred;
 
 	@JsonIgnore
 	private String businessKey;
@@ -37,6 +39,12 @@ public class Build {
 		this();
 		setName(name);
 	}
+	
+	public Build(String name, boolean isStarred) {
+		this();
+		this.setName(name);
+		this.starred = isStarred;
+	}	
 
 	public Build(Long id, String name) {
 		this(name);
@@ -88,6 +96,14 @@ public class Build {
 
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+	}
+	
+	public boolean isStarred() {
+		return starred;
+	}
+
+	public void setStarred(boolean isStarred) {
+		this.starred = isStarred;
 	}
 
 }

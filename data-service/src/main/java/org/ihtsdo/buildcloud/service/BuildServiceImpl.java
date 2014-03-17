@@ -6,10 +6,12 @@ import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
 
 @Service
@@ -28,8 +30,8 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findAll(String authenticatedId) {
-		return buildDAO.findAll(authenticatedId);
+	public List<Build> findAll(EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		return buildDAO.findAll(filterOptions, authenticatedId);
 	}
 
 	@Override

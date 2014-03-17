@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +10,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -23,7 +25,8 @@ public class BuildDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		List<Build> builds = dao.findAll(AUTHENTICATED_ID);
+		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
+		List<Build> builds = dao.findAll(filterOptions, AUTHENTICATED_ID);
 		Assert.assertNotNull(builds);
 		Assert.assertEquals(8, builds.size());
 
