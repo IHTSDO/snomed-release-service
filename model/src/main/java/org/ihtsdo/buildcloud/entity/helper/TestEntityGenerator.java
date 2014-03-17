@@ -21,6 +21,9 @@ public class TestEntityGenerator {
 	
 	public static final int totalBuildCount = 8;
 	
+	public static final int [] buildCount = { 4,
+											  4};
+	
 	public static final String [][] buildNames = { {"20140731 International Release",
 													"20150131 International Release - Biannual",
 													"20150131 International Release - Nightly",
@@ -31,6 +34,9 @@ public class TestEntityGenerator {
 													"20150430 Spanish Release - Semestral"}};
 	
 	public static final int totalStarredBuilds = 5; 
+	
+	public static final int [] starredCount = { 3,
+												2};
 	
 	public static final boolean [][] starredBuilds = {	{ true, true, true, false  },
 														{ true, false, true, false } };
