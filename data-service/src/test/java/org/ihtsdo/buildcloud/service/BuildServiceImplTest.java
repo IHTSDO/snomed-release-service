@@ -28,6 +28,26 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 	
 	@Autowired
 	private BuildService bs;
+	
+	@Test
+	public void testFindForExtension() {
+		EnumSet<FilterOption> filterOff = EnumSet.noneOf(FilterOption.class);
+		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]), 
+												 EntityHelper.formatAsBusinessKey(extensionNames[0]), 
+												 filterOff, 
+												 AUTHENTICATED_ID);
+		Assert.assertEquals(TestEntityGenerator.buildCount[0], builds.size());
+	}
+	
+	@Test
+	public void testFindForExtension_Filtered() {
+		EnumSet<FilterOption> filterOn = EnumSet.of(FilterOption.STARRED_ONLY);
+		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]), 
+												 EntityHelper.formatAsBusinessKey(extensionNames[0]), 
+												 filterOn, 
+												 AUTHENTICATED_ID);
+		Assert.assertEquals(TestEntityGenerator.starredCount[0], builds.size());
+	}
 
 	@Test
 	public void testCreate() throws Exception{

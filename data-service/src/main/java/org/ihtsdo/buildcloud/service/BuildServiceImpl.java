@@ -46,6 +46,13 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 		Hibernate.initialize(builds);
 		return builds;
 	}
+	
+	@Override
+	public List<Build> findForExtension(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		List<Build> builds = buildDAO.findAll(releaseCentreBusinessKey, extensionBusinessKey,  filterOptions, authenticatedId);
+		Hibernate.initialize(builds);
+		return builds;
+	}
 
 	@Override
 	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{

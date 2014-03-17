@@ -13,6 +13,8 @@ public interface BuildService extends EntityService<Build> {
 
 	Build find(String buildCompositeKey, String authenticatedId);
 	
+	List<Build> findForExtension(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId);
+	
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
 	Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception;
