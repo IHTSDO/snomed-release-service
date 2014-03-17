@@ -84,10 +84,10 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public void queueForBuilding(Execution execution) {
-		StringBuffer executionPath = pathHelper.getExecutionPath(execution);
 		execution.setStatus(Execution.Status.QUEUED);
 		saveStatus(execution);
-		buildQueue.add(executionPath.toString());
+		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
+		buildQueue.add(executionApiUrl);
 	}
 
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
