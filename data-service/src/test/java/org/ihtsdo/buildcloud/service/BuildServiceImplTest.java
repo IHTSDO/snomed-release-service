@@ -1,10 +1,12 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +33,8 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 	public void testCreate() throws Exception{
 
 		Assert.assertNotNull(bs);
-		List<Build> builds = bs.findAll(AUTHENTICATED_ID);
+		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
+		List<Build> builds = bs.findAll(filterOptions, AUTHENTICATED_ID);
 		int before = builds.size();
 		//LOGGER.warn("Found " + before + " builds");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
@@ -40,10 +43,39 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 				  EntityHelper.formatAsBusinessKey(productNames[0][0]), 
 				  "my test build name", 
 				  AUTHENTICATED_ID);
-		int after = bs.findAll(AUTHENTICATED_ID).size();
+		int after = bs.findAll(filterOptions, AUTHENTICATED_ID).size();
 		Assert.assertEquals(before + 1, after);
 		
 		//TODO Could add further tests to ensure that the new item was created at the correct point in the hierarchy
 	}
+	
+	@Test
+	public void testStarredFilter() throws Exception{
+
+		EnumSet<FilterOption> filterOff = EnumSet.noneOf(FilterOption.class);
+		EnumSet<FilterOption> filterOn = EnumSet.of(FilterOption.STARRED_ONLY);
+		List<Build> builds = bs.findAll(filterOff, AUTHENTICATED_ID);
+		int allBuildCount = builds.size();
+		
+		Assert.assertEquals(TestEntityGenerator.totalBuildCount, allBuildCount);  //Check our test data is in there.
+		int starredBuildCount = bs.findAll(filterOn, AUTHENTICATED_ID).size();
+		Assert.assertEquals(TestEntityGenerator.totalStarredBuilds, starredBuildCount);
+	}	
+	
+	@Test
+	public void testRemovedFilter() throws Exception{
+
+		EnumSet<FilterOption> filterOff = EnumSet.noneOf(FilterOption.class);
+		EnumSet<FilterOption> filterOn = EnumSet.of(FilterOption.INCLUDE_REMOVED);
+		List<Build> builds = bs.findAll(filterOff, AUTHENTICATED_ID);
+		int visibleBuildCount = builds.size();
+		Assert.assertTrue(visibleBuildCount > 0);
+		
+		int includeRemovedCount = bs.findAll(filterOn, AUTHENTICATED_ID).size();
+		Assert.assertTrue(includeRemovedCount > 0);
+		
+		//TODO When remove functionality is built, use it to remove a build and check
+		//that our build count goes up if we inclue removed builds.
+	}		
 
 }

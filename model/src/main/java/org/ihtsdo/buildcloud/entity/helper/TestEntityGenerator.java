@@ -17,7 +17,9 @@ public class TestEntityGenerator {
 													"SNOMED CT Spanish Edition"};
 	
 	public static final String [][] productNames = {{"SNOMED CT International Edition"},
-													{"SNOMED CT Spanish Edition"} };		
+													{"SNOMED CT Spanish Edition"} };
+	
+	public static final int totalBuildCount = 8;
 	
 	public static final String [][] buildNames = { {"20140731 International Release",
 													"20150131 International Release - Biannual",
@@ -27,6 +29,11 @@ public class TestEntityGenerator {
 													"20150430 Spanish Release - Semestral",
 													"20150430 Spanish Release - Nocturno",
 													"20150430 Spanish Release - Semestral"}};
+	
+	public static final int totalStarredBuilds = 5; 
+	
+	public static final boolean [][] starredBuilds = {	{ true, true, true, false  },
+														{ true, false, true, false } };
 	
 	public static final String [] packageNames = {	"RF2 Release",
 													"RF1CompatibilityPackage",
@@ -49,8 +56,8 @@ public class TestEntityGenerator {
 			for (String productName : productNames[x]) {
 				Product product = new Product (productName);
 				extension.addProduct(product);
-				for (String buildName : buildNames[x]){
-					Build build = new Build(buildName);
+				for (int y=0; y < buildNames[x].length; y++){
+					Build build = new Build(buildNames[x][y], starredBuilds[x][y]);
 					product.addBuild(build);
 					addPackagesToBuild(build);
 				}
