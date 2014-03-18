@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.HandlerMapping;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +33,8 @@ public class ExecutionController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey, HttpServletRequest request) throws IOException {
+	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
+											   HttpServletRequest request) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedId);
 
@@ -49,7 +51,8 @@ public class ExecutionController {
 
 	@RequestMapping("/{executionId}")
 	@ResponseBody
-	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletRequest request) {
+	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+									HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
@@ -57,7 +60,8 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/configuration", produces="application/json")
 	@ResponseBody
-	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletResponse response) throws IOException {
+	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+								 HttpServletResponse response) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedId);
 		response.setContentType("application/json");
@@ -66,7 +70,8 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletRequest request) throws IOException {
+	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+											HttpServletRequest request) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
@@ -74,11 +79,40 @@ public class ExecutionController {
 
 	@RequestMapping("/{executionId}/build-scripts.zip")
 	@ResponseBody
-	public void getBuildScrips(@PathVariable String buildCompositeKey, @PathVariable String executionId, HttpServletResponse response) throws IOException {
+	public void getBuildScrips(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+							   HttpServletResponse response) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 		response.setContentType("application/zip");
 		ServletOutputStream outputStream = response.getOutputStream();
 		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedId, outputStream);
+	}
+
+	@RequestMapping(value = "/{executionId}/output/**", method = RequestMethod.POST, headers = "content-type!=multipart/form-data")
+	@ResponseBody
+	public void uploadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+								 HttpServletRequest request,
+								 HttpServletResponse response) throws IOException {
+
+		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		String filePath = path.substring(path.indexOf("/output/") + 8);
+
+		String authenticatedId = SecurityHelper.getSubject();
+		Long contentLength = asLong(request.getHeader("content-length"));
+		if (contentLength != null) {
+			executionService.saveOutputFile(buildCompositeKey, executionId, filePath,
+					request.getInputStream(), contentLength, authenticatedId);
+			response.setStatus(HttpServletResponse.SC_CREATED);
+		} else {
+			// Ask the client for content length so we may stream to permanent storage.
+			response.setStatus(HttpServletResponse.SC_LENGTH_REQUIRED);
+		}
+	}
+	private Long asLong(String longString) {
+		if (longString != null && longString.matches("\\d+")) {
+			return Long.parseLong(longString);
+		} else {
+			return null;
+		}
 	}
 
 }

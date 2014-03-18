@@ -86,8 +86,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void queueForBuilding(Execution execution) {
 		execution.setStatus(Execution.Status.QUEUED);
 		saveStatus(execution);
+		// Note: this url will only work while the Builder is on the same server as the API.
 		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
 		buildQueue.add(executionApiUrl);
+	}
+
+	@Override
+	public void saveOutputFile(Execution execution, String filePath, InputStream inputStream, Long size) {
+		LOGGER.debug("Saving execution output file path:{}, size:{}", filePath, size);
+		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
+		putFile(outputFilePath, inputStream, size);
 	}
 
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
@@ -137,6 +145,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private void saveStatus(Execution execution) {
 		String statusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus().toString());
 		putFile(statusFilePath, BLANK);
+	}
+
+	private PutObjectResult putFile(String filePath, InputStream stream, Long size) {
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(size);
+		return s3Client.putObject(executionS3BucketName, filePath, stream, objectMetadata);
 	}
 
 	private PutObjectResult putFile(String filePath, String contents) {

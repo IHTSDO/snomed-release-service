@@ -8,6 +8,7 @@ public class ExecutionS3PathHelper {
 	public static final String SEPARATOR = "/";
 	private static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
+	private static final String OUTPUT = "output/";
 
 	public StringBuffer getBuildPath(Build build) {
 		String releaseCentreBusinessKey = build.getProduct().getExtension().getReleaseCentre().getBusinessKey();
@@ -40,6 +41,10 @@ public class ExecutionS3PathHelper {
 
 	public String getStatusFilePath(Execution execution, String status) {
 		return getExecutionPath(execution).append(STATUS_PREFIX).append(status).toString();
+	}
+
+	public String getOutputFilePath(Execution execution, String outputRelativePath) {
+		return getFilePath(execution, OUTPUT + outputRelativePath);
 	}
 
 	private String getFilePath(Execution execution, String relativePath) {
