@@ -1,15 +1,24 @@
 package org.ihtsdo.buildcloud.dao;
 
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.InputFile;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
+
+import java.io.InputStream;
 
 @Repository
 public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputFileDAO {
+
+	@Autowired
+	private AmazonS3Client s3Client;
+
+	private String mavenS3BucketName;
 
 	@Override
 	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
@@ -33,6 +42,40 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 		query.setString("inputFileBusinessKey", inputFileBusinessKey);
 
 		return (InputFile) query.uniqueResult();
+	}
+
+	@Override
+	public void saveFile(InputStream fileStream, long fileSize, String artifactPath) {
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(fileSize);
+		s3Client.putObject(mavenS3BucketName, artifactPath, fileStream, metadata);
+	}
+
+	@Override
+	public void saveFilePom(InputStream inputStream, int length, String pomPath) {
+		ObjectMetadata pomMetadata = new ObjectMetadata();
+		pomMetadata.setContentLength(length);
+		s3Client.putObject(mavenS3BucketName, pomPath, inputStream, pomMetadata);
+	}
+
+	@Override
+	public InputStream getFileStream(String artifactPath) {
+		try {
+			S3Object s3Object = s3Client.getObject(mavenS3BucketName, artifactPath);
+			if (s3Object != null) {
+				return s3Object.getObjectContent();
+			}
+		} catch (AmazonS3Exception e) {
+			if (404 != e.getStatusCode()) {
+				throw e;
+			}
+		}
+		return null;
+	}
+
+	@Required
+	public void setMavenS3BucketName(String mavenS3BucketName) {
+		this.mavenS3BucketName = mavenS3BucketName;
 	}
 
 }
