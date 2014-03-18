@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
 import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
@@ -14,7 +11,6 @@ import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +29,6 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 	@Autowired
 	private MavenGenerator mavenGenerator;
-
-	@Autowired
-	private AmazonS3Client s3Client;
-
-	private String mavenS3BucketName;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
 
@@ -84,22 +75,16 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
 
-		// Upload input file to S3
-		String artifactPath = mavenArtifact.getPath();
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(fileSize);
-		s3Client.putObject(mavenS3BucketName, artifactPath, fileStream, metadata);
+		inputFileDAO.saveFile(fileStream, fileSize, mavenArtifact.getPath());
 
 		// Generate input file pom
-		String pomPath = mavenArtifact.getPomPath();
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		mavenGenerator.generateArtifactPom(new OutputStreamWriter(out), mavenArtifact);
 
 		// Upload input file pom to S3
 		byte[] buf = out.toByteArray();
-		ObjectMetadata pomMetadata = new ObjectMetadata();
-		pomMetadata.setContentLength(buf.length);
-		s3Client.putObject(mavenS3BucketName, pomPath, new ByteArrayInputStream(buf), pomMetadata);
+		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
+		inputFileDAO.saveFilePom(byteArrayInputStream, buf.length, mavenArtifact.getPomPath());
 
 		// Create database entry
 		inputFileDAO.save(inputFile);
@@ -110,18 +95,8 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	public InputStream getFileStream(InputFile inputFile) throws IOException {
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
 		String artifactPath = mavenArtifact.getPath();
-		S3Object s3Object = s3Client.getObject(mavenS3BucketName, artifactPath);
-		LOGGER.info("Serving S3 file. Path: {}, Size: {}", artifactPath, s3Object.getObjectMetadata().getContentLength());
-		if (s3Object != null) {
-			return s3Object.getObjectContent();
-		} else {
-			return null;
-		}
-	}
-
-	@Required
-	public void setMavenS3BucketName(String mavenS3BucketName) {
-		this.mavenS3BucketName = mavenS3BucketName;
+		LOGGER.info("Serving file. Path: {}", artifactPath);
+		return inputFileDAO.getFileStream(artifactPath);
 	}
 
 }

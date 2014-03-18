@@ -17,7 +17,9 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl">
+		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
+	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreMembershipDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
@@ -30,9 +32,7 @@
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl">
-		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
-	</bean>
+	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 
