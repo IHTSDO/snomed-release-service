@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
@@ -35,8 +36,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public Execution create(String buildCompositeKey, String authenticatedId) throws IOException {
-		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = getBuild(buildCompositeKey, authenticatedId);
 
 		Date creationDate = new Date();
 
@@ -53,22 +53,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public List<Execution> findAll(String buildCompositeKey, String authenticatedId) {
-		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = getBuild(buildCompositeKey, authenticatedId);
 		return dao.findAll(build);
 	}
 
 	@Override
 	public Execution find(String buildCompositeKey, String executionId, String authenticatedId) {
-		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = getBuild(buildCompositeKey, authenticatedId);
 		return dao.find(build, executionId);
 	}
 
 	@Override
 	public String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
-		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = getBuild(buildCompositeKey, authenticatedId);
 		Execution execution = dao.find(build, executionId);
 		return dao.loadConfiguration(execution);
 	}
@@ -77,8 +74,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
 
-		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = getBuild(buildCompositeKey, authenticatedId);
 		Execution execution = dao.find(build, executionId);
 
 		String executionConfiguration = dao.loadConfiguration(execution);
@@ -98,6 +94,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, String authenticatedId, OutputStream outputStream) throws IOException {
 		Execution execution = find(buildCompositeKey, executionId, authenticatedId);
 		dao.streamBuildScriptsZip(execution, outputStream);
+	}
+
+	@Override
+	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, String authenticatedId) {
+		Build build = getBuild(buildCompositeKey, authenticatedId);
+		Execution execution = dao.find(build, executionId);
+
+		dao.saveOutputFile(execution, filePath, inputStream, size);
+	}
+
+	private Build getBuild(String buildCompositeKey, String authenticatedId) {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		return buildDAO.find(buildId, authenticatedId);
 	}
 
 }
