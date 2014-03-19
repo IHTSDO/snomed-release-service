@@ -53,15 +53,15 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	}
 
 	@Override
-	public InputFile create(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey,
-							InputStream fileStream, long fileSize, String authenticatedId) throws IOException {
+	public InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
+								  InputStream fileStream, long fileSize, String authenticatedId) throws IOException {
 
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
 
 		Date versionDate = new Date();
 
-		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileBusinessKey);
+		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileName);
 		inputFile.setVersionDate(versionDate);
 
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
@@ -90,7 +90,8 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		return inputFileDAO.getFileStream(artifactPath);
 	}
 
-	private InputFile findOrCreateInputFile(Package aPackage, String inputFileBusinessKey) {
+	private InputFile findOrCreateInputFile(Package aPackage, String inputFileName) {
+		String inputFileBusinessKey = EntityHelper.formatAsBusinessKey(inputFileName);
 		InputFile inputFile = null;
 		for (InputFile file : aPackage.getInputFiles()) {
 			if (file.getBusinessKey().equals(inputFileBusinessKey)) {
@@ -98,7 +99,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 			}
 		}
 		if (inputFile == null) {
-			inputFile = new InputFile(inputFileBusinessKey);
+			inputFile = new InputFile(inputFileName);
 			aPackage.addInputFile(inputFile);
 		}
 		return inputFile;
