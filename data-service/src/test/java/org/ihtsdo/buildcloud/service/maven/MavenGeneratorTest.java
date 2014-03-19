@@ -1,7 +1,9 @@
 package org.ihtsdo.buildcloud.service.maven;
 
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.TestMavenArtifact;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.junit.Assert;
@@ -13,9 +15,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.StreamUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.util.GregorianCalendar;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -35,10 +39,8 @@ public class MavenGeneratorTest {
 	}
 
 	@Test
-	// ToDo: Uncomment dependencies in expected file.
 	public void testGenerateBuildScripts() throws IOException {
 		Execution execution = testEntityFactory.createExecution();
-		execution.getBuild().getPackages().get(0).getInputFiles().get(0).setVersionDate(new GregorianCalendar(2014, 2, 18, 15, 30, 00).getTime());
 		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
 		String expectedRootPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 		String expectedModulePom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-module-pom.txt"), Charset.defaultCharset()).replace("\r", "");
@@ -58,7 +60,7 @@ public class MavenGeneratorTest {
 		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-artifact-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 		StringWriter writer = new StringWriter();
 
-		mavenGenerator.generateArtifactPom(writer, new MavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip"));
+		mavenGenerator.generateArtifactPom(new TestMavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip"), writer);
 
 		String actualPom = writer.toString();
 		Assert.assertEquals(expectedPom, actualPom);
@@ -71,11 +73,11 @@ public class MavenGeneratorTest {
 		aPackage.addInputFile(in1);
 		Assert.assertEquals("centre", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCentre().getBusinessKey());
 
-		MavenArtifact artifact = mavenGenerator.getArtifact(in1);
+		mavenGenerator.generateArtifactAndGroupId(in1);
 
-		Assert.assertEquals("org.ihtsdo.release.centre.ex.prod.build1", artifact.getGroupId());
-		Assert.assertEquals("mypackage.input.in1", artifact.getArtifactId());
-		Assert.assertEquals("1.0", artifact.getVersion());
+		Assert.assertEquals("org.ihtsdo.release.centre.ex.prod.build1", in1.getGroupId());
+		Assert.assertEquals("mypackage.input.in1", in1.getArtifactId());
+		Assert.assertEquals("1.0", in1.getVersion());
 	}
 
 	private String fileToString(File file) throws IOException {

@@ -13,6 +13,6 @@ public interface InputFileDAO extends EntityDAO<InputFile> {
 
 	void saveFilePom(InputStream inputStream, int length, String pomPath);
 
-	InputStream getFileStream(String artifactPath);
+	InputStream getFileStream(InputFile inputFile);
 
 }

@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.entity;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.entity.helper.MavenArtifactHelper;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,7 +12,7 @@ import javax.persistence.ManyToOne;
 import java.util.Date;
 
 @Entity
-public class InputFile {
+public class InputFile implements MavenArtifact {
 
 	@Id
 	@GeneratedValue
@@ -27,7 +28,19 @@ public class InputFile {
 	@JsonIgnore
 	private Package packag;
 
+	/**
+	 * artifactId is generated but stored to guard against renaming.
+	 */
+	private String artifactId;
+
+	/**
+	 * groupId is generated but stored to guard against renaming.
+	 */
+	private String groupId;
+
 	private String version;
+
+	private static final String packaging = "zip";
 
 	public InputFile() {
 	}
@@ -41,6 +54,23 @@ public class InputFile {
 		this.version = version;
 	}
 
+	public String getPath() {
+		return MavenArtifactHelper.getPath(this);
+	}
+
+	public String getPomPath() {
+		return MavenArtifactHelper.getPath(this, MavenArtifact.POM);
+	}
+
+	public void setName(String name) {
+		this.name = name;
+		generateBusinessKey();
+	}
+
+	public void setVersionDate(Date versionDate) {
+		this.version = EntityHelper.formatAsIsoDateTimeURLCompatible(versionDate);
+	}
+
 	public Long getId() {
 		return id;
 	}
@@ -51,15 +81,6 @@ public class InputFile {
 
 	public String getName() {
 		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-		generateBusinessKey();
-	}
-
-	public void setVersionDate(Date versionDate) {
-		this.version = EntityHelper.formatAsIsoDateTimeURLCompatible(versionDate);
 	}
 
 	public String getBusinessKey() {
@@ -77,6 +98,27 @@ public class InputFile {
 
 	public String getVersion() {
 		return version;
+	}
+
+	public String getArtifactId() {
+		return artifactId;
+	}
+
+	public void setArtifactId(String artifactId) {
+		this.artifactId = artifactId;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
+	@Override
+	public String getPackaging() {
+		return packaging;
 	}
 
 	private void generateBusinessKey() {

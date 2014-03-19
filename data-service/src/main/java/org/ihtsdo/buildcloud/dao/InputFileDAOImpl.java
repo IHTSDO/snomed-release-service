@@ -63,9 +63,9 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 	}
 
 	@Override
-	public InputStream getFileStream(String artifactPath) {
+	public InputStream getFileStream(InputFile inputFile) {
 		try {
-			S3Object s3Object = s3Client.getObject(mavenS3BucketName, artifactPath);
+			S3Object s3Object = s3Client.getObject(mavenS3BucketName, inputFile.getPath());
 			if (s3Object != null) {
 				return s3Object.getObjectContent();
 			}

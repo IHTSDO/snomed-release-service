@@ -4,21 +4,19 @@
 	<parent>
 		<groupId>{{>common-group-id execution.build}}</groupId>
 		<artifactId>{{execution.build.id}}</artifactId>
-		<version>{{execution.id}}</version>
+		<version>{{execution.version}}</version>
 	</parent>
 
 	<artifactId>{{id}}</artifactId>
 
-	<!--
 	<dependencies>{{#each inputFiles}}
 		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>todo</artifactId>
+			<groupId>{{groupId}}</groupId>
+			<artifactId>{{artifactId}}</artifactId>
 			<version>{{version}}</version>
-			<type>zip</type>
+			<type>{{packaging}}</type>
 		</dependency>{{/each}}
 	</dependencies>
-	-->
 
 	<build>
 		<plugins>
