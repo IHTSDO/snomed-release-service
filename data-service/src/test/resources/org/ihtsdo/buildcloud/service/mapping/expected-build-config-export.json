@@ -9,7 +9,8 @@
 			"name" : "RF2 Release",
 			"inputFiles" : [ {
 				"id" : "conceptsrf2",
-				"name" : "concepts.rf2"
+				"name" : "concepts.rf2",
+				"version": "2014-03-18T15-30-00"
 			} ]
 		} ],
 		"product" : {

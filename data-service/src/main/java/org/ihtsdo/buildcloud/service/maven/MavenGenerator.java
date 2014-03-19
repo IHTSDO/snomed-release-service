@@ -57,7 +57,7 @@ public class MavenGenerator {
 		// Write the pom to it's newly minted location, filling in the build-pom template
 		FileWriter fw = new FileWriter(parentPom);
 		buildPomHandlebars.apply(executionMap, fw);
-		fw.flush();
+		fw.close();
 		
 		// Now work through the child packages creating directory and poms for each one.
 		Map<String, Object> buildMap = (Map<String, Object>) executionMap.get("build");
@@ -78,7 +78,7 @@ public class MavenGenerator {
 		// Write the pom to it's newly minted location, filling in the package-pom template
 		FileWriter fw = new FileWriter(packagePom);
 		packagePomHandlebars.apply(aPackage, fw);
-		fw.flush();
+		fw.close();
 		
 		// We also need a copy of assembly.xml
 		InputStream packageAssemblyStream = this.getClass().getResourceAsStream("/package_assembly.xml");
@@ -101,8 +101,10 @@ public class MavenGenerator {
 		artifactArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
 		String artifactId = artifactIdWriter.toString();
 
-		String version = "1.0";
+		String version = inputFile.getVersion();
+
 		String packaging = "zip";
+
 		return new MavenArtifact(groupId, artifactId, version, packaging);
 	}
 

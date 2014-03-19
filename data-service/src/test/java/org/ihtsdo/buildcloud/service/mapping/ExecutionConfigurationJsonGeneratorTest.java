@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.mapping;
 
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.json.JSONException;
 import org.junit.Assert;
@@ -16,6 +17,7 @@ import org.springframework.util.FileCopyUtils;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -40,7 +42,9 @@ public class ExecutionConfigurationJsonGeneratorTest {
 
 	@Test
 	public void testGetConfig() throws IOException, JSONException {
-		Assert.assertEquals(1, internationalPackage.getInputFiles().size());
+		List<InputFile> inputFiles = internationalPackage.getInputFiles();
+		Assert.assertEquals(1, inputFiles.size());
+		inputFiles.get(0).setVersionDate(new GregorianCalendar(2014, 2, 18, 15, 30, 00).getTime());
 
 		String actual = executionConfigurationJsonGenerator.getJsonConfig(execution);
 

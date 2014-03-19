@@ -15,6 +15,7 @@ import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.GregorianCalendar;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -36,7 +37,9 @@ public class MavenGeneratorTest {
 	@Test
 	// ToDo: Uncomment dependencies in expected file.
 	public void testGenerateBuildScripts() throws IOException {
-		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(testEntityFactory.createExecution());
+		Execution execution = testEntityFactory.createExecution();
+		execution.getBuild().getPackages().get(0).getInputFiles().get(0).setVersionDate(new GregorianCalendar(2014, 2, 18, 15, 30, 00).getTime());
+		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
 		String expectedRootPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 		String expectedModulePom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-generated-build-module-pom.txt"), Charset.defaultCharset()).replace("\r", "");
 
@@ -64,7 +67,7 @@ public class MavenGeneratorTest {
 	@Test
 	public void testGetArtifact() throws IOException {
 		Package aPackage = testEntityFactory.createPackage("the centre", "centre", "ex", "prod", "build1", "myPackage");
-		InputFile in1 = new InputFile("in1");
+		InputFile in1 = new InputFile("in1", "1.0");
 		aPackage.addInputFile(in1);
 		Assert.assertEquals("centre", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCentre().getBusinessKey());
 
