@@ -19,10 +19,10 @@ public class InputFileDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		InputFile inputFile = dao.find(1L, "rf2_release", "conceptsrf2", "test");
+		InputFile inputFile = dao.find(1L, "rf2_release", "concepts_rf2", "test");
 		Assert.assertNotNull(inputFile);
-		Assert.assertEquals("concepts.rf2", inputFile.getName());
-		Assert.assertEquals("conceptsrf2", inputFile.getBusinessKey());
+		Assert.assertEquals("concepts rf2", inputFile.getName());
+		Assert.assertEquals("concepts_rf2", inputFile.getBusinessKey());
 	}
 
 }

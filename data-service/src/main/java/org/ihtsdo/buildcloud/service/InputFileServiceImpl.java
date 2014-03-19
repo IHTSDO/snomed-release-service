@@ -5,8 +5,8 @@ import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.ihtsdo.buildcloud.service.maven.MavenArtifact;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,20 +62,19 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		Date versionDate = new Date();
 
 		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileName);
+		mavenGenerator.generateArtifactAndGroupId(inputFile);
 		inputFile.setVersionDate(versionDate);
 
-		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
-
-		inputFileDAO.saveFile(fileStream, fileSize, mavenArtifact.getPath());
+		inputFileDAO.saveFile(fileStream, fileSize, inputFile.getPath());
 
 		// Generate input file pom
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		mavenGenerator.generateArtifactPom(new OutputStreamWriter(out), mavenArtifact);
+		mavenGenerator.generateArtifactPom(inputFile, new OutputStreamWriter(out));
 
 		// Upload input file pom to S3
 		byte[] buf = out.toByteArray();
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-		inputFileDAO.saveFilePom(byteArrayInputStream, buf.length, mavenArtifact.getPomPath());
+		inputFileDAO.saveFilePom(byteArrayInputStream, buf.length, inputFile.getPomPath());
 
 		// Create database entry
 		inputFileDAO.save(inputFile);
@@ -84,10 +83,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 	@Override
 	public InputStream getFileStream(InputFile inputFile) throws IOException {
-		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
-		String artifactPath = mavenArtifact.getPath();
-		LOGGER.info("Serving file. Path: {}", artifactPath);
-		return inputFileDAO.getFileStream(artifactPath);
+		return inputFileDAO.getFileStream(inputFile);
 	}
 
 	private InputFile findOrCreateInputFile(Package aPackage, String inputFileName) {

@@ -5,6 +5,7 @@ import com.github.jknack.handlebars.Template;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.MavenArtifact;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +42,9 @@ public class MavenGenerator {
 		artifactArtifactIdHandlebars = handlebars.compile("artifact-artifact-id");
 	}
 
-	public void generateArtifactPom(Writer writer, MavenArtifact artifact) throws IOException {
+	public void generateArtifactPom(MavenArtifact artifact, Writer writer) throws IOException {
 		artifactPomHandlebars.apply(artifact, writer);
+		writer.close();
 	}
 
 	/*
@@ -50,6 +52,7 @@ public class MavenGenerator {
 	 */
 	public File generateBuildScripts(String executionConfigurationJson) throws IOException {
 		Map<String, Object> executionMap = objectMapper.readValue(executionConfigurationJson, Map.class);
+		executionMap.put("version", ((String) executionMap.get("creationTime")).replace(":", "-"));
 
 		File tempDirectory = Files.createTempDirectory(getClass().getCanonicalName()).toFile();
 		File parentPom = new File(tempDirectory, POM_XML);
@@ -89,23 +92,19 @@ public class MavenGenerator {
 		}
 	}
 
-	public MavenArtifact getArtifact(InputFile inputFile) throws IOException {
+	public void generateArtifactAndGroupId(InputFile inputFile) throws IOException {
 		Package aPackage = inputFile.getPackage();
 		Build build = aPackage.getBuild();
 
 		StringWriter groupIdWriter = new StringWriter();
 		artifactGroupIdHandlebars.apply(build, groupIdWriter);
 		String groupId = groupIdWriter.toString();
+		inputFile.setGroupId(groupId);
 
 		StringWriter artifactIdWriter = new StringWriter();
 		artifactArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
 		String artifactId = artifactIdWriter.toString();
-
-		String version = inputFile.getVersion();
-
-		String packaging = "zip";
-
-		return new MavenArtifact(groupId, artifactId, version, packaging);
+		inputFile.setArtifactId(artifactId);
 	}
 
 }

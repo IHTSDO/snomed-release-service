@@ -76,10 +76,10 @@ public class TestEntityGenerator {
 			Package pkg = new Package(packageName);
 			build.addPackage(pkg);
 			if (packageName.equals(packageNames[0])){
-				for (String inputFileName : inputFileNames){
-					InputFile inputFile = new InputFile(inputFileName, "1.0");
-					pkg.addInputFile(inputFile);
-				}
+				InputFile inputFile = new InputFile("concepts rf2", "2014-03-19T14-14-48");
+				inputFile.setGroupId("org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release");
+				inputFile.setArtifactId("rf2_release.input.concepts_rf2");
+				pkg.addInputFile(inputFile);
 			}
 		}		
 	}	
