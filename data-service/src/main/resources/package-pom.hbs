@@ -10,13 +10,13 @@
 	<artifactId>{{id}}</artifactId>
 
 	<!--
-	<dependencies>
+	<dependencies>{{#each inputFiles}}
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>{{id}}.input.test</artifactId>
-			<version>1.0</version>
+			<artifactId>todo</artifactId>
+			<version>{{version}}</version>
 			<type>zip</type>
-		</dependency>
+		</dependency>{{/each}}
 	</dependencies>
 	-->
 

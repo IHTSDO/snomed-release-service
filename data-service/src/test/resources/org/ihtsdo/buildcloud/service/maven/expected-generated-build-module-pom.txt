@@ -13,8 +13,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>rf2_release.input.test</artifactId>
-			<version>1.0</version>
+			<artifactId>todo</artifactId>
+			<version>2014-03-18T15-30-00</version>
 			<type>zip</type>
 		</dependency>
 	</dependencies>

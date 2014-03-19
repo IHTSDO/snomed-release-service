@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -58,20 +59,10 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
 
-		InputFile inputFile = null;
-		// Replace any existing input file of the same name with this new version
-		for (InputFile file : aPackage.getInputFiles()) {
-			if (file.getBusinessKey().equals(inputFileBusinessKey)) {
-				inputFile = file;
-			}
-		}
+		Date versionDate = new Date();
 
-		// If none existing create new and add to package
-		if (inputFile == null) {
-			inputFile = new InputFile(inputFileBusinessKey);
-			aPackage.addInputFile(inputFile);
-		}
-
+		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileBusinessKey);
+		inputFile.setVersionDate(versionDate);
 
 		MavenArtifact mavenArtifact = mavenGenerator.getArtifact(inputFile);
 
@@ -97,6 +88,20 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		String artifactPath = mavenArtifact.getPath();
 		LOGGER.info("Serving file. Path: {}", artifactPath);
 		return inputFileDAO.getFileStream(artifactPath);
+	}
+
+	private InputFile findOrCreateInputFile(Package aPackage, String inputFileBusinessKey) {
+		InputFile inputFile = null;
+		for (InputFile file : aPackage.getInputFiles()) {
+			if (file.getBusinessKey().equals(inputFileBusinessKey)) {
+				inputFile = file;
+			}
+		}
+		if (inputFile == null) {
+			inputFile = new InputFile(inputFileBusinessKey);
+			aPackage.addInputFile(inputFile);
+		}
+		return inputFile;
 	}
 
 }

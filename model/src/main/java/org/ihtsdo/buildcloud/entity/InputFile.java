@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import java.util.Date;
 
 @Entity
 public class InputFile {
@@ -26,11 +27,18 @@ public class InputFile {
 	@JsonIgnore
 	private Package packag;
 
+	private String version;
+
 	public InputFile() {
 	}
 
 	public InputFile(String name) {
 		setName(name);
+	}
+
+	public InputFile(String name, String version) {
+		this(name);
+		this.version = version;
 	}
 
 	public Long getId() {
@@ -50,6 +58,10 @@ public class InputFile {
 		generateBusinessKey();
 	}
 
+	public void setVersionDate(Date versionDate) {
+		this.version = EntityHelper.formatAsIsoDateTimeURLCompatible(versionDate);
+	}
+
 	public String getBusinessKey() {
 		return businessKey;
 	}
@@ -61,6 +73,10 @@ public class InputFile {
 
 	public void setPackage(Package packag) {
 		this.packag = packag;
+	}
+
+	public String getVersion() {
+		return version;
 	}
 
 	private void generateBusinessKey() {

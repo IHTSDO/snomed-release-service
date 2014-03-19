@@ -1,8 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
 
@@ -12,8 +11,6 @@ import java.util.Date;
  * This entity is stored via S3, not Hibernate.
  */
 public class Execution {
-
-	public static final FastDateFormat DATE_FORMAT = DateFormatUtils.ISO_DATETIME_FORMAT;
 
 	private final String creationTime;
 
@@ -33,7 +30,7 @@ public class Execution {
 	}
 
 	public Execution(Date creationTime, Build build) {
-		this.creationTime = DATE_FORMAT.format(creationTime);
+		this.creationTime = EntityHelper.formatAsIsoDateTime(creationTime);
 		this.status = Status.BEFORE_TRIGGER;
 		this.build = build;
 	}

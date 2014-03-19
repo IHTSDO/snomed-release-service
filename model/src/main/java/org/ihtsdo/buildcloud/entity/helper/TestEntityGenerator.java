@@ -77,7 +77,7 @@ public class TestEntityGenerator {
 			build.addPackage(pkg);
 			if (packageName.equals(packageNames[0])){
 				for (String inputFileName : inputFileNames){
-					InputFile inputFile = new InputFile(inputFileName);
+					InputFile inputFile = new InputFile(inputFileName, "1.0");
 					pkg.addInputFile(inputFile);
 				}
 			}

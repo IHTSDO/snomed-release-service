@@ -13,8 +13,8 @@ public class ExecutionConfigurationJsonGenerator {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-
 	private static final String ID = "id";
+
 	private static final String CREATION_TIME = "creationTime";
 	private static final String BUILD = "build";
 	private static final String NAME = "name";
@@ -24,6 +24,7 @@ public class ExecutionConfigurationJsonGenerator {
 	private static final String PRODUCT = "product";
 	private static final String EXTENSION = "extension";
 	private static final String RELEASE_CENTRE = "releaseCentre";
+	private static final String VERSION = "version";
 
 	public String getJsonConfig(Execution execution) throws IOException {
 		Map<String, Object> config = getConfig(execution);
@@ -101,6 +102,7 @@ public class ExecutionConfigurationJsonGenerator {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, inputFile.getBusinessKey());
 		config.put(NAME, inputFile.getName());
+		config.put(VERSION, inputFile.getVersion());
 		return config;
 	}
 
