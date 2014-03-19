@@ -3,8 +3,11 @@ package org.ihtsdo.buildcloud.dao;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.hibernate.Query;
+import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
+import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
@@ -17,6 +20,9 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 
 	@Autowired
 	private AmazonS3Client s3Client;
+
+	@Autowired
+	private S3ClientHelper s3ClientHelper;
 
 	private String mavenS3BucketName;
 
@@ -46,16 +52,14 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 
 	@Override
 	public void saveFile(InputStream fileStream, long fileSize, String artifactPath) {
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(fileSize);
-		s3Client.putObject(mavenS3BucketName, artifactPath, fileStream, metadata);
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, artifactPath, fileStream).length(fileSize).useBucketAcl();
+		s3Client.putObject(putRequest);
 	}
 
 	@Override
 	public void saveFilePom(InputStream inputStream, int length, String pomPath) {
-		ObjectMetadata pomMetadata = new ObjectMetadata();
-		pomMetadata.setContentLength(length);
-		s3Client.putObject(mavenS3BucketName, pomPath, inputStream, pomMetadata);
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, pomPath, inputStream).length(length).useBucketAcl();
+		s3Client.putObject(putRequest);
 	}
 
 	@Override
