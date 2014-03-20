@@ -39,8 +39,8 @@ public class ExecutionS3PathHelper {
 		return getFilePath(execution, CONFIG_JSON);
 	}
 
-	public String getStatusFilePath(Execution execution, String status) {
-		return getExecutionPath(execution).append(STATUS_PREFIX).append(status).toString();
+	public String getStatusFilePath(Execution execution, Execution.Status status) {
+		return getExecutionPath(execution).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
 
 	public String getOutputFilePath(Execution execution, String outputRelativePath) {

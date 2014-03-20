@@ -84,8 +84,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public void queueForBuilding(Execution execution) {
-		execution.setStatus(Execution.Status.QUEUED);
-		saveStatus(execution);
+		updateStatus(execution, Execution.Status.QUEUED);
 		// Note: this url will only work while the Builder is on the same server as the API.
 		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
 		buildQueue.add(executionApiUrl);
@@ -139,12 +138,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		putFile(configPath, jsonConfig);
 
 		// Save status file
-		saveStatus(execution);
+		updateStatus(execution, Execution.Status.BEFORE_TRIGGER);
 	}
 
-	private void saveStatus(Execution execution) {
-		String statusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus().toString());
-		putFile(statusFilePath, BLANK);
+	private void updateStatus(Execution execution, Execution.Status newStatus) {
+		Execution.Status origStatus = execution.getStatus();
+		execution.setStatus(newStatus);
+		String newStatusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus());
+		// Put new status before deleting old to avoid there being none.
+		putFile(newStatusFilePath, BLANK);
+		if (origStatus != null) {
+			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
+			s3Client.deleteObject(executionS3BucketName, origStatusFilePath);
+		}
 	}
 
 	private PutObjectResult putFile(String filePath, InputStream stream, Long size) {
