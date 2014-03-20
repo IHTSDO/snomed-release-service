@@ -11,6 +11,7 @@ import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.test.DummyHazelcastQueue;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -35,6 +37,10 @@ public class ExecutionDAOImplTest {
 
 	@Autowired
 	private BuildDAO buildDAO;
+
+	@Autowired
+	private DummyHazelcastQueue<String> dummyBuildQueue;
+
 	private Build build;
 	private Execution execution;
 	private MocksControl mocksControl;
@@ -121,6 +127,26 @@ public class ExecutionDAOImplTest {
 
 		Assert.assertEquals("2014-02-04T10:30:01", foundExecution.getCreationTime());
 		Assert.assertEquals(Execution.Status.BEFORE_TRIGGER, foundExecution.getStatus());
+	}
+
+	@Test
+	public void testQueueForBuilding() {
+		execution.setStatus(Execution.Status.BEFORE_TRIGGER);
+
+		Capture<String> oldStatusPathCapture = new Capture<>();
+		Capture<String> newStatusPathCapture = new Capture<>();
+		mockS3Client.deleteObject(EasyMock.isA(String.class), EasyMock.capture(oldStatusPathCapture));
+		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(newStatusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+
+		mocksControl.replay();
+		executionDAO.queueForBuilding(execution);
+		mocksControl.verify();
+
+		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
+		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
+		List<String> capturedQueueItems = dummyBuildQueue.getCapturedQueueItems();
+		Assert.assertEquals(1, capturedQueueItems.size());
+		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", capturedQueueItems.get(0));
 	}
 
 	private void addObjectSummary(ObjectListing objectListing, String path) {

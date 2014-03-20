@@ -31,7 +31,6 @@ public class Execution {
 
 	public Execution(Date creationTime, Build build) {
 		this.creationTime = EntityHelper.formatAsIsoDateTime(creationTime);
-		this.status = Status.BEFORE_TRIGGER;
 		this.build = build;
 	}
 
