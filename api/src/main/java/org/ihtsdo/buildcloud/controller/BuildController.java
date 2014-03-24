@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
@@ -30,7 +31,8 @@ public class BuildController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] BUILD_LINKS = {"packages", "executions"};
+	public static final LinkPath[] BUILD_LINKS = { new LinkPath("packages"), 
+												   new LinkPath ("executions")};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildController.class);
 

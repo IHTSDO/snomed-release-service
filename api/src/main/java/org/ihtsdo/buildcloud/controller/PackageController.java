@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.PackageService;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,7 @@ public class PackageController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PACKAGE_LINKS = {"inputfiles"};
+	private static final LinkPath[] PACKAGE_LINKS = { new LinkPath ("inputfiles")};
 
 	@RequestMapping
 	@ResponseBody

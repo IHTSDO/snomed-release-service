@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
@@ -15,6 +16,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,8 @@ public class ExecutionController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	static final String[] EXECUTION_LINKS = { "configuration", "buildScripts|build-scripts.zip" };
+	static final  LinkPath [] EXECUTION_LINKS = { new LinkPath ("configuration"), 
+												  new LinkPath ("buildScripts|build-scripts.zip") };
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody

@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
@@ -34,14 +35,15 @@ public class ExtensionController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] EXTENSION_LINKS = {"products"};
+	private static final LinkPath [] EXTENSION_LINKS_PATHS = { new LinkPath ("products") ,
+															   new LinkPath ("starredBuilds", null, "builds?starred=true") };
 
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		List<Extension> extensions = extensionService.findAll(releaseCentreBusinessKey, authenticatedId);
-		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
+		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS_PATHS);
 	}
 
 	@RequestMapping("/{extensionBusinessKey}")
@@ -49,7 +51,7 @@ public class ExtensionController {
 	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
 		Extension extension = extensionService.find(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
-		return hypermediaGenerator.getEntityHypermedia(extension, request, EXTENSION_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(extension, request, EXTENSION_LINKS_PATHS);
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
@@ -61,7 +63,7 @@ public class ExtensionController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Extension extension = extensionService.create(releaseCentreBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(extension, request, EXTENSION_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(extension, request, EXTENSION_LINKS_PATHS );
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 	
@@ -79,7 +81,24 @@ public class ExtensionController {
 		
 		String authenticatedId = SecurityHelper.getSubject();
 		List<Build> builds = buildService.findForExtension(releaseCentreBusinessKey, extensionBusinessKey, filterOptions, authenticatedId);
-		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS);
+		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
+	}
+	
+	/**
+	 * Having a problem getting ember to pass filter like parameters for nested resources.
+	 * Until we can get this sorted out, will be doing the filtering manually.
+	 * @param releaseCentreBusinessKey
+	 * @param extensionBusinessKey
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/{extensionBusinessKey}/starredBuilds")
+	@ResponseBody
+	public List<Map<String, Object>> getBuilds( @PathVariable String releaseCentreBusinessKey, 
+												@PathVariable String extensionBusinessKey,
+												HttpServletRequest request) {
+		
+		return getBuilds (releaseCentreBusinessKey, extensionBusinessKey, "false", "true", request);
 	}
 
 }
