@@ -27,8 +27,13 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) {
-		List<Product> products = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, oauthId).getProducts();
+	public List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) throws Exception{
+		Extension extension = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, oauthId);
+		
+		if (extension == null) {
+			throw new Exception ("Unable to find extension with path: " + releaseCentreBusinessKey + "/" + extensionBusinessKey);
+		}
+		List<Product> products = extension.getProducts();
 		Hibernate.initialize(products);
 		return products;
 	}

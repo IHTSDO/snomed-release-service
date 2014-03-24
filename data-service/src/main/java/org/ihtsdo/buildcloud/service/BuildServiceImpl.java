@@ -4,19 +4,14 @@ import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.ihtsdo.buildcloud.service.mapping.ConfigJsonMapper;
-import org.ihtsdo.buildcloud.service.maven.MavenExecutor;
-import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 
 @Service
@@ -30,22 +25,13 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	private ProductDAO productDAO;
 
 	@Autowired
-	private ConfigJsonMapper configJsonMapper;
-
-	@Autowired
-	private MavenGenerator mavenGenerator;
-
-	@Autowired
-	private MavenExecutor mavenExecutor;
-
-	@Autowired
 	public BuildServiceImpl(BuildDAO dao) {
 		super(dao);
 	}
 
 	@Override
-	public List<Build> findAll(String authenticatedId) {
-		return buildDAO.findAll(authenticatedId);
+	public List<Build> findAll(EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		return buildDAO.findAll(filterOptions, authenticatedId);
 	}
 
 	@Override
@@ -55,43 +41,27 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 	
 	@Override
-	public String getConfigJson(String buildCompositeKey, String authenticatedId) throws IOException {
-		Long id = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build =  buildDAO.find(id, authenticatedId);
-		return getConfigJson(build);
-	}
-
-	@Override
-	public String getConfigJson(Build build) throws IOException {
-		return configJsonMapper.getJsonConfig(build);
-	}
-
-	@Override
 	public List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
 		List<Build> builds = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
 	}
-
-	@Override
-	public String run(String buildCompositeKey, String authenticatedId) throws IOException {
-		Date triggerDate = new Date();
-
-		Long id = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(id, authenticatedId);
-		Hibernate.initialize(build.getPackages());
-
-		// todo: Generate Build config export
-
-		// todo: poms from config export
-		// Call generate poms
-		File buildSourceDirectory = mavenGenerator.generateBuildFiles(build);
-		return mavenExecutor.exec(build, buildSourceDirectory, triggerDate);
-	}
 	
 	@Override
-	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) {
+	public List<Build> findForExtension(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		List<Build> builds = buildDAO.findAll(releaseCentreBusinessKey, extensionBusinessKey,  filterOptions, authenticatedId);
+		Hibernate.initialize(builds);
+		return builds;
+	}
+
+	@Override
+	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{
 		Product product = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		
+		if (product == null) {
+			throw new Exception ("Unable to find product with path: " + releaseCentreBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
+		}
+		
 		Build build = new Build(name);
 		product.addBuild(build);
 		buildDAO.save(build);

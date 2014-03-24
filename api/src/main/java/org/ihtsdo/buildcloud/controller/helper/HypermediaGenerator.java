@@ -1,20 +1,16 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class HypermediaGenerator {
 
-	private final ObjectMapper mapper;
-
-	public HypermediaGenerator(ObjectMapper mapper) {
-		this.mapper = mapper;
-	}
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
 		return  getEntityCollectionHypermedia(entities, request, entityLinks, null);
@@ -39,17 +35,38 @@ public class HypermediaGenerator {
 		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
 	}
 
+	public Map<String, Object> getEntityHypermediaJustCreated(Object entity, HttpServletRequest request, String... entityLinks) {
+		String url = getUrl(request);
+		String apiRootUrl = getApiRootUrl(url, request);
+		return getEntityHypermedia(entity, false, url, apiRootUrl, entityLinks);
+	}
+
+	public Map<String, Object> getEntityHypermediaOfAction(Object entity, HttpServletRequest request, String... entityLinks) {
+		String url = getUrl(request);
+		// Remove action name
+		url = url.substring(0, url.lastIndexOf("/"));
+		String apiRootUrl = getApiRootUrl(url, request);
+		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
+	}
+
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
-		Map<String,Object> entityMap = mapper.convertValue(entity, Map.class);
+		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
 		if (!currentResource) {
 			url = url + "/" + entityMap.get("id");
 		}
 		if (entityMap != null) {
 			entityMap.put("url", url);
 			for (String link : entityLinks) {
+				String linkName;
+				if (link.contains("|")) {
+					String[] linkParts = link.split("\\|");
+					linkName = linkParts[0];
+					link = linkParts[1];
+				} else {
+					linkName = link.replace("/", "");
+				}
 				String linkUrl = (link.startsWith("/") ? apiRootUrl : (url + "/") ) + link;
-				link = link.replace("/", "");
-				entityMap.put(link + "_url", linkUrl);
+				entityMap.put(linkName + "_url", linkUrl);
 			}
 		}
 		return entityMap;
@@ -68,5 +85,4 @@ public class HypermediaGenerator {
 		String rootPath = request.getContextPath() + request.getServletPath();
 		return url.substring(0, url.indexOf(rootPath) + rootPath.length());
 	}
-
 }

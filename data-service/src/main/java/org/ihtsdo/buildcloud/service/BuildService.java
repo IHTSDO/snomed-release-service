@@ -1,23 +1,22 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 
 public interface BuildService extends EntityService<Build> {
 
-	List<Build> findAll(String authenticatedId);
+	List<Build> findAll(EnumSet<FilterOption> filterOptions, String authenticatedId);
 
 	Build find(String buildCompositeKey, String authenticatedId);
 	
-	String getConfigJson(String buildCompositeKey, String authenticatedId) throws IOException;
-
-	String getConfigJson(Build build) throws IOException;
-
+	List<Build> findForExtension(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId);
+	
 	List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId);
 
-	String run(String buildCompositeKey, String authenticatedId) throws IOException;
+	Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception;
 	
-	Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId);
 }

@@ -3,17 +3,19 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
-	<artifactId>snomed-release-system-parent</artifactId>
+	<artifactId>snomed-release-service-parent</artifactId>
 	<version>1.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
-	<name>SNOMED CT Release System</name>
+	<name>SNOMED CT Release Service</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<hibernate.version>3.6.10.Final</hibernate.version>
 		<spring.version>3.2.7.RELEASE</spring.version>
+		<hazelcast.version>3.1.6</hazelcast.version>
 		<jackson.version>2.3.0</jackson.version>
+		<slf4j.version>1.7.5</slf4j.version>
 	</properties>
 
 	<modules>
@@ -23,10 +25,16 @@
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
+		<module>builder</module>
 		<module>web</module>
 	</modules>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.2.1</version>
+		</dependency>
 		<!-- Test -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -35,12 +43,49 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>3.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.skyscreamer</groupId>
 			<artifactId>jsonassert</artifactId>
 			<version>1.2.3</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.hazelcast</groupId>
+				<artifactId>hazelcast</artifactId>
+				<version>${hazelcast.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-log4j12</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.4</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 		<plugins>

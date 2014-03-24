@@ -46,13 +46,13 @@ public class ProductBuildController {
 											 @PathVariable String extensionBusinessKey,
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException {
-
+												   HttpServletRequest request) throws Exception {
+		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		String name = json.get("name");
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Build build = buildService.create(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, request, BuildController.BUILD_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(build, request, BuildController.BUILD_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}		
 

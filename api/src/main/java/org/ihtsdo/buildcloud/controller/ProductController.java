@@ -30,7 +30,8 @@ public class ProductController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getProducts(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getProducts(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
+		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		String authenticatedId = SecurityHelper.getSubject();
 		List<Product> products = productService.findAll(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
@@ -46,7 +47,7 @@ public class ProductController {
 
 		String authenticatedId = SecurityHelper.getSubject();
 		Product product = productService.create(releaseCentreBusinessKey, extensionBusinessKey, name, authenticatedId);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(product, request, PRODUCT_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 

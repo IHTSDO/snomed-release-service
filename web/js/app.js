@@ -23,7 +23,7 @@ App.Router.map(function() {
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
 				this.resource('build', { path: '/:build_id' }, function() {
-					this.resource('package', { path: '/:package_id' }, function() {
+					this.resource('package', { path: '/package/:package_id' }, function() {
 						this.resource('build-input');
 						this.resource('pre-conditions');
 						this.resource('post-conditions');
@@ -31,14 +31,15 @@ App.Router.map(function() {
 					});
 					this.resource('pre-execution');
 					this.resource('execution-history');
-					this.resource('execution', function() {
+					this.resource('execution-mock', function() {
 						this.route('results');
 						this.route('debug');
 						this.route('output');
 						this.route('publish');
 					});
-					this.resource('execution-review', function() {
+					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
+						this.route('debug');
 					});
 				});
 			});
@@ -111,7 +112,7 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		return {
 			releaseCentres: this.store.filter('centre', {}, function(centre) {
 				return !centre.get('removed');
-			})
+							})
 		}
 	},
 	actions: {
@@ -121,6 +122,17 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		addExtension: function(releaseCentre) {
 			this.send('openModal', 'create-extension', releaseCentre);
 		}		
+	}
+})
+
+// Admin
+App.AdminRoute = App.AuthorisedRoute.extend({
+	model: function() {
+		return {
+			releaseCentres: this.store.filter('centre', {}, function(centre) {
+				return !centre.get('removed');
+							})
+		}
 	}
 })
 
@@ -281,8 +293,15 @@ App.CreateProductController = Ember.ObjectController.extend({
 // Build
 App.BuildIndexController = Ember.ObjectController.extend({
 	actions: {
-		initiateBuild: function (selectedBuild) {
-			this.transitionToRoute('execution-review', selectedBuild);
+		createExecution: function (selectedBuild) {
+			var execution = this.store.createRecord('execution', {
+				parent: selectedBuild
+			})
+			var controller = this;
+			execution.save().then(function(execution) {
+				execution.set('parent', selectedBuild);
+				controller.transitionToRoute('execution', execution);
+			})
 		},
 		addPackage: function(build) {
 			this.send('openModal', 'create-package', build);
@@ -295,7 +314,7 @@ App.BuildRoute = App.AuthorisedRoute.extend({
 		var product = this.modelFor('product');
 		return product.get('builds').then(function(builds) {
 			var build = builds.findBy('id', params.build_id);
-			build.set('parent', product);
+			build.set('product', product);
 			return build;
 		});
 	}
@@ -410,29 +429,59 @@ App.PostConditionsRoute = App.AuthorisedRoute.extend({
 })
 
 
-App.ExecutionRoute = App.AuthorisedRoute.extend({
+App.ExecutionMockRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		var build = this.modelFor('build');
 		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
 		return pack;
+	}
+})
+App.ExecutionMockIndexRoute = App.AuthorisedRoute.extend({
+	beforeModel: function() {
+		this.transitionTo('execution-mock.results');
+	}
+})
+
+App.ExecutionRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		var build = this.modelFor('build');
+		return build.get('executions').then(function(executions) {
+			var execution = executions.findBy('id', params.execution_id);
+			execution.set('parent', build);
+			return execution;
+		});
 	}
 })
 App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
 	beforeModel: function() {
-		this.transitionTo('execution.results');
+		this.transitionTo('execution.configuration');
 	}
 })
-
-App.ExecutionReviewRoute = App.AuthorisedRoute.extend({
-	model: function() {
-		var build = this.modelFor('build');
-		var pack = { name: '17 Feb, 2014 01:05:00 (UTC)', parent: build };
-		return pack;
+App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('execution');
+	},
+	actions: {
+		triggerBuild: function(execution) {
+			var store = this.store;
+			var adapter = store.adapterFor(App.Execution);
+			var build = execution.get('parent');
+			var url = adapter.buildNestedURL(execution);
+			url += '/trigger';
+			$.ajax({
+				url: url,
+				type: 'POST',
+				success: function(executionData) {
+					executionData.parent = build;
+					store.push(App.Execution, executionData, true);
+				}
+			})
+		}
 	}
 })
-App.ExecutionReviewIndexRoute = App.AuthorisedRoute.extend({
-	beforeModel: function() {
-		this.transitionTo('execution-review.configuration');
+App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		return this.modelFor('execution');
 	}
 })
 

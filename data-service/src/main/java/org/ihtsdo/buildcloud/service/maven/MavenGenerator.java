@@ -1,113 +1,110 @@
 package org.ihtsdo.buildcloud.service.maven;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Template;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.MavenArtifact;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 
 public class MavenGenerator {
 
-	private final DefaultMustacheFactory mustacheFactory;
-	private final Mustache artifactPomMustache;
-	private final Mustache buildPomMustache;
-	private final Mustache packagePomMustache;	
-	private final Mustache commonGroupIdMustache;
-	private final Mustache inputFileArtifactIdMustache;
+	@Autowired
+	private ObjectMapper objectMapper;
 
-	public MavenGenerator() {
-		mustacheFactory = new DefaultMustacheFactory();
-		buildPomMustache = mustacheFactory.compile("build-pom.mustache");
-		packagePomMustache = mustacheFactory.compile("package-pom.mustache");
-		artifactPomMustache = mustacheFactory.compile("artifact-pom.mustache");
-		commonGroupIdMustache = mustacheFactory.compile("common-group-id.mustache");
-		inputFileArtifactIdMustache = mustacheFactory.compile("input-file-artifact-id.mustache");
+	private final Handlebars handlebars;
+	private final Template artifactPomHandlebars;
+	private final Template buildPomHandlebars;
+	private final Template packagePomHandlebars;
+	private final Template commonGroupIdHandlebars;
+	private final Template artifactGroupIdHandlebars;
+	private final Template artifactArtifactIdHandlebars;
+
+	private static final String POM_XML = "pom.xml";
+
+	public MavenGenerator() throws IOException {
+		handlebars = new Handlebars();
+
+		buildPomHandlebars = handlebars.compile("build-pom");
+		packagePomHandlebars = handlebars.compile("package-pom");
+		artifactPomHandlebars = handlebars.compile("artifact-pom");
+		commonGroupIdHandlebars = handlebars.compile("common-group-id");
+		artifactGroupIdHandlebars = handlebars.compile("artifact-group-id");
+		artifactArtifactIdHandlebars = handlebars.compile("artifact-artifact-id");
 	}
 
-	public void generateArtifactPom(Writer writer, MavenArtifact artifact) throws IOException {
-		artifactPomMustache.execute(writer, artifact).flush();
+	public void generateArtifactPom(MavenArtifact artifact, Writer writer) throws IOException {
+		artifactPomHandlebars.apply(artifact, writer);
+		writer.close();
 	}
 
 	/*
-	 * @return the directory in which the parent pom has been generated
+	 * @return A temporary directory containing the generated build scripts.
 	 */
-	public File generateBuildFiles(Build build) throws IOException {
-		//Create a randomly named temp directory to hold our parent build pom 
-		File buildDir = Files.createTempDirectory("srs_").toFile();
-		File parentPom = new File(buildDir, "pom.xml");
-		
-		//Write the pom to it's newly minted location, filling in the build-pom.mustache template
-		FileWriter fw = new FileWriter(parentPom);
-		buildPomMustache.execute(fw, build).flush();
-		
-		//Now work through the child packages creating directory and poms for each one.
-		String buildDirPath = buildDir.getPath();
-		for (Package pkg : build.getPackages()) {
-			generatePackagePom(buildDirPath, pkg);
-		}
-		return buildDir;
-	}
-	
-	private void generatePackagePom(String buildDir, Package pkg)  throws IOException {
-		//Create a sub directory based on the businessKey of the package
-		String packageDir = buildDir + File.separator + pkg.getBusinessKey();
-		boolean packageDirOK = new File(packageDir).mkdirs();
-		if (!packageDirOK) {
-			throw new IOException ("Unable to create package directory " + packageDir);
-		}
-		File packagePom = new File(packageDir + File.separator + "pom.xml");
-		
-		//Write the pom to it's newly minted location, filling in the package-pom.mustache template		
-		FileWriter fw = new FileWriter(packagePom);
-		packagePomMustache.execute(fw, pkg).flush();
-		
-		//We also need a copy of assembly.xml 
-		File newAssembly = new File (packageDir + File.separator + "assembly.xml");
-		InputStream is = this.getClass().getResourceAsStream("/package_assembly.xml");
-		if (is == null) {
-			throw new IOException ("Unable to read required resource package_assembly.xml");
-		}
-		OutputStream os = new FileOutputStream(newAssembly);
-		FileCopyUtils.copy(is, os);
+	public File generateBuildScripts(String executionConfigurationJson) throws IOException {
+		Map<String, Object> executionMap = objectMapper.readValue(executionConfigurationJson, Map.class);
+		executionMap.put("version", ((String) executionMap.get("creationTime")).replace(":", "-"));
 
+		File tempDirectory = Files.createTempDirectory(getClass().getCanonicalName()).toFile();
+		File parentPom = new File(tempDirectory, POM_XML);
+		
+		// Write the pom to it's newly minted location, filling in the build-pom template
+		FileWriter fw = new FileWriter(parentPom);
+		buildPomHandlebars.apply(executionMap, fw);
+		fw.close();
+		
+		// Now work through the child packages creating directory and poms for each one.
+		Map<String, Object> buildMap = (Map<String, Object>) executionMap.get("build");
+		List<Map<String, Object>> packagesMap = (List<Map<String, Object>>) buildMap.get("packages");
+		for (Map<String, Object> packageMap : packagesMap) {
+			packageMap.put("execution", executionMap);
+			generatePackagePom(packageMap, tempDirectory);
+		}
+		return tempDirectory;
 	}
 	
-	public MavenArtifact getArtifact(InputFile inputFile) throws IOException {
+	private void generatePackagePom(Map<String, Object> aPackage, File tempDirectory)  throws IOException {
+		// Create a sub directory based on the businessKey of the package
+		String packageBusinessKey = (String) aPackage.get("id");
+		File packageDir = FileUtils.createDirectoryOrThrow(new File(tempDirectory, packageBusinessKey));
+		File packagePom = new File(packageDir, POM_XML);
+		
+		// Write the pom to it's newly minted location, filling in the package-pom template
+		FileWriter fw = new FileWriter(packagePom);
+		packagePomHandlebars.apply(aPackage, fw);
+		fw.close();
+		
+		// We also need a copy of assembly.xml
+		InputStream packageAssemblyStream = this.getClass().getResourceAsStream("/package_assembly.xml");
+		if (packageAssemblyStream != null) {
+			FileCopyUtils.copy(packageAssemblyStream, new FileOutputStream(new File(packageDir, "assembly.xml")));
+		} else {
+			throw new FileNotFoundException("Unable to read required resource package_assembly.xml");
+		}
+	}
+
+	public void generateArtifactAndGroupId(InputFile inputFile) throws IOException {
 		Package aPackage = inputFile.getPackage();
 		Build build = aPackage.getBuild();
 
 		StringWriter groupIdWriter = new StringWriter();
-		commonGroupIdMustache.execute(groupIdWriter, build).flush();
+		artifactGroupIdHandlebars.apply(build, groupIdWriter);
 		String groupId = groupIdWriter.toString();
+		inputFile.setGroupId(groupId);
 
 		StringWriter artifactIdWriter = new StringWriter();
-		inputFileArtifactIdMustache.execute(artifactIdWriter, inputFile).flush();
+		artifactArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
 		String artifactId = artifactIdWriter.toString();
-
-		String version = "1.0";
-		String packaging = "zip";
-		return new MavenArtifact(groupId, artifactId, version, packaging);
+		inputFile.setArtifactId(artifactId);
 	}
 
-	public String getPath(MavenArtifact mavenArtifact) {
-		return getPath(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(), mavenArtifact.getPackaging());
-	}
-
-	public String getPomPath(MavenArtifact mavenArtifact) {
-		return getPath(mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion(), "pom");
-	}
-
-	private String getPath(String groupId, String artifactId, String version, String packaging) {
-		String groupIdWithSlashes = withSlashes(groupId);
-		String artifactIdWithSlashes = withSlashes(artifactId);
-		return String.format("%s/%s/%s/%s-%3$s.%s", groupIdWithSlashes, artifactIdWithSlashes, version, artifactId, packaging);
-	}
-
-	private String withSlashes(String name) {
-		return name.replace(".", "/");
-	}
 }

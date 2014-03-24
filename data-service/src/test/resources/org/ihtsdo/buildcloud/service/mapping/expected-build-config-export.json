@@ -1,0 +1,30 @@
+{
+	"id" : "2013-03-05T16:30:00",
+	"creationTime" : "2013-03-05T16:30:00",
+	"build" : {
+		"id" : "international_release",
+		"name" : "International Release",
+		"packages" : [ {
+			"id" : "rf2_release",
+			"name" : "RF2 Release",
+			"inputFiles" : [ {
+				"id" : "conceptsrf2",
+				"name" : "concepts.rf2",
+				"version": "2014-03-18T15-30-00"
+			} ]
+		} ],
+		"product" : {
+			"id" : "snomed_ct_international_edition",
+			"name" : "SNOMED CT International Edition",
+			"extension" : {
+				"id" : "snomed_ct_international_edition",
+				"name" : "SNOMED CT International Edition",
+				"releaseCentre" : {
+					"id" : "international",
+					"name" : "International Release Centre",
+					"shortName" : "International"
+				}
+			}
+		}
+	}
+}
