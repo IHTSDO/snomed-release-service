@@ -16,7 +16,7 @@ public class TestEntityGenerator {
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
 	
-	public static final String [][] productNames = {{"SNOMED CT Release"},
+	public static final String [][] productNames = {{"SNOMED CT Release", "Conversion Utility", "Compatibility Package"},
 													{"Spanish Release"} };
 	
 	public static final int totalBuildCount = 8;
@@ -24,22 +24,25 @@ public class TestEntityGenerator {
 	public static final int [] buildCount = { 4,
 											  4};
 	
-	public static final String [][] buildNames = { {"20140731 International Release",
-													"20150131 International Release - Biannual",
-													"20150131 International Release - Nightly",
-													"20150731 International Release - Biannual"},
-												 {	"20141031 Spanish Release",
-													"20150430 Spanish Release - Semestral",
-													"20150430 Spanish Release - Nocturno",
-													"20150430 Spanish Release - Semestral"}};
+	//Build array dimensions are extension, products, build
+	//So those two empty arrays there are for "Conversion Utility" and "Compatibility Package"
+	public static final String [][][] buildNames = { 	{ {	"20140731 International Release",
+															"20150131 International Release - Biannual",
+															"20150131 International Release - Nightly",
+															"20150731 International Release - Biannual"} , {}, {} },
+														{ {	"20141031 Spanish Release",
+															"20150430 Spanish Release - Semestral",
+															"20150430 Spanish Release - Nocturno",
+															"20150430 Spanish Release - Semestral"}}};
 	
 	public static final int totalStarredBuilds = 5; 
 	
+	// Starred count is per extension
 	public static final int [] starredCount = { 3,
 												2};
 	
-	public static final boolean [][] starredBuilds = {	{ true, true, true, false  },
-														{ true, false, true, false } };
+	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {}, {} },
+															{{ true, false, true, false }} };
 	
 	public static final String [] packageNames = {	"RF2 Release",
 													"RF1CompatibilityPackage",
@@ -56,14 +59,14 @@ public class TestEntityGenerator {
 	
 
 	protected void addExtensionsToReleaseCentre (ReleaseCentre releaseCentre) {
-		for (int x=0; x < extensionNames.length; x++){
-			Extension extension = new Extension (extensionNames[x]);
+		for (int iEx=0; iEx < extensionNames.length; iEx++){
+			Extension extension = new Extension (extensionNames[iEx]);
 			releaseCentre.addExtension(extension);
-			for (String productName : productNames[x]) {
-				Product product = new Product (productName);
+			for (int iPrd=0; iPrd < productNames[iEx].length; iPrd++) {
+				Product product = new Product (productNames[iEx][iPrd]);
 				extension.addProduct(product);
-				for (int y=0; y < buildNames[x].length; y++){
-					Build build = new Build(buildNames[x][y], starredBuilds[x][y]);
+				for (int iBld=0; iBld < buildNames[iEx][iPrd].length; iBld++){
+					Build build = new Build(buildNames[iEx][iPrd][iBld], starredBuilds[iEx][iPrd][iBld]);
 					product.addBuild(build);
 					addPackagesToBuild(build);
 				}
