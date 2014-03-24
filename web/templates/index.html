@@ -31,6 +31,9 @@
 			<div class="col-sm-6">
 				<h3>Starred Builds <span class="glyphicon glyphicon-star"></span></h3>
 				<ul>
+				{{#each starredBuild in extension.starredBuilds}}
+					<li>{{#link-to "build" releaseCentre extension starredBuild.parent starredBuild}} {{starredBuild.name}}{{/link-to}}</li>
+				{{/each}}
 					<li title="In Progress" data-toggle="tooltip" data-placement="right">
 						{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" }}20130731_international_release{{/link-to}}
 						{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_international_edition" "1_20130731_international_release" title='Last Run: 17 Feb, 2014 01:05:00 UTC'}}<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>{{/link-to}}

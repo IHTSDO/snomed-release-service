@@ -5,11 +5,12 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Extension {
+public class Extension implements DomainEntity{
 
 	@Id
 	@GeneratedValue
@@ -74,6 +75,16 @@ public class Extension {
 
 	public List<Product> getProducts() {
 		return products;
+	}
+
+	@Override
+	public DomainEntity getParent() {
+		return releaseCentre;
+	}
+
+	@Override
+	public String getCollectionName() {
+		return "extensions";
 	}
 
 }

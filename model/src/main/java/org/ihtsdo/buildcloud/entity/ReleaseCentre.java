@@ -6,12 +6,13 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @JsonPropertyOrder({"id"})
-public class ReleaseCentre {
+public class ReleaseCentre implements DomainEntity{
 
 	@Id
 	@GeneratedValue
@@ -86,5 +87,18 @@ public class ReleaseCentre {
 
 	public void setRemoved(boolean removed) {
 		this.removed = removed;
+	}
+
+	@Override
+	public DomainEntity getParent() {
+		// Release Centre is the top of the tree, so it never has a parent.
+		return null;
+	}
+
+	@Override
+	public String getCollectionName() {
+		//You know, if it wasn't for this object having a different name from it's class, 
+		//I'd have used a .getClass().getName() solution!
+		return "centres";
 	}
 }

@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
@@ -15,6 +16,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -30,7 +32,7 @@ public class InputFileController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] INPUT_FILE_LINKS = {"file"};
+	public static final LinkPath[] INPUT_FILE_LINKS = { new LinkPath ("file")};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 
