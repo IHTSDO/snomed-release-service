@@ -16,8 +16,8 @@ public class TestEntityGenerator {
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
 	
-	public static final String [][] productNames = {{"SNOMED CT International Edition"},
-													{"SNOMED CT Spanish Edition"} };
+	public static final String [][] productNames = {{"SNOMED CT Release"},
+													{"Spanish Release"} };
 	
 	public static final int totalBuildCount = 8;
 	

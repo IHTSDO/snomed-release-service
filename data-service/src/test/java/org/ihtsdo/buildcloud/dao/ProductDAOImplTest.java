@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,16 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
-public class ProductDAOImplTest {
+public class ProductDAOImplTest extends TestEntityGenerator{
 
 	@Autowired
 	private ProductDAO dao;
+	
+	public static final String AUTHENTICATED_ID = "test";
 
 	@Test
 	public void testInitialData() {
-		Product product = dao.find("international", "snomed_ct_spanish_edition", "snomed_ct_spanish_edition", "test");
+		Product product = dao.find(	EntityHelper.formatAsBusinessKey(TestEntityGenerator.releaseCentreShortNames[0]), 
+									EntityHelper.formatAsBusinessKey(TestEntityGenerator.extensionNames[1].toLowerCase()), 
+									EntityHelper.formatAsBusinessKey(TestEntityGenerator.productNames[1][0].toLowerCase()),
+									AUTHENTICATED_ID);
 		Assert.assertNotNull(product);
-		Assert.assertEquals("SNOMED CT Spanish Edition", product.getName());
+		Assert.assertEquals(TestEntityGenerator.productNames[1][0], product.getName());
 	}
 
 }

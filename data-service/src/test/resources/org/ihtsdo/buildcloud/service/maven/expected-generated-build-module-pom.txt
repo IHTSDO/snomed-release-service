@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20150731_international_release__biannual</groupId>
+		<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20150731_international_release__biannual</groupId>
 		<artifactId>20150731_international_release__biannual</artifactId>
 		<version>2013-03-05T16-30-00</version>
 	</parent>
