@@ -27,7 +27,7 @@ public class TestEntityFactory extends TestEntityGenerator {
 		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreNames[0], releaseCentreShortNames[0]);
 		Extension extension = new Extension(extensionNames[0]);
 		Product product = new Product(productNames[0][0]);
-		Build build = new Build(1L,buildNames[0][3]);
+		Build build = new Build(1L,buildNames[0][0][3]);
 
 		addPackagesToBuild(build);
 		product.addBuild(build);
