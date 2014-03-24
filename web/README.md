@@ -24,10 +24,10 @@ We will be serving the webapp, using the following configuration:
 
 * Git working directory in /home/www-data
 * Nginx configuration /etc/nginx/sites-available/<servername.domain-name>  root /var/www/release
-* Symlinked ln -s /home/www-data/snomed-release-system/web /var/www/release
+* Symlinked ln -s /home/www-data/snomed-release-service/web /var/www/release
 * Start ssh agent to deliver ssh key:   eval "$(ssh-agent)"
 * ssh-add /home/www-data/.ssh/id_pub
 * Testing using  ssh -T git@github.com (note that username is always "git" for github)
-* git clone git@github.com:IHTSDO/snomed-release-system.git
+* git clone git@github.com:IHTSDO/snomed-release-service.git
 * Callable script to update the code (performs a git pull over ssh): http://release.snomedtools.org/cgi-bin/deploy.sh
-* GitHub hook configured to automatically call deploy script when repository receives an update: https://github.com/IHTSDO/snomed-release-system/settings/hooks
+* GitHub hook configured to automatically call deploy script when repository receives an update: https://github.com/IHTSDO/snomed-release-service/settings/hooks

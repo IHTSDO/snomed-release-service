@@ -52,21 +52,20 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
 	}
 
-	@RequestMapping(value = "/{inputFileBusinessKey}", method = RequestMethod.POST)
+	@RequestMapping(value = "/{inputFileName}", method = RequestMethod.POST)
 	@ResponseBody
 	public Map uploadInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							   @PathVariable String inputFileBusinessKey, @RequestParam Part file,
+							   @PathVariable String inputFileName, @RequestParam Part file,
 							   HttpServletRequest request) throws IOException {
 		String authenticatedId = SecurityHelper.getSubject();
 
 		long size = file.getSize();
-		LOGGER.info("uploadInputFile. inputFileBusinessKey: {}, size: {}", inputFileBusinessKey, size);
+		LOGGER.info("uploadInputFile. inputFileName: {}, size: {}", inputFileName, size);
 
-
-		InputFile inputFile = inputFileService.create(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, file.getInputStream(),
+		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, inputFileName, file.getInputStream(),
 				size, authenticatedId);
 
-		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
+		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
 	}
 
 	@RequestMapping(value = "/{inputFileBusinessKey}/file", produces="application/zip")

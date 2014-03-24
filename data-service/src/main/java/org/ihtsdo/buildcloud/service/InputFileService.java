@@ -12,8 +12,8 @@ public interface InputFileService extends EntityService<InputFile> {
 
 	InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId);
 
-	InputFile create(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey,
-					 InputStream fileStream, long fileSize, String authenticatedId) throws IOException;
+	InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
+						   InputStream fileStream, long fileSize, String authenticatedId) throws IOException;
 
 	InputStream getFileStream(InputFile inputFile) throws IOException;
 }

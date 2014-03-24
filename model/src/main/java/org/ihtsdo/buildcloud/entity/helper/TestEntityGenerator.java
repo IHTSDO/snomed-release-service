@@ -16,8 +16,13 @@ public class TestEntityGenerator {
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
 	
-	public static final String [][] productNames = {{"SNOMED CT International Edition"},
-													{"SNOMED CT Spanish Edition"} };		
+	public static final String [][] productNames = {{"SNOMED CT Release"},
+													{"Spanish Release"} };
+
+	public static final int totalBuildCount = 8;
+	
+	public static final int [] buildCount = { 4,
+											  4};
 	
 	public static final String [][] buildNames = { {"20140731 International Release",
 													"20150131 International Release - Biannual",
@@ -27,6 +32,14 @@ public class TestEntityGenerator {
 													"20150430 Spanish Release - Semestral",
 													"20150430 Spanish Release - Nocturno",
 													"20150430 Spanish Release - Semestral"}};
+	
+	public static final int totalStarredBuilds = 5; 
+	
+	public static final int [] starredCount = { 3,
+												2};
+	
+	public static final boolean [][] starredBuilds = {	{ true, true, true, false  },
+														{ true, false, true, false } };
 	
 	public static final String [] packageNames = {	"RF2 Release",
 													"RF1CompatibilityPackage",
@@ -41,6 +54,7 @@ public class TestEntityGenerator {
 		return internationalReleaseCentre;
 	}	
 	
+
 	protected void addExtensionsToReleaseCentre (ReleaseCentre releaseCentre) {
 		for (int x=0; x < extensionNames.length; x++){
 			Extension extension = new Extension (extensionNames[x]);
@@ -48,8 +62,8 @@ public class TestEntityGenerator {
 			for (String productName : productNames[x]) {
 				Product product = new Product (productName);
 				extension.addProduct(product);
-				for (String buildName : buildNames[x]){
-					Build build = new Build(buildName);
+				for (int y=0; y < buildNames[x].length; y++){
+					Build build = new Build(buildNames[x][y], starredBuilds[x][y]);
 					product.addBuild(build);
 					addPackagesToBuild(build);
 				}
@@ -62,10 +76,10 @@ public class TestEntityGenerator {
 			Package pkg = new Package(packageName);
 			build.addPackage(pkg);
 			if (packageName.equals(packageNames[0])){
-				for (String inputFileName : inputFileNames){
-					InputFile inputFile = new InputFile(inputFileName);
-					pkg.addInputFile(inputFile);
-				}
+				InputFile inputFile = new InputFile("concepts rf2", "2014-03-19T14-14-48");
+				inputFile.setGroupId("org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release");
+				inputFile.setArtifactId("rf2_release.input.concepts_rf2");
+				pkg.addInputFile(inputFile);
 			}
 		}		
 	}	

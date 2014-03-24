@@ -1,0 +1,92 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="
+	    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+        http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd">
+
+	<context:annotation-config />
+	<tx:annotation-driven/>
+
+	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl">
+		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
+	</bean>
+	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCentreMembershipDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
+		<property name="buildQueue" ref="buildQueue"/>
+	</bean>
+	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.ReleaseCentreServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ExtensionServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
+
+	<jdbc:embedded-database id="dataSource"/>
+
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="packagesToScan">
+			<list>
+				<value>org.ihtsdo.buildcloud.entity</value>
+			</list>
+		</property>
+
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
+				<prop key="hibernate.show_sql">false</prop>
+				<prop key="hibernate.hbm2ddl.auto">create</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.service.maven.MavenGenerator"/>
+
+	<bean class="com.amazonaws.services.s3.AmazonS3Client">
+		<constructor-arg>
+			<bean class="com.amazonaws.auth.BasicAWSCredentials">
+				<constructor-arg value="***REMOVED***" />
+				<constructor-arg value="***REMOVED***" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
+
+	<bean class="java.lang.String" id="MavenS3BucketName">
+		<constructor-arg value="ire.maven.release.ihtsdo" />
+	</bean>
+
+	<bean class="java.lang.String" id="executionS3BucketName">
+		<constructor-arg value="ire.execution.release.ihtsdo" />
+	</bean>
+
+	<bean class="org.codehaus.jackson.map.ObjectMapper" factory-bean="ObjectMapperFactory" factory-method="createObjectMapper"/>
+
+	<bean id="ObjectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator"/>
+
+	<bean class="org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper"/>
+
+</beans>

@@ -1,0 +1,19 @@
+<form>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Configuration</h3>
+		</div>
+		<div class="panel-body">
+			<p class="lead"><small>Please review the configuration before running the build.</small></p>
+
+			<h4>Execution Configuration</h4>
+<pre>{{configuration.json}}
+</pre>
+			{{#if isNotTriggered}}
+			<button type="button" class="btn btn-success btn-lg success" {{action 'triggerBuild' this}}>
+				<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
+			</button>
+			{{/if}}
+		</div>
+	</div>
+</form>
