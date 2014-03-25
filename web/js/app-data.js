@@ -21,8 +21,7 @@ App.Centre = App.DSModel.extend({
 App.Extension = DS.Model.extend({
 	parent: DS.belongsTo('centre'),
 	name: DS.attr(),
-	products: DS.hasMany('product', { async: true }),
-	starredBuilds: DS.hasMany('build', { async: true })
+	products: DS.hasMany('product', { async: true })
 });
 App.Product = DS.Model.extend({
 	parent: DS.belongsTo('extension'),
@@ -30,7 +29,7 @@ App.Product = DS.Model.extend({
 	builds: DS.hasMany('build', { async: true })
 });
 App.Build = DS.Model.extend({
-	parent: DS.belongsTo('product', { async: true }),
+	product: DS.belongsTo('product'),
 	name: DS.attr(),
 	config: DS.belongsTo('buildConfig', { async: true }),
 	packages: DS.hasMany('package', { async: true }),

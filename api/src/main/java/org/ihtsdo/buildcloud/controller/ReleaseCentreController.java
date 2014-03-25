@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCentreService;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +26,7 @@ public class ReleaseCentreController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final LinkPath[] RELEASE_CENTRE_LINKS = {new LinkPath ("extensions")};
+	private static final String[] RELEASE_CENTRE_LINKS = {"extensions"};
 
 	@RequestMapping
 	@ResponseBody

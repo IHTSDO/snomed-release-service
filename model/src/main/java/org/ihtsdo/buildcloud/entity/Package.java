@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.util.*;
 
 @Entity
-public class Package  implements DomainEntity{
+public class Package {
 
 	@Id
 	@GeneratedValue
@@ -74,16 +74,6 @@ public class Package  implements DomainEntity{
 
 	public List<InputFile> getInputFiles() {
 		return inputFiles;
-	}
-
-	@Override
-	public DomainEntity getParent() {
-		return build;
-	}
-
-	@Override
-	public String getCollectionName() {
-		return "packages";
 	}
 
 }
