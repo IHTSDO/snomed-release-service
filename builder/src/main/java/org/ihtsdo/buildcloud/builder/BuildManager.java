@@ -53,6 +53,7 @@ public class BuildManager {
 		while (true) {
 			String executionUrl = queue.take();
 			LOGGER.info("Consuming executionUrl:{}", executionUrl);
+			apiClient.setExecutionStatus("BUILDING", executionUrl);
 
 			// Download build scripts as temp file
 			File buildScriptsZip = apiClient.downloadBuildScriptsZip(executionUrl);
@@ -69,6 +70,7 @@ public class BuildManager {
 
 			// Upload output
 			apiClient.uploadTargetDirectories(buildDirectory, executionUrl + "output");
+			apiClient.setExecutionStatus("BUILT", executionUrl);
 		}
 	}
 

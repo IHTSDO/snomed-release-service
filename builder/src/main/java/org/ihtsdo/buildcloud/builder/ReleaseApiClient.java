@@ -66,16 +66,16 @@ public class ReleaseApiClient {
 
 			private void uploadFileAttempt(File file) throws IOException {
 				String path = getRelativePath(file, buildDirectoryPathLength);
-				URL uploadPath = new URL(executionOutputUrl + path);
-				HttpURLConnection connection = (HttpURLConnection) uploadPath.openConnection();
-				connection.setRequestMethod("POST");
-				connection.setRequestProperty("User-Agent", getClass().getName());
+				HttpURLConnection connection = openConnection(executionOutputUrl + path, "POST");
 				connection.setRequestProperty("Content-Length", new Long(file.length()).toString());
 				connection.setDoOutput(true);
 				OutputStream outputStream = connection.getOutputStream();
-				LOGGER.debug("POST to {}", connection.getURL());
-				FileUtils.copyFile(file, outputStream);
-				outputStream.close();
+				try {
+					LOGGER.debug("POST to {}", connection.getURL());
+					FileUtils.copyFile(file, outputStream);
+				} finally {
+					outputStream.close();
+				}
 				int responseCode = connection.getResponseCode();
 				if (responseCode != 201) {
 					throw new IOException("HTTP Response Code:" + responseCode);
@@ -87,6 +87,25 @@ public class ReleaseApiClient {
 			}
 
 		});
+	}
+
+	public void setExecutionStatus(String status, String executionUrl) throws IOException {
+		LOGGER.info("Setting status '{}' of execution {}", status, executionUrl);
+		HttpURLConnection connection = openConnection(executionUrl + "/status/" + status, "POST");
+		assertExpectedResponseCode(200, connection.getResponseCode());
+	}
+
+	private void assertExpectedResponseCode(int expectedResponseCode, int actualResponseCode) throws IOException {
+		if (actualResponseCode != expectedResponseCode) {
+			throw new IOException("Expected Response Code " + expectedResponseCode + ", but got " + actualResponseCode);
+		}
+	}
+
+	private HttpURLConnection openConnection(String url, String method) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+		connection.setRequestMethod(method);
+		connection.setRequestProperty("User-Agent", getClass().getName());
+		return connection;
 	}
 
 }
