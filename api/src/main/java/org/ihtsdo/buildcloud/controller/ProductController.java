@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.controller.helper.LinkPath;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +26,7 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final LinkPath[] PRODUCT_LINKS = { new LinkPath ("builds") };
+	private static final String[] PRODUCT_LINKS = {"builds"};
 
 	@RequestMapping
 	@ResponseBody

@@ -12,8 +12,7 @@ import javax.persistence.ManyToOne;
 import java.util.Date;
 
 @Entity
-
-public class InputFile implements MavenArtifact, DomainEntity {
+public class InputFile implements MavenArtifact {
 
 	@Id
 	@GeneratedValue
@@ -124,15 +123,5 @@ public class InputFile implements MavenArtifact, DomainEntity {
 
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
-	}
-
-	@Override
-	public DomainEntity getParent() {
-		return packag;
-	}
-
-	@Override
-	public String getCollectionName() {
-		return "inputFiles";
 	}
 }

@@ -109,12 +109,11 @@ App.PreLoginRoute = App.AbstractRoute.extend();
 // Index
 App.IndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
-		return Em.RSVP.hash({
+		return {
 			releaseCentres: this.store.filter('centre', {}, function(centre) {
 				return !centre.get('removed');
-				})
-			//starredBuilds: this.store.find('build', {starred:'true'})
-		});
+							})
+		}
 	},
 	actions: {
 		addProduct: function(extension) {
@@ -195,7 +194,7 @@ App.ExtensionRoute = App.AuthorisedRoute.extend({
 		var centre = this.modelFor('release-centre');
 		return centre.get('extensions').then(function(extensions) {
 			var extension = extensions.findBy('id', params.extension_id);
-			//Wextension.set('parent', centre);
+			extension.set('parent', centre);
 			return  extension;
 		});
 	}
@@ -274,12 +273,12 @@ App.CreateProductView = Ember.View.extend({
 	}
 })
 App.CreateProductController = Ember.ObjectController.extend({
-	/*getModel: function(extension) {
+	getModel: function(extension) {
 		var product = this.store.createRecord('product', {
 			parent: extension
 		});
 		return  product;
-	},*/
+	},
 	actions: {
 		submit: function() {
 			var product = this.get('model');
