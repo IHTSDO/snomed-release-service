@@ -65,17 +65,20 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
-		Execution execution = dao.find(build, executionId);
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
 		return dao.loadConfiguration(execution);
+	}
+
+	private Execution getExecution(String buildCompositeKey, String executionId, String authenticatedId) {
+		Build build = getBuild(buildCompositeKey, authenticatedId);
+		return dao.find(build, executionId);
 	}
 
 	@Override
 	public Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
 
-		Build build = getBuild(buildCompositeKey, authenticatedId);
-		Execution execution = dao.find(build, executionId);
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
 
 		String executionConfiguration = dao.loadConfiguration(execution);
 
@@ -98,10 +101,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, String authenticatedId) {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
-		Execution execution = dao.find(build, executionId);
-
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
 		dao.saveOutputFile(execution, filePath, inputStream, size);
+	}
+
+	@Override
+	public void updateStatus(String buildCompositeKey, String executionId, String statusString, String authenticatedId) {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+		Execution.Status status = Execution.Status.valueOf(statusString);
+		dao.updateStatus(execution, status);
 	}
 
 	private Build getBuild(String buildCompositeKey, String authenticatedId) {
