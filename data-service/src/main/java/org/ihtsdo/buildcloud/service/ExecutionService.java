@@ -23,4 +23,6 @@ public interface ExecutionService {
 
 	void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, String authenticatedId);
 
+	void updateStatus(String buildCompositeKey, String executionId, String status, String authenticatedId);
+
 }

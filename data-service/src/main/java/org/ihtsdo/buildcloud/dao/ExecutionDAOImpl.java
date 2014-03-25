@@ -97,6 +97,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		putFile(outputFilePath, inputStream, size);
 	}
 
+	@Override
+	public void updateStatus(Execution execution, Execution.Status newStatus) {
+		Execution.Status origStatus = execution.getStatus();
+		execution.setStatus(newStatus);
+		String newStatusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus());
+		// Put new status before deleting old to avoid there being none.
+		putFile(newStatusFilePath, BLANK);
+		if (origStatus != null) {
+			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
+			s3Client.deleteObject(executionS3BucketName, origStatusFilePath);
+		}
+	}
+
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
 		File[] files = sourceDirectory.listFiles();
 		for (File file : files) {
@@ -139,18 +152,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 		// Save status file
 		updateStatus(execution, Execution.Status.BEFORE_TRIGGER);
-	}
-
-	private void updateStatus(Execution execution, Execution.Status newStatus) {
-		Execution.Status origStatus = execution.getStatus();
-		execution.setStatus(newStatus);
-		String newStatusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus());
-		// Put new status before deleting old to avoid there being none.
-		putFile(newStatusFilePath, BLANK);
-		if (origStatus != null) {
-			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
-			s3Client.deleteObject(executionS3BucketName, origStatusFilePath);
-		}
 	}
 
 	private PutObjectResult putFile(String filePath, InputStream stream, Long size) {

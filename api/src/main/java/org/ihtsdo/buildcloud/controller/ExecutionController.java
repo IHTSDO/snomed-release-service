@@ -107,6 +107,14 @@ public class ExecutionController {
 			response.setStatus(HttpServletResponse.SC_LENGTH_REQUIRED);
 		}
 	}
+
+	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
+	@ResponseBody
+	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) {
+		String authenticatedId = SecurityHelper.getSubject();
+		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedId);
+	}
+
 	private Long asLong(String longString) {
 		if (longString != null && longString.matches("\\d+")) {
 			return Long.parseLong(longString);
