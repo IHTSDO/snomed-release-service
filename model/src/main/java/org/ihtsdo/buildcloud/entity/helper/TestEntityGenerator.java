@@ -16,7 +16,11 @@ public class TestEntityGenerator {
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
 	
-	public static final String [][] productNames = {{"SNOMED CT Release", "Conversion Utility", "Compatibility Package"},
+	public static final String [][] productNames = {{"SNOMED CT Release", 
+													 "Medical Devices Technical Preview",
+													 "GP/FP Refset Technical Preview",
+													 "LOINC Expressions Technical Preview",
+													 "ICPC2 Map Technical Preview"},
 													{"Spanish Release"} };
 	
 	public static final int totalBuildCount = 8;
@@ -25,11 +29,11 @@ public class TestEntityGenerator {
 											  4};
 	
 	//Build array dimensions are extension, products, build
-	//So those two empty arrays there are for "Conversion Utility" and "Compatibility Package"
+	//So those empty arrays there are for "Medical Devices", et al.
 	public static final String [][][] buildNames = { 	{ {	"20140731 International Release",
 															"20150131 International Release - Biannual",
 															"20150131 International Release - Nightly",
-															"20150731 International Release - Biannual"} , {}, {} },
+															"20150731 International Release - Biannual"} , {}, {}, {}, {} },
 														{ {	"20141031 Spanish Release",
 															"20150430 Spanish Release - Semestral",
 															"20150430 Spanish Release - Nocturno",
@@ -41,7 +45,7 @@ public class TestEntityGenerator {
 	public static final int [] starredCount = { 3,
 												2};
 	
-	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {}, {} },
+	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {}, {}, {}, {} },
 															{{ true, false, true, false }} };
 	
 	public static final String [] packageNames = {	"RF2 Release",
