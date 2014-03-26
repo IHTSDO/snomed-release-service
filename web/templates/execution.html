@@ -16,6 +16,9 @@
 			{{#if isTriggered}}
 			<li>{{#link-to 'execution.debug'}}Debug{{/link-to}}</li>
 			{{/if}}
+			{{#if isBuilt}}
+			<li>{{#link-to 'execution.output'}}Output{{/link-to}}</li>
+			{{/if}}
 		</ul>
 	</div>
 	<div class="col-md-9">

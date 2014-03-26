@@ -40,6 +40,7 @@ App.Router.map(function() {
 					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
 						this.route('debug');
+						this.route('output');
 					});
 				});
 			});
@@ -519,6 +520,22 @@ App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
 App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('execution');
+	}
+})
+App.ExecutionOutputRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		var model = this.modelFor('execution');
+		var log = model.get('output-log');
+		if (!log) {
+			model.set('output-log', 'Loading...');
+			$.ajax({
+				url: model._data.url + '/output/target/maven.log',
+				success: function(data) {
+					model.set('output-log', data);
+				}
+			})
+		}
+		return model;
 	}
 })
 

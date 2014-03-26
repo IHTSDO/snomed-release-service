@@ -67,6 +67,9 @@ App.Execution = DS.Model.extend({
 	}.property('status'),
 	isTriggered: function() {
 		return this.get('status') != App.ExecutionStatus.BEFORE_TRIGGER;
+	}.property('status'),
+	isBuilt: function() {
+		return this.get('status') == App.ExecutionStatus.BUILT;
 	}.property('status')
 });
 App.ExecutionStatus = {
