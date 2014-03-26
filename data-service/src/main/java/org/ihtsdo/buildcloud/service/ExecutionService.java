@@ -25,4 +25,6 @@ public interface ExecutionService {
 
 	void updateStatus(String buildCompositeKey, String executionId, String status, String authenticatedId);
 
+	InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, String authenticatedId);
+
 }
