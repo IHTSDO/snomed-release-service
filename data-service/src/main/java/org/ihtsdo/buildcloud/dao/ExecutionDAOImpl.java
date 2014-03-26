@@ -137,7 +137,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private ArrayList<Execution> findExecutions(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionS3BucketName, buildDirectoryPath);
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionS3BucketName, buildDirectoryPath, null, null, 100);
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionS3BucketName, buildDirectoryPath, null, null, 1000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 		List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
 
