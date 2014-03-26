@@ -16,6 +16,7 @@
 				<a href="#" title="Star this build to display it on the home page." data-toggle="tooltip" onclick="$(this).find('span').toggleClass('glyphicon-star-empty'); return false;"><span class="glyphicon glyphicon-star glyphicon-star-empty"></span></a>
 			</li>
 			{{/each}}
+			<li class="no-bullet">{{#link-to}}More...{{/link-to}}</li>
 		</ul>
 		<button class="btn btn-primary btn-md list-align" {{action 'addBuild' this}}>
 			<span class="glyphicon glyphicon-plus"></span> Add a build
