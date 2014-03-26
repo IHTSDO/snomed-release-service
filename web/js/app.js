@@ -450,6 +450,43 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 			execution.set('parent', build);
 			return execution;
 		});
+
+	},
+	setupController: function(controller, model) {
+		controller.set('model', model);
+		controller.onload();
+	},
+	deactivate: function(){
+		this.controller.unload();
+	}
+})
+App.ExecutionController = Ember.ObjectController.extend({
+	onload: function() {
+		var model = this.get('model');
+		App.ExecutionController.updateStatusHalt = false;
+		this.updateStatus(model);
+	},
+	unload: function() {
+		App.ExecutionController.updateStatusHalt = true;
+	},
+	updateStatus: function(model) {
+		var controller = this;
+		$.ajax({
+			url: model._data.url,
+			success: function(data) {
+				var newStatus = data.status;
+				model.set('status', newStatus);
+				if (newStatus == App.ExecutionStatus.BUILT) {
+					// No need to keep updating, status can't change now.
+					App.ExecutionController.updateStatusHalt = true;
+				}
+				if (!App.ExecutionController.updateStatusHalt) {
+					setTimeout(function() {
+						controller.updateStatus(model);
+					}, 1000)
+				}
+			}
+		});
 	}
 })
 App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
