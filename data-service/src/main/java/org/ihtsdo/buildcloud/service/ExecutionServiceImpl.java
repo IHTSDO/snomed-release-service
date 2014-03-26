@@ -69,11 +69,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return dao.loadConfiguration(execution);
 	}
 
-	private Execution getExecution(String buildCompositeKey, String executionId, String authenticatedId) {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
-		return dao.find(build, executionId);
-	}
-
 	@Override
 	public Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
 		Date triggerDate = new Date();
@@ -110,6 +105,17 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
 		Execution.Status status = Execution.Status.valueOf(statusString);
 		dao.updateStatus(execution, status);
+	}
+
+	@Override
+	public InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, String authenticatedId) {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+		return dao.getOutputFile(execution, filePath);
+	}
+
+	private Execution getExecution(String buildCompositeKey, String executionId, String authenticatedId) {
+		Build build = getBuild(buildCompositeKey, authenticatedId);
+		return dao.find(build, executionId);
 	}
 
 	private Build getBuild(String buildCompositeKey, String authenticatedId) {

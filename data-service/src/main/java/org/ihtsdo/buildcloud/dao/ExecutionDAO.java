@@ -29,4 +29,6 @@ public interface ExecutionDAO {
 
 	void updateStatus(Execution execution, Execution.Status newStatus);
 
+	InputStream getOutputFile(Execution execution, String filePath);
+
 }

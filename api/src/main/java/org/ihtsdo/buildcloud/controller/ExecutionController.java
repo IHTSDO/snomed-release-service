@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,6 +17,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -105,6 +107,29 @@ public class ExecutionController {
 		} else {
 			// Ask the client for content length so we may stream to permanent storage.
 			response.setStatus(HttpServletResponse.SC_LENGTH_REQUIRED);
+		}
+	}
+
+	@RequestMapping(value = "/{executionId}/output/**")
+	@ResponseBody
+	public void downloadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+								   HttpServletRequest request,
+								   HttpServletResponse response) throws IOException {
+
+		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		String filePath = path.substring(path.indexOf("/output/") + 8);
+
+		String authenticatedId = SecurityHelper.getSubject();
+		ServletOutputStream outputStream = response.getOutputStream();
+		InputStream outputFileInputStream = executionService.getOutputFile(buildCompositeKey, executionId, filePath, authenticatedId);
+		if (outputFileInputStream != null) {
+			try {
+				StreamUtils.copy(outputFileInputStream, outputStream);
+			} finally {
+				outputFileInputStream.close();
+			}
+		} else {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		}
 	}
 

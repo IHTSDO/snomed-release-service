@@ -110,6 +110,17 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 
+	@Override
+	public InputStream getOutputFile(Execution execution, String filePath) {
+		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
+		try {
+			S3Object object = s3Client.getObject(executionS3BucketName, outputFilePath);
+			return object.getObjectContent();
+		} catch (AmazonS3Exception e) {
+			return returnNullOrThrow(e);
+		}
+	}
+
 	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
 		File[] files = sourceDirectory.listFiles();
 		for (File file : files) {
@@ -182,6 +193,14 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		}
 		zipOutputStream.close();
+	}
+
+	private InputStream returnNullOrThrow(AmazonS3Exception e) {
+		if (e.getStatusCode() == 404) {
+			return null;
+		} else {
+			throw e;
+		}
 	}
 
 	@Required
