@@ -69,18 +69,19 @@ public class ExecutionDAOImplTest {
 		mocksControl.replay();
 		executionDAO.save(execution, "");
 		mocksControl.verify();
+		
 
-		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 
 	@Test
 	public void testFindAll() {
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-02-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-03-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-03-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
@@ -114,8 +115,8 @@ public class ExecutionDAOImplTest {
 	public void testFindOne() {
 		String executionId = "2014-02-04T10:30:01";
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/1_20130731_international_release/" + executionId + "/configuration.json");
-		addObjectSummary(objectListing, "international/1_20130731_international_release/" + executionId + "/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/" + executionId + "/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/" + executionId + "/status:BEFORE_TRIGGER");
 		Capture<ListObjectsRequest> listObjectsRequestCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
@@ -142,8 +143,8 @@ public class ExecutionDAOImplTest {
 		executionDAO.queueForBuilding(execution);
 		mocksControl.verify();
 
-		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
-		Assert.assertEquals("international/1_20140731_international_release/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
 		List<String> capturedQueueItems = dummyBuildQueue.getCapturedQueueItems();
 		Assert.assertEquals(1, capturedQueueItems.size());
 		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", capturedQueueItems.get(0));

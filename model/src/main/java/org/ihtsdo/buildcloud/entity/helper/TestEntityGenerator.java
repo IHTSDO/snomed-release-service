@@ -30,14 +30,14 @@ public class TestEntityGenerator {
 	
 	//Build array dimensions are extension, products, build
 	//So those empty arrays there are for "Medical Devices", et al.
-	public static final String [][][] buildNames = { 	{ {	"20140731 International Release",
-															"20150131 International Release - Biannual",
-															"20150131 International Release - Nightly",
-															"20150731 International Release - Biannual"} , {}, {}, {}, {} },
-														{ {	"20141031 Spanish Release",
-															"20150430 Spanish Release - Semestral",
-															"20150430 Spanish Release - Nocturno",
-															"20150430 Spanish Release - Semestral"}}};
+	public static final String [][][] buildNames = { 	{ {	"20140731 International Release Build",
+															"20140131 International Release Build",
+															"20130731 International Release Build",
+															"20130131 International Release Build"} , {}, {}, {}, {} },
+														{ {	"20140731 Spanish Release Build",
+															"20140131 Spanish Release Build",
+															"20130731 Spanish Release Build",
+															"20130131 Spanish Release Build"}}};
 	
 	public static final int totalStarredBuilds = 5; 
 	
