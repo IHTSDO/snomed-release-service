@@ -58,19 +58,22 @@ App.Execution = DS.Model.extend({
 	statusTitle: function() {
 		var status = this.get('status');
 		switch (status) {
-			case App.ExecutionStatus.beforeTrigger:
+			case App.ExecutionStatus.BEFORE_TRIGGER:
 				return 'Before Trigger'
 		}
 	}.property('status'),
 	isNotTriggered: function() {
-		return this.get('status') == App.ExecutionStatus.beforeTrigger;
+		return this.get('status') == App.ExecutionStatus.BEFORE_TRIGGER;
 	}.property('status'),
 	isTriggered: function() {
-		return this.get('status') != App.ExecutionStatus.beforeTrigger;
+		return this.get('status') != App.ExecutionStatus.BEFORE_TRIGGER;
 	}.property('status')
 });
 App.ExecutionStatus = {
-	beforeTrigger: 'BEFORE_TRIGGER'
+	BEFORE_TRIGGER: 'BEFORE_TRIGGER',
+	QUEUED: 'QUEUED',
+	BUILDING: 'BUILDING',
+	BUILT: 'BUILT'
 }
 App.ExecutionConfiguration = DS.Model.extend({
 	dummy: DS.attr(),
