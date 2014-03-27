@@ -24,7 +24,9 @@ li {
 .nav .nav {
 	margin-bottom: 8px;
 }
-
+.jumbotron {
+    margin-bottom: 10px;
+}
 .add-button span {
     margin: 10px 2px;
 }
