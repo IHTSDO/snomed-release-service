@@ -15,7 +15,7 @@ App = Ember.Application.create({
 
 App.Router.map(function() {
 	this.resource('pre-login');
-	this.resource('release-centre', { path: '/:releaseCentre_id' }, function() {
+	this.resource('release-center', { path: '/:releaseCenter_id' }, function() {
 		this.resource('rule-sets', function() {
 //			this.resource('rule-set', { path: '/:ruleSet_id' });
 			this.resource('rule-set', { path: '/international-edition-only' });
@@ -40,13 +40,14 @@ App.Router.map(function() {
 					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
 						this.route('debug');
+						this.route('output');
 					});
 				});
 			});
 		});
 	});
 	this.resource('admin', function() {
-		this.resource('create-release-centre');
+		this.resource('create-release-center');
 	});
 });
 
@@ -110,8 +111,8 @@ App.PreLoginRoute = App.AbstractRoute.extend();
 App.IndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return {
-			releaseCentres: this.store.filter('centre', {}, function(centre) {
-				return !centre.get('removed');
+			releaseCenters: this.store.filter('center', {}, function(center) {
+				return !center.get('removed');
 							})
 		}
 	},
@@ -119,8 +120,8 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		addProduct: function(extension) {
 			this.send('openModal', 'create-product', extension);
 		},
-		addExtension: function(releaseCentre) {
-			this.send('openModal', 'create-extension', releaseCentre);
+		addExtension: function(releaseCenter) {
+			this.send('openModal', 'create-extension', releaseCenter);
 		}		
 	}
 })
@@ -129,38 +130,38 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 App.AdminRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return {
-			releaseCentres: this.store.filter('centre', {}, function(centre) {
-				return !centre.get('removed');
+			releaseCenters: this.store.filter('center', {}, function(center) {
+				return !center.get('removed');
 							})
 		}
 	}
 })
 
-// ReleaseCentre
-App.ReleaseCentreRoute = App.AuthorisedRoute.extend({
+// ReleaseCenter
+App.ReleaseCenterRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		return this.store.find('centre', params.releaseCentre_id);
+		return this.store.find('center', params.releaseCenter_id);
 	}
 })
-App.ReleaseCentreIndexRoute = App.AuthorisedRoute.extend({
+App.ReleaseCenterIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
-		return this.modelFor('release-centre');
+		return this.modelFor('release-center');
 	},
 	actions: {
-		addExtension: function(releaseCentre) {
-			this.send('openModal', 'create-extension', releaseCentre);
+		addExtension: function(releaseCenter) {
+			this.send('openModal', 'create-extension', releaseCenter);
 		}			
 	}
 })
-App.CreateReleaseCentreView = Ember.View.extend({
-	templateName: 'admin/create-release-centre',
+App.CreateReleaseCenterView = Ember.View.extend({
+	templateName: 'admin/create-release-center',
 	didInsertElement: function() {
 		this.controller.send('modalInserted');
 	}
 })
-App.CreateReleaseCentreController = Ember.ObjectController.extend({
+App.CreateReleaseCenterController = Ember.ObjectController.extend({
 	getModel: function() {
-		return this.store.createRecord('centre');
+		return this.store.createRecord('center');
 	},
 	actions: {
 		submit: function() {
@@ -174,7 +175,7 @@ App.CreateReleaseCentreController = Ember.ObjectController.extend({
 // Rule Set
 App.RuleSetsRoute = App.AuthorisedRoute.extend({
 	model: function() {
-		return this.modelFor('release-centre');
+		return this.modelFor('release-center');
 	}
 })
 App.RuleSetsIndexRoute = App.AuthorisedRoute.extend({
@@ -191,10 +192,10 @@ App.RuleSetRoute = App.AuthorisedRoute.extend({
 // Extension
 App.ExtensionRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		var centre = this.modelFor('release-centre');
-		return centre.get('extensions').then(function(extensions) {
+		var center = this.modelFor('release-center');
+		return center.get('extensions').then(function(extensions) {
 			var extension = extensions.findBy('id', params.extension_id);
-			extension.set('parent', centre);
+			extension.set('parent', center);
 			return  extension;
 		});
 	}
@@ -216,17 +217,17 @@ App.CreateExtensionView = Ember.View.extend({
 	}
 })
 App.CreateExtensionController = Ember.ObjectController.extend({
-	getModel: function(releaseCentre) {
+	getModel: function(releaseCenter) {
 		var extension = this.store.createRecord('extension', {
-			parent: releaseCentre
+			parent: releaseCenter
 		});
 		return  extension;
 	},
 	actions: {
 		submit: function() {
 			var extension = this.get('model');
-			var releaseCentre = extension.get('parent');
-			releaseCentre.get('extensions').pushObject(extension);
+			var releaseCenter = extension.get('parent');
+			releaseCenter.get('extensions').pushObject(extension);
 			extension.save();
 			this.send('closeModal');
 		}
@@ -450,6 +451,43 @@ App.ExecutionRoute = App.AuthorisedRoute.extend({
 			execution.set('parent', build);
 			return execution;
 		});
+
+	},
+	setupController: function(controller, model) {
+		controller.set('model', model);
+		controller.onload();
+	},
+	deactivate: function(){
+		this.controller.unload();
+	}
+})
+App.ExecutionController = Ember.ObjectController.extend({
+	onload: function() {
+		var model = this.get('model');
+		App.ExecutionController.updateStatusHalt = false;
+		this.updateStatus(model);
+	},
+	unload: function() {
+		App.ExecutionController.updateStatusHalt = true;
+	},
+	updateStatus: function(model) {
+		var controller = this;
+		$.ajax({
+			url: model._data.url,
+			success: function(data) {
+				var newStatus = data.status;
+				model.set('status', newStatus);
+				if (newStatus == App.ExecutionStatus.BUILT) {
+					// No need to keep updating, status can't change now.
+					App.ExecutionController.updateStatusHalt = true;
+				}
+				if (!App.ExecutionController.updateStatusHalt) {
+					setTimeout(function() {
+						controller.updateStatus(model);
+					}, 1000)
+				}
+			}
+		});
 	}
 })
 App.ExecutionIndexRoute = App.AuthorisedRoute.extend({
@@ -482,6 +520,22 @@ App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
 App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('execution');
+	}
+})
+App.ExecutionOutputRoute = App.AuthorisedRoute.extend({
+	model: function(params) {
+		var model = this.modelFor('execution');
+		var log = model.get('output-log');
+		if (!log) {
+			model.set('output-log', 'Loading...');
+			$.ajax({
+				url: model._data.url + '/output/target/maven.log',
+				success: function(data) {
+					model.set('output-log', data);
+				}
+			})
+		}
+		return model;
 	}
 })
 

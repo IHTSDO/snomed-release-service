@@ -7,8 +7,8 @@ import java.util.GregorianCalendar;
 
 public class TestEntityFactory extends TestEntityGenerator {
 
-	public Package createPackage(String releaseCentreName, String releaseCentreShortName, String extensionName, String productName, String buildName, String packageName) {
-		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreName, releaseCentreShortName);
+	public Package createPackage(String releaseCenterName, String releaseCenterShortName, String extensionName, String productName, String buildName, String packageName) {
+		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterName, releaseCenterShortName);
 		Extension extension = new Extension(extensionName);
 		Product product = new Product(productName);
 		Build build = new Build(1L, buildName);
@@ -18,21 +18,21 @@ public class TestEntityFactory extends TestEntityGenerator {
 		build.addPackage(aPackage);
 		product.addBuild(build);
 		extension.addProduct(product);
-		releaseCentre.addExtension(extension);
+		releaseCenter.addExtension(extension);
 		return aPackage;
 	}
 	
 	public Build createBuild(){
-		//TODO Once we have sets, we'll be able to use the test release centre directly, and navigate to find a build
-		ReleaseCentre releaseCentre = new ReleaseCentre(releaseCentreNames[0], releaseCentreShortNames[0]);
+		//TODO Once we have sets, we'll be able to use the test release center directly, and navigate to find a build
+		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
 		Extension extension = new Extension(extensionNames[0]);
 		Product product = new Product(productNames[0][0]);
-		Build build = new Build(1L,buildNames[0][0][3]);
+		Build build = new Build(1L,buildNames[0][0][1]);
 
 		addPackagesToBuild(build);
 		product.addBuild(build);
 		extension.addProduct(product);
-		releaseCentre.addExtension(extension);
+		releaseCenter.addExtension(extension);
 		
 		return build;
 	}

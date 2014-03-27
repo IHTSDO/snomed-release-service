@@ -30,9 +30,9 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select inputFile " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
 				"join build.packages package " +

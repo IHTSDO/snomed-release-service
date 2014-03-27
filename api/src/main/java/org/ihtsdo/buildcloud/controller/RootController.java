@@ -17,7 +17,7 @@ public class RootController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] ROOT_LINK = {"centres", "builds"};
+	private static final String[] ROOT_LINK = {"centers", "builds"};
 
 	@RequestMapping
 	@ResponseBody

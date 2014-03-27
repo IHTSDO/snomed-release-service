@@ -1,6 +1,6 @@
 <ol class="breadcrumb">
 	<li><a href="#">Home</a></li>
-	<li>{{#link-to "release-centre" parent.parent}}{{parent.parent.shortName}}{{/link-to}}</li>
+	<li>{{#link-to "release-center" parent.parent}}{{parent.parent.shortName}}{{/link-to}}</li>
 	<li>{{#link-to "extension" parent}}{{parent.name}}{{/link-to}}</li>
 	<li>{{name}}</li>
 </ol>
@@ -16,6 +16,7 @@
 				<a href="#" title="Star this build to display it on the home page." data-toggle="tooltip" onclick="$(this).find('span').toggleClass('glyphicon-star-empty'); return false;"><span class="glyphicon glyphicon-star glyphicon-star-empty"></span></a>
 			</li>
 			{{/each}}
+			<li class="no-bullet">{{#link-to}}More...{{/link-to}}</li>
 		</ul>
 		<button class="btn btn-primary btn-md list-align" {{action 'addBuild' this}}>
 			<span class="glyphicon glyphicon-plus"></span> Add a build
@@ -23,9 +24,7 @@
 	</div>
 	<div class="col-sm-6">
 		<h3>Tasks</h3>
-		<h4>Some Task</h4>
-		<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed quis felis gravida, consectetur velit vitae, aliquet quam. Curabitur nisi leo, bibendum ac augue quis, euismod auctor tellus. Donec vitae fringilla erat. Suspendisse id imperdiet mauris. Quisque fermentum convallis velit, sagittis feugiat ante malesuada luctus. </p>
-		<h4>Some Task</h4>
-		<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed quis felis gravida, consectetur velit vitae, aliquet quam. Curabitur nisi leo, bibendum ac augue quis, euismod auctor tellus. Donec vitae fringilla erat. Suspendisse id imperdiet mauris. Quisque fermentum convallis velit, sagittis feugiat ante malesuada luctus. </p>
+		<h4>Builds</h4>
+		<p>Click the name of the build to navigate to a page which shows the packages within that build and the build's recent executions.</p>
 	</div>
 </div>

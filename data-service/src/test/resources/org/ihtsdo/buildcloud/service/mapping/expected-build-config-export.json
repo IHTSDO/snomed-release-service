@@ -19,9 +19,9 @@
 			"extension" : {
 				"id" : "snomed_ct_international_edition",
 				"name" : "SNOMED CT International Edition",
-				"releaseCentre" : {
+				"releaseCenter" : {
 					"id" : "international",
-					"name" : "International Release Centre",
+					"name" : "International Release Center",
 					"shortName" : "International"
 				}
 			}

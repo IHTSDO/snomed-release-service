@@ -2,8 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import java.util.List;
 
-import org.ihtsdo.buildcloud.entity.ReleaseCentre;
-import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -18,24 +17,24 @@ import org.springframework.transaction.annotation.Transactional;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
-public class ReleaseCentreServiceImplTest extends TestEntityGenerator {
+public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseCentreServiceImplTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseCenterServiceImplTest.class);
 	
 	public static final String AUTHENTICATED_ID = "test";
 	
 	@Autowired
-	private ReleaseCentreService rcs;
+	private ReleaseCenterService rcs;
 
 	@Test
 	public void testCreate() throws Exception{
 
 		Assert.assertNotNull(rcs);
-		List<ReleaseCentre> releaseCenters = rcs.findAll(AUTHENTICATED_ID);
+		List<ReleaseCenter> releaseCenters = rcs.findAll(AUTHENTICATED_ID);
 		int before = releaseCenters.size();
 		//LOGGER.warn("Found " + before + " release centers");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
-		rcs.create("my test releaseCentre name", "some short name", AUTHENTICATED_ID);
+		rcs.create("my test releaseCenter name", "some short name", AUTHENTICATED_ID);
 		int after = rcs.findAll(AUTHENTICATED_ID).size();
 		//LOGGER.warn("After create, found " + after + " release centers");
 		Assert.assertEquals(before + 1, after);

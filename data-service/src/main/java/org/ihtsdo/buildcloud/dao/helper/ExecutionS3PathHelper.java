@@ -11,9 +11,9 @@ public class ExecutionS3PathHelper {
 	private static final String OUTPUT = "output/";
 
 	public StringBuffer getBuildPath(Build build) {
-		String releaseCentreBusinessKey = build.getProduct().getExtension().getReleaseCentre().getBusinessKey();
+		String releaseCenterBusinessKey = build.getProduct().getExtension().getReleaseCenter().getBusinessKey();
 		StringBuffer path = new StringBuffer();
-		path.append(releaseCentreBusinessKey);
+		path.append(releaseCenterBusinessKey);
 		path.append(SEPARATOR);
 		path.append(build.getCompositeKey());
 		path.append(SEPARATOR);
@@ -39,8 +39,8 @@ public class ExecutionS3PathHelper {
 		return getFilePath(execution, CONFIG_JSON);
 	}
 
-	public String getStatusFilePath(Execution execution, String status) {
-		return getExecutionPath(execution).append(STATUS_PREFIX).append(status).toString();
+	public String getStatusFilePath(Execution execution, Execution.Status status) {
+		return getExecutionPath(execution).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
 
 	public String getOutputFilePath(Execution execution, String outputRelativePath) {

@@ -32,7 +32,7 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 	@Test
 	public void testFindForExtension() {
 		EnumSet<FilterOption> filterOff = EnumSet.noneOf(FilterOption.class);
-		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]), 
+		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]),
 												 EntityHelper.formatAsBusinessKey(extensionNames[0]), 
 												 filterOff, 
 												 AUTHENTICATED_ID);
@@ -42,7 +42,7 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 	@Test
 	public void testFindForExtension_Filtered() {
 		EnumSet<FilterOption> filterOn = EnumSet.of(FilterOption.STARRED_ONLY);
-		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]), 
+		List<Build> builds = bs.findForExtension(EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]),
 												 EntityHelper.formatAsBusinessKey(extensionNames[0]), 
 												 filterOn, 
 												 AUTHENTICATED_ID);
@@ -58,7 +58,7 @@ public class BuildServiceImplTest extends TestEntityGenerator {
 		int before = builds.size();
 		//LOGGER.warn("Found " + before + " builds");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
-		bs.create(EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]), 
+		bs.create(EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]),
 				  EntityHelper.formatAsBusinessKey(extensionNames[0]), 
 				  EntityHelper.formatAsBusinessKey(productNames[0][0]), 
 				  "my test build name", 

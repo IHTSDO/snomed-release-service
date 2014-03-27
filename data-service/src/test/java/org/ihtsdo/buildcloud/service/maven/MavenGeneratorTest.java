@@ -70,14 +70,14 @@ public class MavenGeneratorTest {
 
 	@Test
 	public void testGetArtifact() throws IOException {
-		Package aPackage = testEntityFactory.createPackage("the centre", "centre", "ex", "prod", "build1", "myPackage");
+		Package aPackage = testEntityFactory.createPackage("the center", "center", "ex", "prod", "build1", "myPackage");
 		InputFile in1 = new InputFile("in1", "1.0");
 		aPackage.addInputFile(in1);
-		Assert.assertEquals("centre", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCentre().getBusinessKey());
+		Assert.assertEquals("center", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCenter().getBusinessKey());
 
 		mavenGenerator.generateArtifactAndGroupId(in1);
 
-		Assert.assertEquals("org.ihtsdo.release.centre.ex.prod.build1", in1.getGroupId());
+		Assert.assertEquals("org.ihtsdo.release.center.ex.prod.build1", in1.getGroupId());
 		Assert.assertEquals("mypackage.input.in1", in1.getArtifactId());
 		Assert.assertEquals("1.0", in1.getVersion());
 	}

@@ -57,7 +57,7 @@ public class HypermediaGeneratorTest {
 		builds.add(build);
 
 		String expected = FileCopyUtils.copyToString(new InputStreamReader(getClass().getResourceAsStream("expected-build-listing.json")));
-		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/centres/international/extensions/snomed_ct_international_edition/products/snomed_ct_international_edition/builds")).anyTimes();
+		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_international_edition/builds")).anyTimes();
 		mocksControl.replay();
 
 		List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(builds, mockServletRequest, BuildController.BUILD_LINKS, "/builds");
