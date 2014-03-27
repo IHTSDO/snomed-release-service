@@ -9,7 +9,7 @@ import org.ihtsdo.buildcloud.entity.ReleaseCentre;
 
 public class TestEntityGenerator {
 
-	public static final String [] releaseCentreNames = {"International Release Centre"};
+	public static final String [] releaseCentreNames = {"International Release Center"};
 
 	public static final String [] releaseCentreShortNames = {"International"};
 
