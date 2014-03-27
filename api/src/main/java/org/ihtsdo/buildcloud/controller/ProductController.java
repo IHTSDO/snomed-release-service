@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products")
+@RequestMapping("/centers/{releaseCenterBusinessKey}/extensions/{extensionBusinessKey}/products")
 public class ProductController {
 
 	@Autowired
@@ -30,15 +30,15 @@ public class ProductController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getProducts(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
+	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
 		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		String authenticatedId = SecurityHelper.getSubject();
-		List<Product> products = productService.findAll(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
+		List<Product> products = productService.findAll(releaseCenterBusinessKey, extensionBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createProduct(@PathVariable String releaseCentreBusinessKey,
+	public ResponseEntity<Map> createProduct(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws IOException {
@@ -46,16 +46,16 @@ public class ProductController {
 		String name = json.get("name");
 
 		String authenticatedId = SecurityHelper.getSubject();
-		Product product = productService.create(releaseCentreBusinessKey, extensionBusinessKey, name, authenticatedId);
+		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name, authenticatedId);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(product, request, PRODUCT_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
-	public Map getProduct(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Product product = productService.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);
 	}
 

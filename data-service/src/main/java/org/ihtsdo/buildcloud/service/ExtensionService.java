@@ -6,8 +6,8 @@ import java.util.List;
 
 public interface ExtensionService extends EntityService<Extension> {
 
-	List<Extension> findAll(String releaseCentreBusinessKey, String oauthId);
-	Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId);
-	Extension create(String releaseCentreBusinessKey, String name, String authenticatedId);
+	List<Extension> findAll(String releaseCenterBusinessKey, String oauthId);
+	Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, String oauthId);
+	Extension create(String releaseCenterBusinessKey, String name, String authenticatedId);
 
 }

@@ -9,20 +9,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds")
+@RequestMapping("/centers/{releaseCenterBusinessKey}/extensions/{extensionBusinessKey}/products/{productBusinessKey}/builds")
 public class ProductBuildController {
 
 	@Autowired
@@ -33,16 +27,16 @@ public class ProductBuildController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCentreBusinessKey,
+	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterBusinessKey,
 											   @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
 											   HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findForProduct(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createBuild(@PathVariable String releaseCentreBusinessKey,
+	public ResponseEntity<Map> createBuild(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
@@ -51,7 +45,7 @@ public class ProductBuildController {
 		String name = json.get("name");
 
 		String authenticatedId = SecurityHelper.getSubject();
-		Build build = buildService.create(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
+		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(build, request, BuildController.BUILD_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}		

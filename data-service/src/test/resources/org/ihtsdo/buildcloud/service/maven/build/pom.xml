@@ -6,7 +6,7 @@
 	<version>1.0</version>
 	<packaging>pom</packaging>
 
-	<name>Biannual (Spanish Edition, International, International Release Centre)</name>
+	<name>Biannual (Spanish Edition, International, International Release Center)</name>
 
 	<modules>
 		<module>packageA</module>

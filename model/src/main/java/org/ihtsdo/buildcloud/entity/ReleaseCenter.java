@@ -11,7 +11,7 @@ import java.util.List;
 
 @Entity
 @JsonPropertyOrder({"id"})
-public class ReleaseCentre {
+public class ReleaseCenter {
 
 	@Id
 	@GeneratedValue
@@ -26,17 +26,17 @@ public class ReleaseCentre {
 
 	private String shortName;
 
-	@OneToMany(mappedBy = "releaseCentre")
+	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
 	private List<Extension> extensions;
 
 	private boolean removed;
 
-	public ReleaseCentre() {
+	public ReleaseCenter() {
 		extensions = new ArrayList<>();
 	}
 
-	public ReleaseCentre(String name, String shortName) {
+	public ReleaseCenter(String name, String shortName) {
 		this();
 		this.name = name;
 		setShortName(shortName);
@@ -44,7 +44,7 @@ public class ReleaseCentre {
 
 	public void addExtension(Extension extension) {
 		extensions.add(extension);
-		extension.setReleaseCentre(this);
+		extension.setReleaseCenter(this);
 	}
 
 	public Long getId() {

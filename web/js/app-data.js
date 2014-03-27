@@ -2,7 +2,7 @@ App.DSModel = DS.Model.extend(Ember.Validations.Mixin);
 
 // Models
 
-App.Centre = App.DSModel.extend({
+App.Center = App.DSModel.extend({
 	name: DS.attr(),
 	shortName: DS.attr(),
 	extensions: DS.hasMany('extension', { async: true }),
@@ -19,7 +19,7 @@ App.Centre = App.DSModel.extend({
 	}
 });
 App.Extension = DS.Model.extend({
-	parent: DS.belongsTo('centre'),
+	parent: DS.belongsTo('center'),
 	name: DS.attr(),
 	products: DS.hasMany('product', { async: true }),
 	//TODO: ONLY FOR DEMO, UNTIL WE GET STARRED BUILDS RETURNING FROM API

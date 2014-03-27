@@ -6,10 +6,10 @@ import java.util.List;
 
 public interface ProductService extends EntityService<Product> {
 
-	List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) throws Exception;
+	List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, String oauthId) throws Exception;
 
-	Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId);
+	Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId);
 
-	Product create(String releaseCentreBusinessKey, String extensionBusinessKey, String name, String authenticatedId);
+	Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, String authenticatedId);
 
 }

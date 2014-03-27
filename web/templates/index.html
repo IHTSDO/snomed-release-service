@@ -3,15 +3,15 @@
 		<li><a href="#">Home</a></li>
 	</ol>
 
-	{{#each releaseCentre in releaseCentres}}
+	{{#each releaseCenter in releaseCenters}}
 
 	<div class="jumbotron">
-			<h2 style="text-align: center">{{releaseCentre.name}} Dashboard</h2>
+			<h2 style="text-align: center">{{releaseCenter.name}} Dashboard</h2>
 	</div>
 	<div class="row">
 	<div class="col-md-8">
 			<div class="extensions">
-			{{#each extension in releaseCentre.extensions}}
+			{{#each extension in releaseCenter.extensions}}
 				<h2 class="page-header">{{extension.name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
 				<div class="row">
 					<div class="col-sm-6">
@@ -19,7 +19,7 @@
 						<ul>
 							{{#each product in extension.products}}
 							<li>
-								{{#link-to 'product' releaseCentre extension product}}
+								{{#link-to 'product' releaseCenter extension product}}
 								{{product.name}}
 								{{/link-to}}
 							</li>
@@ -34,19 +34,19 @@
 						{{#if extension.isInternationalEdition}}
 						<ul>
 							<li title="Success" data-toggle="tooltip" data-placement="right">
-								{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" }}20140731 International Release Build{{/link-to}}
-								{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" title='Last Run: 28 Mar, 2014 14:42:00 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
+								{{#link-to 'build' releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" }}20140731 International Release Build{{/link-to}}
+								{{#link-to "execution" releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" title='Last Run: 28 Mar, 2014 14:42:00 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
 							</li>
 							<li title="Success" data-toggle="tooltip" data-placement="right">
-								{{#link-to 'build' releaseCentre "snomed_ct_international_edition" "snomed_ct_release" "2_20140131_international_release_build" }}20140131 International Release Build{{/link-to}}
-								{{#link-to "execution" releaseCentre "snomed_ct_international_edition" "snomed_ct_release" "2_20140131_international_release_build" title='Last Run: 17 Feb, 2014 18:55:12 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
+								{{#link-to 'build' releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "2_20140131_international_release_build" }}20140131 International Release Build{{/link-to}}
+								{{#link-to "execution" releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "2_20140131_international_release_build" title='Last Run: 17 Feb, 2014 18:55:12 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
 							</li>
 						</ul>
 						{{/if}}
 					</div>
 				</div>
 				{{/each}}
-				<button class="btn btn-primary btn-md extra-drop" {{action 'addExtension' releaseCentre}}>
+				<button class="btn btn-primary btn-md extra-drop" {{action 'addExtension' releaseCenter}}>
 					<span class="glyphicon glyphicon-plus"></span> Add an Extension
 				</button>
 			</div>

@@ -41,25 +41,25 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 	
 	@Override
-	public List<Build> findForProduct(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
-		List<Build> builds = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
+	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
+		List<Build> builds = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
 	}
 	
 	@Override
-	public List<Build> findForExtension(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
-		List<Build> builds = buildDAO.findAll(releaseCentreBusinessKey, extensionBusinessKey,  filterOptions, authenticatedId);
+	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey,  filterOptions, authenticatedId);
 		Hibernate.initialize(builds);
 		return builds;
 	}
 
 	@Override
-	public Build create(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{
-		Product product = productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
 		
 		if (product == null) {
-			throw new Exception ("Unable to find product with path: " + releaseCentreBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
+			throw new Exception ("Unable to find product with path: " + releaseCenterBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
 		}
 		
 		Build build = new Build(name);
