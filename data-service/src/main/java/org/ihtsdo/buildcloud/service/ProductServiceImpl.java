@@ -27,11 +27,11 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, String oauthId) throws Exception{
-		Extension extension = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, oauthId);
+	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, String oauthId) throws Exception{
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, oauthId);
 		
 		if (extension == null) {
-			throw new Exception ("Unable to find extension with path: " + releaseCentreBusinessKey + "/" + extensionBusinessKey);
+			throw new Exception ("Unable to find extension with path: " + releaseCenterBusinessKey + "/" + extensionBusinessKey);
 		}
 		List<Product> products = extension.getProducts();
 		Hibernate.initialize(products);
@@ -39,13 +39,13 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
-		return productDAO.find(releaseCentreBusinessKey, extensionBusinessKey, productBusinessKey, oauthId);
+	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
+		return productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, oauthId);
 	}
 
 	@Override
-	public Product create(String releaseCentreBusinessKey, String extensionBusinessKey, String name, String authenticatedId) {
-		Extension extension = extensionDAO.find(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
+	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, String authenticatedId) {
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedId);
 		Product product = new Product(name);
 		extension.addProduct(product);
 		productDAO.save(product);

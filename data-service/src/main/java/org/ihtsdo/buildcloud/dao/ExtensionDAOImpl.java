@@ -11,18 +11,18 @@ import org.springframework.stereotype.Repository;
 public class ExtensionDAOImpl extends EntityDAOImpl<Extension> implements ExtensionDAO {
 
 	@Override
-	public Extension find(String releaseCentreBusinessKey, String extensionBusinessKey, String authenticatedId) {
+	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select extension " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"where membership.user.oauthId = :oauthId " +
-				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
+				"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
 				"and extension.businessKey = :extensionBusinessKey " +
 				"order by extension.id ");
 		query.setString("oauthId", authenticatedId);
-		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
+		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		return (Extension) query.uniqueResult();
 	}

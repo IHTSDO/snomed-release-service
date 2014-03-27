@@ -16,7 +16,7 @@ public class User {
 	private String oauthId;
 
 	@OneToMany(mappedBy = "user")
-	private List<ReleaseCentreMembership> releaseCentreMemberships;
+	private List<ReleaseCenterMembership> releaseCenterMemberships;
 
 	public User() {
 	}
@@ -42,12 +42,12 @@ public class User {
 		this.oauthId = oauthId;
 	}
 
-	public List<ReleaseCentreMembership> getReleaseCentreMemberships() {
-		return releaseCentreMemberships;
+	public List<ReleaseCenterMembership> getReleaseCenterMemberships() {
+		return releaseCenterMemberships;
 	}
 
-	public void setReleaseCentreMemberships(List<ReleaseCentreMembership> releaseCentreMemberships) {
-		this.releaseCentreMemberships = releaseCentreMemberships;
+	public void setReleaseCenterMemberships(List<ReleaseCenterMembership> releaseCenterMemberships) {
+		this.releaseCenterMemberships = releaseCenterMemberships;
 	}
 
 }

@@ -5,6 +5,6 @@
 	<artifactId>spanish_edition</artifactId>
 	<version>1.0</version>
 
-	<name>Biannual (Spanish Edition, International, International Release Centre)</name>
+	<name>Biannual (Spanish Edition, International, International Release Center)</name>
 
 </project>

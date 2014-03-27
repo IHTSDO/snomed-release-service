@@ -10,20 +10,20 @@ import org.springframework.stereotype.Repository;
 public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO {
 
 	@Override
-	public Product find(String releaseCentreBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
+	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"where membership.user.oauthId = :oauthId " +
-				"and releaseCentre.businessKey = :releaseCentreBusinessKey " +
+				"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
 				"and extension.businessKey = :extensionBusinessKey " +
 				"and product.businessKey = :productBusinessKey " +
 				"order by product.id ");
 		query.setString("oauthId", authenticatedId);
-		query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
+		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);
 		query.setString("productBusinessKey", productBusinessKey);
 		return (Product) query.uniqueResult();

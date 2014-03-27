@@ -6,35 +6,35 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class ReleaseCentreMembership {
+public class ReleaseCenterMembership {
 
 	@Id
 	@GeneratedValue
 	private Long id;
 
 	@ManyToOne
-	private ReleaseCentre releaseCentre;
+	private ReleaseCenter releaseCenter;
 
 	@ManyToOne
 	private User user;
 
 	private Role role;
 
-	public ReleaseCentreMembership() {
+	public ReleaseCenterMembership() {
 	}
 
-	public ReleaseCentreMembership(ReleaseCentre releaseCentre, User user) {
-		this.releaseCentre = releaseCentre;
+	public ReleaseCenterMembership(ReleaseCenter releaseCenter, User user) {
+		this.releaseCenter = releaseCenter;
 		this.user = user;
 		this.role = Role.VIEW;
 	}
 
-	public ReleaseCentre getReleaseCentre() {
-		return releaseCentre;
+	public ReleaseCenter getReleaseCenter() {
+		return releaseCenter;
 	}
 
-	public void setReleaseCentre(ReleaseCentre releaseCentre) {
-		this.releaseCentre = releaseCentre;
+	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+		this.releaseCenter = releaseCenter;
 	}
 
 	public User getUser() {

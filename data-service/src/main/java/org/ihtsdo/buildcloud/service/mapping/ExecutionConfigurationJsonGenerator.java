@@ -23,7 +23,7 @@ public class ExecutionConfigurationJsonGenerator {
 	private static final String INPUT_FILES = "inputFiles";
 	private static final String PRODUCT = "product";
 	private static final String EXTENSION = "extension";
-	private static final String RELEASE_CENTRE = "releaseCentre";
+	private static final String RELEASE_CENTER = "releaseCenter";
 	private static final String GROUP_ID = "groupId";
 	private static final String ARTIFACT_ID = "artifactId";
 	private static final String VERSION = "version";
@@ -65,15 +65,15 @@ public class ExecutionConfigurationJsonGenerator {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, extension.getBusinessKey());
 		config.put(NAME, extension.getName());
-		config.put(RELEASE_CENTRE, getConfig(extension.getReleaseCentre()));
+		config.put(RELEASE_CENTER, getConfig(extension.getReleaseCenter()));
 		return config;
 	}
 
-	private Map<String, Object> getConfig(ReleaseCentre releaseCentre) {
+	private Map<String, Object> getConfig(ReleaseCenter releaseCenter) {
 		Map<String, Object> config = new LinkedHashMap<>();
-		config.put(ID, releaseCentre.getBusinessKey());
-		config.put(NAME, releaseCentre.getName());
-		config.put(SHORT_NAME, releaseCentre.getShortName());
+		config.put(ID, releaseCenter.getBusinessKey());
+		config.put(NAME, releaseCenter.getName());
+		config.put(SHORT_NAME, releaseCenter.getShortName());
 		return config;
 	}
 

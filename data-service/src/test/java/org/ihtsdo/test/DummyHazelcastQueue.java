@@ -4,17 +4,34 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class DummyHazelcastQueue<T> implements IQueue<T> {
 
+	private List<T> capturedQueueItems;
+
+	public DummyHazelcastQueue() {
+		capturedQueueItems = new ArrayList<>();
+	}
 
 	@Override
 	public boolean add(T t) {
-		return false;
+		capturedQueueItems.add(t);
+		return true;
 	}
+
+	public List<T> getCapturedQueueItems() {
+		return capturedQueueItems;
+	}
+
+
+	//
+	// Generated implementations below this line ...
+	//
 
 	@Override
 	public boolean offer(T t) {

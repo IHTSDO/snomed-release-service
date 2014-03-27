@@ -27,4 +27,8 @@ public interface ExecutionDAO {
 
 	void saveOutputFile(Execution execution, String filePath, InputStream inputStream, Long size);
 
+	void updateStatus(Execution execution, Execution.Status newStatus);
+
+	InputStream getOutputFile(Execution execution, String filePath);
+
 }

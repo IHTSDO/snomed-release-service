@@ -14,9 +14,9 @@ public class PackageDAOImpl extends EntityDAOImpl<Package> implements PackageDAO
 	public Package find(Long buildId, String packageBusinessKey, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select package " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
 				"join build.packages package " +

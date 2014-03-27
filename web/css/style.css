@@ -60,7 +60,7 @@ li {
 	-o-transition: opacity 0.5s linear;
 	transition: opacity 0.5s linear;	
 }
-.centre {
+.center {
 	text-align:center;
 }
 .margin-top-big {
@@ -142,4 +142,10 @@ td.warning {
 }
 .extra-room {
 	margin-top: 30px;
+}
+.extra-drop {
+	margin-top: 30px;
+}
+.align-as-h2 {
+	margin-top: 43px;
 }

@@ -2,7 +2,7 @@ App.DSModel = DS.Model.extend(Ember.Validations.Mixin);
 
 // Models
 
-App.Centre = App.DSModel.extend({
+App.Center = App.DSModel.extend({
 	name: DS.attr(),
 	shortName: DS.attr(),
 	extensions: DS.hasMany('extension', { async: true }),
@@ -19,9 +19,13 @@ App.Centre = App.DSModel.extend({
 	}
 });
 App.Extension = DS.Model.extend({
-	parent: DS.belongsTo('centre'),
+	parent: DS.belongsTo('center'),
 	name: DS.attr(),
-	products: DS.hasMany('product', { async: true })
+	products: DS.hasMany('product', { async: true }),
+	//TODO: ONLY FOR DEMO, UNTIL WE GET STARRED BUILDS RETURNING FROM API
+	isInternationalEdition: function() {
+		return this.get('name') === 'SNOMED CT International Edition';
+	}.property('name')
 });
 App.Product = DS.Model.extend({
 	parent: DS.belongsTo('extension'),
@@ -58,19 +62,25 @@ App.Execution = DS.Model.extend({
 	statusTitle: function() {
 		var status = this.get('status');
 		switch (status) {
-			case App.ExecutionStatus.beforeTrigger:
+			case App.ExecutionStatus.BEFORE_TRIGGER:
 				return 'Before Trigger'
 		}
 	}.property('status'),
 	isNotTriggered: function() {
-		return this.get('status') == App.ExecutionStatus.beforeTrigger;
+		return this.get('status') == App.ExecutionStatus.BEFORE_TRIGGER;
 	}.property('status'),
 	isTriggered: function() {
-		return this.get('status') != App.ExecutionStatus.beforeTrigger;
+		return this.get('status') != App.ExecutionStatus.BEFORE_TRIGGER;
+	}.property('status'),
+	isBuilt: function() {
+		return this.get('status') == App.ExecutionStatus.BUILT;
 	}.property('status')
 });
 App.ExecutionStatus = {
-	beforeTrigger: 'BEFORE_TRIGGER'
+	BEFORE_TRIGGER: 'BEFORE_TRIGGER',
+	QUEUED: 'QUEUED',
+	BUILDING: 'BUILDING',
+	BUILT: 'BUILT'
 }
 App.ExecutionConfiguration = DS.Model.extend({
 	dummy: DS.attr(),

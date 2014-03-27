@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20150731_international_release__biannual</groupId>
-	<artifactId>20150731_international_release__biannual</artifactId>
+	<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20140131_international_release_build</groupId>
+	<artifactId>20140131_international_release_build</artifactId>
 	<version>2013-03-05T16-30-00</version>
 	<packaging>pom</packaging>
 
-	<name>20150731 International Release - Biannual (SNOMED CT Release, SNOMED CT International Edition, International Release Centre)</name>
+	<name>20140131 International Release Build (SNOMED CT Release, SNOMED CT International Edition, International Release Center)</name>
 
 	<modules>
 		<module>rf2_release</module>
