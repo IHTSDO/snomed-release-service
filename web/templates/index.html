@@ -2,10 +2,10 @@
 	<ol class="breadcrumb">
 		<li><a href="#">Home</a></li>
 	</ol>
+	
 
 	{{#each releaseCenter in releaseCenters}}
-
-	<div class="jumbotron">
+	<div class="jumbotron"  id="tour-stop-1">
 			<h2 style="text-align: center">{{releaseCenter.name}} Dashboard</h2>
 	</div>
 	<div class="row">
@@ -14,7 +14,7 @@
 			{{#each extension in releaseCenter.extensions}}
 				<h2 class="page-header">{{extension.name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
 				<div class="row">
-					<div class="col-sm-6">
+					<div {{bind-attr class=":col-sm-6 extension.isInternationalEdition:tour-stop-3"}}>
 						<h3>Products</h3>
 						<ul>
 							{{#each product in extension.products}}
@@ -29,7 +29,7 @@
 							<span class="glyphicon glyphicon-plus"></span> Add a Product
 						</button>
 					</div>
-					<div class="col-sm-6">
+					<div class="col-sm-6" id="tour-stop-4">
 						<h3>Starred Builds <span class="glyphicon glyphicon-star"></span></h3>
 						{{#if extension.isInternationalEdition}}
 						<ul>
@@ -51,7 +51,7 @@
 				</button>
 			</div>
 		</div>
-		<div class="col-md-4 align-under-h2">
+		<div class="col-md-4 align-under-h2" id="tour-stop-2">
 			<h3 class="align-as-h2">Tasks</h3>
 			<h4>Products</h4>
 			Click the name of the product to navigate to the Products page, which enables you to configure products and see builds associated with each product.
