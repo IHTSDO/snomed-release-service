@@ -25,7 +25,7 @@ public class ReleaseCentreDAOImplTest {
 		List<ReleaseCentre> centres = dao.findAll("test");
 		Assert.assertEquals(1, centres.size());
 		ReleaseCentre internationalReleaseCentre = centres.get(0);
-		Assert.assertEquals("International Release Centre", internationalReleaseCentre.getName());
+		Assert.assertEquals("International Release Center", internationalReleaseCentre.getName());
 		Assert.assertEquals("International", internationalReleaseCentre.getShortName());
 		Assert.assertEquals("international", internationalReleaseCentre.getBusinessKey());
 	}
@@ -34,7 +34,7 @@ public class ReleaseCentreDAOImplTest {
 	public void testFind() {
 		ReleaseCentre releaseCentre = dao.find("international", "test");
 		Assert.assertNotNull(releaseCentre);
-		Assert.assertEquals("International Release Centre", releaseCentre.getName());
+		Assert.assertEquals("International Release Center", releaseCentre.getName());
 		Assert.assertEquals("International", releaseCentre.getShortName());
 	}
 

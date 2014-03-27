@@ -6,7 +6,7 @@
 	<version>2013-03-05T16-30-00</version>
 	<packaging>pom</packaging>
 
-	<name>20140131 International Release Build (SNOMED CT Release, SNOMED CT International Edition, International Release Centre)</name>
+	<name>20140131 International Release Build (SNOMED CT Release, SNOMED CT International Edition, International Release Center)</name>
 
 	<modules>
 		<module>rf2_release</module>
