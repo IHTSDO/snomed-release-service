@@ -32,7 +32,7 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 	public void testCreate() throws Exception{
 
 		Assert.assertNotNull(ps);
-		String rc = EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]);
+		String rc = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 		String ext = EntityHelper.formatAsBusinessKey(extensionNames[0]);
 		List<Product> products = ps.findAll(rc,ext,AUTHENTICATED_ID);
 		int before = products.size();

@@ -20,7 +20,7 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	}
 	
 	@Override
-	public List<Build> findAll(String releaseCentreBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
 		
 		String filter = "";
 		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
@@ -29,8 +29,8 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 		if (filterOptions.contains(FilterOption.STARRED_ONLY)) {
 			filter += " and starred = true ";
 		}
-		if (releaseCentreBusinessKey != null) {
-			filter += " and releaseCentre.businessKey = :releaseCentreBusinessKey ";
+		if (releaseCenterBusinessKey != null) {
+			filter += " and releaseCenter.businessKey = :releaseCenterBusinessKey ";
 		}
 		if (extensionBusinessKey != null) {
 			//TODO Watch here that extension business key is not guaranteed unique, so 
@@ -39,9 +39,9 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 		}		
 		Query query = getCurrentSession().createQuery(
 				"select build " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
 				"where membership.user.oauthId = :oauthId " +
@@ -49,8 +49,8 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 				"order by build.id ");
 		query.setString("oauthId", authenticatedId);
 		
-		if (releaseCentreBusinessKey != null) {
-			query.setString("releaseCentreBusinessKey", releaseCentreBusinessKey);
+		if (releaseCenterBusinessKey != null) {
+			query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		}
 		if (extensionBusinessKey != null){
 			query.setString("extensionBusinessKey", extensionBusinessKey);
@@ -62,9 +62,9 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	public Build find(Long id, String authenticatedId) {
 		Query query = getCurrentSession().createQuery(
 				"select build " +
-				"from ReleaseCentreMembership membership " +
-				"join membership.releaseCentre releaseCentre " +
-				"join releaseCentre.extensions extension " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
 				"where membership.user.oauthId = :oauthId " +

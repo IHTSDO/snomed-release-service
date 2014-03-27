@@ -34,7 +34,7 @@ public class ExecutionConfigurationJsonGeneratorTest {
 	public void setup() throws IOException {
 		TestEntityFactory factory = new TestEntityFactory();
 		internationalPackage = factory.createPackage(
-				"International Release Centre", "International", "SNOMED CT International Edition",
+				"International Release Center", "International", "SNOMED CT International Edition",
 				"SNOMED CT International Edition", "International Release", "RF2 Release");
 		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), internationalPackage.getBuild());
 		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json")));

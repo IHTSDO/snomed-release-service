@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/centres/{releaseCentreBusinessKey}/extensions")
+@RequestMapping("/centers/{releaseCenterBusinessKey}/extensions")
 public class ExtensionController {
 
 	@Autowired
@@ -38,36 +38,36 @@ public class ExtensionController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCentreBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		List<Extension> extensions = extensionService.findAll(releaseCentreBusinessKey, authenticatedId);
+		List<Extension> extensions = extensionService.findAll(releaseCenterBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
 	}
 
 	@RequestMapping("/{extensionBusinessKey}")
 	@ResponseBody
-	public Map getExtension(@PathVariable String releaseCentreBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
+	public Map getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		String authenticatedId = SecurityHelper.getSubject();
-		Extension extension = extensionService.find(releaseCentreBusinessKey, extensionBusinessKey, authenticatedId);
+		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedId);
 		return hypermediaGenerator.getEntityHypermedia(extension, request, EXTENSION_LINKS);
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createExtension(@PathVariable String releaseCentreBusinessKey,
+	public ResponseEntity<Map> createExtension(@PathVariable String releaseCenterBusinessKey,
 											   @RequestBody(required = false) Map<String, String> json,
 											   HttpServletRequest request) throws IOException {
 
 		String name = json.get("name");
 
 		String authenticatedId = SecurityHelper.getSubject();
-		Extension extension = extensionService.create(releaseCentreBusinessKey, name, authenticatedId);
+		Extension extension = extensionService.create(releaseCenterBusinessKey, name, authenticatedId);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(extension, request, EXTENSION_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 	
 	@RequestMapping("/{extensionBusinessKey}/builds")
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds( @PathVariable String releaseCentreBusinessKey, 
+	public List<Map<String, Object>> getBuilds( @PathVariable String releaseCenterBusinessKey,
 												@PathVariable String extensionBusinessKey,
 												@RequestParam(value="includeRemoved", required=false) String includeRemovedStr,
 												@RequestParam(value="starred", required=false) String starredStr,
@@ -78,7 +78,7 @@ public class ExtensionController {
 		if (Boolean.parseBoolean(starredStr)) filterOptions.add(FilterOption.STARRED_ONLY);
 		
 		String authenticatedId = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findForExtension(releaseCentreBusinessKey, extensionBusinessKey, filterOptions, authenticatedId);
+		List<Build> builds = buildService.findForExtension(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS);
 	}
 

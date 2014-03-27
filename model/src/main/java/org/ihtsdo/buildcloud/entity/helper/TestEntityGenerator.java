@@ -1,17 +1,14 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Extension;
-import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCentre;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class TestEntityGenerator {
 
-	public static final String [] releaseCentreNames = {"International Release Center"};
+	public static final String [] releaseCenterNames = {"International Release Center"};
 
-	public static final String [] releaseCentreShortNames = {"International"};
+	public static final String [] releaseCenterShortNames = {"International"};
 
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
@@ -59,18 +56,18 @@ public class TestEntityGenerator {
 			"RF2_RF1_Converter|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2torf1conversion.input.rf2_rf1_converter|2014-03-27T08-45-12"
 	};
 	
-	protected ReleaseCentre createTestReleaseCentre() {
+	protected ReleaseCenter createTestReleaseCenter() {
 		
-		ReleaseCentre internationalReleaseCentre = new ReleaseCentre(releaseCentreNames[0], releaseCentreShortNames[0]);
-		addExtensionsToReleaseCentre(internationalReleaseCentre);	
-		return internationalReleaseCentre;
+		ReleaseCenter internationalReleaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
+		addExtensionsToReleaseCenter(internationalReleaseCenter);
+		return internationalReleaseCenter;
 	}	
 	
 
-	protected void addExtensionsToReleaseCentre (ReleaseCentre releaseCentre) {
+	protected void addExtensionsToReleaseCenter (ReleaseCenter releaseCenter) {
 		for (int iEx=0; iEx < extensionNames.length; iEx++){
 			Extension extension = new Extension (extensionNames[iEx]);
-			releaseCentre.addExtension(extension);
+			releaseCenter.addExtension(extension);
 			for (int iPrd=0; iPrd < productNames[iEx].length; iPrd++) {
 				Product product = new Product (productNames[iEx][iPrd]);
 				extension.addProduct(product);

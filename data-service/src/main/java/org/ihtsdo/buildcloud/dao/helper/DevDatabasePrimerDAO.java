@@ -20,26 +20,26 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 	public void primeDatabase() {
 		Session session = getSession();
 
-		Long count = (Long) session.createQuery("select count(*) from ReleaseCentre").list().iterator().next();
+		Long count = (Long) session.createQuery("select count(*) from ReleaseCenter").list().iterator().next();
 		if (count == 0) {
-			ReleaseCentre internationalReleaseCentre = createTestReleaseCentre();
-			save(internationalReleaseCentre);
+			ReleaseCenter internationalReleaseCenter = createTestReleaseCenter();
+			save(internationalReleaseCenter);
 
 			User testUser = new User("test");
-			ReleaseCentreMembership releaseCentreMembership = new ReleaseCentreMembership(internationalReleaseCentre, testUser);
+			ReleaseCenterMembership releaseCenterMembership = new ReleaseCenterMembership(internationalReleaseCenter, testUser);
 
 			session.save(testUser);
-			session.save(releaseCentreMembership);
+			session.save(releaseCenterMembership);
 		}
 	}
 	
 	
 
-	private void save (ReleaseCentre releaseCentre){
+	private void save (ReleaseCenter releaseCenter){
 		//Work down the hierarchy saving objects as we go
 		Session session = getSession();
-		session.save(releaseCentre);
-		List<Extension> extensions = releaseCentre.getExtensions();
+		session.save(releaseCenter);
+		List<Extension> extensions = releaseCenter.getExtensions();
 		for (Extension extension : extensions) {
 			session.save(extension);
 			List <Product> products = extension.getProducts();

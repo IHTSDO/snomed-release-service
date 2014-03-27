@@ -23,7 +23,7 @@ public class Extension {
 
 	@ManyToOne
 	@JsonIgnore
-	private ReleaseCentre releaseCentre;
+	private ReleaseCenter releaseCenter;
 
 	@OneToMany(mappedBy = "extension")
 	@JsonIgnore
@@ -64,12 +64,12 @@ public class Extension {
 		return businessKey;
 	}
 
-	public ReleaseCentre getReleaseCentre() {
-		return releaseCentre;
+	public ReleaseCenter getReleaseCenter() {
+		return releaseCenter;
 	}
 
-	public void setReleaseCentre(ReleaseCentre releaseCentre) {
-		this.releaseCentre = releaseCentre;
+	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+		this.releaseCenter = releaseCenter;
 	}
 
 	public List<Product> getProducts() {

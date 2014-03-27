@@ -31,7 +31,7 @@ public class ExtensionServiceImplTest extends TestEntityGenerator {
 	public void testCreate() throws Exception{
 
 		Assert.assertNotNull(es);
-		String rc = EntityHelper.formatAsBusinessKey(releaseCentreShortNames[0]);
+		String rc = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 		List<Extension> extensions = es.findAll(rc,AUTHENTICATED_ID);
 		int before = extensions.size();
 		//LOGGER.warn("Found " + before + " extensions");

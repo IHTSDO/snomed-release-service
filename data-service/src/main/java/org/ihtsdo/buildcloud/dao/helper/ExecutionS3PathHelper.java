@@ -11,9 +11,9 @@ public class ExecutionS3PathHelper {
 	private static final String OUTPUT = "output/";
 
 	public StringBuffer getBuildPath(Build build) {
-		String releaseCentreBusinessKey = build.getProduct().getExtension().getReleaseCentre().getBusinessKey();
+		String releaseCenterBusinessKey = build.getProduct().getExtension().getReleaseCenter().getBusinessKey();
 		StringBuffer path = new StringBuffer();
-		path.append(releaseCentreBusinessKey);
+		path.append(releaseCenterBusinessKey);
 		path.append(SEPARATOR);
 		path.append(build.getCompositeKey());
 		path.append(SEPARATOR);
