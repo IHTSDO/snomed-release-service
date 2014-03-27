@@ -51,8 +51,13 @@ public class TestEntityGenerator {
 	public static final String [] packageNames = {	"RF2 Release",
 													"RF1CompatibilityPackage",
 													"RF2toRF1Conversion"};		
-	
-	public static final String [] inputFileNames = { "concepts.rf2" };
+
+	// packageInputFile string format is name|groupId|artifactId|version
+	public static final String [] packageInputFiles = {
+			"concepts rf2|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2_release.input.concepts_rf2|2014-03-19T14-14-48",
+			"RF1CompatibilityPackage|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf1compatibilitypackage.input.rf1compatibilitypackage|2014-03-27T08-44-32",
+			"RF2_RF1_Converter|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2torf1conversion.input.rf2_rf1_converter|2014-03-27T08-45-12"
+	};
 	
 	protected ReleaseCentre createTestReleaseCentre() {
 		
@@ -79,13 +84,15 @@ public class TestEntityGenerator {
 	}
 	
 	protected void addPackagesToBuild (Build build) {
-		for (String packageName: packageNames) {
+		for (int i = 0; i < packageNames.length; i++) {
+			String packageName = packageNames[i];
 			Package pkg = new Package(packageName);
 			build.addPackage(pkg);
-			if (packageName.equals(packageNames[0])){
-				InputFile inputFile = new InputFile("concepts rf2", "2014-03-19T14-14-48");
-				inputFile.setGroupId("org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release");
-				inputFile.setArtifactId("rf2_release.input.concepts_rf2");
+			if (packageInputFiles.length > i) {
+				String[] inputFileParts = packageInputFiles[i].split("\\|");
+				InputFile inputFile = new InputFile(inputFileParts[0], inputFileParts[3]);
+				inputFile.setGroupId(inputFileParts[1]);
+				inputFile.setArtifactId(inputFileParts[2]);
 				pkg.addInputFile(inputFile);
 			}
 		}		
