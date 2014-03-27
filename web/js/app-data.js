@@ -21,7 +21,11 @@ App.Centre = App.DSModel.extend({
 App.Extension = DS.Model.extend({
 	parent: DS.belongsTo('centre'),
 	name: DS.attr(),
-	products: DS.hasMany('product', { async: true })
+	products: DS.hasMany('product', { async: true }),
+	//TODO: ONLY FOR DEMO, UNTIL WE GET STARRED BUILDS RETURNING FROM API
+	isInternationalEdition: function() {
+		return this.get('name') === 'SNOMED CT International Edition';
+	}.property('name')
 });
 App.Product = DS.Model.extend({
 	parent: DS.belongsTo('extension'),
