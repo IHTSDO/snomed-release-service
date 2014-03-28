@@ -6,28 +6,32 @@
 	<li>{{name}}</li>
 </ol>
 
-<h2 class="page-header">{{name}} <small>(Product Build) {{partial "title-dropdown"}}</small></h2>
+<h2 class="page-header" id="tour-stop-5">{{name}} <small>(Product Build) {{partial "title-dropdown"}}</small></h2>
 
 <div class="row">
 	<div class="col-xs-4">
-		<h3>Packages</h3>
-		<ul>
-			{{#each package in packages}}
-			<li>
-				{{#link-to "package"  package}}
-				{{package.name}}
-				{{/link-to}}
-			</li>
-			{{/each}}
-		</ul>
-		<button class="btn btn-primary btn-md list-align" {{action 'addPackage' this}}>
-			<span class="glyphicon glyphicon-plus"></span> Add a Package
-		</button>
-		<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success margin-top-big">
-			<span class="glyphicon glyphicon-thumbs-up "></span> Create Execution and Review
-		</button>
+		<div  id="tour-stop-6">
+			<h3>Packages</h3>
+			<ul>
+				{{#each package in packages}}
+				<li>
+					{{#link-to "package"  package}}
+					{{package.name}}
+					{{/link-to}}
+				</li>
+				{{/each}}
+			</ul>
+			<button class="btn btn-primary btn-md list-align" {{action 'addPackage' this}}>
+				<span class="glyphicon glyphicon-plus"></span> Add a Package
+			</button>
+		</div>
+		<div id="tour-stop-8" class="margin-top-big">
+			<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success " >
+				<span class="glyphicon glyphicon-thumbs-up "></span> Create Execution and Review
+			</button>
+		</div>
 	</div>
-	<div class="col-xs-4 build-history">
+	<div class="col-xs-4 build-history" id="tour-stop-7">
 		<h3>Execution History</h3>
 		<ul>
 			<li title="In Progress" data-toggle="tooltip" data-placement="right">
