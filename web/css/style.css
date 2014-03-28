@@ -151,3 +151,7 @@ td.warning {
 .align-as-h2 {
 	margin-top: 43px;
 }
+.align-right {
+	float: right;
+}
+}
