@@ -36,7 +36,9 @@ li {
 .no-bullet {
     list-style: none;
 }
-
+.no-wrap {
+    white-space: nowrap;
+}
 .panel-products li {
 	list-style: none;
 }
