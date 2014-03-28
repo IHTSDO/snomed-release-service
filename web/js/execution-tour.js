@@ -29,11 +29,19 @@ executionTour.addSteps([
 	element: "#tour-stop-4",
 	title: "Starred Builds",
 	content: "Content of fourth step",
-	placement: "left",
+	placement: "left"
+  },
+  {
+    //Going to show the whole page without a backdrop again, just before we move on.
+	element: "#tour-stop-1",
+	title: "Ready to move on",
+	content: "Page overview before moving on to product build screen as if we'd clicked on Starred Build",
+	placement: "right",
+	backdrop: false,
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
 							recommence();
-  						}
+  						}	
   },
   {
 	element: "#tour-stop-5",
@@ -60,6 +68,13 @@ executionTour.addSteps([
 	content: "Content of 8th step",
 	placement: "right"
   },
+  {
+	element: "#tour-stop-5",
+	title: "Product Build Screen",
+	content: "Screen summary before moving on as if we'd clicked 'Create Execution and Review'",
+	placement: "right",
+	backdrop: false
+  }
 ]);
 
 function startExecutionTour() {
@@ -68,7 +83,9 @@ function startExecutionTour() {
 	window.location.hash = "";
 	window.setTimeout( function() {
 		executionTour.init();
-		executionTour.restart();
+		//We might have held onto a tour from last time - end if so.
+		executionTour.end();
+		executionTour.restart();  //Always restart at beginning.
 		console.log("Execution Tour underway!");
 		} , 200 );
 }
