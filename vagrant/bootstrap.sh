@@ -33,7 +33,9 @@ cd /vagrant
 mvn clean install -DskipTests=true
 
 # Deploy API
-cp api/target/api.war /var/lib/tomcat7/webapps/
+mv /var/lib/tomcat7/webapps /var/lib/tomcat7/_webapps.old
+ln -s /vagrant/vagrant/tomcat-webapps /var/lib/tomcat7/webapps
+cp api/target/api.war vagrant/tomcat-webapps
 
 # Start Tomcat and Nginx
 service tomcat7 start
