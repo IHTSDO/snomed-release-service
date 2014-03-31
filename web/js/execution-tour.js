@@ -73,8 +73,26 @@ executionTour.addSteps([
 	title: "Product Build Screen",
 	content: "Screen summary before moving on as if we'd clicked 'Create Execution and Review'",
 	placement: "right",
+	backdrop: false,
+	onNext: function () {	
+						window.location.hash="/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/2014-03-31T09:30:23/configuration";
+						recommence();
+					}	
+  },
+   {
+	element: "#tour-stop-9",
+	title:  "Build Execution Screen",
+	content: "Screen summary as if we'd clicked 'Create Execution and Review'",
+	placement: "right",
 	backdrop: false
-  }
+  },
+     {
+	element: "#tour-stop-10",
+	title:  "Build Execution Screen",
+	content: "This button will add the current execution into a processing queue, at which point the status will update to 'Queued'",
+	placement: "right",
+	backdrop: false
+  }  
 ]);
 
 function startExecutionTour() {
