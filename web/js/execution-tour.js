@@ -40,7 +40,7 @@ executionTour.addSteps([
 	backdrop: false,
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
-							recommence();
+							recommence(executionTour, 1000);
   						}	
   },
   {
@@ -76,7 +76,7 @@ executionTour.addSteps([
 	backdrop: false,
 	onNext: function () {	
 						window.location.hash="/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/2014-03-31T09:30:23/configuration";
-						recommence();
+						recommence(executionTour, 1000);
 					}	
   },
   {
@@ -111,7 +111,6 @@ executionTour.addSteps([
 	backdrop: false
   } ,
   {
-  	element: "#tour-stop-9",
 	title: "Execution Tour End",
 	content: "Thank you for watching. Returning to home page now...",
 	backdrop: false,
@@ -134,16 +133,16 @@ function startExecutionTour() {
 		} , 500 );
 }
 
-function recommence(){
+function recommence(tour, delay){
 	//Workaround for tour moving on to next step before the DOM is ready.
 	//If it does that, we get the popup in the middle of the screen.
 	//For now, we will end the tour, and the recommence 1s later at nextStep
-	var currentStep = executionTour.getCurrentStep();
-	executionTour.end();
+	var currentStep = tour.getCurrentStep();
+	tour.end();
 	window.setTimeout ( function() {
-		executionTour.start(true);
-		executionTour.goTo(currentStep + 1);
-		} , 1000 );
+		tour.restart();
+		tour.goTo(currentStep + 1);
+		} , delay );
 }
 
 
