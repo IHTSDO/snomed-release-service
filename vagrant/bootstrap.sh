@@ -38,3 +38,6 @@ cp api/target/api.war /var/lib/tomcat7/webapps/
 # Start Tomcat and Nginx
 service tomcat7 start
 service nginx start
+
+# Start standalone builder process as a background process
+java -jar builder/target/builder.jar &

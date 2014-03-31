@@ -26,9 +26,15 @@
 			</button>
 		</div>
 		<div id="tour-stop-8" class="margin-top-big">
-			<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success " >
-				<span class="glyphicon glyphicon-thumbs-up "></span> Create Execution and Review
-			</button>
+			<h3>Build Triggers</h3>
+			<div class="well-sm">
+				<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success " >
+					<span class="glyphicon"></span> Build Now...
+				</button>
+			</div>
+			<div class="well-sm">
+				Automatic nightly build <strong>Enabled</strong>. <button class="btn btn-default">Disable</button>
+			</div>
 		</div>
 	</div>
 	<div class="col-xs-4 build-history" id="tour-stop-7">
