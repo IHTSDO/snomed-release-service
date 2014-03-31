@@ -14,7 +14,7 @@ executionTour.addSteps([
   {
 	element: "#tour-stop-2",
 	title: "In-page Help Text",
-	content: "Most pages feature context specific help text to explain how the application functions.  The user will be able to hide this text, once they feel confident with the application.",
+	content: "Most pages feature context specific help text to explain how the application functions.  The user is able to hide this text, once they feel confident with the application.",
 	placement: "left",
 
   },
@@ -35,7 +35,7 @@ executionTour.addSteps([
     //Going to show the whole page without a backdrop again, just before we move on.
 	element: "#tour-stop-1",
 	title: "Ready to move on?",
-	content: "We'll just show the entire screen here for a moment, before moving on to the ProductBbuild screen as if the user has clicked on a Starred Build.",
+	content: "We'll just show the entire screen here for a moment, before moving on to the Product Build screen as if the user has clicked on a Starred Build.",
 	placement: "right",
 	backdrop: false,
 	onNext: function () {	
