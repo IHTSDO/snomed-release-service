@@ -4,7 +4,9 @@
 			<h3 class="panel-title">Configuration</h3>
 		</div>
 		<div class="panel-body">
+			{{#if isNotTriggered}}
 			<p class="lead"><small>Please review the configuration before running the build.</small></p>
+			{{/if}}
 
 			<h4>Execution Configuration</h4>
 <pre>{{configuration.json}}
