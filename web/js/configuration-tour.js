@@ -83,7 +83,7 @@ configurationTour.addSteps([
 	element: "#tour-stop-c9",
 	title: "Package Configuration - Pre-Conditions",
 	placement: "left",
-	content: "...the Pre-condition checks (which are not actually configurable items, but are shown here as a list as they will all be run automatically as part of a build execution and any one of them might fail)...",
+	content: "...the Pre-condition checks (which are not actually configurable items, but are shown here as a list as they run automatically as part of a build execution and any one of them might fail)...",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/post-conditions";
 							recommence(configurationTour, 300);
@@ -93,7 +93,7 @@ configurationTour.addSteps([
 	element: "#tour-stop-c10",
 	title: "Package Configuration - Post Conditions",
 	placement: "left",
-	content: "...and the Post-condition checks, also known as the QA process currently being performed by the 'Release Assertion Toolkit'."
+	content: "...and the Post-condition checks, also known as the QA process previously performed by the 'Release Assertion Toolkit'."
   },
   {
 	element: "#tour-stop-c11",
