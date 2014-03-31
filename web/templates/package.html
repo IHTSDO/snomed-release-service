@@ -4,7 +4,7 @@
 	<li>{{#link-to "extension" parent.product.parent}}{{parent.product.parent.name}}{{/link-to}}</li>
 	<li>{{#link-to "product" parent.product}}{{parent.product.name}}{{/link-to}}</li>
 	<li>{{#link-to "build" parent}}{{parent.name}}{{/link-to}}</li>
-	<li>{{name}}</li>
+	<li id="tour-stop-c7">{{name}}</li>
 </ol>
 
 <h3 class="page-header">{{name}} <small>(Package) {{partial "title-dropdown"}}</small></h3>
@@ -14,9 +14,9 @@
 		<ul class="nav">
 			<li class="active">{{#link-to 'package'}}Configuration{{/link-to}}
 				<ul class="nav">
-					<li>{{#link-to 'build-input'}}Build Input{{/link-to}}</li>				
-					<li>{{#link-to 'pre-conditions'}}Pre-conditions{{/link-to}}
-					<li>{{#link-to 'post-conditions'}}Post-conditions{{/link-to}}
+					<li id="tour-stop-c8">{{#link-to 'build-input'}}Build Input{{/link-to}}</li>				
+					<li id="tour-stop-c9">{{#link-to 'pre-conditions'}}Pre-conditions{{/link-to}}
+					<li id="tour-stop-c10">{{#link-to 'post-conditions'}}Post-conditions{{/link-to}}
 				</ul>
 			</li>
 		</ul>
