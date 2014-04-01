@@ -55,7 +55,7 @@ App.InputFile = DS.Model.extend({
 });
 App.Execution = DS.Model.extend({
 	parent: DS.belongsTo('build'),
-	creationTime: DS.attr(),
+	creationTimeString: DS.attr(),
 	status: DS.attr(),
 	buildScripts_url: DS.attr(),
 	configuration: DS.belongsTo('executionConfiguration', { async: true }),
@@ -74,7 +74,10 @@ App.Execution = DS.Model.extend({
 	}.property('status'),
 	isBuilt: function() {
 		return this.get('status') == App.ExecutionStatus.BUILT;
-	}.property('status')
+	}.property('status'),
+	creationTime: function() {
+		return moment(this.get('creationTimeString')).format('DD MMM, YYYY hh:mm:ss (UTC)');
+	}.property('creationTimeString')
 });
 App.ExecutionStatus = {
 	BEFORE_TRIGGER: 'BEFORE_TRIGGER',
