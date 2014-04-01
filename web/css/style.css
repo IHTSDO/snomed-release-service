@@ -24,7 +24,9 @@ li {
 .nav .nav {
 	margin-bottom: 8px;
 }
-
+.jumbotron {
+    margin-bottom: 10px;
+}
 .add-button span {
     margin: 10px 2px;
 }
@@ -34,7 +36,9 @@ li {
 .no-bullet {
     list-style: none;
 }
-
+.no-wrap {
+    white-space: nowrap;
+}
 .panel-products li {
 	list-style: none;
 }
@@ -148,4 +152,8 @@ td.warning {
 }
 .align-as-h2 {
 	margin-top: 43px;
+}
+.align-right {
+	float: right;
+}
 }

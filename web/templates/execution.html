@@ -7,17 +7,19 @@
 	<li>{{id}}</li>
 </ol>
 
-<h3 class="page-header">{{creationTime}} <small>(Execution)</small> Status: {{status}}</h3>
+<h3 class="page-header" id="tour-stop-9">{{creationTime}} <small>(Execution)</small> Status: {{status}}</h3>
 
 <div class="row">
 	<div class="col-md-3">
 		<ul class="nav">
 			<li>{{#link-to 'execution.configuration'}}Configuration{{/link-to}}</li>
 			{{#if isTriggered}}
-			<li>{{#link-to 'execution.debug'}}Debug{{/link-to}}</li>
+			<li>{{#link-to 'execution.build-scripts'}}Build Scripts{{/link-to}}</li>
 			{{/if}}
 			{{#if isBuilt}}
 			<li>{{#link-to 'execution.output'}}Output{{/link-to}}</li>
+			<li>{{#link-to 'execution.results'}}Results{{/link-to}}</li>
+			<li>{{#link-to 'execution.publish'}}Publish{{/link-to}}</li>
 			{{/if}}
 		</ul>
 	</div>
