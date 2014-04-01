@@ -519,7 +519,7 @@ App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
 		}
 	}
 })
-App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
+App.ExecutionBuildScriptsRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('execution');
 	}
