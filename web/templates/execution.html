@@ -14,10 +14,12 @@
 		<ul class="nav">
 			<li>{{#link-to 'execution.configuration'}}Configuration{{/link-to}}</li>
 			{{#if isTriggered}}
-			<li>{{#link-to 'execution.debug'}}Debug{{/link-to}}</li>
+			<li>{{#link-to 'execution.build-scripts'}}Build Scripts{{/link-to}}</li>
 			{{/if}}
 			{{#if isBuilt}}
 			<li>{{#link-to 'execution.output'}}Output{{/link-to}}</li>
+			<li>{{#link-to 'execution.results'}}Results{{/link-to}}</li>
+			<li>{{#link-to 'execution.publish'}}Publish{{/link-to}}</li>
 			{{/if}}
 		</ul>
 	</div>
