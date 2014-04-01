@@ -3,12 +3,14 @@ var configurationTour = new Tour({  debug: true,
 								orphan: true,
 								backdrop: false,
 								animation: false,
-								placement: "right" });
+								placement: "right"
+								 });
 configurationTour.addSteps([
   {
 
 	title: "Configuration Tour",
 	content: "Welcome to the Configuration Tour!  We will start with an overview of this application's 'domain model' - how each of the elements within the application relate to each other - before proceeding to the configuration for a release.",
+	backdrop: true
   },
   {
 	element: "#tour-stop-1",
@@ -16,7 +18,7 @@ configurationTour.addSteps([
 	content: "The Homepage/Dashboard Screen represents the top level of our domain hierarchy - A Release Center.",
 	onNext: function () {	
 							window.location.hash = "/international/";
-							recommence(configurationTour, 300);
+							recommence(configurationTour, 300, true);
   						}	
   },
   {
@@ -25,8 +27,12 @@ configurationTour.addSteps([
 	content: "Each Release Center 'owns' any number of Extensions.",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition";
-							recommence(configurationTour, 300);
-  						}	
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/";
+							recommence(configurationTour, 300, false);
+						}	
   },
   {
 	element: "#tour-stop-c3",
@@ -34,13 +40,21 @@ configurationTour.addSteps([
 	content: "...Extensions own any number of Products...",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release";
-							recommence(configurationTour, 300);
-  						}	
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/international";
+							recommence(configurationTour, 300, false);
+						}	
   },
   {
 	element: "#tour-stop-c4",
 	title: "List of Builds",
-	content: "...Products own a number of Builds..."
+	content: "...Products own a number of Builds...",
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/";
+							recommence(configurationTour, 300, false);
+						}	
   },
    {
 	element: "#tour-stop-c5",
@@ -48,8 +62,8 @@ configurationTour.addSteps([
 	content: "(just to mention in passing that we can use this screen to specify that build is of interest by click its star, making it a starred build appearing on the Home Page for quicker access.)",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
-							recommence(configurationTour, 300);
-  						}	
+							recommence(configurationTour, 300, true);
+						}
   },
 {
 	element: "#tour-stop-c6",
@@ -57,8 +71,12 @@ configurationTour.addSteps([
 	content: "...Builds have a number of Packages (the actual content that gets published)...",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release";
-  							recommence(configurationTour, 300);
-						}	
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release";
+							recommence(configurationTour, 300, false);
+						}		
   },
   {
 	element: "#tour-stop-c7",
@@ -66,8 +84,12 @@ configurationTour.addSteps([
 	content: "...and each Package has a number of items of configuration associated with it.",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/build-input";
-							recommence(configurationTour, 300);
-						}
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
+							recommence(configurationTour, 300, false);
+						}	
   },
   {
 	element: "#tour-stop-c8",
@@ -76,7 +98,11 @@ configurationTour.addSteps([
 	content: "...such as the input files...",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/pre-conditions";
-							recommence(configurationTour, 300);
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release";
+							recommence(configurationTour, 300, false);
 						}	
   },
 {
@@ -86,14 +112,22 @@ configurationTour.addSteps([
 	content: "...the Pre-condition checks (which are not actually configurable items, but are shown here as a list as they run automatically as part of a build execution and any one of them might fail)...",
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/post-conditions";
-							recommence(configurationTour, 300);
-						}	
+							recommence(configurationTour, 300, true);
+						},
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/build-input";
+							recommence(configurationTour, 300, false);
+						}		
   },
   {
 	element: "#tour-stop-c10",
 	title: "Package Configuration - Post Conditions",
 	placement: "left",
-	content: "...and the Post-condition checks, also known as the QA process previously performed by the 'Release Assertion Toolkit'."
+	content: "...and the Post-condition checks, also known as the QA process previously performed by the 'Release Assertion Toolkit'.",
+	onPrev: function () {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/pre-conditions";
+							recommence(configurationTour, 300, false);
+						}	
   },
   {
 	element: "#tour-stop-c11",
@@ -107,11 +141,8 @@ configurationTour.addSteps([
   },
   {
 	title: "Configuration Tour End",
-	content: "Thank you for watching. Returning to home page now...",
-	backdrop: false,
-	onHidden: function() {	
-						window.location.hash="/";
-					}	
+	content: "Thank you for watching!",
+	backdrop: true
   } 
 ]);
 
