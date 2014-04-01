@@ -2,8 +2,13 @@
 var executionTour = new Tour({  debug: true, 
 								orphan: true,
 								backdrop: true,
-								animation: false });
+								animation: false
+							 });
 executionTour.addSteps([
+  {
+	title: "Execution Tour",
+	content: "Welcome to the Execution Tour!  We'll now navigate directly to the central functionality of the application - building a SNOMED release."
+  },
   {
 	element: "#tour-stop-1",
 	title: "Snomed Release Service",
@@ -40,7 +45,7 @@ executionTour.addSteps([
 	backdrop: false,
 	onNext: function () {	
 							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
-							recommence(executionTour, 1000);
+							recommence(executionTour, 1000, true);
   						}	
   },
   {
@@ -48,7 +53,11 @@ executionTour.addSteps([
 	title: "Product Build Screen",
 	content: "This screen shows the Packages containing the SNOMED content which IHTSDO (or hosted tenant) releases.",
 	placement: "right",
-	backdrop: false
+	backdrop: false,
+	onPrev: function () {	
+							window.location.hash = "/";
+							recommence(executionTour, 300, false);
+						}	
   },
   {
 	element: "#tour-stop-6",
@@ -76,7 +85,7 @@ executionTour.addSteps([
 	backdrop: false,
 	onNext: function () {	
 						window.location.hash="/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/2014-03-31T09:30:23/configuration";
-						recommence(executionTour, 1000);
+						recommence(executionTour, 1000, true);
 					}	
   },
   {
@@ -85,6 +94,10 @@ executionTour.addSteps([
 	content: "This screen lists the configuration that is about to be applied to the current execution.",
 	placement: "right",
 	backdrop: false,
+	onPrev: function() {	
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build";
+							recommence(executionTour, 300, false);
+						}
   },
   {
 	element: "#tour-stop-10",
@@ -112,11 +125,7 @@ executionTour.addSteps([
   } ,
   {
 	title: "Execution Tour End",
-	content: "Thank you for watching. Returning to home page now...",
-	backdrop: false,
-	onHidden: function() {	
-						window.location.hash="/";
-					}	
+	content: "Thank you for watching!"
   } 
 ]);
 
@@ -133,15 +142,23 @@ function startExecutionTour() {
 		} , 500 );
 }
 
-function recommence(tour, delay){
+function recommence(tour, delay, isFwd){
 	//Workaround for tour moving on to next step before the DOM is ready.
 	//If it does that, we get the popup in the middle of the screen.
 	//For now, we will end the tour, and the recommence 1s later at nextStep
 	var currentStep = tour.getCurrentStep();
+	var direction = isFwd? 1 : -1;
+	
+	//disable return to homepage
+	tour.onEnd = function() {}
 	tour.end();
+	
+	//re-enable 
+	tour.onEnd = function() { window.location.hash="/"; }
+	
 	window.setTimeout ( function() {
 		tour.restart();
-		tour.goTo(currentStep + 1);
+		tour.goTo(currentStep + direction);
 		} , delay );
 }
 
