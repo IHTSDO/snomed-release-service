@@ -6,10 +6,16 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="images/ihtsdo-logo.png">
 
-	<title><Develop> SNOMED Release Service</title>
+	<title>-Develop- SNOMED Release Service</title>
 
 	<!-- Bootstrap core CSS -->
 	<link href="libs/bootstrap/css/bootstrap-3.1.1.min.css" rel="stylesheet">
+	
+	<!-- Bootstrap Tour -->
+	<link rel="stylesheet" href="libs/bootstrap/css/bootstrap-theme.min.css">
+	<!--TODO Remove line and file if no side effects link rel="stylesheet" href="libs/bootstrap/css/bootstrap.min.base.12.css" -->
+	<link rel="stylesheet" href="libs/bootstrap/css/bootstrap-tour-standalone.min.css" >
+	<link rel="stylesheet" href="libs/bootstrap/css/bootstrap-override.css" >	
 
 	<!-- Our Styles -->
 	<link href="css/style.css" rel="stylesheet">
@@ -31,7 +37,8 @@
 		</div>
 		<div class="navbar-right">
 			<ul class="nav navbar-nav navbar-right">
-				<li><a href="#help">Help</a></li>
+				<li><a href="javascript: startExecutionTour();">Execution Tour</a></li>
+				<li><a href="javascript: startConfigurationTour();">Configuration Tour</a></li>
 			</ul>
 		</div><!--/.nav-collapse -->
 	</div>
@@ -53,6 +60,12 @@
 <script src="libs/ember-easyForm-1.0.0.beta.1.js"></script>
 <script src="libs/ember-validations-latest-1.0.0.beta.1.js"></script>
 <script src="libs/bootstrap/js/bootstrap-3.1.1.min.js"></script>
+<script src="libs/moment-min.js"></script>
+
+<!-- Bootstrap Tour Support -->
+<!--  script src="js/jquery-2.1.0.min.js"></script -->
+<script src="libs/jquery-ui-1.10.4.custom.js"></script>
+<script src="libs/bootstrap/js/bootstrap-tour-standalone.js"></script>
 
 <script>
 	// Ember.js template loading for dev.
@@ -118,8 +131,10 @@
 
 	loadEmberTemplate('execution');
 	loadEmberTemplate('execution/configuration');
-	loadEmberTemplate('execution/debug');
+	loadEmberTemplate('execution/build-scripts');
 	loadEmberTemplate('execution/output');
+	loadEmberTemplate('execution/results');
+	loadEmberTemplate('execution/publish');
 	loadEmberTemplate('execution-mock');
 	loadEmberTemplate('execution-history');
 	loadEmberTemplate('execution-mock/results');
@@ -143,6 +158,8 @@
 <script src="js/app-data.js"></script>
 <script src="js/ember-data-extensions.js"></script>
 <script src="js/ember-data-nested-resources.js"></script>
+<script src="js/execution-tour.js"></script>
+<script src="js/configuration-tour.js"></script>
 
 </body>
 </html>

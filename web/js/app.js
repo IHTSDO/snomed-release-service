@@ -39,8 +39,10 @@ App.Router.map(function() {
 					});
 					this.resource('execution', { path: '/:execution_id' }, function() {
 						this.route('configuration');
-						this.route('debug');
+						this.route('build-scripts');
 						this.route('output');
+						this.route('results');
+						this.route('publish');
 					});
 				});
 			});
@@ -517,7 +519,7 @@ App.ExecutionConfigurationRoute = App.AuthorisedRoute.extend({
 		}
 	}
 })
-App.ExecutionDebugRoute = App.AuthorisedRoute.extend({
+App.ExecutionBuildScriptsRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
 		return this.modelFor('execution');
 	}

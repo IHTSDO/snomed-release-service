@@ -1,11 +1,7 @@
 <div class="front-page">
-	<ol class="breadcrumb">
-		<li><a href="#">Home</a></li>
-	</ol>
 
 	{{#each releaseCenter in releaseCenters}}
-
-	<div class="jumbotron">
+	<div class="jumbotron"  id="tour-stop-1">
 			<h2 style="text-align: center">{{releaseCenter.name}} Dashboard</h2>
 	</div>
 	<div class="row">
@@ -14,7 +10,7 @@
 			{{#each extension in releaseCenter.extensions}}
 				<h2 class="page-header">{{extension.name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
 				<div class="row">
-					<div class="col-sm-6">
+					<div {{bind-attr class=":col-sm-6 extension.isInternationalEdition:tour-stop-3"}}>
 						<h3>Products</h3>
 						<ul>
 							{{#each product in extension.products}}
@@ -29,10 +25,10 @@
 							<span class="glyphicon glyphicon-plus"></span> Add a Product
 						</button>
 					</div>
-					<div class="col-sm-6">
+					<div class="col-sm-6" id="tour-stop-4">
 						<h3>Starred Builds <span class="glyphicon glyphicon-star"></span></h3>
 						{{#if extension.isInternationalEdition}}
-						<ul>
+						<ul class="no-wrap">
 							<li title="Success" data-toggle="tooltip" data-placement="right">
 								{{#link-to 'build' releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" }}20140731 International Release Build{{/link-to}}
 								{{#link-to "execution" releaseCenter "snomed_ct_international_edition" "snomed_ct_release" "1_20140731_international_release_build" title='Last Run: 28 Mar, 2014 14:42:00 UTC'}}<span class="traffic-light traffic-light-success"></span>{{/link-to}}
@@ -46,14 +42,14 @@
 					</div>
 				</div>
 				{{/each}}
-				<button class="btn btn-primary btn-md extra-drop" {{action 'addExtension' releaseCenter}}>
+				<hr class="extra-drop" />
+				<button class="btn btn-primary btn-md align-right" {{action 'addExtension' releaseCenter}}>
 					<span class="glyphicon glyphicon-plus"></span> Add an Extension
 				</button>
 			</div>
 		</div>
-		<div class="col-md-4 align-under-h2">
-			<h3 class="align-as-h2">Tasks</h3>
-			<h4>Products</h4>
+		<div class="col-md-4 align-under-h2" id="tour-stop-2">
+			<h4 class="align-as-h2">Products</h4>
 			Click the name of the product to navigate to the Products page, which enables you to configure products and see builds associated with each product.
 			<h4>Starred Builds</h4>
 			Click the name of the starred build to navigate to a page which shows the packages within that build and the build's recent executions.
