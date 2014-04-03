@@ -85,7 +85,7 @@
 						</goals>
 						<phase>package</phase>
 						<configuration>
-							<path>/</path>
+							<path>/api</path>
 							<finalName>exec-${project.build.finalName}.jar</finalName>
 							<enableNaming>true</enableNaming>
 						</configuration>
