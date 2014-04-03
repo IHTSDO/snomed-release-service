@@ -1,0 +1,55 @@
+{
+  "id" : "2014-03-31T13:08:12",
+  "creationTime" : "2014-03-31T13:08:12",
+  "build" : {
+    "id" : "20140731_international_release_build",
+    "name" : "20140731 International Release Build",
+    "packages" : [ {
+      "id" : "rf2_release",
+      "name" : "RF2 Release",
+      "inputFiles" : [ {
+        "id" : "concepts_rf2",
+        "name" : "concepts rf2",
+        "groupId" : "org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release",
+        "artifactId" : "rf2_release.input.concepts_rf2",
+        "version" : "2014-03-19T14-14-48",
+        "packaging" : "zip"
+      } ]
+    }, {
+      "id" : "rf1compatibilitypackage",
+      "name" : "RF1CompatibilityPackage",
+      "inputFiles" : [ {
+        "id" : "rf1compatibilitypackage",
+        "name" : "RF1CompatibilityPackage",
+        "groupId" : "org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release",
+        "artifactId" : "rf1compatibilitypackage.input.rf1compatibilitypackage",
+        "version" : "2014-03-27T08-44-32",
+        "packaging" : "zip"
+      } ]
+    }, {
+      "id" : "rf2torf1conversion",
+      "name" : "RF2toRF1Conversion",
+      "inputFiles" : [ {
+        "id" : "rf2_rf1_converter",
+        "name" : "RF2_RF1_Converter",
+        "groupId" : "org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release",
+        "artifactId" : "rf2torf1conversion.input.rf2_rf1_converter",
+        "version" : "2014-03-27T08-45-12",
+        "packaging" : "zip"
+      } ]
+    } ],
+    "product" : {
+      "id" : "snomed_ct_release",
+      "name" : "SNOMED CT Release",
+      "extension" : {
+        "id" : "snomed_ct_international_edition",
+        "name" : "SNOMED CT International Edition",
+        "releaseCenter" : {
+          "id" : "international",
+          "name" : "International Release Center",
+          "shortName" : "International"
+        }
+      }
+    }
+  }
+}
