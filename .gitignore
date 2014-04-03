@@ -1,0 +1,6 @@
+/vagrant/cache/ubuntu-packages/*
+/vagrant/cache/maven/*
+target/
+/.vagrant
+/.extract
+/vagrant/tomcat-webapps/*
