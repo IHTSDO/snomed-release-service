@@ -1,11 +1,11 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.hazelcast.core.IQueue;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import java.util.zip.ZipOutputStream;
 public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Autowired
-	private AmazonS3Client s3Client;
+	private S3Client s3Client;
 
 	@Autowired
 	private ExecutionS3PathHelper pathHelper;
@@ -65,6 +65,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
+//			objectContent.getHttpRequest().
 			return FileCopyUtils.copyToString(new InputStreamReader(objectContent));
 		} else {
 			return null;
@@ -208,7 +209,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		this.buildQueue = buildQueue;
 	}
 
-	public void setS3Client(AmazonS3Client s3Client) {
+	// Just for testing
+	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 	}
 

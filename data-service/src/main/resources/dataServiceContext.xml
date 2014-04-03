@@ -66,13 +66,26 @@
 
 	<bean class="org.ihtsdo.buildcloud.service.maven.MavenGenerator"/>
 
-	<bean class="com.amazonaws.services.s3.AmazonS3Client">
-		<constructor-arg>
-			<bean class="com.amazonaws.auth.BasicAWSCredentials">
-				<constructor-arg value="${aws.key}" />
-				<constructor-arg value="${aws.privateKey}" />
+	<bean class="org.ihtsdo.buildcloud.dao.s3.S3ClientFactory" factory-bean="s3ClientFactory" factory-method="getClient">
+		<constructor-arg value="${offline}" />
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.dao.s3.S3ClientFactory" name="s3ClientFactory">
+		<property name="onlineImplementation">
+			<bean class="org.ihtsdo.buildcloud.dao.s3.S3ClientImpl">
+				<constructor-arg>
+					<bean class="com.amazonaws.auth.BasicAWSCredentials">
+						<constructor-arg value="${aws.key}" />
+						<constructor-arg value="${aws.privateKey}" />
+					</bean>
+				</constructor-arg>
 			</bean>
-		</constructor-arg>
+		</property>
+		<property name="offlineImplementation">
+			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl">
+				<constructor-arg value="${s3Offline.bucketsPath}"/>
+			</bean>
+		</property>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>

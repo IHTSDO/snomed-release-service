@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -9,6 +8,7 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.test.DummyHazelcastQueue;
@@ -44,12 +44,12 @@ public class ExecutionDAOImplTest {
 	private Build build;
 	private Execution execution;
 	private MocksControl mocksControl;
-	private AmazonS3Client mockS3Client;
+	private S3Client mockS3Client;
 
 	@Before
 	public void setup() {
 		mocksControl = new MocksControl(MockType.DEFAULT);
-		this.mockS3Client = mocksControl.createMock(AmazonS3Client.class);
+		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		executionDAO.setS3Client(mockS3Client);
 
 		build = buildDAO.find(1L, "test");
