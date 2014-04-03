@@ -12,9 +12,12 @@
 <pre>{{configuration.json}}
 </pre>
 			{{#if isNotTriggered}}
-			<button type="button" id="tour-stop-10" class="btn btn-success btn-lg success" {{action 'triggerBuild' this}}>
+			<button type="button" id="tour-stop-10" class="btn btn-success btn-lg success" {{bind-attr disabled="isDemoData"}} {{action 'triggerBuild' this}}>
 				<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
 			</button>
+			{{/if}}
+			{{#if isDemoData}}
+			  (button disabled as data is required static for tour)
 			{{/if}}
 		</div>
 	</div>
