@@ -36,6 +36,8 @@ mvn clean install -DskipTests=true
 mv /var/lib/tomcat7/webapps /var/lib/tomcat7/_webapps.old
 ln -s /vagrant/vagrant/tomcat-webapps /var/lib/tomcat7/webapps
 cp api/target/api.war vagrant/tomcat-webapps
+cp -r /vagrant/vagrant/mock-s3 /tmp
+chown -R tomcat7:tomcat7 /tmp/mock-s3
 
 # Start Tomcat and Nginx
 service tomcat7 start

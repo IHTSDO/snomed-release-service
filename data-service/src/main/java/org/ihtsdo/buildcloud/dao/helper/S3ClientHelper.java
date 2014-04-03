@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.InputStream;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class S3ClientHelper {
 
 	@Autowired
-	private AmazonS3Client s3Client;
+	private S3Client s3Client;
 
 	private Map<String, AccessControlList> bucketAclCache;
 
