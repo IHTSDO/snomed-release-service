@@ -16,6 +16,7 @@
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
+		<packageNamePrefix>snomed-release</packageNamePrefix>
 	</properties>
 
 	<modules>

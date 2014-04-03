@@ -12,6 +12,12 @@
 
 	<name>API</name>
 
+	<properties>
+		<execFinalName>exec-${project.build.finalName}.jar</execFinalName>
+		<packageName>${packageNamePrefix}-${artifactId}</packageName>
+	</properties>
+
+
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -44,12 +50,12 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 			<version>${jackson.version}</version>
-		</dependency>		
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>${jackson.version}</version>
-		</dependency>		
+		</dependency>
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -85,9 +91,48 @@
 						</goals>
 						<phase>package</phase>
 						<configuration>
-							<path>/api</path>
-							<finalName>exec-${project.build.finalName}.jar</finalName>
+							<path>/</path>
+							<finalName>${execFinalName}</finalName>
 							<enableNaming>true</enableNaming>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.vafer</groupId>
+				<artifactId>jdeb</artifactId>
+				<version>1.1.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jdeb</goal>
+						</goals>
+						<configuration>
+							<deb>${project.build.directory}/${packageName}_${version}.deb</deb>
+							<dataSet>
+								<data>
+									<src>${project.build.directory}/${execFinalName}</src>
+									<dst>${artifactId}.jar</dst>
+									<type>file</type>
+									<mapper>
+										<type>perm</type>
+										<prefix>/opt/${packageNamePrefix}/lib/</prefix>
+									</mapper>
+								</data>
+								<data>
+									<src>${basedir}/src/deb/${artifactId}.upstart</src>
+									<dst>/etc/init/${packageName}.conf</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+								</data>
+								<data>
+									<type>template</type>
+									<paths>
+										<path>/var/run/${packageName}</path>
+									</paths>
+								</data>
+							</dataSet>
 						</configuration>
 					</execution>
 				</executions>
