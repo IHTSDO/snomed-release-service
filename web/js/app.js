@@ -582,18 +582,22 @@ function afterRender() {
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
 	effectPulse($('.traffic-light-in-progress'));	
-	initBuildInputFileUploadForm();
+	initBuildInputFileUploadForm(true);
+	initBuildInputFileUploadForm(false);
 }
 
-function initBuildInputFileUploadForm() {
-	var $button = $('.panel-build-input form .btn');
-	$('.panel-build-input form').submit(function () {
+function initBuildInputFileUploadForm(isManifest) {
+	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
+	var $button = $(selector + 'Btn');
+	$(selector + 'Form').submit(function () {
 		var $form = $(this);
 		if ($form.valid()) {
-			var actionPath = $('.actionpath', $form).text()
-			var shortName = $('input[name="shortName"]', $form).val();
-			var action = actionPath + shortName;
-			console.log('Upload url = "' + action + '"');
+			var action = $('.actionpath', $form).text();
+			if (!isManifest) {
+				var shortName = $('input[name="shortName"]', $form).val();
+				action += shortName;
+			}
+			console.log( (isManifest?"Manifest":"File") + ' upload url = "' + action + '"');
 			$form.attr('action', action);
 			$button.val('Uploading...');
 			$button.prop('disabled', true);
@@ -603,9 +607,10 @@ function initBuildInputFileUploadForm() {
 		}
 	});
 	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
+		var formIndex = isManifest?0:1;
 		$button.val('Upload');
 		$button.prop('disabled', false);
-		$('.panel-build-input form')[0].reset();
+		$('.panel-build-input form')[formIndex].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
 }

@@ -54,7 +54,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 	@Override
 	public InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
-								  InputStream fileStream, long fileSize, String authenticatedId) throws IOException {
+								  InputStream fileStream, long fileSize, boolean isManifest, String authenticatedId) throws IOException {
 
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
@@ -69,6 +69,8 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 		// Generate input file pom
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		
+		//TODO In a later iteration, store metadata about file in Pom as well eg manifest:true
 		mavenGenerator.generateArtifactPom(inputFile, new OutputStreamWriter(out));
 
 		// Upload input file pom to S3
