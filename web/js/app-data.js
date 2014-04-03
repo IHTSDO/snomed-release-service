@@ -53,6 +53,7 @@ App.InputFile = DS.Model.extend({
 	parent: DS.belongsTo('package'),
 	name: DS.attr()
 });
+var demoExecutions=['2014-03-31T09:30:23'];
 App.Execution = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	creationTimeString: DS.attr(),
@@ -77,6 +78,13 @@ App.Execution = DS.Model.extend({
 	}.property('status'),
 	creationTime: function() {
 		return moment(this.get('creationTimeString')).format('DD MMM, YYYY hh:mm:ss (UTC)');
+	}.property('creationTimeString'),
+	isDemoData: function () {
+		for (var i=0; i<demoExecutions.length; i++){
+			if (demoExecutions[i] == this.get('id'))
+				return true;
+		}
+		return false;
 	}.property('creationTimeString')
 });
 App.ExecutionStatus = {
