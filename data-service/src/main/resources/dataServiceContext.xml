@@ -12,6 +12,10 @@
 	<context:annotation-config />
 	<tx:annotation-driven/>
 
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:data-service.properties"/>
+	</bean>
+
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
@@ -65,8 +69,8 @@
 	<bean class="com.amazonaws.services.s3.AmazonS3Client">
 		<constructor-arg>
 			<bean class="com.amazonaws.auth.BasicAWSCredentials">
-				<constructor-arg value="***REMOVED***" />
-				<constructor-arg value="***REMOVED***" />
+				<constructor-arg value="${aws.key}" />
+				<constructor-arg value="${aws.privateKey}" />
 			</bean>
 		</constructor-arg>
 	</bean>
