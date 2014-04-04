@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet">
+	<link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 	<style>
 		html, body, body > .container-fluid, body > .container-fluid > .row, .col-table, .file-view {
 			height: 100%;
@@ -84,10 +84,8 @@
 		</div>
 	</div>
 </div>
-<script src="../libs/jquery-2.0.3.js" ></script>
-<script src="../libs/handlebars-1.1.2.js"></script>
-<script src="../libs/bootstrap/js/tooltip.js"></script>
-<script src="../libs/bootstrap/js/popover.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js" ></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 <script>
 
 function RF2Browser() {
@@ -212,7 +210,7 @@ function RF2Browser() {
 								var result = '';
 								$.ajax({
 									async: false,
-									url: 'https://browser.snomedtools.com/version/1/concept/json/' + text,
+									url: 'http://browser.snomedtools.com/version/1/concept/json/' + text,
 									success: function(object) {
 										result = object.fullySpecifiedName;
 									},
