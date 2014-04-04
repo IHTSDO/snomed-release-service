@@ -1,9 +1,12 @@
 env JVM_OPTIONS="-Xms64m -Xmx256m"
 env APP_OPTIONS="--httpPort=8080"
 
+start on runlevel [2345]
+stop on runlevel [!2345]
+
 console log
-chdir /var/run/snomed-release-api
 setuid snomed-release-api
+chdir  /var/run/snomed-release-api
 
 script
   exec /usr/bin/java $JVM_OPTIONS -jar /opt/snomed-release/lib/api.jar $APP_OPTIONS

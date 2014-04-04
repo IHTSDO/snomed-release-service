@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+PROJECT=snomed-release
+ARTIFACT=api
+NAME=${PROJECT}-${ARTIFACT}
+
+stop snomed-release-api
+rm -r /var/run/snomed-release-api
