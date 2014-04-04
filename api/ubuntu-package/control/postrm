@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+PROJECT=snomed-release
+ARTIFACT=api
+NAME=${PROJECT}-${ARTIFACT}
+
+case $1 in
+	purge)
+		if getent passwd snomed-release-api >/dev/null; then
+  			userdel ${NAME}
+		fi
+		rm -r /var/lib/snomed-release-api
+	;;
+esac
