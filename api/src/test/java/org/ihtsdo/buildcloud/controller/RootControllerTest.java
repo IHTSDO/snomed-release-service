@@ -1,0 +1,27 @@
+package org.ihtsdo.buildcloud.controller;
+
+
+import org.junit.Test;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@Transactional
+public class RootControllerTest extends ControllerTest {
+
+	@Test
+	public void root_returns_centers_and_builds() throws Exception {
+
+		mockMvc.perform(get("/"))
+				.andExpect(status().isOk())
+				.andDo(print())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andExpect(jsonPath("$.url", is(ROOT_URL)))
+				.andExpect(jsonPath("$.centers_url", is(ROOT_URL + "/centers")))
+				.andExpect(jsonPath("$.builds_url", is(ROOT_URL + "/builds")));
+	}
+
+}
