@@ -32,12 +32,20 @@ App.Product = DS.Model.extend({
 	name: DS.attr(),
 	builds: DS.hasMany('build', { async: true })
 });
+var activeBuilds=['1_20140731_international_release_build'];
 App.Build = DS.Model.extend({
 	product: DS.belongsTo('product'),
 	name: DS.attr(),
 	config: DS.belongsTo('buildConfig', { async: true }),
 	packages: DS.hasMany('package', { async: true }),
-	executions: DS.hasMany('execution', { async: true })
+	executions: DS.hasMany('execution', { async: true }),
+	isDemoData: function () {
+		for (var i=0; i<activeBuilds.length; i++){
+			if (activeBuilds[i] == this.get('id'))
+				return false;
+		}
+		return true;
+	}.property('name')
 });
 App.BuildConfig = DS.Model.extend({
 	parent: DS.belongsTo('build'),
@@ -85,7 +93,7 @@ App.Execution = DS.Model.extend({
 				return true;
 		}
 		return false;
-	}.property('creationTimeString')
+	}.property('creationTime')
 });
 App.ExecutionStatus = {
 	BEFORE_TRIGGER: 'BEFORE_TRIGGER',
