@@ -1,0 +1,4 @@
+target
+.*
+vagrant/cache
+vagrant/tomcat-webapps
