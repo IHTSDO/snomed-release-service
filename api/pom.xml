@@ -8,15 +8,13 @@
 	</parent>
 
 	<artifactId>api</artifactId>
-	<packaging>war</packaging>
 
 	<name>API</name>
 
 	<properties>
 		<execFinalName>exec-${project.build.finalName}.jar</execFinalName>
-		<packageName>${packageNamePrefix}-${artifactId}</packageName>
+		<packageName>${packageNamePrefix}-${project.artifactId}</packageName>
 	</properties>
-
 
 	<dependencies>
 		<dependency>
@@ -109,12 +107,12 @@
 							<goal>jdeb</goal>
 						</goals>
 						<configuration>
-							<deb>${project.build.directory}/${packageName}_${version}.deb</deb>
+							<deb>${project.build.directory}/${packageName}_${project.version}.deb</deb>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
 							<dataSet>
 								<data>
 									<src>${project.build.directory}/${execFinalName}</src>
-									<dst>${artifactId}.jar</dst>
+									<dst>${project.artifactId}.jar</dst>
 									<type>file</type>
 									<mapper>
 										<type>perm</type>
@@ -122,7 +120,7 @@
 									</mapper>
 								</data>
 								<data>
-									<src>${basedir}/ubuntu-package/${artifactId}.upstart</src>
+									<src>${basedir}/ubuntu-package/${project.artifactId}.upstart</src>
 									<dst>/etc/init/${packageName}.conf</dst>
 									<type>file</type>
 									<conffile>true</conffile>
