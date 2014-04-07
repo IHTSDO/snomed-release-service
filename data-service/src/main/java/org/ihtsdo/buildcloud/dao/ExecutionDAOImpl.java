@@ -1,15 +1,14 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
-import com.hazelcast.core.IQueue;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
@@ -30,7 +29,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private String executionS3BucketName;
 
-	private IQueue<String> buildQueue;
+	@Autowired
+	private JmsTemplate jmsTemplate;
 
 	private static final String BLANK = "";
 
@@ -88,7 +88,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		updateStatus(execution, Execution.Status.QUEUED);
 		// Note: this url will only work while the Builder is on the same server as the API.
 		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
-		buildQueue.add(executionApiUrl);
+		LOGGER.info("Queuing Execution for building {}", executionApiUrl);
+		jmsTemplate.convertAndSend(executionApiUrl);
 	}
 
 	@Override
@@ -204,14 +205,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 
-	@Required
-	public void setBuildQueue(IQueue<String> buildQueue) {
-		this.buildQueue = buildQueue;
-	}
-
 	// Just for testing
 	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 	}
 
+	// Just for testing
+	public void setJmsTemplate(JmsTemplate jmsTemplate) {
+		this.jmsTemplate = jmsTemplate;
+	}
 }
