@@ -8,6 +8,7 @@
 	</parent>
 
 	<artifactId>api</artifactId>
+	<packaging>war</packaging>
 
 	<name>API</name>
 
@@ -89,7 +90,7 @@
 						</goals>
 						<phase>package</phase>
 						<configuration>
-							<path>/</path>
+							<path>/api</path>
 							<finalName>${execFinalName}</finalName>
 							<enableNaming>true</enableNaming>
 						</configuration>
