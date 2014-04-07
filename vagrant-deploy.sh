@@ -3,7 +3,7 @@
 set -e # Stop on error
 
 # Maven build
-#mvn clean install -Dapple.awt.UIElement='true'
+mvn clean install -Dapple.awt.UIElement='true'
 
 # Deploy API
 echo "Deploying API"
