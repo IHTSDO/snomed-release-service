@@ -1,6 +1,7 @@
-/vagrant/cache/ubuntu-packages/*
-/vagrant/cache/maven/*
-target/
-/.vagrant
-/.extract
-/vagrant/tomcat-webapps/*
+target
+.*
+*.iml
+*.project
+*.classpath
+vagrant/cache
+vagrant/tomcat-webapps
