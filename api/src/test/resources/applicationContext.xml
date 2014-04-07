@@ -9,10 +9,15 @@
         http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
         http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd">
 
+
+	<!-- TODO: This is largely a duplicate of the data-service context. Let's get together and refactor. -->
+
+
 	<context:annotation-config />
 	<tx:annotation-driven/>
 	
 	<import resource="DispatcherServlet-servlet.xml"/>
+	<import resource="jmsConnectionContext.xml"/>
 
 
 	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -27,11 +32,8 @@
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
 	
-	<bean id="buildQueue" class="org.ihtsdo.test.DummyHazelcastQueue"/>
-	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
-		<property name="buildQueue" ref="buildQueue"/>
-	</bean>
-	
+	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl"/>
+
 	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl">
 		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
 	</bean>
