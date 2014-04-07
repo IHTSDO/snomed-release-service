@@ -10,12 +10,11 @@
 	</parent>
 
 	<artifactId>web</artifactId>
-	<packaging>war</packaging>
 
 	<name>Web Front End</name>
 
 	<properties>
-		<packageName>${packageNamePrefix}-${artifactId}</packageName>
+		<packageName>${packageNamePrefix}-${project.artifactId}</packageName>
 	</properties>
 
 	<build>
@@ -47,7 +46,7 @@
 							<goal>jdeb</goal>
 						</goals>
 						<configuration>
-							<deb>${project.build.directory}/${packageName}_${version}.deb</deb>
+							<deb>${project.build.directory}/${packageName}_${project.version}.deb</deb>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
 							<dataSet>
 					            <data>
