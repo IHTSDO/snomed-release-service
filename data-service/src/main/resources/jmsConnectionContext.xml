@@ -1,0 +1,19 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="
+	    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+	<bean class="org.springframework.jms.core.JmsTemplate">
+		<property name="defaultDestinationName" value="org.ihtsdo.buildcloud.build.queue"/>
+		<property name="connectionFactory">
+			<bean class="org.springframework.jms.connection.CachingConnectionFactory" destroy-method="destroy">
+				<constructor-arg>
+					<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+						<constructor-arg value="tcp://localhost:61616"/>
+					</bean>
+				</constructor-arg>
+			</bean>
+		</property>
+	</bean>
+
+</beans>

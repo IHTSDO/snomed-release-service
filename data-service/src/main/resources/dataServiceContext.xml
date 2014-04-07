@@ -27,9 +27,7 @@
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
-		<property name="buildQueue" ref="buildQueue"/>
-	</bean>
+	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCenterServiceImpl"/>

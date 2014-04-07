@@ -11,12 +11,12 @@ import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.test.DummyHazelcastQueue;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -39,7 +38,7 @@ public class ExecutionDAOImplTest {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private DummyHazelcastQueue<String> dummyBuildQueue;
+	private JmsTemplate jmsTemplate;
 
 	private Build build;
 	private Execution execution;
@@ -51,6 +50,8 @@ public class ExecutionDAOImplTest {
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		executionDAO.setS3Client(mockS3Client);
+		this.jmsTemplate = mocksControl.createMock(JmsTemplate.class);
+		executionDAO.setJmsTemplate(jmsTemplate);
 
 		build = buildDAO.find(1L, "test");
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
@@ -138,6 +139,8 @@ public class ExecutionDAOImplTest {
 		Capture<String> newStatusPathCapture = new Capture<>();
 		mockS3Client.deleteObject(EasyMock.isA(String.class), EasyMock.capture(oldStatusPathCapture));
 		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(newStatusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+		Capture<String> jmsMessageCapture = new Capture<>();
+		jmsTemplate.convertAndSend(EasyMock.capture(jmsMessageCapture));
 
 		mocksControl.replay();
 		executionDAO.queueForBuilding(execution);
@@ -145,9 +148,7 @@ public class ExecutionDAOImplTest {
 
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
-		List<String> capturedQueueItems = dummyBuildQueue.getCapturedQueueItems();
-		Assert.assertEquals(1, capturedQueueItems.size());
-		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", capturedQueueItems.get(0));
+		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", jmsMessageCapture.getValue());
 	}
 
 	private void addObjectSummary(ObjectListing objectListing, String path) {
