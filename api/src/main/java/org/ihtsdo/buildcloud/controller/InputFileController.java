@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.controller.helper.Utils;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
@@ -18,6 +19,7 @@ import javax.servlet.http.Part;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -83,7 +85,8 @@ public class InputFileController {
 	public Map uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@RequestParam Part file,
 								HttpServletRequest request) throws IOException {
-		return uploadFile (buildCompositeKey, packageBusinessKey, MANIFEST_FILENAME, file, request, true);
+		String filename = Utils.getFilename(file, "manifest.xml");
+		return uploadFile (buildCompositeKey, packageBusinessKey, filename, file, request, true);
 	}
 	
 	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.POST)
@@ -112,7 +115,7 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/{inputFileBusinessKey}/file", produces="application/zip")
 	public void getInputFileContents(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 													@PathVariable String inputFileBusinessKey, HttpServletResponse response) throws IOException {
-		getInputFileContents(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, response);
+		getFileContents(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, response);
 	}
 	
 	@RequestMapping(value = "/manifest/file", produces="application/zip")
