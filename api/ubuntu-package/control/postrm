@@ -1,14 +1,12 @@
 #!/bin/sh -e
 
-PROJECT=snomed-release
-ARTIFACT=api
-NAME=${PROJECT}-${ARTIFACT}
+APP_NAME=snomed-release-api
 
 case $1 in
 	purge)
-		if getent passwd snomed-release-api >/dev/null; then
-  			userdel ${NAME}
+		if getent passwd $APP_NAME >/dev/null; then
+  			userdel $APP_NAME
 		fi
-		rm -r /var/lib/snomed-release-api
+		rm -r /var/lib/$APP_NAME
 	;;
 esac

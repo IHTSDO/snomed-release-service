@@ -1,21 +1,16 @@
 #!/bin/sh -e
 
-PROJECT=snomed-release
-ARTIFACT=api
-NAME=${PROJECT}-${ARTIFACT}
+APP_NAME=snomed-release-api
 
-mkdir -p /var/run/snomed-release-api
-chmod 700 /var/run/snomed-release-api
+mkdir -p /var/run/$APP_NAME
+chmod 700 /var/run/$APP_NAME
 
-if ! getent passwd snomed-release-api >/dev/null; then
-  adduser --quiet --system --no-create-home --home /opt/${PROJECT} --shell /bin/false ${NAME}
+if ! getent passwd $APP_NAME >/dev/null; then
+  adduser --quiet --system --no-create-home --home /opt/$APP_NAME --shell /bin/false $APP_NAME
 fi
 
-mkdir -p /var/run/snomed-release-api
-mkdir -p /var/lib/snomed-release-api
-chmod 700 /var/run/snomed-release-api
-chmod 700 /var/lib/snomed-release-api
-chown snomed-release-api /var/run/snomed-release-api
-chown snomed-release-api /var/lib/snomed-release-api
+mkdir -p /var/lib/$APP_NAME
+chmod 700 /var/lib/$APP_NAME
+chown $APP_NAME /var/lib/$APP_NAME
 
-start snomed-release-api
+start $APP_NAME
