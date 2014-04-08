@@ -113,11 +113,11 @@
 							<dataSet>
 								<data>
 									<src>${project.build.directory}/${execFinalName}</src>
-									<dst>${project.artifactId}.jar</dst>
+									<dst>app.jar</dst>
 									<type>file</type>
 									<mapper>
 										<type>perm</type>
-										<prefix>/opt/${packageNamePrefix}/lib/</prefix>
+										<prefix>/opt/${packageName}/lib/</prefix>
 									</mapper>
 								</data>
 								<data>

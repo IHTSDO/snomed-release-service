@@ -1,13 +1,22 @@
 env JVM_OPTIONS="-Xms64m -Xmx256m"
 env APP_OPTIONS="--httpPort=8080"
+env APP_NAME=snomed-release-api
 
 start on runlevel [2345]
 stop on runlevel [!2345]
 
 console log
-setuid snomed-release-api
-chdir  /var/run/snomed-release-api
+
+pre-start script
+  mkdir -p /var/run/$APP_NAME
+  chown $APP_NAME /var/run/$APP_NAME
+end script
 
 script
-  exec /usr/bin/java $JVM_OPTIONS -jar /opt/snomed-release/lib/api.jar $APP_OPTIONS
+  cd /var/run/$APP_NAME
+  exec su -s /bin/sh -c 'exec "$0" "$@"' $APP_NAME -- /usr/bin/java $JVM_OPTIONS -jar /opt/$APP_NAME/lib/app.jar $APP_OPTIONS
+end script
+
+post-stop script
+  rm -r /var/run/$APP_NAME
 end script

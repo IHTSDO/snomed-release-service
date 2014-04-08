@@ -1,4 +1,4 @@
-Package: [[packageNamePrefix]]-[[artifactId]]
+Package: [[packageName]]
 Version: [[version]]
 Priority: optional
 Architecture: all
