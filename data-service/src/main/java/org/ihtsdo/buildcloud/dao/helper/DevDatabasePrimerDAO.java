@@ -25,7 +25,7 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 			ReleaseCenter internationalReleaseCenter = createTestReleaseCenter();
 			save(internationalReleaseCenter);
 
-			User testUser = new User("test");
+			User testUser = new User(TestEntityGenerator.TEST_USER);
 			ReleaseCenterMembership releaseCenterMembership = new ReleaseCenterMembership(internationalReleaseCenter, testUser);
 
 			session.save(testUser);

@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
@@ -11,6 +12,7 @@ import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +55,7 @@ public class ExecutionDAOImplTest {
 		this.jmsTemplate = mocksControl.createMock(JmsTemplate.class);
 		executionDAO.setJmsTemplate(jmsTemplate);
 
-		build = buildDAO.find(1L, "test");
+		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, build);
 	}

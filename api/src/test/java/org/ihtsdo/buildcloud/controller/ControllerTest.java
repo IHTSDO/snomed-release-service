@@ -1,14 +1,13 @@
 package org.ihtsdo.buildcloud.controller;
 
-import org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO;
-import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.service.DevDatabasePrimerService;
+
 import org.junit.Before;
-import org.junit.Test;
+
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,7 +21,7 @@ import java.nio.charset.Charset;
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @WebAppConfiguration
 @Transactional
-public abstract class ControllerTest extends TestEntityGenerator{
+public abstract class ControllerTest extends AbstractJUnit4SpringContextTests{
 
 	public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(MediaType.APPLICATION_JSON.getType(),
 			MediaType.APPLICATION_JSON.getSubtype(),

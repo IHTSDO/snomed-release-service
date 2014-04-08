@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,8 +18,6 @@ import java.util.List;
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
 public class BuildDAOImplTest {
-	
-	public static final String AUTHENTICATED_ID = "test";
 
 	@Autowired
 	private BuildDAO dao;
@@ -26,13 +25,13 @@ public class BuildDAOImplTest {
 	@Test
 	public void testInitialData() {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
-		List<Build> builds = dao.findAll(filterOptions, AUTHENTICATED_ID);
+		List<Build> builds = dao.findAll(filterOptions, TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(builds);
 		Assert.assertEquals(8, builds.size());
 
-		Assert.assertNotNull(dao.find(1L, AUTHENTICATED_ID));
-		Assert.assertNotNull(dao.find(2L, AUTHENTICATED_ID));
-		Assert.assertNull(dao.find(9L, AUTHENTICATED_ID));
+		Assert.assertNotNull(dao.find(1L, TestEntityGenerator.TEST_USER));
+		Assert.assertNotNull(dao.find(2L, TestEntityGenerator.TEST_USER));
+		Assert.assertNull(dao.find(9L, TestEntityGenerator.TEST_USER));
 	}
 
 }
