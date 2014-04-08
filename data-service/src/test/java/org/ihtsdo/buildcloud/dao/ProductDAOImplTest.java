@@ -18,15 +18,13 @@ public class ProductDAOImplTest extends TestEntityGenerator{
 
 	@Autowired
 	private ProductDAO dao;
-	
-	public static final String AUTHENTICATED_ID = "test";
 
 	@Test
 	public void testInitialData() {
 		Product product = dao.find(	EntityHelper.formatAsBusinessKey(TestEntityGenerator.releaseCenterShortNames[0]),
 									EntityHelper.formatAsBusinessKey(TestEntityGenerator.extensionNames[1].toLowerCase()), 
 									EntityHelper.formatAsBusinessKey(TestEntityGenerator.productNames[1][0].toLowerCase()),
-									AUTHENTICATED_ID);
+									TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(product);
 		Assert.assertEquals(TestEntityGenerator.productNames[1][0], product.getName());
 	}

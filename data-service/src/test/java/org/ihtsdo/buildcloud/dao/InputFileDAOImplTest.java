@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +20,7 @@ public class InputFileDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		InputFile inputFile = dao.find(1L, "rf2_release", "concepts_rf2", "test");
+		InputFile inputFile = dao.find(1L, "rf2_release", "concepts_rf2", TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(inputFile);
 		Assert.assertEquals("concepts rf2", inputFile.getName());
 		Assert.assertEquals("concepts_rf2", inputFile.getBusinessKey());
