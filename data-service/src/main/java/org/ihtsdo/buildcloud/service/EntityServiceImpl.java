@@ -19,4 +19,9 @@ public abstract class EntityServiceImpl<T> implements EntityService<T> {
 		dao.update(entity);
 	}
 
+	@Override
+	public void delete(T entity) {
+		dao.delete(entity);
+	}
+
 }

@@ -6,4 +6,6 @@ public interface EntityDAO<T> {
 
 	void update(T entity);
 
+	void delete(T entity);
+
 }
