@@ -21,6 +21,11 @@ public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
 		getCurrentSession().update(entity);
 	}
 
+	@Override
+	public void delete(T entity) {
+		getCurrentSession().delete(entity);
+	}
+
 	protected Session getCurrentSession() {
 		return sessionFactory.getCurrentSession();
 	}

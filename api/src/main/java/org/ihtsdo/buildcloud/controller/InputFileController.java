@@ -127,7 +127,15 @@ public class InputFileController {
 		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
 		getFileContents(buildCompositeKey, packageBusinessKey, manifest.getBusinessKey(), response);
 	}
-	
+
+	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.DELETE)
+	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+								@PathVariable String inputFileName, HttpServletResponse response) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedId);
+		inputFileService.delete(inputFile);
+		response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+	}
 
 	private void getFileContents(	String buildCompositeKey,
 									String packageBusinessKey,
