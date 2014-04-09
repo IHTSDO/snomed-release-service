@@ -55,9 +55,9 @@ App.Package = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	name: DS.attr(),
 	status: DS.attr(),
-	inputfiles: DS.hasMany('inputFile', { async: true })
+	inputfiles: DS.hasMany('inputfile', { async: true })
 });
-App.InputFile = DS.Model.extend({
+App.Inputfile = DS.Model.extend({
 	parent: DS.belongsTo('package'),
 	name: DS.attr()
 });

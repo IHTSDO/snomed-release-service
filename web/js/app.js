@@ -51,6 +51,7 @@ App.Router.map(function() {
 	this.resource('admin', function() {
 		this.resource('create-release-center');
 	});
+	this.resource('confirm-dialog');
 });
 
 
@@ -81,7 +82,12 @@ App.ApplicationRoute = Ember.Route.extend({
 		openModal: function(modalName, params) {
 			console.log('openModal');
 			var controller = this.controllerFor(modalName);
-			var model = controller.getModel(params);
+			var model = null;
+			if (controller.getModel) {
+				model = controller.getModel(params);
+			} else {
+				model = params;
+			}
 			controller.set('model', model);
 			return this.render(modalName, {
 				into: 'application',
@@ -422,6 +428,24 @@ App.BuildInputController = Ember.ObjectController.extend({
 		reload: function() {
 			var inputfiles = this.get('inputfiles');
 			inputfiles.reloadLinks();
+		},
+		deleteInputFile: function(inputFile) {
+			console.log('deleteInputFile');
+			console.log(inputFile);
+			var store = this.store;
+			this.send('openModal', 'confirm-dialog',
+				{
+					question: 'Delete input file?',
+					guardedFunction: function() {
+						console.log('deleting', inputFile);
+						var parent = inputFile.get('parent');
+						inputFile.deleteRecord();
+						inputFile.set('parent', parent);
+						inputFile.save().then(function() {
+							parent.get('inputfiles').removeObject(inputFile);
+						})
+					}
+				});
 		}
 	}
 })
@@ -557,6 +581,22 @@ App.RemoveEntityController = Ember.ObjectController.extend({
 			model.set('removed', true);
 			model.save();
 			this.send('closeModal');
+		}
+	}
+})
+
+App.ConfirmDialogView = Ember.View.extend({
+	templateName: 'confirm-dialog',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.ConfirmDialogController = Ember.ObjectController.extend({
+	actions: {
+		proceed: function() {
+			var model = this.get('model');
+			var guardedFunction = model.guardedFunction;
+			guardedFunction();
 		}
 	}
 })
