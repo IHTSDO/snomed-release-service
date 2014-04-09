@@ -29,12 +29,14 @@
 					<thead>
 						<th>Name</th>
 						<th>Source</th>
+						<th></th>
 					</thead>
 					<tbody>
 						{{#each inputfiles}}
 						<tr>
 							<td>{{name}}</td>
 							<td>Uploaded</td>
+							<td><a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a></td>
 						</tr>
 						{{else}}
 						<tr>
