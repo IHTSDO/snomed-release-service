@@ -34,7 +34,8 @@ public class InputFile implements MavenArtifact {
 	@ManyToOne
 	@JsonIgnore
 	private Package packag;
-	
+
+	@JsonIgnore
 	@ElementCollection(fetch=FetchType.EAGER)
 	private Map<String, String> metaData;
 
@@ -138,6 +139,7 @@ public class InputFile implements MavenArtifact {
 	}
 
 	@Override
+	@JsonIgnore
 	public Map<String, String> getMetaData() {
 		return metaData;
 	}
