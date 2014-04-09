@@ -1,7 +1,10 @@
 package org.ihtsdo.buildcloud.service.maven;
 
 import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Helper;
 import com.github.jknack.handlebars.Template;
+import com.github.jknack.handlebars.Options;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.InputFile;
@@ -33,6 +36,19 @@ public class MavenGenerator {
 
 	public MavenGenerator() throws IOException {
 		handlebars = new Handlebars();
+		
+		handlebars.registerHelper("eachInMap", new Helper<Map<String,String>> () {
+			public CharSequence apply(Map<String, String> map, Options options) {
+				String result = "";
+				if (map != null){
+					result += map.size() > 0 ? "\n\t" : "";
+					for (Map.Entry<String, String> entry : map.entrySet()){
+						result += "\t<" + entry.getKey() + ">" + entry.getValue() + "</" + entry.getKey() + ">\n\t";
+					}
+				}
+				return new Handlebars.SafeString (result);
+			}			
+		});
 
 		buildPomHandlebars = handlebars.compile("build-pom");
 		packagePomHandlebars = handlebars.compile("package-pom");
@@ -106,5 +122,6 @@ public class MavenGenerator {
 		String artifactId = artifactIdWriter.toString();
 		inputFile.setArtifactId(artifactId);
 	}
+	
 
 }

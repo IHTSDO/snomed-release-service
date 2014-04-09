@@ -1,11 +1,14 @@
 package org.ihtsdo.buildcloud.entity;
 
+import java.util.Map;
+
 public class TestMavenArtifact implements MavenArtifact {
 
 	private String groupId;
 	private String artifactId;
 	private String version;
 	private String packaging;
+	private Map<String, String> metaData;
 
 	public TestMavenArtifact(String groupId, String artifactId, String version, String packaging) {
 		this.groupId = groupId;
@@ -44,6 +47,14 @@ public class TestMavenArtifact implements MavenArtifact {
 
 	public void setPackaging(String packaging) {
 		this.packaging = packaging;
+	}
+
+	public Map<String, String> getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(Map<String, String> metaData) {
+		this.metaData = metaData;
 	}
 
 }
