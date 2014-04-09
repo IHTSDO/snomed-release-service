@@ -19,7 +19,6 @@ import javax.servlet.http.Part;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -36,8 +35,7 @@ public class InputFileController {
 
 	public static final String[] INPUT_FILE_LINKS = {"file"};
 	
-	public static final String MANIFEST_FILENAME = "manifest.xml";
-	public static final String MANIFEST_BUSINESS_KEY = "manifestxml";
+	public static final String MANIFEST_KEY = "isManifest";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 	
@@ -50,7 +48,7 @@ public class InputFileController {
 		//TODO Rewrite this with lambda expression once we're on Java8
 		List<InputFile> filteredFiles = new Vector<InputFile>();
 		for (InputFile file : inputFiles) {
-			if (!file.getName().equals(MANIFEST_FILENAME))
+			if (!file.getMetaData().containsKey(MANIFEST_KEY))
 				filteredFiles.add(file);
 		}
 		return hypermediaGenerator.getEntityCollectionHypermedia(filteredFiles, request, INPUT_FILE_LINKS);
@@ -70,14 +68,19 @@ public class InputFileController {
 	public Map<String, Object> getManifest( @PathVariable String buildCompositeKey,
 											@PathVariable String packageBusinessKey, 
 											HttpServletRequest request) {
+		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
+		return hypermediaGenerator.getEntityHypermedia(manifest, request, INPUT_FILE_LINKS);
+	}
+	
+	private InputFile getManifest (String buildCompositeKey, String packageBusinessKey) {
 		String authenticatedId = SecurityHelper.getSubject();
 		List<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedId);
 		InputFile manifest = null;
 		for (InputFile file : inputFiles) {
-			if (file.getName().equals(MANIFEST_FILENAME))
+			if (file.getMetaData().containsKey(MANIFEST_KEY))
 				manifest = file;
-		}		
-		return hypermediaGenerator.getEntityHypermedia(manifest, request, INPUT_FILE_LINKS);
+		}
+		return manifest;
 	}
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
@@ -121,7 +124,8 @@ public class InputFileController {
 	@RequestMapping(value = "/manifest/file", produces="application/zip")
 	public void getManifestContents(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 									HttpServletResponse response) throws IOException {
-		getFileContents(buildCompositeKey, packageBusinessKey, MANIFEST_BUSINESS_KEY, response);
+		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
+		getFileContents(buildCompositeKey, packageBusinessKey, manifest.getBusinessKey(), response);
 	}
 	
 
