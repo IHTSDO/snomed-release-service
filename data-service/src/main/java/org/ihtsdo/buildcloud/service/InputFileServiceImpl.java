@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -70,7 +72,11 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		// Generate input file pom
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		
-		//TODO In a later iteration, store metadata about file in Pom as well eg manifest:true
+		Map<String, String> metaData = new HashMap<String,String>();
+		if (isManifest){
+			metaData.put("isManifest", "true");
+			inputFile.setMetaData(metaData);
+		}
 		mavenGenerator.generateArtifactPom(inputFile, new OutputStreamWriter(out));
 
 		// Upload input file pom to S3

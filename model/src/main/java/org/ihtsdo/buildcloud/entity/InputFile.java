@@ -5,11 +5,18 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.MavenArtifactHelper;
 
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
+
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 public class InputFile implements MavenArtifact {
@@ -27,6 +34,9 @@ public class InputFile implements MavenArtifact {
 	@ManyToOne
 	@JsonIgnore
 	private Package packag;
+	
+	@ElementCollection(fetch=FetchType.EAGER)
+	private Map<String, String> metaData;
 
 	/**
 	 * artifactId is generated but stored to guard against renaming.
@@ -43,9 +53,11 @@ public class InputFile implements MavenArtifact {
 	private static final String packaging = "zip";
 
 	public InputFile() {
+		this.metaData = new HashMap<String, String>();
 	}
 
 	public InputFile(String name) {
+		this();
 		setName(name);
 	}
 
@@ -123,5 +135,14 @@ public class InputFile implements MavenArtifact {
 
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+	}
+
+	@Override
+	public Map<String, String> getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(Map<String, String> metadata) {
+		this.metaData = metadata;
 	}
 }
