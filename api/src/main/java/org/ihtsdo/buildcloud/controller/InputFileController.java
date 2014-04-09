@@ -142,10 +142,10 @@ public class InputFileController {
 				FileCopyUtils.copy(fileStream, outputStream);
 				outputStream.flush();
 			}
+		} else {
+			// File not found
+			response.sendError(404);
 		}
-
-		// File not found
-		response.sendError(404);
 	}
 
 }
