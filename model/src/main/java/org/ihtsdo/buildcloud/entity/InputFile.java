@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Entity
-public class InputFile implements MavenArtifact {
+public class InputFile implements MavenArtifact, DomainEntity {
 
 	@Id
 	@GeneratedValue
@@ -147,4 +147,14 @@ public class InputFile implements MavenArtifact {
 	public void setMetaData(Map<String, String> metadata) {
 		this.metaData = metadata;
 	}
+
+	@Override
+	public DomainEntity getParent() {
+		return packag;
+	}
+
+	@Override
+	public String getCollectionName() {
+		return "inputFiles";
+	}	
 }
