@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Extension {
+public class Extension implements DomainEntity{
 
 	@Id
 	@GeneratedValue
@@ -76,4 +76,13 @@ public class Extension {
 		return products;
 	}
 
+	@Override
+	public DomainEntity getParent() {
+		return releaseCenter;
+	}
+
+	@Override
+	public String getCollectionName() {
+		return "extensions";
+	}
 }

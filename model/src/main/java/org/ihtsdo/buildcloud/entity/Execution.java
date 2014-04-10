@@ -10,7 +10,7 @@ import java.util.Date;
  *
  * This entity is stored via S3, not Hibernate.
  */
-public class Execution {
+public class Execution  implements DomainEntity{
 
 	private final String creationTime;
 
@@ -54,4 +54,18 @@ public class Execution {
 		return build;
 	}
 
+	@Override
+	public DomainEntity getParent() {
+		return build;
+	}
+
+	@Override
+	public String getCollectionName() {
+		return "executions";
+	}
+
+	@Override
+	public String getBusinessKey() {
+		return null;
+	}
 }

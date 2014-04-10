@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.util.*;
 
 @Entity
-public class Build {
+public class Build  implements DomainEntity{
 
 	@Id
 	@GeneratedValue
@@ -106,4 +106,13 @@ public class Build {
 		this.starred = isStarred;
 	}
 
+	@Override
+	public DomainEntity getParent() {
+		return product;
+	}
+
+	@Override
+	public String getCollectionName() {
+		return "builds";
+	}
 }
