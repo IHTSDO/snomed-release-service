@@ -55,10 +55,11 @@ App.Package = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	name: DS.attr(),
 	status: DS.attr(),
-	inputfiles: DS.hasMany('inputfile', { async: true })
+	inputfiles: DS.hasMany('inputFile', { async: true }),
+	manifest: DS.belongsTo('inputFile', { async: true })
 });
-App.Inputfile = DS.Model.extend({
-	parent: DS.belongsTo('package'),
+App.InputFile = DS.Model.extend({
+	parent: DS.belongsTo('package', { inverse: 'inputfiles' }),
 	name: DS.attr()
 });
 var demoExecutions=['2014-03-31T09:30:23'];
