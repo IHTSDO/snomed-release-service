@@ -6,17 +6,22 @@
 	
 		<div class="panel panel-info">
 			<div class="panel-heading">
-				<div class="panel-title">Manifest File</div>
+				<div class="panel-title">
+					<a id="collapseManifestControl" {{bind-attr class=":accordion-toggle :finger manifest.name:collapsed"}} onClick="$('#collapseManifestPanel').collapse('toggle'); $('#collapseManifestControl').toggleClass('collapsed')">
+						Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
+					</a>
+				</div>
 			</div>
-			<div class="panel-body">
-
-				<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
-					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
-					<div class="form-group">
-						<input type="file" name="file" class="form-control" required/>
-					</div>
-					<input type="submit" id="buildManifestUploadBtn" class="btn btn-default" value="Upload"/>
-				</form>
+			<div id="collapseManifestPanel" {{bind-attr class=":panel-collapse :collapse manifest.name::in"}}>
+				<div class="panel-body">
+					<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+						<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
+						<div class="form-group">
+							<input type="file" name="file" class="form-control" required/>
+						</div>
+						<input type="submit" id="buildManifestUploadBtn" class="btn btn-default" value="Upload"/>
+					</form>
+				</div>
 			</div>
 		</div>
 

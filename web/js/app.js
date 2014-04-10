@@ -428,6 +428,8 @@ App.BuildInputController = Ember.ObjectController.extend({
 		reload: function() {
 			var inputfiles = this.get('inputfiles');
 			inputfiles.reloadLinks();
+			var manifest = this.get('manifest');
+			manifest.reloadLinks();
 		},
 		deleteInputFile: function(inputFile) {
 			console.log('deleteInputFile');
