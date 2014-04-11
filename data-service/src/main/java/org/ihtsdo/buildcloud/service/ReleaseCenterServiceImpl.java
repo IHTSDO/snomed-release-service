@@ -31,21 +31,20 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 	}
 
 	@Override
-	public List<ReleaseCenter> findAll(String oauthId) {
-		return dao.findAll(oauthId);
+	public List<ReleaseCenter> findAll(User authenticatedUser) {
+		return dao.findAll(authenticatedUser);
 	}
 
 	@Override
-	public ReleaseCenter find(String businessKey, String oauthId) {
-		return dao.find(businessKey, oauthId);
+	public ReleaseCenter find(String businessKey, User authenticatedUser) {
+		return dao.find(businessKey, authenticatedUser);
 	}
 
 	@Override
-	public ReleaseCenter create(String name, String shortName, String oauthId) {
+	public ReleaseCenter create(String name, String shortName, User user) {
 		ReleaseCenter releaseCenter = new ReleaseCenter(name, shortName);
 		dao.save(releaseCenter);
 
-		User user = userDAO.find(oauthId);
 		ReleaseCenterMembership releaseCenterMembership = new ReleaseCenterMembership(releaseCenter, user);
 		membershipDAO.save(releaseCenterMembership);
 

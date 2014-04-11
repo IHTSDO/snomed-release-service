@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.InputFile;
+import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
@@ -24,8 +25,12 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 
 	private String mavenS3BucketName;
 
+	public InputFileDAOImpl() {
+		super(InputFile.class);
+	}
+
 	@Override
-	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
+	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select inputFile " +
 				"from ReleaseCenterMembership membership " +
@@ -35,12 +40,12 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 				"join product.builds build " +
 				"join build.packages package " +
 				"join package.inputFiles inputFile " +
-				"where membership.user.oauthId = :oauthId " +
+				"where membership.user = :user " +
 				"and build.id = :buildId " +
 				"and package.businessKey = :packageBusinessKey " +
 				"and inputFile.businessKey = :inputFileBusinessKey " +
 				"order by inputFile.id ");
-		query.setString("oauthId", authenticatedId);
+		query.setEntity("user", user);
 		query.setLong("buildId", buildId);
 		query.setString("packageBusinessKey", packageBusinessKey);
 		query.setString("inputFileBusinessKey", inputFileBusinessKey);

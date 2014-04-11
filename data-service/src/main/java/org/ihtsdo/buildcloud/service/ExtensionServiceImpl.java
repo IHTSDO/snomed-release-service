@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.ExtensionDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,20 +28,20 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 
 	@Override
-	public List<Extension> findAll(String releaseCenterBusinessKey, String oauthId) {
-		List<Extension> extensions = releaseCenterDAO.find(releaseCenterBusinessKey, oauthId).getExtensions();
+	public List<Extension> findAll(String releaseCenterBusinessKey, User authenticatedUser) {
+		List<Extension> extensions = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser).getExtensions();
 		Hibernate.initialize(extensions);
 		return extensions;
 	}
 
 	@Override
-	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, String oauthId) {
-		return extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, oauthId);
+	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) {
+		return extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 	}
 	
 	@Override
-	public Extension create(String releaseCenterBusinessKey, String name, String authenticatedId) {
-		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedId);
+	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) {
+		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
 		Extension extension = new Extension(name);
 		releaseCenter.addExtension(extension);
 		extensionDAO.save(extension);

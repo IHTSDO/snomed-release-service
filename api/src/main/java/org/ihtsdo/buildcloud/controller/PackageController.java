@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,16 +30,16 @@ public class PackageController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(packages, request, PACKAGE_LINKS);
 	}
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
 	public Map getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(aPackage, request, PACKAGE_LINKS);
 	}
 

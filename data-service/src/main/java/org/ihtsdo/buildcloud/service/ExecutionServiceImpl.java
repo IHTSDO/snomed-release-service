@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
@@ -35,8 +36,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private MavenGenerator mavenGenerator;
 
 	@Override
-	public Execution create(String buildCompositeKey, String authenticatedId) throws IOException {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException {
+		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
 		Date creationDate = new Date();
 
@@ -52,28 +53,28 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAll(String buildCompositeKey, String authenticatedId) {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
+	public List<Execution> findAll(String buildCompositeKey, User authenticatedUser) {
+		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		return dao.findAll(build);
 	}
 
 	@Override
-	public Execution find(String buildCompositeKey, String executionId, String authenticatedId) {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
+	public Execution find(String buildCompositeKey, String executionId, User authenticatedUser) {
+		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		return dao.find(build, executionId);
 	}
 
 	@Override
-	public String loadConfiguration(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+	public String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		return dao.loadConfiguration(execution);
 	}
 
 	@Override
-	public Execution triggerBuild(String buildCompositeKey, String executionId, String authenticatedId) throws IOException {
+	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
 		Date triggerDate = new Date();
 
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 
 		String executionConfiguration = dao.loadConfiguration(execution);
 
@@ -89,38 +90,38 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, String authenticatedId, OutputStream outputStream) throws IOException {
-		Execution execution = find(buildCompositeKey, executionId, authenticatedId);
+	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException {
+		Execution execution = find(buildCompositeKey, executionId, authenticatedUser);
 		dao.streamBuildScriptsZip(execution, outputStream);
 	}
 
 	@Override
-	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, String authenticatedId) {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		dao.saveOutputFile(execution, filePath, inputStream, size);
 	}
 
 	@Override
-	public void updateStatus(String buildCompositeKey, String executionId, String statusString, String authenticatedId) {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		Execution.Status status = Execution.Status.valueOf(statusString);
 		dao.updateStatus(execution, status);
 	}
 
 	@Override
-	public InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, String authenticatedId) {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedId);
+	public InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser) {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		return dao.getOutputFile(execution, filePath);
 	}
 
-	private Execution getExecution(String buildCompositeKey, String executionId, String authenticatedId) {
-		Build build = getBuild(buildCompositeKey, authenticatedId);
+	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) {
+		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		return dao.find(build, executionId);
 	}
 
-	private Build getBuild(String buildCompositeKey, String authenticatedId) {
+	private Build getBuild(String buildCompositeKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return buildDAO.find(buildId, authenticatedId);
+		return buildDAO.find(buildId, authenticatedUser);
 	}
 
 }

@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.security;
 
+import org.ihtsdo.buildcloud.entity.User;
+
 import java.util.HashMap;
 
 /**
@@ -8,7 +10,7 @@ import java.util.HashMap;
  */
 public class SecurityHelper {
 
-	private static final HashMap<Thread, String> threadSubjects = new HashMap<>();
+	private static final HashMap<Thread, User> threadSubjects = new HashMap<>();
 
 	public static void clearSubject() {
 		synchronized (threadSubjects) {
@@ -16,13 +18,13 @@ public class SecurityHelper {
 		}
 	}
 
-	public static void setSubject(String authenticatedId) {
+	public static void setSubject(User authenticatedSubject) {
 		synchronized (threadSubjects) {
-			threadSubjects.put(Thread.currentThread(), authenticatedId);
+			threadSubjects.put(Thread.currentThread(), authenticatedSubject);
 		}
 	}
 
-	public static String getSubject() {
+	public static User getSubject() {
 		synchronized (threadSubjects) {
 			return threadSubjects.get(Thread.currentThread());
 		}

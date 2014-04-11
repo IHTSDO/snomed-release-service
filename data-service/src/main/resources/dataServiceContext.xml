@@ -29,7 +29,9 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
+	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
 
+	<bean class="org.ihtsdo.buildcloud.service.UserServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCenterServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ExtensionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
@@ -38,6 +40,9 @@
 	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
+	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl">
+		<constructor-arg value="${authTokenValidMinutes}"/>
+	</bean>
 
 	<jdbc:embedded-database id="dataSource"/>
 
@@ -104,5 +109,11 @@
 	<bean class="org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator"/>
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper"/>
+
+	<bean class="org.springframework.security.crypto.password.StandardPasswordEncoder">
+		<constructor-arg value="${encryption.salt}"/>
+	</bean>
+
+	<bean class="org.springframework.security.crypto.keygen.KeyGenerators" factory-method="string"/>
 
 </beans>

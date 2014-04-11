@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,8 @@ public class ProductController {
 	@ResponseBody
 	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
 		//TODO PETER - Return 404 rather than throw exception if extension not found.
-		String authenticatedId = SecurityHelper.getSubject();
-		List<Product> products = productService.findAll(releaseCenterBusinessKey, extensionBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<Product> products = productService.findAll(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
@@ -45,8 +46,8 @@ public class ProductController {
 
 		String name = json.get("name");
 
-		String authenticatedId = SecurityHelper.getSubject();
-		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name, authenticatedUser);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(product, request, PRODUCT_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
@@ -54,8 +55,8 @@ public class ProductController {
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
 	public Map getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);
 	}
 

@@ -13,6 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<hibernate.version>3.6.10.Final</hibernate.version>
 		<spring.version>3.2.7.RELEASE</spring.version>
+		<spring-security.version>3.2.3.RELEASE</spring-security.version>
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
@@ -76,6 +77,11 @@
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
 				<version>2.4</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>16.0.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

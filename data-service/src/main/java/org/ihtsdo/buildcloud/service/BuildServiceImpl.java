@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,33 +31,33 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findAll(EnumSet<FilterOption> filterOptions, String authenticatedId) {
-		return buildDAO.findAll(filterOptions, authenticatedId);
+	public List<Build> findAll(EnumSet<FilterOption> filterOptions, User authenticatedUser) {
+		return buildDAO.findAll(filterOptions, authenticatedUser);
 	}
 
 	@Override
-	public Build find(String buildCompositeKey, String authenticatedId) {
+	public Build find(String buildCompositeKey, User authenticatedUser) {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
-		return buildDAO.find(id, authenticatedId);
+		return buildDAO.find(id, authenticatedUser);
 	}
 	
 	@Override
-	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String authenticatedId) {
-		List<Build> builds = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId).getBuilds();
+	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) {
+		List<Build> builds = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser).getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
 	}
 	
 	@Override
-	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
-		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey,  filterOptions, authenticatedId);
+	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser) {
+		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey,  filterOptions, authenticatedUser);
 		Hibernate.initialize(builds);
 		return builds;
 	}
 
 	@Override
-	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, String authenticatedId) throws Exception{
-		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws Exception{
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		
 		if (product == null) {
 			throw new Exception ("Unable to find product with path: " + releaseCenterBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);

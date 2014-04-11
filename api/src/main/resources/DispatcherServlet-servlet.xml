@@ -10,6 +10,12 @@
 
 	<context:component-scan base-package="org.ihtsdo.buildcloud.controller" />
 
+	<!--<security:http auto-config='true'>-->
+		<!--<security:intercept-url pattern="/**" />-->
+	<!--</security:http>-->
+
+	<!--<security:global-method-security secured-annotations="enabled" />-->
+
 	<import resource="servletContext.xml"/>
 
 </beans>

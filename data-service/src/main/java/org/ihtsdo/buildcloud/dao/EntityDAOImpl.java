@@ -5,8 +5,16 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.io.Serializable;
+
 @Repository
 public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
+
+	private final Class<T> type;
+
+	protected EntityDAOImpl(Class<T> type) {
+		this.type = type;
+	}
 
 	@Autowired
 	private SessionFactory sessionFactory;
@@ -14,6 +22,11 @@ public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
 	@Override
 	public void save(T entity) {
 		getCurrentSession().save(entity);
+	}
+
+	@Override
+	public T load(Serializable id) {
+		return (T) getCurrentSession().get(type, id);
 	}
 
 	@Override
