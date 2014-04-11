@@ -1,17 +1,19 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class PackageDAOImpl extends EntityDAOImpl<Package> implements PackageDAO {
 
+	protected PackageDAOImpl() {
+		super(Package.class);
+	}
+
 	@Override
-	public Package find(Long buildId, String packageBusinessKey, String authenticatedId) {
+	public Package find(Long buildId, String packageBusinessKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select package " +
 				"from ReleaseCenterMembership membership " +
@@ -20,11 +22,11 @@ public class PackageDAOImpl extends EntityDAOImpl<Package> implements PackageDAO
 				"join extension.products product " +
 				"join product.builds build " +
 				"join build.packages package " +
-				"where membership.user.oauthId = :oauthId " +
+				"where membership.user = :user " +
 				"and build.id = :buildId " +
 				"and package.businessKey = :packageBusinessKey " +
 				"order by package.id ");
-		query.setString("oauthId", authenticatedId);
+		query.setEntity("user", user);
 		query.setLong("buildId", buildId);
 		query.setString("packageBusinessKey", packageBusinessKey);
 

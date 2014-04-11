@@ -13,7 +13,9 @@ public class User {
 	@GeneratedValue
 	private Long id;
 
-	private String oauthId;
+	private String username;
+
+	private String encodedPassword;
 
 	@OneToMany(mappedBy = "user")
 	private List<ReleaseCenterMembership> releaseCenterMemberships;
@@ -21,9 +23,14 @@ public class User {
 	public User() {
 	}
 
-	public User(String oauthId) {
+	public User(String username) {
 		this();
-		this.oauthId = oauthId;
+		this.username = username;
+	}
+
+	public User(Long id, String username) {
+		this(username);
+		this.id = id;
 	}
 
 	public Long getId() {
@@ -34,12 +41,20 @@ public class User {
 		this.id = id;
 	}
 
-	public String getOauthId() {
-		return oauthId;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setOauthId(String oauthId) {
-		this.oauthId = oauthId;
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getEncodedPassword() {
+		return encodedPassword;
+	}
+
+	public void setEncodedPassword(String encodedPassword) {
+		this.encodedPassword = encodedPassword;
 	}
 
 	public List<ReleaseCenterMembership> getReleaseCenterMemberships() {

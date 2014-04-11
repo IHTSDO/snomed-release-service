@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -43,25 +44,25 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 	}
 
 	@Override
-	public List<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
+	public List<InputFile> findAll(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		List<InputFile> inputFiles = packageDAO.find(buildId, packageBusinessKey, authenticatedId).getInputFiles();
+		List<InputFile> inputFiles = packageDAO.find(buildId, packageBusinessKey, authenticatedUser).getInputFiles();
 		Hibernate.initialize(inputFiles);
 		return inputFiles;
 	}
 
 	@Override
-	public InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId) {
+	public InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return inputFileDAO.find(buildId, packageBusinessKey, inputFileBusinessKey, authenticatedId);
+		return inputFileDAO.find(buildId, packageBusinessKey, inputFileBusinessKey, authenticatedUser);
 	}
 
 	@Override
 	public InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
-								  InputStream fileStream, long fileSize, boolean isManifest, String authenticatedId) throws IOException {
+								  InputStream fileStream, long fileSize, boolean isManifest, User authenticatedUser) throws IOException {
 
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
+		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 
 		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileName);
 		mavenGenerator.generateArtifactAndGroupId(inputFile);
