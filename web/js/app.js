@@ -14,7 +14,6 @@ App = Ember.Application.create({
 });
 
 App.Router.map(function() {
-	this.resource('pre-login');
 	this.resource('release-center', { path: '/:releaseCenter_id' }, function() {
 		this.resource('rule-sets', function() {
 //			this.resource('rule-set', { path: '/:ruleSet_id' });
@@ -65,11 +64,6 @@ App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
 		// Close any open modals
 		if ($('.modal').size() > 0) this.send('closeModal');
-
-		//Redirect user to login page if no authorisation token is stored.
-		if (sessionStorage.authorisationToken === undefined){
-//			this.transitionTo('pre-login');
-		}
 	}
 });
 
@@ -111,9 +105,6 @@ App.ApplicationRoute = Ember.Route.extend({
 		}
 	}
 });
-
-//Pre-Login
-App.PreLoginRoute = App.AbstractRoute.extend();
 
 // Index
 App.IndexRoute = App.AuthorisedRoute.extend({
@@ -606,20 +597,6 @@ App.ConfirmDialogController = Ember.ObjectController.extend({
 	}
 })
 
-function signinCallback(authResult) {
-	if (authResult['status']['signed_in']) {
-		//Store the token in session storage.  Note we can't store against Ember
-		//App or it will be lost on page reload.
-		sessionStorage.authorisationToken = authResult['access_token'];
-		
-		//And return the user to whatever page there were on when they got booted here
-		var currentRoute = App.get('lastKnownRoute');
-		currentRoute.transitionTo('index');
-	} else {
-		debug('Sign-in state: ' + authResult['error']);
-		sessionStorage.authorisationToken = "Athentication Failed in Client";
-	}
-}
 
 function afterRender() {
 	//alert ("AfterRender");
