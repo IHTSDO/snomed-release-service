@@ -29,28 +29,6 @@
 
 <body>
 
-<!-- Fixed navbar -->
-<div class="navbar navbar-default navbar-fixed-top" role="navigation">
-	<div class="container">
-		<div class="navbar-header">
-			<a class="navbar-brand" href="#">SNOMED Release Service</a>
-		</div>
-		<div class="navbar-right">
-			<ul class="nav navbar-nav navbar-right">
-				<li class="dropdown">
-					<a class="dropdown-toggle" data-toggle="dropdown" href="#">
-						Tours <span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu">
-						<li><a href="javascript: startExecutionTour();">Execution Tour</a></li>
-						<li><a href="javascript: startConfigurationTour();">Configuration Tour</a></li>
-					</ul>
-				</li>
-			</ul>
-		</div><!--/.nav-collapse -->
-	</div>
-</div>
-
 <script type="text/x-handlebars">
 	<div class="container main-container">
 		{{outlet}}
@@ -115,7 +93,6 @@
 	loadEmberTemplate('easyform-override/bootstrap-inputControls');
 	loadEmberTemplate('confirm-dialog');
 
-	loadEmberTemplate('pre-login');
 	loadEmberTemplate('index');
 	loadEmberTemplate('release-center');
 	loadEmberTemplate('release-center-index');
