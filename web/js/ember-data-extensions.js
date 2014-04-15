@@ -74,17 +74,12 @@ DS.PromiseArray.reopen({
 	}
 });
 DS.PromiseObject.reopen({
-	reloadLinks: function() {
-		console.log("ember-data-extension.js line 78 - TODO: Refresh manifest model");
-		/*var content = get(this, 'content'),
-			store = get(content, 'store'),
-			owner = get(content, 'container'),
-			type = get(content, 'type'),
-			name = get(content, 'name'),
-			resolver = Ember.RSVP.defer();
+	reloadLinks: function(parentObject, childName) {
+		var store = parentObject.get('store');
+		var resolver = Ember.RSVP.defer();
 
-		relationship = 'App.Package';
-		//var link = owner._data.links[meta.key];
-		store.findBelongsTo(owner, link, relationship, resolver);*/
+		var relationship = parentObject.constructor.metaForProperty(childName);
+		var link = parentObject._data.links[childName];
+		store.findBelongsTo(parentObject, link, relationship, resolver);
 	}
 });
