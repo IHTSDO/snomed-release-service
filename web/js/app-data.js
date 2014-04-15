@@ -32,12 +32,20 @@ App.Product = DS.Model.extend({
 	name: DS.attr(),
 	builds: DS.hasMany('build', { async: true })
 });
+var activeBuilds=['1_20140731_international_release_build'];
 App.Build = DS.Model.extend({
 	product: DS.belongsTo('product'),
 	name: DS.attr(),
 	config: DS.belongsTo('buildConfig', { async: true }),
 	packages: DS.hasMany('package', { async: true }),
-	executions: DS.hasMany('execution', { async: true })
+	executions: DS.hasMany('execution', { async: true }),
+	isDemoData: function () {
+		for (var i=0; i<activeBuilds.length; i++){
+			if (activeBuilds[i] == this.get('id'))
+				return false;
+		}
+		return true;
+	}.property('name')
 });
 App.BuildConfig = DS.Model.extend({
 	parent: DS.belongsTo('build'),
@@ -47,12 +55,14 @@ App.Package = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	name: DS.attr(),
 	status: DS.attr(),
-	inputfiles: DS.hasMany('inputFile', { async: true })
+	inputfiles: DS.hasMany('inputFile', { async: true }),
+	manifest: DS.belongsTo('inputFile', { async: true })
 });
 App.InputFile = DS.Model.extend({
-	parent: DS.belongsTo('package'),
+	parent: DS.belongsTo('package', { inverse: 'inputfiles' }),
 	name: DS.attr()
 });
+var demoExecutions=['2014-03-31T09:30:23'];
 App.Execution = DS.Model.extend({
 	parent: DS.belongsTo('build'),
 	creationTimeString: DS.attr(),
@@ -77,7 +87,14 @@ App.Execution = DS.Model.extend({
 	}.property('status'),
 	creationTime: function() {
 		return moment(this.get('creationTimeString')).format('DD MMM, YYYY hh:mm:ss (UTC)');
-	}.property('creationTimeString')
+	}.property('creationTimeString'),
+	isDemoData: function () {
+		for (var i=0; i<demoExecutions.length; i++){
+			if (demoExecutions[i] == this.get('id'))
+				return true;
+		}
+		return false;
+	}.property('creationTime')
 });
 App.ExecutionStatus = {
 	BEFORE_TRIGGER: 'BEFORE_TRIGGER',

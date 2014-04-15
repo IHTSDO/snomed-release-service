@@ -1,0 +1,7 @@
+target
+.*
+*.iml
+*.project
+*.classpath
+vagrant/cache
+vagrant/tomcat-webapps

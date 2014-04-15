@@ -13,7 +13,7 @@ public interface InputFileService extends EntityService<InputFile> {
 	InputFile find(String buildCompositeKey, String packageBusinessKey, String inputFileBusinessKey, String authenticatedId);
 
 	InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
-						   InputStream fileStream, long fileSize, String authenticatedId) throws IOException;
+						   InputStream fileStream, long fileSize, boolean isManifest, String authenticatedId) throws IOException;
 
 	InputStream getFileStream(InputFile inputFile) throws IOException;
 }

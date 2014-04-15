@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
@@ -63,6 +65,19 @@ public class MavenGeneratorTest {
 		StringWriter writer = new StringWriter();
 
 		mavenGenerator.generateArtifactPom(new TestMavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip"), writer);
+
+		String actualPom = writer.toString();
+		Assert.assertEquals(expectedPom, actualPom);
+	}
+	
+	@Test
+	public void testGenerateManifestArtifactPom() throws IOException {
+		String expectedPom = StreamUtils.copyToString(this.getClass().getResourceAsStream("expected-manifest-artifact-pom.txt"), Charset.defaultCharset()).replace("\r", "");
+		StringWriter writer = new StringWriter();
+
+		Map <String, String> metaData = new HashMap<String, String>();
+		metaData.put("isManifest", "true");
+		mavenGenerator.generateArtifactPom(new TestMavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip", metaData), writer);
 
 		String actualPom = writer.toString();
 		Assert.assertEquals(expectedPom, actualPom);

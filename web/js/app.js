@@ -51,6 +51,7 @@ App.Router.map(function() {
 	this.resource('admin', function() {
 		this.resource('create-release-center');
 	});
+	this.resource('confirm-dialog');
 });
 
 
@@ -81,7 +82,12 @@ App.ApplicationRoute = Ember.Route.extend({
 		openModal: function(modalName, params) {
 			console.log('openModal');
 			var controller = this.controllerFor(modalName);
-			var model = controller.getModel(params);
+			var model = null;
+			if (controller.getModel) {
+				model = controller.getModel(params);
+			} else {
+				model = params;
+			}
 			controller.set('model', model);
 			return this.render(modalName, {
 				into: 'application',
@@ -422,6 +428,26 @@ App.BuildInputController = Ember.ObjectController.extend({
 		reload: function() {
 			var inputfiles = this.get('inputfiles');
 			inputfiles.reloadLinks();
+			var manifest = this.get('manifest');
+			manifest.reloadLinks();
+		},
+		deleteInputFile: function(inputFile) {
+			console.log('deleteInputFile');
+			console.log(inputFile);
+			var store = this.store;
+			this.send('openModal', 'confirm-dialog',
+				{
+					question: 'Delete input file?',
+					guardedFunction: function() {
+						console.log('deleting', inputFile);
+						var parent = inputFile.get('parent');
+						inputFile.deleteRecord();
+						inputFile.set('parent', parent);
+						inputFile.save().then(function() {
+							parent.get('inputfiles').removeObject(inputFile);
+						})
+					}
+				});
 		}
 	}
 })
@@ -561,6 +587,22 @@ App.RemoveEntityController = Ember.ObjectController.extend({
 	}
 })
 
+App.ConfirmDialogView = Ember.View.extend({
+	templateName: 'confirm-dialog',
+	didInsertElement: function() {
+		this.controller.send('modalInserted');
+	}
+})
+App.ConfirmDialogController = Ember.ObjectController.extend({
+	actions: {
+		proceed: function() {
+			var model = this.get('model');
+			var guardedFunction = model.guardedFunction;
+			guardedFunction();
+		}
+	}
+})
+
 function signinCallback(authResult) {
 	if (authResult['status']['signed_in']) {
 		//Store the token in session storage.  Note we can't store against Ember
@@ -582,18 +624,22 @@ function afterRender() {
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
 	effectPulse($('.traffic-light-in-progress'));	
-	initBuildInputFileUploadForm();
+	initBuildInputFileUploadForm(true);
+	initBuildInputFileUploadForm(false);
 }
 
-function initBuildInputFileUploadForm() {
-	var $button = $('.panel-build-input form .btn');
-	$('.panel-build-input form').submit(function () {
+function initBuildInputFileUploadForm(isManifest) {
+	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
+	var $button = $(selector + 'Btn');
+	$(selector + 'Form').submit(function () {
 		var $form = $(this);
 		if ($form.valid()) {
-			var actionPath = $('.actionpath', $form).text()
-			var shortName = $('input[name="shortName"]', $form).val();
-			var action = actionPath + shortName;
-			console.log('Upload url = "' + action + '"');
+			var action = $('.actionpath', $form).text();
+			if (!isManifest) {
+				var shortName = $('input[name="shortName"]', $form).val();
+				action += shortName;
+			}
+			console.log( (isManifest?"Manifest":"File") + ' upload url = "' + action + '"');
 			$form.attr('action', action);
 			$button.val('Uploading...');
 			$button.prop('disabled', true);
@@ -603,9 +649,10 @@ function initBuildInputFileUploadForm() {
 		}
 	});
 	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
+		var formIndex = isManifest?0:1;
 		$button.val('Upload');
 		$button.prop('disabled', false);
-		$('.panel-build-input form')[0].reset();
+		$('.panel-build-input form')[formIndex].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
 }

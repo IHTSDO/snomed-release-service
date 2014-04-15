@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Vector;
 
 @Repository
 public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
@@ -21,6 +22,11 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	
 	@Override
 	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+		
+		/*List<Build> testList = new Vector<Build>();
+		Build b = new Build("Peter");
+		testList.add(b);
+		return testList;*/
 		
 		String filter = "";
 		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {

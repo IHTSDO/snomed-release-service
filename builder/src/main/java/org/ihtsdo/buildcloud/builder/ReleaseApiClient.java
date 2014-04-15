@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -19,6 +21,15 @@ public class ReleaseApiClient {
 
 	private static final String ZIP = ".zip";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseApiClient.class);
+
+	public ReleaseApiClient() {
+		Authenticator.setDefault(new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication("test", new char[]{});
+			}
+		});
+	}
 
 	public File downloadBuildScriptsZip(String executionUrl) throws IOException {
 		String buildScriptsUrl = executionUrl + "build-scripts.zip";

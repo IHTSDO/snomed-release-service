@@ -1,13 +1,11 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
@@ -19,7 +17,7 @@ import java.io.InputStream;
 public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputFileDAO {
 
 	@Autowired
-	private AmazonS3Client s3Client;
+	private S3Client s3Client;
 
 	@Autowired
 	private S3ClientHelper s3ClientHelper;
