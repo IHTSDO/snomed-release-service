@@ -3,6 +3,27 @@
 		<h3 class="panel-title">Build Input</h3>
 	</div>
 	<div class="panel-body">
+	
+		<div class="panel panel-info">
+			<div class="panel-heading">
+				<div class="panel-title">
+					<a id="collapseManifestControl" {{bind-attr class=":accordion-toggle :finger manifest.name:collapsed"}} onClick="$('#collapseManifestPanel').collapse('toggle'); $('#collapseManifestControl').toggleClass('collapsed')">
+						Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
+					</a>
+				</div>
+			</div>
+			<div id="collapseManifestPanel" {{bind-attr class=":panel-collapse :collapse manifest.name::in"}}>
+				<div class="panel-body">
+					<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+						<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
+						<div class="form-group">
+							<input type="file" name="file" class="form-control" required/>
+						</div>
+						<input type="submit" id="buildManifestUploadBtn" class="btn btn-default" value="Upload"/>
+					</form>
+				</div>
+			</div>
+		</div>
 
 		<div class="panel panel-info">
 			<div class="panel-heading">
@@ -13,12 +34,14 @@
 					<thead>
 						<th>Name</th>
 						<th>Source</th>
+						<th></th>
 					</thead>
 					<tbody>
 						{{#each inputfiles}}
 						<tr>
 							<td>{{name}}</td>
 							<td>Uploaded</td>
+							<td><a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a></td>
 						</tr>
 						{{else}}
 						<tr>
@@ -30,7 +53,7 @@
 				</table>
 				<hr/>
 				<h4>Upload</h4>
-				<form method="post" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+				<form method="post" id="buildInputFileUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
 					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/inputfiles/</div>
 					<div class="form-group">
 						<label>Build Input File</label>
@@ -40,7 +63,7 @@
 						<label>Short Name</label>
 						<input type="text" name="shortName" class="form-control" minlength="3" required/>
 					</div>
-					<input type="submit" class="btn btn-default" value="Upload"/>
+					<input type="submit" id="buildInputFileUploadBtn" class="btn btn-default" value="Upload"/>
 				</form>
 				<iframe id="buildInputFileUploadIframe" style="display: none;"/>
 				<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
@@ -50,7 +73,7 @@
 </div>
 
 <hr/>
-<div class="alert alert-warning">Stuff below this message is just mocked up.</div>
+<div class="alert alert-warning">Panels below this message are pure mock-up.</div>
 
 <div class="panel panel-default panel-build-input">
 	<div class="panel-heading">

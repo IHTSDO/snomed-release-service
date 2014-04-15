@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
+import java.util.Map;
+
 public interface MavenArtifact {
 
 	String POM = "pom";
@@ -8,5 +10,6 @@ public interface MavenArtifact {
 	String getArtifactId();
 	String getVersion();
 	String getPackaging();
+	Map<String, String> getMetaData();
 
 }

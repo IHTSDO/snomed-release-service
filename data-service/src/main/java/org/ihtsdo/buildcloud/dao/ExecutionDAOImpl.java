@@ -1,15 +1,14 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
-import com.hazelcast.core.IQueue;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
@@ -22,7 +21,7 @@ import java.util.zip.ZipOutputStream;
 public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Autowired
-	private AmazonS3Client s3Client;
+	private S3Client s3Client;
 
 	@Autowired
 	private ExecutionS3PathHelper pathHelper;
@@ -30,7 +29,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private String executionS3BucketName;
 
-	private IQueue<String> buildQueue;
+	@Autowired
+	private JmsTemplate jmsTemplate;
 
 	private static final String BLANK = "";
 
@@ -65,6 +65,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
+//			objectContent.getHttpRequest().
 			return FileCopyUtils.copyToString(new InputStreamReader(objectContent));
 		} else {
 			return null;
@@ -87,7 +88,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		updateStatus(execution, Execution.Status.QUEUED);
 		// Note: this url will only work while the Builder is on the same server as the API.
 		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
-		buildQueue.add(executionApiUrl);
+		LOGGER.info("Queuing Execution for building {}", executionApiUrl);
+		jmsTemplate.convertAndSend(executionApiUrl);
 	}
 
 	@Override
@@ -203,13 +205,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 
-	@Required
-	public void setBuildQueue(IQueue<String> buildQueue) {
-		this.buildQueue = buildQueue;
-	}
-
-	public void setS3Client(AmazonS3Client s3Client) {
+	// Just for testing
+	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 	}
 
+	// Just for testing
+	public void setJmsTemplate(JmsTemplate jmsTemplate) {
+		this.jmsTemplate = jmsTemplate;
+	}
 }

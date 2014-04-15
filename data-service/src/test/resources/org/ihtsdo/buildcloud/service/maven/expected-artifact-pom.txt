@@ -5,5 +5,5 @@
 	<artifactId>input.rf2</artifactId>
 	<version>1.0</version>
 	<packaging>zip</packaging>
-
+	<properties></properties>
 </project>

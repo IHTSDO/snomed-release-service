@@ -73,3 +73,18 @@ DS.PromiseArray.reopen({
 		store.findHasMany(owner, link, meta, resolver);
 	}
 });
+DS.PromiseObject.reopen({
+	reloadLinks: function() {
+		console.log("ember-data-extension.js line 78 - TODO: Refresh manifest model");
+		/*var content = get(this, 'content'),
+			store = get(content, 'store'),
+			owner = get(content, 'container'),
+			type = get(content, 'type'),
+			name = get(content, 'name'),
+			resolver = Ember.RSVP.defer();
+
+		relationship = 'App.Package';
+		//var link = owner._data.links[meta.key];
+		store.findBelongsTo(owner, link, relationship, resolver);*/
+	}
+});

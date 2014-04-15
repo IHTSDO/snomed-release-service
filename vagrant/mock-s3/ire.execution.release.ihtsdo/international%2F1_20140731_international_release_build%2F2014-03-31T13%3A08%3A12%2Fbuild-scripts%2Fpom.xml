@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20140731_international_release_build</groupId>
+	<artifactId>20140731_international_release_build</artifactId>
+	<version>2014-03-31T13-08-12</version>
+	<packaging>pom</packaging>
+
+	<name>20140731 International Release Build (SNOMED CT Release, SNOMED CT International Edition, International Release Center)</name>
+
+	<modules>
+		<module>rf2_release</module>
+		<module>rf1compatibilitypackage</module>
+		<module>rf2torf1conversion</module>
+	</modules>
+
+	<repositories>
+		<repository>
+			<id>ihtsdo-release-repository</id>
+			<url>http://ire.maven.release.ihtsdo.s3.amazonaws.com/</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+</project>

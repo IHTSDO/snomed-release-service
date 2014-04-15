@@ -22,8 +22,6 @@ public class ExtensionServiceImplTest extends TestEntityGenerator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExtensionServiceImplTest.class);
 	
-	public static final String AUTHENTICATED_ID = "test";
-	
 	@Autowired
 	private ExtensionService es;
 
@@ -32,12 +30,12 @@ public class ExtensionServiceImplTest extends TestEntityGenerator {
 
 		Assert.assertNotNull(es);
 		String rc = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
-		List<Extension> extensions = es.findAll(rc,AUTHENTICATED_ID);
+		List<Extension> extensions = es.findAll(rc,TestEntityGenerator.TEST_USER);
 		int before = extensions.size();
 		//LOGGER.warn("Found " + before + " extensions");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
-		es.create(rc, "my test extension name", AUTHENTICATED_ID);
-		int after = es.findAll(rc,AUTHENTICATED_ID).size();
+		es.create(rc, "my test extension name", TestEntityGenerator.TEST_USER);
+		int after = es.findAll(rc,TestEntityGenerator.TEST_USER).size();
 		Assert.assertEquals(before + 1, after);
 		
 		//TODO Could add further tests to ensure that the new item was created at the correct point in the hierarchy

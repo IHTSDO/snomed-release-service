@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -54,7 +56,7 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 	@Override
 	public InputFile createUpdate(String buildCompositeKey, String packageBusinessKey, String inputFileName,
-								  InputStream fileStream, long fileSize, String authenticatedId) throws IOException {
+								  InputStream fileStream, long fileSize, boolean isManifest, String authenticatedId) throws IOException {
 
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
@@ -69,6 +71,12 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 
 		// Generate input file pom
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		
+		Map<String, String> metaData = new HashMap<String,String>();
+		if (isManifest){
+			metaData.put("isManifest", "true");
+			inputFile.setMetaData(metaData);
+		}
 		mavenGenerator.generateArtifactPom(inputFile, new OutputStreamWriter(out));
 
 		// Upload input file pom to S3
