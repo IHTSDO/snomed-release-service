@@ -56,13 +56,13 @@ App.Package = DS.Model.extend({
 	name: DS.attr(),
 	status: DS.attr(),
 	inputfiles: DS.hasMany('inputFile', { async: true }),
-	manifest: DS.belongsTo('inputFile', { async: true })
+	manifest: DS.belongsTo('manifest', { async: true })
 });
 App.InputFile = DS.Model.extend({
 	parent: DS.belongsTo('package', { inverse: 'inputfiles' }),
 	name: DS.attr()
 });
-App.Manifest = App.InputFile.extend({
+App.Manifest = DS.Model.extend({
 	parent: DS.belongsTo('package', { inverse: 'manifest' }),
 	name: DS.attr()
 });
