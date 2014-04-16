@@ -419,8 +419,11 @@ App.BuildInputRoute = App.AuthorisedRoute.extend({
 		return this.modelFor('package');
 	},
 	setupController: function(controller, model) {
-		controller.set('model', model);
-		controller.set('inputfiles', model.get('inputfiles'));
+		//controller.set('model', model);
+		controller.set('content', model);
+		console.log ("Got me a " +  model.get('inputfiles') + " and a " + model.get('manifest'));
+		//controller.set('inputfiles', model.get('inputfiles'));
+		//controller.set('manifest', model.get('manifest'));
 	}
 })
 App.BuildInputController = Ember.ObjectController.extend({
