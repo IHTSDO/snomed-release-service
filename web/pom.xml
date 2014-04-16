@@ -45,7 +45,8 @@
 							<goal>jdeb</goal>
 						</goals>
 						<configuration>
-							<deb>${project.build.directory}/${packageName}_${project.version}.deb</deb>
+							<deb>${project.build.directory}/${packageName}_${project.version}-all.deb</deb>
+							<classifier>all</classifier>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
 							<dataSet>
 					            <data>

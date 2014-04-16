@@ -32,9 +32,9 @@
 	</modules>
 
 	<scm>
-    	<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
-    	<developerConnection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</developerConnection>
-    	<url>http://github.com/IHTSDO/snomed-release-service</url>
+		<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
+		<developerConnection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</developerConnection>
+		<url>http://github.com/IHTSDO/snomed-release-service</url>
 	  <tag>HEAD</tag>
   </scm>
 
@@ -122,5 +122,18 @@
 		  </plugin>
 		</plugins>
 	</build>
+
+	<distributionManagement>
+	  <repository>
+			<id>deployment</id>
+			<name>Internal Releases</name>
+			<url>https://maven.ihtsdotools.org/content/repositories/releases/</url>
+	  </repository>
+	  <snapshotRepository>
+			<id>deployment</id>
+			<name>Internal Releases</name>
+			<url>https://maven.ihtsdotools.org/content/repositories/snapshots/</url>
+	  </snapshotRepository>
+	</distributionManagement>
 
 </project>
