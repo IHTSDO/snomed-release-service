@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -98,9 +99,10 @@ public class InputFileController {
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
 	@ResponseBody
 	public Map uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								@RequestParam Part file,
+								@RequestParam(value = "file") MultipartFile file,
 								HttpServletRequest request) throws IOException {
-		String filename = Utils.getFilename(file, "manifest.xml");
+		//String filename = Utils.getFilename(file, "manifest.xml");
+		String filename = file.getOriginalFilename();
 		return uploadFile (buildCompositeKey, packageBusinessKey, filename, file, request, true);
 	}
 
@@ -122,6 +124,20 @@ public class InputFileController {
 		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, inputFileName, file.getInputStream(),
 				size, isManifest, authenticatedId);
 
+		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
+	}
+	
+	private Map uploadFile(String buildCompositeKey, String packageBusinessKey,
+			   String inputFileName, MultipartFile file,
+			   HttpServletRequest request, boolean isManifest) throws IOException {
+		String authenticatedId = SecurityHelper.getSubject();
+		
+		long size = file.getSize();
+		LOGGER.info("uploadInputFile(multipart). inputFileName: {}, size: {}", inputFileName, size);
+		
+		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, inputFileName, file.getInputStream(),
+			size, isManifest, authenticatedId);
+		
 		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
 	}
 
