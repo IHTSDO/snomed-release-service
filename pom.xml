@@ -28,7 +28,6 @@
 		<module>api</module>
 		<module>builder</module>
 		<module>web</module>
-		<module>apt-repository</module>
 	</modules>
 
 	<scm>
