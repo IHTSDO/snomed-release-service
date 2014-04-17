@@ -20,9 +20,6 @@
 	</properties>
 
 	<modules>
-		<module>id-generation</module>
-		<module>wb-release-process</module>
-		<module>oauth-landingpage</module>
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
