@@ -33,21 +33,22 @@ public class InputFileControllerTest extends ControllerTest{
 		//JSON object indexes start from 1 so add 1 to the traditional 0 based index
 		String build_id =  (random_build+1) + "_" + EntityHelper.formatAsBusinessKey(buildStr);
 		String testFileName = "three_readmes.zip";
-		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/inputfiles/" + testFileName;
+		String shortName = "threereadmes";
+		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/inputfiles/" + shortName;
+		
 		ClassPathResource cpr = new ClassPathResource(testFileName);
 		MockMultipartFile testFile = new MockMultipartFile("file", cpr.getInputStream());
-		
-		String shortName = EntityHelper.formatAsBusinessKey(testFileName);
-		String expectedResult = postURL + "/" + shortName;
+
+		String expectedResult = postURL; // + "/" + EntityHelper.formatAsBusinessKey(shortName);
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload(postURL)
-				.file(testFile)
-				.param("buildCompositeKey", build_id)
-				.param("packageBusinessKey", packageStr)
-				.param("inputFileName", shortName))
-			//.andDo(print())
+				.file(testFile))
+				//.param("buildCompositeKey", build_id)
+				//.param("packageBusinessKey", packageStr))
+				//.param("inputFileName", shortName)) These gets picked up from the URL
+			.andDo(print())
 			.andExpect(status().is(200))
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
-			//.andExpect(jsonPath("$.url", is(expectedResult))); The short name is being truncated (last 3 chars removed) somewhere in ServletInvocationHandlerMethod.
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+			.andExpect(jsonPath("$.url", is(expectedResult))); 
 	}
 	
 	@Test
@@ -67,7 +68,7 @@ public class InputFileControllerTest extends ControllerTest{
 		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/manifest";
 		MockMultipartFile testFile = new MockMultipartFile("file", testFileName , null , "some manifest type text here".getBytes());
 		
-		String expectedResult = postURL + "/" + EntityHelper.formatAsBusinessKey(testFileName);
+		String expectedResult = postURL; // + "/" + EntityHelper.formatAsBusinessKey(testFileName);
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload(postURL)
 				.file(testFile)
 				.param("buildCompositeKey", build_id)
