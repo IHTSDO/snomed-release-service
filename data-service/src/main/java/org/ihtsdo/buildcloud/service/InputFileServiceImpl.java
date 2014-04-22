@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.io.input.TeeInputStream;
 
 import java.io.*;
 import java.util.Date;
@@ -61,21 +63,31 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedId);
 
-		Date versionDate = new Date();
-
 		InputFile inputFile = findOrCreateInputFile(aPackage, inputFileName);
 		mavenGenerator.generateArtifactAndGroupId(inputFile);
-		inputFile.setVersionDate(versionDate);
+		inputFile.setVersionDate(new Date());
+		
+		//We need to T the input stream as it's effectively being read twice
+		//don't want to read the whole thing into memory if we can avoid it
+		//4K Buffer limit on this solution, save for Java 8 streams implementation
+		//PipedInputStream in = new PipedInputStream();
+		//TeeInputStream tee = new TeeInputStream(fileStream, new PipedOutputStream(in));
+		InputStream [] inputStreams = FileUtils.cloneInputStream(fileStream);
+		inputFileDAO.saveFile(inputStreams[0], fileSize, inputFile.getPath());
 
-		inputFileDAO.saveFile(fileStream, fileSize, inputFile.getPath());
+		//TODO This is memory intensive. Option to write to disk first and examine there - could be done thread parallel to S3 upload.
+		//Can we treat this stream as a zip file and examine it's contents?
+		Map<String, String> metaData = FileUtils.examineZipContents(inputFileName, inputStreams[1]);
+
+		inputFile.setMetaData(metaData);
 
 		// Generate input file pom
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		
-		Map<String, String> metaData = new HashMap<String,String>();
+		Map<String, String> manifestMetaData = new HashMap<String,String>();
 		if (isManifest){
-			metaData.put("isManifest", "true");
-			inputFile.setMetaData(metaData);
+			manifestMetaData.put("isManifest", "true");
+			inputFile.addMetaData(manifestMetaData);
 		}
 		mavenGenerator.generateArtifactPom(inputFile, new OutputStreamWriter(out));
 

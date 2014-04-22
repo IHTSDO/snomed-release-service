@@ -1,25 +1,55 @@
 package org.ihtsdo.buildcloud.controller;
 
-import javax.servlet.annotation.MultipartConfig;
-
 import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-//import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
 public class InputFileControllerTest extends ControllerTest{
 	
 	@Autowired
 	private SessionFactory sessionFactory;
 
+	@Test
+	public void uploadZipFile() throws Exception {
+		
+		int random_extension_index = 0;
+		int random_product_index = 0;
+		int random_build = 3;
+		int random_package = 0;
+		String packageStr = EntityHelper.formatAsBusinessKey(TestEntityGenerator.packageNames[random_package]);
+		String buildStr = TestEntityGenerator.buildNames[random_extension_index][random_product_index][random_build];
+		
+		SecurityHelper.setSubject(TestEntityGenerator.TEST_USER);
+		//JSON object indexes start from 1 so add 1 to the traditional 0 based index
+		String build_id =  (random_build+1) + "_" + EntityHelper.formatAsBusinessKey(buildStr);
+		String testFileName = "three_readmes.zip";
+		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/inputfiles/" + testFileName;
+		ClassPathResource cpr = new ClassPathResource(testFileName);
+		MockMultipartFile testFile = new MockMultipartFile("file", cpr.getInputStream());
+		
+		String shortName = EntityHelper.formatAsBusinessKey(testFileName);
+		String expectedResult = postURL + "/" + shortName;
+		mockMvc.perform(MockMvcRequestBuilders.fileUpload(postURL)
+				.file(testFile)
+				.param("buildCompositeKey", build_id)
+				.param("packageBusinessKey", packageStr)
+				.param("inputFileName", shortName))
+			//.andDo(print())
+			.andExpect(status().is(200))
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+			//.andExpect(jsonPath("$.url", is(expectedResult))); The short name is being truncated (last 3 chars removed) somewhere in ServletInvocationHandlerMethod.
+	}
+	
 	@Test
 	public void uploadManifest() throws Exception {
 		
@@ -42,7 +72,7 @@ public class InputFileControllerTest extends ControllerTest{
 				.file(testFile)
 				.param("buildCompositeKey", build_id)
 				.param("packageBusinessKey", packageStr))
-			//.andDo(print())
+			.andDo(print())
 			.andExpect(status().is(200))
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
 			.andExpect(jsonPath("$.url", is(expectedResult)));
