@@ -67,7 +67,7 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.POST)
 	@ResponseBody
 	public Map uploadInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							   @PathVariable String inputFileName, @RequestParam Part file,
+							   @PathVariable String inputFileName, @RequestParam(value = "file") MultipartFile file,
 							   HttpServletRequest request) throws IOException {
 		return uploadFile(buildCompositeKey, packageBusinessKey, inputFileName, file, request, false);
 	}
@@ -113,20 +113,6 @@ public class InputFileController {
 		getFileContents(buildCompositeKey, packageBusinessKey, manifest.getBusinessKey(), response);
 	}
 
-	private Map uploadFile(String buildCompositeKey, String packageBusinessKey,
-						   String inputFileName, Part file,
-						   HttpServletRequest request, boolean isManifest) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
-
-		long size = file.getSize();
-		LOGGER.info("uploadInputFile. inputFileName: {}, size: {}", inputFileName, size);
-
-		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, inputFileName, file.getInputStream(),
-				size, isManifest, authenticatedId);
-
-		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
-	}
-	
 	private Map uploadFile(String buildCompositeKey, String packageBusinessKey,
 			   String inputFileName, MultipartFile file,
 			   HttpServletRequest request, boolean isManifest) throws IOException {

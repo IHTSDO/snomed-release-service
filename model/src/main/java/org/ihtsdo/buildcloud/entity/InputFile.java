@@ -147,6 +147,17 @@ public class InputFile implements MavenArtifact, DomainEntity {
 	public void setMetaData(Map<String, String> metadata) {
 		this.metaData = metadata;
 	}
+	
+	/**
+	 * Sets the metadata for the file if none exists, or appends to existing data if it already exists.
+	 */
+	public void addMetaData(Map<String, String> metadata) {
+		if (this.metaData == null) {
+			this.metaData = metadata;
+		} else {
+			this.metaData.putAll(metadata);
+		}
+	}
 
 	@Override
 	public DomainEntity getParent() {
