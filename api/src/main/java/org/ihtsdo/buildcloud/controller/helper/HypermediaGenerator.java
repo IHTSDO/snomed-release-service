@@ -40,7 +40,9 @@ public class HypermediaGenerator {
 	public Map<String, Object> getEntityHypermediaJustCreated(DomainEntity entity, HttpServletRequest request, String... entityLinks) {
 		String url = getUrl(request);
 		String apiRootUrl = getApiRootUrl(url, request);
-		return getEntityHypermedia(entity, false, url, apiRootUrl, entityLinks);
+		//The id of the object being created is included in the URL, so we don't need it to be added again.  
+		//So passing 'current resource' as true to acheive this.
+		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
 	}
 
 	public Map<String, Object> getEntityHypermediaOfAction(DomainEntity entity, HttpServletRequest request, String... entityLinks) {
