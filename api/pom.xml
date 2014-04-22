@@ -34,12 +34,6 @@
 			<artifactId>spring-webmvc</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
-		<!-- Guava -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>16.0.1</version>
-		</dependency>
 		<!-- Jackson JSON -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
