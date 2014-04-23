@@ -51,9 +51,9 @@ public class TestEntityGenerator {
 
 															{{ true, false, true, false }} };
 	
-	public static final String [] packageNames = {	"RF2 Release",
-													"RF1CompatibilityPackage",
-													"RF2toRF1Conversion"};		
+	public static final String [] packageNames = {	"SNOMED Release Package",
+													"RF1 Compatibility Package",
+													"RF2 to RF1 Conversion"};		
 
 	// packageInputFile string format is name|groupId|artifactId|version
 	public static final String [] packageInputFiles = {
