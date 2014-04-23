@@ -2,3 +2,9 @@
 	background-color:#000;
 	opacity:.5
 }
+.popover-content, .popover-navigation, .tour-tour{
+	background-color:#D6EBFF
+}
+.popover-title{
+	background-color:#A3C2FF
+}
