@@ -1,8 +1,3 @@
-DS.RESTAdapter.reopen({
-	// Configure API location
-	namespace: 'api/v1'
-});
-
 // REST interface adapter. Lets Ember Data communicate with our API as if the API used a JSON envelope.
 App.ApplicationSerializer = DS.RESTSerializer.extend({
 

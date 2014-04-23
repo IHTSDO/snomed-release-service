@@ -12,6 +12,7 @@
 					</a>
 				</div>
 			</div>
+			{{#if controllers.application.isAuthenticated}}
 			<div id="collapseManifestPanel" {{bind-attr class=":panel-collapse :collapse manifest.name::in"}}>
 				<div class="panel-body">
 					<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
@@ -23,6 +24,7 @@
 					</form>
 				</div>
 			</div>
+			{{/if}}
 		</div>
 
 		<div class="panel panel-info">
@@ -41,7 +43,11 @@
 						<tr>
 							<td>{{name}}</td>
 							<td>Uploaded</td>
-							<td><a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a></td>
+							<td>
+								{{#if controllers.application.isAuthenticated}}
+								<a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a>
+								{{/if}}
+							</td>
 						</tr>
 						{{else}}
 						<tr>
@@ -51,6 +57,7 @@
 						{{/each}}
 					</tbody>
 				</table>
+				{{#if controllers.application.isAuthenticated}}
 				<hr/>
 				<h4>Upload</h4>
 				<form method="post" id="buildInputFileUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
@@ -67,6 +74,7 @@
 				</form>
 				<iframe id="buildInputFileUploadIframe" style="display: none;"/>
 				<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
+				{{/if}}
 			</div>
 		</div>
 	</div>

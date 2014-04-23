@@ -11,13 +11,15 @@
 			<h4>Execution Configuration</h4>
 <pre>{{configuration.json}}
 </pre>
-			{{#if isNotTriggered}}
-			<button type="button" id="tour-stop-10" class="btn btn-success btn-lg success" {{bind-attr disabled="isDemoData"}} {{action 'triggerBuild' this}}>
-				<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
-			</button>
-			{{/if}}
-			{{#if isDemoData}}
-			  (button disabled as data is required static for tour)
+			{{#if controllers.application.isAuthenticated}}
+				{{#if isNotTriggered}}
+				<button type="button" id="tour-stop-10" class="btn btn-success btn-lg success" {{bind-attr disabled="isDemoData"}} {{action 'triggerBuild' this}}>
+					<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
+				</button>
+				{{/if}}
+				{{#if isDemoData}}
+				  (button disabled as data is required static for tour)
+				{{/if}}
 			{{/if}}
 		</div>
 	</div>

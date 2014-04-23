@@ -51,6 +51,7 @@ App.Router.map(function() {
 		this.resource('create-release-center');
 	});
 	this.resource('confirm-dialog');
+	this.resource('reload');
 });
 
 
@@ -60,6 +61,10 @@ App.AbstractRoute = Ember.Route.extend({
 	}
 });
 
+App.AbstractController = Ember.ObjectController.reopen({
+	needs: "application"
+})
+
 App.AuthorisedRoute = App.AbstractRoute.extend({
 	beforeModel: function() {
 		// Close any open modals
@@ -68,7 +73,32 @@ App.AuthorisedRoute = App.AbstractRoute.extend({
 });
 
 App.ApplicationRoute = Ember.Route.extend({
+	beforeModel: function() {
+		App.store = this.store;
+	},
+	model: function() {
+		return Ember.Object.create({
+			currentUser: App.loadCurrentUser()
+		})
+	},
 	actions: {
+		signin: function() {
+			var $form = $('.navbar form.login');
+			var username = $form.find('[name="username"]').val();
+			var password = $form.find('[name="password"]').val();
+			try {
+				var user = App.login(username, password);
+				this.currentModel.set('currentUser', user);
+			} catch (error) {
+				console.log('error', error);
+				$form.find('.login\\-error').show();
+			}
+		},
+		signout: function() {
+			var user = App.logout();
+			this.currentModel.set('currentUser', user);
+			this.transitionTo('reload');
+		},
 		removeEntity: function(model) {
 			console.log('removeEntity', model);
 			this.send('openModal', 'remove-entity', model);
@@ -105,6 +135,13 @@ App.ApplicationRoute = Ember.Route.extend({
 		}
 	}
 });
+App.ApplicationController = Ember.ObjectController.extend({
+	isAuthenticated: function() {
+		var currentUser = this.get('currentUser');
+		var b = true == currentUser.authenticated;
+		return b;
+	}.property('currentUser')
+});
 
 // Index
 App.IndexRoute = App.AuthorisedRoute.extend({
@@ -112,7 +149,7 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		return {
 			releaseCenters: this.store.filter('center', {}, function(center) {
 				return !center.get('removed');
-							})
+			})
 		}
 	},
 	actions: {
@@ -122,6 +159,12 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		addExtension: function(releaseCenter) {
 			this.send('openModal', 'create-extension', releaseCenter);
 		}		
+	}
+})
+
+App.ReloadRoute = App.AbstractRoute.extend({
+	beforeModel: function() {
+		this.transitionTo('index');
 	}
 })
 

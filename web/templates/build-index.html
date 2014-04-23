@@ -21,19 +21,26 @@
 				</li>
 				{{/each}}
 			</ul>
+			{{#if controllers.application.isAuthenticated}}
 			<button class="btn btn-primary btn-md list-align" {{action 'addPackage' this}}>
 				<span class="glyphicon glyphicon-plus"></span> Add a Package
 			</button>
+			{{/if}}
 		</div>
 		<div id="tour-stop-8" class="margin-top-big">
 			<h3>Build Triggers</h3>
+			{{#if controllers.application.isAuthenticated}}
 			<div class="well-sm">
 				<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success " >
 					<span class="glyphicon"></span> Build Now...
 				</button>
 			</div>
+			{{/if}}
 			<div class="well-sm">
-				Automatic nightly build <strong>Enabled</strong>. <button class="btn btn-default">Disable</button>
+				Automatic nightly build <strong>Enabled</strong>.
+				{{#if controllers.application.isAuthenticated}}
+				<button class="btn btn-default">Disable</button>
+				{{/if}}
 			</div>
 		</div>
 	</div>

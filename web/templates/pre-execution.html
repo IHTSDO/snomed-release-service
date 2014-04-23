@@ -10,7 +10,8 @@
 
 <pre> {{config.configStr}}</pre>
 
+{{#if controllers.application.isAuthenticated}}
 <button {{action 'runBuild' this}} type="button" class="btn btn-success btn-lg success">
 	<span class="glyphicon glyphicon-thumbs-up "></span> Run Build
 </button>
-
+{{/if}}

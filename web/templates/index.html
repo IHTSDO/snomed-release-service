@@ -1,3 +1,6 @@
+
+{{partial "header"}}
+
 <div class="front-page">
 
 	{{#each releaseCenter in releaseCenters}}
@@ -21,9 +24,11 @@
 							</li>
 							{{/each}}
 						</ul>
+						{{#if controllers.application.isAuthenticated}}
 						<button class="btn btn-primary btn-md list-align" {{action 'addProduct' extension}}>
 							<span class="glyphicon glyphicon-plus"></span> Add a Product
 						</button>
+						{{/if}}
 					</div>
 					<div class="col-sm-6" id="tour-stop-4">
 						<h3>Starred Builds <span class="glyphicon glyphicon-star"></span></h3>
@@ -43,9 +48,11 @@
 				</div>
 				{{/each}}
 				<hr class="extra-drop" />
+				{{#if controllers.application.isAuthenticated}}
 				<button class="btn btn-primary btn-md align-right" {{action 'addExtension' releaseCenter}}>
 					<span class="glyphicon glyphicon-plus"></span> Add an Extension
 				</button>
+				{{/if}}
 			</div>
 		</div>
 		<div class="col-md-4 align-under-h2" id="tour-stop-2">

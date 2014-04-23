@@ -1,12 +1,12 @@
 <ol class="breadcrumb">
 	<li><a href="#">Home</a></li>
-	<li id="tour-stop-c2">{{shortName}}</li>
+	<li id="tour-stop-c2">{{releaseCentre.shortName}}</li>
 </ol>
 
-<h2>{{name}} <small>{{partial "title-dropdown"}}</small></h2>
+<h2>{{releaseCentre.name}} <small>{{partial "title-dropdown"}}</small></h2>
 <h3>Extensions</h3>
 <ul>
-	{{#each extensions}}
+	{{#each releaseCentre.extensions}}
 	<li>
 		{{#link-to "extension" this}}
 		{{name}}
@@ -14,6 +14,8 @@
 	</li>
 	{{/each}}
 </ul>
-<button class="btn btn-primary btn-md list-align" {{action 'addExtension' this}}>
+{{#if controllers.application.isAuthenticated}}
+<button class="btn btn-primary btn-md list-align" {{action 'addExtension' this.releaseCentre}}>
 	<span class="glyphicon glyphicon-plus"></span> Add an Extension
 </button>
+{{/if}}
