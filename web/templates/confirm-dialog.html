@@ -10,7 +10,9 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				{{#if controllers.application.isAuthenticated}}
 				<button type="button" class="btn btn-primary" data-dismiss="modal" {{action 'proceed'}}>Proceed</button>
+				{{/if}}
 			</div>
 		</div>
 	</div>

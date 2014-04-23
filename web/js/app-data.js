@@ -116,14 +116,95 @@ App.ExecutionConfiguration = DS.Model.extend({
 
 // Configuration
 
+App.namespace = 'api/v1';
 // Configure REST location
 DS.RESTAdapter.reopen({
-	namespace: 'api/v1'
+	namespace: App.namespace,
+	pathForType: function(type) {
+		if (type == App.User) {
+			return "user"
+		} else {
+			return this._super(type);
+		}
+	}
 });
+
+// Load the current user and validate any sessionStorage authenticationToken
+App.loadCurrentUser = function() {
+	delete App.currentUser;
+	delete App.authenticationToken;
+	function doLoadCurrentUser(attempt) {
+		var user = null;
+		if (attempt <= 2) {
+			$.ajax({
+				async: false,
+				url: App.namespace + '/user',
+				beforeSend: function(xhr, settings) {
+					if (sessionStorage.authenticationToken) {
+						xhr.setRequestHeader('Authorization', 'Basic ' + btoa(sessionStorage.authenticationToken + ':'));
+					}
+				},
+				success: function(data) {
+					user = data;
+					if (user.authenticated == true) {
+						// sessionStorage authenticationToken is valid. Push into App for use in all future calls.
+						App.authenticationToken = sessionStorage.authenticationToken;
+					} else {
+						// sessionStorage authenticationToken is invalid, let's clear it out.
+						delete sessionStorage.authenticationToken;
+					}
+				},
+				error: function() {
+					delete sessionStorage.authenticationToken;
+					doLoadCurrentUser(++attempt);
+				}
+			})
+		}
+		return user;
+	}
+	return doLoadCurrentUser(1);
+}
+App.login = function(username, password) {
+	App.clearLogin();
+	var error = null;
+	var user = null;
+	$.ajax({
+		async: false,
+		url: App.namespace + '/login',
+		type: 'POST',
+		data: {username: username, password: password},
+		success: function(data) {
+			sessionStorage.authenticationToken = data.authenticationToken;
+			user = App.loadCurrentUser();
+		},
+		error: function() {
+			error = Error();
+		}
+	})
+	if (!error) {
+		return user;
+	} else {
+		throw Error();
+	}
+}
+App.logout = function() {
+	App.clearLogin();
+	App.clearStore();
+	return App.loadCurrentUser();
+}
+App.clearLogin = function() {
+	delete App.authenticationToken;
+	delete sessionStorage.authenticationToken;
+}
+App.clearStore = function() {
+	App.store.unloadAll(App.Center);
+}
 
 // API auto authentication
 $.ajaxSetup({
-	beforeSend: function(xhr) {
-		xhr.setRequestHeader('Authorization', 'Basic ' + btoa('test:'));
+	beforeSend: function(xhr, settings) {
+		if (App.authenticationToken) {
+			xhr.setRequestHeader('Authorization', 'Basic ' + btoa(App.authenticationToken + ':'));
+		}
 	}
 })

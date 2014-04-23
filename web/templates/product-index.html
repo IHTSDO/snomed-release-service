@@ -18,9 +18,11 @@
 			{{/each}}
 			<li class="no-bullet">{{#link-to}}More...{{/link-to}}</li>
 		</ul>
+		{{#if controllers.application.isAuthenticated}}
 		<button class="btn btn-primary btn-md list-align" {{action 'addBuild' this}}>
 			<span class="glyphicon glyphicon-plus"></span> Add a build
-		</button>	
+		</button>
+		{{/if}}
 	</div>
 	<div class="col-sm-6">
 		<h4>Builds</h4>

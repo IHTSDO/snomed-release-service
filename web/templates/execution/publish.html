@@ -7,11 +7,12 @@
 			<div>
 				<p class="lead"><small>Publish the output of this execution.</small></p>
 				<div class="alert alert-danger">There were test failures. See {{#link-to "execution-mock.results"}}Results{{/link-to}} for details.</div>
+				{{#if controllers.application.isAuthenticated}}
 				<hr/>
 				<button type="button" class="btn btn-primary btn-lg">
 					<span class="glyphicon glyphicon-cloud-upload"></span> Publish Production Release
 				</button>
-
+				{{/if}}
 			</div>
 		</div>
 	</div>

@@ -5,6 +5,9 @@ body {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
 }
+.navbar-form.navbar-right.navbar-form {
+    margin-right: 0px;
+}
 li {
     margin-bottom: 5px;
 }
@@ -23,6 +26,9 @@ li {
 }
 .nav .nav {
 	margin-bottom: 8px;
+}
+.navbar .username {
+    font-weight: bold;
 }
 .jumbotron {
     margin-bottom: 10px;

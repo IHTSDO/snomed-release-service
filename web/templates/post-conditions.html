@@ -16,4 +16,6 @@
 		{{#link-to "rule-sets" this.parent.product.parent.parent class="add-button tour-stop-c12"}}Maintain Rule Sets{{/link-to}}
 	</div>
 </div>
+{{#if controllers.application.isAuthenticated}}
 <button type="submit" class="btn btn-default">Save</button>
+{{/if}}
