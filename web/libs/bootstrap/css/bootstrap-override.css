@@ -7,7 +7,9 @@
 }
 .popover.right .arrow:after{
 	border-right-color:#D6EBFF;
-	text-color:#D6EBFF
+}
+.popover.left .arrow:after{
+	border-left-color:#D6EBFF;
 }
 .popover-title{
 	background-color:#A3C2FF
