@@ -7,40 +7,39 @@ var executionTour = new Tour({  debug: true,
 executionTour.addSteps([
   {
 	title: "Execution Tour",
-	content: "Welcome to the Execution Tour!  We'll now navigate directly to the central functionality of the application - building a SNOMED release."
+	content: "Let's start building a SNOMED release!"
   },
   {
 	element: "#tour-stop-1",
 	title: "Snomed Release Service",
-	content: "The Homepage/Dashboard Screen shows the Extensions and Products 'owned by the default Release Center of the currently logged in user.",
+	content: "The Dashboard shows the Release Center's Extensions and Products.",
 	placement: "right",
 	backdrop: false
   },
   {
 	element: "#tour-stop-2",
 	title: "In-page Help Text",
-	content: "Most pages feature context specific help text to explain how the application functions.  The user is able to hide this text, once they feel confident with the application.",
+	content: "Context specific help, to explain how the application functions.",
 	placement: "left",
-
   },
   {
 	element: ".tour-stop-3",
 	title: "List of Products",
-	content: "This panel shows the Products 'owned' by the current Extension.",
+	content: "Extension consist of Products.",
 	placement: "right",
 
   },
   {
 	element: "#tour-stop-4",
 	title: "Starred Builds",
-	content: "The user can select any number of builds they have a particular interest in, and these appear here as shortcut links either to the configuration (by clicking on the build name) or to the results of the last execution (by clicking on the traffic light icon). ",
+	content: "Quickly navigate to the builds you're currently working on.",
 	placement: "left"
   },
   {
     //Going to show the whole page without a backdrop again, just before we move on.
 	element: "#tour-stop-1",
 	title: "Ready to move on?",
-	content: "We'll just show the entire screen here for a moment, before moving on to the Product Build screen as if the user has clicked on a Starred Build.",
+	content: "Next stop will be Product Builds.",
 	placement: "right",
 	backdrop: false,
 	onNext: function () {	
@@ -50,8 +49,8 @@ executionTour.addSteps([
   },
   {
 	element: "#tour-stop-5",
-	title: "Product Build Screen",
-	content: "This screen shows the Packages containing the SNOMED content which IHTSDO (or hosted tenant) releases.",
+	title: "Product Build Page",
+	content: "Builds assemble files into distributable packages.",
 	placement: "right",
 	backdrop: false,
 	onPrev: function () {	
@@ -62,25 +61,25 @@ executionTour.addSteps([
   {
 	element: "#tour-stop-6",
 	title: "Packages",
-	content: "Here we see the Packages 'owned' by the current build.",
+	content: "Packages contain SNOMED CT files.",
 	placement: "right"
   },
   {
 	element: "#tour-stop-7",
 	title: "Execution History",
-	content: "This panel displays the last few executions of the current build, and the traffic light icons give an indication of the status of each execution.",
+	content: "Here are the last few executions of the current build. The traffic lights show the status of each execution.",
 	placement: "left"
   },
   {
 	element: "#tour-stop-8",
 	title: "Start an Execution",
-	content: "As well as offering support for a nightly build, this panel allows an execution to be triggered manually - which we'd use when performing a 6-monthly release.",
+	content: "Behold! One button to rule them all. Purpose - self evident.",
 	placement: "right"
   },
   {
 	element: "#tour-stop-5",
-	title: "Product Build Screen - Review",
-	content: "We'll show the whole screen here again, before moving on to the Execution Summary as if we'd clicked on the 'Build Now...' button.",
+	title: "Product Build - Review",
+	content: "Next stop, the configuration.",
 	placement: "right",
 	backdrop: false,
 	onNext: function () {	
@@ -90,8 +89,8 @@ executionTour.addSteps([
   },
   {
 	element: "#tour-stop-9",
-	title:  "Build Execution Screen",
-	content: "This screen lists the configuration that is about to be applied to the current execution.",
+	title:  "Build Execution",
+	content: "View the configuration before executing.",
 	placement: "right",
 	backdrop: false,
 	onPrev: function() {	
@@ -101,15 +100,15 @@ executionTour.addSteps([
   },
   {
 	element: "#tour-stop-10",
-	title:  "Build Execution Screen",
-	content: "This button will add the current execution into a processing queue, at which point the status will update to 'Queued'.",
+	title:  "Build Execution",
+	content: "Add the build to the queue.",
 	placement: "right",
 	backdrop: false,
   },
   {
 	element: "#tour-stop-9",
-	title:  "Build Execution Screen",
-	content: "Ready to move on?  Clicking the 'Run Build' button now...",
+	title:  "Build Execution",
+	content: "Next stop, the build output.",
 	placement: "right",
 	backdrop: false,
 	onNext: function () {	
@@ -118,8 +117,8 @@ executionTour.addSteps([
   },
   {
 	element: "#tour-stop-9",
-	title: "Execution Output",
-	content: "Here we see the logs output by the build process - currently in a raw format, but this will change to a more user friendly summary listing in a subsequent iteration.",
+	title: "Build Output",
+	content: "The release files are ready for review.",
 	placement: "right",
 	backdrop: false
   } ,
