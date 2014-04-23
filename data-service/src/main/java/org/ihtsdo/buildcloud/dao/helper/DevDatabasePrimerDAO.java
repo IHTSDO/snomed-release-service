@@ -7,7 +7,6 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,11 +28,13 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 			ReleaseCenter internationalReleaseCenter = createTestReleaseCenter();
 			save(internationalReleaseCenter);
 
-			User testUser = userService.createUser("test", "");
-			ReleaseCenterMembership releaseCenterMembership = new ReleaseCenterMembership(internationalReleaseCenter, testUser);
+			User anonymousUser = userService.createUser(User.ANONYMOUS_USER, "");
+			session.save(anonymousUser);
+			session.save(new ReleaseCenterMembership(internationalReleaseCenter, anonymousUser));
 
-			session.save(testUser);
-			session.save(releaseCenterMembership);
+			User managerUser = userService.createUser("manager", "test123");
+			session.save(managerUser);
+			session.save(new ReleaseCenterMembership(internationalReleaseCenter, managerUser));
 		}
 	}
 

@@ -27,21 +27,27 @@ public class SecurityFilter implements Filter {
 		SecurityHelper.clearSubject();
 
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
+		final HttpServletResponse httpResponse = (HttpServletResponse) response;
+		final String authHeader = httpRequest.getHeader("Authorization");
 
 		String pathInfo = httpRequest.getPathInfo();
-		LOGGER.info("pathInfo: '{}'", pathInfo);
-		if (pathInfo.equals("/") || pathInfo.startsWith("/login")) {
-			// Trying to log in. Pass through to login controller.
-			chain.doFilter(request, response);
-		} else {
-			final HttpServletResponse httpResponse = (HttpServletResponse) response;
-			final String auth = httpRequest.getHeader("Authorization");
+		String requestMethod = httpRequest.getMethod();
+		LOGGER.debug("pathInfo: '{}'", pathInfo);
 
+		if (pathInfo.startsWith("/login")) {
+			// Trying to log in
+			chain.doFilter(request, response);
+		} else if (authHeader == null && requestMethod.equals("GET")) {
+			// An anonymous GET
+			User anonymousSubject = authenticationService.getAnonymousSubject();
+			SecurityHelper.setSubject(anonymousSubject);
+			chain.doFilter(request, response);
+		} else if (authHeader != null){
 			User authenticatedSubject = null;
-			if (auth != null) {
-				final int index = auth.indexOf(' ');
+			if (authHeader != null) {
+				final int index = authHeader.indexOf(' ');
 				if (index > 0) {
-					String credsString = new String(DatatypeConverter.parseBase64Binary(auth.substring(index)));
+					String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
 					String[] credentials = credsString.split(":");
 
 					if (credentials != null && credentials.length > 0) {
@@ -60,10 +66,12 @@ public class SecurityFilter implements Filter {
 				} finally {
 					SecurityHelper.clearSubject();
 				}
-			} else {
-				httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API\"");
-				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 			}
+			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} else {
+			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 	}
 

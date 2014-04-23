@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -9,15 +11,20 @@ import java.util.List;
 @Entity
 public class User {
 
+	public static final String ANONYMOUS_USER = "anonymous_user";
+
 	@Id
 	@GeneratedValue
+	@JsonIgnore
 	private Long id;
 
 	private String username;
 
+	@JsonIgnore
 	private String encodedPassword;
 
 	@OneToMany(mappedBy = "user")
+	@JsonIgnore
 	private List<ReleaseCenterMembership> releaseCenterMemberships;
 
 	public User() {

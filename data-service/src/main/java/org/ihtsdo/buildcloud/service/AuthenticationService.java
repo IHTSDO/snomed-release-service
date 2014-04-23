@@ -8,4 +8,6 @@ public interface AuthenticationService {
 
 	User getAuthenticatedSubject(String authenticationToken);
 
+	User getAnonymousSubject();
+
 }
