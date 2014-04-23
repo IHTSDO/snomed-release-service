@@ -111,7 +111,7 @@
 							<deb>${project.build.directory}/${packageName}_${project.version}-all.deb</deb>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
 							<classifier>all</classifier>
-             				<signPackage>false</signPackage>
+			 				<signPackage>false</signPackage>
 							<dataSet>
 								<data>
 									<src>${project.build.directory}/${execFinalName}</src>
