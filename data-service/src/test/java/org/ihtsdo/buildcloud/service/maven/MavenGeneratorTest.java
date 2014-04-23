@@ -4,7 +4,9 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.TestMavenArtifact;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
+import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,10 +52,13 @@ public class MavenGeneratorTest {
 		File buildDirectory = mavenGenerator.generateBuildScripts(jsonConfig);
 
 		Assert.assertNotNull(buildDirectory);
+		
+		String testPackageName = TestEntityGenerator.packageNames[0];
+		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 
 		String generatedRootPom = fileToString(new File(buildDirectory, "pom.xml"));
 		Assert.assertEquals(expectedRootPom, generatedRootPom);
-		String generatedModulePom = fileToString(new File(new File(buildDirectory, "rf2_release"), "pom.xml"));
+		String generatedModulePom = fileToString(new File(new File(buildDirectory, testPackageId), "pom.xml"));
 		Assert.assertEquals(expectedModulePom, generatedModulePom);
 		Assert.assertEquals("Expecting 10 things. (4 x pom.xml, 3 x assembly.xml, 3 x dir)", TestUtils.itemCount(buildDirectory), 10);
 
