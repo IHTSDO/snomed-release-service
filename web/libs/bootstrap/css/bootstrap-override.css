@@ -5,6 +5,13 @@
 .popover-content, .popover-navigation, .tour-tour{
 	background-color:#D6EBFF
 }
+.popover.right .arrow:after{
+	border-right-color:#D6EBFF;
+	text-color:#D6EBFF
+}
 .popover-title{
 	background-color:#A3C2FF
 }
+ .popover-navigation .btn-default{
+	background-color:#A3C2FF
+ }
