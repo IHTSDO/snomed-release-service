@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service-parent</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.2</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -31,7 +31,7 @@
 		<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
 		<developerConnection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</developerConnection>
 		<url>http://github.com/IHTSDO/snomed-release-service</url>
-	  <tag>HEAD</tag>
+	  <tag>snomed-release-service-parent-0.0.2</tag>
   </scm>
 
 	<dependencies>
