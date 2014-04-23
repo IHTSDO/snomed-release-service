@@ -3,7 +3,8 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/login")
@@ -26,14 +26,15 @@ public class LoginController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public Map login(@RequestParam String username, @RequestParam String password, HttpServletRequest request) {
+	public ResponseEntity login(@RequestParam String username, @RequestParam String password, HttpServletRequest request) {
 		String authenticationToken = authenticationService.authenticate(username, password);
+		HashMap<String, String> response = new HashMap<>();
 		if (authenticationToken != null) {
-			HashMap<String, String> response = new HashMap<>();
 			response.put("authenticationToken", authenticationToken);
-			return hypermediaGenerator.getEntityHypermedia(response, request);
+			return new ResponseEntity(response, HttpStatus.OK);
 		} else {
-			throw new AuthenticationCredentialsNotFoundException("Username or password are incorrect.");
+			response.put("errorMessage", "Username or password are incorrect.");
+			return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
 		}
 	}
 

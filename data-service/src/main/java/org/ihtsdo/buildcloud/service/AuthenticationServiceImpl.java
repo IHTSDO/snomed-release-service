@@ -38,16 +38,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Override
 	public String authenticate(String username, String password) {
-		User user = userDAO.find(username);
-		if (user != null && passwordEncoder.matches(password, user.getEncodedPassword())) {
-			String authorisationKey = keyGenerator.generateKey();
-			AuthToken authToken = new AuthToken(authorisationKey, newExpireTime(), user);
-			// Token stored in database to be shared in cluster.
-			authTokenDAO.save(authToken);
-			return authorisationKey;
-		} else {
-			return null;
+		String authorisationKey = null;
+		if (username != null && !username.equals(User.ANONYMOUS_USER)) {
+			User user = userDAO.find(username);
+			if (user != null && passwordEncoder.matches(password, user.getEncodedPassword())) {
+				authorisationKey = keyGenerator.generateKey();
+				AuthToken authToken = new AuthToken(authorisationKey, newExpireTime(), user);
+				// Token stored in database to be shared in cluster.
+				authTokenDAO.save(authToken);
+			}
 		}
+		return authorisationKey;
 	}
 
 	@Override
@@ -59,6 +60,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			return null;
 		}
 		// Todo: strategy for deleting auth tokens from the database when they expire. Shouldn't be done here.
+	}
+
+	@Override
+	public User getAnonymousSubject() {
+		return userDAO.find(User.ANONYMOUS_USER);
 	}
 
 	private Date newExpireTime() {
