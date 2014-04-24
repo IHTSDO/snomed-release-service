@@ -7,9 +7,13 @@
 		<div class="panel panel-info">
 			<div class="panel-heading">
 				<div class="panel-title">
+				{{#if controllers.application.isAuthenticated}}
 					<a id="collapseManifestControl" {{bind-attr class=":accordion-toggle :finger manifest.name:collapsed"}} onClick="$('#collapseManifestPanel').collapse('toggle'); $('#collapseManifestControl').toggleClass('collapsed')">
 						Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
 					</a>
+				{{else}}
+					Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
+				{{/if}}
 				</div>
 			</div>
 			{{#if controllers.application.isAuthenticated}}
@@ -79,94 +83,3 @@
 		</div>
 	</div>
 </div>
-
-<hr/>
-<div class="alert alert-warning">Panels below this message are pure mock-up.</div>
-
-<div class="panel panel-default panel-build-input">
-	<div class="panel-heading">
-		<h3 class="panel-title">Build Input</h3>
-	</div>
-	<div class="panel-body">
-		<h4>File Sets</h4>
-
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<div class="panel-title">Documentation</div>
-			</div>
-			<div class="panel-body">
-				<table>
-					<thead>
-					<th>Name</th>
-					<th>Source</th>
-					</thead>
-					<tbody>
-					<tr>
-						<td>SnomedCTReleaseNotes.pdf</td>
-						<td>Uploaded</td>
-					</tr>
-					<tr>
-						<td>Icd10MapTechnicalGuideExemplars.xlsx</td>
-						<td>Uploaded</td>
-					</tr>
-					</tbody>
-				</table>
-				<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File</a>
-				<hr/>
-				<strong>Destination:</strong> /Documentation/ <a href="#" onclick="return false;">Change Destination</a>
-			</div>
-		</div>
-
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<div class="panel-title">SNOMED CT Deltas</div>
-			</div>
-			<div class="panel-body">
-				<table>
-					<thead>
-					<th>Name</th>
-					<th>Source</th>
-					</thead>
-					<tbody>
-					<tr>
-						<td>org.ihtsdo.workbench-export-rf2.zip</td>
-						<td>Maven</td>
-					</tr>
-					</tbody>
-				</table>
-				<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File</a>
-				<hr/>
-				<strong>Processing:</strong> Extract, Generate IDs, Patch Kaiser Descriptions <a href="#" onclick="return false;">Edit Steps</a>
-			</div>
-		</div>
-
-		<a class="add-button" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add a File Set</a>
-	</div>
-</div>
-
-<div class="panel panel-default panel-build-input">
-	<div class="panel-body">
-
-		<div class="alert alert-warning">These fields may no longer be relevant.</div>
-
-		<div class="form-group">
-			<label data-toggle="popover" data-trigger="hover" data-placement="left" data-content="Parturient montes, nascetur ridiculus mus." title="Read Me File">
-				Readme File
-			</label>
-			<input type="file" >
-		</div>
-		<div class="form-group">
-			<label data-toggle="popover" data-trigger="hover" data-placement="left" data-content="Parturient montes, nascetur ridiculus mus." title="RF2 Delta Location">
-				RF2 Delta location
-			</label>
-			<input type="text" class="form-control">
-		</div>
-		<div class="form-group">
-			<label data-toggle="popover" data-trigger="hover" data-placement="left" data-content="Parturient montes, nascetur ridiculus mus." title="Effective Date">
-				Effective Date
-			</label>
-			<input type="date" class="form-control" >
-		</div>
-	</div>
-</div>
-<!--<button type="submit" class="btn btn-default">Save</button>-->
