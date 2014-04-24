@@ -16,6 +16,12 @@ executionTour.addSteps([
 	placement: "right",
 	backdrop: false
   },
+    {
+	element: ".tour-stop-1b",
+	title: "Snomed Release Service",
+	content: "The International Release Center includes the Spanish Edition.",
+	placement: "right"
+  },
   {
 	element: "#tour-stop-2",
 	title: "In-page Help Text",
