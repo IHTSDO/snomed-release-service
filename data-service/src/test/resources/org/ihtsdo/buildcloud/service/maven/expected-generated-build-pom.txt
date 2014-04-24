@@ -9,9 +9,9 @@
 	<name>20140131 International Release Build (SNOMED CT Release, SNOMED CT International Edition, International Release Center)</name>
 
 	<modules>
-		<module>rf2_release</module>
-		<module>rf1compatibilitypackage</module>
-		<module>rf2torf1conversion</module>
+		<module>snomed_release_package</module>
+		<module>rf1_compatibility_package</module>
+		<module>rf2_to_rf1_conversion</module>
 	</modules>
 
 	<repositories>

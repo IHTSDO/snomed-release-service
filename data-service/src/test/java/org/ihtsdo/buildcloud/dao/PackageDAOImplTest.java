@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,9 +21,12 @@ public class PackageDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		Package aPackage = dao.find(1L, "rf2_release", TestEntityGenerator.TEST_USER);
+		String testPackageName = TestEntityGenerator.packageNames[0];
+		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
+		
+		Package aPackage = dao.find(1L, testPackageId, TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(aPackage);
-		Assert.assertEquals("RF2 Release", aPackage.getName());
+		Assert.assertEquals(testPackageName, aPackage.getName());
 		Assert.assertEquals(1, aPackage.getInputFiles().size());
 	}
 
