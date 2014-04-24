@@ -70,7 +70,7 @@ configurationTour.addSteps([
 	title: "List of Packages",
 	content: "...Builds have a number of Packages (the actual content that gets published)...",
 	onNext: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package";
 							recommence(configurationTour, 300, true);
 						},
 	onPrev: function () {	
@@ -83,7 +83,7 @@ configurationTour.addSteps([
 	title: "Package Configuration",
 	content: "...and each Package has a number of items of configuration associated with it.",
 	onNext: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/build-input";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package/build-input";
 							recommence(configurationTour, 300, true);
 						},
 	onPrev: function () {	
@@ -97,11 +97,11 @@ configurationTour.addSteps([
 	placement: "left",
 	content: "...such as the input files...",
 	onNext: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/pre-conditions";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package/pre-conditions";
 							recommence(configurationTour, 300, true);
 						},
 	onPrev: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package";
 							recommence(configurationTour, 300, false);
 						}	
   },
@@ -111,11 +111,11 @@ configurationTour.addSteps([
 	placement: "left",
 	content: "...the Pre-condition checks (which are not actually configurable items, but are shown here as a list as they run automatically as part of a build execution and any one of them might fail)...",
 	onNext: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/post-conditions";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package/post-conditions";
 							recommence(configurationTour, 300, true);
 						},
 	onPrev: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/build-input";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package/build-input";
 							recommence(configurationTour, 300, false);
 						}		
   },
@@ -125,7 +125,7 @@ configurationTour.addSteps([
 	placement: "left",
 	content: "...and the Post-condition checks, also known as the QA process previously performed by the 'Release Assertion Toolkit'.",
 	onPrev: function () {	
-							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/rf2_release/pre-conditions";
+							window.location.hash = "/international/snomed_ct_international_edition/snomed_ct_release/1_20140731_international_release_build/package/snomed_release_package/pre-conditions";
 							recommence(configurationTour, 300, false);
 						}	
   },
