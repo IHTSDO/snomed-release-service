@@ -13,20 +13,22 @@ public class TestEntityGenerator {
 
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
 													"SNOMED CT Spanish Edition"};
-	
+
 	public static final String [][] productNames = {{"SNOMED CT Release", 
 													 "Medical Devices Technical Preview",
 													 "GP/FP Refset Technical Preview",
 													 "LOINC Expressions Technical Preview",
 													 "ICPC2 Map Technical Preview"},
+
 													{"Spanish Release"} };
-	
+
 	public static final int totalBuildCount = 8;
 	
 	public static final int [] buildCount = { 4,
 											  4};
 	
 	//Build array dimensions are extension, products, build
+
 	//So those empty arrays there are for "Medical Devices", et al.
 	public static final String [][][] buildNames = { 	{ {	"20140731 International Release Build",
 															"20140131 International Release Build",
@@ -36,6 +38,7 @@ public class TestEntityGenerator {
 															"20140131 Spanish Release Build",
 															"20130731 Spanish Release Build",
 															"20130131 Spanish Release Build"}}};
+
 	
 	public static final int totalStarredBuilds = 5; 
 	
@@ -44,11 +47,12 @@ public class TestEntityGenerator {
 												2};
 	
 	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {}, {}, {}, {} },
+
 															{{ true, false, true, false }} };
 	
-	public static final String [] packageNames = {	"RF2 Release",
-													"RF1CompatibilityPackage",
-													"RF2toRF1Conversion"};		
+	public static final String [] packageNames = {	"SNOMED Release Package",
+													"RF1 Compatibility Package",
+													"RF2 to RF1 Conversion"};		
 
 	// packageInputFile string format is name|groupId|artifactId|version
 	public static final String [] packageInputFiles = {

@@ -16,6 +16,12 @@ executionTour.addSteps([
 	placement: "right",
 	backdrop: false
   },
+    {
+	element: ".tour-stop-1b",
+	title: "Snomed Release Service",
+	content: "The International Release Center includes the Spanish Edition.",
+	placement: "right"
+  },
   {
 	element: "#tour-stop-2",
 	title: "In-page Help Text",
@@ -25,7 +31,7 @@ executionTour.addSteps([
   {
 	element: ".tour-stop-3",
 	title: "List of Products",
-	content: "Extension consist of Products.",
+	content: "Extensions consist of Products.",
 	placement: "right",
 
   },
@@ -73,7 +79,7 @@ executionTour.addSteps([
   {
 	element: "#tour-stop-8",
 	title: "Start an Execution",
-	content: "Behold! One button to rule them all. Purpose - self evident.",
+	content: "Behold! The green button speaks for itself :-)",
 	placement: "right"
   },
   {
