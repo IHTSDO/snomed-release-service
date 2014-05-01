@@ -1,18 +1,20 @@
 <?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service-parent</artifactId>
-		<version>1.0-SNAPSHOT</version>
+		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>web</artifactId>
-	<packaging>war</packaging>
 
 	<name>Web Front End</name>
+
+	<properties>
+		<packageName>${packageNamePrefix}-${project.artifactId}</packageName>
+	</properties>
 
 	<build>
 		<plugins>
@@ -32,7 +34,46 @@
 					</webApp>
 				</configuration>
 			</plugin>
-		</plugins>	
+			<plugin>
+				<groupId>org.vafer</groupId>
+				<artifactId>jdeb</artifactId>
+				<version>1.1.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jdeb</goal>
+						</goals>
+						<configuration>
+							<deb>${project.build.directory}/${packageName}_${project.version}-all.deb</deb>
+							<classifier>all</classifier>
+							<controlDir>${basedir}/ubuntu-package/control</controlDir>
+							<signPackage>false</signPackage>
+							<dataSet>
+					            <data>
+				                  <src>${basedir}/src/html</src>
+				                  <type>directory</type>
+				                  <mapper>
+				                    <type>directory</type>
+				                    <prefix>/var/www</prefix>
+				                  </mapper>
+				                  <mapper>
+				                  	<type>perm</type>
+				                  	<prefix>/srv/http/${packageName}</prefix>
+				                  	<filemode>0644</filemode>
+				                  </mapper>
+				                </data>
+				                <data>
+				                	<src>${basedir}/src/nginx/web.conf</src>
+				                	<dst>/etc/nginx/conf.d/${packageName}.conf</dst>
+				                	<type>file</type>
+				                	<conffile>true</conffile>
+				                </data>
+							</dataSet>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
-
 </project>
