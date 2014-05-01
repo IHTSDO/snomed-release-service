@@ -144,7 +144,6 @@
 						<phase>package</phase>
 						<configuration>
 							<path>/api</path>
-							<finalName>exec-${project.build.finalName}.jar</finalName>
 							<finalName>${execFinalName}</finalName>
 							<enableNaming>true</enableNaming>
 						</configuration>
