@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+APP_NAME=[[packageName]]
+
+mkdir -p /var/run/$APP_NAME
+chmod 700 /var/run/$APP_NAME
+
+if ! getent passwd $APP_NAME >/dev/null; then
+  adduser --quiet --system --no-create-home --home /opt/$APP_NAME --shell /bin/false $APP_NAME
+fi
+
+mkdir -p /var/lib/$APP_NAME
+chmod 700 /var/lib/$APP_NAME
+chown $APP_NAME /var/lib/$APP_NAME
+
+start $APP_NAME

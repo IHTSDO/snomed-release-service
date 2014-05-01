@@ -1,0 +1,9 @@
+Package: [[packageNamePrefix]]-[[artifactId]]
+Version: [[version]]
+Priority: optional
+Architecture: all
+Depends: nginx
+Maintainer: Kai Kewley <kke@ihtsdo.org>
+Description: SNOMED Release Service Web UI
+Distribution: stable
+Section: web

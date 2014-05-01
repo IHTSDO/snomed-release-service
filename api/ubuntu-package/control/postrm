@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+APP_NAME=[[packageName]]
+
+case $1 in
+	purge)
+		if getent passwd $APP_NAME >/dev/null; then
+  			userdel $APP_NAME
+		fi
+		rm -r /var/lib/$APP_NAME
+	;;
+esac
