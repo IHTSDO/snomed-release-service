@@ -1,6 +1,6 @@
 env JVM_OPTIONS="-Xms64m -Xmx256m"
 env APP_OPTIONS="--httpPort=8080"
-env APP_NAME=snomed-release-api
+env APP_NAME=snomed-release-service-api
 
 start on runlevel [2345]
 stop on runlevel [!2345]
