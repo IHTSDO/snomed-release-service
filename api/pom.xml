@@ -3,7 +3,7 @@
 
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
-		<artifactId>snomed-release-service-parent</artifactId>
+		<artifactId>snomed-release-service</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 
@@ -14,7 +14,7 @@
 
 	<properties>
 		<execFinalName>exec-${project.build.finalName}.jar</execFinalName>
-		<packageName>${packageNamePrefix}-${project.artifactId}</packageName>
+		<packageName>${project.parent.artifactId}-${project.artifactId}</packageName>
 	</properties>
 
 	<dependencies>
@@ -161,7 +161,7 @@
 							<goal>jdeb</goal>
 						</goals>
 						<configuration>
-							<deb>${project.build.directory}/${packageName}_${project.version}-all.deb</deb>
+							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
 							<classifier>all</classifier>
 			 				<signPackage>false</signPackage>
