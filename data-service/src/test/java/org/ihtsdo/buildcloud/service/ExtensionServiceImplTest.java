@@ -1,26 +1,22 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.List;
-
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
 public class ExtensionServiceImplTest extends TestEntityGenerator {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExtensionServiceImplTest.class);
 	
 	@Autowired
 	private ExtensionService es;

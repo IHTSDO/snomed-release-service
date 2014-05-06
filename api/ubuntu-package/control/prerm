@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+APP_NAME=[[packageName]]
+
+stop $APP_NAME

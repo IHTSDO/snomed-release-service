@@ -5,6 +5,7 @@ import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +16,9 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 
 	@Autowired
 	private SessionFactory sessionFactory;
-	
+
+	@Autowired
+	private UserServiceImpl userService;
 
 	public void primeDatabase() {
 		Session session = getSession();
@@ -25,15 +28,15 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 			ReleaseCenter internationalReleaseCenter = createTestReleaseCenter();
 			save(internationalReleaseCenter);
 
-			User testUser = new User(TestEntityGenerator.TEST_USER);
-			ReleaseCenterMembership releaseCenterMembership = new ReleaseCenterMembership(internationalReleaseCenter, testUser);
+			User anonymousUser = userService.createUser(User.ANONYMOUS_USER, "");
+			session.save(anonymousUser);
+			session.save(new ReleaseCenterMembership(internationalReleaseCenter, anonymousUser));
 
-			session.save(testUser);
-			session.save(releaseCenterMembership);
+			User managerUser = userService.createUser("manager", "test123");
+			session.save(managerUser);
+			session.save(new ReleaseCenterMembership(internationalReleaseCenter, managerUser));
 		}
 	}
-	
-	
 
 	private void save (ReleaseCenter releaseCenter){
 		//Work down the hierarchy saving objects as we go

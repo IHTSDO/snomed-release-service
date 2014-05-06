@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +38,8 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
 											   HttpServletRequest request) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
-		Execution execution = executionService.create(buildCompositeKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 
 		return hypermediaGenerator.getEntityHypermediaJustCreated(execution, request, EXECUTION_LINKS);
 	}
@@ -46,8 +47,8 @@ public class ExecutionController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		List<Execution> executions = executionService.findAll(buildCompositeKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<Execution> executions = executionService.findAll(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
 	}
 
@@ -55,8 +56,8 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 									HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
 	}
 
@@ -64,8 +65,8 @@ public class ExecutionController {
 	@ResponseBody
 	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 								 HttpServletResponse response) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
-		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedUser);
 		response.setContentType("application/json");
 		response.getOutputStream().print(executionConfiguration);
 	}
@@ -74,8 +75,8 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 											HttpServletRequest request) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
-		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
@@ -83,10 +84,10 @@ public class ExecutionController {
 	@ResponseBody
 	public void getBuildScrips(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 							   HttpServletResponse response) throws IOException {
-		String authenticatedId = SecurityHelper.getSubject();
+		User authenticatedUser = SecurityHelper.getSubject();
 		response.setContentType("application/zip");
 		ServletOutputStream outputStream = response.getOutputStream();
-		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedId, outputStream);
+		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedUser, outputStream);
 	}
 
 	@RequestMapping(value = "/{executionId}/output/**", method = RequestMethod.POST, headers = "content-type!=multipart/form-data")
@@ -98,11 +99,11 @@ public class ExecutionController {
 		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
 		String filePath = path.substring(path.indexOf("/output/") + 8);
 
-		String authenticatedId = SecurityHelper.getSubject();
+		User authenticatedUser = SecurityHelper.getSubject();
 		Long contentLength = asLong(request.getHeader("content-length"));
 		if (contentLength != null) {
 			executionService.saveOutputFile(buildCompositeKey, executionId, filePath,
-					request.getInputStream(), contentLength, authenticatedId);
+					request.getInputStream(), contentLength, authenticatedUser);
 			response.setStatus(HttpServletResponse.SC_CREATED);
 		} else {
 			// Ask the client for content length so we may stream to permanent storage.
@@ -119,9 +120,9 @@ public class ExecutionController {
 		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
 		String filePath = path.substring(path.indexOf("/output/") + 8);
 
-		String authenticatedId = SecurityHelper.getSubject();
+		User authenticatedUser = SecurityHelper.getSubject();
 		ServletOutputStream outputStream = response.getOutputStream();
-		InputStream outputFileInputStream = executionService.getOutputFile(buildCompositeKey, executionId, filePath, authenticatedId);
+		InputStream outputFileInputStream = executionService.getOutputFile(buildCompositeKey, executionId, filePath, authenticatedUser);
 		if (outputFileInputStream != null) {
 			try {
 				StreamUtils.copy(outputFileInputStream, outputStream);
@@ -136,8 +137,8 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
 	@ResponseBody
 	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) {
-		String authenticatedId = SecurityHelper.getSubject();
-		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedUser);
 	}
 
 	private Long asLong(String longString) {

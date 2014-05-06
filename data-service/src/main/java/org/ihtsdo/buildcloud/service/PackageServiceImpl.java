@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,22 +29,22 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	}
 
 	@Override
-	public Package find(String buildCompositeKey, String packageBusinessKey, String authenticatedId) {
+	public Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return packageDAO.find(buildId, packageBusinessKey, authenticatedId);
+		return packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 	}
 
 	@Override
-	public List<Package> findAll(String buildCompositeKey, String authenticatedId) {
+	public List<Package> findAll(String buildCompositeKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return new ArrayList<Package>(buildDAO.find(buildId, authenticatedId).getPackages());
+		return new ArrayList<Package>(buildDAO.find(buildId, authenticatedUser).getPackages());
 	}
 	
 	@Override
-	public Package create(String buildCompositeKey, String name, String authenticatedId) {
+	public Package create(String buildCompositeKey, String name, User authenticatedUser) {
 		
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		Build build = buildDAO.find(buildId, authenticatedId);
+		Build build = buildDAO.find(buildId, authenticatedUser);
 		Package pkg = new Package(name);
 		build.addPackage(pkg);
 		packageDAO.save(pkg);

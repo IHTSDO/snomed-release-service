@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,8 @@ public class ReleaseCenterController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getReleaseCenters(HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		List<ReleaseCenter> centers = releaseCenterService.findAll(authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<ReleaseCenter> centers = releaseCenterService.findAll(authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
 	}
 
@@ -42,8 +43,8 @@ public class ReleaseCenterController {
 		String name = json.get("name");
 		String shortName = json.get("shortName");
 
-		String authenticatedId = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.create(name, shortName, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		ReleaseCenter center = releaseCenterService.create(name, shortName, authenticatedUser);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(center, request, RELEASE_CENTER_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
@@ -54,8 +55,8 @@ public class ReleaseCenterController {
 												   @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws IOException {
 
-		String authenticatedId = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
 		center.setName(json.get("name"));
 		center.setShortName(json.get("shortName"));
 		center.setRemoved("true".equalsIgnoreCase(json.get("removed")));
@@ -66,8 +67,8 @@ public class ReleaseCenterController {
 	@RequestMapping("/{releaseCenterBusinessKey}")
 	@ResponseBody
 	public Map getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(center, request, RELEASE_CENTER_LINKS);
 	}
 

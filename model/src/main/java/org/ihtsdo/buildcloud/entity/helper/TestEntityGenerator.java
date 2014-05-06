@@ -2,11 +2,10 @@ package org.ihtsdo.buildcloud.entity.helper;
 
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class TestEntityGenerator {
 	
-	public static final String TEST_USER = "test";
+	public static final User TEST_USER = new User(1L, "test");
 
 	public static final String [] releaseCenterNames = {"International Release Center"};
 
@@ -63,7 +62,6 @@ public class TestEntityGenerator {
 	};
 	
 	protected ReleaseCenter createTestReleaseCenter() {
-		
 		ReleaseCenter internationalReleaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
 		addExtensionsToReleaseCenter(internationalReleaseCenter);
 		return internationalReleaseCenter;

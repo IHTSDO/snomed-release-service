@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,8 @@ public class ProductBuildController {
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterBusinessKey,
 											   @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
 											   HttpServletRequest request) {
-		String authenticatedId = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
 	}
 	
@@ -44,8 +45,8 @@ public class ProductBuildController {
 		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		String name = json.get("name");
 
-		String authenticatedId = SecurityHelper.getSubject();
-		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedId);
+		User authenticatedUser = SecurityHelper.getSubject();
+		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedUser);
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(build, request, BuildController.BUILD_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}		
