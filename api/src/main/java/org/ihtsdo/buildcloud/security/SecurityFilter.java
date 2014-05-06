@@ -29,6 +29,7 @@ public class SecurityFilter implements Filter {
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 		final String authHeader = httpRequest.getHeader("Authorization");
+		boolean authenticationRequired = true;
 
 		String pathInfo = httpRequest.getPathInfo();
 		String requestMethod = httpRequest.getMethod();
@@ -42,6 +43,7 @@ public class SecurityFilter implements Filter {
 			User anonymousSubject = authenticationService.getAnonymousSubject();
 			SecurityHelper.setSubject(anonymousSubject);
 			chain.doFilter(request, response);
+			authenticationRequired = false;
 		} else if (authHeader != null){
 			User authenticatedSubject = null;
 			if (authHeader != null) {
@@ -58,6 +60,7 @@ public class SecurityFilter implements Filter {
 			}
 
 			if (authenticatedSubject != null) {
+				authenticationRequired = false;
 				try {
 					// Bind authenticated subject/user to thread
 					SecurityHelper.setSubject(authenticatedSubject);
@@ -66,13 +69,14 @@ public class SecurityFilter implements Filter {
 				} finally {
 					SecurityHelper.clearSubject();
 				}
-			}
-			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		} else {
+			} 
+		} 
+		
+		if (authenticationRequired) {
 			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
+		
 	}
 
 	public void destroy() {
