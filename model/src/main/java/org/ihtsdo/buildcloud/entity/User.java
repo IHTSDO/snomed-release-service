@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -9,21 +11,33 @@ import java.util.List;
 @Entity
 public class User {
 
+	public static final String ANONYMOUS_USER = "anonymous_user";
+
 	@Id
 	@GeneratedValue
+	@JsonIgnore
 	private Long id;
 
-	private String oauthId;
+	private String username;
+
+	@JsonIgnore
+	private String encodedPassword;
 
 	@OneToMany(mappedBy = "user")
+	@JsonIgnore
 	private List<ReleaseCenterMembership> releaseCenterMemberships;
 
 	public User() {
 	}
 
-	public User(String oauthId) {
+	public User(String username) {
 		this();
-		this.oauthId = oauthId;
+		this.username = username;
+	}
+
+	public User(Long id, String username) {
+		this(username);
+		this.id = id;
 	}
 
 	public Long getId() {
@@ -34,12 +48,20 @@ public class User {
 		this.id = id;
 	}
 
-	public String getOauthId() {
-		return oauthId;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setOauthId(String oauthId) {
-		this.oauthId = oauthId;
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getEncodedPassword() {
+		return encodedPassword;
+	}
+
+	public void setEncodedPassword(String encodedPassword) {
+		this.encodedPassword = encodedPassword;
 	}
 
 	public List<ReleaseCenterMembership> getReleaseCenterMemberships() {

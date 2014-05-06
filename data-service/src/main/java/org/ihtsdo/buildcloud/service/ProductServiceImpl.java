@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.ExtensionDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,8 +28,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, String oauthId) throws Exception{
-		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, oauthId);
+	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws Exception{
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		
 		if (extension == null) {
 			throw new Exception ("Unable to find extension with path: " + releaseCenterBusinessKey + "/" + extensionBusinessKey);
@@ -39,13 +40,13 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String oauthId) {
-		return productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, oauthId);
+	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) {
+		return productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 	}
 
 	@Override
-	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, String authenticatedId) {
-		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedId);
+	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, User authenticatedUser) {
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		Product product = new Product(name);
 		extension.addProduct(product);
 		productDAO.save(product);

@@ -1,0 +1,22 @@
+{{partial "header"}}
+
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+	<li>Admin</li>
+</ol>
+
+<h2>Admin</h2>
+{{#if controllers.application.isAuthenticated}}
+	<ul>
+	{{#each releaseCenters}}
+		<li>
+			{{#link-to "release-center" this}}{{name}}{{/link-to}}
+		</li>
+	{{/each}}
+	</ul>
+
+	<!-- Button trigger modal -->
+	<button class="btn btn-primary btn-md list-align" {{action 'openModal' 'create-release-center'}}>
+		<span class="glyphicon glyphicon-plus"></span> Add a Release Center
+	</button>
+{{/if}}

@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.EnumSet;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
@@ -10,19 +7,18 @@ import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
+import java.util.List;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @Transactional
 public class BuildServiceImplTest extends TestEntityGenerator {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImplTest.class);
 	
 	@Autowired
 	private BuildService bs;

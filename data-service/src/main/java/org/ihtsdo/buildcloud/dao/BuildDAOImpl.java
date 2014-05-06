@@ -1,27 +1,28 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Vector;
 
 @Repository
 public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 
+	public BuildDAOImpl() {
+		super(Build.class);
+	}
+
 	@Override
-	public List<Build> findAll(EnumSet<FilterOption> filterOptions, String authenticatedId) {
-		return findAll(null, null, filterOptions, authenticatedId);
+	public List<Build> findAll(EnumSet<FilterOption> filterOptions, User user) {
+		return findAll(null, null, filterOptions, user);
 	}
 	
 	@Override
-	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, String authenticatedId) {
+	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User user) {
 		
 		/*List<Build> testList = new Vector<Build>();
 		Build b = new Build("Peter");
@@ -50,11 +51,11 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
-				"where membership.user.oauthId = :oauthId " +
+				"where membership.user = :user " +
 				filter +  
 				"order by build.id ");
-		query.setString("oauthId", authenticatedId);
-		
+		query.setEntity("user", user);
+
 		if (releaseCenterBusinessKey != null) {
 			query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		}
@@ -65,7 +66,7 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	}
 
 	@Override
-	public Build find(Long id, String authenticatedId) {
+	public Build find(Long id, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select build " +
 				"from ReleaseCenterMembership membership " +
@@ -73,10 +74,10 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 				"join releaseCenter.extensions extension " +
 				"join extension.products product " +
 				"join product.builds build " +
-				"where membership.user.oauthId = :oauthId " +
+				"where membership.user = :user " +
 				"and build.id = :buildId " +
 				"order by build.id ");
-		query.setString("oauthId", authenticatedId);
+		query.setEntity("user", user);
 		query.setLong("buildId", id);
 		return (Build) query.uniqueResult();
 	}
