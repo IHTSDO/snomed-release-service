@@ -204,8 +204,11 @@ public class OfflineS3ClientImplTest {
 	}
 
 	private File getTestFile() {
-		LOGGER.warn("Attempting to recover test resource from: " + getClass().getResource(".").getPath());
-		return new File(getClass().getResource(TEST_FILE_TXT).getFile());
+		File testFile = new File(getClass().getResource(TEST_FILE_TXT).getFile());
+		if (!testFile.exists()) {
+			LOGGER.warn("Failed to recover test resource from: " + getClass().getResource(".").getPath());
+		}
+		return testFile;
 	}
 
 }
