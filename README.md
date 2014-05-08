@@ -42,7 +42,5 @@ current develop version, e.g 0.0.2-SNAPSHOT produces a 0.0.2 release version) an
 
 During the release process it will create the release branch and merge it.
 
-When finished, master and develop will be pushed which will cause the
-master and develop Jenkins jobs to run, packaging up the versions and
-deploying them on success.
+When finished push your branches and tags up and the Jenkins jobs will run to produce packages.
 
