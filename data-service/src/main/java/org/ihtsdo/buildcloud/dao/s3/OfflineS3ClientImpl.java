@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,8 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -41,7 +44,7 @@ public class OfflineS3ClientImpl implements S3Client {
 		});
 
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
-
+		
 		if (list != null) {
 			for (String filename : list) {
 				String key = getKey(filename);
@@ -52,6 +55,11 @@ public class OfflineS3ClientImpl implements S3Client {
 			}
 		}
 		listing.setBucketName(bucketName);
+		
+		//Mac appears to return these objects in a sorted list, Ubuntu does not.   
+		//Sorting programatically for now until we can get this nailed down.
+		Collections.sort(objectSummaries, new S3ObjectSummaryComparator());
+		
 		return listing;
 	}
 
@@ -148,7 +156,7 @@ public class OfflineS3ClientImpl implements S3Client {
 	private String getFilename(String key) {
 		try {
 			String encode = URLEncoder.encode(key, UTF_8);
-			System.out.println(encode);
+			//System.out.println("Offline S3 Client url-encoded filename: " + encode);
 			return encode;
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("Unsupported Encoding", e);
@@ -160,6 +168,13 @@ public class OfflineS3ClientImpl implements S3Client {
 			return URLDecoder.decode(filename, UTF_8);
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("Unsupported Encoding", e);
+		}
+	}
+	
+	public class S3ObjectSummaryComparator implements Comparator<S3ObjectSummary> {
+		@Override
+		public int compare(S3ObjectSummary o1, S3ObjectSummary o2) {
+			return o1.getKey().compareTo(o2.getKey());
 		}
 	}
 
