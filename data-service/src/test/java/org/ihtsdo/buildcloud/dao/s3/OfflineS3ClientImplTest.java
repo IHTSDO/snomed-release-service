@@ -2,10 +2,13 @@ package org.ihtsdo.buildcloud.dao.s3;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.*;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
 import java.io.File;
@@ -18,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OfflineS3ClientImplTest {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(OfflineS3ClientImplTest.class);
 
 	public static final String TEST_FILE_TXT = "testFile.txt";
 	private S3Client s3Client;
@@ -199,7 +204,11 @@ public class OfflineS3ClientImplTest {
 	}
 
 	private File getTestFile() {
-		return new File(getClass().getResource(TEST_FILE_TXT).getFile());
+		File testFile = new File(getClass().getResource(TEST_FILE_TXT).getFile());
+		if (!testFile.exists()) {
+			LOGGER.warn("Failed to recover test resource from: " + getClass().getResource(".").getPath());
+		}
+		return testFile;
 	}
 
 }
