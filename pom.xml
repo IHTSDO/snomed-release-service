@@ -117,9 +117,6 @@
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 					<enableSshAgent>true</enableSshAgent>
 					<noDeploy>true</noDeploy>
-					<pushFeatures>true</pushFeatures>
-					<pushReleases>true</pushReleases>
-					<pushHotfixes>true</pushHotfixes>
 				</configuration>
 			</plugin>
 		</plugins>
