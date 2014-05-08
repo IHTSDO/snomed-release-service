@@ -29,9 +29,6 @@ See the [pom.xml](pom.xml) for configuration options used.
 
 The plugin is configured to use your SSH Agent for ease of use.
 
-Of particular note is that new feature branch and hotfixes
-automatically get pushed upstream, so be careful with rebases.
-
 ## Performing a release
 
 To perform a release run:
@@ -43,7 +40,7 @@ $ mvn jgitflow:release-start jgitflow:release-finish
 This will prompt for the version to release (which it derives from the
 current develop version, e.g 0.0.2-SNAPSHOT produces a 0.0.2 release version) and the new development version (0.0.3-SNAPSHOT, from our example).
 
-During the release process it will create the release branch and merge it. The release branch will be pushed up the main respository too.
+During the release process it will create the release branch and merge it.
 
 When finished, master and develop will be pushed which will cause the
 master and develop Jenkins jobs to run, packaging up the versions and
