@@ -1,16 +1,21 @@
 
-App = Ember.Application.create({
-	ApplicationController: Ember.Controller.extend({
-		routeChanged: function() {
-			// Scroll top top of new page
-			window.scrollTo(0, 0);
+App = Ember.Application.create();
 
-			//Initialise popovers for all elements that include the relevant attribute
-			//Needs to be repeated each time the DOM changes
-			//Ember.run.scheduleOnce('afterRender', this, afterRender);
-			Ember.run.later(window, afterRender, 1000);
-		}.observes('currentPath')
-	})
+App.ApplicationController = Ember.ObjectController.extend({
+	isAuthenticated: function() {
+		var currentUser = this.get('currentUser');
+		var b = true == currentUser.authenticated;
+		return b;
+	}.property('currentUser'),
+	routeChanged: function() {
+		// Scroll top top of new page
+		window.scrollTo(0, 0);
+
+		//Initialise popovers for all elements that include the relevant attribute
+		//Needs to be repeated each time the DOM changes
+		//Ember.run.scheduleOnce('afterRender', this, afterRender);
+		Ember.run.later(window, afterRender, 1000);
+	}.observes('currentPath')
 });
 
 App.Router.map(function() {
@@ -134,13 +139,6 @@ App.ApplicationRoute = Ember.Route.extend({
 			$('.modal').modal('hide');
 		}
 	}
-});
-App.ApplicationController = Ember.ObjectController.extend({
-	isAuthenticated: function() {
-		var currentUser = this.get('currentUser');
-		var b = true == currentUser.authenticated;
-		return b;
-	}.property('currentUser')
 });
 
 // Index
@@ -642,7 +640,7 @@ App.ConfirmDialogController = Ember.ObjectController.extend({
 
 
 function afterRender() {
-	//alert ("AfterRender");
+	console.log("in function afterRender()");
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
@@ -652,16 +650,13 @@ function afterRender() {
 }
 
 function initBuildInputFileUploadForm(isManifest) {
+	console.log ("Setting up upload form for " + (isManifest?"Manifest":"Build Files"));
 	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
 	var $button = $(selector + 'Btn');
 	$(selector + 'Form').submit(function () {
 		var $form = $(this);
 		if ($form.valid()) {
 			var action = $('.actionpath', $form).text();
-			if (!isManifest) {
-				var shortName = $('input[name="shortName"]', $form).val();
-				action += shortName;
-			}
 			console.log( (isManifest?"Manifest":"File") + ' upload url = "' + action + '"');
 			$form.attr('action', action);
 			$button.val('Uploading...');

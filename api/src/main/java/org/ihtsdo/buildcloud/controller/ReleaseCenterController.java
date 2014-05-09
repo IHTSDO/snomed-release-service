@@ -43,9 +43,13 @@ public class ReleaseCenterController {
 		String name = json.get("name");
 		String shortName = json.get("shortName");
 
+
 		User authenticatedUser = SecurityHelper.getSubject();
 		ReleaseCenter center = releaseCenterService.create(name, shortName, authenticatedUser);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(center, request, RELEASE_CENTER_LINKS);
+
+		boolean currentResource = true;
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
+
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 
@@ -61,15 +65,19 @@ public class ReleaseCenterController {
 		center.setShortName(json.get("shortName"));
 		center.setRemoved("true".equalsIgnoreCase(json.get("removed")));
 		releaseCenterService.update(center);
-		return hypermediaGenerator.getEntityHypermedia(center, request, RELEASE_CENTER_LINKS);
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 	}
 
 	@RequestMapping("/{releaseCenterBusinessKey}")
 	@ResponseBody
 	public Map getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
+
 		User authenticatedUser = SecurityHelper.getSubject();
 		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(center, request, RELEASE_CENTER_LINKS);
+
+		boolean currentResource = true;
+		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 	}
 
 }

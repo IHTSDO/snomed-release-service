@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.ihtsdo.buildcloud.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.User;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -59,15 +61,15 @@ public class InputFileController {
 							@PathVariable String inputFileBusinessKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(inputFile, request, INPUT_FILE_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(inputFile, false, request, INPUT_FILE_LINKS);
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.POST)
+	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
 	@ResponseBody
 	public Map uploadInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							   @PathVariable String inputFileName, @RequestParam(value = "file") MultipartFile file,
+							   @RequestParam(value = "file") MultipartFile file,
 							   HttpServletRequest request) throws IOException {
-		return uploadFile(buildCompositeKey, packageBusinessKey, inputFileName, file, request, false);
+		return uploadFile(buildCompositeKey, packageBusinessKey, file, request, false);
 	}
 
 	@RequestMapping(value = "/inputfiles/{inputFileBusinessKey}/file", produces="application/zip")
@@ -91,7 +93,10 @@ public class InputFileController {
 											@PathVariable String packageBusinessKey,
 											HttpServletRequest request) {
 		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
-		return hypermediaGenerator.getEntityHypermedia(manifest, request, INPUT_FILE_LINKS);
+		if (manifest == null) {
+			throw new ResourceNotFoundException();
+		}
+		return hypermediaGenerator.getEntityHypermedia(manifest, false, request, INPUT_FILE_LINKS);
 	}
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
@@ -99,9 +104,7 @@ public class InputFileController {
 	public Map uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@RequestParam(value = "file") MultipartFile file,
 								HttpServletRequest request) throws IOException {
-		//String filename = Utils.getFilename(file, "manifest.xml");
-		String filename = file.getOriginalFilename();
-		return uploadFile (buildCompositeKey, packageBusinessKey, filename, file, request, true);
+		return uploadFile (buildCompositeKey, packageBusinessKey, file, request, true);
 	}
 
 	@RequestMapping(value = "/manifest/file", produces="application/zip")
@@ -112,17 +115,18 @@ public class InputFileController {
 	}
 
 	private Map uploadFile(String buildCompositeKey, String packageBusinessKey,
-			   String inputFileName, MultipartFile file,
+			   MultipartFile file,
 			   HttpServletRequest request, boolean isManifest) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
 
 		long size = file.getSize();
-		LOGGER.info("uploadInputFile(multipart). inputFileName: {}, size: {}", inputFileName, size);
+		LOGGER.info("uploadInputFile(multipart). inputFileName: {}, size: {}", file.getOriginalFilename(), size);
 		
-		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, inputFileName, file.getInputStream(),
+		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, file.getOriginalFilename(), file.getInputStream(),
 			size, isManifest, authenticatedUser);
 		
-		return hypermediaGenerator.getEntityHypermediaJustCreated(inputFile, request, INPUT_FILE_LINKS);
+		boolean isCurrentResource = isManifest;  //Manifests don't need their filename added to URL
+		return hypermediaGenerator.getEntityHypermedia(inputFile, isCurrentResource, request, INPUT_FILE_LINKS);
 	}
 
 	private InputFile getManifest(String buildCompositeKey, String packageBusinessKey) {

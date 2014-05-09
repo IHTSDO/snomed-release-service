@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+//import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
 public class InputFileControllerTest extends ControllerTest{
 	
@@ -33,19 +33,16 @@ public class InputFileControllerTest extends ControllerTest{
 		//JSON object indexes start from 1 so add 1 to the traditional 0 based index
 		String build_id =  (random_build+1) + "_" + EntityHelper.formatAsBusinessKey(buildStr);
 		String testFileName = "three_readmes.zip";
-		String shortName = "threereadmes";
-		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/inputfiles/" + shortName;
+
+		String postURL = ROOT_URL + "/builds/" + build_id + "/packages/" + packageStr + "/inputfiles";
 		
 		ClassPathResource cpr = new ClassPathResource(testFileName);
-		MockMultipartFile testFile = new MockMultipartFile("file", cpr.getInputStream());
+		MockMultipartFile testFile = new MockMultipartFile("file", testFileName, null, cpr.getInputStream());
 
-		String expectedResult = postURL; // + "/" + EntityHelper.formatAsBusinessKey(shortName);
+		String expectedResult = postURL + "/" + EntityHelper.formatAsBusinessKey(testFileName);
 		mockMvc.perform(MockMvcRequestBuilders.fileUpload(postURL)
 				.file(testFile))
-				//.param("buildCompositeKey", build_id)
-				//.param("packageBusinessKey", packageStr))
-				//.param("inputFileName", shortName)) These gets picked up from the URL
-			.andDo(print())
+			//.andDo(print())
 			.andExpect(status().is(200))
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
 			.andExpect(jsonPath("$.url", is(expectedResult))); 
@@ -73,7 +70,7 @@ public class InputFileControllerTest extends ControllerTest{
 				.file(testFile)
 				.param("buildCompositeKey", build_id)
 				.param("packageBusinessKey", packageStr))
-			.andDo(print())
+			//.andDo(print())
 			.andExpect(status().is(200))
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
 			.andExpect(jsonPath("$.url", is(expectedResult)));
