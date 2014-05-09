@@ -163,6 +163,7 @@
 						<configuration>
 							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
+						    <snapshotEnv>BUILD_NUMBER</snapshotEnv>
 							<classifier>all</classifier>
 			 				<signPackage>false</signPackage>
 							<dataSet>
