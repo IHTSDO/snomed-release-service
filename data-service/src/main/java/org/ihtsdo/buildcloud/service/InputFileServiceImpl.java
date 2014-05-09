@@ -79,7 +79,6 @@ public class InputFileServiceImpl extends EntityServiceImpl<InputFile> implement
 		//TODO This is memory intensive. Option to write to disk first and examine there - could be done thread parallel to S3 upload.
 		//Can we treat this stream as a zip file and examine it's contents?
 		Map<String, String> metaData = FileUtils.examineZipContents(inputFileName, inputStreams[1]);
-
 		inputFile.setMetaData(metaData);
 
 		// Generate input file pom

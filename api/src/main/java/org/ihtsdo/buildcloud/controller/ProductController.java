@@ -45,19 +45,25 @@ public class ProductController {
 												   HttpServletRequest request) throws IOException {
 
 		String name = json.get("name");
-
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name, authenticatedUser);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(product, request, PRODUCT_LINKS);
+
+		boolean currentResource = true;
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
+
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
 	public Map getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(product, request, PRODUCT_LINKS);
+
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
+
 	}
 
 }

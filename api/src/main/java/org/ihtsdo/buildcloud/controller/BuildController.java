@@ -50,8 +50,8 @@ public class BuildController {
 	public Map getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.find(buildCompositeKey, authenticatedUser);
-
-		return hypermediaGenerator.getEntityHypermedia(build, request, BUILD_LINKS);
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
 	}
 	
 }

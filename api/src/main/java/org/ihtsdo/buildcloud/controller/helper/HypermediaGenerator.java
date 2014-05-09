@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.ihtsdo.buildcloud.entity.Execution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,18 +28,18 @@ public class HypermediaGenerator {
 		return entitiesHypermedia;
 	}
 
-	public Map<String, Object> getEntityHypermedia(Object entity, HttpServletRequest request, String... entityLinks) {
+	/**
+	 * 
+	 * @param entity
+	 * @param currentResource - if true indicates that the URL already contains the entity id.  If false, the entity will be added. 
+	 * @param request
+	 * @param entityLinks
+	 * @return
+	 */
+	public Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, HttpServletRequest request, String... entityLinks) {
 		String url = getUrl(request);
 		String apiRootUrl = getApiRootUrl(url, request);
-		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
-	}
-
-	public Map<String, Object> getEntityHypermediaJustCreated(Object entity, HttpServletRequest request, String... entityLinks) {
-		String url = getUrl(request);
-		String apiRootUrl = getApiRootUrl(url, request);
-		//The id of the object being created is included in the URL, so we don't need it to be added again.  
-		//So passing 'current resource' as true to acheive this.
-		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
+		return getEntityHypermedia(entity, currentResource, url, apiRootUrl, entityLinks);
 	}
 
 	public Map<String, Object> getEntityHypermediaOfAction(Object entity, HttpServletRequest request, String... entityLinks) {
@@ -52,6 +51,8 @@ public class HypermediaGenerator {
 	}
 
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
+		
+		
 		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
 		if (!currentResource) {
 			url = url + "/" + entityMap.get("id");

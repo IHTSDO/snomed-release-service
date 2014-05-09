@@ -33,7 +33,7 @@ public class SecurityFilter implements Filter {
 
 		String pathInfo = httpRequest.getPathInfo();
 		String requestMethod = httpRequest.getMethod();
-		LOGGER.debug("pathInfo: '{}'", pathInfo);
+		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpRequest.getRemoteAddr());
 
 		if (pathInfo.startsWith("/login")) {
 			// Trying to log in

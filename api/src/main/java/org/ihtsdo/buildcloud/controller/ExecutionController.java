@@ -41,7 +41,8 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 
-		return hypermediaGenerator.getEntityHypermediaJustCreated(execution, request, EXECUTION_LINKS);
+		boolean currentResource = true;
+		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping
@@ -58,7 +59,9 @@ public class ExecutionController {
 									HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(execution, request, EXECUTION_LINKS);
+		
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping(value = "/{executionId}/configuration", produces="application/json")
