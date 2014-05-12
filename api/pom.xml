@@ -162,8 +162,8 @@
 						</goals>
 						<configuration>
 							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
-							<controlDir>${basedir}/ubuntu-package/control</controlDir>
-              <snapshotExpand>true</snapshotExpand>
+							<controlDir>${basedir}/src/ubuntu-package/control</controlDir>
+							<snapshotExpand>true</snapshotExpand>
 							<snapshotEnv>BUILD_NUMBER</snapshotEnv>
 							<verbose>true</verbose>
 							<classifier>all</classifier>
@@ -179,8 +179,14 @@
 									</mapper>
 								</data>
 								<data>
-									<src>${basedir}/ubuntu-package/${project.artifactId}.upstart</src>
+									<src>${basedir}/src/ubuntu-package/upstart.conf</src>
 									<dst>/etc/init/${packageName}.conf</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+								</data>
+								<data>
+									<src>${basedir}/src/ubuntu-package/default</src>
+									<dst>/etc/default/${packageName}</dst>
 									<type>file</type>
 									<conffile>true</conffile>
 								</data>
