@@ -1,0 +1,4 @@
+# SNOMED Release Service API settings
+
+#HTTP_PORT=8080
+#JVM_OPTIONS="-Xms64m -Xmx256m"
