@@ -1,6 +1,29 @@
 body {
 	padding-top: 70px;
 }
+.ribbon {
+    background-color: #a00;
+    overflow: hidden;
+    white-space: nowrap;
+    position: absolute;
+    left: -47px;
+    top: 22px;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+.ribbon span {
+    border: 1px solid #faa;
+    color: #fff;
+    display: block;
+    font: bold 100% 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 1px 0;
+    padding: 3px 70px;
+    text-align: center;
+    text-decoration: none;
+}
 .navbar-brand {
 	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
 	padding-left: 75px;
