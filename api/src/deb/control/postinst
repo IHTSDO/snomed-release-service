@@ -1,0 +1,34 @@
+#!/bin/sh -e
+
+#For debugging uncomment these two lines
+#set -x
+#echo $*
+
+APP_NAME=[[packageName]]
+
+if ! getent passwd $APP_NAME >/dev/null; then
+  adduser --quiet --system --no-create-home --home /opt/$APP_NAME --shell /bin/false $APP_NAME
+fi
+
+if ! test -d /var/opt/$APP_NAME; then
+  mkdir -p /var/opt/$APP_NAME/run
+  chmod 700 /var/opt/$APP_NAME
+  chown -R $APP_NAME /var/opt/$APP_NAME
+fi
+
+status=$( supervisorctl status $APP_NAME | awk '{print $2}' )
+
+case $status in
+	RUNNING)
+ 		supervisorctl reread $APP_NAME >/dev/null
+ 		supervisorctl restart $APP_NAME
+    ;;
+    STOPPED)
+        supervisorctl reread $APP_NAME
+    ;;
+    such)
+		# 'No such process'
+		supervisorctl add $APP_NAME
+	;;
+esac
+
