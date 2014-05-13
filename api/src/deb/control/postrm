@@ -1,5 +1,9 @@
 #!/bin/sh -e
 
+#For debugging uncomment these two lines
+#set -x
+#echo $*
+
 APP_NAME=[[packageName]]
 
 case $1 in
@@ -7,8 +11,8 @@ case $1 in
 		if getent passwd $APP_NAME >/dev/null; then
   			userdel $APP_NAME
 		fi
-		if test -d /var/lib/$APP_NAME; then
-			rm -r /var/lib/$APP_NAME
+		if test -d /var/opt/$APP_NAME; then
+			rm -r /var/opt/$APP_NAME
 		fi
 	;;
 esac
