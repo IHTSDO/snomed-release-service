@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+#For debugging uncomment these two lines
+#set -x
+#echo $*
+
+APP_NAME=[[packageName]]
+
