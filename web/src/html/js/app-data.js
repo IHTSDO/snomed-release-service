@@ -22,9 +22,8 @@ App.Extension = DS.Model.extend({
 	parent: DS.belongsTo('center'),
 	name: DS.attr(),
 	products: DS.hasMany('product', { async: true }),
-	//TODO: ONLY FOR DEMO, UNTIL WE GET STARRED BUILDS RETURNING FROM API
 	isInternationalEdition: function() {
-		return this.get('name') === 'SNOMED CT International Edition';
+		return this.get('id') === 'snomed_ct_international_edition';
 	}.property('name')
 });
 App.Product = DS.Model.extend({
