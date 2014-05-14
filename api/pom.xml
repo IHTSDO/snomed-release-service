@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
+		<version>0.0.3-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>api</artifactId>
@@ -162,9 +162,12 @@
 						</goals>
 						<configuration>
 							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
-							<controlDir>${basedir}/ubuntu-package/control</controlDir>
+							<controlDir>${basedir}/src/deb/control</controlDir>
+							<snapshotExpand>true</snapshotExpand>
+							<snapshotEnv>BUILD_NUMBER</snapshotEnv>
+							<verbose>true</verbose>
 							<classifier>all</classifier>
-			 				<signPackage>false</signPackage>
+							<signPackage>false</signPackage>
 							<dataSet>
 								<data>
 									<src>${project.build.directory}/${execFinalName}</src>
@@ -176,17 +179,10 @@
 									</mapper>
 								</data>
 								<data>
-									<src>${basedir}/ubuntu-package/${project.artifactId}.upstart</src>
-									<dst>/etc/init/${packageName}.conf</dst>
+									<src>${basedir}/src/deb/supervisor.conf</src>
+									<dst>/etc/supervisor/conf.d/${packageName}.conf</dst>
 									<type>file</type>
 									<conffile>true</conffile>
-								</data>
-								<data>
-									<type>template</type>
-									<paths>
-										<path>/var/lib/${packageName}</path>
-										<path>/var/run/${packageName}</path>
-									</paths>
 								</data>
 							</dataSet>
 						</configuration>
@@ -195,5 +191,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
