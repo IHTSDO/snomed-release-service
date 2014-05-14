@@ -3,7 +3,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title" id="modalLabel">Add Product to {{parent.name}} <small>(Extension)</small></h4>
+				<h4 class="modal-title" id="modalLabel">Add Product to {{parent.name}}{{#unless parent.isInternationalEdition}} <small>(Extension)</small>{{/unless}}</h4>
 			</div>
 			{{#form-for controller}}
 			<div class="modal-body">

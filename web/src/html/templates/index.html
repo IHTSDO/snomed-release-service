@@ -11,7 +11,7 @@
 	<div class="col-md-8">
 			<div class="extensions">
 			{{#each extension in releaseCenter.extensions}}
-				<h2 {{bind-attr class=":page-header extension.isInternationalEdition::tour-stop-1b"}}>{{extension.name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
+				<h2 {{bind-attr class=":page-header extension.isInternationalEdition::tour-stop-1b"}}>{{extension.name}} <small>{{#unless extension.isInternationalEdition}}(Extension){{/unless}} {{partial "title-dropdown"}}</small></h2>
 				<div class="row">
 					<div {{bind-attr class=":col-sm-6 extension.isInternationalEdition:tour-stop-3"}}>
 						<h3>Products</h3>
