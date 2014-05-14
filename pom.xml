@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -109,29 +109,30 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.12.4</version>
 			</plugin>
-		  <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-release-plugin</artifactId>
-			<version>2.5</version>
-			<configuration>
-				<autoVersionSubmodules>true</autoVersionSubmodules>
-				<tagNameFormat>v@{project.version}</tagNameFormat>
-			</configuration>
-		  </plugin>
+			<plugin>
+				<groupId>external.atlassian.jgitflow</groupId>
+				<artifactId>jgitflow-maven-plugin</artifactId>
+				<version>1.0-m1.1</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<enableSshAgent>true</enableSshAgent>
+					<noDeploy>true</noDeploy>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
 	<distributionManagement>
-	  <repository>
-			<id>deployment</id>
-			<name>Internal Releases</name>
+		<repository>
+			<id>ihtsdo-public-nexus</id>
+			<name>IHTSDO Public Nexus Releases</name>
 			<url>https://maven.ihtsdotools.org/content/repositories/releases/</url>
-	  </repository>
-	  <snapshotRepository>
-			<id>deployment</id>
-			<name>Internal Releases</name>
+		</repository>
+		<snapshotRepository>
+			<id>ihtsdo-public-nexus</id>
+			<name>IHTSDO Public Nexus Snapshots</name>
 			<url>https://maven.ihtsdotools.org/content/repositories/snapshots/</url>
-	  </snapshotRepository>
+		</snapshotRepository>
 	</distributionManagement>
 
 </project>
