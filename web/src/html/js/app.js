@@ -649,6 +649,7 @@ function afterRender() {
 	initBuildInputFileUploadForm(false);
 }
 
+var XMLFormReq;
 function initBuildInputFileUploadForm(isManifest) {
 	console.log ("Setting up upload form for " + (isManifest?"Manifest":"Build Files"));
 	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
@@ -661,6 +662,14 @@ function initBuildInputFileUploadForm(isManifest) {
 			$form.attr('action', action);
 			$button.val('Uploading...');
 			$button.prop('disabled', true);
+			
+			//Submitting a form does not allow Basic Auth headers to be set, so we're going to pass
+			//the auth token in a hidden field (XMLHttpRequest method also tried but problems with file data)
+			if (App.authenticationToken) {
+				//XMLFormReq.setRequestHeader('Authorization', 'Basic ' + btoa(App.authenticationToken + ':'));
+				$form.append('<input type="hidden" name="auth_token" value="' + btoa(App.authenticationToken) + '" />');
+			}
+
 			return true;
 		} else {
 			return false;
@@ -673,6 +682,17 @@ function initBuildInputFileUploadForm(isManifest) {
 		$('.panel-build-input form')[formIndex].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
+}
+
+function formSubmissionComplete() {
+	console.log ("FormSubmission at status: " + XMLFormReq.readyState);
+	var result;
+
+	if (XMLFormReq.readyState == 4) {
+		console.log ("Received response: " + XMLFormReq.responseText);
+}
+
+
 }
 
 function effectPulse($selection) {
