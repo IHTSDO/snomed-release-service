@@ -1,81 +1,97 @@
-<div class="panel panel-default panel-build-input">
-	<div class="panel-heading">
-		<h3 class="panel-title">Build Input</h3>
-	</div>
-	<div class="panel-body">
-	
-		<div class="panel panel-info">
+<div class="row">
+	<div class="col-md-8">
+		<div class="panel panel-default panel-build-input">
 			<div class="panel-heading">
-				<div class="panel-title">
-				{{#if controllers.application.isAuthenticated}}
-					<a id="collapseManifestControl" {{bind-attr class=":accordion-toggle :finger manifest.name:collapsed"}} onClick="$('#collapseManifestPanel').collapse('toggle'); $('#collapseManifestControl').toggleClass('collapsed')">
-						Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
-					</a>
-				{{else}}
-					Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
-				{{/if}}
-				</div>
-			</div>
-			{{#if controllers.application.isAuthenticated}}
-			<div id="collapseManifestPanel" {{bind-attr class=":panel-collapse :collapse manifest.name::in"}}>
-				<div class="panel-body">
-					<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
-						<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
-						<div class="form-group">
-							<input type="file" name="file" class="form-control" required/>
-						</div>
-						<input type="submit" id="buildManifestUploadBtn" class="btn btn-default" value="Upload"/>
-					</form>
-				</div>
-			</div>
-			{{/if}}
-		</div>
-
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<div class="panel-title" id="tour-stop-c8">Input Files</div>
+				<h3 class="panel-title">Build Input</h3>
 			</div>
 			<div class="panel-body">
-				<table>
-					<thead>
-						<th>Name</th>
-						<th>Source</th>
-						<th></th>
-					</thead>
-					<tbody>
-						{{#each inputfiles}}
-						<tr>
-							<td>{{name}}</td>
-							<td>Uploaded</td>
-							<td>
-								{{#if controllers.application.isAuthenticated}}
-								<a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a>
-								{{/if}}
-							</td>
-						</tr>
+			
+				<div class="panel panel-info">
+					<div class="panel-heading">
+						<div class="panel-title">
+						{{#if controllers.application.isAuthenticated}}
+							<a id="collapseManifestControl" {{bind-attr class=":accordion-toggle :finger manifest.name:collapsed"}} onClick="$('#collapseManifestPanel').collapse('toggle'); $('#collapseManifestControl').toggleClass('collapsed')">
+								Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
+							</a>
 						{{else}}
-						<tr>
-							<td>Empty</td>
-							<td></td>
-						</tr>
-						{{/each}}
-					</tbody>
-				</table>
-				{{#if controllers.application.isAuthenticated}}
-				<hr/>
-				<h4>Upload</h4>
-				<form method="post" id="buildInputFileUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
-					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/inputfiles/</div>
-					<div class="form-group">
-						<label>Build Input File</label>
-						<input type="file" name="file" class="form-control" required/>
+							Manifest File {{#if manifest}} - {{manifest.name}} {{/if}}
+						{{/if}}
+						</div>
 					</div>
-					<input type="submit" id="buildInputFileUploadBtn" class="btn btn-default" value="Upload"/>
-				</form>
-				<iframe id="buildInputFileUploadIframe" style="display: none;"/>
-				<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
-				{{/if}}
+					{{#if controllers.application.isAuthenticated}}
+					<div id="collapseManifestPanel" {{bind-attr class=":panel-collapse :collapse manifest.name::in"}}>
+						<div class="panel-body">
+							<form method="post" id="buildManifestUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+								<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
+								<div class="form-group">
+									<input type="file" name="file" class="form-control" required/>
+								</div>
+								<input type="submit" id="buildManifestUploadBtn" class="btn btn-default" value="Upload"/>
+							</form>
+						</div>
+					</div>
+					{{/if}}
+				</div>
+		
+				<div class="panel panel-info">
+					<div class="panel-heading">
+						<div class="panel-title" id="tour-stop-c8">Input Files</div>
+					</div>
+					<div class="panel-body">
+						<table>
+							<thead>
+								<th>Name</th>
+								<th>Source</th>
+								<th></th>
+							</thead>
+							<tbody>
+								{{#each inputfiles}}
+								<tr>
+									<td>{{name}}</td>
+									<td>Uploaded</td>
+									<td>
+										{{#if controllers.application.isAuthenticated}}
+										<a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a>
+										{{/if}}
+									</td>
+								</tr>
+								{{else}}
+								<tr>
+									<td>Empty</td>
+									<td></td>
+								</tr>
+								{{/each}}
+							</tbody>
+						</table>
+						{{#if controllers.application.isAuthenticated}}
+						<hr/>
+						<h4>Upload</h4>
+						<form method="post" id="buildInputFileUploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+							<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/inputfiles/</div>
+							<div class="form-group">
+								<label>Build Input File</label>
+								<input type="file" name="file" class="form-control" required/>
+							</div>
+							<input type="submit" id="buildInputFileUploadBtn" class="btn btn-default" value="Upload"/>
+						</form>
+						<iframe id="buildInputFileUploadIframe" style="display: none;"/>
+						<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
+						{{/if}}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
-</div>
+	<div class="col-md-4">
+		<h4>Build Input</h4>
+			<ul>
+				<li><strong>Manifest</strong> - upload an xml file containing the expected structure of the build output files.</li>
+				<li><strong>Input Files </strong> - upload any other files that the build process will require.</li>
+			</ul>
+
+		{{#unless controllers.application.isAuthenticated}}
+		<h4>Authentication</h4>
+		Note that users who have not logged into the system will be unable to upload files for a build.
+		{{/unless}}
+	</div>
+</div>	
