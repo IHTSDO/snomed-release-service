@@ -16,6 +16,12 @@
 			<version>2014-03-19T14-14-48</version>
 			<type>zip</type>
 		</dependency>
+		<dependency>
+			<groupId>org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20140731_international_release_build</groupId>
+			<artifactId>snomed_release_package.input.snomedct_release_int_20140131xml</artifactId>
+			<version>2014-05-15T15-29-58</version>
+			<type>zip</type>
+		</dependency>
 	</dependencies>
 
 	<build>
