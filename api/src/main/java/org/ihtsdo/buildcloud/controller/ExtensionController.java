@@ -49,7 +49,8 @@ public class ExtensionController {
 	public Map getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(extension, request, EXTENSION_LINKS);
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
@@ -58,10 +59,11 @@ public class ExtensionController {
 											   HttpServletRequest request) throws IOException {
 
 		String name = json.get("name");
-
 		User authenticatedUser = SecurityHelper.getSubject();
 		Extension extension = extensionService.create(releaseCenterBusinessKey, name, authenticatedUser);
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermediaJustCreated(extension, request, EXTENSION_LINKS);
+		
+		boolean currentResource = true;
+		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
 		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
 	}
 	

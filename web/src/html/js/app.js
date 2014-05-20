@@ -1,16 +1,21 @@
 
-App = Ember.Application.create({
-	ApplicationController: Ember.Controller.extend({
-		routeChanged: function() {
-			// Scroll top top of new page
-			window.scrollTo(0, 0);
+App = Ember.Application.create();
 
-			//Initialise popovers for all elements that include the relevant attribute
-			//Needs to be repeated each time the DOM changes
-			//Ember.run.scheduleOnce('afterRender', this, afterRender);
-			Ember.run.later(window, afterRender, 1000);
-		}.observes('currentPath')
-	})
+App.ApplicationController = Ember.ObjectController.extend({
+	isAuthenticated: function() {
+		var currentUser = this.get('currentUser');
+		var b = true == currentUser.authenticated;
+		return b;
+	}.property('currentUser'),
+	routeChanged: function() {
+		// Scroll top top of new page
+		window.scrollTo(0, 0);
+
+		//Initialise popovers for all elements that include the relevant attribute
+		//Needs to be repeated each time the DOM changes
+		//Ember.run.scheduleOnce('afterRender', this, afterRender);
+		Ember.run.later(window, afterRender, 1000);
+	}.observes('currentPath')
 });
 
 App.Router.map(function() {
@@ -134,13 +139,6 @@ App.ApplicationRoute = Ember.Route.extend({
 			$('.modal').modal('hide');
 		}
 	}
-});
-App.ApplicationController = Ember.ObjectController.extend({
-	isAuthenticated: function() {
-		var currentUser = this.get('currentUser');
-		var b = true == currentUser.authenticated;
-		return b;
-	}.property('currentUser')
 });
 
 // Index
@@ -642,7 +640,7 @@ App.ConfirmDialogController = Ember.ObjectController.extend({
 
 
 function afterRender() {
-	//alert ("AfterRender");
+	console.log("in function afterRender()");
 	$("[data-toggle='popover']").popover();
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
@@ -651,21 +649,27 @@ function afterRender() {
 	initBuildInputFileUploadForm(false);
 }
 
+var XMLFormReq;
 function initBuildInputFileUploadForm(isManifest) {
+	console.log ("Setting up upload form for " + (isManifest?"Manifest":"Build Files"));
 	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
 	var $button = $(selector + 'Btn');
 	$(selector + 'Form').submit(function () {
 		var $form = $(this);
 		if ($form.valid()) {
 			var action = $('.actionpath', $form).text();
-			if (!isManifest) {
-				var shortName = $('input[name="shortName"]', $form).val();
-				action += shortName;
-			}
 			console.log( (isManifest?"Manifest":"File") + ' upload url = "' + action + '"');
 			$form.attr('action', action);
 			$button.val('Uploading...');
 			$button.prop('disabled', true);
+			
+			//Submitting a form does not allow Basic Auth headers to be set, so we're going to pass
+			//the auth token in a hidden field (XMLHttpRequest method also tried but problems with file data)
+			if (App.authenticationToken) {
+				//XMLFormReq.setRequestHeader('Authorization', 'Basic ' + btoa(App.authenticationToken + ':'));
+				$form.append('<input type="hidden" name="auth_token" value="' + btoa(App.authenticationToken) + '" />');
+			}
+
 			return true;
 		} else {
 			return false;
@@ -678,6 +682,17 @@ function initBuildInputFileUploadForm(isManifest) {
 		$('.panel-build-input form')[formIndex].reset();
 		$('.panel-build-input .reloadmodel').click();
 	});
+}
+
+function formSubmissionComplete() {
+	console.log ("FormSubmission at status: " + XMLFormReq.readyState);
+	var result;
+
+	if (XMLFormReq.readyState == 4) {
+		console.log ("Received response: " + XMLFormReq.responseText);
+}
+
+
 }
 
 function effectPulse($selection) {

@@ -30,12 +30,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Autowired
 	private StringKeyGenerator keyGenerator;
 
-	private int authTokenValidMinutes;
-
-	public AuthenticationServiceImpl(int authTokenValidMinutes) {
-		this.authTokenValidMinutes = authTokenValidMinutes;
-	}
-
 	@Override
 	public String authenticate(String username, String password) {
 		String authorisationKey = null;
@@ -43,7 +37,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			User user = userDAO.find(username);
 			if (user != null && passwordEncoder.matches(password, user.getEncodedPassword())) {
 				authorisationKey = keyGenerator.generateKey();
-				AuthToken authToken = new AuthToken(authorisationKey, newExpireTime(), user);
+				AuthToken authToken = new AuthToken(authorisationKey, user);
 				// Token stored in database to be shared in cluster.
 				authTokenDAO.save(authToken);
 			}
@@ -54,23 +48,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Override
 	public User getAuthenticatedSubject(String authenticationToken) {
 		AuthToken authToken = authTokenDAO.load(authenticationToken);
-		if (authToken != null && authToken.getExpires().after(new Date())) {
-			return authToken.getUser();
-		} else {
-			return null;
-		}
-		// Todo: strategy for deleting auth tokens from the database when they expire. Shouldn't be done here.
+		return authToken != null ? authToken.getUser() : null;
 	}
 
 	@Override
 	public User getAnonymousSubject() {
 		return userDAO.find(User.ANONYMOUS_USER);
-	}
-
-	private Date newExpireTime() {
-		GregorianCalendar expireTime = new GregorianCalendar();
-		expireTime.add(Calendar.MINUTE, authTokenValidMinutes);
-		return expireTime.getTime();
 	}
 
 }

@@ -40,9 +40,7 @@
 	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
-	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl">
-		<constructor-arg value="${authTokenValidMinutes}"/>
-	</bean>
+	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
 
 	<jdbc:embedded-database id="dataSource"/>
 

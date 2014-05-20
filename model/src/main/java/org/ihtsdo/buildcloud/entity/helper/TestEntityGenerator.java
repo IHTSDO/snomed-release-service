@@ -1,5 +1,8 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
@@ -61,6 +64,8 @@ public class TestEntityGenerator {
 			"RF2_RF1_Converter|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2torf1conversion.input.rf2_rf1_converter|2014-03-27T08-45-12"
 	};
 	
+	public static final String manifestFileStr = "SnomedCT_Release_INT_20140131.xml|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20140731_international_release_build|snomed_release_package.input.snomedct_release_int_20140131xml|2014-05-15T15-29-58";
+	
 	protected ReleaseCenter createTestReleaseCenter() {
 		ReleaseCenter internationalReleaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
 		addExtensionsToReleaseCenter(internationalReleaseCenter);
@@ -96,7 +101,20 @@ public class TestEntityGenerator {
 				inputFile.setArtifactId(inputFileParts[2]);
 				pkg.addInputFile(inputFile);
 			}
+			if (i == 0) {
+				addManifestToPackage(pkg);
+			}
 		}		
-	}	
+	}
 	
+	protected void addManifestToPackage (Package pkg) {
+		String[] manifestFileParts = manifestFileStr.split("\\|");
+		InputFile manifestFile = new InputFile(manifestFileParts[0], manifestFileParts[3]);
+		Map<String, String> manifestMetaData = new HashMap<String,String>();
+		manifestMetaData.put("isManifest", "true");
+		manifestFile.addMetaData(manifestMetaData);
+		manifestFile.setGroupId(manifestFileParts[1]);
+		manifestFile.setArtifactId(manifestFileParts[2]);
+		pkg.addInputFile(manifestFile);
+	}
 }

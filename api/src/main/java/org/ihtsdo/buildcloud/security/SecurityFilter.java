@@ -17,6 +17,8 @@ public class SecurityFilter implements Filter {
 
 	private AuthenticationService authenticationService;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityFilter.class);
+	
+	private static final String AUTH_TOKEN_NAME = "auth_token";
 
 	public void init(FilterConfig config) throws ServletException {
 		ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(config.getServletContext());
@@ -29,53 +31,48 @@ public class SecurityFilter implements Filter {
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 		final String authHeader = httpRequest.getHeader("Authorization");
-		boolean authenticationRequired = true;
 
 		String pathInfo = httpRequest.getPathInfo();
 		String requestMethod = httpRequest.getMethod();
-		LOGGER.debug("pathInfo: '{}'", pathInfo);
+		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpRequest.getRemoteAddr());
+		User validUser = null;
 
 		if (pathInfo.startsWith("/login")) {
 			// Trying to log in
-			chain.doFilter(request, response);
+			validUser = authenticationService.getAnonymousSubject();
 		} else if (authHeader == null && requestMethod.equals("GET")) {
 			// An anonymous GET
-			User anonymousSubject = authenticationService.getAnonymousSubject();
-			SecurityHelper.setSubject(anonymousSubject);
-			chain.doFilter(request, response);
-			authenticationRequired = false;
+			validUser = authenticationService.getAnonymousSubject();
+		} else if (authHeader == null && requestMethod.equals("POST")) {
+			//For a file upload we're sending the auth token in a hidden input element
+			String authenticationTokenEncoded = request.getParameter(AUTH_TOKEN_NAME);
+			String authenticationToken = new String(DatatypeConverter.parseBase64Binary(authenticationTokenEncoded));
+			validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
 		} else if (authHeader != null){
-			User authenticatedSubject = null;
-			if (authHeader != null) {
-				final int index = authHeader.indexOf(' ');
-				if (index > 0) {
-					String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
-					String[] credentials = credsString.split(":");
+			final int index = authHeader.indexOf(' ');
+			if (index > 0) {
+				String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
+				String[] credentials = credsString.split(":");
 
-					if (credentials != null && credentials.length > 0) {
-						String authenticationToken = credentials[0];
-						authenticatedSubject = authenticationService.getAuthenticatedSubject(authenticationToken);
-					}
+				if (credentials != null && credentials.length > 0) {
+					String authenticationToken = credentials[0];
+					validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
 				}
 			}
+		}
 
-			if (authenticatedSubject != null) {
-				authenticationRequired = false;
-				try {
-					// Bind authenticated subject/user to thread
-					SecurityHelper.setSubject(authenticatedSubject);
-
-					chain.doFilter(request, response);
-				} finally {
-					SecurityHelper.clearSubject();
-				}
-			} 
-		} 
-		
-		if (authenticationRequired) {
+		if (validUser != null) {
+			try {
+				// Bind authenticated subject/user to thread
+				SecurityHelper.setSubject(validUser);
+				chain.doFilter(request, response);
+			} finally {
+				SecurityHelper.clearSubject();
+			}			
+		} else {
 			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		}
+		} 
 		
 	}
 

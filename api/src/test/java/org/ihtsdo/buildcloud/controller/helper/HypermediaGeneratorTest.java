@@ -75,7 +75,8 @@ public class HypermediaGeneratorTest {
 		mocksControl.replay();
 
 		String linkNameAndUrl = "buildScripts|build-scripts.zip";
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, mockServletRequest, new String[]{"configuration", linkNameAndUrl});
+		boolean currentResource = true;
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, currentResource, mockServletRequest, new String[]{"configuration", linkNameAndUrl});
 
 		Assert.assertNotNull(hypermedia);
 //		System.out.println(toString(hypermedia));
