@@ -1,0 +1,52 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="metadata">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="file">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element type="xs:string" name="description"/>
+							<xs:element name="regex">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element type="xs:string" name="test"/>
+										<xs:element type="xs:string" name="expression"/>
+										<xs:element type="xs:string" name="description"/>
+										<xs:element type="xs:string" name="successMessage"/>
+										<xs:element type="xs:string" name="failureMessage"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element type="xs:string" name="delimiter"/>
+							<xs:element type="xs:string" name="encoding"/>
+							<xs:element type="xs:string" name="carryForward"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="column" maxOccurs="unbounded" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element type="xs:string" name="header"/>
+							<xs:element type="xs:byte" name="position"/>
+							<xs:element name="regex" maxOccurs="unbounded" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element type="xs:string" name="test"/>
+										<xs:element type="xs:string" name="expression"/>
+										<xs:element type="xs:string" name="description">
+											<xs:annotation>
+												<xs:documentation>NOT NULLABLE	NOT NULLABLE	NOT NULLABLE	NOT NULLABLE	NOT NULLABLE	NOT NULLABLE	NOT NULLABLE</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+										<xs:element type="xs:string" name="successMessage"/>
+										<xs:element type="xs:string" name="failureMessage"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
