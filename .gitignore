@@ -5,3 +5,4 @@ target
 *.classpath
 vagrant/cache
 vagrant/tomcat-webapps
+*.sh

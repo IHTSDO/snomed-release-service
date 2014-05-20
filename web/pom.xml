@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.0.2</version>
+		<version>0.1.0</version>
 	</parent>
 
 	<artifactId>web</artifactId>
@@ -48,6 +48,8 @@
 							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
 							<classifier>all</classifier>
 							<controlDir>${basedir}/ubuntu-package/control</controlDir>
+							<snapshotExpand>true</snapshotExpand>
+							<snapshotEnv>BUILD_NUMBER</snapshotEnv>
 							<signPackage>false</signPackage>
 							<dataSet>
 					            <data>

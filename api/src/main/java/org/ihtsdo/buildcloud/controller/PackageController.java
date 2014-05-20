@@ -38,9 +38,12 @@ public class PackageController {
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
 	public Map getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(aPackage, request, PACKAGE_LINKS);
+
+		boolean currentResource = false;
+		return hypermediaGenerator.getEntityHypermedia(aPackage, currentResource, request, PACKAGE_LINKS);
 	}
 
 }

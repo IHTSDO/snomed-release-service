@@ -4,7 +4,7 @@
 	<li id="tour-stop-c3">{{name}}</li>
 </ol>
 
-<h2>{{name}} <small>(Extension) {{partial "title-dropdown"}}</small></h2>
+<h2>{{name}} <small>{{#unless isInternationalEdition}}(Extension) {{/unless}}{{partial "title-dropdown"}}</small></h2>
 <h3>Products</h3>
 <ul>
 	{{#each products}}
