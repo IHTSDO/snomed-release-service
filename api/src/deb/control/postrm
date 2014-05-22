@@ -10,6 +10,7 @@ case $1 in
 	purge)
 		if getent passwd $APP_NAME >/dev/null; then
   			userdel $APP_NAME
+  			groupdel $APP_NAME
 		fi
 		if test -d /var/opt/$APP_NAME; then
 			rm -r /var/opt/$APP_NAME
