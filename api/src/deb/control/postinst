@@ -6,15 +6,16 @@
 
 APP_NAME=[[packageName]]
 
-if ! getent passwd $APP_NAME >/dev/null; then
-  adduser --quiet --system --no-create-home --home /opt/$APP_NAME --shell /bin/false $APP_NAME
-fi
+vardirs="run offline_bucket logs"
 
-if ! test -d /var/opt/$APP_NAME; then
-  mkdir -p /var/opt/$APP_NAME/run
-  chmod 700 /var/opt/$APP_NAME
-  chown -R $APP_NAME /var/opt/$APP_NAME
-fi
+dir=/var/opt/$APP_NAME
+test -d $dir || mkdir -p $dir && chmod 700 $dir && chown $APP_NAME $dir
+
+for d in $vardirs
+do
+  dir=/var/opt/$APP_NAME/$d
+  test -d $dir || mkdir -p $dir && chmod 700 $dir && chown $APP_NAME $dir
+done
 
 status=$( supervisorctl status $APP_NAME | awk '{print $2}' )
 
@@ -23,12 +24,11 @@ case $status in
  		supervisorctl reread $APP_NAME >/dev/null
  		supervisorctl restart $APP_NAME
     ;;
-    STOPPED)
+  STOPPED)
         supervisorctl reread $APP_NAME
     ;;
-    such)
+  such)
 		# 'No such process'
 		supervisorctl add $APP_NAME
 	;;
 esac
-
