@@ -184,6 +184,28 @@
 									<type>file</type>
 									<conffile>true</conffile>
 								</data>
+								<data>
+									<src>${basedir}/src/deb/config.properties</src>
+									<dst>/etc/opt/${packageName}/config.properties</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<group>${packageName}</group>
+										<filemode>0640</filemode>
+									</mapper>
+								</data>
+								<data>
+									<src>${basedir}/src/deb/log4j.xml</src>
+									<dst>/etc/opt/${packageName}/log4j.xml</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<group>${packageName}</group>
+										<filemode>0640</filemode>
+									</mapper>
+								</data>
 							</dataSet>
 						</configuration>
 					</execution>
