@@ -17,18 +17,20 @@ do
   test -d $dir || mkdir -p $dir && chmod 700 $dir && chown $APP_NAME $dir
 done
 
+test -e /var/log/$APP_NAME || ln -s /var/opt/$APP_NAME/logs /var/log/$APP_NAME
+
 status=$( supervisorctl status $APP_NAME | awk '{print $2}' )
 
 case $status in
-	RUNNING)
- 		supervisorctl reread $APP_NAME >/dev/null
- 		supervisorctl restart $APP_NAME
+  RUNNING)
+    supervisorctl reread $APP_NAME >/dev/null
+    supervisorctl restart $APP_NAME
     ;;
   STOPPED)
-        supervisorctl reread $APP_NAME
+    supervisorctl reread $APP_NAME
     ;;
   such)
-		# 'No such process'
-		supervisorctl add $APP_NAME
-	;;
+    # 'No such process'
+    supervisorctl add $APP_NAME
+  ;;
 esac
