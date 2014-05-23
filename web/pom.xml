@@ -47,7 +47,7 @@
 						<configuration>
 							<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
 							<classifier>all</classifier>
-							<controlDir>${basedir}/ubuntu-package/control</controlDir>
+							<controlDir>${basedir}/src/deb/control</controlDir>
 							<snapshotExpand>true</snapshotExpand>
 							<snapshotEnv>BUILD_NUMBER</snapshotEnv>
 							<signPackage>false</signPackage>
