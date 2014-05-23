@@ -4,6 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,21 +35,23 @@ public class OfflineS3ClientImpl implements S3Client {
 	@Override
 	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
 		ObjectListing listing = new ObjectListing();
-		File bucketFile = getFile(bucketName);
-		final String fileNamePrefix = getFilename(prefix);
-
-		String[] list = bucketFile.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.startsWith(fileNamePrefix);
-			}
-		});
-
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
 		
+		String searchLocation = bucketName + File.separator + prefix;
+		File searchStartDir;
+		
+		try{
+			searchStartDir = getBucket(searchLocation, false);
+		} catch (Exception e) {
+			LOGGER.warn ("Failed to find files at " + searchLocation, e);
+			return listing;
+		}
+		
+		Collection<File> list = FileUtils.listFiles(searchStartDir, null, true); //No filter files, yes search recursively
+		
 		if (list != null) {
-			for (String filename : list) {
-				String key = getKey(filename);
+			for (File file : list) {
+				String key = getRelativePath(bucketName, file);
 				S3ObjectSummary summary = new S3ObjectSummary();
 				summary.setKey(key);
 				summary.setBucketName(bucketName);
@@ -73,7 +77,7 @@ public class OfflineS3ClientImpl implements S3Client {
 
 	@Override
 	public S3Object getObject(String bucketName, String key) {
-		File file = getFile(bucketName, key);
+		File file = getFile(bucketName, key, false); //Don't create bucket
 		return new OfflineS3Object(bucketName, key, file);
 	}
 
@@ -84,7 +88,7 @@ public class OfflineS3ClientImpl implements S3Client {
 
 	@Override
 	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException, AmazonServiceException {
-		File outFile = getFile(bucketName, key);
+		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
 		if (inputStream != null) {
 			try {
 				Files.copy(inputStream, outFile.toPath());
@@ -98,14 +102,15 @@ public class OfflineS3ClientImpl implements S3Client {
 					LOGGER.error("Failed to close stream.", e);
 				}
 			}
-			return null;
 		} else {
 			throw new AmazonClientException("Failed to store object, no input given.");
 		}
+		return new PutObjectResult();
 	}
 
 	@Override
 	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException {
+		//TODO Might want to change "/" for File.separator to make us more platform independent	
 		String bucketName = putRequest.getBucketName();
 		String key = putRequest.getKey();
 		InputStream inputStream = putRequest.getInputStream();
@@ -113,8 +118,7 @@ public class OfflineS3ClientImpl implements S3Client {
 			File inFile = putRequest.getFile();
 			inputStream = getInputStream(inFile);
 		}
-		putObject(bucketName, key, inputStream, null);
-		return new PutObjectResult();
+		return putObject(bucketName, key, inputStream, null);
 	}
 
 	private InputStream getInputStream(File inFile) {
@@ -130,7 +134,7 @@ public class OfflineS3ClientImpl implements S3Client {
 
 	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
-		File file = getFile(bucketName, key);
+		File file = getFile(bucketName, key, false);
 		file.delete();
 	}
 
@@ -139,38 +143,46 @@ public class OfflineS3ClientImpl implements S3Client {
 		return null;
 	}
 
-	private File getFile(String bucketName) {
-		File bucketFile = new File(bucketsDirectory, bucketName);
-		if (bucketFile.isDirectory()) {
-			return bucketFile;
-		} else {
-			throw new AmazonServiceException("Bucket does not exist.");
+	private File getBucket(String bucketName, boolean createIfRequired) {
+		File bucket = new File(bucketsDirectory, bucketName);
+		
+		//Is bucket there already, or do we need to create it?
+		if (!bucket.isDirectory()) {
+			//Attempt to create - will fail if file already exists at that location.
+			if (createIfRequired) {
+				boolean success = bucket.mkdirs();
+				
+				if (!success) {
+					throw new AmazonServiceException("Could neither find nor create Bucket at: "  + bucketsDirectory + File.separator + bucketName);
+				}
+			} else {
+				throw new AmazonServiceException("Could not find Bucket expected at: "  + bucketsDirectory + File.separator + bucketName);
+			}
 		}
+		return bucket;
 	}
 
-	private File getFile(String bucketName, String key) {
-		File bucketFile = getFile(bucketName);
-		return new File(bucketFile, getFilename(key));
-	}
-
-	private String getFilename(String key) {
-		try {
-			String encode = URLEncoder.encode(key, UTF_8);
-			//System.out.println("Offline S3 Client url-encoded filename: " + encode);
-			return encode;
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Unsupported Encoding", e);
-		}
-	}
-
-	private String getKey(String filename) {
-		try {
-			return URLDecoder.decode(filename, UTF_8);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Unsupported Encoding", e);
-		}
+	private File getFile(String bucketName, String key, boolean createIfRequired) {
+		//Limitations on length of filename mean we have to use the slashed elements in the key as a directory path, unlike in the online implementation
+		//split the last filename off to create the parent directory as required.
+		File relativeLocation = new File (bucketName + File.separator + key);
+		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);  //creates bucket if needed
+		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
+		return file;
 	}
 	
+	/**
+	 * 
+	 * @param file
+	 * @return The path relative to the bucket directory and bucket
+	 */
+	private String getRelativePath (String bucketName, File file) {
+		String absolutePath = file.getAbsolutePath();
+		int relativeStart =  bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash 
+		String relativePath = absolutePath.substring(relativeStart);  
+		return relativePath;
+	}
+
 	public class S3ObjectSummaryComparator implements Comparator<S3ObjectSummary> {
 		@Override
 		public int compare(S3ObjectSummary o1, S3ObjectSummary o2) {
