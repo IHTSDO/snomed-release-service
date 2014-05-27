@@ -4,9 +4,10 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
-import javax.persistence.*;
-
-import java.util.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class Package {
@@ -25,22 +26,13 @@ public class Package {
 	@JsonIgnore
 	private Build build;
 
-	@OneToMany(mappedBy = "packag")
-	@JsonIgnore
-	private List<InputFile> inputFiles;
-
 	public Package() {
-		inputFiles = new ArrayList<>();
+
 	}
 
 	public Package(String name) {
 		this();
 		setName(name);
-	}
-
-	public void addInputFile(InputFile inputFile) {
-		inputFiles.add(inputFile);
-		inputFile.setPackage(this);
 	}
 
 	public Long getId() {
@@ -70,10 +62,6 @@ public class Package {
 
 	public void setBuild(Build build) {
 		this.build = build;
-	}
-
-	public List<InputFile> getInputFiles() {
-		return inputFiles;
 	}
 
 }

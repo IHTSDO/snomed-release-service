@@ -59,11 +59,12 @@ App.Package = DS.Model.extend({
 });
 App.InputFile = DS.Model.extend({
 	parent: DS.belongsTo('package', { inverse: 'inputfiles' }),
-	name: DS.attr()
+	filename: DS.attr()
 });
 App.Manifest = DS.Model.extend({
 	parent: DS.belongsTo('package', { inverse: 'manifest' }),
-	name: DS.attr()
+	filename: DS.attr(),
+	file_url: DS.attr()
 });
 var demoExecutions=['2014-03-31T09:30:23'];
 App.Execution = DS.Model.extend({

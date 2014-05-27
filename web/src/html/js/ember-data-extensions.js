@@ -12,6 +12,17 @@ App.ApplicationSerializer = DS.RESTSerializer.extend({
 			payload['id'] = uniqueID;
 			var payloadJSON = JSON.stringify(payload,null,"\t");
 			payload['configStr'] = payloadJSON;
+		} else if (type == 'App.Manifest') {
+			var url = payload['url'];
+			var id = url.substr(url.indexOf('builds') + 7);
+			id += '.' + payload['filename'];
+			payload['id'] = id;
+		} else if (type == 'App.InputFile') {
+			for (var a = 0; a < payload.length; a++) {
+				var file = payload[a];
+				file['filename'] = file['id'];
+				file['id'] = file['url'];
+			}
 		}
 
 		var o = {};

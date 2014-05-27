@@ -1,8 +1,6 @@
 package org.ihtsdo.buildcloud.service.maven;
 
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.InputFile;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.TestMavenArtifact;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
@@ -61,7 +59,6 @@ public class MavenGeneratorTest {
 		String generatedModulePom = fileToString(new File(new File(buildDirectory, testPackageId), "pom.xml"));
 		Assert.assertEquals(expectedModulePom, generatedModulePom);
 		Assert.assertEquals("Expecting 10 things. (4 x pom.xml, 3 x assembly.xml, 3 x dir)", TestUtils.itemCount(buildDirectory), 10);
-
 	}
 
 	@Test
@@ -86,20 +83,6 @@ public class MavenGeneratorTest {
 
 		String actualPom = writer.toString();
 		Assert.assertEquals(expectedPom, actualPom);
-	}
-
-	@Test
-	public void testGetArtifact() throws IOException {
-		Package aPackage = testEntityFactory.createPackage("the center", "center", "ex", "prod", "build1", "myPackage");
-		InputFile in1 = new InputFile("in1", "1.0");
-		aPackage.addInputFile(in1);
-		Assert.assertEquals("center", in1.getPackage().getBuild().getProduct().getExtension().getReleaseCenter().getBusinessKey());
-
-		mavenGenerator.generateArtifactAndGroupId(in1);
-
-		Assert.assertEquals("org.ihtsdo.release.center.ex.prod.build1", in1.getGroupId());
-		Assert.assertEquals("mypackage.input.in1", in1.getArtifactId());
-		Assert.assertEquals("1.0", in1.getVersion());
 	}
 
 	private String fileToString(File file) throws IOException {
