@@ -31,6 +31,6 @@ case $status in
     ;;
   such)
     # 'No such process'
-    supervisorctl add $APP_NAME
+    supervisorctl update $APP_NAME
   ;;
 esac
