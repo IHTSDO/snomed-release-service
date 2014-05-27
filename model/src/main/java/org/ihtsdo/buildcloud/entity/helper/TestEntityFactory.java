@@ -13,8 +13,6 @@ public class TestEntityFactory extends TestEntityGenerator {
 		Product product = new Product(productName);
 		Build build = new Build(1L, buildName);
 		Package aPackage = new Package(packageName);
-		InputFile inputFile = new InputFile("concepts.rf2", "1.0");
-		aPackage.addInputFile(inputFile);
 		build.addPackage(aPackage);
 		product.addBuild(build);
 		extension.addProduct(product);

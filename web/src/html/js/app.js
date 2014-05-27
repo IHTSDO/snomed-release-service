@@ -645,54 +645,40 @@ function afterRender() {
 	$("[data-toggle='tooltip']").tooltip();
 	$("[data-toggle='dropdown']").dropdown();
 	effectPulse($('.traffic-light-in-progress'));	
-	initBuildInputFileUploadForm(true);
-	initBuildInputFileUploadForm(false);
+	initUploadForm();
 }
 
-var XMLFormReq;
-function initBuildInputFileUploadForm(isManifest) {
-	console.log ("Setting up upload form for " + (isManifest?"Manifest":"Build Files"));
-	var selector = isManifest ? "#buildManifestUpload" : "#buildInputFileUpload";
-	var $button = $(selector + 'Btn');
-	$(selector + 'Form').submit(function () {
+function initUploadForm() {
+	$('.uploadForm').each(function() {
 		var $form = $(this);
-		if ($form.valid()) {
-			var action = $('.actionpath', $form).text();
-			console.log( (isManifest?"Manifest":"File") + ' upload url = "' + action + '"');
-			$form.attr('action', action);
-			$button.val('Uploading...');
-			$button.prop('disabled', true);
-			
-			//Submitting a form does not allow Basic Auth headers to be set, so we're going to pass
-			//the auth token in a hidden field (XMLHttpRequest method also tried but problems with file data)
-			if (App.authenticationToken) {
-				//XMLFormReq.setRequestHeader('Authorization', 'Basic ' + btoa(App.authenticationToken + ':'));
-				$form.append('<input type="hidden" name="auth_token" value="' + btoa(App.authenticationToken) + '" />');
+		$form.submit(function () {
+			if ($form.valid()) {
+				var action = $('.actionpath', $form).text();
+				$form.attr('action', action);
+				var $button = $form.find('input[type="submit"]');
+				$button.val('Uploading...');
+				$button.prop('disabled', true);
+
+				//Submitting a form does not allow Basic Auth headers to be set, so we're going to pass
+				//the auth token in a hidden field (XMLHttpRequest method also tried but problems with file data)
+				if (App.authenticationToken) {
+					$form.find('input[name="auth_token"]').remove();// remove any existing auth_tokens
+					$form.append('<input type="hidden" name="auth_token" value="' + btoa(App.authenticationToken) + '" />');
+				}
+				return true;
+			} else {
+				return false;
 			}
+		});
+	})
 
-			return true;
-		} else {
-			return false;
-		}
-	});
-	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
-		var formIndex = isManifest?0:1;
-		$button.val('Upload');
-		$button.prop('disabled', false);
-		$('.panel-build-input form')[formIndex].reset();
-		$('.panel-build-input .reloadmodel').click();
-	});
-}
-
-function formSubmissionComplete() {
-	console.log ("FormSubmission at status: " + XMLFormReq.readyState);
-	var result;
-
-	if (XMLFormReq.readyState == 4) {
-		console.log ("Received response: " + XMLFormReq.responseText);
-}
-
-
+//	$('.panel-build-input #buildInputFileUploadIframe').load(function() {
+//		var formIndex = isManifest?0:1;
+//		$button.val('Upload');
+//		$button.prop('disabled', false);
+//		$('.panel-build-input form')[formIndex].reset();
+//		$('.panel-build-input .reloadmodel').click();
+//	});
 }
 
 function effectPulse($selection) {

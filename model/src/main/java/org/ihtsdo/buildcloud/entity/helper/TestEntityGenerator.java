@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
@@ -94,27 +91,7 @@ public class TestEntityGenerator {
 			String packageName = packageNames[i];
 			Package pkg = new Package(packageName);
 			build.addPackage(pkg);
-			if (packageInputFiles.length > i) {
-				String[] inputFileParts = packageInputFiles[i].split("\\|");
-				InputFile inputFile = new InputFile(inputFileParts[0], inputFileParts[3]);
-				inputFile.setGroupId(inputFileParts[1]);
-				inputFile.setArtifactId(inputFileParts[2]);
-				pkg.addInputFile(inputFile);
-			}
-			if (i == 0) {
-				addManifestToPackage(pkg);
-			}
-		}		
+		}
 	}
-	
-	protected void addManifestToPackage (Package pkg) {
-		String[] manifestFileParts = manifestFileStr.split("\\|");
-		InputFile manifestFile = new InputFile(manifestFileParts[0], manifestFileParts[3]);
-		Map<String, String> manifestMetaData = new HashMap<String,String>();
-		manifestMetaData.put("isManifest", "true");
-		manifestFile.addMetaData(manifestMetaData);
-		manifestFile.setGroupId(manifestFileParts[1]);
-		manifestFile.setArtifactId(manifestFileParts[2]);
-		pkg.addInputFile(manifestFile);
-	}
+
 }
