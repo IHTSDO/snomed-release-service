@@ -4,6 +4,6 @@ Priority: optional
 Architecture: all
 Depends: nginx
 Maintainer: Kai Kewley <kke@ihtsdo.org>
-Description: SNOMED Release Service Web UI
+Description: [[name]]
 Distribution: stable
 Section: web
