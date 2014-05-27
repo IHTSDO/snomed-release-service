@@ -14,7 +14,7 @@
 
 	<!-- Bean to resolve the 'data-service-properties-path' from a system property -->
 	<bean id="configurer1" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<!--<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>-->
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
 		<property name="placeholderPrefix" value="+{"/>
 		<property name="properties">
 			<props>
