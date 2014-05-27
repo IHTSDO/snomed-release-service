@@ -43,7 +43,7 @@ public class OfflineS3ClientImpl implements S3Client {
 		try{
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
-			LOGGER.warn ("Failed to find files at " + searchLocation, e);
+			LOGGER.warn ("Failed to find files at " + searchLocation + ", with detail: " + e.getLocalizedMessage());
 			return listing;
 		}
 		
