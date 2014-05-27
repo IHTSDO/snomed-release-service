@@ -10,7 +10,7 @@
 	<artifactId>api</artifactId>
 	<packaging>war</packaging>
 
-	<name>API</name>
+	<name>SNOMED Release Service API</name>
 
 	<properties>
 		<execFinalName>exec-${project.build.finalName}.jar</execFinalName>
