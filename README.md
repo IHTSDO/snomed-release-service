@@ -44,3 +44,8 @@ During the release process it will create the release branch and merge it.
 
 When finished push your branches and tags up and the Jenkins jobs will run to produce packages.
 
+## Fresh installations
+
+On a fresh installation of the snomed-release-service-web package, nginx will need to be started as well as
+any default configuration removed. This is handled by the ansible role, but if you're not using that you'll
+need to do it manually

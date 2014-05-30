@@ -12,9 +12,20 @@
 	<context:annotation-config />
 	<tx:annotation-driven/>
 
-	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="location" value="classpath:data-service.properties"/>
+	<!-- Bean to resolve the 'data-service-properties-path' from a system property -->
+	<bean id="configurer1" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+		<property name="placeholderPrefix" value="+{"/>
+		<property name="properties">
+			<props>
+				<prop key="dataServicePropertiesPath">classpath:data-service-defaults.properties</prop>
+			</props>
+		</property> 
+		<property name="ignoreUnresolvablePlaceholders" value="true"/>
+	</bean>
+
+	<bean id="configurer2" class="org.ihtsdo.context.OrderedPropertyPlaceholderConfigurer">
+		<property name="location" value="+{dataServicePropertiesPath}" />
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
