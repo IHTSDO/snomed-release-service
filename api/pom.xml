@@ -196,6 +196,33 @@
 									</mapper>
 								</data>
 								<data>
+									<type>template</type>
+									<paths>
+										<path>/etc/opt/${packageName}</path>
+										<path>/opt/${packageName}</path>
+									</paths>
+								</data>
+								<data>
+									<type>template</type>
+									<paths>
+										<path>/var/opt/${packageName}</path>
+										<path>/var/opt/${packageName}/run</path>
+										<path>/var/opt/${packageName}/logs</path>
+										<path>/var/opt/${packageName}/offline_buckets</path>
+									</paths>
+									<mapper>
+										<type>perms</type>
+										<user>${packageName}</user>
+										<group>${packagename}</group>
+										<dirmode>0750</dirmode>
+									</mapper>
+								</data>
+								<data>
+									<type>link</type>
+									<linkName>/var/log/${packageName}</linkName>
+									<linkTarget>/var/opt/${packageName}/log</linkTarget>
+									<symlink>true</symlink>
+								<data>
 									<src>${basedir}/src/deb/log4j.xml</src>
 									<dst>/etc/opt/${packageName}/log4j.xml</dst>
 									<type>file</type>
