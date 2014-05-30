@@ -675,7 +675,7 @@ function initBuildInputFileUploadForm(isManifest) {
 			return false;
 		}
 	});
-	$('.panel-build-input iframe[name=buildInputFileUploadIframe]')').load(function() {
+	$('.panel-build-input iframe[name=buildInputFileUploadIframe]').load(function() {
 		var formIndex = isManifest?0:1;
 		$button.val('Upload');
 		$button.prop('disabled', false);
