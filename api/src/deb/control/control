@@ -3,7 +3,7 @@ Version: [[version]]
 Priority: optional
 Architecture: all
 Depends: openjdk-7-jdk, supervisor
-Maintainer: Kai Kewley <kke@ihtsdo.org>
-Description: SNOMED Release Service API
+Maintainer: DevOps Support <devops@ihtsdo.org>
+Description: [[name]]
 Distribution: stable
 Section: web

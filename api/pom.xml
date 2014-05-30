@@ -4,13 +4,13 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.0</version>
+		<version>0.1.1</version>
 	</parent>
 
 	<artifactId>api</artifactId>
 	<packaging>war</packaging>
 
-	<name>API</name>
+	<name>SNOMED Release Service API</name>
 
 	<properties>
 		<execFinalName>exec-${project.build.finalName}.jar</execFinalName>
@@ -183,6 +183,28 @@
 									<dst>/etc/supervisor/conf.d/${packageName}.conf</dst>
 									<type>file</type>
 									<conffile>true</conffile>
+								</data>
+								<data>
+									<src>${basedir}/src/deb/config.properties</src>
+									<dst>/etc/opt/${packageName}/config.properties</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<group>${packageName}</group>
+										<filemode>0640</filemode>
+									</mapper>
+								</data>
+								<data>
+									<src>${basedir}/src/deb/log4j.xml</src>
+									<dst>/etc/opt/${packageName}/log4j.xml</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<group>${packageName}</group>
+										<filemode>0640</filemode>
+									</mapper>
 								</data>
 							</dataSet>
 						</configuration>

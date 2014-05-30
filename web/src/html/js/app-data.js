@@ -175,6 +175,7 @@ App.login = function(username, password) {
 		success: function(data) {
 			sessionStorage.authenticationToken = data.authenticationToken;
 			user = App.loadCurrentUser();
+			afterRender(); //Might need to set up the upload functionality again.
 		},
 		error: function() {
 			error = Error();
@@ -189,6 +190,7 @@ App.login = function(username, password) {
 App.logout = function() {
 	App.clearLogin();
 	App.clearStore();
+	afterRender();
 	return App.loadCurrentUser();
 }
 App.clearLogin = function() {
