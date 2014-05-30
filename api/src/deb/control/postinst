@@ -1,23 +1,10 @@
 #!/bin/sh -e
 
 #For debugging uncomment these two lines
-#set -x
-#echo $*
+set -x
+echo $*
 
 APP_NAME=[[packageName]]
-
-vardirs="run offline_bucket logs"
-
-dir=/var/opt/$APP_NAME
-test -d $dir || mkdir -p $dir && chmod 700 $dir && chown $APP_NAME $dir
-
-for d in $vardirs
-do
-  dir=/var/opt/$APP_NAME/$d
-  test -d $dir || mkdir -p $dir && chmod 700 $dir && chown $APP_NAME $dir
-done
-
-test -e /var/log/$APP_NAME || ln -s /var/opt/$APP_NAME/logs /var/log/$APP_NAME
 
 supervisorctl update $APP_NAME 2>&1 >/dev/null
 supervisorctl start $APP_NAME 2>&1 >/dev/null
