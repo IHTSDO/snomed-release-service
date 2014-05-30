@@ -222,6 +222,7 @@
 									<linkName>/var/log/${packageName}</linkName>
 									<linkTarget>/var/opt/${packageName}/log</linkTarget>
 									<symlink>true</symlink>
+								</data>
 								<data>
 									<src>${basedir}/src/deb/log4j.xml</src>
 									<dst>/etc/opt/${packageName}/log4j.xml</dst>
