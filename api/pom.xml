@@ -208,13 +208,14 @@
 										<path>/var/opt/${packageName}</path>
 										<path>/var/opt/${packageName}/run</path>
 										<path>/var/opt/${packageName}/logs</path>
-										<path>/var/opt/${packageName}/offline_buckets</path>
+										<path>/var/opt/${packageName}/offline_bucket</path>
 									</paths>
 									<mapper>
-										<type>perms</type>
+										<type>perm</type>
 										<user>${packageName}</user>
-										<group>${packagename}</group>
+										<group>${packageName}</group>
 										<dirmode>0750</dirmode>
+										<filemode>0750</filemode>
 									</mapper>
 								</data>
 								<data>
