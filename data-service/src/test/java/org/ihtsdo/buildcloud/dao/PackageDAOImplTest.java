@@ -27,7 +27,6 @@ public class PackageDAOImplTest {
 		Package aPackage = dao.find(1L, testPackageId, TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(aPackage);
 		Assert.assertEquals(testPackageName, aPackage.getName());
-		Assert.assertEquals(2, aPackage.getInputFiles().size());  // Expecting 1 input file and 1 manifest file
 	}
 
 }

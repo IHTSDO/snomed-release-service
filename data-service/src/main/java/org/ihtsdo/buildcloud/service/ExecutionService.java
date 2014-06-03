@@ -10,6 +10,13 @@ import java.util.List;
 
 public interface ExecutionService {
 
+	/**
+	 * Create snapshot of build files and configuration for review and possibly using to run a build.
+	 * @param buildCompositeKey
+	 * @param authenticatedUser
+	 * @return
+	 * @throws IOException
+	 */
 	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException;
 
 	List<Execution> findAll(String buildCompositeKey, User authenticatedUser);

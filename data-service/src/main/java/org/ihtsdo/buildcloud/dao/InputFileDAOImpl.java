@@ -1,21 +1,22 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
-import org.hibernate.Query;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.InputFile;
-import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Repository
-public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputFileDAO {
+public class InputFileDAOImpl implements InputFileDAO {
 
 	@Autowired
 	private S3Client s3Client;
@@ -23,52 +24,18 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 	@Autowired
 	private S3ClientHelper s3ClientHelper;
 
-	private String mavenS3BucketName;
-
-	public InputFileDAOImpl() {
-		super(InputFile.class);
-	}
+	private String executionS3BucketName;
 
 	@Override
-	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, User user) {
-		Query query = getCurrentSession().createQuery(
-				"select inputFile " +
-				"from ReleaseCenterMembership membership " +
-				"join membership.releaseCenter releaseCenter " +
-				"join releaseCenter.extensions extension " +
-				"join extension.products product " +
-				"join product.builds build " +
-				"join build.packages package " +
-				"join package.inputFiles inputFile " +
-				"where membership.user = :user " +
-				"and build.id = :buildId " +
-				"and package.businessKey = :packageBusinessKey " +
-				"and inputFile.businessKey = :inputFileBusinessKey " +
-				"order by inputFile.id ");
-		query.setEntity("user", user);
-		query.setLong("buildId", buildId);
-		query.setString("packageBusinessKey", packageBusinessKey);
-		query.setString("inputFileBusinessKey", inputFileBusinessKey);
-
-		return (InputFile) query.uniqueResult();
-	}
-
-	@Override
-	public void saveFile(InputStream fileStream, long fileSize, String artifactPath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, artifactPath, fileStream).length(fileSize).useBucketAcl();
+	public void putFile(InputStream fileStream, long fileSize, String filePath) {
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, filePath, fileStream).length(fileSize).useBucketAcl();
 		s3Client.putObject(putRequest);
 	}
 
 	@Override
-	public void saveFilePom(InputStream inputStream, int length, String pomPath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, pomPath, inputStream).length(length).useBucketAcl();
-		s3Client.putObject(putRequest);
-	}
-
-	@Override
-	public InputStream getFileStream(InputFile inputFile) {
+	public InputStream getFileStream(String filePath) {
 		try {
-			S3Object s3Object = s3Client.getObject(mavenS3BucketName, inputFile.getPath());
+			S3Object s3Object = s3Client.getObject(executionS3BucketName, filePath);
 			if (s3Object != null) {
 				return s3Object.getObjectContent();
 			}
@@ -80,9 +47,25 @@ public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputF
 		return null;
 	}
 
+	@Override
+	public List<String> listFiles(String directoryPath) {
+		ObjectListing objectListing = s3Client.listObjects(executionS3BucketName, directoryPath);
+		ArrayList<String> files = new ArrayList<>();
+		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+			files.add(summary.getKey().substring(directoryPath.length()));
+		}
+		return files;
+	}
+
+	@Override
+	// TODO: User logging against file actions?
+	public void deleteFile(String filePath) {
+		s3Client.deleteObject(executionS3BucketName, filePath);
+	}
+
 	@Required
-	public void setMavenS3BucketName(String mavenS3BucketName) {
-		this.mavenS3BucketName = mavenS3BucketName;
+	public void setExecutionS3BucketName(String executionS3BucketName) {
+		this.executionS3BucketName = executionS3BucketName;
 	}
 
 }

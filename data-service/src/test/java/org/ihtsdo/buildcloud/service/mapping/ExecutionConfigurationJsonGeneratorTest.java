@@ -1,10 +1,8 @@
 package org.ihtsdo.buildcloud.service.mapping;
 
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.json.JSONException;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +14,7 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 
@@ -36,18 +35,18 @@ public class ExecutionConfigurationJsonGeneratorTest {
 		internationalPackage = factory.createPackage(
 				"International Release Center", "International", "SNOMED CT International Edition",
 				"SNOMED CT International Edition", "International Release", "RF2 Release");
+		List<String> inputFiles = new ArrayList<>();
+		inputFiles.add("sct2_Concept_Delta_INT_20140131.txt");
+		inputFiles.add("sct2_Description_Delta-en_INT_20140131.txt");
+		inputFiles.add("sct2_Relationship_Delta_INT_20140131.txt");
+		internationalPackage.setInputFiles(inputFiles);
 		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), internationalPackage.getBuild());
 		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json")));
 	}
 
 	@Test
 	public void testGetConfig() throws IOException, JSONException {
-		List<InputFile> inputFiles = internationalPackage.getInputFiles();
-		Assert.assertEquals(1, inputFiles.size());
-		inputFiles.get(0).setVersionDate(new GregorianCalendar(2014, 2, 18, 15, 30, 00).getTime());
-
 		String actual = executionConfigurationJsonGenerator.getJsonConfig(execution);
-
 		JSONAssert.assertEquals(expectedExport, actual, false);
 	}
 

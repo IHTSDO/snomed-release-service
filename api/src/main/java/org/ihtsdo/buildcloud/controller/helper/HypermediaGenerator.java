@@ -12,7 +12,11 @@ public class HypermediaGenerator {
 	private ObjectMapper objectMapper;
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
-		return  getEntityCollectionHypermedia(entities, request, entityLinks, null);
+		return getEntityCollectionHypermedia(entities, request, entityLinks, null);
+	}
+
+	public List<Map<String,Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request) {
+		return getEntityCollectionHypermedia(entities, request, null, null);
 	}
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
@@ -29,9 +33,9 @@ public class HypermediaGenerator {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param entity
-	 * @param currentResource - if true indicates that the URL already contains the entity id.  If false, the entity will be added. 
+	 * @param currentResource - if true indicates that the URL already contains the entity id.  If false, the entity will be added.
 	 * @param request
 	 * @param entityLinks
 	 * @return
@@ -51,25 +55,27 @@ public class HypermediaGenerator {
 	}
 
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
-		
-		
+
+
 		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
 		if (!currentResource) {
 			url = url + "/" + entityMap.get("id");
 		}
 		if (entityMap != null) {
 			entityMap.put("url", url);
-			for (String link : entityLinks) {
-				String linkName;
-				if (link.contains("|")) {
-					String[] linkParts = link.split("\\|");
-					linkName = linkParts[0];
-					link = linkParts[1];
-				} else {
-					linkName = link.replace("/", "");
+			if (entityLinks != null) {
+				for (String link : entityLinks) {
+					String linkName;
+					if (link.contains("|")) {
+						String[] linkParts = link.split("\\|");
+						linkName = linkParts[0];
+						link = linkParts[1];
+					} else {
+						linkName = link.replace("/", "");
+					}
+					String linkUrl = (link.startsWith("/") ? apiRootUrl : (url + "/")) + link;
+					entityMap.put(linkName + "_url", linkUrl);
 				}
-				String linkUrl = (link.startsWith("/") ? apiRootUrl : (url + "/") ) + link;
-				entityMap.put(linkName + "_url", linkUrl);
 			}
 		}
 		return entityMap;
