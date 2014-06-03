@@ -145,18 +145,6 @@ public class OfflineS3ClientImplTest {
 	}
 
 	@Test
-	public void testPutObjectKeyCharacters() throws IOException {
-		String buildDir = "builds/123/";
-		String key = buildDir + "execA/file1_01:01:01.txt";
-
-		s3Client.putObject(TEST_BUCKET, key, getTestFileStream(), null);
-
-		List<S3ObjectSummary> objectSummaries = s3Client.listObjects(TEST_BUCKET, "").getObjectSummaries();
-		Assert.assertEquals(1, objectSummaries.size());
-		Assert.assertEquals("builds/123/execA/file1_01:01:01.txt", objectSummaries.get(0).getKey());
-	}
-
-	@Test
 	public void testPutObjectNoInput() {
 		try {
 			s3Client.putObject(TEST_BUCKET, "123", null, null);
