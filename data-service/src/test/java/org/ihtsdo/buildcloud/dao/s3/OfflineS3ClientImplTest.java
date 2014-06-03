@@ -101,7 +101,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertEquals(key, s3Object.getKey());
 		S3ObjectInputStream objectContent = s3Object.getObjectContent();
 		Assert.assertNotNull(objectContent);
-		Assert.assertEquals(13, objectContent.available());
+		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
 		Assert.assertEquals("Some content\n", content);
 	}
@@ -118,7 +118,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertEquals(key, s3Object.getKey());
 		S3ObjectInputStream objectContent = s3Object.getObjectContent();
 		Assert.assertNotNull(objectContent);
-		Assert.assertEquals(13, objectContent.available());
+		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
 		Assert.assertEquals("Some content\n", content);
 	}
@@ -139,7 +139,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertEquals(key, s3Object.getKey());
 		S3ObjectInputStream objectContent = s3Object.getObjectContent();
 		Assert.assertNotNull(objectContent);
-		Assert.assertEquals(13, objectContent.available());
+		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
 		Assert.assertEquals("Some content\n", content);
 	}
