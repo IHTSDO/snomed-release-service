@@ -38,7 +38,7 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 		}
 	}
 
-	private void save (ReleaseCenter releaseCenter){
+	private void save(ReleaseCenter releaseCenter){
 		//Work down the hierarchy saving objects as we go
 		Session session = getSession();
 		session.save(releaseCenter);
@@ -54,10 +54,6 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 					List <Package> packages = build.getPackages();
 					for (Package pkg: packages){  //package is a reserved work
 						session.save(pkg);
-						List <InputFile> inputFiles = pkg.getInputFiles();
-						for (InputFile inputFile : inputFiles) {
-							session.save(inputFile);
-						}
 					}
 				}
 			}

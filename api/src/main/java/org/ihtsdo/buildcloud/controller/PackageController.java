@@ -25,7 +25,7 @@ public class PackageController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PACKAGE_LINKS = {"inputfiles","manifest"};
+	private static final String[] PACKAGE_LINKS = {"manifest", "inputfiles"};
 
 	@RequestMapping
 	@ResponseBody
@@ -42,7 +42,7 @@ public class PackageController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
 
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(aPackage, currentResource, request, PACKAGE_LINKS);
 	}
 

@@ -34,7 +34,7 @@
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl">
-		<property name="mavenS3BucketName" ref="MavenS3BucketName"/>
+		<property name="executionS3BucketName" ref="executionS3BucketName"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
