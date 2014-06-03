@@ -7,11 +7,7 @@
 		"packages" : [ {
 			"id" : "rf2_release",
 			"name" : "RF2 Release",
-			"inputFiles" : [ {
-				"id" : "conceptsrf2",
-				"name" : "concepts.rf2",
-				"version": "2014-03-18T15-30-00"
-			} ]
+			"inputFiles" : [ "sct2_Concept_Delta_INT_20140131.txt", "sct2_Description_Delta-en_INT_20140131.txt", "sct2_Relationship_Delta_INT_20140131.txt" ]
 		} ],
 		"product" : {
 			"id" : "snomed_ct_international_edition",

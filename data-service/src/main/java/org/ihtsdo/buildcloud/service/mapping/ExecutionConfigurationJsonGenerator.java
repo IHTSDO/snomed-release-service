@@ -89,6 +89,7 @@ public class ExecutionConfigurationJsonGenerator {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, aPackage.getBusinessKey());
 		config.put(NAME, aPackage.getName());
+		config.put(INPUT_FILES, aPackage.getInputFiles());
 		return config;
 	}
 
