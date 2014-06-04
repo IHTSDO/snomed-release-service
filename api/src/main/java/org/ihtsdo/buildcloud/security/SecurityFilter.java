@@ -31,22 +31,22 @@ public class SecurityFilter implements Filter {
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 		final String authHeader = httpRequest.getHeader("Authorization");
+		//For a file upload we're sending the auth token in a hidden input element
+		final String authParameter = request.getParameter(AUTH_TOKEN_NAME);
 
 		String pathInfo = httpRequest.getPathInfo();
 		String requestMethod = httpRequest.getMethod();
 		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpRequest.getRemoteAddr());
 		User validUser = null;
 
-		if (pathInfo.startsWith("/login")) {
+		if (pathInfo != null && pathInfo.startsWith("/login")) {
 			// Trying to log in
 			validUser = authenticationService.getAnonymousSubject();
 		} else if (authHeader == null && requestMethod.equals("GET")) {
 			// An anonymous GET
 			validUser = authenticationService.getAnonymousSubject();
-		} else if (authHeader == null && requestMethod.equals("POST")) {
-			//For a file upload we're sending the auth token in a hidden input element
-			String authenticationTokenEncoded = request.getParameter(AUTH_TOKEN_NAME);
-			String authenticationToken = new String(DatatypeConverter.parseBase64Binary(authenticationTokenEncoded));
+		} else if (authHeader == null && requestMethod.equals("POST") && authParameter != null) {
+			String authenticationToken = new String(DatatypeConverter.parseBase64Binary(authParameter));
 			validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
 		} else if (authHeader != null){
 			final int index = authHeader.indexOf(' ');
