@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -72,7 +73,7 @@ public class MavenGeneratorTest {
 		mavenGenerator.generateArtifactPom(new TestMavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip"), writer);
 
 		String actualPom = writer.toString();
-		Assert.assertEquals(expectedPom, actualPom);
+		Assert.assertEquals(StringUtils.trimAllWhitespace(expectedPom), StringUtils.trimAllWhitespace(actualPom));
 	}
 	
 	@Test
@@ -85,7 +86,8 @@ public class MavenGeneratorTest {
 		mavenGenerator.generateArtifactPom(new TestMavenArtifact("org.ihtsdo.release.international.international.spanish_edition.biannual", "input.rf2", "1.0", "zip", metaData), writer);
 
 		String actualPom = writer.toString();
-		Assert.assertEquals(expectedPom, actualPom);
+
+		Assert.assertEquals(StringUtils.trimAllWhitespace(expectedPom), StringUtils.trimAllWhitespace(actualPom));
 	}
 
 	@Test
