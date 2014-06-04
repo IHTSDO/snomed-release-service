@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.execution.ExecutionManager;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
@@ -72,21 +73,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
-		Date triggerDate = new Date();
 
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 
-		String executionConfiguration = dao.loadConfiguration(execution);
+		ExecutionManager manager = new ExecutionManager(execution);
 
-		// Generate poms from config export
-		File buildScriptsTmpDirectory = mavenGenerator.generateBuildScripts(executionConfiguration);
-
-		dao.saveBuildScripts(buildScriptsTmpDirectory, execution);
-
-		// Queue the Execution for building
-		dao.queueForBuilding(execution);
-
-		return execution;
+		return manager.doExecution();
 	}
 
 	@Override
