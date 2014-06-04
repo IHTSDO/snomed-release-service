@@ -10,7 +10,7 @@ public class MavenExecutorTestManually {
 	public void manualTest() throws IOException, InterruptedException {
 		MavenExecutor mavenExecutor = new MavenExecutor();
 
-		File buildDirectory = new File("builder/src/test/resources/singlepom");
+		File buildDirectory = new File("builder" + File.separator + "src" + File.separator + "test" + File.separator + "resources" + File.separator + "singlepom");
 		System.out.println("Test build directory: " + buildDirectory.getAbsolutePath());
 		Assert.assertTrue(buildDirectory.isDirectory());
 
