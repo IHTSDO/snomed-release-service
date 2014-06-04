@@ -101,7 +101,7 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName}")
+	@RequestMapping(value = "/inputfiles/{inputFileName:.*}")
 	public void getInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@PathVariable String inputFileName,
 								HttpServletResponse response) {
