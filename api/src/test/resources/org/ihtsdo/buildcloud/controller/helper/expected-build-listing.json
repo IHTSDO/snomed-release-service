@@ -1,5 +1,6 @@
 [ {
   "name" : "20140131 International Release Build",
+  "effectiveDate" : null,
   "firstTimeRelease" : true,
   "starred" : false,
   "id" : "1_20140131_international_release_build",

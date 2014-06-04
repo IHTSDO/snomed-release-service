@@ -1,12 +1,14 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Entity
 public class Build {
@@ -17,6 +19,8 @@ public class Build {
 	private Long id;
 
 	private String name;
+
+	private Date effectiveDate;
 
 	private boolean firstTimeRelease;
 
@@ -79,6 +83,19 @@ public class Build {
 	public void setName(String name) {
 		this.name = name;
 		generateBusinessKey();
+	}
+
+	@JsonProperty("effectiveDate")
+	public String getEffectiveDateFormatted() {
+		return effectiveDate != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveDate) : null;
+	}
+
+	public Date getEffectiveDate() {
+		return effectiveDate;
+	}
+
+	public void setEffectiveDate(Date effectiveDate) {
+		this.effectiveDate = effectiveDate;
 	}
 
 	public String getBusinessKey() {
