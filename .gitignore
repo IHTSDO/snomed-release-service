@@ -6,3 +6,4 @@ target
 vagrant/cache
 vagrant/tomcat-webapps
 *.sh
+rebel.xml
