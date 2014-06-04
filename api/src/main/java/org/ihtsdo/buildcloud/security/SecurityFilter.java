@@ -37,7 +37,7 @@ public class SecurityFilter implements Filter {
 		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpRequest.getRemoteAddr());
 		User validUser = null;
 
-		if (pathInfo.startsWith("/login")) {
+		if (pathInfo != null && pathInfo.startsWith("/login")) {
 			// Trying to log in
 			validUser = authenticationService.getAnonymousSubject();
 		} else if (authHeader == null && requestMethod.equals("GET")) {
