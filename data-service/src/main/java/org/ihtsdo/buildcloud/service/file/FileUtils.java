@@ -3,13 +3,17 @@ package org.ihtsdo.buildcloud.service.file;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +37,7 @@ public class FileUtils {
 			int idx = 0;
 			while (entry != null) {
 				contents.put("zip_content_" + idx, entry.getName());
-				LOGGER.info (filename + "[" + idx + "]: " + entry.getName());
+				LOGGER.debug (filename + "[" + idx + "]: " + entry.getName());
 				entry = zis.getNextEntry();
 				idx++;
 			}
@@ -51,7 +55,7 @@ public class FileUtils {
 		byte[] buffer = new byte[1024];
 		int len;
 		while ((len = is.read(buffer)) > -1 ) {
-		    baos.write(buffer, 0, len);
+			baos.write(buffer, 0, len);
 		}
 		baos.flush();
 
@@ -60,6 +64,56 @@ public class FileUtils {
 		InputStream is2 = new ByteArrayInputStream(baos.toByteArray()); 
 		
 		return new InputStream[] { is1, is2 };
+	}
+	
+	/**
+	 * Modified functionality to add folder as root object ie relative path to the parent.
+	 * @param zipFilePath
+	 * @param dirToZip
+	 * @throws Exception
+	 * @author http://www.java2s.com/Code/Java/File-Input-Output/Makingazipfileofdirectoryincludingitssubdirectoriesrecursively.htm
+	 */
+	public static File zipDir(String zipFilePath, String dirToZip) throws Exception {
+		File dirObj = new File(dirToZip);
+		File zipFile = new File(zipFilePath);
+		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
+		LOGGER.debug("Creating zip file: " + zipFilePath);
+		addDir(dirObj, out, dirObj.getAbsolutePath().length());
+		out.close();
+		return zipFile;
+	}
+
+	/*
+	 * @param parentPathLength We will deduct this parent path from files/directories put into the zip file
+	 */
+	public static void addDir(File dirObj, ZipOutputStream out, int parentPathLen) throws IOException {
+		File[] files = dirObj.listFiles();
+		byte[] tmpBuf = new byte[1024];
+		
+		//We also want directories to be represented in the zip file, even if they're empty
+		//but no need to do that for the top level directory, so check for that first
+		if (dirObj.getAbsolutePath().length() > parentPathLen){
+			String relativePath = dirObj.getAbsolutePath().substring(parentPathLen) + File.separator;
+			out.putNextEntry(new ZipEntry(relativePath));
+		}
+
+		for (int i = 0; i < files.length; i++) {
+			if (files[i].isDirectory()) {
+				addDir(files[i], out, parentPathLen);
+				continue;
+			}
+
+			FileInputStream in = new FileInputStream(files[i].getAbsolutePath());
+			LOGGER.debug(" Adding: " + files[i].getAbsolutePath());
+			String relativePath = files[i].getAbsolutePath().substring(parentPathLen);
+			out.putNextEntry(new ZipEntry(relativePath));
+			int len;
+			while ((len = in.read(tmpBuf)) > 0) {
+				out.write(tmpBuf, 0, len);
+			}
+			out.closeEntry();
+			in.close();
+		}
 	}
 
 }

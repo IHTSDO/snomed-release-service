@@ -1,0 +1,215 @@
+<listing>
+	<folder Name="SnomedCT_Release_INT_20140131">
+		<file Name="Readme_en_20140131.txt"/>
+		<folder Name="Documentation">
+			<file Name="doc_SnomedCTReleaseNotes_Current-en-US_INT_20140131.pdf" />
+			<file Name="doc_Icd10MapTechnicalGuideExemplars_Current-en-US_INT_20140131.xlsx" />
+		</folder>
+
+		<folder Name="Resources" >
+				<folder Name="StatedRelationshipsToOwlKRSS" >
+					<file Name="tls2_StatedRelationshipsToOwlKRSS_INT_20140131.pl" />
+		</folder>
+		<folder Name="OrderedTypeReferenceSetExemplar" >
+				<file Name="zres2_icRefset_OrderedTypeFull_INT_20110731.txt"/>
+				<file Name="zres2_icRefset_OrderedTypeSnapshot_INT_20110731.txt"/>
+		</folder>
+	</folder>
+
+
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Full_INT_20140131.txt"/>
+					<file Name="sct2_Description_Full-en_INT_20140131.txt"/>
+					<file Name="sct2_Relationship_Full_INT_20140131.txt"/>
+					<file Name="sct2_StatedRelationship_Full_INT_20140131.txt"/>
+					<file Name="sct2_Identifier_Full_INT_20140131.txt"/>
+					<file Name="sct2_TextDefinition_Full-en_INT_20140131.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceFull_INT_20140131.txt"/>
+						<file Name="der2_cRefset_AttributeValueFull_INT_20140131.txt"/>
+						<file Name="der2_Refset_SimpleFull_INT_20140131.txt"/>	
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapFull_INT_20140131.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapFull_INT_20140131.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageFull-en_INT_20140131.txt"/>
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorFull_INT_20140131.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencyFull_INT_20140131.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeFull_INT_20140131.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Full -->
+			<folder Name="Snapshot">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Snapshot_INT_20140131.txt"/>
+					<file Name="sct2_Description_Snapshot-en_INT_20140131.txt"/>
+					<file Name="sct2_Relationship_Snapshot_INT_20140131.txt"/>
+					<file Name="sct2_StatedRelationship_Snapshot_INT_20140131.txt"/>
+					<file Name="sct2_Identifier_Snapshot_INT_20140131.txt"/>
+					<file Name="sct2_TextDefinition_Snapshot-en_INT_20140131.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt"/>
+						<file Name="der2_cRefset_AttributeValueSnapshot_INT_20140131.txt"/>
+						<file Name="der2_Refset_SimpleSnapshot_INT_20140131.txt"/>	
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20140131.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapSnapshot_INT_20140131.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapSnapshot_INT_20140131.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageSnapshot-en_INT_20140131.txt"/>	
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorSnapshot_INT_20140131.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencySnapshot_INT_20140131.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeSnapshot_INT_20140131.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Snapshot -->
+			
+			<folder Name="Delta">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Delta_INT_20140131.txt"/>
+					<file Name="sct2_Description_Delta-en_INT_20140131.txt"/>
+					<file Name="sct2_Relationship_Delta_INT_20140131.txt"/>
+					<file Name="sct2_StatedRelationship_Delta_INT_20140131.txt"/>
+					<file Name="sct2_Identifier_Delta_INT_20140131.txt"/>
+					<file Name="sct2_TextDefinition_Delta-en_INT_20140131.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceDelta_INT_20140131.txt"/>
+						<file Name="der2_cRefset_AttributeValueDelta_INT_20140131.txt"/>
+						<file Name="der2_Refset_SimpleDelta_INT_20140131.txt"/>
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_iisssccRefset_ExtendedMapDelta_INT_20140131.txt"/>
+						<file Name="der2_sRefset_SimpleMapDelta_INT_20140131.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapDelta_INT_20140131.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageDelta-en_INT_20140131.txt"/>	
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorDelta_INT_20140131.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencyDelta_INT_20140131.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeDelta_INT_20140131.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Delta -->
+		</folder> <!-- RF2Release -->	
+
+		<folder Name="RF1Release">
+			<folder Name="Maps" >
+				<folder Name="ICD9" >
+					<file Name="der1_CrossMapSets_ICD9_INT_20140131.txt" />
+					<file Name="der1_CrossMaps_ICD9_INT_20140131.txt" />
+					<file Name="der1_CrossMapTargets_ICD9_INT_20140131.txt" />
+				</folder>
+				
+				<folder Name="ICDO" >
+					<file Name="der1_CrossMapSets_ICDO_INT_20140131.txt" />
+					<file Name="der1_CrossMaps_ICDO_INT_20140131.txt" />
+					<file Name="der1_CrossMapTargets_ICDO_INT_20140131.txt" />
+				</folder>
+			</folder>	
+			<folder Name="Terminology">
+				<folder Name="Content">
+					<file Name="sct1_Concepts_Core_INT_20140131.txt" />
+					<file Name="sct1_Descriptions_en_INT_20140131.txt" />
+					<file Name="sct1_Relationships_Core_INT_20140131.txt"/>
+				</folder>
+				<folder Name="History">
+					<file Name="sct1_ComponentHistory_Core_INT_20140131.txt" />
+					<file Name="sct1_References_Core_INT_20140131.txt" />
+				</folder>
+			</folder> <!--Terminology-->
+			<folder Name="Subsets">
+				<folder Name="Language-en-GB">
+					<file Name="der1_SubsetMembers_en-GB_INT_20140131.txt" />
+					<file Name="der1_Subsets_en-GB_INT_20140131.txt" />
+				</folder>
+				<folder Name="Language-en-US">
+					<file Name="der1_SubsetMembers_en-US_INT_20140131.txt" />
+					<file Name="der1_Subsets_en-US_INT_20140131.txt" />
+				</folder>
+
+				<!--folder Name="NonHumanSubset" >
+					<file Name="der1_SubsetMembers_NonHuman_INT_20140131.txt" />
+					<file Name="der1_Subsets_NonHuman_INT_20140131.txt" />
+				</folder -->
+
+				<folder Name="VTMVMP" >
+					<file Name="der1_SubsetMembers_VTMVMP_INT_20140131.txt" />
+					<file Name="der1_Subsets_VTMVMP_INT_20140131.txt" />
+				</folder>
+			</folder> <!--Subsets-->
+		
+			<folder Name="OtherResources" >
+				<folder Name="BridgeFiles" >
+					<file Name="zres_BridgeFile_Snomed2ToSnomedRT_INT_20020131.zip" />
+					<file Name="zres_BridgeFile_Snomed35ToSnomedRT_INT_20020131.zip" />
+				</folder>
+				
+				<folder Name="Canonical Table" >
+					<file Name="doc1_CanonicalTableGuide_Current-en-US_INT_20140131.pdf" />
+					<file Name="res1_Canonical_Core_INT_20140131.txt" />
+				</folder>
+				
+				
+				<folder Name="LOINCIntegration" >
+					<file Name="zder1_Integration_LOINC_INT_20050731.txt" />
+				</folder>
+				
+				<folder Name="StatedRelationships" >
+					<file Name="res1_StatedRelationships_Core_INT_20140131.txt" />
+				</folder>
+			
+				<folder Name="TextDefinitions" >
+					<file Name="sct1_TextDefinitions_en-US_INT_20140131.txt" />
+				</folder>
+								
+				<folder Name="DeveloperToolkit" >
+					<file Name="doc_DeveloperToolkitGuide_Current-en-US_INT_20140131.pdf" />
+					<file Name="zres_WordEquivalents_en-US_INT_20020731.txt" />
+				
+					<folder Name="Indexes" >
+						<file Name="res_DualKeyIndex_Concepts-en-US_INT_20140131.txt" />
+						<file Name="res_DualKeyIndex_Descriptions-en-US_INT_20140131.txt" />
+						<file Name="res_WordKeyIndex_Concepts-en-US_INT_20140131.txt" />
+						<file Name="res_WordKeyIndex_Descriptions-en-US_INT_20140131.txt" />
+						<file Name="tls1_Index_Generator_INT_20140131.zip" />
+						<file Name="zres_ExcludedWords_en-US_INT_20070731.txt" />
+					</folder> <!--Indexes-->
+				
+					<folder Name="Subsets" >
+						<folder Name="DuplicateTerms" >
+							<file Name="der1_SubsetMembers_DuplicateTerms_INT_20110731.txt" />
+							<file Name="der1_Subsets_DuplicateTerms_INT_20110731.txt" />
+						</folder>
+						<folder Name="Navigation" >
+							<file Name="zder1_SubsetMembers_Navigation_INT_20030731.txt" />
+							<file Name="zder1_Subsets_Navigation_INT_20030731.txt" />
+						</folder>
+					</folder> <!--Subsets-->
+					
+				</folder> <!--DeveloperToolkit-->
+				
+			</folder> <!--OtherResources-->
+			
+		</folder> <!--RF1Release-->
+
+	</folder> <!-- SnomedCT_Release_INT_20140131 -->
+</listing>
