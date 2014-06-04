@@ -7,11 +7,9 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.EnumSet;
@@ -50,8 +48,16 @@ public class BuildController {
 	public Map getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.find(buildCompositeKey, authenticatedUser);
-		boolean currentResource = false;
-		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);
+	}
+
+	@RequestMapping(value = "/{buildCompositeKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	public Map<String, Object> updateBuild(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json,
+										   HttpServletRequest request) {
+		User authenticatedUser = SecurityHelper.getSubject();
+		Build build = buildService.update(buildCompositeKey, json, authenticatedUser);
+		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);
 	}
 	
 }
