@@ -3,14 +3,11 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,9 +20,9 @@ import java.util.List;
  */
 public class OfflineS3ClientImpl implements S3Client {
 
-	public static final String UTF_8 = "UTF-8";
 	private File bucketsDirectory;
 
+	private static final boolean REPLACE_SEPARATOR = !File.pathSeparator.equals("/");
 	private static final Logger LOGGER = LoggerFactory.getLogger(OfflineS3ClientImpl.class);
 
 	public OfflineS3ClientImpl(File bucketsDirectory) {
@@ -36,14 +33,14 @@ public class OfflineS3ClientImpl implements S3Client {
 	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
 		ObjectListing listing = new ObjectListing();
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
-		
-		String searchLocation = bucketName + File.separator + prefix;
+
+		String searchLocation = bucketName + File.separator + getPlatformDependantPath(prefix);
 		File searchStartDir;
 		
 		try{
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
-			LOGGER.warn ("Failed to find files at " + searchLocation + ", with detail: " + e.getLocalizedMessage());
+			LOGGER.warn("Failed to find files at {}", searchLocation, e);
 			return listing;
 		}
 		
@@ -51,7 +48,7 @@ public class OfflineS3ClientImpl implements S3Client {
 		
 		if (list != null) {
 			for (File file : list) {
-				String key = getRelativePath(bucketName, file);
+				String key = getRelativePathAsKey(bucketName, file);
 				S3ObjectSummary summary = new S3ObjectSummary();
 				summary.setKey(key);
 				summary.setBucketName(bucketName);
@@ -110,7 +107,6 @@ public class OfflineS3ClientImpl implements S3Client {
 
 	@Override
 	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException {
-		//TODO Might want to change "/" for File.separator to make us more platform independent	
 		String bucketName = putRequest.getBucketName();
 		String key = putRequest.getKey();
 		InputStream inputStream = putRequest.getInputStream();
@@ -165,8 +161,9 @@ public class OfflineS3ClientImpl implements S3Client {
 	private File getFile(String bucketName, String key, boolean createIfRequired) {
 		//Limitations on length of filename mean we have to use the slashed elements in the key as a directory path, unlike in the online implementation
 		//split the last filename off to create the parent directory as required.
-		File relativeLocation = new File (bucketName + File.separator + key);
-		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);  //creates bucket if needed
+		key = getPlatformDependantPath(key);
+		File relativeLocation = new File(bucketName + File.separator + key);
+		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);
 		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
 		return file;
 	}
@@ -176,11 +173,26 @@ public class OfflineS3ClientImpl implements S3Client {
 	 * @param file
 	 * @return The path relative to the bucket directory and bucket
 	 */
-	private String getRelativePath (String bucketName, File file) {
+	private String getRelativePathAsKey(String bucketName, File file) {
 		String absolutePath = file.getAbsolutePath();
 		int relativeStart =  bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash 
-		String relativePath = absolutePath.substring(relativeStart);  
+		String relativePath = absolutePath.substring(relativeStart);
+		relativePath = getPlatformIndependentPath(relativePath);
 		return relativePath;
+	}
+
+	private String getPlatformDependantPath(String path) {
+		if (REPLACE_SEPARATOR) {
+			path = path.replace('/', File.separatorChar);
+		}
+		return path;
+	}
+
+	private String getPlatformIndependentPath(String path) {
+		if (REPLACE_SEPARATOR) {
+			path = path.replace(File.separatorChar, '/');
+		}
+		return path;
 	}
 
 	public class S3ObjectSummaryComparator implements Comparator<S3ObjectSummary> {
