@@ -17,7 +17,9 @@ public class Build {
 	private Long id;
 
 	private String name;
-	
+
+	private boolean firstTimeRelease;
+
 	private boolean starred;
 
 	@JsonIgnore
@@ -33,6 +35,7 @@ public class Build {
 	
 	public Build() {
 		packages = new ArrayList<>();
+		firstTimeRelease = true;
 	}
 
 	public Build(String name) {
@@ -97,7 +100,15 @@ public class Build {
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
-	
+
+	public boolean isFirstTimeRelease() {
+		return firstTimeRelease;
+	}
+
+	public void setFirstTimeRelease(boolean firstTimeRelease) {
+		this.firstTimeRelease = firstTimeRelease;
+	}
+
 	public boolean isStarred() {
 		return starred;
 	}
