@@ -103,7 +103,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertNotNull(objectContent);
 		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
-		Assert.assertEquals("Some content\n", content);
+		Assert.assertEquals("Some content".trim(), content.trim());
 	}
 
 	@Test
@@ -120,7 +120,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertNotNull(objectContent);
 		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
-		Assert.assertEquals("Some content\n", content);
+		Assert.assertEquals("Some content".trim(), content.trim());
 	}
 
 	@Test
@@ -141,7 +141,7 @@ public class OfflineS3ClientImplTest {
 		Assert.assertNotNull(objectContent);
 		Assert.assertTrue(objectContent.available() > 0);
 		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
-		Assert.assertEquals("Some content\n", content);
+		Assert.assertEquals("Some content".trim(), content.trim());
 	}
 
 	@Test
