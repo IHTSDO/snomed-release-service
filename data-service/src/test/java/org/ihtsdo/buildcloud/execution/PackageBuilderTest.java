@@ -41,7 +41,7 @@ public class PackageBuilderTest {
 		Assert.assertEquals("Expecting 49 directories + 1 file = 50 items in zipped file", 50, zipContents.size());
 		
 		//And lets make sure our test file is in there.
-		Assert.assertTrue(zipContents.containsValue("/SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Metadata/der2_ciRefset_DescriptionTypeFull_INT_20140131.txt"));
+		Assert.assertTrue(zipContents.containsValue(FilenameUtils.separatorsToSystem("/SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Metadata/der2_ciRefset_DescriptionTypeFull_INT_20140131.txt")));
 	}
 
 }
