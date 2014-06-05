@@ -129,6 +129,13 @@ public class OfflineS3ClientImpl implements S3Client {
 	}
 
 	@Override
+	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException, AmazonServiceException {
+		S3Object object = getObject(sourceBucketName, sourceKey);
+		putObject(destinationBucketName, destinationKey, object.getObjectContent(), null);
+		return null;
+	}
+
+	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
 		File file = getFile(bucketName, key, false);
 		file.delete();

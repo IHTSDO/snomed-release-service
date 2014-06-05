@@ -124,6 +124,43 @@ public class OfflineS3ClientImplTest {
 	}
 
 	@Test
+	public void testCopyObject() throws IOException {
+		String buildDir = "builds/123/";
+		String key = buildDir + "execA/file1.txt";
+
+		// put first file
+		s3Client.putObject(TEST_BUCKET, key, getTestFile());
+
+		// get first file
+		S3Object s3Object = s3Client.getObject(TEST_BUCKET, key);
+
+		// test first file
+		Assert.assertEquals(TEST_BUCKET, s3Object.getBucketName());
+		Assert.assertEquals(key, s3Object.getKey());
+		S3ObjectInputStream objectContent = s3Object.getObjectContent();
+		Assert.assertNotNull(objectContent);
+		Assert.assertTrue(objectContent.available() > 0);
+		String content = StreamUtils.copyToString(objectContent, Charset.defaultCharset());
+		Assert.assertEquals("Some content".trim(), content.trim());
+
+		// copy file
+		String destinationKey = key + "2";
+		s3Client.copyObject(TEST_BUCKET, key, TEST_BUCKET, destinationKey);
+
+		// get copy
+		S3Object s3Object2 = s3Client.getObject(TEST_BUCKET, destinationKey);
+
+		// test copy
+		Assert.assertEquals(TEST_BUCKET, s3Object2.getBucketName());
+		Assert.assertEquals(destinationKey, s3Object2.getKey());
+		S3ObjectInputStream object2Content = s3Object2.getObjectContent();
+		Assert.assertNotNull(object2Content);
+		Assert.assertTrue(object2Content.available() > 0);
+		String content2 = StreamUtils.copyToString(object2Content, Charset.defaultCharset());
+		Assert.assertEquals("Some content".trim(), content2.trim());
+	}
+
+	@Test
 	public void testPutObjectByPutRequest() throws IOException {
 		String buildDir = "builds/123/";
 		String key = buildDir + "execA/file1.txt";
