@@ -106,7 +106,7 @@ public class InputFileController {
 								@PathVariable String inputFileName,
 								HttpServletResponse response) {
 
-		try (InputStream fileStream = inputFileService.getFileStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject());) {
+		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject());) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {

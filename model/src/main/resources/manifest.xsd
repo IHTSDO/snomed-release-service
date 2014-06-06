@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?> 
+
+<xs:schema	targetNamespace="http://release.ihtsdo.org/manifest/1.0.0"
+			xmlns="http://release.ihtsdo.org/manifest/1.0.0"
+			attributeFormDefault="unqualified" 
+			elementFormDefault="qualified" 
+			xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="listing" type="listingType"/>
+	<xs:complexType name="listingType">
+		<xs:sequence>
+			<xs:element type="folderType" name="folder"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="folderType">
+		<xs:sequence>
+			<xs:element type="fileType" name="file" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="folderType" name="folder" maxOccurs="unbounded" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute type="xs:string" name="Name" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="fileType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute type="xs:string" name="Name" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

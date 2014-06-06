@@ -73,7 +73,12 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
-		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPathPath(aPackage);
+		return getManifestStream(aPackage);
+	}
+	
+	@Override
+	public InputStream getManifestStream(Package pkg) {
+		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPathPath(pkg);
 
 		String directoryPath = manifestDirectoryPathSB.toString();
 		List<String> files = fileDAO.listFiles(directoryPath);
@@ -93,11 +98,17 @@ public class FileServiceImpl implements FileService {
 	}
 
 	@Override
-	public InputStream getFileStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) {
+	public InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
-		String filePath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
+		return getFileInputStream(aPackage, filename);
+	}
+	
+	@Override
+	public InputStream getFileInputStream(Package pkg, String filename) {
+		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
 		return fileDAO.getFileStream(filePath);
 	}
+	
 
 	@Override
 	public List<String> listFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {

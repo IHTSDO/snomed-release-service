@@ -5,9 +5,11 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
+import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.JAXBException;
 
 @Service
 @Transactional
@@ -81,7 +85,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		//Easiest thing for iteration 1 is to process just the first package for a build
+		Package pkg = execution.getBuild().getPackages().get(0);
+		
 		transformFiles(execution);
+		
+		/*try {
+			Zipper zipper = new Zipper(pkg, "some_filename.zip", fileService);
+			zipper.createZipFile();
+		} catch (JAXBException jbex) {
+			
+		}*/
+		
 		return execution;
 	}
 

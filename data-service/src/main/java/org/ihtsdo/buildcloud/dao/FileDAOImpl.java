@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +46,7 @@ public class FileDAOImpl implements FileDAO {
 
 	@Override
 	public InputStream getFileStream(String filePath) {
+
 		try {
 			S3Object s3Object = s3Client.getObject(executionS3BucketName, filePath);
 			if (s3Object != null) {

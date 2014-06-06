@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 public interface FileDAO {

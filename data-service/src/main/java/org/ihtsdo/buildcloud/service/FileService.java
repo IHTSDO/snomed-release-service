@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.Package;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +18,13 @@ public interface FileService {
 
 	InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
 
+	InputStream getManifestStream(Package pkg);
+
 	void putFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
 
-	InputStream getFileStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
+	InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
+	
+	InputStream getFileInputStream(Package pkg, String filename);
 
 	List<String> listFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
 
