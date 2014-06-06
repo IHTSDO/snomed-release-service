@@ -36,7 +36,9 @@ public class Build {
 	@OneToMany(mappedBy = "build")
 	@JsonIgnore
 	private List<Package> packages;
-	
+
+	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
+
 	public Build() {
 		packages = new ArrayList<>();
 		firstTimeRelease = true;
@@ -90,6 +92,11 @@ public class Build {
 		return effectiveDate != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveDate) : null;
 	}
 
+	@JsonIgnore
+	public String getEffectiveDateSnomedFormat() {
+		return effectiveDate != null ? DateFormatUtils.format(effectiveDate, SNOMED_DATE_FORMAT) : null;
+	}
+
 	public Date getEffectiveDate() {
 		return effectiveDate;
 	}
@@ -133,5 +140,4 @@ public class Build {
 	public void setStarred(boolean isStarred) {
 		this.starred = isStarred;
 	}
-
 }

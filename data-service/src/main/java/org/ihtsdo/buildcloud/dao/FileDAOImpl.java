@@ -33,6 +33,16 @@ public class FileDAOImpl implements FileDAO {
 	}
 
 	@Override
+	/**
+	 * This method causes a warning when using S3 because we don't know the file length up front.
+	 * TODO: Investigate multipart upload to avoid the S3 library buffering the whole file.
+	 */
+	public void putFile(InputStream fileStream, String filePath) {
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, filePath, fileStream).useBucketAcl();
+		s3Client.putObject(putRequest);
+	}
+
+	@Override
 	public InputStream getFileStream(String filePath) {
 		try {
 			S3Object s3Object = s3Client.getObject(executionS3BucketName, filePath);
@@ -61,6 +71,11 @@ public class FileDAOImpl implements FileDAO {
 	// TODO: User logging against file actions?
 	public void deleteFile(String filePath) {
 		s3Client.deleteObject(executionS3BucketName, filePath);
+	}
+
+	@Override
+	public void copyFile(String sourcePath, String targetPath) {
+		s3Client.copyObject(executionS3BucketName, sourcePath, executionS3BucketName, targetPath);
 	}
 
 	@Required

@@ -1,10 +1,10 @@
-package org.ihtsdo.buildcloud.execution;
-
-import java.io.IOException;
+package org.ihtsdo.buildcloud.service.execution;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
 
 public class ExecutionManager {
 	
@@ -17,7 +17,7 @@ public class ExecutionManager {
 		this.execution = execution;
 	}
 	
-	public Execution doExecution() throws IOException{
+	public Execution doExecution() throws IOException {
 		
 		String executionConfiguration = dao.loadConfiguration(execution);
 		
@@ -26,6 +26,7 @@ public class ExecutionManager {
 		// Get IDs as required from ID Generator
 		
 		// Run classifier
+			// (Not required for this epic)
 
 		// Do packaging
 		
