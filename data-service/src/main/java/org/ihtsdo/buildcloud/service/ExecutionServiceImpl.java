@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
+import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -95,6 +96,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		// Add streaming transformation of effectiveDate
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveDateSnomedFormat();
 		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
+		transformation.addLineTransformation(new UUIDTransformation(0));
 
 		// Iterate each execution package
 		Map<String, Object> executionConfigMap = dao.loadConfigurationMap(execution);
