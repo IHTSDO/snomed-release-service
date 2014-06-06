@@ -52,7 +52,7 @@ public class MavenGeneratorTest {
 
 		Assert.assertNotNull(buildDirectory);
 		
-		String testPackageName = TestEntityGenerator.packageNames[0];
+		String testPackageName = TestEntityGenerator.packageNames[0][0][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 
 		String generatedRootPom = fileToString(new File(buildDirectory, "pom.xml"));
