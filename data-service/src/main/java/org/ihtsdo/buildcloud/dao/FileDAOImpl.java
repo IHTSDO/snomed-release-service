@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class InputFileDAOImpl implements InputFileDAO {
+public class FileDAOImpl implements FileDAO {
 
 	@Autowired
 	private S3Client s3Client;

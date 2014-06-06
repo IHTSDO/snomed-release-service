@@ -5,7 +5,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import java.io.InputStream;
 import java.util.List;
 
-public interface InputFileService {
+public interface FileService {
 
 	void putManifestFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String originalFilename, long fileSize, User subject);
 

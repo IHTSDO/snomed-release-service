@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.InputFileService;
+import org.ihtsdo.buildcloud.service.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class InputFileController {
 
 	@Autowired
-	private InputFileService inputFileService;
+	private FileService inputFileService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;

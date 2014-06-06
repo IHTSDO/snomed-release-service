@@ -58,7 +58,7 @@ public class PackageBuilder {
 		this.warnOnMissingFiles = doWarnings;
 	}
 
-	public PackageBuilder() throws IOException {
+	private PackageBuilder() throws IOException {
 		LOGGER.debug("Reading properties file {}", propsFile);
 		Properties props = new Properties();
 		props.load(getClass().getResourceAsStream(propsFile));
@@ -141,7 +141,7 @@ public class PackageBuilder {
 					}
 			
 				} catch (Exception e) {
-					LOGGER.warn ("Unexpected during package building at manifest element [{}: {} {}] {}",i, n.getNodeName(), getAttribute(n, "Name", "unknown"), e.getLocalizedMessage() );
+					LOGGER.warn ("Unexpected problem during package building at manifest element [{}: {} {}] {}",i, n.getNodeName(), getAttribute(n, "Name", "unknown"), e.getLocalizedMessage() );
 				}
 			}
 		} else {
