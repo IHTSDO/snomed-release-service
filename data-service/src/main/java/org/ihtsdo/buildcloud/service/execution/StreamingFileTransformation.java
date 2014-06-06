@@ -42,7 +42,7 @@ public class StreamingFileTransformation {
 
 					// Pass line through all transformers
 					for (LineTransformation lineTransformation : lineTransformations) {
-						columnValues = lineTransformation.transformLine(columnValues);
+						lineTransformation.transformLine(columnValues);
 					}
 
 					// Write transformed line to temp file

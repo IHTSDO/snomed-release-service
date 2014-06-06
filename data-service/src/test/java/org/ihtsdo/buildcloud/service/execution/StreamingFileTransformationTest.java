@@ -96,7 +96,7 @@ public class StreamingFileTransformationTest {
 	
 	@Test
 	public void testReplaceUUID() throws IOException {
-		fileTransformation.addLineTransformation(new UUIDTransformation() );
+		fileTransformation.addLineTransformation(new UUIDTransformation(0));
 
 		// Assert preconditions
 		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), StreamingFileTransformation.UTF_8);

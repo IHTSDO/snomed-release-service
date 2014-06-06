@@ -23,7 +23,7 @@ public class UUIDTransformationTest {
 
 	@Before
 	public void setup() throws URISyntaxException, IOException {
-		uuidTransformation = new UUIDTransformation();
+		uuidTransformation = new UUIDTransformation(0);
 		File origFile = new File(getClass().getResource("refSet-without-uuid.txt").toURI());
 		Path tempFile = Files.createTempFile(getClass().getName(), origFile.getName());
 		Files.copy(origFile.toPath(), tempFile, StandardCopyOption.REPLACE_EXISTING);
@@ -37,11 +37,11 @@ public class UUIDTransformationTest {
 		assertEquals(5, lines.size());
 		assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId", lines.get(0));
 		for( int i=1;i<lines.size();i++) {
-			String[] before = lines.get(i).split("\t");
-			assertEquals(EMPTY_SPACE, before[0] );
-			String[] after = uuidTransformation.transformLine(before);
-			assertNotEquals(EMPTY_SPACE, after[0]);
-			assertEquals( UUID_LENGTH, after[0].length() );
+			String[] values = lines.get(i).split("\t");
+			assertEquals(EMPTY_SPACE, values[0] );
+			uuidTransformation.transformLine(values);
+			assertNotEquals(EMPTY_SPACE, values[0]);
+			assertEquals( UUID_LENGTH, values[0].length() );
 			
 		}
 	}
