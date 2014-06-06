@@ -1,36 +1,31 @@
-package org.ihtsdo.buildcloud.packageprocessor;
+package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileTransformation {
+public class StreamingFileTransformation {
 
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String LINE_ENDING = "\r\n";
 
 	private List<LineTransformation> lineTransformations;
-	private static final String COLUMN_SEPARATOR = "\t";
 
-	public FileTransformation() {
+	private static final String COLUMN_SEPARATOR = "\t";
+	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingFileTransformation.class);
+
+	public StreamingFileTransformation() {
 		lineTransformations = new ArrayList<>();
 	}
 
-	public void transformFile(File inputFile) throws IOException {
-
-		// Temp file to receive results stream
-		Path tempFile = Files.createTempFile(getClass().getName(), inputFile.getName());
-
-		try (BufferedReader reader = Files.newBufferedReader(inputFile.toPath(), UTF_8);
-			 BufferedWriter writer = Files.newBufferedWriter(tempFile, UTF_8)) {
-
+	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8));
+		try {
 			// Iterate input lines
 			String line;
 			StringBuilder stringBuilder = new StringBuilder();
@@ -62,12 +57,18 @@ public class FileTransformation {
 					writer.write(stringBuilder.toString());
 				}
 			}
-
+		} finally {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close writer.", e);
+			}
+			try {
+				reader.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close reader.", e);
+			}
 		}
-
-		// Replace input file with transformed temp file
-		Files.move(tempFile, inputFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
 	}
 
 	public void addLineTransformation(LineTransformation transformation) {

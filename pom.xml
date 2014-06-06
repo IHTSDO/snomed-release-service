@@ -23,7 +23,6 @@
 	<modules>
 		<module>model</module>
 		<module>data-service</module>
-		<module>package-processor</module>
 		<module>api</module>
 		<module>builder</module>
 		<module>web</module>

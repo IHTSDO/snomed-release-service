@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Map;
 
 public interface ExecutionDAO {
 
@@ -18,6 +19,8 @@ public interface ExecutionDAO {
 	Execution find(Build build, String executionId);
 
 	String loadConfiguration(Execution execution) throws IOException;
+
+	Map<String,Object> loadConfigurationMap(Execution execution) throws IOException;
 
 	void saveBuildScripts(File buildScriptsTmpDirectory, Execution execution);
 

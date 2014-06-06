@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 
 public class ExecutionS3PathHelper {
@@ -9,6 +10,7 @@ public class ExecutionS3PathHelper {
 	private static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
 	private static final String OUTPUT = "output/";
+	private static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String BUILD_FILES = "build-files";
 	private static final String MANIFEST = "manifest";
@@ -41,6 +43,27 @@ public class ExecutionS3PathHelper {
 		return getExecutionPath(execution.getBuild(), execution.getId());
 	}
 
+	public StringBuffer getExecutionInputFilesPath(Execution execution, Package aPackage) {
+		String businessKey = aPackage.getBusinessKey();
+		return getExecutionInputFilesPath(execution, businessKey);
+	}
+
+	public StringBuffer getExecutionInputFilesPath(Execution execution, String packageBusinessKey) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(INPUT_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+	}
+
+	public String getExecutionInputFilePath(Execution execution, String packageBusinessKey, String inputFile) {
+		return getExecutionInputFilesPath(execution, packageBusinessKey).append(inputFile).toString();
+	}
+
+	public StringBuffer getExecutionOutputFilesPath(Execution execution, String packageBusinessKey) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(OUTPUT_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+	}
+
+	public String getExecutionOutputFilePath(Execution execution, String packageBusinessKey, String relativeFilePath) {
+		return getExecutionOutputFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+	}
+
 	public StringBuffer getExecutionPath(Build build, String executionId) {
 		StringBuffer path = getBuildPath(build);
 		path.append(executionId);
@@ -59,7 +82,7 @@ public class ExecutionS3PathHelper {
 	public String getStatusFilePath(Execution execution, Execution.Status status) {
 		return getExecutionPath(execution).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
-	
+
 	public String getOutputPath(Execution execution, String outputRelativePath) {
 		return getFilePath(execution, OUTPUT);
 	}

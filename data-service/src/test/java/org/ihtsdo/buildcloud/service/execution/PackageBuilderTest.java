@@ -1,16 +1,15 @@
-package org.ihtsdo.buildcloud.execution;
+package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Map;
-
+import com.google.common.io.Files;
 import org.apache.commons.io.FilenameUtils;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.maven.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.io.Files;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Map;
 
 public class PackageBuilderTest {
 

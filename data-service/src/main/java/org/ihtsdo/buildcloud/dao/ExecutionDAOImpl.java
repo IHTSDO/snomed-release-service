@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -14,7 +16,9 @@ import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -32,9 +36,15 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private JmsTemplate jmsTemplate;
 
-	private static final String BLANK = "";
+	private ObjectMapper objectMapper;
 
+	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
+	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
+
+	public ExecutionDAOImpl() {
+		objectMapper = new ObjectMapper();
+	}
 
 	@Override
 	public void save(Execution execution, String jsonConfig) {
@@ -65,8 +75,17 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
-//			objectContent.getHttpRequest().
-			return FileCopyUtils.copyToString(new InputStreamReader(objectContent));
+			return FileCopyUtils.copyToString(new InputStreamReader(objectContent)); // Closes stream
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public Map<String, Object> loadConfigurationMap(Execution execution) throws IOException {
+		String jsonConfigString = loadConfiguration(execution);
+		if (jsonConfigString != null) {
+			return objectMapper.readValue(jsonConfigString, MAP_TYPE_REF);
 		} else {
 			return null;
 		}
