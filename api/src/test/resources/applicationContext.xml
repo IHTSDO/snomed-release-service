@@ -35,7 +35,7 @@
 	
 	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl"/>
 
-	<bean class="org.ihtsdo.buildcloud.dao.InputFileDAOImpl">
+	<bean class="org.ihtsdo.buildcloud.dao.FileDAOImpl">
 		<property name="executionS3BucketName" ref="executionS3BucketName"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
@@ -49,7 +49,7 @@
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.FileServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>

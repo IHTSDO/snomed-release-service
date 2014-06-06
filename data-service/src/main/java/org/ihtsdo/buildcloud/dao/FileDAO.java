@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import java.io.InputStream;
 import java.util.List;
 
-public interface InputFileDAO {
+public interface FileDAO {
 
 	void putFile(InputStream fileStream, long fileSize, String filePath);
 
