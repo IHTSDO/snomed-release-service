@@ -11,9 +11,8 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 	}
 
 	@Override
-	public String[] transformLine(String[] columnValues) {
+	public void transformLine(String[] columnValues) {
 		columnValues[column] = value;
-		return columnValues;
 	}
 
 }
