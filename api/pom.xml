@@ -224,7 +224,7 @@
 									<linkTarget>/var/opt/${packageName}/log</linkTarget>
 									<symlink>true</symlink>
 								</data>
-								<data>
+								<!--			<data>
 									<src>${basedir}/src/deb/log4j.xml</src>
 									<dst>/etc/opt/${packageName}/log4j.xml</dst>
 									<type>file</type>
@@ -234,7 +234,7 @@
 										<group>${packageName}</group>
 										<filemode>0640</filemode>
 									</mapper>
-								</data>
+								</data> -->
 							</dataSet>
 						</configuration>
 					</execution>
