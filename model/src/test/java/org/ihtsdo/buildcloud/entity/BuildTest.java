@@ -24,7 +24,7 @@ public class BuildTest extends TestEntityGenerator{
 	@Test
 	public void testStructure() {
 		Assert.assertNotNull(build);
-		Assert.assertEquals(build.getPackages().size(), packageNames.length);
+		Assert.assertEquals(build.getPackages().size(), packageNames[0][0].length);
 	}
 
 	@Test

@@ -21,7 +21,7 @@ public class PackageDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		String testPackageName = TestEntityGenerator.packageNames[0];
+		String testPackageName = TestEntityGenerator.packageNames[0][0][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 		
 		Package aPackage = dao.find(1L, testPackageId, TestEntityGenerator.TEST_USER);
