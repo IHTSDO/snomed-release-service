@@ -27,7 +27,6 @@ public class Zipper {
 	
 	private Package pkg;
 	private ListingType manifestListing;
-	private String zipName = "Unknown_Name.zip";
 	
 	private static final String PATH_CHAR = "/";
 	
@@ -41,13 +40,8 @@ public class Zipper {
 	public File createZipFile() throws JAXBException, IOException {
 		//Get the manifest file as an input stream
 		InputStream is = fileService.getManifestStream(pkg);
-		return createZipFile(is);
-	}
-	
-	File createZipFile(InputStream is) throws JAXBException, IOException {
 		loadManifest(is);
 		File zipFile = createArchive();
-		//uploadArchive(zipFile);
 		return zipFile;
 	}
 	
@@ -61,8 +55,10 @@ public class Zipper {
 	private File createArchive() throws IOException {
 		
 		String targetPath = Files.createTempDir().getAbsolutePath();
-		String rootFolder = manifestListing.getFolder().getName();
-		String zipLocation = targetPath + File.separator + rootFolder + ".zip";
+		
+		//Zip file name is the same as the root folder defined in manifest, with .zip appended
+		FolderType rootFolder = manifestListing.getFolder();
+		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
 		//Option to use Google's InputStreamFromOutputStream here to feed directly 
 		//up to S3, but that would use another thread in parallel, so not without risk.
@@ -71,7 +67,7 @@ public class Zipper {
 		File zipFile = new File(zipLocation);
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		ZipOutputStream zos = new ZipOutputStream(fos);
-		walkFolders(manifestListing.getFolder(), zos, "/");
+		walkFolders(rootFolder, zos, "/");
 		zos.close();
 		return zipFile;
 	}
@@ -80,8 +76,6 @@ public class Zipper {
 		//Create an entry for this folder
 		String thisFolder = parentPath + f.getName() + PATH_CHAR;
 		zos.putNextEntry(new ZipEntry(thisFolder));
-		
-		
 		
 		//Pull down and compress any child files
 		for(FileType file : f.getFile()) {
