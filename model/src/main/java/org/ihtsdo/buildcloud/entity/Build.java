@@ -20,7 +20,7 @@ public class Build {
 
 	private String name;
 
-	private Date effectiveDate;
+	private Date effectiveTime;
 
 	private boolean firstTimeRelease;
 
@@ -87,22 +87,22 @@ public class Build {
 		generateBusinessKey();
 	}
 
-	@JsonProperty("effectiveDate")
+	@JsonProperty("effectiveTime")
 	public String getEffectiveDateFormatted() {
-		return effectiveDate != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveDate) : null;
+		return effectiveTime != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveTime) : null;
 	}
 
 	@JsonIgnore
-	public String getEffectiveDateSnomedFormat() {
-		return effectiveDate != null ? DateFormatUtils.format(effectiveDate, SNOMED_DATE_FORMAT) : null;
+	public String getEffectiveTimeSnomedFormat() {
+		return effectiveTime != null ? DateFormatUtils.format(effectiveTime, SNOMED_DATE_FORMAT) : null;
 	}
 
-	public Date getEffectiveDate() {
-		return effectiveDate;
+	public Date getEffectiveTime() {
+		return effectiveTime;
 	}
 
-	public void setEffectiveDate(Date effectiveDate) {
-		this.effectiveDate = effectiveDate;
+	public void setEffectiveTime(Date effectiveTime) {
+		this.effectiveTime = effectiveTime;
 	}
 
 	public String getBusinessKey() {

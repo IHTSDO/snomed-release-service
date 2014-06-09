@@ -9,7 +9,6 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
-import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -24,8 +23,6 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.bind.JAXBException;
 
 @Service
 @Transactional
@@ -111,7 +108,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
 
 		// Add streaming transformation of effectiveDate
-		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveDateSnomedFormat();
+		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
 		transformation.addLineTransformation(new UUIDTransformation(0));
 
