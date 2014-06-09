@@ -1,9 +1,12 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.ihtsdo.buildcloud.security.SecurityFilter;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockFilterConfig;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -13,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.servlet.ServletException;
 import java.nio.charset.Charset;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -34,8 +38,16 @@ public abstract class ControllerIntegrationTest extends AbstractJUnit4SpringCont
 	private WebApplicationContext wac;
 
 	@Before
-	public void setup() {
-		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+	public void setup() throws ServletException {
+		// Create SecurityFilter
+		SecurityFilter securityFilter = new SecurityFilter();
+		MockServletContext mockServletContext = new MockServletContext();
+		mockServletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, wac);
+		securityFilter.init(new MockFilterConfig(mockServletContext));
+
+		mockMvc = MockMvcBuilders.webAppContextSetup(wac)
+				.addFilter(securityFilter, "/*") // Add SecurityFilter
+				.build();
 	}
 
 }
