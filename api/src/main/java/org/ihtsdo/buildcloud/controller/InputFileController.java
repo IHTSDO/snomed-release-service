@@ -83,7 +83,7 @@ public class InputFileController {
 	public ResponseEntity uploadInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 											 @RequestParam(value = "file") MultipartFile file) throws IOException {
 
-		inputFileService.putFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
 		return new ResponseEntity(HttpStatus.OK);
 	}
 

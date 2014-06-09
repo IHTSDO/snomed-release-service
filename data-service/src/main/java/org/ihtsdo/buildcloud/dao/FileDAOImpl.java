@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
@@ -12,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -29,8 +33,8 @@ public class FileDAOImpl implements FileDAO {
 	private String executionS3BucketName;
 
 	@Override
-	public void putFile(InputStream fileStream, long fileSize, String filePath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, filePath, fileStream).length(fileSize).useBucketAcl();
+	public void putFile(InputStream fileStream, long fileSize, String targetFilePath) {
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, targetFilePath, fileStream).length(fileSize).useBucketAcl();
 		s3Client.putObject(putRequest);
 	}
 
@@ -39,8 +43,20 @@ public class FileDAOImpl implements FileDAO {
 	 * This method causes a warning when using S3 because we don't know the file length up front.
 	 * TODO: Investigate multipart upload to avoid the S3 library buffering the whole file.
 	 */
-	public void putFile(InputStream fileStream, String filePath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, filePath, fileStream).useBucketAcl();
+	public void putFile(InputStream fileStream, String targetFilePath) {
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, targetFilePath, fileStream).useBucketAcl();
+		s3Client.putObject(putRequest);
+	}
+	
+	@Override
+	public void putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException {
+		
+		if (calcMD5){
+			//TODO : create the md5 file and upload as a second put request (with .md5 appended to file name)
+		}
+		InputStream is = new FileInputStream (file);
+		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, targetFilePath, is).length(file.length()).useBucketAcl();
+		
 		s3Client.putObject(putRequest);
 	}
 

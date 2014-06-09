@@ -91,10 +91,17 @@ public class FileServiceImpl implements FileService {
 	}
 
 	@Override
-	public void putFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) {
+	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
 		fileDAO.putFile(inputStream, fileSize, pathPath);
+	}
+	
+	@Override
+	public
+	void putOutputFile(Execution execution, Package aPackage, File file, boolean calcMD5) throws FileNotFoundException {
+		String pathPath = s3PathHelper.getPackageOutputFilePath(aPackage, file.getName());
+		fileDAO.putFile(file, pathPath, calcMD5);
 	}
 
 	@Override

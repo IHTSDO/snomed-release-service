@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -92,7 +94,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		try {
 			Zipper zipper = new Zipper(pkg, fileService);
-			zipper.createZipFile();
+			File zip = zipper.createZipFile();
+			fileService.putOutputFile(execution, pkg, zip, true);  //calculate MD5 hash on upload
 		} catch (JAXBException jbex) {
 			//TODO Telemetry about failures, but will not prevent process from continuing
 			LOGGER.error("Failure in Zip creation.",jbex);
