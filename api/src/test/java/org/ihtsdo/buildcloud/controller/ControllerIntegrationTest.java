@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.controller;
 
-
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,25 +19,23 @@ import java.nio.charset.Charset;
 @ContextConfiguration(locations={"/applicationContext.xml"})
 @WebAppConfiguration
 @Transactional
-public abstract class ControllerTest extends AbstractJUnit4SpringContextTests{
+public abstract class ControllerIntegrationTest extends AbstractJUnit4SpringContextTests {
 
 	public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(MediaType.APPLICATION_JSON.getType(),
 			MediaType.APPLICATION_JSON.getSubtype(),
 			Charset.forName("utf8")
-			);
+		);
 
 	public static final String ROOT_URL = "http://localhost:80";
 
 	protected MockMvc mockMvc;
-	
+
 	@Autowired
-	WebApplicationContext wac;
+	private WebApplicationContext wac;
 
 	@Before
-	public void setup()
-	{
+	public void setup() {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 	}
-	
 
 }
