@@ -41,7 +41,7 @@ public class ZipperTest {
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 		
 		Package pkg = dao.find(5L, testPackageId, TestEntityGenerator.TEST_USER);
-		Zipper zipper = new Zipper (pkg, "some_test.zip", fs);
+		Zipper zipper = new Zipper (pkg, fs);
 		InputStream manifestStream = getClass().getResourceAsStream("simple_refset_manifest.xml");
 		File zipFile = zipper.createZipFile(manifestStream);
 		Assert.assertNotNull(zipFile);

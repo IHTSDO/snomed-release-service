@@ -27,15 +27,14 @@ public class Zipper {
 	
 	private Package pkg;
 	private ListingType manifestListing;
-	private String zipName;
+	private String zipName = "Unknown_Name.zip";
 	
 	private static final String PATH_CHAR = "/";
 	
 	//private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
 	
-	public Zipper (Package pkg, String zipName, FileService fs) {
+	public Zipper (Package pkg, FileService fs) {
 		this.pkg = pkg;
-		this.zipName = zipName;
 		this.fileService = fs;
 	}
 	
@@ -62,11 +61,13 @@ public class Zipper {
 	private File createArchive() throws IOException {
 		
 		String targetPath = Files.createTempDir().getAbsolutePath();
-		String zipLocation = targetPath + File.separator + this.zipName;
+		String rootFolder = manifestListing.getFolder().getName();
+		String zipLocation = targetPath + File.separator + rootFolder + ".zip";
 
 		//Option to use Google's InputStreamFromOutputStream here to feed directly 
 		//up to S3, but that would use another thread in parallel, so not without risk.
 		//Simpler to write to local disk for now and upload when complete.
+		
 		File zipFile = new File(zipLocation);
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		ZipOutputStream zos = new ZipOutputStream(fos);
@@ -79,6 +80,8 @@ public class Zipper {
 		//Create an entry for this folder
 		String thisFolder = parentPath + f.getName() + PATH_CHAR;
 		zos.putNextEntry(new ZipEntry(thisFolder));
+		
+		
 		
 		//Pull down and compress any child files
 		for(FileType file : f.getFile()) {

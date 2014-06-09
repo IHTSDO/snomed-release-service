@@ -91,12 +91,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		transformFiles(execution);
 		
-		/*try {
-			Zipper zipper = new Zipper(pkg, "some_filename.zip", fileService);
+		try {
+			Zipper zipper = new Zipper(pkg, fileService);
 			zipper.createZipFile();
 		} catch (JAXBException jbex) {
-			
-		}*/
+			//TODO Telemetry about failures, but will not prevent process from continuing
+			LOGGER.error("Failure in Zip creation.",jbex);
+		}
 		
 		return execution;
 	}
