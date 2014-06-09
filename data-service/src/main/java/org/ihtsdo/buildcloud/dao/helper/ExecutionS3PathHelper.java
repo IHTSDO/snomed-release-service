@@ -26,11 +26,15 @@ public class ExecutionS3PathHelper {
 	}
 
 	public String getPackageInputFilesPath(Package aPackage) {
-		return getPackageInputFilesPathAsStringBuffer(aPackage).toString();
+		return getPackageFilesPathAsStringBuffer(aPackage, INPUT_FILES).toString();
 	}
 
 	public String getPackageInputFilePath(Package aPackage, String filename) {
-		return getPackageInputFilesPathAsStringBuffer(aPackage).append(filename).toString();
+		return getPackageFilesPathAsStringBuffer(aPackage, INPUT_FILES).append(filename).toString();
+	}
+	
+	public String getPackageOutputFilePath(Package aPackage, String filename) {
+		return getPackageFilesPathAsStringBuffer(aPackage, OUTPUT_FILES).append(filename).toString();
 	}
 
 	public StringBuffer getPackageManifestDirectoryPathPath(Package aPackage) {
@@ -91,9 +95,9 @@ public class ExecutionS3PathHelper {
 		return getFilePath(execution, OUTPUT + outputRelativePath);
 	}
 
-	private StringBuffer getPackageInputFilesPathAsStringBuffer(Package aPackage) {
+	private StringBuffer getPackageFilesPathAsStringBuffer(Package aPackage, String directionModifier) {
 		StringBuffer buildPath = getBuildPath(aPackage.getBuild());
-		buildPath.append(BUILD_FILES).append(SEPARATOR).append(INPUT_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR);
+		buildPath.append(BUILD_FILES).append(SEPARATOR).append(directionModifier).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR);
 		return buildPath;
 	}
 

@@ -5,6 +5,8 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.Package;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,10 +22,12 @@ public interface FileService {
 
 	InputStream getManifestStream(Package pkg);
 
-	void putFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
+	void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
+
+	void putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws FileNotFoundException, IOException;
 
 	InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
-	
+
 	InputStream getFileInputStream(Package pkg, String filename);
 
 	List<String> listFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
