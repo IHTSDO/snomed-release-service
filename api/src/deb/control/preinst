@@ -12,7 +12,3 @@ if ! getent passwd $APP_NAME >/dev/null; then
 fi
 
 supervisorctl stop $APP_NAME 2>&1 >/dev/null || true
-
-if test -d /var/opt/$APP_NAME/run/.extract; then
-	rm -fr /var/opt/$APP_NAME/run/.extract
-fi
