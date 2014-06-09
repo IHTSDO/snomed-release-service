@@ -1,22 +1,16 @@
 package org.ihtsdo.buildcloud.controller;
 
-import org.hibernate.SessionFactory;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-//import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 
-public class BuildControllerTest extends ControllerTest{
+public class BuildControllerTest extends ControllerIntegrationTest {
 	
-	@Autowired
-	private SessionFactory sessionFactory;
-
 	@Test
 	public void returns_builds() throws Exception {
 		

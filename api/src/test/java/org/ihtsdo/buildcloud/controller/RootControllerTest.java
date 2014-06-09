@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.controller;
 
-
 import org.junit.Test;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Transactional
-public class RootControllerTest extends ControllerTest {
+public class RootControllerTest extends ControllerIntegrationTest {
 
 	@Test
 	public void root_returns_centers_and_builds() throws Exception {
