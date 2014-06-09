@@ -33,7 +33,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	private ProductDAO productDAO;
 
 	private static final String FIRST_TIME_RELEASE = "firstTimeRelease";
-	private static final String EFFECTIVE_DATE = "effectiveDate";
+	private static final String EFFECTIVE_TIME = "effectiveTime";
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
@@ -89,12 +89,12 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
 			build.setFirstTimeRelease("true".equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
-		if (newPropertyValues.containsKey(EFFECTIVE_DATE)) {
+		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
-				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_DATE));
-				build.setEffectiveDate(date);
+				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
+				build.setEffectiveTime(date);
 			} catch (ParseException e) {
-				throw new BadRequestException("Invalid " + EFFECTIVE_DATE + " format.", e);
+				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format.", e);
 			}
 		}
 		buildDAO.update(build);
