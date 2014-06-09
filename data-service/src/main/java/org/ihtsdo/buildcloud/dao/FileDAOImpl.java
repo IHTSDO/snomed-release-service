@@ -5,10 +5,12 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
@@ -16,8 +18,10 @@ import org.springframework.stereotype.Repository;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,14 +53,14 @@ public class FileDAOImpl implements FileDAO {
 	}
 	
 	@Override
-	public void putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException {
-		
-		if (calcMD5){
-			//TODO : create the md5 file and upload as a second put request (with .md5 appended to file name)
-		}
+	public void putFile(File file, String targetFilePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+
 		InputStream is = new FileInputStream (file);
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, targetFilePath, is).length(file.length()).useBucketAcl();
-		
+		if (calcMD5){
+			String md5 = FileUtils.calculateMD5(file);
+			putRequest.withMD5(md5);
+		}		
 		s3Client.putObject(putRequest);
 	}
 

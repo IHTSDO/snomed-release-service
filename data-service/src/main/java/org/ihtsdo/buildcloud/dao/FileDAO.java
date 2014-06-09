@@ -2,12 +2,12 @@ package org.ihtsdo.buildcloud.dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.apache.commons.codec.DecoderException;
 
 public interface FileDAO {
 
@@ -15,7 +15,7 @@ public interface FileDAO {
 
 	void putFile(InputStream fileStream, String targetFilePath);
 
-	void putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException;
+	void putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException, NoSuchAlgorithmException, IOException, DecoderException;
 
 	InputStream getFileStream(String pathPath);
 
