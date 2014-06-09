@@ -5,6 +5,10 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import java.io.InputStream;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+
 /**
  * Wraps the JetS3t ObjectMetadata enabling builder pattern.
  */
@@ -19,6 +23,15 @@ public class S3PutRequestBuilder extends PutObjectRequest {
 
 	public S3PutRequestBuilder length(long contentLength) {
 		this.getMetadata().setContentLength(contentLength);
+		return this;
+	}
+	
+	public S3PutRequestBuilder withMD5(String md5HexString) throws DecoderException {
+		//Amazon expects the md5 value to be base64 encoded
+		byte[] decodedHex = Hex.decodeHex(md5HexString.toCharArray());
+		String md5Base64 = Base64.encodeBase64(decodedHex).toString();
+		//TODO - Amazon isn't happy with my MD5 calculation here
+		//this.getMetadata().setContentMD5(md5Base64);
 		return this;
 	}
 

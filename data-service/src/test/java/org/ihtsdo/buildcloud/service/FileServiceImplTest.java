@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.codec.DecoderException;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -23,6 +24,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -64,11 +66,11 @@ public class FileServiceImplTest {
 	}
 	
 	@Test
-	public void testPutOutputFile() throws FileNotFoundException, IOException {
+	public void testPutOutputFile() throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException {
 		
 		Package pkg = execution.getBuild().getPackages().get(0);
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
-		boolean calcMD5 = false;
+		boolean calcMD5 = true;
 		fileService.putOutputFile(execution, pkg, new File(testFile), calcMD5);
 		
 		//Now lets see if we can get that file back out again

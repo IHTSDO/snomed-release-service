@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.FileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -99,7 +101,7 @@ public class FileServiceImpl implements FileService {
 	
 	@Override
 	public
-	void putOutputFile(Execution execution, Package aPackage, File file, boolean calcMD5) throws FileNotFoundException {
+	void putOutputFile(Execution execution, Package aPackage, File file, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 		String pathPath = s3PathHelper.getPackageOutputFilePath(aPackage, file.getName());
 		fileDAO.putFile(file, pathPath, calcMD5);
 	}

@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
@@ -10,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public interface FileService {
@@ -24,7 +26,7 @@ public interface FileService {
 
 	void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
 
-	void putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws FileNotFoundException, IOException;
+	void putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException;
 
 	InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
 

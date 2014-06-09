@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -95,10 +97,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 		try {
 			Zipper zipper = new Zipper(pkg, fileService);
 			File zip = zipper.createZipFile();
-			fileService.putOutputFile(execution, pkg, zip, true);  //calculate MD5 hash on upload
+			fileService.putOutputFile(execution, pkg, zip, true);
 		} catch (JAXBException jbex) {
 			//TODO Telemetry about failures, but will not prevent process from continuing
-			LOGGER.error("Failure in Zip creation.",jbex);
+			LOGGER.error("Failure in Zip creation caused by JAXB.",jbex);
+		} catch (NoSuchAlgorithmException nsaEx) {
+			LOGGER.error("Failure in Zip creation caused by hashing algorithm.",nsaEx);
+		} catch (Exception e) {
+			LOGGER.error("Failure in Zip creation caused by ", e);
 		}
 		
 		return execution;
