@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -10,7 +11,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.service.FileServiceImpl;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
@@ -27,6 +31,8 @@ import java.util.List;
 
 @Repository
 public class FileDAOImpl implements FileDAO {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileDAOImpl.class);
 
 	@Autowired
 	private S3Client s3Client;
@@ -53,7 +59,7 @@ public class FileDAOImpl implements FileDAO {
 	}
 	
 	@Override
-	public void putFile(File file, String targetFilePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+	public String putFile(File file, String targetFilePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 
 		InputStream is = new FileInputStream (file);
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(executionS3BucketName, targetFilePath, is).length(file.length()).useBucketAcl();
@@ -61,7 +67,10 @@ public class FileDAOImpl implements FileDAO {
 			String md5 = FileUtils.calculateMD5(file);
 			putRequest.withMD5(md5);
 		}		
-		s3Client.putObject(putRequest);
+		PutObjectResult putResult = s3Client.putObject(putRequest);
+		String md5Received = (putResult == null ? null : putResult.getContentMd5());
+		LOGGER.debug ("S3Client put request returned MD5: " + md5Received);
+		return md5Received;
 	}
 
 	@Override

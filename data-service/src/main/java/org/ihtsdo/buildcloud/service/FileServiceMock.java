@@ -141,12 +141,13 @@ public class FileServiceMock implements FileService {
 	}
 
 	@Override
-	public void putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws IOException {
+	public String putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws IOException {
 
 		String destination = localCacheDirectory + File.separator + EntityHelper.formatAsBusinessKey(pkg.getName()) + File.separator + file.getName();
 		File destFile = new File (destination);
 		localFileCache.put(file.getName(), destFile);
 		FileUtils.copyFile(file, destFile);
+		return null;
 	}
 
 }
