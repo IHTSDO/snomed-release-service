@@ -26,7 +26,7 @@ public interface FileService {
 
 	void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
 
-	void putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException;
+	String putOutputFile(Execution execution, Package pkg, File file, boolean calcMD5) throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException;
 
 	InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
 

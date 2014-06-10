@@ -15,7 +15,7 @@ public interface FileDAO {
 
 	void putFile(InputStream fileStream, String targetFilePath);
 
-	void putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException, NoSuchAlgorithmException, IOException, DecoderException;
+	String putFile(File file, String targetFilePath, boolean calcMD5) throws FileNotFoundException, NoSuchAlgorithmException, IOException, DecoderException;
 
 	InputStream getFileStream(String pathPath);
 
