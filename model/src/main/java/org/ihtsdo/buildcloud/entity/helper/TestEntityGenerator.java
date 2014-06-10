@@ -16,7 +16,7 @@ public class TestEntityGenerator {
 													};
 
 	public static final String [][] productNames = {{"SNOMED CT Release",
-													 "SNOMED Special Refset Preview",
+													 "NLM Example Refset",
 													 "Medical Devices Technical Preview",
 													 "GP/FP Refset Technical Preview",
 													 "LOINC Expressions Technical Preview",
