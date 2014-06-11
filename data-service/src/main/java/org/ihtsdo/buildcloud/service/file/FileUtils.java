@@ -149,7 +149,7 @@ public class FileUtils {
 	 * @throws IOException 
 	 * @throws NoSuchAlgorithmException 
 	 */
-	/*public static File createMD5File (File hashMe) throws NoSuchAlgorithmException, IOException {
+	public static File createMD5File (File hashMe) throws NoSuchAlgorithmException, IOException {
 		String md5String = calculateMD5(hashMe);
 		String resultFilePath = hashMe.getAbsolutePath() + ".md5";
 
@@ -169,6 +169,6 @@ public class FileUtils {
 		fop.close();
 
 		return resultFile;
-	}*/
+	}
 
 }
