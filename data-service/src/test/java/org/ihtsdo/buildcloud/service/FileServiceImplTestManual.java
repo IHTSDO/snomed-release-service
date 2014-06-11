@@ -38,11 +38,11 @@ import java.util.GregorianCalendar;
  * @author Peter
  *
  */
-public class FileServiceImplManualTest extends FileServiceImplTest {
+public class FileServiceImplTestManual extends FileServiceImplTest {
 	
 	@Test
 	public void testPutOutputFile() throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException {
-		
+		Assert.fail(); // Enable this line to ensure automatic checks aren't picking up this Manual test class
 		Package pkg = execution.getBuild().getPackages().get(0);
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
 		boolean calcMD5 = true;
