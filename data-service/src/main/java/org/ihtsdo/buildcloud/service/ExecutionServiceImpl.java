@@ -6,13 +6,13 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,23 +47,28 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException {
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
-		Date creationDate = new Date();
+		if (build.getEffectiveTime() != null) {
 
-		Execution execution = new Execution(creationDate, build);
+			Date creationDate = new Date();
 
-		// Copy all files from Build input directory to Execution input directory
-		fileService.copyAll(build, execution);
+			Execution execution = new Execution(creationDate, build);
 
-		// Create Build config export
-		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
+			// Copy all files from Build input directory to Execution input directory
+			fileService.copyAll(build, execution);
 
-		// Persist export
-		dao.save(execution, jsonConfig);
+			// Create Build config export
+			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
 
-		return execution;
+			// Persist export
+			dao.save(execution, jsonConfig);
+
+			return execution;
+		} else {
+			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
+		}
 	}
 
 	@Override
@@ -91,22 +95,22 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		//Easiest thing for iteration 1 is to process just the first package for a build
 		Package pkg = execution.getBuild().getPackages().get(0);
-		
+
 		transformFiles(execution);
-		
+
 		try {
 			Zipper zipper = new Zipper(pkg, fileService);
 			File zip = zipper.createZipFile();
 			fileService.putOutputFile(execution, pkg, zip, true);
 		} catch (JAXBException jbex) {
 			//TODO Telemetry about failures, but will not prevent process from continuing
-			LOGGER.error("Failure in Zip creation caused by JAXB.",jbex);
+			LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
 		} catch (NoSuchAlgorithmException nsaEx) {
-			LOGGER.error("Failure in Zip creation caused by hashing algorithm.",nsaEx);
+			LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
 		} catch (Exception e) {
 			LOGGER.error("Failure in Zip creation caused by ", e);
 		}
-		
+
 		return execution;
 	}
 
