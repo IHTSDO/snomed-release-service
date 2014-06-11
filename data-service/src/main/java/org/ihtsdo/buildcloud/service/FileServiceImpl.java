@@ -102,8 +102,8 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public
 	String putOutputFile(Execution execution, Package aPackage, File file, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
-		String pathPath = s3PathHelper.getPackageOutputFilePath(aPackage, file.getName());
-		return fileDAO.putFile(file, pathPath, calcMD5);
+		String outputFilePath = s3PathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), file.getName());
+		return fileDAO.putFile(file, outputFilePath, calcMD5);
 	}
 
 	@Override

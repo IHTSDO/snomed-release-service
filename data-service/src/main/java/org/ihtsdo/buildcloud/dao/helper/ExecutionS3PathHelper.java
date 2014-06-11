@@ -33,9 +33,8 @@ public class ExecutionS3PathHelper {
 		return getPackageFilesPathAsStringBuffer(aPackage, INPUT_FILES).append(filename).toString();
 	}
 	
-	public String getPackageOutputFilePath(Package aPackage, String filename) {
-		return getPackageFilesPathAsStringBuffer(aPackage, OUTPUT_FILES).append(filename).toString();
-	}
+	//Note that getPackageOutputFilePath(Package aPackage, String filename) should not exist because all output 
+	//files are specific to the execution that creates them.  See getExecutionOutputFilePath instead.
 
 	public StringBuffer getPackageManifestDirectoryPathPath(Package aPackage) {
 		StringBuffer buildPath = getBuildPath(aPackage.getBuild());
