@@ -70,6 +70,16 @@ public class FileDAOImpl implements FileDAO {
 		PutObjectResult putResult = s3Client.putObject(putRequest);
 		String md5Received = (putResult == null ? null : putResult.getContentMd5());
 		LOGGER.debug ("S3Client put request returned MD5: " + md5Received);
+		
+		if (calcMD5){
+			//Also upload the hex encoded (ie normal) md5 digest in a file
+			String md5TargetPath = targetFilePath + ".md5";
+			File md5File = FileUtils.createMD5File(file);
+			InputStream isMD5 = new FileInputStream (md5File);
+			S3PutRequestBuilder md5PutRequest = s3ClientHelper.newPutRequest(executionS3BucketName, md5TargetPath, isMD5).length(md5File.length()).useBucketAcl();
+			s3Client.putObject(md5PutRequest);
+		}
+		
 		return md5Received;
 	}
 
