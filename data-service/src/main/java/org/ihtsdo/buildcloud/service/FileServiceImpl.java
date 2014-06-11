@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
-import org.ihtsdo.buildcloud.dao.FileDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.FileHelper;
+import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -12,6 +14,7 @@ import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,21 +29,22 @@ import java.util.concurrent.Executors;
 @Transactional
 public class FileServiceImpl implements FileService {
 
-	@Autowired
-	private FileDAO fileDAO;
+	private FileHelper fileHelper;
 
 	@Autowired
 	private PackageDAO packageDAO;
 
 	@Autowired
 	private ExecutionS3PathHelper s3PathHelper;
-
+	
 	private final ExecutorService executorService;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileServiceImpl.class);
 
-	public FileServiceImpl() {
+	@Autowired
+	public FileServiceImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		executorService = Executors.newCachedThreadPool();
+		fileHelper = new FileHelper (executionBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -50,21 +54,21 @@ public class FileServiceImpl implements FileService {
 
 		// Fist delete any existing manifest files
 		String directoryPath = manifestDirectoryPathSB.toString();
-		List<String> files = fileDAO.listFiles(directoryPath);
+		List<String> files = fileHelper.listFiles(directoryPath);
 		for (String file : files) {
-			fileDAO.deleteFile(directoryPath + file);
+			fileHelper.deleteFile(directoryPath + file);
 		}
 
 		// Put new manifest file
 		String filePath = manifestDirectoryPathSB.append(originalFilename).toString();
-		fileDAO.putFile(inputStream, fileSize, filePath);
+		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
 	@Override
 	public String getManifestFileName(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPathPath(aPackage);
-		List<String> files = fileDAO.listFiles(manifestDirectoryPathSB.toString());
+		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
 		if (!files.isEmpty()) {
 			return files.iterator().next();
 		} else {
@@ -83,10 +87,10 @@ public class FileServiceImpl implements FileService {
 		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPathPath(pkg);
 
 		String directoryPath = manifestDirectoryPathSB.toString();
-		List<String> files = fileDAO.listFiles(directoryPath);
+		List<String> files = fileHelper.listFiles(directoryPath);
 		if (!files.isEmpty()) {
 			String manifestFilePath = directoryPath + files.iterator().next();
-			return fileDAO.getFileStream(manifestFilePath);
+			return fileHelper.getFileStream(manifestFilePath);
 		} else {
 			return null;
 		}
@@ -96,14 +100,14 @@ public class FileServiceImpl implements FileService {
 	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
-		fileDAO.putFile(inputStream, fileSize, pathPath);
+		fileHelper.putFile(inputStream, fileSize, pathPath);
 	}
 	
 	@Override
 	public
 	String putOutputFile(Execution execution, Package aPackage, File file, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 		String outputFilePath = s3PathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), file.getName());
-		return fileDAO.putFile(file, outputFilePath, calcMD5);
+		return fileHelper.putFile(file, outputFilePath, calcMD5);
 	}
 
 	@Override
@@ -115,7 +119,7 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public InputStream getFileInputStream(Package pkg, String filename) {
 		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
-		return fileDAO.getFileStream(filePath);
+		return fileHelper.getFileStream(filePath);
 	}
 	
 
@@ -127,14 +131,14 @@ public class FileServiceImpl implements FileService {
 
 	private List<String> listFilePaths(Package aPackage) {
 		String directoryPath = s3PathHelper.getPackageInputFilesPath(aPackage);
-		return fileDAO.listFiles(directoryPath);
+		return fileHelper.listFiles(directoryPath);
 	}
 
 	@Override
 	public void deleteFile(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		String filePath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
-		fileDAO.deleteFile(filePath);
+		fileHelper.deleteFile(filePath);
 	}
 
 	@Override
@@ -144,7 +148,7 @@ public class FileServiceImpl implements FileService {
 			String executionPackageInputFilesPath = s3PathHelper.getExecutionInputFilesPath(execution, buildPackage).toString();
 			List<String> filePaths = listFilePaths(buildPackage);
 			for (String filePath : filePaths) {
-				fileDAO.copyFile(buildPackageInputFilesPath + filePath, executionPackageInputFilesPath + filePath);
+				fileHelper.copyFile(buildPackageInputFilesPath + filePath, executionPackageInputFilesPath + filePath);
 			}
 		}
 	}
@@ -152,13 +156,13 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public List<String> listInputFilePaths(Execution execution, String packageId) {
 		String executionInputFilesPath = s3PathHelper.getExecutionInputFilesPath(execution, packageId).toString();
-		return fileDAO.listFiles(executionInputFilesPath);
+		return fileHelper.listFiles(executionInputFilesPath);
 	}
 
 	@Override
 	public InputStream getExecutionInputFileStream(Execution execution, String packageBusinessKey, String inputFile) {
 		String path = s3PathHelper.getExecutionInputFilePath(execution, packageBusinessKey, inputFile);
-		return fileDAO.getFileStream(path);
+		return fileHelper.getFileStream(path);
 	}
 
 	@Override
@@ -171,19 +175,19 @@ public class FileServiceImpl implements FileService {
 	public void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath) {
 		String executionInputFilePath = s3PathHelper.getExecutionInputFilePath(execution, packageBusinessKey, relativeFilePath);
 		String executionOutputFilePath = s3PathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		fileDAO.copyFile(executionInputFilePath, executionOutputFilePath);
+		fileHelper.copyFile(executionInputFilePath, executionOutputFilePath);
 	}
 
 	@Override
 	public OutputStream getExecutionOutputFileOutputStream(final String executionOutputFilePath) throws IOException {
-		// Stream file to fileDAO as it's written to the OutputStream
+		// Stream file to fileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
 
 		executorService.submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
-				fileDAO.putFile(pipedInputStream, executionOutputFilePath);
+				fileHelper.putFile(pipedInputStream, executionOutputFilePath);
 				LOGGER.debug("Execution outputfile stream ended: {}", executionOutputFilePath);
 				return executionOutputFilePath;
 			}
@@ -191,5 +195,4 @@ public class FileServiceImpl implements FileService {
 
 		return pipedOutputStream;
 	}
-
 }

@@ -33,12 +33,12 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.PackageDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.FileDAOImpl">
-		<property name="executionS3BucketName" ref="executionS3BucketName"/>
-	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
+		<property name="executionBucketName" ref="executionBucketName"/>
+		<property name="mavenBucketName" ref="mavenBucketName"/>
+	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
 
@@ -103,11 +103,11 @@
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
 
-	<bean class="java.lang.String" id="MavenS3BucketName">
+	<bean class="java.lang.String" id="mavenBucketName">
 		<constructor-arg value="ire.maven.release.ihtsdo" />
 	</bean>
 
-	<bean class="java.lang.String" id="executionS3BucketName">
+	<bean class="java.lang.String" id="executionBucketName">
 		<constructor-arg value="ire.execution.release.ihtsdo" />
 	</bean>
 

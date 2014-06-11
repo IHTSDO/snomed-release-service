@@ -1,15 +1,19 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.FileHelper;
+import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
@@ -24,14 +28,18 @@ import java.util.zip.ZipOutputStream;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
-	@Autowired
 	private S3Client s3Client;
 
 	@Autowired
 	private ExecutionS3PathHelper pathHelper;
 
 	@Autowired
-	private String executionS3BucketName;
+	private String executionBucketName;
+	
+	@Autowired
+	private String mavenBucketName;
+
+	private FileHelper executionFileHelper;
 
 	@Autowired
 	private JmsTemplate jmsTemplate;
@@ -42,8 +50,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
 
-	public ExecutionDAOImpl() {
+	@Autowired
+	public ExecutionDAOImpl(String mavenBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		objectMapper = new ObjectMapper();
+		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
+		this.s3Client = s3Client;
 	}
 
 	@Override
@@ -72,7 +83,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public String loadConfiguration(Execution execution) throws IOException {
 		String configFilePath = pathHelper.getConfigFilePath(execution);
-		S3Object s3Object = s3Client.getObject(executionS3BucketName, configFilePath);
+		S3Object s3Object = s3Client.getObject(executionBucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
 			return FileCopyUtils.copyToString(new InputStreamReader(objectContent)); // Closes stream
@@ -93,13 +104,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public void saveBuildScripts(File sourceDirectory, Execution execution) {
-		saveFiles(sourceDirectory, pathHelper.getBuildScriptsPath(execution));
+		executionFileHelper.putFiles(sourceDirectory, pathHelper.getBuildScriptsPath(execution));
 	}
 
 	@Override
 	public void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException {
 		StringBuffer buildScriptsPath = pathHelper.getBuildScriptsPath(execution);
-		streamS3FilesAsZip(buildScriptsPath.toString(), outputStream);
+		executionFileHelper.streamS3FilesAsZip(buildScriptsPath.toString(), outputStream);
 	}
 
 	@Override
@@ -115,7 +126,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void saveOutputFile(Execution execution, String filePath, InputStream inputStream, Long size) {
 		LOGGER.debug("Saving execution output file path:{}, size:{}", filePath, size);
 		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
-		putFile(outputFilePath, inputStream, size);
+		executionFileHelper.putFile(inputStream, size, outputFilePath);
 	}
 
 	@Override
@@ -127,38 +138,22 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		putFile(newStatusFilePath, BLANK);
 		if (origStatus != null) {
 			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
-			s3Client.deleteObject(executionS3BucketName, origStatusFilePath);
+			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
 
 	@Override
 	public InputStream getOutputFile(Execution execution, String filePath) {
 		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
-		try {
-			S3Object object = s3Client.getObject(executionS3BucketName, outputFilePath);
-			return object.getObjectContent();
-		} catch (AmazonS3Exception e) {
-			return returnNullOrThrow(e);
-		}
+		return executionFileHelper.getFileStream(outputFilePath);
 	}
 
-	private void saveFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
-		File[] files = sourceDirectory.listFiles();
-		for (File file : files) {
-			StringBuffer filePath = new StringBuffer(targetDirectoryPath).append(file.getName());
-			if (file.isFile()) {
-				s3Client.putObject(executionS3BucketName, filePath.toString(), file);
-			} else if (file.isDirectory()) {
-				filePath.append(pathHelper.SEPARATOR);
-				saveFiles(file, filePath);
-			}
-		}
-	}
+
 
 	private ArrayList<Execution> findExecutions(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
-		LOGGER.info("List s3 objects {}, {}", executionS3BucketName, buildDirectoryPath);
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionS3BucketName, buildDirectoryPath, null, null, 1000);
+		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 1000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 		List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
 
@@ -186,51 +181,34 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		updateStatus(execution, Execution.Status.BEFORE_TRIGGER);
 	}
 
-	private PutObjectResult putFile(String filePath, InputStream stream, Long size) {
+	/*private PutObjectResult putFile(String filePath, InputStream stream, Long size) {
 		ObjectMetadata objectMetadata = new ObjectMetadata();
 		objectMetadata.setContentLength(size);
-		return s3Client.putObject(executionS3BucketName, filePath, stream, objectMetadata);
-	}
+		return s3Client.putObject(executionBucketName, filePath, stream, objectMetadata);
+	}*/
 
 	private PutObjectResult putFile(String filePath, String contents) {
-		return s3Client.putObject(executionS3BucketName, filePath,
+		return s3Client.putObject(executionBucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
 	}
 
-	private void streamS3FilesAsZip(String buildScriptsPath, OutputStream outputStream) throws IOException {
-		LOGGER.debug("Serving zip of files in {}", buildScriptsPath);
-		ObjectListing objectListing = s3Client.listObjects(executionS3BucketName, buildScriptsPath);
-		int buildScriptsPathLength = buildScriptsPath.length();
-
-		ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
-		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-			String key = summary.getKey();
-			String relativePath = key.substring(buildScriptsPathLength);
-			LOGGER.debug("Zip entry. S3Key {}, Entry path {}", key, relativePath);
-			zipOutputStream.putNextEntry(new ZipEntry(relativePath));
-			S3Object object = s3Client.getObject(executionS3BucketName, key);
-			try (InputStream objectContent = object.getObjectContent()) {
-				StreamUtils.copy(objectContent, zipOutputStream);
-			}
-		}
-		zipOutputStream.close();
+	@Required
+	public void setExecutionBucketName(String executionBucketName) {
+		this.executionBucketName = executionBucketName;
 	}
 
-	private InputStream returnNullOrThrow(AmazonS3Exception e) {
-		if (e.getStatusCode() == 404) {
-			return null;
-		} else {
-			throw e;
-		}
+	@Required
+	public void setMavenBucketName(String mavenBucketName) {
+		this.mavenBucketName = mavenBucketName;
 	}
 
 	// Just for testing
-	public void setS3Client(S3Client s3Client) {
+	void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 	}
 
 	// Just for testing
-	public void setJmsTemplate(JmsTemplate jmsTemplate) {
+	void setJmsTemplate(JmsTemplate jmsTemplate) {
 		this.jmsTemplate = jmsTemplate;
 	}
 }
