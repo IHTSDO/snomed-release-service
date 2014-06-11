@@ -93,27 +93,6 @@ public class ExecutionController {
 		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedUser, outputStream);
 	}
 
-	@RequestMapping(value = "/{executionId}/output/**", method = RequestMethod.POST, headers = "content-type!=multipart/form-data")
-	@ResponseBody
-	public void uploadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-								 HttpServletRequest request,
-								 HttpServletResponse response) throws IOException {
-
-		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-		String filePath = path.substring(path.indexOf("/output/") + 8);
-
-		User authenticatedUser = SecurityHelper.getSubject();
-		Long contentLength = asLong(request.getHeader("content-length"));
-		if (contentLength != null) {
-			executionService.saveOutputFile(buildCompositeKey, executionId, filePath,
-					request.getInputStream(), contentLength, authenticatedUser);
-			response.setStatus(HttpServletResponse.SC_CREATED);
-		} else {
-			// Ask the client for content length so we may stream to permanent storage.
-			response.setStatus(HttpServletResponse.SC_LENGTH_REQUIRED);
-		}
-	}
-
 	@RequestMapping(value = "/{executionId}/output/**")
 	@ResponseBody
 	public void downloadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
