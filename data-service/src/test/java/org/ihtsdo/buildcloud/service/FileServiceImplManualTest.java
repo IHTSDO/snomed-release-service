@@ -31,41 +31,31 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
-@Transactional
-public class FileServiceImplTest {
+/**
+ * This test will call the actual AWS S3 Service, so we make it manual to ensure
+ * our build system will not have a dependency on an external system.  However we
+ * can still manually check that Amazon is happy with our MD5 Encoding!
+ * @author Peter
+ *
+ */
+public class FileServiceImplManualTest extends FileServiceImplTest {
 	
-	public static final String TEST_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
-
-	@Autowired
-	protected FileService fileService;
-	
-	@Autowired
-	protected BuildDAO buildDAO;
-	
-	protected Build build;
-	protected Execution execution;
-	
-	private MocksControl mocksControl;
-	private S3Client mockS3Client;
-	
-	@Before
-	public void setup() {
-		mocksControl = new MocksControl(MockType.DEFAULT);
-		mockS3Client = mocksControl.createMock(S3Client.class);
-		//executionDAO.setS3Client(mockS3Client);
-
-		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
-		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
-		execution = new Execution(creationTime, build);
-	}
-
 	@Test
-	public void testExecutionOutputFileOutputStream() throws IOException {
-		OutputStream outputStream = fileService.getExecutionOutputFileOutputStream("out.txt");
-		Assert.assertNotNull(outputStream);
-		outputStream.close();
+	public void testPutOutputFile() throws FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException {
+		
+		Package pkg = execution.getBuild().getPackages().get(0);
+		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
+		boolean calcMD5 = true;
+		String md5Received = fileService.putOutputFile(execution, pkg, new File(testFile), calcMD5);
+		
+		//Amazon are expecting the md5 to be g8tgi4y8+ABULBMAbgodiA==
+		byte[] md5BytesExpected = Base64.decodeBase64("g8tgi4y8+ABULBMAbgodiA==");
+		byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
+		Assert.assertArrayEquals(md5BytesExpected, md5BytesReceived);
+		
+		//Now lets see if we can get that file back out again
+		OutputStream os = fileService.getExecutionOutputFileOutputStream(execution, pkg.getBusinessKey(), TEST_FILE_NAME);
+		Assert.assertNotNull(os);
 	}
-	
+
 }
