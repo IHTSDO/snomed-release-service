@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
 import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
@@ -97,6 +98,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Package pkg = execution.getBuild().getPackages().get(0);
 
 		transformFiles(execution);
+		
+		//Convert Delta files to Full, Snapshot and delta release files
+				ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, fileService );
+				generator.generateReleaseFiles();
 
 		try {
 			Zipper zipper = new Zipper(pkg, fileService);

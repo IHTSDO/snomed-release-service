@@ -53,7 +53,7 @@ public class FileServiceImplTest {
 
 	@Test
 	public void testExecutionOutputFileOutputStream() throws IOException {
-		OutputStream outputStream = fileService.getExecutionOutputFileOutputStream("out.txt");
+		OutputStream outputStream = fileService.getExecutionFileOutputStream("out.txt");
 		Assert.assertNotNull(outputStream);
 		outputStream.close();
 	}

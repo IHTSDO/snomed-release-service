@@ -14,6 +14,7 @@ public class ExecutionS3PathHelper {
 	private static final String INPUT_FILES = "input-files";
 	private static final String BUILD_FILES = "build-files";
 	private static final String MANIFEST = "manifest";
+	private static final String TRANSFORMED_FILES ="transformed-files";
 
 	public StringBuffer getBuildPath(Build build) {
 		String releaseCenterBusinessKey = build.getProduct().getExtension().getReleaseCenter().getBusinessKey();
@@ -102,5 +103,13 @@ public class ExecutionS3PathHelper {
 
 	private String getFilePath(Execution execution, String relativePath) {
 		return getExecutionPath(execution).append(relativePath).toString();
+	}
+	public StringBuffer getExecutionTransformedFilesPath(Execution execution, String packageBusinessKey) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(TRANSFORMED_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+	}
+
+	public String getTransformedFilePath(Execution execution,
+			String packageBusinessKey, String relativeFilePath) {
+		return getExecutionTransformedFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
 	}
 }
