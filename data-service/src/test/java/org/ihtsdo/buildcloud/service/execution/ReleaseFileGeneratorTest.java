@@ -33,7 +33,7 @@ public class ReleaseFileGeneratorTest {
 	protected static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 	@Mocked Build build;
 	@Test
-	public void testGenerateReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws IOException
+	public void testGenerateReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
 	{
 		final List<Package> packages = createPackages();
 		final List<String> fileNames = mockTransformedFileNames();
@@ -112,7 +112,7 @@ public class ReleaseFileGeneratorTest {
 	@Test
 	@Ignore
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution, 
-			@Injectable final ExecutionDAO dao) throws IOException
+			@Injectable final ExecutionDAO dao) throws Exception
 			{
 		final List<Package> packages = createPackages();
 		new NonStrictExpectations() {{
