@@ -157,7 +157,7 @@ public class ExecutionDAOImplTest {
 	
 	@Test
 	public void testExecutionOutputFileOutputStream() throws IOException {
-		OutputStream outputStream = executionDAO.getExecutionFileAsOutputStream("out.txt");
+		OutputStream outputStream = executionDAO.getFileAsOutputStream("out.txt");
 		Assert.assertNotNull(outputStream);
 		outputStream.close();
 	}

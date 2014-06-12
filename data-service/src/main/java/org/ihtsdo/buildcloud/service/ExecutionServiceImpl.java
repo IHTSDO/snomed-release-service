@@ -49,7 +49,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			Date creationDate = new Date();
 
-
 			Execution execution = new Execution(creationDate, build);
 
 			// Copy all files from Build input and manifest directory to Execution input and manifest directory
@@ -89,26 +88,29 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		
-		//Easiest thing for iteration 1 is to process just the first package for a build
-		Package pkg = execution.getBuild().getPackages().get(0);
-
-		transformFiles(execution);
-		
-		//Convert Delta files to Full, Snapshot and delta release files
-				ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, dao );
-				generator.generateReleaseFiles();
-
-		try {
-			Zipper zipper = new Zipper(execution, pkg, dao);
-			File zip = zipper.createZipFile();
-			dao.putOutputFile(execution, pkg, zip, "", true);
-		} catch (JAXBException jbex) {
-			//TODO Telemetry about failures, but will not prevent process from continuing
-			LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
-		} catch (NoSuchAlgorithmException nsaEx) {
-			LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
-		} catch (Exception e) {
-			LOGGER.error("Failure in Zip creation caused by ", e);
+		//Run transformation on each of our packages in turn.
+		//TODO Multithreading opportunity here!
+		List<Package> packages = execution.getBuild().getPackages();
+		for (Package pkg: packages) {
+			
+			transformFiles(execution);
+			
+			//Convert Delta files to Full, Snapshot and delta release files
+			ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, dao );
+			generator.generateReleaseFiles();
+	
+			try {
+				Zipper zipper = new Zipper(execution, pkg, dao);
+				File zip = zipper.createZipFile();
+				dao.putOutputFile(execution, pkg, zip, "", true);
+			} catch (JAXBException jbex) {
+				//TODO Telemetry about failures, but will not prevent process from continuing
+				LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
+			} catch (NoSuchAlgorithmException nsaEx) {
+				LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
+			} catch (Exception e)  {
+				LOGGER.error("Failure in Zip creation caused by ", e);
+			}
 		}
 
 		return execution;
@@ -143,7 +145,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 				// Transform all txt files. We are assuming they are all RefSet files for this Epic.
 				if (relativeFilePath.endsWith(".txt")) {
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionTransformedOutputStream = dao.getExecutionTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					OutputStream executionTransformedOutputStream = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
 				} else {
 					dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
