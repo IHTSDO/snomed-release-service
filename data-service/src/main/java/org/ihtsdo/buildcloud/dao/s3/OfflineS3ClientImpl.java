@@ -37,7 +37,7 @@ public class OfflineS3ClientImpl implements S3Client {
 		String searchLocation = bucketName + File.separator + getPlatformDependantPath(prefix);
 		File searchStartDir;
 		
-		try{
+		try {
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
 			LOGGER.warn("Failed to find files at {}", searchLocation, e);
@@ -75,7 +75,11 @@ public class OfflineS3ClientImpl implements S3Client {
 	@Override
 	public S3Object getObject(String bucketName, String key) {
 		File file = getFile(bucketName, key, false); //Don't create bucket
-		return new OfflineS3Object(bucketName, key, file);
+		if (file.isFile()) {
+			return new OfflineS3Object(bucketName, key, file);
+		} else {
+			throw new AmazonClientException("Object does not exist.");
+		}
 	}
 
 	@Override
