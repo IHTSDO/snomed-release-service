@@ -22,10 +22,13 @@ public class ReleaseFileGenerator {
 	public static final String LINE_ENDING = "\r\n";
 	private ExecutionDAO dao;
 	private Execution execution;
+	
+	private Package pkg;
 
-	public ReleaseFileGenerator(Execution execution, ExecutionDAO dao) {
+	public ReleaseFileGenerator(Execution execution, Package pkg, ExecutionDAO dao) {
 		this.execution = execution;
 		this.dao = dao;
+		this.pkg = pkg;
 	}
 
 	/**
@@ -66,57 +69,53 @@ public class ReleaseFileGenerator {
 	 */
 	private void convertDeltaFilesTo(String fileType) {
 
-		for (Package pk : execution.getBuild().getPackages()) {
-			String businessKey = pk.getBusinessKey();
-			for (String fileName : dao.listTransformedFilePaths(
-					execution, businessKey)) {
-				if (fileName.endsWith(TXT_FILE_EXTENSION)
-						&& fileName.contains(DELTA)) {
-					dao.copyTransformedFileToOutput(execution,
-							businessKey, fileName,
-							fileName.replace(DELTA, fileType));
-				}
+		String businessKey = pkg.getBusinessKey();
+		for (String fileName : dao.listTransformedFilePaths(
+				execution, businessKey)) {
+			if (fileName.endsWith(TXT_FILE_EXTENSION)
+					&& fileName.contains(DELTA)) {
+				dao.copyTransformedFileToOutput(execution,
+						businessKey, fileName,
+						fileName.replace(DELTA, fileType));
 			}
 		}
 	}
 
 	private void generateDeltaFiles(boolean isFirstRelease) throws IOException {
 
-		for (Package pk : execution.getBuild().getPackages()) {
-			String businessKey = pk.getBusinessKey();
-			for (String fileName : dao.listTransformedFilePaths(
-					execution, businessKey)) {
-				if (fileName.endsWith(TXT_FILE_EXTENSION)
-						&& fileName.contains(DELTA)) {
-					if (isFirstRelease) {
-						// remove delta file contents and only keep the header
-						// line
-						InputStream inputStream = dao
-								.getTransformedFileAsInputStream(execution,
-										businessKey, fileName);
-						OutputStream outputStream = dao
-								.getOutputFileOutputStream(execution,
-										businessKey, fileName);
-						try (BufferedReader reader = new BufferedReader(
-								new InputStreamReader(inputStream, UTF_8));
-								BufferedWriter writer = new BufferedWriter(
-										new OutputStreamWriter(outputStream,
-												UTF_8))) {
-							// only needs to read the first line.
-							String line = reader.readLine();
-							if (line == null) {
-								throw new IllegalStateException(
-										"No contents found in file: "
-												+ fileName);
-							}
-							writer.write(line);
-							writer.write(LINE_ENDING);
+		String businessKey = pkg.getBusinessKey();
+		for (String fileName : dao.listTransformedFilePaths(
+				execution, businessKey)) {
+			if (fileName.endsWith(TXT_FILE_EXTENSION)
+					&& fileName.contains(DELTA)) {
+				if (isFirstRelease) {
+					// remove delta file contents and only keep the header
+					// line
+					InputStream inputStream = dao
+							.getTransformedFileAsInputStream(execution,
+									businessKey, fileName);
+					OutputStream outputStream = dao
+							.getOutputFileOutputStream(execution,
+									businessKey, fileName);
+					try (BufferedReader reader = new BufferedReader(
+							new InputStreamReader(inputStream, UTF_8));
+							BufferedWriter writer = new BufferedWriter(
+									new OutputStreamWriter(outputStream,
+											UTF_8))) {
+						// only needs to read the first line.
+						String line = reader.readLine();
+						if (line == null) {
+							throw new IllegalStateException(
+									"No contents found in file: "
+											+ fileName);
 						}
-					} else {
-
-						dao.copyTransformedFileToOutput(execution,
-								businessKey, fileName);
+						writer.write(line);
+						writer.write(LINE_ENDING);
 					}
+				} else {
+
+					dao.copyTransformedFileToOutput(execution,
+							businessKey, fileName);
 				}
 			}
 		}
