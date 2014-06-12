@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:servletContext.xml"})
+@ContextConfiguration(locations={"/testDispatcherServletContext.xml"})
 public class HypermediaGeneratorTest {
 
 	@Autowired
