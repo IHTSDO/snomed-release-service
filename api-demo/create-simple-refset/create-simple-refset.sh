@@ -31,8 +31,19 @@ echo "Token is '${token}'"
 commonParams="-${curlFlags} -u ${token}:"
 echo
 
+echo "Find Manifest"
+manifest=`ls input-files/ | grep ".xml"`
+echo "Found ${manifest}"
 echo "Upload Manifset"
-curl ${commonParams} -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest | grep HTTP
+curl ${commonParams} -F "file=@input-files/${manifest}" $api/builds/${buildId}/packages/${packageId}/manifest | grep HTTP
+echo
+
+echo "Upload Input Files:"
+for file in `ls input-files | grep -v ".xml"`;
+do
+	echo "Upload Input File ${file}"
+	curl ${commonParams} -F "file=@input-files/${file}" $api/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP
+done
 echo
 
 echo "Set effectiveTime"
