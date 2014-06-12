@@ -120,9 +120,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		transformFiles(execution, pkg);
 		
+		pause();
+		
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
 		generator.generateReleaseFiles();
+		
+		pause();
 
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
@@ -204,6 +208,17 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private Build getBuild(String buildCompositeKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return buildDAO.find(buildId, authenticatedUser);
+	}
+	
+	/*
+	 * Have a break, have a kitkat.
+	 */
+	private void pause() {
+		try {
+			Thread.sleep(1000);
+		} catch(InterruptedException ex) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 }
