@@ -35,6 +35,8 @@ public interface ExecutionDAO {
 	void putOutputFile(Execution execution, String filePath, InputStream inputStream, Long size);
 
 	void updateStatus(Execution execution, Execution.Status newStatus);
+	
+	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
 
 	InputStream getOutputFile(Execution execution, String filePath);
 	

@@ -158,6 +158,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
+	
+	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception {
+		if (execution.getStatus() != ensureStatus) {
+			throw new Exception ("Execution "	+ execution.getCreationTime() 
+												+ " is at status: " 
+												+ execution.getStatus().name() 
+												+ " and is expected to be at status:" 
+												+ ensureStatus.name());
+		}
+	}
 
 /*	PGW: I think this method is wrong because an output file should be specific to a package
  *  Is it being used for writing execution logs or config or something? */

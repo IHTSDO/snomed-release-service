@@ -26,7 +26,7 @@ public interface ExecutionService {
 
 	String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException;
 
-	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException;
+	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
 
 	void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException;
 
