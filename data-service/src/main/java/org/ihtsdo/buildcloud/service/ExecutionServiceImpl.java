@@ -149,8 +149,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 				// Transform all txt files. We are assuming they are all RefSet files for this Epic.
 				if (relativeFilePath.endsWith(".txt")) {
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionOutputFileOutputStream = dao.getOutputFileOutputStream(execution, packageBusinessKey, relativeFilePath);
-					transformation.transformFile(executionInputFileInputStream, executionOutputFileOutputStream);
+					OutputStream executionTransformedOutputStream = dao.getExecutionTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
 				} else {
 					dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 				}
