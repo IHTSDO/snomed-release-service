@@ -34,10 +34,9 @@ public class ReleaseFileGenerator {
 
 	/**
 	 * Generate full,snapshot and delta files.
-	 * 
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public void generateReleaseFiles() throws IOException {
+	public void generateReleaseFiles() throws Exception {
 		boolean isFirstRelease = execution.getBuild().isFirstTimeRelease();
 		generateFullFiles(isFirstRelease);
 		generateSnapshotFiles(isFirstRelease);
@@ -45,7 +44,7 @@ public class ReleaseFileGenerator {
 
 	}
 
-	private void generateFullFiles(boolean isFirstRelease) {
+	private void generateFullFiles(boolean isFirstRelease) throws Exception {
 
 		// first release just rename the delta file to full
 
@@ -67,26 +66,42 @@ public class ReleaseFileGenerator {
 	 * 
 	 * @param fileType
 	 *            the type of file to be converted to.
+	 * @throws Exception 
 	 */
-	private void convertDeltaFilesTo(String fileType) {
+	private void convertDeltaFilesTo(String fileType) throws Exception {
 
 		String businessKey = pkg.getBusinessKey();
 		List<String> transformedFilePaths = dao.listTransformedFilePaths(execution, businessKey);
+		
+		if (transformedFilePaths.size() < 1) {
+			throw new Exception ("Failed to find any transformed files to convert to " + fileType);
+		}
+		int filesProcessed = 0;
 		for (String fileName : transformedFilePaths) {
 			if (fileName.endsWith(TXT_FILE_EXTENSION)
 					&& fileName.contains(DELTA)) {
 				dao.copyTransformedFileToOutput(execution,
 						businessKey, fileName,
 						fileName.replace(DELTA, fileType));
+				filesProcessed++;
 			}
+		}
+		if (filesProcessed < 1) {
+			throw new Exception ("Failed to find any files of type *Delta*.txt to convert to " + fileType + ".");
 		}
 	}
 
-	private void generateDeltaFiles(boolean isFirstRelease) throws IOException {
+	private void generateDeltaFiles(boolean isFirstRelease) throws Exception {
 
 		String businessKey = pkg.getBusinessKey();
-		List<String> transformedFiles = dao.listTransformedFilePaths(execution, businessKey);
-		for (String fileName : transformedFiles) {
+		List<String> transformedFilePaths = dao.listTransformedFilePaths(execution, businessKey);
+		
+		if (transformedFilePaths.size() < 1) {
+			throw new Exception ("Failed to find any transformed files to convert to output delta files.");
+		}
+		
+		int filesProcessed = 0;		
+		for (String fileName : transformedFilePaths) {
 			if (fileName.endsWith(TXT_FILE_EXTENSION)
 					&& fileName.contains(DELTA)) {
 				if (isFirstRelease) {
@@ -113,11 +128,16 @@ public class ReleaseFileGenerator {
 					dao.copyTransformedFileToOutput(execution,
 							businessKey, fileName);
 				}
+				filesProcessed++;
+			}
+			
+			if (filesProcessed < 1) {
+				throw new Exception ("Failed to find any files of type *Delta*.txt to convert to output delta files.");
 			}
 		}
 	}
 
-	private void generateSnapshotFiles(boolean isFirstRelease) {
+	private void generateSnapshotFiles(boolean isFirstRelease) throws Exception {
 
 		if (isFirstRelease) {
 			convertDeltaFilesTo(SNAPSHOT);
