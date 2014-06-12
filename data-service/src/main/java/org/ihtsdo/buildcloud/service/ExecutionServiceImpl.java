@@ -98,30 +98,45 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//TODO Multithreading opportunity here!
 		List<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg: packages) {
-			
-			transformFiles(execution, pkg);
-			
-			//Convert Delta files to Full, Snapshot and delta release files
-			ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
-			generator.generateReleaseFiles();
-	
-			try {
-				Zipper zipper = new Zipper(execution, pkg, dao);
-				File zip = zipper.createZipFile();
-				dao.putOutputFile(execution, pkg, zip, "", true);
-			} catch (JAXBException jbex) {
-				//TODO Telemetry about failures, but will not prevent process from continuing
-				LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
-			} catch (NoSuchAlgorithmException nsaEx) {
-				LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
-			} catch (Exception e)  {
-				LOGGER.error("Failure in Zip creation caused by ", e);
+			try{
+				executePackage(execution, pkg);
+			} catch (Exception e) {
+				//Each package could fail independently, record telemetry and move on to next package
+				LOGGER.warn ("Failure while processing package {}  due to: {}" , pkg.getBusinessKey(), e.getMessage());
 			}
 		}
 		
 		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return execution;
+	}
+	
+	private void executePackage(Execution execution, Package pkg) throws Exception {
+
+		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
+		if (dao.getManifestStream(execution, pkg) == null) {
+			throw new Exception ("Failed to find valid manifest file.");
+		}
+		
+		transformFiles(execution, pkg);
+		
+		//Convert Delta files to Full, Snapshot and delta release files
+		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
+		generator.generateReleaseFiles();
+
+		try {
+			Zipper zipper = new Zipper(execution, pkg, dao);
+			File zip = zipper.createZipFile();
+			dao.putOutputFile(execution, pkg, zip, "", true);
+		} catch (JAXBException jbex) {
+			//TODO Telemetry about failures, but will not prevent process from continuing
+			LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
+		} catch (NoSuchAlgorithmException nsaEx) {
+			LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
+		} catch (Exception e)  {
+			LOGGER.error("Failure in Zip creation caused by ", e);
+		}
+
 	}
 
 	/**
