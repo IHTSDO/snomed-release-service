@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -18,7 +19,7 @@ import java.util.List;
  * Offers an offline version of S3 cloud storage for demos or working without a connection.
  * N.B. Metadata and ACL security are not implemented.
  */
-public class OfflineS3ClientImpl implements S3Client {
+public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	private File bucketsDirectory;
 
@@ -150,15 +151,24 @@ public class OfflineS3ClientImpl implements S3Client {
 		return null;
 	}
 
+	@Override
+	/**
+	 * Part of the TestS3Client interface.
+	 * For clearing down before and after testing.
+	 */
+	public void deleteBuckets() {
+		FileSystemUtils.deleteRecursively(bucketsDirectory);
+	}
+
 	private File getBucket(String bucketName, boolean createIfRequired) {
 		File bucket = new File(bucketsDirectory, bucketName);
-		
+
 		//Is bucket there already, or do we need to create it?
 		if (!bucket.isDirectory()) {
 			//Attempt to create - will fail if file already exists at that location.
 			if (createIfRequired) {
 				boolean success = bucket.mkdirs();
-				
+
 				if (!success) {
 					throw new AmazonServiceException("Could neither find nor create Bucket at: "  + bucketsDirectory + File.separator + bucketName);
 				}
@@ -178,15 +188,15 @@ public class OfflineS3ClientImpl implements S3Client {
 		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
 		return file;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param file
 	 * @return The path relative to the bucket directory and bucket
 	 */
 	private String getRelativePathAsKey(String bucketName, File file) {
 		String absolutePath = file.getAbsolutePath();
-		int relativeStart =  bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash 
+		int relativeStart = bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash
 		String relativePath = absolutePath.substring(relativeStart);
 		relativePath = getPlatformIndependentPath(relativePath);
 		return relativePath;
