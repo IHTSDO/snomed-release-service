@@ -14,7 +14,6 @@ import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,7 +88,7 @@ public class FileServiceImpl implements FileService {
 		String directoryPath = manifestDirectoryPathSB.toString();
 		List<String> files = fileHelper.listFiles(directoryPath);
 		if (!files.isEmpty()) {
-			String manifestFilePath = directoryPath + files.iterator().next();
+			String manifestFilePath = directoryPath + files.iterator().next(); // It's the only file in the manifest directory
 			return fileHelper.getFileStream(manifestFilePath);
 		} else {
 			return null;
