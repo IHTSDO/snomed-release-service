@@ -44,7 +44,7 @@ public interface ExecutionDAO {
 
 	OutputStream getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
-	OutputStream getExecutionFileAsOutputStream(String executionOutputFilePath) throws IOException;
+	OutputStream getFileAsOutputStream(String executionOutputFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
@@ -61,7 +61,7 @@ public interface ExecutionDAO {
 	
 	List<String> listOutputFilePaths(Execution execution, String packageId);
 
-	OutputStream getExecutionTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	OutputStream getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
 	

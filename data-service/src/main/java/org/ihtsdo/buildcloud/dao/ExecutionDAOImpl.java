@@ -253,7 +253,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public OutputStream getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getExecutionFileAsOutputStream(executionOutputFilePath);
+		return getFileAsOutputStream(executionOutputFilePath);
 	}
 
 	@Override
@@ -270,7 +270,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getExecutionFileAsOutputStream(final String executionOutputFilePath) throws IOException {
+	public OutputStream getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to executionFileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
@@ -317,9 +317,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getExecutionTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+	public OutputStream getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getExecutionFileAsOutputStream(transformedFilePath);
+		return getFileAsOutputStream(transformedFilePath);
 	}
 	
 	@Override
