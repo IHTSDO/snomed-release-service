@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -70,8 +71,8 @@ public class ReleaseFileGenerator {
 	private void convertDeltaFilesTo(String fileType) {
 
 		String businessKey = pkg.getBusinessKey();
-		for (String fileName : dao.listTransformedFilePaths(
-				execution, businessKey)) {
+		List<String> transformedFilePaths = dao.listTransformedFilePaths(execution, businessKey);
+		for (String fileName : transformedFilePaths) {
 			if (fileName.endsWith(TXT_FILE_EXTENSION)
 					&& fileName.contains(DELTA)) {
 				dao.copyTransformedFileToOutput(execution,
@@ -84,8 +85,8 @@ public class ReleaseFileGenerator {
 	private void generateDeltaFiles(boolean isFirstRelease) throws IOException {
 
 		String businessKey = pkg.getBusinessKey();
-		for (String fileName : dao.listTransformedFilePaths(
-				execution, businessKey)) {
+		List<String> transformedFiles = dao.listTransformedFilePaths(execution, businessKey);
+		for (String fileName : transformedFiles) {
 			if (fileName.endsWith(TXT_FILE_EXTENSION)
 					&& fileName.contains(DELTA)) {
 				if (isFirstRelease) {
@@ -97,23 +98,18 @@ public class ReleaseFileGenerator {
 					OutputStream outputStream = dao
 							.getOutputFileOutputStream(execution,
 									businessKey, fileName);
-					try (BufferedReader reader = new BufferedReader(
-							new InputStreamReader(inputStream, UTF_8));
-							BufferedWriter writer = new BufferedWriter(
-									new OutputStreamWriter(outputStream,
-											UTF_8))) {
+					try (	BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
+							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
 						// only needs to read the first line.
 						String line = reader.readLine();
 						if (line == null) {
-							throw new IllegalStateException(
-									"No contents found in file: "
-											+ fileName);
+							throw new IllegalStateException( "No contents found in file: " + fileName);
 						}
 						writer.write(line);
 						writer.write(LINE_ENDING);
 					}
 				} else {
-
+					//In subsequent releases, the delta file received as input should be the actual change from the previous release.  Copy as is.
 					dao.copyTransformedFileToOutput(execution,
 							businessKey, fileName);
 				}
@@ -124,10 +120,8 @@ public class ReleaseFileGenerator {
 	private void generateSnapshotFiles(boolean isFirstRelease) {
 
 		if (isFirstRelease) {
-
 			convertDeltaFilesTo(SNAPSHOT);
 		} else {
-
 			// generate snapshot files using delta file and previous release.
 			throw new UnsupportedOperationException("Sorry we only support first time release at the moment!");
 		}

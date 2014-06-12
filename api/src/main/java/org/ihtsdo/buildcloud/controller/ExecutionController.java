@@ -18,6 +18,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -78,7 +79,7 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-											HttpServletRequest request) throws IOException {
+											HttpServletRequest request) throws Exception {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
