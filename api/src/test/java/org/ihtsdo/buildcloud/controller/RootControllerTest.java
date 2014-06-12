@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Transactional
-public class RootControllerTest extends ControllerIntegrationTest {
+public class RootControllerTest extends AbstractControllerTest {
 
 	@Test
 	public void root_returns_centers_and_builds() throws Exception {

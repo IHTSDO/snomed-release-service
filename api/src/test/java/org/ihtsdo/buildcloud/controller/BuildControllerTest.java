@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-public class BuildControllerTest extends ControllerIntegrationTest {
+public class BuildControllerTest extends AbstractControllerTest {
 	
 	@Test
 	public void returns_builds() throws Exception {
