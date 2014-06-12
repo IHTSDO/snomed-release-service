@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,8 +86,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
+		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
+		
+		dao.updateStatus(execution, Execution.Status.BUILDING);
 		
 		//Run transformation on each of our packages in turn.
 		//TODO Multithreading opportunity here!
@@ -112,6 +118,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 				LOGGER.error("Failure in Zip creation caused by ", e);
 			}
 		}
+		
+		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return execution;
 	}
