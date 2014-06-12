@@ -1,24 +1,26 @@
 package org.ihtsdo.buildcloud.service.execution;
 
+import com.google.common.io.Files;
+import org.apache.commons.io.IOUtils;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.manifest.FileType;
+import org.ihtsdo.buildcloud.manifest.FolderType;
+import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.FileService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
-import org.apache.commons.io.IOUtils;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.manifest.*;
-import org.ihtsdo.buildcloud.service.FileService;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.common.io.Files;
 
 public class Zipper {
 	
@@ -30,7 +32,7 @@ public class Zipper {
 	
 	private static final String PATH_CHAR = "/";
 	
-	//private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
 	
 	public Zipper (Package pkg, FileService fs) {
 		this.pkg = pkg;
@@ -79,19 +81,23 @@ public class Zipper {
 		
 		//Pull down and compress any child files
 		for(FileType file : f.getFile()) {
-			InputStream is = fileService.getFileInputStream(pkg, file.getName());
-			if (is != null) {
-				zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
-				IOUtils.copy(is, zos);
-				is.close();
+			try {
+				InputStream is = fileService.getFileInputStream(pkg, file.getName());
+				if (is != null) {
+					zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
+					IOUtils.copy(is, zos);
+					is.close();
+				}
+			} catch (Exception e) {
+				//TODO We'll want to report missing files in the telemetry
+				LOGGER.warn ("Manifest failed to find expected output file: " + file.getName());
 			}
 		}
-		
+
 		//Recurse through child folders
 		for (FolderType childFolder : f.getFolder()) {
 			walkFolders(childFolder, zos, thisFolder);
 		}
 	}
-
 
 }
