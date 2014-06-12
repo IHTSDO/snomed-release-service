@@ -44,7 +44,19 @@ public interface FileService {
 
 	OutputStream getExecutionOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
-	OutputStream getExecutionOutputFileOutputStream(String executionOutputFilePath) throws IOException;
+	OutputStream getExecutionFileOutputStream(String executionOutputFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
+
+	List<String> listTransformedFilePaths(Execution execution, String packageId);
+	
+	List<String> listOutputFilePaths(Execution execution, String packageId);
+
+	OutputStream getExecutionTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+
+	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
+	
+	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
+	
+	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
 }

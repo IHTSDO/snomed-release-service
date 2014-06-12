@@ -167,7 +167,7 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public OutputStream getExecutionOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = s3PathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getExecutionOutputFileOutputStream(executionOutputFilePath);
+		return getExecutionFileOutputStream(executionOutputFilePath);
 	}
 
 	@Override
@@ -178,7 +178,7 @@ public class FileServiceImpl implements FileService {
 	}
 
 	@Override
-	public OutputStream getExecutionOutputFileOutputStream(final String executionOutputFilePath) throws IOException {
+	public OutputStream getExecutionFileOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to fileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
@@ -194,4 +194,49 @@ public class FileServiceImpl implements FileService {
 
 		return pipedOutputStream;
 	}
+	@Override
+	public List<String> listTransformedFilePaths(Execution execution,
+			String packageId) {
+		
+		String transformedFilesPath = s3PathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
+		return fileHelper.listFiles(transformedFilesPath);
+	}
+
+	@Override
+	public List<String> listOutputFilePaths(Execution execution,
+			String packageId) {
+		String outputFilePath = s3PathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
+		return fileHelper.listFiles(outputFilePath);
+	}
+
+	@Override
+	public void copyTransformedFileToOutput(Execution execution,
+			String packageBusinessKey, String relativeFilePath) {
+		copyTransformedFileToOutput(execution, packageBusinessKey, relativeFilePath, relativeFilePath);
+	}
+
+
+	@Override
+	public void copyTransformedFileToOutput(Execution execution,
+			String packageBusinessKey, String sourceFileName,
+			String targetFileName) {
+		String transformedFilePath = s3PathHelper.getExecutionInputFilePath(execution, packageBusinessKey, sourceFileName);
+		String executionOutputFilePath = s3PathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
+		fileHelper.copyFile(transformedFilePath, executionOutputFilePath);
+		
+	}
+
+	@Override
+	public InputStream getTransformedFileAsInputStream(Execution execution,
+			String businessKey, String relativeFilePath) {
+		String transformedFilePath = s3PathHelper.getTransformedFilePath(execution, businessKey, relativeFilePath);
+		return fileHelper.getFileStream(transformedFilePath);
+	}
+
+	@Override
+	public OutputStream getExecutionTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+		String transformedFilePath = s3PathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getExecutionFileOutputStream(transformedFilePath);
+	}
+
 }
