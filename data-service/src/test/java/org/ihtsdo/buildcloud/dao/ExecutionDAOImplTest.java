@@ -23,7 +23,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -34,16 +36,16 @@ import java.util.GregorianCalendar;
 public class ExecutionDAOImplTest {
 
 	@Autowired
-	private ExecutionDAOImpl executionDAO;
+	protected ExecutionDAOImpl executionDAO;
 
 	@Autowired
-	private BuildDAO buildDAO;
+	protected BuildDAO buildDAO;
 
 	@Autowired
 	private JmsTemplate jmsTemplate;
 
 	private Build build;
-	private Execution execution;
+	protected Execution execution;
 	private MocksControl mocksControl;
 	private S3Client mockS3Client;
 
@@ -151,6 +153,13 @@ public class ExecutionDAOImplTest {
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
 		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", jmsMessageCapture.getValue());
+	}
+	
+	@Test
+	public void testExecutionOutputFileOutputStream() throws IOException {
+		OutputStream outputStream = executionDAO.getOutputFileOutputStream("out.txt");
+		Assert.assertNotNull(outputStream);
+		outputStream.close();
 	}
 
 	private void addObjectSummary(ObjectListing objectListing, String path) {

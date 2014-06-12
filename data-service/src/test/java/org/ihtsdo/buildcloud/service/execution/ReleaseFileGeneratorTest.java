@@ -13,11 +13,13 @@ import java.util.List;
 import mockit.integration.junit4.JMockit;
 import mockit.*;
 
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.service.FileService;
 import org.ihtsdo.buildcloud.entity.Package;
+
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,7 +30,7 @@ public class ReleaseFileGeneratorTest {
 	protected static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 	@Mocked Build build;
 	@Test
-	public void testGenerateReleaseFiles(@Injectable final Execution execution, @Injectable final FileService fileService) throws IOException
+	public void testGenerateReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws IOException
 	{
 		final List<Package> packages = createPackages();
 		final List<String> fileNames = mockTransformedFileNames();
@@ -41,7 +43,7 @@ public class ReleaseFileGeneratorTest {
 			returns( build);
 			build.getPackages();
 			returns(packages);
-			fileService.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
+			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
 		}};
 		
@@ -51,7 +53,7 @@ public class ReleaseFileGeneratorTest {
 			{
 				for( String deltaName : fileNames ){
 					
-					fileService.copyTransformedFileToOutput(execution, pk.getBusinessKey(), deltaName, anyString);
+					dao.copyTransformedFileToOutput(execution, pk.getBusinessKey(), deltaName, anyString);
 				}
 			}
 			
@@ -68,16 +70,16 @@ public class ReleaseFileGeneratorTest {
 			{
 				for( String fileName : fileNames ){
 					
-					fileService.getTransformedFileAsInputStream(execution, pk.getBusinessKey(), fileName);
+					dao.getTransformedFileAsInputStream(execution, pk.getBusinessKey(), fileName);
 					returns(inputStream);
-					fileService.getExecutionOutputFileOutputStream(execution, pk.getBusinessKey(), fileName);
+					dao.getOutputFileOutputStream(execution, pk.getBusinessKey(), fileName);
 					returns(outputStream);
 					
 				}
 			}
 			
 		}};
-		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, fileService);
+		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, dao);
 		generator.generateReleaseFiles();
 		
 		//get the original header line from delta file
@@ -103,7 +105,7 @@ public class ReleaseFileGeneratorTest {
 	
 	@Test
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution, 
-			@Injectable final FileService fileService) throws IOException
+			@Injectable final ExecutionDAO dao) throws IOException
 			{
 		final List<Package> packages = createPackages();
 		new NonStrictExpectations() {{
@@ -117,13 +119,13 @@ public class ReleaseFileGeneratorTest {
 
 		final List<String> fileNames = mockTransformedFileNames();
 		new Expectations(){{
-			fileService.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
+			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
 			//only for delta file at the moment.
-			fileService.copyTransformedFileToOutput(execution, packages.get(0).getBusinessKey(), fileNames.get(0));
+			dao.copyTransformedFileToOutput(execution, packages.get(0).getBusinessKey(), fileNames.get(0));
 
 		}};
-		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, fileService);
+		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, dao);
 		generator.generateReleaseFiles();
 
 			}

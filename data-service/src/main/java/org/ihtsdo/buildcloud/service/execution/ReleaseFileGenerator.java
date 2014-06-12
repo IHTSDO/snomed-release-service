@@ -8,8 +8,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.service.FileService;
 import org.ihtsdo.buildcloud.entity.Package;
 
 public class ReleaseFileGenerator {
@@ -20,12 +20,12 @@ public class ReleaseFileGenerator {
 	private static final String SNAPSHOT = "Snapshot";
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String LINE_ENDING = "\r\n";
-	private FileService fileService;
+	private ExecutionDAO dao;
 	private Execution execution;
 
-	public ReleaseFileGenerator(Execution executionX, FileService fileServiceX) {
-		execution = executionX;
-		fileService = fileServiceX;
+	public ReleaseFileGenerator(Execution execution, ExecutionDAO dao) {
+		this.execution = execution;
+		this.dao = dao;
 	}
 
 	/**
@@ -67,11 +67,11 @@ public class ReleaseFileGenerator {
 
 		for (Package pk : execution.getBuild().getPackages()) {
 			String businessKey = pk.getBusinessKey();
-			for (String fileName : fileService.listTransformedFilePaths(
+			for (String fileName : dao.listTransformedFilePaths(
 					execution, businessKey)) {
 				if (fileName.endsWith(TXT_FILE_EXTENSION)
 						&& fileName.contains(DELTA)) {
-					fileService.copyTransformedFileToOutput(execution,
+					dao.copyTransformedFileToOutput(execution,
 							businessKey, fileName,
 							fileName.replace(DELTA, fileType));
 				}
@@ -83,18 +83,18 @@ public class ReleaseFileGenerator {
 
 		for (Package pk : execution.getBuild().getPackages()) {
 			String businessKey = pk.getBusinessKey();
-			for (String fileName : fileService.listTransformedFilePaths(
+			for (String fileName : dao.listTransformedFilePaths(
 					execution, businessKey)) {
 				if (fileName.endsWith(TXT_FILE_EXTENSION)
 						&& fileName.contains(DELTA)) {
 					if (isFirstRelease) {
 						// remove delta file contents and only keep the header
 						// line
-						InputStream inputStream = fileService
+						InputStream inputStream = dao
 								.getTransformedFileAsInputStream(execution,
 										businessKey, fileName);
-						OutputStream outputStream = fileService
-								.getExecutionOutputFileOutputStream(execution,
+						OutputStream outputStream = dao
+								.getOutputFileOutputStream(execution,
 										businessKey, fileName);
 						try (BufferedReader reader = new BufferedReader(
 								new InputStreamReader(inputStream, UTF_8));
@@ -113,7 +113,7 @@ public class ReleaseFileGenerator {
 						}
 					} else {
 
-						fileService.copyTransformedFileToOutput(execution,
+						dao.copyTransformedFileToOutput(execution,
 								businessKey, fileName);
 					}
 				}

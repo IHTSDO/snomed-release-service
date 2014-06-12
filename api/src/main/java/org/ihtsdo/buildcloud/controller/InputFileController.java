@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.FileService;
+import org.ihtsdo.buildcloud.service.InputFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class InputFileController {
 
 	@Autowired
-	private FileService inputFileService;
+	private InputFileService inputFileService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -91,7 +91,7 @@ public class InputFileController {
 	@ResponseBody
 	public List<Map<String, Object>> listInputFiles(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 													HttpServletRequest request) {
-		List<String> filePaths = inputFileService.listFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
+		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
 			HashMap<String, String> file = new HashMap<>();

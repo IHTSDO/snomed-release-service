@@ -37,10 +37,15 @@ public class ExecutionS3PathHelper {
 	//Note that getPackageOutputFilePath(Package aPackage, String filename) should not exist because all output 
 	//files are specific to the execution that creates them.  See getExecutionOutputFilePath instead.
 
-	public StringBuffer getPackageManifestDirectoryPathPath(Package aPackage) {
+	public StringBuffer getPackageManifestDirectoryPath(Package aPackage) {
 		StringBuffer buildPath = getBuildPath(aPackage.getBuild());
 		buildPath.append(BUILD_FILES).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 		return buildPath;
+	}
+	
+	//There will also be a copy of the manifest for each execution's package
+	public StringBuffer getManifestDirectoryPath(Execution execution, Package pkg) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(OUTPUT_FILES).append(SEPARATOR).append(pkg.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 	}
 
 	public StringBuffer getExecutionPath(Execution execution) {

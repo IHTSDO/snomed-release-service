@@ -32,6 +32,10 @@ public class FileHelper {
 
 	private S3Client s3Client;
 
+	public void setS3Client(S3Client s3Client) {
+		this.s3Client = s3Client;
+	}
+
 	private S3ClientHelper s3ClientHelper;
 
 	private String bucketName;
@@ -54,6 +58,10 @@ public class FileHelper {
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
 		s3Client.putObject(putRequest);
+	}
+	
+	public String putFile(File file, String targetFilePath) throws NoSuchAlgorithmException, IOException, DecoderException {
+		return putFile(file, targetFilePath, false);
 	}
 	
 

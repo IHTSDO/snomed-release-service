@@ -16,20 +16,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
-public class FileServiceImplTest {
-	
-	public static final String TEST_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
-
-	@Autowired
-	protected FileService fileService;
+public class InputFileServiceImplTest {
 	
 	@Autowired
 	protected BuildDAO buildDAO;
@@ -50,12 +43,13 @@ public class FileServiceImplTest {
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, build);
 	}
-
+	
 	@Test
-	public void testExecutionOutputFileOutputStream() throws IOException {
-		OutputStream outputStream = fileService.getExecutionFileOutputStream("out.txt");
-		Assert.assertNotNull(outputStream);
-		outputStream.close();
+	public void test() {
+		Assert.assertTrue(true);
 	}
+	
+
+
 	
 }
