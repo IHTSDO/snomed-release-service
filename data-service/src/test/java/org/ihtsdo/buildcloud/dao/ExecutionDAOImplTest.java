@@ -29,7 +29,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
 public class ExecutionDAOImplTest {
 
