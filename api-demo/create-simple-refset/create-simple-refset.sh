@@ -32,7 +32,7 @@ commonParams="-${curlFlags} -u ${token}:"
 echo
 
 echo "Upload Manifset"
-curl ${commonParams} -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest
+curl ${commonParams} -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest | grep HTTP
 echo
 
 echo "Create Execution"
@@ -42,5 +42,5 @@ echo "Execution ID is '${executionId}'"
 echo
 
 echo "Trigger Execution"
-curl ${commonParams} -X POST $api/builds/${buildId}/executions/${executionId}/trigger
+curl ${commonParams} -X POST $api/builds/${buildId}/executions/${executionId}/trigger  | grep HTTP
 echo
