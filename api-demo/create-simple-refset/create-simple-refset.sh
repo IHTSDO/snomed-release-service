@@ -35,6 +35,10 @@ echo "Upload Manifset"
 curl ${commonParams} -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest | grep HTTP
 echo
 
+echo "Set effectiveTime"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary '{ "effectiveTime" : "2014-01-31" }' $api/builds/${buildId}  | grep HTTP
+echo
+
 echo "Create Execution"
 curl ${commonParams} -X POST $api/builds/${buildId}/executions > tmp/execution-response.txt
 executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
