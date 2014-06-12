@@ -37,15 +37,7 @@ public abstract class ControllerIntegrationTest extends AbstractJUnit4SpringCont
 
 	@Before
 	public void setup() throws ServletException {
-		// Create SecurityFilter
-//		SecurityFilter securityFilter = new SecurityFilter();
-//		MockServletContext mockServletContext = new MockServletContext();
-//		mockServletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, wac);
-//		securityFilter.init(new MockFilterConfig(mockServletContext));
-
-		mockMvc = MockMvcBuilders.webAppContextSetup(wac)
-//				.addFilter(securityFilter, "/*") // Add SecurityFilter
-				.build();
+		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
 	}
 
