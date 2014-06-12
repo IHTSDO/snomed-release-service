@@ -69,21 +69,24 @@ public class ReleaseFileGeneratorTest {
 		final OutputStream outputStream = new FileOutputStream( outputDeltaFile);
 		new Expectations() { {
 			
-			for( Package pk : packages )
+			for( Package pkg : packages )
 			{
 				for( String fileName : fileNames ){
 					
-					dao.getTransformedFileAsInputStream(execution, pk.getBusinessKey(), fileName);
+					dao.getTransformedFileAsInputStream(execution, pkg.getBusinessKey(), fileName);
 					returns(inputStream);
-					dao.getOutputFileOutputStream(execution, pk.getBusinessKey(), fileName);
+					dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), fileName);
 					returns(outputStream);
 					
 				}
 			}
 			
 		}};
-		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, dao);
-		generator.generateReleaseFiles();
+		
+		for( Package pkg : packages ){
+			ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, pkg, dao);
+			generator.generateReleaseFiles();
+		}
 		
 		//get the original header line from delta file
 		String headerLine = null;
@@ -129,10 +132,14 @@ public class ReleaseFileGeneratorTest {
 			dao.copyTransformedFileToOutput(execution, packages.get(0).getBusinessKey(), fileNames.get(0));
 
 		}};
-		ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, dao);
-		generator.generateReleaseFiles();
+		
+		
+		for( Package pkg : packages ){
+			ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, pkg, dao);
+			generator.generateReleaseFiles();
+		}
 
-			}
+	}
 
 
 

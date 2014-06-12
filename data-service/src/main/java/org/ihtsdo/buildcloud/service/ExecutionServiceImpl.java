@@ -93,10 +93,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		List<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg: packages) {
 			
-			transformFiles(execution);
+			transformFiles(execution, pkg);
 			
 			//Convert Delta files to Full, Snapshot and delta release files
-			ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, dao );
+			ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
 			generator.generateReleaseFiles();
 	
 			try {
@@ -121,7 +121,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	 * @param execution
 	 * @throws IOException
 	 */
-	private void transformFiles(Execution execution) throws IOException {
+	private void transformFiles(Execution execution, Package pkg) throws IOException {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
 
 		// Add streaming transformation of effectiveDate
@@ -129,27 +129,21 @@ public class ExecutionServiceImpl implements ExecutionService {
 		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
 		transformation.addLineTransformation(new UUIDTransformation(0));
 
-		// Iterate each execution package
-		Map<String, Object> executionConfigMap = dao.loadConfigurationMap(execution);
-		Map<String, Object> build = (Map<String, Object>) executionConfigMap.get("build");
-		List<Map<String, String>> packages = (List<Map<String, String>>) build.get("packages");
-		for (Map<String, String> aPackage : packages) {
-			String packageBusinessKey = aPackage.get("id");
-			LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
+		String packageBusinessKey = pkg.getBusinessKey();
+		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
 
-			// Iterate each execution input file
-			List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
+		// Iterate each execution input file
+		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
 
-			for (String relativeFilePath : executionInputFilePaths) {
+		for (String relativeFilePath : executionInputFilePaths) {
 
-				// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-				if (relativeFilePath.endsWith(".txt")) {
-					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionTransformedOutputStream = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
-					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
-				} else {
-					dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
-				}
+			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
+			if (relativeFilePath.endsWith(".txt")) {
+				InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
+				OutputStream executionTransformedOutputStream = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+				transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+			} else {
+				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 			}
 		}
 	}
