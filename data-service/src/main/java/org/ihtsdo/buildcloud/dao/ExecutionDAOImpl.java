@@ -245,7 +245,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public OutputStream getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getOutputFileOutputStream(executionOutputFilePath);
+		return getExecutionFileAsOutputStream(executionOutputFilePath);
 	}
 
 	@Override
@@ -262,7 +262,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getOutputFileOutputStream(final String executionOutputFilePath) throws IOException {
+	public OutputStream getExecutionFileAsOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to executionFileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
@@ -295,7 +295,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void copyTransformedFileToOutput(Execution execution,
 			String packageBusinessKey, String sourceFileName,
 			String targetFileName) {
-		String transformedFilePath = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, sourceFileName);
+		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
 		executionFileHelper.copyFile(transformedFilePath, executionOutputFilePath);
 		
@@ -311,7 +311,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public OutputStream getExecutionTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getOutputFileOutputStream(transformedFilePath);
+		return getExecutionFileAsOutputStream(transformedFilePath);
 	}
 	
 	@Override
@@ -325,7 +325,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public List<String> listOutputFilePaths(Execution execution,
 			String packageId) {
-		String outputFilePath = pathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
+		String outputFilePath = pathHelper.getOutputFilePath(execution, packageId).toString();
 		return executionFileHelper.listFiles(outputFilePath);
 	}
 

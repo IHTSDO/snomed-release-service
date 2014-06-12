@@ -49,6 +49,7 @@ public class ReleaseFileGenerator {
 			convertDeltaFilesTo(FULL);
 		} else {
 			// generate full files combining previous release and delta files
+			throw new UnsupportedOperationException("Sorry we only support first time release at the moment!");
 
 		}
 	}
@@ -129,6 +130,7 @@ public class ReleaseFileGenerator {
 		} else {
 
 			// generate snapshot files using delta file and previous release.
+			throw new UnsupportedOperationException("Sorry we only support first time release at the moment!");
 		}
 
 	}
