@@ -119,6 +119,7 @@ public class FileHelper {
 	}
 
 	public void copyFile(String sourcePath, String targetPath) {
+		LOGGER.debug("Copy file '{}' to '{}'", sourcePath, targetPath);
 		s3Client.copyObject(bucketName, sourcePath, bucketName, targetPath);
 	}
 

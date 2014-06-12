@@ -169,7 +169,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	
 	@Override
 	public InputStream getManifestStream(Execution execution, Package pkg) {
-		StringBuffer manifestDirectoryPathSB = pathHelper.getManifestDirectoryPath(execution, pkg);
+		StringBuffer manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
 
 		String directoryPath = manifestDirectoryPathSB.toString();
 		List<String> files = executionFileHelper.listFiles(directoryPath);
@@ -221,11 +221,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public void copyAll(Build buildSource, Execution execution) {
 		for (Package buildPackage : buildSource.getPackages()) {
+			// Copy input files
 			String buildPackageInputFilesPath = pathHelper.getPackageInputFilesPath(buildPackage);
 			String executionPackageInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, buildPackage).toString();
 			List<String> filePaths = inputFileDAO.listInputFilePaths(buildPackage);
 			for (String filePath : filePaths) {
 				executionFileHelper.copyFile(buildPackageInputFilesPath + filePath, executionPackageInputFilesPath + filePath);
+			}
+
+			// Copy manifest file
+			String manifestPath = inputFileDAO.getManifestPath(buildPackage);
+			if (manifestPath != null) { // Let the packages with manifests build
+				String executionPackageManifestDirectoryPath = pathHelper.getExecutionManifestDirectoryPath(execution, buildPackage).toString();
+				executionFileHelper.copyFile(manifestPath, executionPackageManifestDirectoryPath + "manifest.xml");
 			}
 		}
 	}
