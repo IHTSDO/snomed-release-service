@@ -24,22 +24,23 @@ echo "Target Package ID is '${packageId}'"
 echo
 
 # Login
-echo "Logging in and recording authorisation token."
+echo "Login and record authorisation token."
 curl -${curlFlags} -F username=manager -F password=test123 $api/login > tmp/login-response.txt
 token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
 echo "Token is '${token}'"
+commonParams="-${curlFlags} -u ${token}:"
 echo
 
 echo "Upload Manifset"
-curl -${curlFlags} -u "${token}:" -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest
+curl ${commonParams} -F "file=@manifest.xml" $api/builds/${buildId}/packages/${packageId}/manifest
 echo
 
-echo "Creating Execution"
-curl -${curlFlags} -X POST -u "${token}:" $api/builds/${buildId}/executions > tmp/execution-response.txt
+echo "Create Execution"
+curl ${commonParams} -X POST $api/builds/${buildId}/executions > tmp/execution-response.txt
 executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 echo
 
 echo "Trigger Execution"
-curl -${curlFlags} -X POST -u "${token}:" $api/builds/${buildId}/executions/${executionId}/trigger
+curl ${commonParams} -X POST $api/builds/${buildId}/executions/${executionId}/trigger
 echo
