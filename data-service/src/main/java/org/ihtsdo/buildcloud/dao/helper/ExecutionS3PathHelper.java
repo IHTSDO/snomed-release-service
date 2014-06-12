@@ -39,13 +39,13 @@ public class ExecutionS3PathHelper {
 
 	public StringBuffer getPackageManifestDirectoryPath(Package aPackage) {
 		StringBuffer buildPath = getBuildPath(aPackage.getBuild());
-		buildPath.append(BUILD_FILES).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
+		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 		return buildPath;
 	}
 	
 	//There will also be a copy of the manifest for each execution's package
-	public StringBuffer getManifestDirectoryPath(Execution execution, Package pkg) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(OUTPUT_FILES).append(SEPARATOR).append(pkg.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
+	public StringBuffer getExecutionManifestDirectoryPath(Execution execution, Package pkg) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(pkg.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 	}
 
 	public StringBuffer getExecutionPath(Execution execution) {
@@ -105,10 +105,10 @@ public class ExecutionS3PathHelper {
 		buildPath.append(BUILD_FILES).append(SEPARATOR).append(directionModifier).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR);
 		return buildPath;
 	}
-
 	private String getFilePath(Execution execution, String relativePath) {
 		return getExecutionPath(execution).append(relativePath).toString();
 	}
+
 	public StringBuffer getExecutionTransformedFilesPath(Execution execution, String packageBusinessKey) {
 		return getExecutionPath(execution.getBuild(), execution.getId()).append(TRANSFORMED_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
 	}

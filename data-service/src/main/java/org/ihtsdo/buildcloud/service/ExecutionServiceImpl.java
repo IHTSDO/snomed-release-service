@@ -2,18 +2,12 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.InputFileDAO;
-import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
-import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
-import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
-import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
-import org.ihtsdo.buildcloud.service.execution.Zipper;
+import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -58,7 +52,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			Execution execution = new Execution(creationDate, build);
 
-			// Copy all files from Build input directory to Execution input directory
+			// Copy all files from Build input and manifest directory to Execution input and manifest directory
 			dao.copyAll(build, execution);
 
 			// Create Build config export
