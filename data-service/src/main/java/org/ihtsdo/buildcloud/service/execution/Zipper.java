@@ -6,10 +6,8 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -22,26 +20,33 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.entity.Execution;
+
+
 public class Zipper {
 	
-	@Autowired
-	private FileService fileService;
+	private ExecutionDAO executionDAO;
+	
+	private Execution execution;
 	
 	private Package pkg;
+	
 	private ListingType manifestListing;
 	
 	private static final String PATH_CHAR = "/";
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
 	
-	public Zipper (Package pkg, FileService fs) {
+	public Zipper (Execution execution, Package pkg, ExecutionDAO executionDAO) {
+		this.execution = execution;
 		this.pkg = pkg;
-		this.fileService = fs;
+		this.executionDAO = executionDAO;
 	}
 	
 	public File createZipFile() throws JAXBException, IOException {
 		//Get the manifest file as an input stream
-		InputStream is = fileService.getManifestStream(pkg);
+		InputStream is = executionDAO.getManifestStream(execution, pkg);
 		loadManifest(is);
 		File zipFile = createArchive();
 		return zipFile;
@@ -82,7 +87,7 @@ public class Zipper {
 		//Pull down and compress any child files
 		for(FileType file : f.getFile()) {
 			try {
-				InputStream is = fileService.getFileInputStream(pkg, file.getName());
+				InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName());
 				if (is != null) {
 					zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
 					IOUtils.copy(is, zos);

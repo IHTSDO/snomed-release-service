@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -36,12 +38,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ExecutionDAO dao;
+	
 	@Autowired
 	private BuildDAO buildDAO;
-
-	@Autowired
-	private FileService fileService;
-
+	
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
@@ -55,10 +55,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			Date creationDate = new Date();
 
+
 			Execution execution = new Execution(creationDate, build);
 
 			// Copy all files from Build input directory to Execution input directory
-			fileService.copyAll(build, execution);
+			dao.copyAll(build, execution);
 
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
@@ -100,13 +101,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 		transformFiles(execution);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
-				ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, fileService );
+				ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, dao );
 				generator.generateReleaseFiles();
 
 		try {
-			Zipper zipper = new Zipper(pkg, fileService);
+			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
-			fileService.putOutputFile(execution, pkg, zip, true);
+			dao.putOutputFile(execution, pkg, zip, "", true);
 		} catch (JAXBException jbex) {
 			//TODO Telemetry about failures, but will not prevent process from continuing
 			LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
@@ -141,17 +142,17 @@ public class ExecutionServiceImpl implements ExecutionService {
 			LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
 
 			// Iterate each execution input file
-			List<String> executionInputFilePaths = fileService.listInputFilePaths(execution, packageBusinessKey);
+			List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
 
 			for (String relativeFilePath : executionInputFilePaths) {
 
 				// Transform all txt files. We are assuming they are all RefSet files for this Epic.
 				if (relativeFilePath.endsWith(".txt")) {
-					InputStream executionInputFileInputStream = fileService.getExecutionInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionOutputFileOutputStream = fileService.getExecutionOutputFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
+					OutputStream executionOutputFileOutputStream = dao.getOutputFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					transformation.transformFile(executionInputFileInputStream, executionOutputFileOutputStream);
 				} else {
-					fileService.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
+					dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 				}
 			}
 		}
@@ -164,9 +165,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
+	public void putOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		dao.saveOutputFile(execution, filePath, inputStream, size);
+		dao.putOutputFile(execution, filePath, inputStream, size);
 	}
 
 	@Override
