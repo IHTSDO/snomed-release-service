@@ -7,8 +7,10 @@
 set -e;
 
 # Declare parameters
-api=http://localhost:8080/api/v1
+#api=http://local.ihtsdotools.org/api/v1
+#api=http://localhost:8080/api/v1
 #api="http://uat-release.ihtsdotools.org/api/v1"
+api="http://dev-release.ihtsdotools.org/api/v1"
 buildId="1_20140731_international_release_build"
 packageId="snomed_release_package"
 
