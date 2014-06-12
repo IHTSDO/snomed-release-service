@@ -13,6 +13,10 @@
 
 	<context:component-scan base-package="org.ihtsdo.buildcloud.controller" />
 
+	<mvc:interceptors>
+		<bean class="org.ihtsdo.buildcloud.security.SecurityHandlerInterceptor"/>
+	</mvc:interceptors>
+
 	<import resource="servletContext.xml"/>
 
 	<import resource="classpath*:dataServiceContext.xml"/>
