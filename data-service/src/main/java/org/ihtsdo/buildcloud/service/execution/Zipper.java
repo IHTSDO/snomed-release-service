@@ -74,7 +74,7 @@ public class Zipper {
 		File zipFile = new File(zipLocation);
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		ZipOutputStream zos = new ZipOutputStream(fos);
-		walkFolders(rootFolder, zos, "/");
+		walkFolders(rootFolder, zos, "");
 		zos.close();
 		return zipFile;
 	}
