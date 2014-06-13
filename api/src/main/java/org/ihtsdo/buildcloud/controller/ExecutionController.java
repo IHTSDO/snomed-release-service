@@ -62,7 +62,7 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
 		
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
 	}
 
