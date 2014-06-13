@@ -122,14 +122,16 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 
 		// Trigger Execution
-//		mockMvc.perform(
-//			post("/builds/" + buildId + "/executions/" + executionId + "/trigger")
-//				.header("Authorization", basicDigestHeaderValue)
-//				.contentType(MediaType.APPLICATION_JSON)
-//			)
-//			.andDo(print())
-//			.andExpect(status().isOk())
-//			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+		mockMvc.perform(
+			post("/builds/" + buildId + "/executions/" + executionId + "/trigger")
+				.header("Authorization", basicDigestHeaderValue)
+				.contentType(MediaType.APPLICATION_JSON)
+			)
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+
+
 
 
 	}
