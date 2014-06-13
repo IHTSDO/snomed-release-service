@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -105,10 +106,15 @@ public class FileHelper {
 	}
 
 	public List<String> listFiles(String directoryPath) {
-		ObjectListing objectListing = s3Client.listObjects(bucketName, directoryPath);
 		ArrayList<String> files = new ArrayList<>();
-		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-			files.add(summary.getKey().substring(directoryPath.length()));
+		try {
+			ObjectListing objectListing = s3Client.listObjects(bucketName, directoryPath);
+			for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+				files.add(summary.getKey().substring(directoryPath.length()));
+			}
+		} catch (AmazonServiceException e) {
+			//Trying to list files in a directory that doesn't exist isn't a problem, we'll just return an empty array
+			LOGGER.debug("Probable attempt to get listing on non-existent directory: {} error {}", directoryPath, e.getLocalizedMessage());
 		}
 		return files;
 	}

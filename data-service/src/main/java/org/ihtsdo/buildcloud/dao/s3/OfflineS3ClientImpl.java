@@ -41,7 +41,8 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		try {
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
-			LOGGER.warn("Failed to find files at {}", searchLocation, e);
+			//It's not a problem if we're listing files in a non-existent directory.  Just note and return empty list.
+			LOGGER.debug("Failed to find files at {} due to {}", searchLocation, e);
 			return listing;
 		}
 		
