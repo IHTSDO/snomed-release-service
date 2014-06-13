@@ -1,30 +1,26 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
+import mockit.Expectations;
+import mockit.Injectable;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
-import mockit.*;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
-
-import static org.junit.Assert.*;
-
+import org.ihtsdo.buildcloud.test.DummyFuture;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.simpleworkflow.flow.annotations.SkipTypeRegistration;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 @RunWith(JMockit.class)
@@ -66,24 +62,20 @@ public class ReleaseFileGeneratorTest {
 		final InputStream inputStream = new FileInputStream(deltaFile);
 	
 		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
-		final OutputStream outputStream = new FileOutputStream( outputDeltaFile);
-		new Expectations() { {
-			
-			for( Package pkg : packages )
-			{
-				for( String fileName : fileNames ){
-					
+		final OutputStream outputStream = new FileOutputStream(outputDeltaFile);
+		final AsyncPipedStreamBean asyncPipedStreamBean = new AsyncPipedStreamBean(outputStream, new DummyFuture());
+		new Expectations() {{
+			for (Package pkg : packages) {
+				for (String fileName : fileNames) {
 					dao.getTransformedFileAsInputStream(execution, pkg.getBusinessKey(), fileName);
 					returns(inputStream);
 					dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), fileName);
-					returns(outputStream);
-					
+					returns(asyncPipedStreamBean);
 				}
 			}
-			
 		}};
 		
-		for( Package pkg : packages ){
+		for (Package pkg : packages) {
 			ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, pkg, dao);
 			generator.generateReleaseFiles();
 		}

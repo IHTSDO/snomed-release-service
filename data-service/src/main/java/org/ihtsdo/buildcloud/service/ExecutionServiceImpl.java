@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -22,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @Transactional
@@ -116,14 +118,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		transformFiles(execution, pkg);
 		
-		pause();
-		
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
 		generator.generateReleaseFiles();
 		
-		pause();
-
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
@@ -139,7 +137,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	 * @param execution
 	 * @throws IOException
 	 */
-	private void transformFiles(Execution execution, Package pkg) throws IOException {
+	private void transformFiles(Execution execution, Package pkg) {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
 
 		// Add streaming transformation of effectiveDate
@@ -157,9 +155,20 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
 			if (relativeFilePath.endsWith(".txt")) {
-				InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-				OutputStream executionTransformedOutputStream = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
-				transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+				try {
+					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
+					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+					asyncPipedStreamBean.waitForFinish();
+				} catch (IOException e) {
+					// Catch blocks just log and let the next file get processed.
+					LOGGER.error("IOException processing file {}", relativeFilePath, e);
+				} catch (InterruptedException e) {
+					LOGGER.error("InterruptedException uploading file {}", relativeFilePath, e);
+				} catch (ExecutionException e) {
+					LOGGER.error("ExecutionException uploading file {}", relativeFilePath, e);
+				}
 			} else {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 			}
@@ -201,15 +210,4 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return buildDAO.find(buildId, authenticatedUser);
 	}
 	
-	/*
-	 * Have a break, have a kitkat.
-	 */
-	private void pause() {
-		try {
-			Thread.sleep(1000);
-		} catch(InterruptedException ex) {
-			Thread.currentThread().interrupt();
-		}
-	}
-
 }

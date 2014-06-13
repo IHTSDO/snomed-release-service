@@ -44,9 +44,9 @@ public interface ExecutionDAO {
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
-	OutputStream getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
-	OutputStream getFileAsOutputStream(String executionOutputFilePath) throws IOException;
+	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getFileAsOutputStream(String executionOutputFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
@@ -63,7 +63,7 @@ public interface ExecutionDAO {
 	
 	List<String> listOutputFilePaths(Execution execution, String packageId);
 
-	OutputStream getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
 	

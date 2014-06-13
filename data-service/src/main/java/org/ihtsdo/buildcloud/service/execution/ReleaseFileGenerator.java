@@ -1,17 +1,12 @@
 package org.ihtsdo.buildcloud.service.execution;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.List;
 
 public class ReleaseFileGenerator {
 
@@ -102,17 +97,13 @@ public class ReleaseFileGenerator {
 		
 		int filesProcessed = 0;		
 		for (String fileName : transformedFilePaths) {
-			if (fileName.endsWith(TXT_FILE_EXTENSION)
-					&& fileName.contains(DELTA)) {
+			if (fileName.endsWith(TXT_FILE_EXTENSION) && fileName.contains(DELTA)) {
 				if (isFirstRelease) {
 					// remove delta file contents and only keep the header
 					// line
-					InputStream inputStream = dao
-							.getTransformedFileAsInputStream(execution,
-									businessKey, fileName);
-					OutputStream outputStream = dao
-							.getOutputFileOutputStream(execution,
-									businessKey, fileName);
+					InputStream inputStream = dao.getTransformedFileAsInputStream(execution, businessKey, fileName);
+					AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, businessKey, fileName);
+					OutputStream outputStream = asyncPipedStreamBean.getOutputStream();
 					try (	BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
 							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
 						// only needs to read the first line.
@@ -123,10 +114,11 @@ public class ReleaseFileGenerator {
 						writer.write(line);
 						writer.write(LINE_ENDING);
 					}
+					// Wait for upload pipe to finish
+					asyncPipedStreamBean.waitForFinish();
 				} else {
 					//In subsequent releases, the delta file received as input should be the actual change from the previous release.  Copy as is.
-					dao.copyTransformedFileToOutput(execution,
-							businessKey, fileName);
+					dao.copyTransformedFileToOutput(execution, businessKey, fileName);
 				}
 				filesProcessed++;
 			}

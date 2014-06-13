@@ -8,6 +8,7 @@ import org.codehaus.jackson.type.TypeReference;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
@@ -261,7 +263,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+	public AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
 		return getFileAsOutputStream(executionOutputFilePath);
 	}
@@ -280,12 +282,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
+	public AsyncPipedStreamBean getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to executionFileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
-		final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+		PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
-		executorService.submit(new Callable<String>() {
+		Future<String> future = executorService.submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
 				executionFileHelper.putFile(pipedInputStream, executionOutputFilePath);
@@ -294,7 +296,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		});
 
-		return pipedOutputStream;
+		return new AsyncPipedStreamBean(outputStream, future);
 	}
 	
 	private PutObjectResult putFile(String filePath, String contents) {
@@ -327,7 +329,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public OutputStream getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+	public AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
 		return getFileAsOutputStream(transformedFilePath);
 	}
