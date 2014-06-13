@@ -11,6 +11,7 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -193,7 +194,9 @@ public class ExecutionDAOImplTest {
 	
 	@Test
 	public void testExecutionOutputFileOutputStream() throws IOException {
-		OutputStream outputStream = executionDAO.getFileAsOutputStream("out.txt");
+		AsyncPipedStreamBean asyncPipedStreamBean = executionDAO.getFileAsOutputStream("out.txt");
+		Assert.assertNotNull(asyncPipedStreamBean);
+		OutputStream outputStream = asyncPipedStreamBean.getOutputStream();
 		Assert.assertNotNull(outputStream);
 		outputStream.close();
 	}
