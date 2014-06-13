@@ -58,7 +58,7 @@ public class ExecutionS3PathHelper {
 	}
 
 	public StringBuffer getExecutionInputFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(INPUT_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(INPUT_FILES).append(SEPARATOR);
 	}
 
 	public String getExecutionInputFilePath(Execution execution, String packageBusinessKey, String inputFile) {
@@ -66,7 +66,7 @@ public class ExecutionS3PathHelper {
 	}
 
 	public StringBuffer getExecutionOutputFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(OUTPUT_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(OUTPUT_FILES).append(SEPARATOR);
 	}
 
 	public String getExecutionOutputFilePath(Execution execution, String packageBusinessKey, String relativeFilePath) {
@@ -102,7 +102,7 @@ public class ExecutionS3PathHelper {
 
 	private StringBuffer getPackageFilesPathAsStringBuffer(Package aPackage, String directionModifier) {
 		StringBuffer buildPath = getBuildPath(aPackage.getBuild());
-		buildPath.append(BUILD_FILES).append(SEPARATOR).append(directionModifier).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR);
+		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(directionModifier).append(SEPARATOR);
 		return buildPath;
 	}
 	private String getFilePath(Execution execution, String relativePath) {
@@ -110,7 +110,7 @@ public class ExecutionS3PathHelper {
 	}
 
 	public StringBuffer getExecutionTransformedFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(TRANSFORMED_FILES).append(SEPARATOR).append(packageBusinessKey).append(SEPARATOR);
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(TRANSFORMED_FILES).append(SEPARATOR);
 	}
 
 	public String getTransformedFilePath(Execution execution,
