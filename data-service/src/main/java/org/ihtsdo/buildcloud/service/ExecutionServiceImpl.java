@@ -16,16 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.bind.JAXBException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -97,8 +93,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//Run transformation on each of our packages in turn.
 		//TODO Multithreading opportunity here!
 		List<Package> packages = execution.getBuild().getPackages();
-		for (Package pkg: packages) {
-			try{
+		for (Package pkg : packages) {
+			try {
 				executePackage(execution, pkg);
 			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
@@ -132,13 +128,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
 			dao.putOutputFile(execution, pkg, zip, "", true);
-		} catch (JAXBException jbex) {
-			//TODO Telemetry about failures, but will not prevent process from continuing
-			LOGGER.error("Failure in Zip creation caused by JAXB.", jbex);
-		} catch (NoSuchAlgorithmException nsaEx) {
-			LOGGER.error("Failure in Zip creation caused by hashing algorithm.", nsaEx);
 		} catch (Exception e)  {
-			LOGGER.error("Failure in Zip creation caused by ", e);
+			throw (new Exception("Failure in Zip creation.", e));
 		}
 
 	}
