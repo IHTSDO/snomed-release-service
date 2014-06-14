@@ -94,10 +94,11 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
 				build.setEffectiveTime(date);
 			} catch (ParseException e) {
-				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format.", e);
+				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
 		buildDAO.update(build);
 		return build;
 	}
+
 }

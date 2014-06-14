@@ -5,7 +5,6 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity

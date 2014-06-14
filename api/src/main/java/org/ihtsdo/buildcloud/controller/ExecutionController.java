@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -37,7 +39,7 @@ public class ExecutionController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
-											   HttpServletRequest request) throws IOException {
+											   HttpServletRequest request) throws IOException, BadConfigurationException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 
@@ -60,7 +62,7 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
 		
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
 	}
 
@@ -77,7 +79,7 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-											HttpServletRequest request) throws IOException {
+											HttpServletRequest request) throws Exception {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
@@ -91,27 +93,6 @@ public class ExecutionController {
 		response.setContentType("application/zip");
 		ServletOutputStream outputStream = response.getOutputStream();
 		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedUser, outputStream);
-	}
-
-	@RequestMapping(value = "/{executionId}/output/**", method = RequestMethod.POST, headers = "content-type!=multipart/form-data")
-	@ResponseBody
-	public void uploadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-								 HttpServletRequest request,
-								 HttpServletResponse response) throws IOException {
-
-		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-		String filePath = path.substring(path.indexOf("/output/") + 8);
-
-		User authenticatedUser = SecurityHelper.getSubject();
-		Long contentLength = asLong(request.getHeader("content-length"));
-		if (contentLength != null) {
-			executionService.saveOutputFile(buildCompositeKey, executionId, filePath,
-					request.getInputStream(), contentLength, authenticatedUser);
-			response.setStatus(HttpServletResponse.SC_CREATED);
-		} else {
-			// Ask the client for content length so we may stream to permanent storage.
-			response.setStatus(HttpServletResponse.SC_LENGTH_REQUIRED);
-		}
 	}
 
 	@RequestMapping(value = "/{executionId}/output/**")

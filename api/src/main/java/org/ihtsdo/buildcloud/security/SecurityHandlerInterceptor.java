@@ -4,39 +4,34 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
 
-public class SecurityFilter implements Filter {
+public class SecurityHandlerInterceptor implements HandlerInterceptor {
 
+	@Autowired
 	private AuthenticationService authenticationService;
-	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityFilter.class);
-	
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandlerInterceptor.class);
+
 	private static final String AUTH_TOKEN_NAME = "auth_token";
 
-	public void init(FilterConfig config) throws ServletException {
-		ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(config.getServletContext());
-		authenticationService = applicationContext.getBean(AuthenticationService.class);
-	}
-
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws ServletException, IOException {
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 		SecurityHelper.clearSubject();
 
-		final HttpServletRequest httpRequest = (HttpServletRequest) request;
-		final HttpServletResponse httpResponse = (HttpServletResponse) response;
-		final String authHeader = httpRequest.getHeader("Authorization");
+		final String authHeader = request.getHeader("Authorization");
 		//For a file upload we're sending the auth token in a hidden input element
 		final String authParameter = request.getParameter(AUTH_TOKEN_NAME);
 
-		String pathInfo = httpRequest.getPathInfo();
-		String requestMethod = httpRequest.getMethod();
-		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpRequest.getRemoteAddr());
+		String pathInfo = request.getPathInfo();
+		String requestMethod = request.getMethod();
+		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, request.getRemoteAddr());
 		User validUser = null;
 
 		if (pathInfo != null && pathInfo.startsWith("/login")) {
@@ -62,21 +57,23 @@ public class SecurityFilter implements Filter {
 		}
 
 		if (validUser != null) {
-			try {
-				// Bind authenticated subject/user to thread
-				SecurityHelper.setSubject(validUser);
-				chain.doFilter(request, response);
-			} finally {
-				SecurityHelper.clearSubject();
-			}			
+			// Bind authenticated subject/user to thread
+			SecurityHelper.setSubject(validUser);
+			return true;
 		} else {
-			httpResponse.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		} 
-		
+			response.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			return false;
+		}
 	}
 
-	public void destroy() {
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+		SecurityHelper.clearSubject();
+	}
+
+	@Override
+	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
 	}
 
 }

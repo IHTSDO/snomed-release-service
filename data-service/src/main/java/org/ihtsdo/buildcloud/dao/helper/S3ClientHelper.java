@@ -19,6 +19,11 @@ public class S3ClientHelper {
 	public S3ClientHelper() {
 		bucketAclCache = new HashMap<>();
 	}
+	
+	public S3ClientHelper(S3Client s3Client) {
+		this();
+		this.s3Client = s3Client;
+	}
 
 	public void useBucketAcl(PutObjectRequest putObjectRequest) {
 		String bucketName = putObjectRequest.getBucketName();

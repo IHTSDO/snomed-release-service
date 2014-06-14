@@ -19,7 +19,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 public class ExecutionConfigurationJsonGeneratorTest {
 
 	@Autowired

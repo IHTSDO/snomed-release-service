@@ -11,7 +11,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
 public class ExtensionDAOImplTest {
 
