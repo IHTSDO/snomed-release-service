@@ -196,6 +196,15 @@
 									</mapper>
 								</data>
 								<data>
+									<src>${basedir}/src/deb/server.xml<src>
+									<dst>/etc/opt/${packageName}/server.xml</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<filemode>0644</filemode>
+									</mapper>
+								<data>
 									<type>template</type>
 									<paths>
 										<path>/etc/opt/${packageName}</path>
