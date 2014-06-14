@@ -48,7 +48,7 @@ public class ReleaseApiClient {
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
 				String path = getRelativePath(file.toFile(), buildDirectoryPathLength);
-				if (path.contains("/target/")) {
+				if (path.contains( File.separator + "target" + File.separator)) {
 					LOGGER.info("Uploading output file :{}", path);
 					robustUpload(file.toFile());
 				}

@@ -5,8 +5,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-
-import java.util.*;
+import java.util.List;
 
 @Entity
 public class Package {
@@ -25,22 +24,17 @@ public class Package {
 	@JsonIgnore
 	private Build build;
 
-	@OneToMany(mappedBy = "packag")
+	@Transient
 	@JsonIgnore
-	private List<InputFile> inputFiles;
+	private List<String> inputFiles;
 
 	public Package() {
-		inputFiles = new ArrayList<>();
+
 	}
 
 	public Package(String name) {
 		this();
 		setName(name);
-	}
-
-	public void addInputFile(InputFile inputFile) {
-		inputFiles.add(inputFile);
-		inputFile.setPackage(this);
 	}
 
 	public Long getId() {
@@ -72,8 +66,12 @@ public class Package {
 		this.build = build;
 	}
 
-	public List<InputFile> getInputFiles() {
+	public List<String> getInputFiles() {
 		return inputFiles;
+	}
+
+	public void setInputFiles(List<String> inputFiles) {
+		this.inputFiles = inputFiles;
 	}
 
 }

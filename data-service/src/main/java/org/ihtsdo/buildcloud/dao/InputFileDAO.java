@@ -1,20 +1,16 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.ihtsdo.buildcloud.entity.InputFile;
-import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.Package;
 
 import java.io.InputStream;
+import java.util.List;
 
-public interface InputFileDAO extends EntityDAO<InputFile> {
+public interface InputFileDAO {
+	
+	InputStream getManifestStream(Package pkg);
+	
+	public List<String> listInputFilePaths(Package aPackage);
 
-	InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, User user);
-
-	void save(InputFile inputFile);
-
-	void saveFile(InputStream fileStream, long fileSize, String artifactPath);
-
-	void saveFilePom(InputStream inputStream, int length, String pomPath);
-
-	InputStream getFileStream(InputFile inputFile);
+	String getManifestPath(Package aPackage);
 
 }

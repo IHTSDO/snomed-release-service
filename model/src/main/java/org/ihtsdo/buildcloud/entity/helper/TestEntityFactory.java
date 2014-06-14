@@ -13,8 +13,6 @@ public class TestEntityFactory extends TestEntityGenerator {
 		Product product = new Product(productName);
 		Build build = new Build(1L, buildName);
 		Package aPackage = new Package(packageName);
-		InputFile inputFile = new InputFile("concepts.rf2", "1.0");
-		aPackage.addInputFile(inputFile);
 		build.addPackage(aPackage);
 		product.addBuild(build);
 		extension.addProduct(product);
@@ -29,7 +27,11 @@ public class TestEntityFactory extends TestEntityGenerator {
 		Product product = new Product(productNames[0][0]);
 		Build build = new Build(1L,buildNames[0][0][1]);
 
-		addPackagesToBuild(build);
+		for (int pkgIdx = 0; pkgIdx < packageNames[0][0].length; pkgIdx++) {
+			Package pkg = new Package(packageNames[0][0][pkgIdx]);
+			build.addPackage(pkg);
+		}
+		
 		product.addBuild(build);
 		extension.addProduct(product);
 		releaseCenter.addExtension(extension);

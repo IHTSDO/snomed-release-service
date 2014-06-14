@@ -1,28 +1,27 @@
 package org.ihtsdo.buildcloud.controller;
 
-import org.ihtsdo.buildcloud.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}")
@@ -34,129 +33,97 @@ public class InputFileController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] INPUT_FILE_LINKS = {"file"};
-	
-	public static final String MANIFEST_KEY = "isManifest";
-
+	private static final String FILENAME = "filename";
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
-	
-	@RequestMapping("/inputfiles")
+
+
+	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
 	@ResponseBody
-	public List<Map<String, Object>> getInputFiles(@PathVariable String buildCompositeKey,
-												   @PathVariable String packageBusinessKey, HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		//TODO Rewrite this with lambda expression once we're on Java8
-		List<InputFile> filteredFiles = new Vector<InputFile>();
-		for (InputFile file : inputFiles) {
-			if (!file.getMetaData().containsKey(MANIFEST_KEY))
-				filteredFiles.add(file);
-		}
-		return hypermediaGenerator.getEntityCollectionHypermedia(filteredFiles, request, INPUT_FILE_LINKS);
+	public ResponseEntity uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+											 @RequestParam(value = "file") MultipartFile file,
+											 HttpServletResponse response) throws IOException {
+
+		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		return new ResponseEntity(HttpStatus.OK);
 	}
 
-	@RequestMapping("/inputfiles/{inputFileBusinessKey}")
+	@RequestMapping(value = "/manifest")
 	@ResponseBody
-	public Map getInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							@PathVariable String inputFileBusinessKey, HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getSubject();
-		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermedia(inputFile, false, request, INPUT_FILE_LINKS);
+	public Map<String, Object> getManifest(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+										   HttpServletRequest request) {
+		String manifestFileName = inputFileService.getManifestFileName(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
+		Map<String, String> objectHashMap = new HashMap<>();
+		if (manifestFileName != null) {
+			objectHashMap.put(FILENAME, manifestFileName);
+			return hypermediaGenerator.getEntityHypermedia(objectHashMap, true, request, "file");
+		} else {
+			return hypermediaGenerator.getEntityHypermedia(new HashMap<>(), true, request);
+		}
+	}
+
+	@RequestMapping(value = "/manifest/file", produces="application/xml")
+	public void getManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+								HttpServletResponse response) {
+
+		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());) {
+			if (fileStream != null) {
+				response.setContentType("application/xml");
+				StreamUtils.copy(fileStream, response.getOutputStream());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		} catch (IOException e) {
+			LOGGER.error("Failed to stream manifest file from storage.", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
 	@ResponseBody
-	public Map uploadInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							   @RequestParam(value = "file") MultipartFile file,
-							   HttpServletRequest request) throws IOException {
-		return uploadFile(buildCompositeKey, packageBusinessKey, file, request, false);
+	public ResponseEntity uploadInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+											 @RequestParam(value = "file") MultipartFile file) throws IOException {
+
+		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		return new ResponseEntity(HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileBusinessKey}/file", produces="application/zip")
-	public void getInputFileContents(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-									 @PathVariable String inputFileBusinessKey, HttpServletResponse response) throws IOException {
-		getFileContents(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, response);
+	@RequestMapping(value = "/inputfiles")
+	@ResponseBody
+	public List<Map<String, Object>> listInputFiles(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+													HttpServletRequest request) {
+		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
+		List<Map<String, String>> files = new ArrayList<>();
+		for (String filePath : filePaths) {
+			HashMap<String, String> file = new HashMap<>();
+			file.put("id", filePath);
+			files.add(file);
+		}
+		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
+	}
+
+	@RequestMapping(value = "/inputfiles/{inputFileName:.*}")
+	public void getInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+								@PathVariable String inputFileName,
+								HttpServletResponse response) {
+
+		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject());) {
+			if (fileStream != null) {
+				StreamUtils.copy(fileStream, response.getOutputStream());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		} catch (IOException e) {
+			LOGGER.error("Failed to stream manifest file from storage.", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@PathVariable String inputFileName, HttpServletResponse response) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
-		inputFileService.delete(inputFile);
+		inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
 		response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-	}
-
-	@RequestMapping(value = "/manifest", method = RequestMethod.GET)
-	@ResponseBody
-	public Map<String, Object> getManifest( @PathVariable String buildCompositeKey,
-											@PathVariable String packageBusinessKey,
-											HttpServletRequest request) {
-		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
-		if (manifest == null) {
-			throw new ResourceNotFoundException();
-		}
-		return hypermediaGenerator.getEntityHypermedia(manifest, false, request, INPUT_FILE_LINKS);
-	}
-
-	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
-	@ResponseBody
-	public Map uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								@RequestParam(value = "file") MultipartFile file,
-								HttpServletRequest request) throws IOException {
-		return uploadFile (buildCompositeKey, packageBusinessKey, file, request, true);
-	}
-
-	@RequestMapping(value = "/manifest/file", produces="application/zip")
-	public void getManifestContents(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-									HttpServletResponse response) throws IOException {
-		InputFile manifest = getManifest(buildCompositeKey, packageBusinessKey);
-		getFileContents(buildCompositeKey, packageBusinessKey, manifest.getBusinessKey(), response);
-	}
-
-	private Map uploadFile(String buildCompositeKey, String packageBusinessKey,
-			   MultipartFile file,
-			   HttpServletRequest request, boolean isManifest) throws IOException {
-		User authenticatedUser = SecurityHelper.getSubject();
-
-		long size = file.getSize();
-		LOGGER.info("uploadInputFile(multipart). inputFileName: {}, size: {}", file.getOriginalFilename(), size);
-		
-		InputFile inputFile = inputFileService.createUpdate(buildCompositeKey, packageBusinessKey, file.getOriginalFilename(), file.getInputStream(),
-			size, isManifest, authenticatedUser);
-		
-		boolean isCurrentResource = isManifest;  //Manifests don't need their filename added to URL
-		return hypermediaGenerator.getEntityHypermedia(inputFile, isCurrentResource, request, INPUT_FILE_LINKS);
-	}
-
-	private InputFile getManifest(String buildCompositeKey, String packageBusinessKey) {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<InputFile> inputFiles = inputFileService.findAll(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		InputFile manifest = null;
-		for (InputFile file : inputFiles) {
-			if (file.getMetaData().containsKey(MANIFEST_KEY))
-				manifest = file;
-		}
-		return manifest;
-	}
-
-	private void getFileContents(	String buildCompositeKey,
-									String packageBusinessKey,
-									String inputFileBusinessKey,
-									HttpServletResponse response) throws IOException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		InputFile inputFile = inputFileService.find(buildCompositeKey, packageBusinessKey, inputFileBusinessKey, authenticatedUser);
-		if (inputFile != null) {
-			InputStream fileStream = inputFileService.getFileStream(inputFile);
-			if (fileStream != null) {
-				ServletOutputStream outputStream = response.getOutputStream();
-				FileCopyUtils.copy(fileStream, outputStream);
-				outputStream.flush();
-			}
-		} else {
-			// File not found
-			response.sendError(404);
-		}
 	}
 
 }

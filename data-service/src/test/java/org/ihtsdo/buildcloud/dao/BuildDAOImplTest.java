@@ -15,7 +15,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
 public class BuildDAOImplTest {
 
@@ -27,11 +27,12 @@ public class BuildDAOImplTest {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
 		List<Build> builds = dao.findAll(filterOptions, TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(builds);
-		Assert.assertEquals(8, builds.size());
+		Assert.assertEquals(TestEntityGenerator.totalBuildCount, builds.size());
 
 		Assert.assertNotNull(dao.find(1L, TestEntityGenerator.TEST_USER));
 		Assert.assertNotNull(dao.find(2L, TestEntityGenerator.TEST_USER));
-		Assert.assertNull(dao.find(9L, TestEntityGenerator.TEST_USER));
+		//Attempt to recover build greater than our current amount of test data - should not be found
+		Assert.assertNull(dao.find((long)TestEntityGenerator.totalBuildCount + 1, TestEntityGenerator.TEST_USER));
 	}
 
 }

@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.1.1</version>
+		<version>0.1.2</version>
 	</parent>
 
 	<artifactId>api</artifactId>
@@ -196,6 +196,45 @@
 									</mapper>
 								</data>
 								<data>
+									<src>${basedir}/src/deb/server.xml</src>
+									<dst>/etc/opt/${packageName}/server.xml</dst>
+									<type>file</type>
+									<conffile>true</conffile>
+									<mapper>
+										<type>perm</type>
+										<filemode>0644</filemode>
+									</mapper>
+								</data>
+								<data>
+									<type>template</type>
+									<paths>
+										<path>/etc/opt/${packageName}</path>
+										<path>/opt/${packageName}</path>
+									</paths>
+								</data>
+								<data>
+									<type>template</type>
+									<paths>
+										<path>/var/opt/${packageName}</path>
+										<path>/var/opt/${packageName}/run</path>
+										<path>/var/opt/${packageName}/logs</path>
+										<path>/var/opt/${packageName}/offline_bucket</path>
+									</paths>
+									<mapper>
+										<type>perm</type>
+										<user>${packageName}</user>
+										<group>${packageName}</group>
+										<dirmode>0750</dirmode>
+										<filemode>0750</filemode>
+									</mapper>
+								</data>
+								<data>
+									<type>link</type>
+									<linkName>/var/log/${packageName}</linkName>
+									<linkTarget>/var/opt/${packageName}/log</linkTarget>
+									<symlink>true</symlink>
+								</data>
+								<!--			<data>
 									<src>${basedir}/src/deb/log4j.xml</src>
 									<dst>/etc/opt/${packageName}/log4j.xml</dst>
 									<type>file</type>
@@ -205,7 +244,7 @@
 										<group>${packageName}</group>
 										<filemode>0640</filemode>
 									</mapper>
-								</data>
+								</data> -->
 							</dataSet>
 						</configuration>
 					</execution>

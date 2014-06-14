@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
@@ -15,9 +12,11 @@ public class TestEntityGenerator {
 	public static final String [] releaseCenterShortNames = {"International"};
 
 	public static final String [] extensionNames = {"SNOMED CT International Edition",
-													"SNOMED CT Spanish Edition"};
+													"SNOMED CT Spanish Edition"
+													};
 
-	public static final String [][] productNames = {{"SNOMED CT Release", 
+	public static final String [][] productNames = {{"SNOMED CT Release",
+													 "NLM Example Refset",
 													 "Medical Devices Technical Preview",
 													 "GP/FP Refset Technical Preview",
 													 "LOINC Expressions Technical Preview",
@@ -25,37 +24,44 @@ public class TestEntityGenerator {
 
 													{"Spanish Release"} };
 
-	public static final int totalBuildCount = 8;
+	public static final int totalBuildCount = 9;
 	
-	public static final int [] buildCount = { 4,
+	//Number of builds per extension
+	public static final int [] buildCount = { 5,
 											  4};
 	
 	//Build array dimensions are extension, products, build
 
 	//So those empty arrays there are for "Medical Devices", et al.
-	public static final String [][][] buildNames = { 	{ {	"20140731 International Release Build",
-															"20140131 International Release Build",
-															"20130731 International Release Build",
-															"20130131 International Release Build"} , {}, {}, {}, {} },
+	public static final String [][][] buildNames = { 	{ 	{	"20140731 International Release Build",
+																"20140131 International Release Build",
+																"20130731 International Release Build",
+																"20130131 International Release Build"} , 
+															{"20140831 Simple Refset Build"}, {}, {}, {}, {} },
 														{ {	"20140731 Spanish Release Build",
 															"20140131 Spanish Release Build",
 															"20130731 Spanish Release Build",
 															"20130131 Spanish Release Build"}}};
 
 	
-	public static final int totalStarredBuilds = 5; 
+	public static final int totalStarredBuilds = 6; 
 	
 	// Starred count is per extension
-	public static final int [] starredCount = { 3,
+	public static final int [] starredCount = { 4,
 												2};
 	
-	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {}, {}, {}, {} },
+	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {true}, {}, {}, {}, {} },
 
 															{{ true, false, true, false }} };
 	
-	public static final String [] packageNames = {	"SNOMED Release Package",
-													"RF1 Compatibility Package",
-													"RF2 to RF1 Conversion"};		
+	//Doing this on a per product basis just like the builds, ie all builds in a product will feature the same package
+	public static final String [][][] packageNames = {	{	{	"SNOMED Release Package",
+																"RF1 Compatibility Package",
+																"RF2 to RF1 Conversion"},
+															{	"Simple Refset Package" }, {}, {}, {} },
+														{ {	"SNOMED Release Package (es-ar)",
+															"RF1 Compatibility Package (es-ar)",
+															"RF2 to RF1 Conversion (es-ar)" }}};
 
 	// packageInputFile string format is name|groupId|artifactId|version
 	public static final String [] packageInputFiles = {
@@ -83,38 +89,19 @@ public class TestEntityGenerator {
 				for (int iBld=0; iBld < buildNames[iEx][iPrd].length; iBld++){
 					Build build = new Build(buildNames[iEx][iPrd][iBld], starredBuilds[iEx][iPrd][iBld]);
 					product.addBuild(build);
-					addPackagesToBuild(build);
+					
+					//Do we have packages to add to all builds of this product?
+					if (packageNames.length > iEx && packageNames[iEx].length > iPrd){
+						for (int pkgIdx = 0; pkgIdx < packageNames[iEx][iPrd].length; pkgIdx++) {
+							Package pkg = new Package(packageNames[iEx][iPrd][pkgIdx]);
+							build.addPackage(pkg);
+						}
+					}
 				}
 			}
 		}
 	}
 	
-	protected void addPackagesToBuild (Build build) {
-		for (int i = 0; i < packageNames.length; i++) {
-			String packageName = packageNames[i];
-			Package pkg = new Package(packageName);
-			build.addPackage(pkg);
-			if (packageInputFiles.length > i) {
-				String[] inputFileParts = packageInputFiles[i].split("\\|");
-				InputFile inputFile = new InputFile(inputFileParts[0], inputFileParts[3]);
-				inputFile.setGroupId(inputFileParts[1]);
-				inputFile.setArtifactId(inputFileParts[2]);
-				pkg.addInputFile(inputFile);
-			}
-			if (i == 0) {
-				addManifestToPackage(pkg);
-			}
-		}		
-	}
-	
-	protected void addManifestToPackage (Package pkg) {
-		String[] manifestFileParts = manifestFileStr.split("\\|");
-		InputFile manifestFile = new InputFile(manifestFileParts[0], manifestFileParts[3]);
-		Map<String, String> manifestMetaData = new HashMap<String,String>();
-		manifestMetaData.put("isManifest", "true");
-		manifestFile.addMetaData(manifestMetaData);
-		manifestFile.setGroupId(manifestFileParts[1]);
-		manifestFile.setArtifactId(manifestFileParts[2]);
-		pkg.addInputFile(manifestFile);
-	}
+
+
 }

@@ -2,14 +2,10 @@ package org.ihtsdo.buildcloud.service.maven;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Helper;
-import com.github.jknack.handlebars.Template;
 import com.github.jknack.handlebars.Options;
-
+import com.github.jknack.handlebars.Template;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.InputFile;
 import org.ihtsdo.buildcloud.entity.MavenArtifact;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.FileCopyUtils;
@@ -107,21 +103,5 @@ public class MavenGenerator {
 			throw new FileNotFoundException("Unable to read required resource package_assembly.xml");
 		}
 	}
-
-	public void generateArtifactAndGroupId(InputFile inputFile) throws IOException {
-		Package aPackage = inputFile.getPackage();
-		Build build = aPackage.getBuild();
-
-		StringWriter groupIdWriter = new StringWriter();
-		artifactGroupIdHandlebars.apply(build, groupIdWriter);
-		String groupId = groupIdWriter.toString();
-		inputFile.setGroupId(groupId);
-
-		StringWriter artifactIdWriter = new StringWriter();
-		artifactArtifactIdHandlebars.apply(inputFile, artifactIdWriter);
-		String artifactId = artifactIdWriter.toString();
-		inputFile.setArtifactId(artifactId);
-	}
-	
 
 }
