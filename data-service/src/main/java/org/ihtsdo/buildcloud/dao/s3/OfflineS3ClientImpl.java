@@ -3,12 +3,15 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -18,7 +21,7 @@ import java.util.List;
  * Offers an offline version of S3 cloud storage for demos or working without a connection.
  * N.B. Metadata and ACL security are not implemented.
  */
-public class OfflineS3ClientImpl implements S3Client {
+public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	private File bucketsDirectory;
 
@@ -37,10 +40,11 @@ public class OfflineS3ClientImpl implements S3Client {
 		String searchLocation = bucketName + File.separator + getPlatformDependantPath(prefix);
 		File searchStartDir;
 		
-		try{
+		try {
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
-			LOGGER.warn("Failed to find files at {}", searchLocation, e);
+			//It's not a problem if we're listing files in a non-existent directory.  Just note and return empty list.
+			LOGGER.debug("Failed to find files at {} due to {}", searchLocation, e);
 			return listing;
 		}
 		
@@ -75,7 +79,11 @@ public class OfflineS3ClientImpl implements S3Client {
 	@Override
 	public S3Object getObject(String bucketName, String key) {
 		File file = getFile(bucketName, key, false); //Don't create bucket
-		return new OfflineS3Object(bucketName, key, file);
+		if (file.isFile()) {
+			return new OfflineS3Object(bucketName, key, file);
+		} else {
+			throw new AmazonClientException("Object does not exist.");
+		}
 	}
 
 	@Override
@@ -88,7 +96,8 @@ public class OfflineS3ClientImpl implements S3Client {
 		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
 		if (inputStream != null) {
 			try {
-				Files.copy(inputStream, outFile.toPath());
+				//As per the online implmentation, if the file is already there we will overwrite it.
+				Files.copy(inputStream, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new AmazonServiceException(String.format("Failed to store object, bucket:%s, objectKey:%s", bucketName, key), e);
 			} finally {
@@ -102,7 +111,14 @@ public class OfflineS3ClientImpl implements S3Client {
 		} else {
 			throw new AmazonClientException("Failed to store object, no input given.");
 		}
-		return new PutObjectResult();
+		
+		PutObjectResult result = new PutObjectResult();
+		//For the offline implmentation we'll just copy the incoming MD5 and say we received the same thing
+		if (metadata != null) {
+			result.setContentMd5(metadata.getContentMD5());
+		}
+		
+		return result;
 	}
 
 	@Override
@@ -114,7 +130,7 @@ public class OfflineS3ClientImpl implements S3Client {
 			File inFile = putRequest.getFile();
 			inputStream = getInputStream(inFile);
 		}
-		return putObject(bucketName, key, inputStream, null);
+		return putObject(bucketName, key, inputStream, putRequest.getMetadata());
 	}
 
 	private InputStream getInputStream(File inFile) {
@@ -146,15 +162,24 @@ public class OfflineS3ClientImpl implements S3Client {
 		return null;
 	}
 
+	@Override
+	/**
+	 * Part of the TestS3Client interface.
+	 * For clearing down before and after testing.
+	 */
+	public void deleteBuckets() {
+		FileSystemUtils.deleteRecursively(bucketsDirectory);
+	}
+
 	private File getBucket(String bucketName, boolean createIfRequired) {
 		File bucket = new File(bucketsDirectory, bucketName);
-		
+
 		//Is bucket there already, or do we need to create it?
 		if (!bucket.isDirectory()) {
 			//Attempt to create - will fail if file already exists at that location.
 			if (createIfRequired) {
 				boolean success = bucket.mkdirs();
-				
+
 				if (!success) {
 					throw new AmazonServiceException("Could neither find nor create Bucket at: "  + bucketsDirectory + File.separator + bucketName);
 				}
@@ -174,15 +199,15 @@ public class OfflineS3ClientImpl implements S3Client {
 		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
 		return file;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param file
 	 * @return The path relative to the bucket directory and bucket
 	 */
 	private String getRelativePathAsKey(String bucketName, File file) {
 		String absolutePath = file.getAbsolutePath();
-		int relativeStart =  bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash 
+		int relativeStart = bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash
 		String relativePath = absolutePath.substring(relativeStart);
 		relativePath = getPlatformIndependentPath(relativePath);
 		return relativePath;

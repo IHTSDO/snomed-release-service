@@ -7,13 +7,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +115,58 @@ public class FileUtils {
 			out.closeEntry();
 			in.close();
 		}
+	}
+	
+	/*
+	 *@author http://www.mkyong.com/java/how-to-generate-a-file-checksum-value-in-java/
+	 */
+	public static String calculateMD5(File file) throws NoSuchAlgorithmException, IOException {
+		StringBuffer sb = new StringBuffer("");
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		FileInputStream fis = new FileInputStream(file);
+		byte[] dataBytes = new byte[1024];
+
+		int nread = 0; 
+		while ((nread = fis.read(dataBytes)) != -1) {
+			md.update(dataBytes, 0, nread);
+		}
+
+		//convert the byte to hex format
+		byte[] mdbytes = md.digest();
+		for (int i = 0; i < mdbytes.length; i++) {
+			sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
+		}
+		fis.close();
+		return sb.toString();
+	}
+	
+	/**
+	 * Creates a file in the same directory as hashMe, using the same name with .md5 appended to it.
+	 * @param hashMe
+	 * @return
+	 * @throws IOException 
+	 * @throws NoSuchAlgorithmException 
+	 */
+	public static File createMD5File (File hashMe) throws NoSuchAlgorithmException, IOException {
+		String md5String = calculateMD5(hashMe);
+		String resultFilePath = hashMe.getAbsolutePath() + ".md5";
+
+		File resultFile = new File(resultFilePath);
+		FileOutputStream fop = new FileOutputStream(resultFile);
+
+		// if file doesnt exists, then create it
+		if (!resultFile.exists()) {
+			resultFile.createNewFile();
+		}
+
+		// get the content in bytes
+		byte[] contentInBytes = md5String.getBytes();
+
+		fop.write(contentInBytes);
+		fop.flush();
+		fop.close();
+
+		return resultFile;
 	}
 
 }

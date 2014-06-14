@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 public class MavenGeneratorTest {
 	
 	@Autowired

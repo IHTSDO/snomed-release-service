@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -21,6 +23,22 @@ public class GlobalControllerExceptionHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public HashMap<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
+		logError(request, exception);
+		return getErrorMap(exception);
+	}
+
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ResponseBody
+	public HashMap<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
+		logError(request, exception);
+		return getErrorMap(exception);
+	}
+
+	@ExceptionHandler(BadConfigurationException.class)
+	@ResponseStatus(HttpStatus.PRECONDITION_FAILED)
+	@ResponseBody
+	public HashMap<String, String> handleBadConfigurationException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception);
 	}
