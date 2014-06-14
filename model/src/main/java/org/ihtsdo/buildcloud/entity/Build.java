@@ -1,12 +1,14 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Entity
 public class Build {
@@ -17,7 +19,11 @@ public class Build {
 	private Long id;
 
 	private String name;
-	
+
+	private Date effectiveTime;
+
+	private boolean firstTimeRelease;
+
 	private boolean starred;
 
 	@JsonIgnore
@@ -30,9 +36,12 @@ public class Build {
 	@OneToMany(mappedBy = "build")
 	@JsonIgnore
 	private List<Package> packages;
-	
+
+	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
+
 	public Build() {
 		packages = new ArrayList<>();
+		firstTimeRelease = true;
 	}
 
 	public Build(String name) {
@@ -78,6 +87,24 @@ public class Build {
 		generateBusinessKey();
 	}
 
+	@JsonProperty("effectiveTime")
+	public String getEffectiveDateFormatted() {
+		return effectiveTime != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveTime) : null;
+	}
+
+	@JsonIgnore
+	public String getEffectiveTimeSnomedFormat() {
+		return effectiveTime != null ? DateFormatUtils.format(effectiveTime, SNOMED_DATE_FORMAT) : null;
+	}
+
+	public Date getEffectiveTime() {
+		return effectiveTime;
+	}
+
+	public void setEffectiveTime(Date effectiveTime) {
+		this.effectiveTime = effectiveTime;
+	}
+
 	public String getBusinessKey() {
 		return businessKey;
 	}
@@ -97,7 +124,15 @@ public class Build {
 	private void generateBusinessKey() {
 		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
-	
+
+	public boolean isFirstTimeRelease() {
+		return firstTimeRelease;
+	}
+
+	public void setFirstTimeRelease(boolean firstTimeRelease) {
+		this.firstTimeRelease = firstTimeRelease;
+	}
+
 	public boolean isStarred() {
 		return starred;
 	}
@@ -105,5 +140,4 @@ public class Build {
 	public void setStarred(boolean isStarred) {
 		this.starred = isStarred;
 	}
-
 }

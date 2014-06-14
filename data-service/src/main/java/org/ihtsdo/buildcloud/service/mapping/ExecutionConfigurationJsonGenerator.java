@@ -89,26 +89,7 @@ public class ExecutionConfigurationJsonGenerator {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, aPackage.getBusinessKey());
 		config.put(NAME, aPackage.getName());
-		config.put(INPUT_FILES, getInputFilesConfig(aPackage.getInputFiles()));
-		return config;
-	}
-
-	private List<Map> getInputFilesConfig(List<InputFile> inputFiles) {
-		List<Map> configList = new ArrayList<>();
-		for (InputFile inputFile : inputFiles) {
-			configList.add(getConfig(inputFile));
-		}
-		return configList;
-	}
-
-	private Map<String, Object> getConfig(InputFile inputFile) {
-		Map<String, Object> config = new LinkedHashMap<>();
-		config.put(ID, inputFile.getBusinessKey());
-		config.put(NAME, inputFile.getName());
-		config.put(GROUP_ID, inputFile.getGroupId());
-		config.put(ARTIFACT_ID, inputFile.getArtifactId());
-		config.put(VERSION, inputFile.getVersion());
-		config.put(PACKAGING, inputFile.getPackaging());
+		config.put(INPUT_FILES, aPackage.getInputFiles());
 		return config;
 	}
 

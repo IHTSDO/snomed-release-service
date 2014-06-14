@@ -1,88 +1,57 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.S3Object;
-import org.hibernate.Query;
+import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.InputFile;
-import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.stereotype.Repository;
 
 import java.io.InputStream;
+import java.util.List;
 
-@Repository
-public class InputFileDAOImpl extends EntityDAOImpl<InputFile> implements InputFileDAO {
+public class InputFileDAOImpl implements InputFileDAO {
+
+	private FileHelper fileHelper;
+	
+	@Autowired
+	private ExecutionS3PathHelper s3PathHelper;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
 
 	@Autowired
-	private S3Client s3Client;
-
-	@Autowired
-	private S3ClientHelper s3ClientHelper;
-
-	private String mavenS3BucketName;
-
-	public InputFileDAOImpl() {
-		super(InputFile.class);
+	public InputFileDAOImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+		fileHelper = new FileHelper (executionBucketName, s3Client, s3ClientHelper);
+	}
+	
+	public List<String> listInputFilePaths(Package aPackage) {
+		String directoryPath = s3PathHelper.getPackageInputFilesPath(aPackage);
+		return fileHelper.listFiles(directoryPath);
 	}
 
 	@Override
-	public InputFile find(Long buildId, String packageBusinessKey, String inputFileBusinessKey, User user) {
-		Query query = getCurrentSession().createQuery(
-				"select inputFile " +
-				"from ReleaseCenterMembership membership " +
-				"join membership.releaseCenter releaseCenter " +
-				"join releaseCenter.extensions extension " +
-				"join extension.products product " +
-				"join product.builds build " +
-				"join build.packages package " +
-				"join package.inputFiles inputFile " +
-				"where membership.user = :user " +
-				"and build.id = :buildId " +
-				"and package.businessKey = :packageBusinessKey " +
-				"and inputFile.businessKey = :inputFileBusinessKey " +
-				"order by inputFile.id ");
-		query.setEntity("user", user);
-		query.setLong("buildId", buildId);
-		query.setString("packageBusinessKey", packageBusinessKey);
-		query.setString("inputFileBusinessKey", inputFileBusinessKey);
-
-		return (InputFile) query.uniqueResult();
-	}
-
-	@Override
-	public void saveFile(InputStream fileStream, long fileSize, String artifactPath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, artifactPath, fileStream).length(fileSize).useBucketAcl();
-		s3Client.putObject(putRequest);
-	}
-
-	@Override
-	public void saveFilePom(InputStream inputStream, int length, String pomPath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(mavenS3BucketName, pomPath, inputStream).length(length).useBucketAcl();
-		s3Client.putObject(putRequest);
-	}
-
-	@Override
-	public InputStream getFileStream(InputFile inputFile) {
-		try {
-			S3Object s3Object = s3Client.getObject(mavenS3BucketName, inputFile.getPath());
-			if (s3Object != null) {
-				return s3Object.getObjectContent();
-			}
-		} catch (AmazonS3Exception e) {
-			if (404 != e.getStatusCode()) {
-				throw e;
-			}
+	public InputStream getManifestStream(Package aPackage) {
+		String manifestPath = getManifestPath(aPackage);
+		if (manifestPath != null) {
+			return fileHelper.getFileStream(manifestPath);
+		} else {
+			return null;
 		}
-		return null;
 	}
 
-	@Required
-	public void setMavenS3BucketName(String mavenS3BucketName) {
-		this.mavenS3BucketName = mavenS3BucketName;
+	@Override
+	public String getManifestPath(Package aPackage) {
+		String manifestDirectoryPath = s3PathHelper.getPackageManifestDirectoryPath(aPackage).toString();
+		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
+		List<String> files = fileHelper.listFiles(manifestDirectoryPath);
+		//The first file in the manifest directory will be the manifest
+		if (!files.isEmpty()) {
+			return manifestDirectoryPath + files.iterator().next();
+		} else {
+			return null;
+		}
 	}
 
 }

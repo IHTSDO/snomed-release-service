@@ -7,11 +7,11 @@ import com.amazonaws.services.s3.model.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,11 +21,11 @@ import java.util.List;
  * Offers an offline version of S3 cloud storage for demos or working without a connection.
  * N.B. Metadata and ACL security are not implemented.
  */
-public class OfflineS3ClientImpl implements S3Client {
+public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
-	public static final String UTF_8 = "UTF-8";
 	private File bucketsDirectory;
 
+	private static final boolean REPLACE_SEPARATOR = !File.pathSeparator.equals("/");
 	private static final Logger LOGGER = LoggerFactory.getLogger(OfflineS3ClientImpl.class);
 
 	public OfflineS3ClientImpl(File bucketsDirectory) {
@@ -36,14 +36,15 @@ public class OfflineS3ClientImpl implements S3Client {
 	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
 		ObjectListing listing = new ObjectListing();
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
-		
-		String searchLocation = bucketName + File.separator + prefix;
+
+		String searchLocation = bucketName + File.separator + getPlatformDependantPath(prefix);
 		File searchStartDir;
 		
-		try{
+		try {
 			searchStartDir = getBucket(searchLocation, false);
 		} catch (Exception e) {
-			LOGGER.warn ("Failed to find files at " + searchLocation + ", with detail: " + e.getLocalizedMessage());
+			//It's not a problem if we're listing files in a non-existent directory.  Just note and return empty list.
+			LOGGER.debug("Failed to find files at {} due to {}", searchLocation, e);
 			return listing;
 		}
 		
@@ -51,7 +52,7 @@ public class OfflineS3ClientImpl implements S3Client {
 		
 		if (list != null) {
 			for (File file : list) {
-				String key = getRelativePath(bucketName, file);
+				String key = getRelativePathAsKey(bucketName, file);
 				S3ObjectSummary summary = new S3ObjectSummary();
 				summary.setKey(key);
 				summary.setBucketName(bucketName);
@@ -78,7 +79,11 @@ public class OfflineS3ClientImpl implements S3Client {
 	@Override
 	public S3Object getObject(String bucketName, String key) {
 		File file = getFile(bucketName, key, false); //Don't create bucket
-		return new OfflineS3Object(bucketName, key, file);
+		if (file.isFile()) {
+			return new OfflineS3Object(bucketName, key, file);
+		} else {
+			throw new AmazonClientException("Object does not exist.");
+		}
 	}
 
 	@Override
@@ -91,7 +96,8 @@ public class OfflineS3ClientImpl implements S3Client {
 		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
 		if (inputStream != null) {
 			try {
-				Files.copy(inputStream, outFile.toPath());
+				//As per the online implmentation, if the file is already there we will overwrite it.
+				Files.copy(inputStream, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new AmazonServiceException(String.format("Failed to store object, bucket:%s, objectKey:%s", bucketName, key), e);
 			} finally {
@@ -105,12 +111,18 @@ public class OfflineS3ClientImpl implements S3Client {
 		} else {
 			throw new AmazonClientException("Failed to store object, no input given.");
 		}
-		return new PutObjectResult();
+		
+		PutObjectResult result = new PutObjectResult();
+		//For the offline implmentation we'll just copy the incoming MD5 and say we received the same thing
+		if (metadata != null) {
+			result.setContentMd5(metadata.getContentMD5());
+		}
+		
+		return result;
 	}
 
 	@Override
 	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException {
-		//TODO Might want to change "/" for File.separator to make us more platform independent	
 		String bucketName = putRequest.getBucketName();
 		String key = putRequest.getKey();
 		InputStream inputStream = putRequest.getInputStream();
@@ -118,7 +130,7 @@ public class OfflineS3ClientImpl implements S3Client {
 			File inFile = putRequest.getFile();
 			inputStream = getInputStream(inFile);
 		}
-		return putObject(bucketName, key, inputStream, null);
+		return putObject(bucketName, key, inputStream, putRequest.getMetadata());
 	}
 
 	private InputStream getInputStream(File inFile) {
@@ -133,6 +145,13 @@ public class OfflineS3ClientImpl implements S3Client {
 	}
 
 	@Override
+	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException, AmazonServiceException {
+		S3Object object = getObject(sourceBucketName, sourceKey);
+		putObject(destinationBucketName, destinationKey, object.getObjectContent(), null);
+		return null;
+	}
+
+	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
 		File file = getFile(bucketName, key, false);
 		file.delete();
@@ -143,15 +162,24 @@ public class OfflineS3ClientImpl implements S3Client {
 		return null;
 	}
 
+	@Override
+	/**
+	 * Part of the TestS3Client interface.
+	 * For clearing down before and after testing.
+	 */
+	public void deleteBuckets() {
+		FileSystemUtils.deleteRecursively(bucketsDirectory);
+	}
+
 	private File getBucket(String bucketName, boolean createIfRequired) {
 		File bucket = new File(bucketsDirectory, bucketName);
-		
+
 		//Is bucket there already, or do we need to create it?
 		if (!bucket.isDirectory()) {
 			//Attempt to create - will fail if file already exists at that location.
 			if (createIfRequired) {
 				boolean success = bucket.mkdirs();
-				
+
 				if (!success) {
 					throw new AmazonServiceException("Could neither find nor create Bucket at: "  + bucketsDirectory + File.separator + bucketName);
 				}
@@ -165,22 +193,38 @@ public class OfflineS3ClientImpl implements S3Client {
 	private File getFile(String bucketName, String key, boolean createIfRequired) {
 		//Limitations on length of filename mean we have to use the slashed elements in the key as a directory path, unlike in the online implementation
 		//split the last filename off to create the parent directory as required.
-		File relativeLocation = new File (bucketName + File.separator + key);
-		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);  //creates bucket if needed
+		key = getPlatformDependantPath(key);
+		File relativeLocation = new File(bucketName + File.separator + key);
+		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);
 		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
 		return file;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param file
 	 * @return The path relative to the bucket directory and bucket
 	 */
-	private String getRelativePath (String bucketName, File file) {
+	private String getRelativePathAsKey(String bucketName, File file) {
 		String absolutePath = file.getAbsolutePath();
-		int relativeStart =  bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash 
-		String relativePath = absolutePath.substring(relativeStart);  
+		int relativeStart = bucketsDirectory.getAbsolutePath().length() + bucketName.length() + 2; //Take off the slash between bucketDirectory and final slash
+		String relativePath = absolutePath.substring(relativeStart);
+		relativePath = getPlatformIndependentPath(relativePath);
 		return relativePath;
+	}
+
+	private String getPlatformDependantPath(String path) {
+		if (REPLACE_SEPARATOR) {
+			path = path.replace('/', File.separatorChar);
+		}
+		return path;
+	}
+
+	private String getPlatformIndependentPath(String path) {
+		if (REPLACE_SEPARATOR) {
+			path = path.replace(File.separatorChar, '/');
+		}
+		return path;
 	}
 
 	public class S3ObjectSummaryComparator implements Comparator<S3ObjectSummary> {

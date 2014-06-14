@@ -21,6 +21,8 @@ public interface S3Client {
 
 	PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException;
 
+	CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException, AmazonServiceException;
+
 	void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException;
 
 	AccessControlList getBucketAcl(String bucketName);

@@ -15,7 +15,7 @@ public class MavenExecutor {
 
 		// Create target directory for log
 		new File(buildDirectory, "target").mkdirs();
-		File mavenLog = new File(buildDirectory, "target/maven.log");
+		File mavenLog = new File(buildDirectory, "target" + File.separator + "maven.log");
 
 		ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
 		processBuilder.directory(buildDirectory);

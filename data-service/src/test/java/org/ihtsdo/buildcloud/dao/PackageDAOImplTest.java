@@ -12,7 +12,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/applicationContext.xml"})
+@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
 public class PackageDAOImplTest {
 
@@ -21,13 +21,12 @@ public class PackageDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		String testPackageName = TestEntityGenerator.packageNames[0];
+		String testPackageName = TestEntityGenerator.packageNames[0][0][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 		
 		Package aPackage = dao.find(1L, testPackageId, TestEntityGenerator.TEST_USER);
 		Assert.assertNotNull(aPackage);
 		Assert.assertEquals(testPackageName, aPackage.getName());
-		Assert.assertEquals(2, aPackage.getInputFiles().size());  // Expecting 1 input file and 1 manifest file
 	}
 
 }

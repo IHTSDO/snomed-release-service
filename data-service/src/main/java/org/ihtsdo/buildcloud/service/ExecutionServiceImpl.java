@@ -2,12 +2,17 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
-import org.ihtsdo.buildcloud.service.maven.MavenGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @Transactional
@@ -25,31 +31,38 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ExecutionDAO dao;
-
+	
 	@Autowired
 	private BuildDAO buildDAO;
-
+	
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
-	@Autowired
-	private MavenGenerator mavenGenerator;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException {
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
-		Date creationDate = new Date();
+		if (build.getEffectiveTime() != null) {
 
-		Execution execution = new Execution(creationDate, build);
+			Date creationDate = new Date();
 
-		// Create Build config export
-		String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
+			Execution execution = new Execution(creationDate, build);
 
-		// Persist export
-		dao.save(execution, jsonConfig);
+			// Copy all files from Build input and manifest directory to Execution input and manifest directory
+			dao.copyAll(build, execution);
 
-		return execution;
+			// Create Build config export
+			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
+
+			// Persist export
+			dao.save(execution, jsonConfig);
+
+			return execution;
+		} else {
+			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
+		}
 	}
 
 	@Override
@@ -71,22 +84,95 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
-		Date triggerDate = new Date();
-
+	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-
-		String executionConfiguration = dao.loadConfiguration(execution);
-
-		// Generate poms from config export
-		File buildScriptsTmpDirectory = mavenGenerator.generateBuildScripts(executionConfiguration);
-
-		dao.saveBuildScripts(buildScriptsTmpDirectory, execution);
-
-		// Queue the Execution for building
-		dao.queueForBuilding(execution);
+		
+		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
+		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
+		
+		dao.updateStatus(execution, Execution.Status.BUILDING);
+		
+		//Run transformation on each of our packages in turn.
+		//TODO Multithreading opportunity here!
+		List<Package> packages = execution.getBuild().getPackages();
+		for (Package pkg : packages) {
+			try {
+				executePackage(execution, pkg);
+			} catch (Exception e) {
+				//Each package could fail independently, record telemetry and move on to next package
+				LOGGER.warn ("Failure while processing package {} due to: {}" , pkg.getBusinessKey(), e.getMessage());
+			}
+		}
+		
+		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return execution;
+	}
+	
+	private void executePackage(Execution execution, Package pkg) throws Exception {
+
+		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
+		if (dao.getManifestStream(execution, pkg) == null) {
+			throw new Exception ("Failed to find valid manifest file.");
+		}
+		
+		transformFiles(execution, pkg);
+		
+		//Convert Delta files to Full, Snapshot and delta release files
+		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
+		generator.generateReleaseFiles();
+		
+		try {
+			Zipper zipper = new Zipper(execution, pkg, dao);
+			File zip = zipper.createZipFile();
+			dao.putOutputFile(execution, pkg, zip, "", true);
+		} catch (Exception e)  {
+			throw (new Exception("Failure in Zip creation.", e));
+		}
+
+	}
+
+	/**
+	 * A streaming transformation of execution input files, creating execution output files.
+	 * @param execution
+	 * @throws IOException
+	 */
+	private void transformFiles(Execution execution, Package pkg) {
+		StreamingFileTransformation transformation = new StreamingFileTransformation();
+
+		// Add streaming transformation of effectiveDate
+		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
+		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
+		transformation.addLineTransformation(new UUIDTransformation(0));
+
+		String packageBusinessKey = pkg.getBusinessKey();
+		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
+
+		// Iterate each execution input file
+		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
+
+		for (String relativeFilePath : executionInputFilePaths) {
+
+			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
+			if (relativeFilePath.endsWith(".txt")) {
+				try {
+					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
+					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+					asyncPipedStreamBean.waitForFinish();
+				} catch (IOException e) {
+					// Catch blocks just log and let the next file get processed.
+					LOGGER.error("IOException processing file {}", relativeFilePath, e);
+				} catch (InterruptedException e) {
+					LOGGER.error("InterruptedException uploading file {}", relativeFilePath, e);
+				} catch (ExecutionException e) {
+					LOGGER.error("ExecutionException uploading file {}", relativeFilePath, e);
+				}
+			} else {
+				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
+			}
+		}
 	}
 
 	@Override
@@ -96,9 +182,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void saveOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
+	public void putOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		dao.saveOutputFile(execution, filePath, inputStream, size);
+		dao.putOutputFile(execution, filePath, inputStream, size);
 	}
 
 	@Override
@@ -123,5 +209,5 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return buildDAO.find(buildId, authenticatedUser);
 	}
-
+	
 }
