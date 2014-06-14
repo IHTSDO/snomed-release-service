@@ -6,8 +6,5 @@ echo $*
 
 APP_NAME=[[packageName]]
 
-ps -ef | grep java >/tmp/install.log
-md5sum /opt/$APP_NAME/lib/app.jar >>/tmp/install.log
-
-supervisorctl update $APP_NAME 2>&1 >>/tmp/install.log
-supervisorctl start $APP_NAME 2>&1 >>/tmp/install.log
+supervisorctl update $APP_NAME 2>&1 >/dev/null
+supervisorctl start $APP_NAME 2>&1 >/dev/null
