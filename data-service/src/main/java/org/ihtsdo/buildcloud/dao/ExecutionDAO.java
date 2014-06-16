@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -44,9 +45,9 @@ public interface ExecutionDAO {
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
-	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
-	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getFileAsOutputStream(String executionOutputFilePath) throws IOException;
+	AsyncPipedStreamBean getFileAsOutputStream(String executionOutputFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
@@ -63,7 +64,7 @@ public interface ExecutionDAO {
 	
 	List<String> listOutputFilePaths(Execution execution, String packageId);
 
-	org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
 	
