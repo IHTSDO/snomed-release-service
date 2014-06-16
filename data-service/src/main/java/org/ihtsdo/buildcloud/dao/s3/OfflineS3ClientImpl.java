@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -94,7 +96,8 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
 		if (inputStream != null) {
 			try {
-				Files.copy(inputStream, outFile.toPath());
+				//As per the online implmentation, if the file is already there we will overwrite it.
+				Files.copy(inputStream, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new AmazonServiceException(String.format("Failed to store object, bucket:%s, objectKey:%s", bucketName, key), e);
 			} finally {
@@ -108,7 +111,14 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		} else {
 			throw new AmazonClientException("Failed to store object, no input given.");
 		}
-		return new PutObjectResult();
+		
+		PutObjectResult result = new PutObjectResult();
+		//For the offline implmentation we'll just copy the incoming MD5 and say we received the same thing
+		if (metadata != null) {
+			result.setContentMd5(metadata.getContentMD5());
+		}
+		
+		return result;
 	}
 
 	@Override
@@ -120,7 +130,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 			File inFile = putRequest.getFile();
 			inputStream = getInputStream(inFile);
 		}
-		return putObject(bucketName, key, inputStream, null);
+		return putObject(bucketName, key, inputStream, putRequest.getMetadata());
 	}
 
 	private InputStream getInputStream(File inFile) {

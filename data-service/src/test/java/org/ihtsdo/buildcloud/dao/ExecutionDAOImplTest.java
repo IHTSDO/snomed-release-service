@@ -5,13 +5,17 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,9 +27,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -34,9 +41,14 @@ import java.util.GregorianCalendar;
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
 public class ExecutionDAOImplTest {
+	
+	public static final String TEST_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 
 	@Autowired
 	protected ExecutionDAOImpl executionDAO;
+
+	@Autowired
+	private S3ClientFactory factory;
 
 	@Autowired
 	protected BuildDAO buildDAO;
@@ -134,6 +146,31 @@ public class ExecutionDAOImplTest {
 		Assert.assertEquals("2014-02-04T10:30:01", foundExecution.getCreationTime());
 		Assert.assertEquals(Execution.Status.BEFORE_TRIGGER, foundExecution.getStatus());
 	}
+	
+	
+	@Test
+	public void testPutOutputFile() throws Exception, FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException {
+
+		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
+		boolean offlineMode = true; 
+		S3Client onlineS3Client = factory.getClient(offlineMode);
+		executionDAO.setS3Client(onlineS3Client);
+		
+		Package pkg = execution.getBuild().getPackages().get(0);
+		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
+		boolean calcMD5 = true;
+		String md5Received = executionDAO.putOutputFile(execution, pkg, new File(testFile), "", calcMD5);
+		
+		//Amazon are expecting the md5 to be g8tgi4y8+ABULBMAbgodiA==
+		//Offline test is just going to return the MD5 input, so this test only makes sense in online mode.
+		byte[] md5BytesExpected = Base64.decodeBase64("g8tgi4y8+ABULBMAbgodiA==");
+		byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
+		Assert.assertArrayEquals(md5BytesExpected, md5BytesReceived);
+		
+		//Now lets see if we can get that file back out again
+		InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, TEST_FILE_NAME);
+		Assert.assertNotNull(is);
+	}
 
 	@Test
 	public void testQueueForBuilding() {
@@ -167,5 +204,7 @@ public class ExecutionDAOImplTest {
 		summary.setKey(path);
 		objectListing.getObjectSummaries().add(summary);
 	}
+	
+
 
 }
