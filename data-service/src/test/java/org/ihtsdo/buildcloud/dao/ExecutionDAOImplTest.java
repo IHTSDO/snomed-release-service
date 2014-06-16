@@ -72,7 +72,6 @@ public class ExecutionDAOImplTest {
 		mocksControl.replay();
 		executionDAO.save(execution, "");
 		mocksControl.verify();
-		
 
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
 		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
