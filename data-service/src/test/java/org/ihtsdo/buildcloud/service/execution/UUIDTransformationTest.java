@@ -33,7 +33,7 @@ public class UUIDTransformationTest {
 	@Test
 	public void testReplaceSingleColumnValue() throws IOException {
 
-		List<String> lines = Files.readAllLines(refSetFile.toPath(), StreamingFileTransformation.UTF_8);
+		List<String> lines = Files.readAllLines(refSetFile.toPath(), RF2Constants.UTF_8);
 		assertEquals(5, lines.size());
 		assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId", lines.get(0));
 		for( int i=1;i<lines.size();i++) {
