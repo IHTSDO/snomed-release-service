@@ -5,17 +5,10 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.List;
 
 public class ReleaseFileGenerator {
 
-	private static final String TXT_FILE_EXTENSION = ".txt";
-	private static final String DELTA = "Delta";
-	private static final String FULL = "Full";
-	private static final String SNAPSHOT = "Snapshot";
-	public static final Charset UTF_8 = Charset.forName("UTF-8");
-	public static final String LINE_ENDING = "\r\n";
 	private ExecutionDAO dao;
 	private Execution execution;
 	
@@ -36,7 +29,6 @@ public class ReleaseFileGenerator {
 		generateFullFiles(isFirstRelease);
 		generateSnapshotFiles(isFirstRelease);
 		generateDeltaFiles(isFirstRelease);
-
 	}
 
 	private void generateFullFiles(boolean isFirstRelease) throws Exception {
@@ -44,7 +36,7 @@ public class ReleaseFileGenerator {
 		// first release just rename the delta file to full
 
 		if (isFirstRelease) {
-			convertDeltaFilesTo(FULL);
+			convertDeltaFilesTo(RF2Constants.FULL);
 		} else {
 			// generate full files combining previous release and delta files
 			throw new UnsupportedOperationException("Sorry we only support first time release at the moment!");
@@ -73,11 +65,11 @@ public class ReleaseFileGenerator {
 		}
 		int filesProcessed = 0;
 		for (String fileName : transformedFilePaths) {
-			if (fileName.endsWith(TXT_FILE_EXTENSION)
-					&& fileName.contains(DELTA)) {
+			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
+					&& fileName.contains(RF2Constants.DELTA)) {
 				dao.copyTransformedFileToOutput(execution,
 						businessKey, fileName,
-						fileName.replace(DELTA, fileType));
+						fileName.replace(RF2Constants.DELTA, fileType));
 				filesProcessed++;
 			}
 		}
@@ -97,22 +89,22 @@ public class ReleaseFileGenerator {
 		
 		int filesProcessed = 0;		
 		for (String fileName : transformedFilePaths) {
-			if (fileName.endsWith(TXT_FILE_EXTENSION) && fileName.contains(DELTA)) {
+			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
 				if (isFirstRelease) {
 					// remove delta file contents and only keep the header
 					// line
 					InputStream inputStream = dao.getTransformedFileAsInputStream(execution, businessKey, fileName);
 					AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, businessKey, fileName);
 					OutputStream outputStream = asyncPipedStreamBean.getOutputStream();
-					try (	BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, UTF_8));
-							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+					try (	BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
+							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
 						// only needs to read the first line.
 						String line = reader.readLine();
 						if (line == null) {
 							throw new IllegalStateException( "No contents found in file: " + fileName);
 						}
 						writer.write(line);
-						writer.write(LINE_ENDING);
+						writer.write(RF2Constants.LINE_ENDING);
 					}
 					// Wait for upload pipe to finish
 					asyncPipedStreamBean.waitForFinish();
@@ -132,7 +124,7 @@ public class ReleaseFileGenerator {
 	private void generateSnapshotFiles(boolean isFirstRelease) throws Exception {
 
 		if (isFirstRelease) {
-			convertDeltaFilesTo(SNAPSHOT);
+			convertDeltaFilesTo(RF2Constants.SNAPSHOT);
 		} else {
 			// generate snapshot files using delta file and previous release.
 			throw new UnsupportedOperationException("Sorry we only support first time release at the moment!");
