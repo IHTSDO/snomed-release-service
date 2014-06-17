@@ -1,0 +1,31 @@
+package org.ihtsdo.buildcloud.service.execution.database;
+
+public class H2DataTypeConverter {
+
+	/**
+	 *
+	 * @param type
+	 * @return a <code>String</code> containing the H2 data type.
+	 */
+	public String convert(DataType type) {
+		String h2Type;
+		switch (type) {
+			case SCTID:
+				h2Type = "BIGINT";
+				break;
+			case UUID:
+				h2Type = "UUID";
+				break;
+			case BOOLEAN:
+				h2Type = "BOOLEAN";
+				break;
+			case TIME:
+				h2Type = "TIMESTAMP";
+				break;
+			default:
+				throw new RuntimeException("DataType missing from " + getClass() + " : " + type);
+		}
+		return h2Type;
+	}
+
+}
