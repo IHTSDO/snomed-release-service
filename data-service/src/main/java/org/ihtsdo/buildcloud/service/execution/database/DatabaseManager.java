@@ -9,6 +9,7 @@ public class DatabaseManager {
 	public Connection createConnection(String databaseId) throws ClassNotFoundException, SQLException {
 		Class.forName("org.h2.Driver");
 		Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + databaseId);
+		connection.setAutoCommit(false);
 		return connection;
 	}
 
