@@ -115,6 +115,7 @@ public class DatabasePopulator {
 		List<TableSchema.Field> fields = tableSchema.getFields();
 		int fieldCount = fields.size();
 
+		int executeBatchSize = 10000;
 		String line;
 		long lineNumber = 1;
 		String[] lineValues;
@@ -138,6 +139,9 @@ public class DatabasePopulator {
 				LOGGER.error("Line number {} has wrong column count. Expected {}, got {}. Line skipped.", lineNumber, fieldCount, valuesCount);
 			}
 			lineNumber++;
+			if (lineNumber % executeBatchSize == 0) {
+				insertStatement.executeBatch();
+			}
 		}
 		insertStatement.executeBatch();
 	}
