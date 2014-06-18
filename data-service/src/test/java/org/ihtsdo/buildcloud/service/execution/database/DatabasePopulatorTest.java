@@ -36,14 +36,28 @@ public class DatabasePopulatorTest {
 		Statement statement = testConnection.createStatement();
 		try {
 			ResultSet resultSet = statement.executeQuery("select * from DER2_REFSET_SIMPLEDELTA_INT_20140831");
+
+			// Test first row values
 			Assert.assertTrue(resultSet.first());
-			int col = 1;
-			Assert.assertEquals("3570b46b-b581-4655-ba2c-9a677a2e880c", resultSet.getString(col++));
-			Assert.assertEquals("2014-01-31", resultSet.getDate(col++).toString());
-			Assert.assertEquals(true, resultSet.getBoolean(col++));
-			Assert.assertEquals(900000000000207008L, resultSet.getLong(col++));
-			Assert.assertEquals(450990004L, resultSet.getLong(col++));
-			Assert.assertEquals(293495006L, resultSet.getLong(col++));
+			Assert.assertEquals(1, resultSet.getRow());
+			int colIndex = 1;
+			Assert.assertEquals("3570b46b-b581-4655-ba2c-9a677a2e880c", resultSet.getString(colIndex++));
+			Assert.assertEquals("2014-01-31", resultSet.getDate(colIndex++).toString());
+			Assert.assertEquals(true, resultSet.getBoolean(colIndex++));
+			Assert.assertEquals(900000000000207008L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(450990004L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(293495006L, resultSet.getLong(colIndex++));
+
+			// Test last row values
+			Assert.assertTrue(resultSet.last());
+			Assert.assertEquals(4, resultSet.getRow());
+			colIndex = 1;
+			Assert.assertEquals("c8e26c3c-5f19-41e7-b74b-2ebb889e9e41", resultSet.getString(colIndex++));
+			Assert.assertEquals("2014-01-31", resultSet.getDate(colIndex++).toString());
+			Assert.assertEquals(false, resultSet.getBoolean(colIndex++));
+			Assert.assertEquals(900000000000207008L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(450990004L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(293104008L, resultSet.getLong(colIndex++));
 		} finally {
 			statement.close();
 		}
