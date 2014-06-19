@@ -35,5 +35,4 @@ public interface ExecutionService {
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser);
 
 	InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser);
-
 }

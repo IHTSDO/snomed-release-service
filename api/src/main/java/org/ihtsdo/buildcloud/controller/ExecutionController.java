@@ -2,9 +2,11 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
+import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -33,6 +35,8 @@ public class ExecutionController {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
+	@Autowired
+	private PublishService publishService;
 
 	static final String[] EXECUTION_LINKS = { "configuration", "buildScripts|build-scripts.zip" };
 
@@ -131,6 +135,17 @@ public class ExecutionController {
 		} else {
 			return null;
 		}
+	}
+	
+	@RequestMapping(value = "/{executionId}/output/publish")
+	@ResponseBody
+	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId){
+	    
+	    User authenticatedUser = SecurityHelper.getSubject();
+	    Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
+	    for(Package pk: execution.getBuild().getPackages() ){
+		 publishService.publishExecutionPackage(execution, pk );
+	    }
 	}
 
 }

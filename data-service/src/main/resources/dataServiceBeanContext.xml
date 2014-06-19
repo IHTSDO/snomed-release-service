@@ -53,6 +53,10 @@
 	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.PublishServiceImpl">
+		<constructor-arg name="executionBucketName" ref="executionBucketName"/>
+		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
+	</bean>
 
 	<jdbc:embedded-database id="dataSource"/>
 
@@ -110,6 +114,10 @@
 
 	<bean class="java.lang.String" id="executionBucketName">
 		<constructor-arg value="ire.execution.release.ihtsdo" />
+	</bean>
+	
+	<bean class="java.lang.String" id="publishedBucketName">
+		<constructor-arg value="ire.published.release.ihtsdo" />
 	</bean>
 
 	<bean class="org.codehaus.jackson.map.ObjectMapper" factory-bean="ObjectMapperFactory" factory-method="createObjectMapper"/>
