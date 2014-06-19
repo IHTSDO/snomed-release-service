@@ -47,6 +47,15 @@ public class DatabasePopulator {
 		}
 	}
 
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
+			reader.readLine(); // Discard header line
+
+			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getName());
+			insertData(reader, tableSchema, insertStatement);
+		}
+	}
+
 	public void closeConnection() throws SQLException {
 		connection.close();
 	}
