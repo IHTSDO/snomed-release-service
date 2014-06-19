@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,6 @@ public class DatabasePopulator {
 	private final H2DataTypeConverter dataTypeConverter;
 	private final SchemaFactory schemaFactory;
 
-	private static final FastDateFormat fastDateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatabasePopulator.class);
 
 	public DatabasePopulator(Connection connection) throws DatabasePopulatorException {
@@ -30,7 +28,7 @@ public class DatabasePopulator {
 		schemaFactory = new SchemaFactory();
 	}
 
-	public void createTable(String rf2Filename, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException {
+	public TableSchema createTable(String rf2Filename, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 
 			// Build Schema
@@ -44,6 +42,8 @@ public class DatabasePopulator {
 			// Insert Data
 			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableName);
 			insertData(reader, tableSchema, insertStatement);
+
+			return tableSchema;
 		}
 	}
 
@@ -128,7 +128,7 @@ public class DatabasePopulator {
 				for (int colIndex = 0; colIndex < valuesCount; colIndex++) {
 					DataType type = fields.get(colIndex).getType();
 					if (type == DataType.TIME) {
-						value = fastDateFormat.parse(lineValues[colIndex]);
+						value = RF2Constants.DATE_FORMAT.parse(lineValues[colIndex]);
 					} else {
 						value = lineValues[colIndex];
 					}
