@@ -112,8 +112,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
-		if (dao.getManifestStream(execution, pkg) == null) {
-			throw new Exception ("Failed to find valid manifest file.");
+		InputStream manifestStream = dao.getManifestStream(execution, pkg);
+		if (manifestStream == null) {
+			throw new BadConfigurationException("Failed to find valid manifest file.");
+		} else {
+			manifestStream.close();
 		}
 		
 		transformFiles(execution, pkg);
