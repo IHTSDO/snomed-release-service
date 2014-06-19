@@ -28,6 +28,8 @@ public class Package {
 	@JsonIgnore
 	private List<String> inputFiles;
 
+	private String readmeHeader;
+
 	public Package() {
 
 	}
@@ -72,6 +74,14 @@ public class Package {
 
 	public void setInputFiles(List<String> inputFiles) {
 		this.inputFiles = inputFiles;
+	}
+
+	public String getReadmeHeader() {
+		return readmeHeader;
+	}
+
+	public void setReadmeHeader(String readmeHeader) {
+		this.readmeHeader = readmeHeader;
 	}
 
 }
