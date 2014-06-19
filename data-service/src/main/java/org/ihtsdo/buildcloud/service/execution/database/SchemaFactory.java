@@ -9,6 +9,7 @@ public class SchemaFactory {
 		// See http://www.snomed.org/tig?t=fng2_convention
 
 		String filenameNoExtension = filename.substring(0, filename.indexOf("."));
+
 		String[] nameParts = filenameNoExtension.split("_");
 		if (nameParts.length == 5) {
 			String fileType = nameParts[0];
@@ -23,7 +24,7 @@ public class SchemaFactory {
 							.field("effectiveTime", DataType.TIME)
 							.field("active", DataType.BOOLEAN)
 							.field("moduleId", DataType.SCTID)
-							.field("refsetId", DataType.SCTID)
+							.field("refSetId", DataType.SCTID)
 							.field("referencedComponentId", DataType.SCTID);
 
 					return simpleRefset;
