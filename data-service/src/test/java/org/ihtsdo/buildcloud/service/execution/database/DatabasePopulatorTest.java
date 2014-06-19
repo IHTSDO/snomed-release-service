@@ -52,14 +52,15 @@ public class DatabasePopulatorTest {
 
 			// Test last row values
 			Assert.assertTrue(resultSet.last());
-			Assert.assertEquals(5, resultSet.getRow());
+			Assert.assertEquals(6, resultSet.getRow());
 			colIndex = 1;
-			Assert.assertEquals("347a0a38-98ab-481c-8974-fcaa6e46385c", resultSet.getString(colIndex++));
-			Assert.assertEquals("2013-06-30", resultSet.getDate(colIndex++).toString());
-			Assert.assertEquals(false, resultSet.getBoolean(colIndex++));
+
+			Assert.assertEquals("5fa7d98a-2010-4490-bc87-7dce3a540d04", resultSet.getString(colIndex++));
+			Assert.assertEquals("2013-12-30", resultSet.getDate(colIndex++).toString());
+			Assert.assertEquals(true, resultSet.getBoolean(colIndex++));
 			Assert.assertEquals(900000000000207008L, resultSet.getLong(colIndex++));
 			Assert.assertEquals(450990004L, resultSet.getLong(colIndex++));
-			Assert.assertEquals(62014003L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(293104123L, resultSet.getLong(colIndex++));
 		} finally {
 			statement.close();
 		}
@@ -92,7 +93,7 @@ public class DatabasePopulatorTest {
 
 			// Test last row values
 			Assert.assertTrue(resultSet.last());
-			Assert.assertEquals(7, resultSet.getRow());
+			Assert.assertEquals(8, resultSet.getRow());
 			colIndex = 1;
 			Assert.assertEquals("4a926393-55f8-4cdf-95f6-d70c23185212", resultSet.getString(colIndex++));
 			Assert.assertEquals("2013-09-30", resultSet.getDate(colIndex++).toString());
