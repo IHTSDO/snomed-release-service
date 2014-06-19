@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution;
 
+import org.apache.commons.lang3.time.FastDateFormat;
+
 import java.nio.charset.Charset;
 
 public class RF2Constants {
@@ -11,5 +13,7 @@ public class RF2Constants {
 	public static final String DELTA = "Delta";
 	public static final String FULL = "Full";
 	public static final String SNAPSHOT = "Snapshot";
+	public static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyyMMdd");
+	public static final String EFFECTIVE_TIME = "effectiveTime";
 
 }

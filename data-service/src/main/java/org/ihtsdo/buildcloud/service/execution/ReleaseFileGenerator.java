@@ -26,6 +26,9 @@ public class ReleaseFileGenerator {
 	 */
 	public void generateReleaseFiles() throws Exception {
 		boolean isFirstRelease = execution.getBuild().isFirstTimeRelease();
+
+		// TODO: load previous full release, add delta input file, export new full file, export new snapshot file
+
 		generateFullFiles(isFirstRelease);
 		generateSnapshotFiles(isFirstRelease);
 		generateDeltaFiles(isFirstRelease);

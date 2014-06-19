@@ -22,7 +22,7 @@ public class DatabasePopulatorTest {
 	public void setup() throws Exception {
 		testConnection = new DatabaseManager().createConnection("test");
 		databasePopulator = new DatabasePopulator(testConnection);
-		rf2Filename = "der2_Refset_SimpleDelta_INT_20140831.txt";
+		rf2Filename = "der2_Refset_SimpleFull_INT_20140831.txt";
 	}
 
 	@Test
@@ -31,18 +31,18 @@ public class DatabasePopulatorTest {
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
-		Assert.assertEquals("DER2_REFSET_SIMPLEDELTA_INT_20140831", tableNames.get(0));
+		Assert.assertEquals("DER2_REFSET_SIMPLEFULL_INT_20140831", tableNames.get(0));
 
 		Statement statement = testConnection.createStatement();
 		try {
-			ResultSet resultSet = statement.executeQuery("select * from DER2_REFSET_SIMPLEDELTA_INT_20140831");
+			ResultSet resultSet = statement.executeQuery("select * from DER2_REFSET_SIMPLEFULL_INT_20140831");
 
 			// Test first row values
 			Assert.assertTrue(resultSet.first());
 			Assert.assertEquals(1, resultSet.getRow());
 			int colIndex = 1;
-			Assert.assertEquals("3570b46b-b581-4655-ba2c-9a677a2e880c", resultSet.getString(colIndex++));
-			Assert.assertEquals("2014-01-31", resultSet.getDate(colIndex++).toString());
+			Assert.assertEquals("a895084b-10bc-42ca-912f-d70e8f0b825e", resultSet.getString(colIndex++));
+			Assert.assertEquals("2013-01-30", resultSet.getDate(colIndex++).toString());
 			Assert.assertEquals(true, resultSet.getBoolean(colIndex++));
 			Assert.assertEquals(900000000000207008L, resultSet.getLong(colIndex++));
 			Assert.assertEquals(450990004L, resultSet.getLong(colIndex++));
@@ -50,14 +50,14 @@ public class DatabasePopulatorTest {
 
 			// Test last row values
 			Assert.assertTrue(resultSet.last());
-			Assert.assertEquals(4, resultSet.getRow());
+			Assert.assertEquals(5, resultSet.getRow());
 			colIndex = 1;
-			Assert.assertEquals("c8e26c3c-5f19-41e7-b74b-2ebb889e9e41", resultSet.getString(colIndex++));
-			Assert.assertEquals("2014-01-31", resultSet.getDate(colIndex++).toString());
+			Assert.assertEquals("347a0a38-98ab-481c-8974-fcaa6e46385c", resultSet.getString(colIndex++));
+			Assert.assertEquals("2013-06-30", resultSet.getDate(colIndex++).toString());
 			Assert.assertEquals(false, resultSet.getBoolean(colIndex++));
 			Assert.assertEquals(900000000000207008L, resultSet.getLong(colIndex++));
 			Assert.assertEquals(450990004L, resultSet.getLong(colIndex++));
-			Assert.assertEquals(293104008L, resultSet.getLong(colIndex++));
+			Assert.assertEquals(62014003L, resultSet.getLong(colIndex++));
 		} finally {
 			statement.close();
 		}
