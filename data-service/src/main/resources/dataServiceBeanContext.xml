@@ -39,6 +39,7 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
 		<property name="executionBucketName" ref="executionBucketName"/>
 		<property name="mavenBucketName" ref="mavenBucketName"/>
+		<property name="publishedBucketName" ref="publishedBucketName"></property>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>

@@ -1,11 +1,5 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.apache.commons.codec.DecoderException;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +8,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
 
 public interface ExecutionDAO {
 
@@ -71,5 +71,7 @@ public interface ExecutionDAO {
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
+
+	InputStream getPublishedFileAsInputStream(String previousPublishedFull);
 
 }

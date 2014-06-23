@@ -50,7 +50,7 @@ public class PackageController {
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
-	public Map getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
@@ -61,7 +61,7 @@ public class PackageController {
 
 	@RequestMapping(value = "/{packageBusinessKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
-	public Map updatePackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+	public Map<String, Object> updatePackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json, authenticatedUser);
