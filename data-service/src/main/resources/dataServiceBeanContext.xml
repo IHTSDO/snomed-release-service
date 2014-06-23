@@ -134,4 +134,6 @@
 
 	<bean class="org.springframework.security.crypto.keygen.KeyGenerators" factory-method="string"/>
 
+	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
+
 </beans>
