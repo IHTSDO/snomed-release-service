@@ -7,6 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 public interface PackageService extends EntityService<Package> {
+	
+
+	static final String README_HEADER = "readmeHeader";
+	
+	static final String FIRST_TIME_RELEASE = "firstTimeRelease";
+
+	static final String PREVIOUS_PUBLISHED_FULL_FILE = "previousPublishedFullFile";
 
 	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
 

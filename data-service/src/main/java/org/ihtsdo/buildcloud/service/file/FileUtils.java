@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 public class FileUtils {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
+	
+	public static final String ZIP_EXTENSION = ".zip";
 
 	public static File createDirectoryOrThrow(File directory) throws IOException {
 		if (!directory.mkdirs()) {
@@ -167,6 +169,14 @@ public class FileUtils {
 		fop.close();
 
 		return resultFile;
+	}
+	
+	public static boolean hasExtension (String fileName, String extension) {
+		return fileName.endsWith(extension);
+	}
+	
+	public static boolean isZip (String fileName) {
+		return hasExtension (fileName, ZIP_EXTENSION);
 	}
 
 }
