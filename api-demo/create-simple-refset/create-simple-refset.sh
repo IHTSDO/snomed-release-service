@@ -20,6 +20,7 @@ curlFlags="isS"
 # S - show errors
 
 # Constants
+readmeHeader="readme-header.txt"
 manifest="manifest.xml"
 
 echo
@@ -34,6 +35,12 @@ curl -${curlFlags} -F username=manager -F password=test123 $api/login > tmp/logi
 token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
 echo "Token is '${token}'"
 commonParams="-${curlFlags} -u ${token}:"
+echo
+
+echo "Set Readme Header"
+readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
+echo "readmeHeaderContents: ${readmeHeaderContents}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" $api/builds/${buildId}/packages/${packageId}  | grep HTTP
 echo
 
 echo "Upload Manifset"
