@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
+import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +36,12 @@ public class ExecutionController {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
+	
 	@Autowired
 	private PublishService publishService;
+	
+	@Autowired
+	private PackageService packageService;
 
 	static final String[] EXECUTION_LINKS = { "configuration", "buildScripts|build-scripts.zip" };
 
@@ -140,12 +145,14 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
 	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId){
-	    
-	    User authenticatedUser = SecurityHelper.getSubject();
-	    Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
-	    for(Package pk: execution.getBuild().getPackages() ){
-		 publishService.publishExecutionPackage(execution, pk );
-	    }
+		
+		User authenticatedUser = SecurityHelper.getSubject();
+		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
+		//List<Package> packages = execution.getBuild().getPackages();
+		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
+		for(Package pk: packages ){
+			publishService.publishExecutionPackage(execution, pk );
+		}
 	}
 
 }

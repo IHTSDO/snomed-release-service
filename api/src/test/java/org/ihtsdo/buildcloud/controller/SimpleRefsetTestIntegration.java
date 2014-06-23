@@ -26,6 +26,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 	@Autowired
 	private S3Client s3Client;
+	
+	public static final String PRODUCT_URL = "/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset";
 
 	@Test
 	public void test() throws Exception {
@@ -50,7 +52,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Create Build
 		MvcResult createBuildResult = mockMvc.perform(
-			post("/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset/builds")
+			post(PRODUCT_URL +"/builds")
 				.header("Authorization", basicDigestHeaderValue)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{ \"name\" : \"test-build\" }")
@@ -119,20 +121,51 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 			.andReturn();
 
 		String executionId = JsonPath.read(createExecutionResult.getResponse().getContentAsString(), "$.id");
-
+		String executionURL = "/builds/" + buildId + "/executions/" + executionId;
 
 		// Trigger Execution
 		mockMvc.perform(
-			post("/builds/" + buildId + "/executions/" + executionId + "/trigger")
+			post( executionURL + "/trigger")
 				.header("Authorization", basicDigestHeaderValue)
 				.contentType(MediaType.APPLICATION_JSON)
 			)
 			.andDo(print())
 			.andExpect(status().isOk())
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
-
-
-
+/*
+		//Publish output
+		mockMvc.perform( 
+				post( executionURL + "/output/publish")
+				.header("Authorization", basicDigestHeaderValue)
+				.contentType(MediaType.APPLICATION_JSON)
+			)
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+		
+		//Recover URL of published things from Product
+		MvcResult productResult = mockMvc.perform( 
+				post(PRODUCT_URL)
+				.header("Authorization", basicDigestHeaderValue)
+				.contentType(MediaType.APPLICATION_JSON)
+			)
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8)
+			).andReturn();
+		String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.publish_url");
+		Assert.assertNotNull(publishedURL);
+		
+		//Recover list of published packages
+		mockMvc.perform( 
+				post( publishedURL )
+				.header("Authorization", basicDigestHeaderValue)
+				.contentType(MediaType.APPLICATION_JSON)
+			)
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+*/
 
 	}
 

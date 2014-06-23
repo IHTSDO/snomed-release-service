@@ -12,8 +12,12 @@ import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.ihtsdo.buildcloud.entity.Package;
 
+@Service
+@Transactional
 public class PublishServiceImpl implements PublishService {
 	
 	private static final String ZIP_EXTENSION = ".zip";
@@ -65,11 +69,21 @@ public class PublishServiceImpl implements PublishService {
 	 * @param execution 
 	 * @param releaseFileName
 	 * @return a file structure like
-	 * releaseCenter/extension/product/releaseFileName.zip
+	 * releaseCenter/extension/product/
 	 */
-	private String getPublishFilePath(Execution execution, String releaseFileName) {
-		
+	private String getPublishDirPath(Execution execution) {
 		Product product = execution.getBuild().getProduct();
+		return getPublishDirPath(product);
+	}
+	
+	/**
+	 * @param execution 
+	 * @param releaseFileName
+	 * @return a file structure like
+	 * releaseCenter/extension/product/
+	 */
+	private String getPublishDirPath(Product product) {
+		
 		Extension extension = product.getExtension();
 		ReleaseCenter releaseCenter =  extension.getReleaseCenter();
 		StringBuffer path = new StringBuffer();
@@ -79,14 +93,20 @@ public class PublishServiceImpl implements PublishService {
 		path.append(SEPARATOR);
 		path.append(product.getBusinessKey());
 		path.append(SEPARATOR);
-		path.append(releaseFileName);
 		return path.toString();
 	}
+	
+	/**
+	 * @param execution 
+	 * @param releaseFileName
+	 * @return a file structure like
+	 * releaseCenter/extension/product/releaseFileName.zip
+	 */
+	private String getPublishFilePath(Execution execution, String releaseFileName) {
+		return getPublishDirPath(execution) + releaseFileName;
+	}
 
-	@Override
-	public List<String> findPublisheddReleaseFileNames(String releaseCentreKey,
-			String extensionKey, String productKey) {
-		String filePathDir = releaseCentreKey + SEPARATOR + extensionKey + SEPARATOR + productKey;
-		return publishedFileHelper.listFiles( filePathDir);
+	public List<String> getPublishedPackages(Product product) {
+		return publishedFileHelper.listFiles(getPublishDirPath(product));
 	}
 }
