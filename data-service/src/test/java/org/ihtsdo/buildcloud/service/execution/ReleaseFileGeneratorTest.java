@@ -1,10 +1,23 @@
 package org.ihtsdo.buildcloud.service.execution;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -15,13 +28,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 
 @RunWith(JMockit.class)
 public class ReleaseFileGeneratorTest {
@@ -29,14 +35,13 @@ public class ReleaseFileGeneratorTest {
 	protected static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 	@Mocked Build build;
 	@Test
-	public void testGenerateReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
+	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
 	{
-		final List<Package> packages = createPackages();
+		final List<Package> packages = createPackages( true );
 		final List<String> fileNames = mockTransformedFileNames();
 		new NonStrictExpectations() {{
 			execution.getBuild();
 			returns( build);
-			build.isFirstTimeRelease();
 			returns(true);
 			execution.getBuild();
 			returns( build);
@@ -76,7 +81,7 @@ public class ReleaseFileGeneratorTest {
 		}};
 		
 		for (Package pkg : packages) {
-			ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, pkg, dao);
+			ReleaseFileGenerator generator = new FirstReleaseFileGenerator(execution, pkg, dao);
 			generator.generateReleaseFiles();
 		}
 		
@@ -103,14 +108,14 @@ public class ReleaseFileGeneratorTest {
 	
 	@Test
 	@Ignore
+	//TODO to make test pass.
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution, 
 			@Injectable final ExecutionDAO dao) throws Exception
 			{
-		final List<Package> packages = createPackages();
+		final List<Package> packages = createPackages( false );
 		new NonStrictExpectations() {{
 			execution.getBuild();
 			returns( build);
-			build.isFirstTimeRelease();
 			returns(false);
 			build.getPackages();
 			returns(packages);
@@ -127,7 +132,7 @@ public class ReleaseFileGeneratorTest {
 		
 		
 		for( Package pkg : packages ){
-			ReleaseFileGenerator generator = new ReleaseFileGenerator(execution, pkg, dao);
+			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, dao);
 			generator.generateReleaseFiles();
 		}
 
@@ -141,9 +146,10 @@ public class ReleaseFileGeneratorTest {
 		return fileNames;
 	}
 	
-	private List<Package> createPackages() {
+	private List<Package> createPackages( boolean isFirstRelease) {
 		List<Package> packages = new ArrayList<>();
 		Package pk = new Package("PK1");
+		pk.setFirstTimeRelease(isFirstRelease);
 		packages.add(pk);
 		return packages;
 	}

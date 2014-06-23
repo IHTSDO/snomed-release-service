@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
 import java.util.List;
 
 @Entity
@@ -29,6 +30,10 @@ public class Package {
 	private List<String> inputFiles;
 
 	private String readmeHeader;
+	
+	private boolean firstTimeRelease = false;
+
+	private String previousPublishedFullFile;
 
 	public Package() {
 
@@ -83,5 +88,20 @@ public class Package {
 	public void setReadmeHeader(String readmeHeader) {
 		this.readmeHeader = readmeHeader;
 	}
+	
+	public boolean isFirstTimeRelease() {
+		return firstTimeRelease;
+	}
 
+	public void setFirstTimeRelease(boolean firstTimeRelease) {
+		this.firstTimeRelease = firstTimeRelease;
+	}
+
+	public void setPreviousPublishedFullFile(String previousPublishedFileName) {
+		previousPublishedFullFile = previousPublishedFileName;
+	}
+
+	public String getPreviousPublishedFullFile() {
+		return previousPublishedFullFile;
+	}
 }

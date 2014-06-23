@@ -1,5 +1,18 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -11,7 +24,13 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.execution.*;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
+import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
+import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
+import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
+import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
@@ -20,18 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 @Service
 @Transactional
@@ -135,7 +142,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		transformFiles(execution, pkg);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
-		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
+		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
+		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
 		generator.generateReleaseFiles();
 
 		// Generate readme file

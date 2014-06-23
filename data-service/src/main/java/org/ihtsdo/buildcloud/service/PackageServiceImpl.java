@@ -17,6 +17,8 @@ import java.util.Map;
 @Service
 @Transactional
 public class PackageServiceImpl extends EntityServiceImpl<Package> implements PackageService {
+	
+	private static final String TRUE = "true";
 
 	@Autowired
 	private PackageDAO packageDAO;
@@ -25,26 +27,29 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	private BuildDAO buildDAO;
 
 	private static final String README_HEADER = "readmeHeader";
+	private static final String FIRST_TIME_RELEASE = "firstTimeRelease";
+
+	private static final String PREVIOUS_PUBLISHED_FULL_FILE = "previousPublishedFullFile";
 
 	@Autowired
-	protected PackageServiceImpl(PackageDAO dao) {
+	protected PackageServiceImpl(final PackageDAO dao) {
 		super(dao);
 	}
 
 	@Override
-	public Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
+	public final Package find(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 	}
 
 	@Override
-	public List<Package> findAll(String buildCompositeKey, User authenticatedUser) {
+	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return new ArrayList<Package>(buildDAO.find(buildId, authenticatedUser).getPackages());
 	}
-	
+
 	@Override
-	public Package create(String buildCompositeKey, String name, User authenticatedUser) {
+	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build = buildDAO.find(buildId, authenticatedUser);
 		Package pkg = new Package(name);
@@ -54,10 +59,18 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	}
 
 	@Override
-	public Package update(String buildCompositeKey, String packageBusinessKey, Map<String, String> newPropertyValues, User authenticatedUser) {
+	public final Package update(final String buildCompositeKey, final String packageBusinessKey,
+			final Map<String, String> newPropertyValues, final User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 
+		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
+			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
+		} else {
+			if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_FULL_FILE)) {
+				aPackage.setPreviousPublishedFullFile(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
+			}
+		}
 		if (newPropertyValues.containsKey(README_HEADER)) {
 			String readmeHeader = newPropertyValues.get(README_HEADER);
 			aPackage.setReadmeHeader(readmeHeader);

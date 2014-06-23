@@ -32,7 +32,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	@Autowired
 	private ProductDAO productDAO;
 
-	private static final String FIRST_TIME_RELEASE = "firstTimeRelease";
 	private static final String EFFECTIVE_TIME = "effectiveTime";
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
@@ -86,9 +85,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException {
 		LOGGER.debug("update, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
-		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
-			build.setFirstTimeRelease("true".equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
-		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
 				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
