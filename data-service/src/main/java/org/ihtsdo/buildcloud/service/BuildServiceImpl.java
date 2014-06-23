@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -31,9 +30,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	private BuildDAO buildDAO;
 	@Autowired
 	private ProductDAO productDAO;
-
-	private static final String EFFECTIVE_TIME = "effectiveTime";
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 

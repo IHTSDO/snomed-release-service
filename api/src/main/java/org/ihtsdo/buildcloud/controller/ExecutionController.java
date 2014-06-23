@@ -148,7 +148,6 @@ public class ExecutionController {
 		
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
-		//List<Package> packages = execution.getBuild().getPackages();
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		for(Package pk: packages ){
 			publishService.publishExecutionPackage(execution, pk );

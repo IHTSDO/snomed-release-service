@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public class ProductController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
 
 	}
@@ -78,8 +79,10 @@ public class ProductController {
 		User authenticatedUser = SecurityHelper.getSubject();  
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		List<String> publishedPackages = publishService.getPublishedPackages(product);
-		boolean currentResource = false;
-		return hypermediaGenerator.getEntityHypermedia(publishedPackages, currentResource, request, PRODUCT_LINKS);
+		Map<String, Object> jsonStructure = new HashMap <String, Object>();
+		jsonStructure.put("publishedPackages", publishedPackages);
+		boolean currentResource = true;
+		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request, PRODUCT_LINKS);
 
 	}
 

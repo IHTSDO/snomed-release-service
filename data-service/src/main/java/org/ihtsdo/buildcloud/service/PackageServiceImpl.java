@@ -26,11 +26,6 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	@Autowired
 	private BuildDAO buildDAO;
 
-	private static final String README_HEADER = "readmeHeader";
-	private static final String FIRST_TIME_RELEASE = "firstTimeRelease";
-
-	private static final String PREVIOUS_PUBLISHED_FULL_FILE = "previousPublishedFullFile";
-
 	@Autowired
 	protected PackageServiceImpl(final PackageDAO dao) {
 		super(dao);
@@ -64,15 +59,16 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 
-		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
+		if (newPropertyValues.containsKey(PackageService.FIRST_TIME_RELEASE)) {
 			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
-		} else {
-			if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_FULL_FILE)) {
-				aPackage.setPreviousPublishedFullFile(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
-			}
 		}
-		if (newPropertyValues.containsKey(README_HEADER)) {
-			String readmeHeader = newPropertyValues.get(README_HEADER);
+
+		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_FULL_FILE)) {
+			aPackage.setPreviousPublishedFullFile(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
+		}
+
+		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {
+			String readmeHeader = newPropertyValues.get(PackageService.README_HEADER);
 			aPackage.setReadmeHeader(readmeHeader);
 		}
 

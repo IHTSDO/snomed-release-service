@@ -15,12 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
 	
-	private static final String ZIP_EXTENSION = ".zip";
 	private FileHelper executionFileHelper;
 	private FileHelper publishedFileHelper;
 	@Autowired
@@ -47,7 +47,7 @@ public class PublishServiceImpl implements PublishService {
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
 		for( String fileName : filesFound ){
-			if ( fileName.endsWith( ZIP_EXTENSION ))
+			if ( FileUtils.isZip(fileName))
 			{
 				releaseFileName = fileName;
 				//only one zip file per package
