@@ -84,7 +84,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public List<String> findPublsihedReleaseFileNames(String releaseCentreKey,
+	public List<String> findPublisheddReleaseFileNames(String releaseCentreKey,
 			String extensionKey, String productKey) {
 		String filePathDir = releaseCentreKey + SEPARATOR + extensionKey + SEPARATOR + productKey;
 		return publishedFileHelper.listFiles( filePathDir);
