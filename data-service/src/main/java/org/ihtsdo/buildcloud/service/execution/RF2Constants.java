@@ -15,5 +15,6 @@ public class RF2Constants {
 	public static final String SNAPSHOT = "Snapshot";
 	public static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyyMMdd");
 	public static final String EFFECTIVE_TIME = "effectiveTime";
+	public static final String MANIFEST_CONTEXT_PATH = "org.ihtsdo.buildcloud.manifest";
 
 }

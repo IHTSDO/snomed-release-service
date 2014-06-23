@@ -13,6 +13,7 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class ReadmeGeneratorTest {
@@ -25,7 +26,7 @@ public class ReadmeGeneratorTest {
 	public void setUp() throws Exception {
 		readmeGenerator = new ReadmeGenerator();
 
-		JAXBContext jc = JAXBContext.newInstance( "org.ihtsdo.buildcloud.manifest");
+		JAXBContext jc = JAXBContext.newInstance("org.ihtsdo.buildcloud.manifest");
 		Unmarshaller um = jc.createUnmarshaller();
 		InputStream resourceAsStream = getClass().getResourceAsStream("readme-test-manifest.xml");
 		Assert.assertNotNull("Test manifest stream should not be null", resourceAsStream);
@@ -37,10 +38,24 @@ public class ReadmeGeneratorTest {
 	public void testGenerate() throws Exception {
 		Assert.assertNotNull("ListingType object should not be null", manifestListing);
 		Assert.assertNotNull("Manifest root folder should not be null", manifestListing.getFolder());
-		ByteArrayOutputStream readmeOutputStream = new ByteArrayOutputStream();
+		ByteArrayOutputStreamRecordClose readmeOutputStream = new ByteArrayOutputStreamRecordClose();
+		Assert.assertFalse(readmeOutputStream.closeCalled);
 
 		readmeGenerator.generate(readmeHeader, manifestListing, readmeOutputStream);
 
+		Assert.assertTrue("OutputStream should be closed", readmeOutputStream.closeCalled);
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream("expected-readme.txt"), new ByteArrayInputStream(readmeOutputStream.toByteArray()));
 	}
+
+	private static class ByteArrayOutputStreamRecordClose extends ByteArrayOutputStream {
+
+		private boolean closeCalled;
+
+		@Override
+		public void close() throws IOException {
+			closeCalled = true;
+			super.close();
+		}
+	}
+
 }

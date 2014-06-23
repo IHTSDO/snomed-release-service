@@ -7,8 +7,12 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.manifest.FileType;
+import org.ihtsdo.buildcloud.manifest.FolderType;
+import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.*;
+import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -17,6 +21,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +46,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
+	@Autowired
+	private ReadmeGenerator readmeGenerator;
+
+	private static final String README_FILENAME_PREFIX = "Readme";
+	private static final String README_FILENAME_EXTENSION = ".txt";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -124,7 +137,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
 		generator.generateReleaseFiles();
-		
+
+		// Generate readme file
+		generateReadmeFile(execution, pkg);
+
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
@@ -212,5 +228,44 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return buildDAO.find(buildId, authenticatedUser);
 	}
-	
+
+	private void generateReadmeFile(Execution execution, Package pkg) throws BadConfigurationException, JAXBException, IOException,
+			ExecutionException, InterruptedException {
+
+		Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
+		InputStream manifestStream = dao.getManifestStream(execution, pkg);
+		ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+
+		String readmeFilename = null;
+		if (manifestListing != null) {
+			FolderType rootFolder = manifestListing.getFolder();
+			if (rootFolder != null) {
+				List<FileType> files = rootFolder.getFile();
+				for (FileType file : files) {
+					String filename = file.getName();
+					if (file.getName().startsWith(README_FILENAME_PREFIX) && filename.endsWith(README_FILENAME_EXTENSION)) {
+						readmeFilename = filename;
+						break;
+					}
+				}
+			}
+		} else {
+			LOGGER.warn("Can not generate readme, manifest listing is null.");
+		}
+		if (readmeFilename != null) {
+			AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
+			OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream();
+			try {
+				readmeGenerator.generate(pkg.getReadmeHeader(), manifestListing, readmeOutputStream);
+				asyncPipedStreamBean.waitForFinish();
+			} finally {
+				readmeOutputStream.close();
+			}
+
+		} else {
+			LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
+					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
+		}
+	}
+
 }
