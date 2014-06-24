@@ -1,90 +1,25 @@
 package org.ihtsdo.idgeneration;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import org.apache.axis2.AxisFault;
+import org.ihtsdo.idgen.ws.*;
+import org.ihtsdo.idgen.ws.data.*;
+
 import java.math.BigInteger;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
-
-import org.apache.axis2.AxisFault;
-import org.ihtsdo.idgen.ws.Id_generatorStub;
-import org.ihtsdo.idgen.ws.data.CTV3IDRequest;
-import org.ihtsdo.idgen.ws.data.CTV3IDResponse;
-import org.ihtsdo.idgen.ws.data.CodeParentSnomedIdType;
-import org.ihtsdo.idgen.ws.data.CodeSctIdType;
-import org.ihtsdo.idgen.ws.data.ConceptIds;
-import org.ihtsdo.idgen.ws.data.CreateCTV3IDRequest;
-import org.ihtsdo.idgen.ws.data.CreateCTV3IDResponse;
-import org.ihtsdo.idgen.ws.data.CreateConceptIDListRequest;
-import org.ihtsdo.idgen.ws.data.CreateConceptIDListResponse;
-import org.ihtsdo.idgen.ws.data.CreateConceptIdsRequest;
-import org.ihtsdo.idgen.ws.data.CreateConceptIdsResponse;
-import org.ihtsdo.idgen.ws.data.CreateSCTIDListRequest;
-import org.ihtsdo.idgen.ws.data.CreateSCTIDListResponse;
-import org.ihtsdo.idgen.ws.data.CreateSCTIDRequest;
-import org.ihtsdo.idgen.ws.data.CreateSCTIDResponse;
-import org.ihtsdo.idgen.ws.data.CreateSNOMEDIDRequest;
-import org.ihtsdo.idgen.ws.data.CreateSNOMEDIDResponse;
-import org.ihtsdo.idgen.ws.data.IDString;
-import org.ihtsdo.idgen.ws.data.IdentifierConceptId;
-import org.ihtsdo.idgen.ws.data.SCTIDListRequest;
-import org.ihtsdo.idgen.ws.data.SCTIDListResponse;
-import org.ihtsdo.idgen.ws.data.SCTIDRequest;
-import org.ihtsdo.idgen.ws.data.SCTIDResponse;
-import org.ihtsdo.idgen.ws.data.SNOMEDIDRequest;
-import org.ihtsdo.idgen.ws.data.SNOMEDIDResponse;
 
 public class IdAssignmentImpl implements IdAssignmentBI {
 
-	private String targetEndpoint = "http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator";
 	private Id_generatorStub idGenStub;
-	private static final String WEB_SERVICE_IMPL = "WebServiceImplementation";
 
-	public IdAssignmentImpl() {
-		super();
-		try {
-			Properties props = new Properties();
-			props.load(new FileInputStream("config/webservice.properties"));
-			this.targetEndpoint = props.getProperty("targetEndpoint");
-			this.idGenStub = new Id_generatorStub(targetEndpoint);
-		} catch (AxisFault e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public IdAssignmentImpl(File propertiesFile) {
-		Properties props = new Properties();
-		try {
-			props.load(new FileInputStream("config/webservice.properties"));
-			this.targetEndpoint = props.getProperty("targetEndpoint");
-			this.idGenStub = new Id_generatorStub(targetEndpoint);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public IdAssignmentImpl(String targetEndpoint, String user, String password) {
-		super();
-		this.targetEndpoint = targetEndpoint;
-		try {
-			this.idGenStub = new Id_generatorStub(targetEndpoint);
-		} catch (AxisFault e) {
-			e.printStackTrace();
-		}
+	public IdAssignmentImpl(String targetEndpoint) throws AxisFault {
+		this.idGenStub = new Id_generatorStub(targetEndpoint);
 	}
 
 	@Override
-	public Long getSCTID(UUID componentUuid) throws Exception {
+	public Long getSCTID(UUID componentUuid) throws GetSCTIDFault, RemoteException {
 		SCTIDRequest request = new SCTIDRequest();
 		request.setComponentUuid(componentUuid.toString());
 
@@ -101,7 +36,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public String getSNOMEDID(UUID componentUuid) throws Exception {
+	public String getSNOMEDID(UUID componentUuid) throws RemoteException, GetSNOMEDIDFault {
 		SNOMEDIDRequest request = new SNOMEDIDRequest();
 		request.setComponentUuid(componentUuid.toString());
 
@@ -112,7 +47,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public String getCTV3ID(UUID componentUuid) throws Exception {
+	public String getCTV3ID(UUID componentUuid) throws GetCTV3IDFault, RemoteException {
 		CTV3IDRequest request = new CTV3IDRequest();
 		request.setComponentUuid(componentUuid.toString());
 
@@ -123,7 +58,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public HashMap<UUID, Long> getSCTIDList(List<UUID> componentUuidList) throws Exception {
+	public HashMap<UUID, Long> getSCTIDList(List<UUID> componentUuidList) throws RemoteException, GetSCTIDListFault {
 		long soTimeout = 3 * 60 * 1000;
 		idGenStub._getServiceClient().getOptions().setTimeOutInMilliSeconds(soTimeout);
 		SCTIDListRequest request = new SCTIDListRequest();
@@ -149,7 +84,8 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public Long createSCTID(UUID componentUuid, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws Exception {
+	public Long createSCTID(UUID componentUuid, Integer namespaceId, String partitionId, String releaseId,
+							String executionId, String moduleId) throws CreateSCTIDFaultException, RemoteException {
 		CreateSCTIDRequest request = new CreateSCTIDRequest();
 		request.setComponentUuid(componentUuid.toString());
 		request.setExecutionId(executionId);
@@ -171,7 +107,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public String createSNOMEDID(UUID componentUuid, String parentSnomedId) throws Exception {
+	public String createSNOMEDID(UUID componentUuid, String parentSnomedId) throws RemoteException, CreateSNOMEDIDFaultException {
 		CreateSNOMEDIDRequest request = new CreateSNOMEDIDRequest();
 
 		request.setComponentUuid(componentUuid.toString());
@@ -184,7 +120,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public String createCTV3ID(UUID componentUuid) throws Exception {
+	public String createCTV3ID(UUID componentUuid) throws RemoteException, CreateCTV3IDFaultException {
 		CreateCTV3IDRequest request = new CreateCTV3IDRequest();
 		request.setComponentUuid(componentUuid.toString());
 		CreateCTV3IDResponse response = idGenStub.createCTV3ID(request);
@@ -194,7 +130,10 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public HashMap<UUID, Long> createSCTIDList(List<UUID> componentUuidList, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws Exception {
+	public HashMap<UUID, Long> createSCTIDList(List<UUID> componentUuidList, Integer namespaceId, String partitionId,
+											   String releaseId, String executionId, String moduleId)
+			throws RemoteException, CreateSCTIDListFaultException {
+
 		long soTimeout = 10 * 60 * 1000;
 		idGenStub._getServiceClient().getOptions().setTimeOutInMilliSeconds(soTimeout);
 
@@ -227,8 +166,8 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public HashMap<UUID, HashMap<IDENTIFIER, String>> createConceptIDList(HashMap<UUID, String> componentUuidParentSnoId, Integer namespaceId, String partitionId, String releaseId,
-			String executionId, String moduleId) throws Exception {
+	public HashMap<UUID, HashMap<IDENTIFIER, String>> createConceptIDList(HashMap<UUID, String> componentUuidParentSnoId,
+																		  Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateConceptIDListFaultException {
 		CreateConceptIDListRequest request = new CreateConceptIDListRequest();
 
 		CodeParentSnomedIdType[] componentUuidList = new CodeParentSnomedIdType[componentUuidParentSnoId.size()];
@@ -270,8 +209,7 @@ public class IdAssignmentImpl implements IdAssignmentBI {
 	}
 
 	@Override
-	public HashMap<IDENTIFIER, String> createConceptIds(UUID componentUuid, String parentSnomedId, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId)
-			throws Exception {
+	public HashMap<IDENTIFIER, String> createConceptIds(UUID componentUuid, String parentSnomedId, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateConceptIdsFaultException {
 		CreateConceptIdsRequest request = new CreateConceptIdsRequest();
 		request.setComponentUuid(componentUuid.toString());
 		request.setParentSnomedId(parentSnomedId);
