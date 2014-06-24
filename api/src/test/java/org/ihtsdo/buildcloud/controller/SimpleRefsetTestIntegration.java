@@ -43,7 +43,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		doExecution (buildId,  "2014-01-31", isFirstTime);
 		
 		isFirstTime = false;
-		//doExecution (buildId,  "2014-07-31",  isFirstTime);
+		doExecution (buildId,  "2014-07-31", isFirstTime);
 	}
 	
 	private String createBuildStructure()  throws Exception {
@@ -134,7 +134,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		//Set isFirstTime and previousPublished file on the Package 
 		String previousPublishedFile = "";
 		if (!isFirstTime) {
-			previousPublishedFile = getPreviousPublishedFile();
+			previousPublishedFile = getPreviousPublishedPackage();
 		}
 
 		String packageURL = "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
@@ -189,7 +189,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 	}
 	
-	private String getPreviousPublishedFile() throws Exception {
+	private String getPreviousPublishedPackage() throws Exception {
 		
 		//Recover URL of published things from Product
 		MvcResult productResult = mockMvc.perform( 

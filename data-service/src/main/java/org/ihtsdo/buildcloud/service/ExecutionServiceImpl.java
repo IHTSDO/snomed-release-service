@@ -120,7 +120,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 				executePackage(execution, pkg);
 			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
-				LOGGER.warn ("Failure while processing package {} due to: {}" , pkg.getBusinessKey(), e.getMessage());
+				LOGGER.warn ("Failure while processing package {}." , pkg.getBusinessKey(), e);
 			}
 		}
 		
