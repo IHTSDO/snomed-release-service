@@ -22,6 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,9 +132,11 @@ public class FileHelper {
 		//Now lets iterate through that zip archive and see if we can find it's partner
 		ZipEntry zEntry;
 		while ( (zEntry = zis.getNextEntry()) != null) {
-			if (fnt.transformFilename(zEntry.getName()).equalsIgnoreCase(targetNameTemplate)) {
+			//The Zip entry will contain the whole path to the file.  We'll just check the end string matches...should be ok.
+			if (fnt.transformFilename(zEntry.getName()).endsWith(targetNameTemplate)) {
 				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
-				result = new ArchiveEntry(zEntry.getName(), zis);
+				Path p = Paths.get(zEntry.getName());
+				result = new ArchiveEntry(p.getFileName().toString(), zis);
 			}
 		}
 		return result;

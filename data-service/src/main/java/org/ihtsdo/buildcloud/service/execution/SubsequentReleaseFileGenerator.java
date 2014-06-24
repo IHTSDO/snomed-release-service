@@ -40,14 +40,20 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 		try (Connection connection = getConnection(pkg.getBusinessKey())) {
 			DatabasePopulator databasePopulator = getDatabasePopulator(connection);
 			String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-			ArchiveEntry previousFullFile = executionDao.getPublishedFile(product, transformedDeltDataFile, previousPublishedPackage);
+			
+			//We're looking for the previous full file, so change the filename to be Full
+			if (!transformedDeltDataFile.contains(RF2Constants.DELTA)) {
+				throw new Exception ("Malformed delta filename encountered: " + transformedDeltDataFile);
+			}
+			String currentFullFileName = transformedDeltDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			ArchiveEntry previousFullFile = executionDao.getPublishedFile(product, currentFullFileName, previousPublishedPackage);
+			
 			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFileName(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 							pkg.getBusinessKey(), transformedDeltDataFile);
 			databasePopulator.appendData(tableSchema, transformedDeltaInputStream);
 			ReleaseFileExporter releaseFileExporter = new ReleaseFileExporter();
 			Date targetEffectiveTime = pkg.getBuild().getEffectiveTime();
-			String currentFullFileName = transformedDeltDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 			AsyncPipedStreamBean fullFileAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), currentFullFileName);
 
