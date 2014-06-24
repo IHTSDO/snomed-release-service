@@ -29,6 +29,9 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -388,13 +391,14 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Required
 	public void setPublishedBucketName(String publishedBucketName) {
-	    this.publishedBucketName = publishedBucketName;
+		this.publishedBucketName = publishedBucketName;
 	}
 	
 	@Override
-	public InputStream getPublishedFileAsInputStream(String previousPublishedFull) {
-	    FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-	    return publisheFileHelper.getFileStream(previousPublishedFull);
+	public ArchiveEntry getPublishedFile(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
+		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
+		String previousPublishedPackagePath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
+		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());
 	}
 
 

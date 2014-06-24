@@ -23,6 +23,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.test.DummyFuture;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,11 +35,15 @@ public class ReleaseFileGeneratorTest {
 
 	protected static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 	@Mocked Build build;
+	
 	@Test
 	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
 	{
 		final List<Package> packages = createPackages( true );
 		final List<String> fileNames = mockTransformedFileNames();
+		
+		build.setProduct(new Product("Test Product"));
+		
 		new NonStrictExpectations() {{
 			execution.getBuild();
 			returns( build);
@@ -149,6 +154,7 @@ public class ReleaseFileGeneratorTest {
 	private List<Package> createPackages( boolean isFirstRelease) {
 		List<Package> packages = new ArrayList<>();
 		Package pk = new Package("PK1");
+		pk.setBuild(build);
 		pk.setFirstTimeRelease(isFirstRelease);
 		packages.add(pk);
 		return packages;

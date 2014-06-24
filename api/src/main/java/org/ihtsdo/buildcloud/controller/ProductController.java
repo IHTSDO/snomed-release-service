@@ -82,7 +82,7 @@ public class ProductController {
 		Map<String, Object> jsonStructure = new HashMap <String, Object>();
 		jsonStructure.put("publishedPackages", publishedPackages);
 		boolean currentResource = true;
-		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request, PRODUCT_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request, null);
 
 	}
 

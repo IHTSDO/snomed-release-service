@@ -9,6 +9,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.buildcloud.service.file.FileNameTransformation;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 @Repository
@@ -103,6 +107,35 @@ public class FileHelper {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @param targetFileName
+	 * @param previousPublishedPackagePath
+	 * @param fnt - A FileTransformationObject that will strip out the releaseDate in the filenames to allow matching.
+	 * @return an inputStream positioned at the correct point in the archive.  Make sure you close it!
+	 * @throws IOException
+	 */
+	public ArchiveEntry getArchiveEntry(String targetFileName, String previousPublishedPackagePath, FileNameTransformation fnt) throws IOException {
+		
+		ArchiveEntry result = null;
+		//Get hold of the Archive Input Stream
+		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
+		ZipInputStream zis = new ZipInputStream (archiveInputStream);
+		
+		//Now what's our target filename template (ie with the date stripped off)
+		String targetNameTemplate = fnt.transformFilename(targetFileName);
+		
+		//Now lets iterate through that zip archive and see if we can find it's partner
+		ZipEntry zEntry;
+		while ( (zEntry = zis.getNextEntry()) != null) {
+			if (fnt.transformFilename(zEntry.getName()).equalsIgnoreCase(targetNameTemplate)) {
+				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
+				result = new ArchiveEntry(zEntry.getName(), zis);
+			}
+		}
+		return result;
 	}
 
 	public List<String> listFiles(String directoryPath) {

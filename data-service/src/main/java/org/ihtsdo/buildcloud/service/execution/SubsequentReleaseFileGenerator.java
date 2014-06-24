@@ -14,6 +14,7 @@ import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulator;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.ReleaseFileExporter;
 import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
 /**
  * Release file generator for subsequent release.
@@ -38,9 +39,9 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 		// file, export new snapshot file
 		try (Connection connection = getConnection(pkg.getBusinessKey())) {
 			DatabasePopulator databasePopulator = getDatabasePopulator(connection);
-			String previousPublishedFull = pkg.getPreviousPublishedFullFile();
-			InputStream fullFileinputStream = executionDao.getPublishedFileAsInputStream(previousPublishedFull);
-			TableSchema tableSchema = databasePopulator.createTable(previousPublishedFull, fullFileinputStream);
+			String previousPublishedPackage = pkg.getPreviousPublishedPakage();
+			ArchiveEntry previousFullFile = executionDao.getPublishedFile(product, transformedDeltDataFile, previousPublishedPackage);
+			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFileName(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 							pkg.getBusinessKey(), transformedDeltDataFile);
 			databasePopulator.appendData(tableSchema, transformedDeltaInputStream);

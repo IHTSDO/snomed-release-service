@@ -14,6 +14,8 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
 public interface ExecutionDAO {
 
@@ -72,6 +74,6 @@ public interface ExecutionDAO {
 	
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
 
-	InputStream getPublishedFileAsInputStream(String previousPublishedFull);
+	public ArchiveEntry getPublishedFile(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
 }
