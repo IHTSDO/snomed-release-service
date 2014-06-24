@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao.helper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
 
 public class ExecutionS3PathHelper {
 
@@ -22,6 +23,17 @@ public class ExecutionS3PathHelper {
 		path.append(releaseCenterBusinessKey);
 		path.append(SEPARATOR);
 		path.append(build.getCompositeKey());
+		path.append(SEPARATOR);
+		return path;
+	}
+	
+	public StringBuffer getProductPath(Product product) {
+		StringBuffer path = new StringBuffer();
+		path.append(product.getExtension().getReleaseCenter().getBusinessKey());
+		path.append(SEPARATOR);
+		path.append(product.getExtension().getBusinessKey());
+		path.append(SEPARATOR);
+		path.append(product.getBusinessKey());
 		path.append(SEPARATOR);
 		return path;
 	}
@@ -116,5 +128,11 @@ public class ExecutionS3PathHelper {
 	public String getTransformedFilePath(Execution execution,
 			String packageBusinessKey, String relativeFilePath) {
 		return getExecutionTransformedFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+	}
+
+	public String getPublishedFilePath(Product product, String publishedFileName) {
+		StringBuffer productPath = getProductPath(product);
+		productPath.append(publishedFileName);
+		return productPath.toString();
 	}
 }

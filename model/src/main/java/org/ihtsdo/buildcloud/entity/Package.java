@@ -101,7 +101,7 @@ public class Package {
 		previousPublishedFullFile = previousPublishedFileName;
 	}
 
-	public String getPreviousPublishedFullFile() {
+	public String getPreviousPublishedPakage() {
 		return previousPublishedFullFile;
 	}
 }

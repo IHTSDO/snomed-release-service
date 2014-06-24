@@ -14,6 +14,7 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
 
 /**
  * Abstract class for ReleaseFileGenerator.
@@ -22,6 +23,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 public abstract class ReleaseFileGenerator {
 	final Execution execution;
 	final Package pkg;
+	final Product product;
 	final ExecutionDAO executionDao;
 
 	/**
@@ -34,6 +36,7 @@ public abstract class ReleaseFileGenerator {
 	public ReleaseFileGenerator(final Execution executionX, final Package pkgX, final ExecutionDAO dao) {
 		execution = executionX;
 		pkg = pkgX;
+		product = pkg.getBuild().getProduct();
 		executionDao = dao;
 	}
 
