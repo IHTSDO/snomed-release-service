@@ -24,6 +24,7 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
@@ -181,25 +182,35 @@ public class ExecutionServiceImpl implements ExecutionService {
 		for (String relativeFilePath : executionInputFilePaths) {
 
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-			if (relativeFilePath.endsWith(".txt")) {
+			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
+				    	checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
 					asyncPipedStreamBean.waitForFinish();
-				} catch (IOException e) {
+				} catch (IOException | ExecutionException | InterruptedException e) {
 					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("IOException processing file {}", relativeFilePath, e);
-				} catch (InterruptedException e) {
-					LOGGER.error("InterruptedException uploading file {}", relativeFilePath, e);
-				} catch (ExecutionException e) {
-					LOGGER.error("ExecutionException uploading file {}", relativeFilePath, e);
+					LOGGER.error("Exception occured when transforming file {}", relativeFilePath, e);
 				}
 			} else {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 			}
 		}
+	}
+
+	/**
+	 * @param fileName input text file name.
+	 * @param effectiveDate  date in format of "yyyyMMdd"
+	 */
+	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
+	    String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+	    //last segment will be like 20140131.txt
+	    String dateFromFile = segments[segments.length - 1].substring(0,effectiveDate.length());
+	    if( !dateFromFile.equals(effectiveDate)){
+		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
+	    }
 	}
 
 	@Override

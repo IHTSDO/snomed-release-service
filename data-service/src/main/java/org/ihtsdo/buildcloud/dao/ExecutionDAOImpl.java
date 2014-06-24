@@ -395,7 +395,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 	
 	@Override
-	public ArchiveEntry getPublishedFile(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
+	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
 		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 		String previousPublishedPackagePath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
 		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());

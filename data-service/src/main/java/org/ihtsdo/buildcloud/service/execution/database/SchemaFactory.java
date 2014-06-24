@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+
 public class SchemaFactory {
 
 	public TableSchema createSchemaBean(String filename, String headerLine) throws FileRecognitionException {
@@ -10,7 +12,7 @@ public class SchemaFactory {
 
 		String filenameNoExtension = filename.substring(0, filename.indexOf("."));
 
-		String[] nameParts = filenameNoExtension.split("_");
+		String[] nameParts = filenameNoExtension.split(RF2Constants.FILE_NAME_SEPARATOR);
 		if (nameParts.length == 5) {
 			String fileType = nameParts[0];
 			String contentType = nameParts[1];
