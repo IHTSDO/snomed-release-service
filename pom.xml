@@ -15,7 +15,6 @@
 	<modules>
 		<module>id-generation-ws-client</module>
 		<module>id-generation-api</module>
-		<module>id-generation-ws</module>
 	</modules>
 
 	<dependencies>
