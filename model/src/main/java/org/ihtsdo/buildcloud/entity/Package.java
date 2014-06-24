@@ -33,7 +33,7 @@ public class Package {
 	
 	private boolean firstTimeRelease = false;
 
-	private String previousPublishedFullFile;
+	private String previousPublishedPackage;
 
 	public Package() {
 
@@ -97,11 +97,11 @@ public class Package {
 		this.firstTimeRelease = firstTimeRelease;
 	}
 
-	public void setPreviousPublishedFullFile(String previousPublishedFileName) {
-		previousPublishedFullFile = previousPublishedFileName;
+	public void setPreviousPublishedPackage(String previousPublishedFileName) {
+		previousPublishedPackage = previousPublishedFileName;
 	}
 
-	public String getPreviousPublishedPakage() {
-		return previousPublishedFullFile;
+	public String getPreviousPublishedPackage() {
+		return previousPublishedPackage;
 	}
 }

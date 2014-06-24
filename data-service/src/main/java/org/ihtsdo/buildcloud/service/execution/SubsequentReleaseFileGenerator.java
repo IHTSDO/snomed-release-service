@@ -39,7 +39,7 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 		// file, export new snapshot file
 		try (Connection connection = getConnection(pkg.getBusinessKey())) {
 			DatabasePopulator databasePopulator = getDatabasePopulator(connection);
-			String previousPublishedPackage = pkg.getPreviousPublishedPakage();
+			String previousPublishedPackage = pkg.getPreviousPublishedPackage();
 			ArchiveEntry previousFullFile = executionDao.getPublishedFile(product, transformedDeltDataFile, previousPublishedPackage);
 			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFileName(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
