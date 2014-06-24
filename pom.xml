@@ -17,6 +17,12 @@
 		<module>id-generation-api</module>
 	</modules>
 
+	<scm>
+		<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
+		<developerConnection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</developerConnection>
+		<url>https://github.com/IHTSDO/snomed-release-service</url>
+	</scm>
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
