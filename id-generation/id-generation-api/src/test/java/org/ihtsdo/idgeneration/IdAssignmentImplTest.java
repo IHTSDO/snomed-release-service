@@ -11,9 +11,8 @@ import java.util.UUID;
 public class IdAssignmentImplTest {
 
 	@Test
-	// TODO: This test can not fail because the exception is just printed. Fix inherited test.
 	public void testApi() throws Exception {
-		IdAssignmentBI idAssignment = new IdAssignmentImpl("http://mgr.servers.aceworkspace.net:50008/axis2/services/id_generator", "userName", "passwd");
+		IdAssignmentBI idAssignment = new IdAssignmentImpl("http://mgr.servers.aceworkspace.net:50008/axis2/services/id_generator");
 
 		//Individual creation for any component
 		UUID componentUuid = UUID.fromString("c83bafaa-ec84-55c1-b1c9-1234a25fe706");
