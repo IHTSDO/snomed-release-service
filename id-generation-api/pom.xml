@@ -14,7 +14,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.ihtsdo.snomed.release</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>id-generation-ws-client</artifactId>
 			<version>${project.version}</version>
 		</dependency>
