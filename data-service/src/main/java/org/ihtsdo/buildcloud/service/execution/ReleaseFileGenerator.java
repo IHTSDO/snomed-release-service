@@ -61,6 +61,8 @@ public abstract class ReleaseFileGenerator {
 			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
 					&& fileName.contains(RF2Constants.DELTA)) {
 				deltaFileName = fileName;
+				//expects to be only one
+				break;
 			}
 		}
 		if (deltaFileName == null) {

@@ -74,6 +74,6 @@ public interface ExecutionDAO {
 	
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
 
-	public ArchiveEntry getPublishedFile(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
+	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
 }

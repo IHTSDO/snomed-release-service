@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import org.apache.commons.lang3.time.FastDateFormat;
-
 import java.nio.charset.Charset;
+
+import org.apache.commons.lang3.time.FastDateFormat;
 
 public class RF2Constants {
 
@@ -16,5 +16,6 @@ public class RF2Constants {
 	public static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyyMMdd");
 	public static final String EFFECTIVE_TIME = "effectiveTime";
 	public static final String MANIFEST_CONTEXT_PATH = "org.ihtsdo.buildcloud.manifest";
+	public static final String FILE_NAME_SEPARATOR = "_";
 
 }

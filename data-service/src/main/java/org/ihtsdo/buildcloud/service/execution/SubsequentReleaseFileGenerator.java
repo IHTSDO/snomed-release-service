@@ -15,11 +15,15 @@ import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorExcepti
 import org.ihtsdo.buildcloud.service.execution.database.ReleaseFileExporter;
 import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Release file generator for subsequent release.
  */
 public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(SubsequentReleaseFileGenerator.class);
         
 	/**
 	 * @param execution an execution.
@@ -40,14 +44,11 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 		try (Connection connection = getConnection(pkg.getBusinessKey())) {
 			DatabasePopulator databasePopulator = getDatabasePopulator(connection);
 			String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-			
-			//We're looking for the previous full file, so change the filename to be Full
-			if (!transformedDeltDataFile.contains(RF2Constants.DELTA)) {
-				throw new Exception ("Malformed delta filename encountered: " + transformedDeltDataFile);
-			}
 			String currentFullFileName = transformedDeltDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
-			ArchiveEntry previousFullFile = executionDao.getPublishedFile(product, currentFullFileName, previousPublishedPackage);
-			
+			ArchiveEntry previousFullFile = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
+			if ( previousFullFile == null ){
+			    throw new RuntimeException("No full file found in prevous published package:" + previousPublishedPackage);
+			}
 			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFileName(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 							pkg.getBusinessKey(), transformedDeltDataFile);
@@ -66,9 +67,10 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
-			throw new ReleaseFileGenerationException(
-					"Failed to generate subsequent full and snapshort release files for package:"
-					+ pkg.getBusinessKey(), e);
+		    	
+			String errorMsg = "Failed to generate subsequent full and snapshort release files for package:" + pkg.getBusinessKey();
+			LOGGER.error(errorMsg, e);
+			throw new ReleaseFileGenerationException(errorMsg, e);
 		}
 	}
 

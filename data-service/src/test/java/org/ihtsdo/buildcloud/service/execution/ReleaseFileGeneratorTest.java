@@ -4,7 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,17 +26,21 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.test.DummyFuture;
-import org.junit.Ignore;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 
 @RunWith(JMockit.class)
 public class ReleaseFileGeneratorTest {
-
-	protected static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
+    
+	private static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
+	private static final String FuLL_FILE_NAME = "der2_Refset_SimpleFull_INT_20140731.txt";
+	
 	@Mocked Build build;
+	@Mocked Product product;
 	
 	@Test
 	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
@@ -69,9 +75,9 @@ public class ReleaseFileGeneratorTest {
 		} };
 		
 		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ DELTA_FILE_NAME).getFile();
-		final InputStream inputStream = new FileInputStream(deltaFile);
-	
 		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
+		final InputStream inputStream = getFileInputStreamFromResource(DELTA_FILE_NAME);
+	
 		final OutputStream outputStream = new FileOutputStream(outputDeltaFile);
 		final AsyncPipedStreamBean asyncPipedStreamBean = new AsyncPipedStreamBean(outputStream, new DummyFuture());
 		new Expectations() {{
@@ -112,8 +118,6 @@ public class ReleaseFileGeneratorTest {
 	}
 	
 	@Test
-	@Ignore
-	//TODO to make test pass.
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution, 
 			@Injectable final ExecutionDAO dao) throws Exception
 			{
@@ -124,15 +128,32 @@ public class ReleaseFileGeneratorTest {
 			returns(false);
 			build.getPackages();
 			returns(packages);
+			build.getProduct();
+			returns(product);
 		}};
 
 		final List<String> fileNames = mockTransformedFileNames();
+		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
+		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
 		new Expectations(){{
 			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
 			//only for delta file at the moment.
 			dao.copyTransformedFileToOutput(execution, packages.get(0).getBusinessKey(), fileNames.get(0));
-
+			
+			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
+			
+			ArchiveEntry entry = new ArchiveEntry(FuLL_FILE_NAME, getFileInputStreamFromResource(FuLL_FILE_NAME));
+			returns(entry);
+			
+			dao.getTransformedFileAsInputStream( withInstanceOf(Execution.class), anyString, anyString);
+			returns( getFileInputStreamFromResource(DELTA_FILE_NAME));
+			
+			
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentFullFile));
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
 		}};
 		
 		
@@ -140,10 +161,12 @@ public class ReleaseFileGeneratorTest {
 			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, dao);
 			generator.generateReleaseFiles();
 		}
+		//add assert to check files are generated
+		Assert.assertTrue("Full file should be generated", new File( currentFullFile).exists() );
+		Assert.assertTrue("Snapshort file should be generated", new File( currentSnapshotFile).exists() );
+		
 
 	}
-
-
 
 	private List<String> mockTransformedFileNames() {
 		final List<String> fileNames = new ArrayList<>();
@@ -159,5 +182,21 @@ public class ReleaseFileGeneratorTest {
 		packages.add(pk);
 		return packages;
 	}
+	
+	private InputStream getFileInputStreamFromResource(String fileName) throws FileNotFoundException{
+	    String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ fileName).getFile();
+	    return new FileInputStream(filePath);
+	}
+	
+	private AsyncPipedStreamBean getDummyAsyncPipedStreamBean( String fileName) throws FileNotFoundException{
+		final OutputStream outputStream = new FileOutputStream(fileName);
+		return new AsyncPipedStreamBean(outputStream, new DummyFuture());
+	}
+	
+	private String getCurrentReleaseFile(String fileType){
+	    String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ DELTA_FILE_NAME).getFile();
+	    return deltaFile.replace(RF2Constants.DELTA, fileType);
+	}
+
 
 }

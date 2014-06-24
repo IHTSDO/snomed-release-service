@@ -1,13 +1,21 @@
 package org.ihtsdo.buildcloud.controller;
 
-import com.jayway.jsonpath.JsonPath;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import javax.servlet.ServletException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PackageService;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,12 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 
-import javax.servlet.ServletException;
-
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.jayway.jsonpath.JsonPath;
 
 public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
@@ -34,19 +37,25 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	String basicDigestHeaderValue = "NOT_YET_AUTHENTICATED";
 	
 	static final String TEST_PACKAGE = "testpackage";
+	
 	@Test
-	public void test() throws Exception {
-		
-		String buildId = createBuildStructure();
-		
-		boolean isFirstTime = true;
-		doExecution (buildId,  "2014-01-31", isFirstTime);
-		
-		isFirstTime = false;
-		doExecution (buildId,  "2014-07-31", isFirstTime);
+	public void testMultipleReleases() throws Exception {
+	    
+	    try{
+		boolean isFirstTimeRelease = true;
+		String buildId = createBuildStructure( isFirstTimeRelease );
+		doExecution (buildId,  "2014-01-31", isFirstTimeRelease);
+		isFirstTimeRelease = false;
+		buildId = createBuildStructure( isFirstTimeRelease );
+		doExecution (buildId,  "2014-07-31",  isFirstTimeRelease);
+	    }catch(Throwable e)
+	    {
+		Assert.fail("Error occurred!");
+	    }
+	    
 	}
 	
-	private String createBuildStructure()  throws Exception {
+	private String createBuildStructure(boolean isFirstTimeRelease)  throws Exception {
 
 		Assert.assertNotNull(mockMvc);
 
@@ -105,9 +114,14 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 
 		// Upload Input File
+		
+		String deltaFileName = "der2_Refset_SimpleDelta_INT_20140131.txt";
+		if( !isFirstTimeRelease ){
+			deltaFileName = "der2_Refset_SimpleDelta_INT_20140731.txt";
+		}
 		mockMvc.perform(
 			fileUpload(packageURL +"/inputfiles")
-				.file(new MockMultipartFile("file", "der2_Refset_SimpleDelta_INT_20140131.txt", "text/plain", getClass().getResourceAsStream("/der2_Refset_SimpleDelta_INT_20140131.txt")))
+				.file(new MockMultipartFile("file", deltaFileName, "text/plain", getClass().getResourceAsStream("/" + deltaFileName)))
 				.header("Authorization", basicDigestHeaderValue)
 			)
 			.andDo(print())
@@ -230,15 +244,16 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		
 	}
 
+	@Override
 	@Before
 	public void setup() throws ServletException {
 		super.setup();
 		((TestS3Client) s3Client).deleteBuckets();
 	}
-
-	@After
-	public void tearDown() {
-		((TestS3Client) s3Client).deleteBuckets();
-	}
+//
+//	@After
+//	public void tearDown() {
+//		((TestS3Client) s3Client).deleteBuckets();
+//	}
 
 }
