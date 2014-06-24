@@ -64,7 +64,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 		}
 
 		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_FULL_FILE)) {
-			aPackage.setPreviousPublishedFullFile(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
+			aPackage.setPreviousPublishedPackage(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
 		}
 
 		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {
