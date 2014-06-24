@@ -12,7 +12,7 @@ public class IdAssignmentImplTest {
 
 	@Test
 	public void testApi() throws Exception {
-		IdAssignmentBI idAssignment = new IdAssignmentImpl("http://mgr.servers.aceworkspace.net:50008/axis2/services/id_generator");
+		IdAssignmentBI idAssignment = new IdAssignmentImpl("http://mgr.servers.aceworkspace.net:50002/axis2/services/id_generator");
 
 		//Individual creation for any component
 		UUID componentUuid = UUID.fromString("c83bafaa-ec84-55c1-b1c9-1234a25fe706");
@@ -23,7 +23,7 @@ public class IdAssignmentImplTest {
 
 		//Batch creation for any component
 		List<UUID> componentUuidList = new ArrayList<UUID>();
-		for (int i = 0; i < 2500; i++) {
+		for (int i = 0; i < 10; i++) {
 			componentUuidList.add(UUID.randomUUID());
 		}
 		HashMap<UUID, Long> listOfNewSctIds = idAssignment.createSCTIDList(componentUuidList , 0, "01", "20110111","TEST EXECUTION", "12345");
