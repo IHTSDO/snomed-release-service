@@ -184,7 +184,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
 			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
-				    	checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
+					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();

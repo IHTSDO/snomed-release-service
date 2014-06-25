@@ -51,13 +51,13 @@ public class ReleaseFileGeneratorTest {
 		build.setProduct(new Product("Test Product"));
 		
 		new NonStrictExpectations() {{
+			
 			execution.getBuild();
-			returns( build);
-			returns(true);
-			execution.getBuild();
-			returns( build);
+			returns(build);
+			
 			build.getPackages();
 			returns(packages);
+			
 			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
 		}};
@@ -67,11 +67,9 @@ public class ReleaseFileGeneratorTest {
 			for( Package pk : packages )
 			{
 				for( String deltaName : fileNames ){
-					
 					dao.copyTransformedFileToOutput(execution, pk.getBusinessKey(), deltaName, anyString);
 				}
 			}
-			
 		} };
 		
 		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ DELTA_FILE_NAME).getFile();
