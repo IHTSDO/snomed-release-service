@@ -40,22 +40,17 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	
 	@Test
 	public void testMultipleReleases() throws Exception {
-	    
-	    try{
-		boolean isFirstTimeRelease = true;
-		String buildId = createBuildStructure( isFirstTimeRelease );
-		doExecution (buildId,  "2014-01-31", isFirstTimeRelease);
-		isFirstTimeRelease = false;
-		buildId = createBuildStructure( isFirstTimeRelease );
-		doExecution (buildId,  "2014-07-31",  isFirstTimeRelease);
-	    }catch(Throwable e)
-	    {
-		Assert.fail("Error occurred!");
-	    }
-	    
+		
+			String buildId = createBuildStructure();
+			
+			boolean isFirstTimeRelease = true;
+			doExecution (buildId,  "2014-01-31", null);
+			
+			isFirstTimeRelease = false;
+			doExecution (buildId,  "2014-07-31", "2014-01-31");
 	}
 	
-	private String createBuildStructure(boolean isFirstTimeRelease)  throws Exception {
+	private String createBuildStructure()  throws Exception {
 
 		Assert.assertNotNull(mockMvc);
 
@@ -88,8 +83,6 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 			.andReturn();
 
 		String buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
-		String packageURL = "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
-
 		
 		// Create Package
 		mockMvc.perform(
@@ -101,39 +94,66 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 			.andDo(print())
 			.andExpect(status().isOk())
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
-
-		
-		// Upload Manifest
-		mockMvc.perform(
-			fileUpload(packageURL +"/manifest")
-				.file(new MockMultipartFile("file", "simple_refset_manifest.xml", "text/plain", getClass().getResourceAsStream("/simple_refset_manifest.xml")))
-				.header("Authorization", basicDigestHeaderValue)
-			)
-			.andDo(print())
-			.andExpect(status().isOk());
-
-
-		// Upload Input File
-		
-		String deltaFileName = "der2_Refset_SimpleDelta_INT_20140131.txt";
-		if( !isFirstTimeRelease ){
-			deltaFileName = "der2_Refset_SimpleDelta_INT_20140731.txt";
-		}
-		mockMvc.perform(
-			fileUpload(packageURL +"/inputfiles")
-				.file(new MockMultipartFile("file", deltaFileName, "text/plain", getClass().getResourceAsStream("/" + deltaFileName)))
-				.header("Authorization", basicDigestHeaderValue)
-			)
-			.andDo(print())
-			.andExpect(status().isOk());
 		
 		return buildId;
 	}
 
-	private void doExecution (String buildId, String effectiveDate, boolean isFirstTime) throws Exception {
+	/**
+	 * 
+	 * @param buildId
+	 * @param effectiveDate
+	 * @param previousEffectiveDate if null, then we'll treat this as a first time execution
+	 * @throws Exception
+	 */
+	private void doExecution (String buildId, String effectiveDate, String previousEffectiveDate) throws Exception {
+		
+		boolean isFirstTime = (previousEffectiveDate == null) ? true : false;
+		
+		String packageURL = "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
+		
+		//ISO format for date has dashes in it YYYY-MM-DD, strip out to use in filenames
+		String effectiveDateStripped = effectiveDate.replace("-", "");
+		
+		// Upload Input File - specific to each run
+		String deltaFileName = "der2_Refset_SimpleDelta_INT_" + effectiveDateStripped + ".txt";
+		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", getClass().getResourceAsStream("/" + deltaFileName));
+		mockMvc.perform(
+			fileUpload(packageURL +"/inputfiles")
+				.file(deltaFile)
+				.header("Authorization", basicDigestHeaderValue)
+			)
+			.andDo(print())
+			.andExpect(status().isOk());
+		
+		//And if we're doing a subsequent run, we need to delete the input file from the previous run!
+		if (!isFirstTime) {
+			String previousEffectiveDateStripped = previousEffectiveDate.replace("-", "");
+			//String previousDeltaFileName = "der2_Refset_SimpleDelta_INT_" + previousEffectiveDateStripped + "%2Etxt";  //%2E is url friendly hex for a full stop.
+			String previousDeltaFileName = "der2_Refset_SimpleDelta_INT_" + previousEffectiveDateStripped + ".txt";  //%2E is url friendly hex for a full stop.
+			mockMvc.perform(
+					request(HttpMethod.DELETE, packageURL + "/inputfiles/" + previousDeltaFileName)
+						.header("Authorization", basicDigestHeaderValue)
+					)
+					.andDo(print())
+					.andExpect(status().isNoContent());
+		}
+		
+		// Upload Manifest - again specific to the release date.   
+		// We're going to give it the same name on upload to ensure it gets overwritten, but the code wipes that directory
+		// on upload anyway.
+		String manifestFileName = "simple_refset_manifest_" + effectiveDateStripped + ".xml";
+		String givenName = "manifest.xml";
+		MockMultipartFile manifestFile = new MockMultipartFile("file", givenName, "text/plain", getClass().getResourceAsStream("/" + manifestFileName));
+		mockMvc.perform(
+			fileUpload(packageURL +"/manifest")
+				.file(manifestFile)
+				.header("Authorization", basicDigestHeaderValue)
+			)
+			.andDo(print())
+			.andExpect(status().isOk());
 
 		// Set Build effectiveTime
-		String jsonContent = "{ " + jsonPair ( BuildService.EFFECTIVE_TIME, effectiveDate) +  " }";
+		String jsonContent = "{ " + jsonPair (BuildService.EFFECTIVE_TIME, effectiveDate) +  " }";
 		mockMvc.perform(
 			request(HttpMethod.PATCH, "/builds/" + buildId)
 				.header("Authorization", basicDigestHeaderValue)
@@ -144,17 +164,16 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
-		
+
 		//Set isFirstTime and previousPublished file on the Package 
 		String previousPublishedFile = "";
 		if (!isFirstTime) {
 			previousPublishedFile = getPreviousPublishedPackage();
 		}
 
-		String packageURL = "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
 		jsonContent = 	"{ "
 						+ 		jsonPair ( PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime))
-						+ 		(isFirstTime ? "" : "," + jsonPair( PackageService.PREVIOUS_PUBLISHED_FULL_FILE, previousPublishedFile))
+						+ 		(isFirstTime ? "" : "," + jsonPair(PackageService.PREVIOUS_PUBLISHED_FULL_FILE, previousPublishedFile))
 						+ " }";
 		mockMvc.perform(
 				request(HttpMethod.PATCH, packageURL)
