@@ -118,7 +118,9 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.DELETE)
+	//Using Regex to match variable name here due to problems with .txt getting truncated
+	//See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
+	@RequestMapping(value = "/inputfiles/{inputFileName:.+}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@PathVariable String inputFileName, HttpServletResponse response) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
