@@ -4,6 +4,10 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 
 public class SchemaFactory {
 
+	public static final char REFSET_FILENAME_CONCEPT_FIELD = 'c';
+	public static final char REFSET_FILENAME_INTEGER_FIELD = 'i';
+	public static final char REFSET_FILENAME_STRING_FIELD = 's';
+
 	public TableSchema createSchemaBean(String filename, String headerLine) throws FileRecognitionException {
 
 		// General File Naming Pattern
@@ -39,13 +43,13 @@ public class SchemaFactory {
 						fieldOffset++;
 						DataType type;
 						switch (additionalFieldType) {
-							case 'c':
+							case REFSET_FILENAME_CONCEPT_FIELD:
 								type = DataType.SCTID;
 								break;
-							case 'i':
+							case REFSET_FILENAME_INTEGER_FIELD:
 								type = DataType.INTEGER;
 								break;
-							case 's':
+							case REFSET_FILENAME_STRING_FIELD:
 								type = DataType.STRING;
 								break;
 							default:
