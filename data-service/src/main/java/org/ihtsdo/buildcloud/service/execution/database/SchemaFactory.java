@@ -21,22 +21,41 @@ public class SchemaFactory {
 				if (contentType.equals("Refset")) {
 					// Simple Refset
 
-					TableSchema simpleRefset = new TableSchema(filenameNoExtension)
-							.field("id", DataType.UUID)
-							.field("effectiveTime", DataType.TIME)
-							.field("active", DataType.BOOLEAN)
-							.field("moduleId", DataType.SCTID)
-							.field("refSetId", DataType.SCTID)
-							.field("referencedComponentId", DataType.SCTID);
-
+					TableSchema simpleRefset = createSimpleRefsetSchema(filenameNoExtension);
 					return simpleRefset;
 
 				} else if (contentType.endsWith("Refset")) {
 					// Other Refset
 
-					// Use the contentType prefix characters for datatypes and the header line for names of additional fields.
+					// Start with Simple Refset
+					TableSchema refset = createSimpleRefsetSchema(filenameNoExtension);
 
-					throw new FileRecognitionException("Only the simple refset type is currently supported.");
+					// Use the contentType prefix characters for datatypes and the header line for names of additional fields.
+					char[] additionalFieldTypes = contentType.replace("Refset", "").toCharArray();
+					String[] fieldNames = headerLine.split(RF2Constants.COLUMN_SEPARATOR);
+					int fieldOffset = refset.getFields().size() - 1;
+
+					for (char additionalFieldType : additionalFieldTypes) {
+						fieldOffset++;
+						DataType type;
+						switch (additionalFieldType) {
+							case 'c':
+								type = DataType.SCTID;
+								break;
+							case 'i':
+								type = DataType.INTEGER;
+								break;
+							case 's':
+								type = DataType.STRING;
+								break;
+							default:
+								throw new FileRecognitionException("Unexpected character '" + additionalFieldType + "' within content " +
+										"type section of Refset filename.");
+						}
+						String fieldName = fieldNames[fieldOffset];
+						refset.field(fieldName, type);
+					}
+					return refset;
 				} else {
 					throw new FileRecognitionException("Content type '" + contentType + "' is not supported.");
 				}
@@ -48,6 +67,16 @@ public class SchemaFactory {
 					" underscores, expected 4.");
 		}
 
+	}
+
+	private TableSchema createSimpleRefsetSchema(String filenameNoExtension) {
+		return new TableSchema(filenameNoExtension)
+								.field("id", DataType.UUID)
+								.field("effectiveTime", DataType.TIME)
+								.field("active", DataType.BOOLEAN)
+								.field("moduleId", DataType.SCTID)
+								.field("refSetId", DataType.SCTID)
+								.field("referencedComponentId", DataType.SCTID);
 	}
 
 }

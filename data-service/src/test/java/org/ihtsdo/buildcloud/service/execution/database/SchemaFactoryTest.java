@@ -25,7 +25,72 @@ public class SchemaFactoryTest {
 		Assert.assertEquals("der2_Refset_SimpleDelta_INT_20140831", schemaBean.getName());
 		List<TableSchema.Field> fields = schemaBean.getFields();
 		Assert.assertEquals(6, fields.size());
+		assertFirstSixSimpleRefsetFields(fields);
+	}
 
+	@Test
+	public void testCreateSchemaBeanAttributeValueRefset() throws Exception {
+		String filename = "der2_cRefset_AttributeValueDelta_INT_20140831.txt";
+		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\tvalueId";
+
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
+
+		Assert.assertEquals("der2_cRefset_AttributeValueDelta_INT_20140831", schemaBean.getName());
+		List<TableSchema.Field> fields = schemaBean.getFields();
+		Assert.assertEquals(7, fields.size());
+		assertFirstSixSimpleRefsetFields(fields);
+
+		// Assert additional fields
+		Assert.assertEquals("valueId", fields.get(6).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(6).getType());
+	}
+
+	@Test
+	public void testCreateSchemaBeanExtendedMapRefset() throws Exception {
+		String filename = "der2_iisssccRefset_ExtendedMapDelta_INT_20140131.txt";
+		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\t" +
+				"mapGroup\tmapPriority\tmapRule\tmapAdvice\tmapTarget\tcorrelationId\tmapCategoryId";
+
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
+
+		Assert.assertEquals("der2_iisssccRefset_ExtendedMapDelta_INT_20140131", schemaBean.getName());
+		List<TableSchema.Field> fields = schemaBean.getFields();
+		Assert.assertEquals(13, fields.size());
+		assertFirstSixSimpleRefsetFields(fields);
+
+		// Assert additional fields
+		Assert.assertEquals("mapGroup", fields.get(6).getName());
+		Assert.assertEquals(DataType.INTEGER, fields.get(6).getType());
+
+		Assert.assertEquals("mapPriority", fields.get(7).getName());
+		Assert.assertEquals(DataType.INTEGER, fields.get(7).getType());
+
+		Assert.assertEquals("mapRule", fields.get(8).getName());
+		Assert.assertEquals(DataType.STRING, fields.get(8).getType());
+
+		Assert.assertEquals("mapAdvice", fields.get(9).getName());
+		Assert.assertEquals(DataType.STRING, fields.get(9).getType());
+
+		Assert.assertEquals("mapTarget", fields.get(10).getName());
+		Assert.assertEquals(DataType.STRING, fields.get(10).getType());
+
+		Assert.assertEquals("correlationId", fields.get(11).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(11).getType());
+
+		Assert.assertEquals("mapCategoryId", fields.get(12).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(12).getType());
+	}
+
+	@Test(expected = FileRecognitionException.class)
+	public void testCreateSchemaBeanBadNameRefset() throws Exception {
+		String filename = "der2_aRefset_SimpleDelta_INT_20140831.txt";
+		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\tsomething";
+
+		schemaFactory.createSchemaBean(filename, headerLine);
+
+	}
+
+	private void assertFirstSixSimpleRefsetFields(List<TableSchema.Field> fields) {
 		Assert.assertEquals("id", fields.get(0).getName());
 		Assert.assertEquals(DataType.UUID, fields.get(0).getType());
 
