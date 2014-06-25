@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao.s3;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
 
 import org.junit.After;
@@ -193,8 +194,15 @@ public class OfflineS3ClientImplTest {
 
 	@Test
 	public void testDeleteNonExistentObject() {
-		// should not throw an error
-		s3Client.deleteObject(TEST_BUCKET, "file-does-not-exist.txt");
+		// now throws an AmazonServiceExecption when delete attempt fails.
+		boolean exceptionDetected = false;
+		try {
+			s3Client.deleteObject(TEST_BUCKET, "file-does-not-exist.txt");
+		} catch (AmazonServiceException ase) {
+			exceptionDetected = true;
+		}
+		
+		Assert.assertTrue("Expected to see exception thrown when attempting to delete non-existant object", exceptionDetected);
 	}
 
 	@Test

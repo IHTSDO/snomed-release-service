@@ -161,7 +161,11 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
 		File file = getFile(bucketName, key, false);
-		file.delete();
+		LOGGER.debug("Deleting file {}.", file.getAbsoluteFile());
+		boolean deletedOK = file.delete();
+		if (!deletedOK) {
+			throw new AmazonServiceException ("Failed to delete " + file.getAbsoluteFile());
+		}
 	}
 
 	@Override
