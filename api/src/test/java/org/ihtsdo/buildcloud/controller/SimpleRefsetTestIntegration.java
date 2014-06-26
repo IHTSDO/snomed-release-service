@@ -131,7 +131,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 					.andExpect(status().isNoContent());
 		}
 
-		// Upload Manifest - again specific to the release date.   
+		// Upload Manifest - again specific to the release date.
 		// We're going to give it the same name on upload to ensure it gets overwritten, but the code wipes that directory
 		// on upload anyway.
 		String manifestFileName = "simple_refset_manifest_" + effectiveDateStripped + ".xml";
@@ -157,8 +157,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
-
-		//Set isFirstTime and previousPublished file on the Package 
+		//Set isFirstTime and previousPublished file on the Package
 		String previousPublishedFile = "";
 		if (!isFirstTime) {
 			previousPublishedFile = getPreviousPublishedPackage();
@@ -173,6 +172,17 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 						.header("Authorization", basicDigestHeaderValue)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(jsonContent)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+
+		// Set Readme Header
+		mockMvc.perform(
+				request(HttpMethod.PATCH, packageURL)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{ \"readmeHeader\" : \"This is the readme.\\nTable of contents:\\n\" }")
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
