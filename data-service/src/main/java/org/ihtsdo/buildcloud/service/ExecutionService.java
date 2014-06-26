@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,8 +19,9 @@ public interface ExecutionService {
 	 * @param authenticatedUser
 	 * @return
 	 * @throws IOException
+	 * @throws NamingConflictException 
 	 */
-	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException;
+	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException;
 
 	List<Execution> findAll(String buildCompositeKey, User authenticatedUser);
 

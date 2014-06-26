@@ -8,11 +8,13 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
+import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -27,6 +29,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,12 +61,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException {
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
 		if (build.getEffectiveTime() != null) {
 
 			Date creationDate = new Date();
+			
+			//Do we already have an execution for that date?
+			Execution existingExecution = getExecution (build, creationDate);
+			if (existingExecution != null) {
+				throw new NamingConflictException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
+			}
 
 			Execution execution = new Execution(creationDate, build);
 
@@ -264,6 +273,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		return dao.find(build, executionId);
 	}
+	
+	private Execution getExecution(Build build, Date creationTime) {
+		return dao.find(build, EntityHelper.formatAsIsoDateTime(creationTime));
+	}
+		
 
 	private Build getBuild(String buildCompositeKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
