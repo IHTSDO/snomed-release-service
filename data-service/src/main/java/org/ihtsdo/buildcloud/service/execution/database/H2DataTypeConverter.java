@@ -22,6 +22,12 @@ public class H2DataTypeConverter {
 			case TIME:
 				h2Type = "TIMESTAMP";
 				break;
+			case INTEGER:
+			    	h2Type = "INTEGER";
+			    	break;
+			case STRING:
+				h2Type = "VARCHAR";
+				break;
 			default:
 				throw new RuntimeException("DataType missing from " + getClass() + " : " + type);
 		}
