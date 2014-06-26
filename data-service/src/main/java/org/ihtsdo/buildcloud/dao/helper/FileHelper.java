@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -123,6 +124,11 @@ public class FileHelper {
 		ArchiveEntry result = null;
 		//Get hold of the Archive Input Stream
 		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
+		
+		if (archiveInputStream == null) {
+			throw new FileNotFoundException ("Failed to find published package: " + previousPublishedPackagePath);
+		}
+		
 		ZipInputStream zis = new ZipInputStream (archiveInputStream);
 		
 		//Now what's our target filename template (ie with the date stripped off)
