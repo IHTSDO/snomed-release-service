@@ -51,15 +51,15 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Login
 		MvcResult loginResult = mockMvc.perform(
-			post("/login")
-				.param("username", "manager")
-				.param("password", "test123")
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-			.andExpect(jsonPath("$.authenticationToken", notNullValue()))
-			.andReturn();
+				post("/login")
+						.param("username", "manager")
+						.param("password", "test123")
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andExpect(jsonPath("$.authenticationToken", notNullValue()))
+				.andReturn();
 
 		String authenticationToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.authenticationToken");
 		basicDigestHeaderValue = "Basic " + new String(Base64.encodeBase64((authenticationToken + ":").getBytes()));
@@ -67,28 +67,28 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Create Build
 		MvcResult createBuildResult = mockMvc.perform(
-			post(PRODUCT_URL + "/builds")
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{ \"name\" : \"test-build\" }")
-			)
-			.andDo(print())
-			.andExpect(status().isCreated())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-			.andReturn();
+				post(PRODUCT_URL + "/builds")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{ \"name\" : \"test-build\" }")
+		)
+				.andDo(print())
+				.andExpect(status().isCreated())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andReturn();
 
 		String buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
 
 		// Create Package
 		mockMvc.perform(
-			post("/builds/" + buildId + "/packages")
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{ \"name\" : \"" + TEST_PACKAGE + "\" }")
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				post("/builds/" + buildId + "/packages")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{ \"name\" : \"" + TEST_PACKAGE + "\" }")
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
 		return buildId;
 	}
@@ -112,23 +112,23 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		String deltaFileName = "der2_Refset_SimpleDelta_INT_" + effectiveDateStripped + ".txt";
 		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", getClass().getResourceAsStream("/" + deltaFileName));
 		mockMvc.perform(
-			fileUpload(packageURL + "/inputfiles")
-				.file(deltaFile)
-				.header("Authorization", basicDigestHeaderValue)
-			)
-			.andDo(print())
-			.andExpect(status().isOk());
+				fileUpload(packageURL + "/inputfiles")
+						.file(deltaFile)
+						.header("Authorization", basicDigestHeaderValue)
+		)
+				.andDo(print())
+				.andExpect(status().isOk());
 
 		//And if we're doing a subsequent run, we need to delete the input file from the previous run!
 		if (!isFirstTime) {
 			String previousEffectiveDateStripped = previousEffectiveDate.replace("-", "");
 			String previousDeltaFileName = "der2_Refset_SimpleDelta_INT_" + previousEffectiveDateStripped + ".txt";  //%2E is url friendly hex for a full stop.
 			mockMvc.perform(
-				request(HttpMethod.DELETE, packageURL + "/inputfiles/" + previousDeltaFileName)
-					.header("Authorization", basicDigestHeaderValue)
-				)
-				.andDo(print())
-				.andExpect(status().isNoContent());
+					request(HttpMethod.DELETE, packageURL + "/inputfiles/" + previousDeltaFileName)
+							.header("Authorization", basicDigestHeaderValue)
+			)
+					.andDo(print())
+					.andExpect(status().isNoContent());
 		}
 
 		// Upload Manifest - again specific to the release date.   
@@ -138,24 +138,24 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		String givenName = "manifest.xml";
 		MockMultipartFile manifestFile = new MockMultipartFile("file", givenName, "text/plain", getClass().getResourceAsStream("/" + manifestFileName));
 		mockMvc.perform(
-			fileUpload(packageURL + "/manifest")
-				.file(manifestFile)
-				.header("Authorization", basicDigestHeaderValue)
-			)
-			.andDo(print())
-			.andExpect(status().isOk());
+				fileUpload(packageURL + "/manifest")
+						.file(manifestFile)
+						.header("Authorization", basicDigestHeaderValue)
+		)
+				.andDo(print())
+				.andExpect(status().isOk());
 
 		// Set Build effectiveTime
 		String jsonContent = "{ " + jsonPair(BuildService.EFFECTIVE_TIME, effectiveDate) + " }";
 		mockMvc.perform(
-			request(HttpMethod.PATCH, "/builds/" + buildId)
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(jsonContent)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				request(HttpMethod.PATCH, "/builds/" + buildId)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
 
 		//Set isFirstTime and previousPublished file on the Package 
@@ -169,48 +169,48 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				+ (isFirstTime ? "" : "," + jsonPair(PackageService.PREVIOUS_PUBLISHED_FULL_FILE, previousPublishedFile))
 				+ " }";
 		mockMvc.perform(
-			request(HttpMethod.PATCH, packageURL)
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(jsonContent)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				request(HttpMethod.PATCH, packageURL)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
 		// Create Execution
 		MvcResult createExecutionResult = mockMvc.perform(
-			post("/builds/" + buildId + "/executions")
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-			.andReturn();
+				post("/builds/" + buildId + "/executions")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andReturn();
 
 		String executionId = JsonPath.read(createExecutionResult.getResponse().getContentAsString(), "$.id");
 		String executionURL = "/builds/" + buildId + "/executions/" + executionId;
 
 		// Trigger Execution
 		mockMvc.perform(
-			post(executionURL + "/trigger")
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				post(executionURL + "/trigger")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
 		//Publish output
 		mockMvc.perform(
-			post(executionURL + "/output/publish")
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andDo(print())
-			.andExpect(status().isOk());
-			//.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				post(executionURL + "/output/publish")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk());
+		//.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
 
 	}
@@ -219,14 +219,14 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		//Recover URL of published things from Product
 		MvcResult productResult = mockMvc.perform(
-			post(PRODUCT_URL)
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-			.andReturn();
+				post(PRODUCT_URL)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andReturn();
 
 		String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
 		String expectedURL = "http://localhost:80/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset/published";
@@ -235,14 +235,14 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		//Recover list of published packages
 		MvcResult publishedResult = mockMvc.perform(
-			post(publishedURL)
-				.header("Authorization", basicDigestHeaderValue)
-				.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-			.andReturn();
+				post(publishedURL)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andReturn();
 
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
