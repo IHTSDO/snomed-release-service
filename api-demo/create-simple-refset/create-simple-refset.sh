@@ -12,7 +12,7 @@ ensureCorrectResponse() {
 	echo
 	if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
 	then
-		echo "Failure detected with non 2XX HTTP response code recevied.  Script halted"
+		echo "Failure detected with non-2xx HTTP response code recevied.  Script halted"
 		exit -1
 	fi
 }
@@ -104,14 +104,17 @@ curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "
 if ${isFirstTime}
 then
 	echo "Setting first time flag to ${firstTimeStr}"
-curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"firstTimeRelease\" : \"${firstTimeStr}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"firstTimeRelease\" : \"${firstTimeStr}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 else
 	echo "Recover previously published release"
 	# eg /centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_release/published
 	curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published > tmp/published-response.txt
-	exit 42
-	publishedName=`cat tmp/published-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
-	echo "Previously published package is ${publishedName}"		
+	publishedName=`cat tmp/published-response.txt | grep "publishedPackages" | sed 's/.*: \[ "\([^"]*\).*".*/\1/g'`
+	echo "Previously published package detected as ${publishedName}"
+	
+	echo "Setting first time flag to ${firstTimeStr} and previous published package to ${publishedName}"
+	updateJSON="{ \"firstTimeRelease\" : \"${firstTimeStr}\", \"previousPublishedPackage\" : \"${publishedName}\" }"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "$updateJSON" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
  
 
