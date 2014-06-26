@@ -1,16 +1,17 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DatabasePopulatorTest {
 
@@ -23,8 +24,8 @@ public class DatabasePopulatorTest {
 	public void setup() throws Exception {
 		testConnection = new DatabaseManager().createConnection("test");
 		databasePopulator = new DatabasePopulator(testConnection);
-		rf2FullFilename = "der2_Refset_SimpleFull_INT_20140831.txt";
-		rf2DeltaFilename = "der2_Refset_SimpleDelta_INT_20140831.txt";
+		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
+		rf2DeltaFilename = "der2_Refset_SimpleDelta_INT_20130930.txt";
 	}
 
 	@Test
@@ -33,11 +34,11 @@ public class DatabasePopulatorTest {
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
-		Assert.assertEquals("DER2_REFSET_SIMPLEFULL_INT_20140831", tableNames.get(0));
+		Assert.assertEquals(getExpectedTableName(rf2FullFilename), tableNames.get(0));
 
 		Statement statement = testConnection.createStatement();
 		try {
-			ResultSet resultSet = statement.executeQuery("select * from DER2_REFSET_SIMPLEFULL_INT_20140831");
+			ResultSet resultSet = statement.executeQuery("select * from " + tableNames.get(0));
 
 			// Test first row values
 			Assert.assertTrue(resultSet.first());
@@ -66,6 +67,13 @@ public class DatabasePopulatorTest {
 		}
 	}
 
+	private String getExpectedTableName(String fileName) {
+	    if( fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)){
+		return fileName.replace(RF2Constants.TXT_FILE_EXTENSION, "").toUpperCase();
+	    }
+	    return fileName.toUpperCase();
+	}
+
 	@Test
 	public void testAppendData() throws Exception {
 		TableSchema tableSchema = databasePopulator.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
@@ -74,11 +82,11 @@ public class DatabasePopulatorTest {
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
-		Assert.assertEquals("DER2_REFSET_SIMPLEFULL_INT_20140831", tableNames.get(0));
+		Assert.assertEquals(getExpectedTableName(rf2FullFilename), tableNames.get(0));
 
 		Statement statement = testConnection.createStatement();
 		try {
-			ResultSet resultSet = statement.executeQuery("select * from DER2_REFSET_SIMPLEFULL_INT_20140831");
+			ResultSet resultSet = statement.executeQuery("select * from " + tableNames.get(0));
 
 			// Test first row values
 			Assert.assertTrue(resultSet.first());

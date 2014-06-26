@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,33 +46,21 @@ public class ReleaseFileGeneratorTest {
 	@Test
 	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception
 	{
+	    
 		final List<Package> packages = createPackages( true );
 		final List<String> fileNames = mockTransformedFileNames();
 		
 		build.setProduct(new Product("Test Product"));
 		
 		new NonStrictExpectations() {{
-			
 			execution.getBuild();
-			returns(build);
-			
+			returns( build);
 			build.getPackages();
 			returns(packages);
-			
 			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
+			dao.copyTransformedFileToOutput(execution, anyString, anyString, anyString);
 		}};
-		
-		new NonStrictExpectations(2) { {
-			
-			for( Package pk : packages )
-			{
-				for( String deltaName : fileNames ){
-					dao.copyTransformedFileToOutput(execution, pk.getBusinessKey(), deltaName, anyString);
-				}
-			}
-		} };
-		
 		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ DELTA_FILE_NAME).getFile();
 		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
 		final InputStream inputStream = getFileInputStreamFromResource(DELTA_FILE_NAME);
@@ -88,7 +77,7 @@ public class ReleaseFileGeneratorTest {
 				}
 			}
 		}};
-		
+	
 		for (Package pkg : packages) {
 			ReleaseFileGenerator generator = new FirstReleaseFileGenerator(execution, pkg, dao);
 			generator.generateReleaseFiles();
@@ -123,11 +112,14 @@ public class ReleaseFileGeneratorTest {
 		new NonStrictExpectations() {{
 			execution.getBuild();
 			returns( build);
-			returns(false);
 			build.getPackages();
 			returns(packages);
 			build.getProduct();
 			returns(product);
+			build.getEffectiveTime();
+			SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
+			returns(formater.parse("20130831"));
+			
 		}};
 
 		final List<String> fileNames = mockTransformedFileNames();
@@ -160,10 +152,10 @@ public class ReleaseFileGeneratorTest {
 			generator.generateReleaseFiles();
 		}
 		//add assert to check files are generated
-		Assert.assertTrue("Full file should be generated", new File( currentFullFile).exists() );
-		Assert.assertTrue("Snapshort file should be generated", new File( currentSnapshotFile).exists() );
-		
-
+		File fullFile = new File( currentFullFile);
+		File snapshotFile = new File( currentSnapshotFile);
+		Assert.assertTrue("Full file should be generated", fullFile.exists() );
+		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists() );		
 	}
 
 	private List<String> mockTransformedFileNames() {
