@@ -28,8 +28,8 @@ fi
 
 # Declare common parameters
 #api=http://localhost:8080/api/v1
-api=http://local.ihtsdotools.org/api/v1
-#api="http://uat-release.ihtsdotools.org/api/v1"
+#api=http://local.ihtsdotools.org/api/v1
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
@@ -65,7 +65,7 @@ then
 	echo "Cannot proceed further if we haven't logged in!"
 	exit -1
 fi
-commonParams="-${curlFlags} -u ${token}:"
+commonParams="-${curlFlags} --retry 0 -u ${token}:"
 echo
 
 #Only need a readme header for a first time run
@@ -103,7 +103,7 @@ curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "
 #Set the first time release flag, and if a subsequent release, recover the previously published package and set that
 if ${isFirstTime}
 then
-	echo "Setting first time flag to ${firstTimeStr}"
+	echo "Set first time flag to ${firstTimeStr}"
 	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"firstTimeRelease\" : \"${firstTimeStr}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 else
 	echo "Recover previously published release"
@@ -112,7 +112,7 @@ else
 	publishedName=`cat tmp/published-response.txt | grep "publishedPackages" | sed 's/.*: \[ "\([^"]*\).*".*/\1/g'`
 	echo "Previously published package detected as ${publishedName}"
 	
-	echo "Setting first time flag to ${firstTimeStr} and previous published package to ${publishedName}"
+	echo "Set first time flag to ${firstTimeStr} and previous published package to ${publishedName}"
 	updateJSON="{ \"firstTimeRelease\" : \"${firstTimeStr}\", \"previousPublishedPackage\" : \"${publishedName}\" }"
 	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "$updateJSON" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
@@ -128,3 +128,24 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/
 
 echo "Publish the package"
 curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
+
+echo "List the output files"
+downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
+localDownloadDirectory=`echo "tmp/output_${executionId}" | sed s/://g`
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
+
+
+mkdir ${localDownloadDirectory}
+downloadFile() {
+	read fileName
+	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
+	#Using curl as the MAC doesn't have wget loaded by default
+	#wget -P ${localDownloadDirectory} ${downloadUrlRoot}/${fileName}
+	curl ${commonParams} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
+}
+cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+
+echo
+echo "Process Complete"
+echo
+
