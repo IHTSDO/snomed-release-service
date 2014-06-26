@@ -134,14 +134,6 @@ public class ExecutionController {
 		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedUser);
 	}
 
-	private Long asLong(String longString) {
-		if (longString != null && longString.matches("\\d+")) {
-			return Long.parseLong(longString);
-		} else {
-			return null;
-		}
-	}
-	
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
 	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId){
