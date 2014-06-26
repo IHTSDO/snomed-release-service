@@ -1,21 +1,9 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -25,13 +13,7 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
-import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
-import org.ihtsdo.buildcloud.service.execution.ReplaceValueLineTransformation;
-import org.ihtsdo.buildcloud.service.execution.StreamingFileTransformation;
-import org.ihtsdo.buildcloud.service.execution.UUIDTransformation;
-import org.ihtsdo.buildcloud.service.execution.Zipper;
+import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
@@ -40,6 +22,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @Transactional
@@ -102,6 +98,32 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		return dao.loadConfiguration(execution);
+	}
+
+	@Override
+	public List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+		return getExecutionPackages(buildCompositeKey, executionId, null, authenticatedUser);
+	}
+
+	@Override
+	public ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		List<ExecutionPackageDTO> executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId, authenticatedUser);
+		return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
+	}
+
+	private List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
+		Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
+		List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
+		for (Map<String, Object> aPackage : packages) {
+			String id = (String) aPackage.get("id");
+			if (packageId == null || packageId.equals(id)) {
+				executionPackageDTOs.add(new ExecutionPackageDTO(id, (String) aPackage.get("name")));
+			}
+		}
+		return executionPackageDTOs;
 	}
 
 	@Override
@@ -207,7 +229,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
 	    String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 	    //last segment will be like 20140131.txt
-	    String dateFromFile = segments[segments.length - 1].substring(0,effectiveDate.length());
+	    String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
 	    if( !dateFromFile.equals(effectiveDate)){
 		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
 	    }

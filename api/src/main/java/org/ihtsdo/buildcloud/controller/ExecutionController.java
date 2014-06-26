@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
@@ -21,7 +22,6 @@ import org.springframework.web.servlet.HandlerMapping;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -33,17 +33,17 @@ public class ExecutionController {
 
 	@Autowired
 	private ExecutionService executionService;
-
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
-	
+
 	@Autowired
 	private PublishService publishService;
-	
+
 	@Autowired
 	private PackageService packageService;
 
-	static final String[] EXECUTION_LINKS = { "configuration", "buildScripts|build-scripts.zip" };
+	static final String[] EXECUTION_LINKS = {"configuration", "packages", "buildScripts|build-scripts.zip"};
+	static final String[] PACKAGE_LINKS = {};
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
@@ -83,6 +83,25 @@ public class ExecutionController {
 		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedUser);
 		response.setContentType("application/json");
 		response.getOutputStream().print(executionConfiguration);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages")
+	@ResponseBody
+	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+												 HttpServletRequest request) throws IOException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<ExecutionPackageDTO> executionPackages = executionService.getExecutionPackages(buildCompositeKey, executionId, authenticatedUser);
+		return hypermediaGenerator.getEntityCollectionHypermedia(executionPackages, request, PACKAGE_LINKS);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}")
+	@ResponseBody
+	public Map<String, Object> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+										   @PathVariable String packageId,
+										   HttpServletRequest request) throws IOException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId, authenticatedUser);
+		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
 	}
 
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)

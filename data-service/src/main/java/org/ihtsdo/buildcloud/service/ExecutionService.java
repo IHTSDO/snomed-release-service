@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
@@ -26,6 +27,10 @@ public interface ExecutionService {
 
 	String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException;
 
+	List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException;
+
+	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException;
+
 	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
 
 	void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException;
@@ -35,4 +40,5 @@ public interface ExecutionService {
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser);
 
 	InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser);
+
 }
