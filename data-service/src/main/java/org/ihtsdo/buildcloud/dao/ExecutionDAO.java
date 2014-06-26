@@ -1,5 +1,13 @@
 package org.ihtsdo.buildcloud.dao;
 
+import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,14 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.codec.DecoderException;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
 public interface ExecutionDAO {
 
@@ -35,13 +35,11 @@ public interface ExecutionDAO {
 
 	void queueForBuilding(Execution execution);
 
-	void putOutputFile(Execution execution, String filePath, InputStream inputStream, Long size);
-
 	void updateStatus(Execution execution, Execution.Status newStatus);
 	
 	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
 
-	InputStream getOutputFile(Execution execution, String filePath);
+	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
 	
 	List<String> listInputFilePaths(Execution execution, String packageId);
 

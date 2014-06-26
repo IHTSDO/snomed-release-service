@@ -35,10 +35,10 @@ public interface ExecutionService {
 
 	void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException;
 
-	void putOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser);
-
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser);
 
-	InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser);
+	InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser);
+
+	List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException;
 
 }

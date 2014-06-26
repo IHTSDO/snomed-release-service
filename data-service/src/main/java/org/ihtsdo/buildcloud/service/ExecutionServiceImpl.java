@@ -242,12 +242,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void putOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		dao.putOutputFile(execution, filePath, inputStream, size);
-	}
-
-	@Override
 	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		Execution.Status status = Execution.Status.valueOf(statusString);
@@ -255,9 +249,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser) {
+	public InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getOutputFile(execution, filePath);
+		return dao.getOutputFileStream(execution, packageId, outputFilePath);
+	}
+
+	@Override
+	public List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listOutputFilePaths(execution, packageId);
 	}
 
 	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) {

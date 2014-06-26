@@ -104,12 +104,8 @@ public class ExecutionS3PathHelper {
 		return getExecutionPath(execution).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
 
-	public String getOutputPath(Execution execution, String outputRelativePath) {
-		return getFilePath(execution, OUTPUT);
-	}
-
-	public String getOutputFilePath(Execution execution, String outputRelativePath) {
-		return getFilePath(execution, OUTPUT + outputRelativePath);
+	public String getOutputFilesPath(Execution execution, String packageId) {
+		return getExecutionPath(execution).append(packageId).append(SEPARATOR).append("output-files").append(SEPARATOR).toString();
 	}
 
 	private StringBuffer getPackageFilesPathAsStringBuffer(Package aPackage, String directionModifier) {

@@ -163,13 +163,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public void putOutputFile(Execution execution, String filePath, InputStream inputStream, Long size) {
-		LOGGER.debug("Saving execution output file path:{}, size:{}", filePath, size);
-		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
-		executionFileHelper.putFile(inputStream, size, outputFilePath);
-	}
-
-	@Override
 	public void updateStatus(Execution execution, Execution.Status newStatus) {
 		Execution.Status origStatus = execution.getStatus();
 		execution.setStatus(newStatus);
@@ -190,14 +183,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 
-/*	PGW: I think this method is wrong because an output file should be specific to a package
- *  Is it being used for writing execution logs or config or something? */
-  @Override
-	public InputStream getOutputFile(Execution execution, String filePath) {
-		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
+	@Override
+	public InputStream getOutputFileStream(Execution execution, String packageId, String filePath) {
+		String outputFilePath = pathHelper.getOutputFilesPath(execution, packageId) + filePath;
 		return executionFileHelper.getFileStream(outputFilePath);
 	}
-	
+
 	@Override
 	public InputStream getManifestStream(Execution execution, Package pkg) {
 		StringBuffer manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
@@ -364,8 +355,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public List<String> listOutputFilePaths(Execution execution,
 			String packageId) {
-		String outputFilePath = pathHelper.getOutputFilePath(execution, packageId).toString();
-		return executionFileHelper.listFiles(outputFilePath);
+		String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
+		return executionFileHelper.listFiles(outputFilesPath);
 	}
 
 	@Required
