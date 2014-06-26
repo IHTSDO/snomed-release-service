@@ -17,13 +17,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.HandlerMapping;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class ExecutionController {
 	private PackageService packageService;
 
 	static final String[] EXECUTION_LINKS = {"configuration", "packages", "buildScripts|build-scripts.zip"};
-	static final String[] PACKAGE_LINKS = {};
+	static final String[] PACKAGE_LINKS = {"outputfiles"};
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
@@ -96,12 +97,38 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/packages/{packageId}")
 	@ResponseBody
-	public Map<String, Object> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-										   @PathVariable String packageId,
-										   HttpServletRequest request) throws IOException {
+	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+										  @PathVariable String packageId,
+										  HttpServletRequest request) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles")
+	@ResponseBody
+	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+															@PathVariable String packageId,
+															HttpServletRequest request) throws IOException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		List<Map<String, String>> outputFiles = new ArrayList<>();
+		for (String relativeFilePath : relativeFilePaths) {
+			HashMap<String, String> file = new HashMap<>();
+			file.put("id", relativeFilePath);
+			outputFiles.add(file);
+		}
+		return hypermediaGenerator.getEntityCollectionHypermedia(outputFiles, request);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles/{outputFileName:.*}")
+	public void getPackageOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+											@PathVariable String packageId, @PathVariable String outputFileName,
+											HttpServletResponse response) throws IOException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
+		}
 	}
 
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
@@ -121,29 +148,6 @@ public class ExecutionController {
 		response.setContentType("application/zip");
 		ServletOutputStream outputStream = response.getOutputStream();
 		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedUser, outputStream);
-	}
-
-	@RequestMapping(value = "/{executionId}/output/**")
-	@ResponseBody
-	public void downloadOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-								   HttpServletRequest request,
-								   HttpServletResponse response) throws IOException {
-
-		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-		String filePath = path.substring(path.indexOf("/output/") + 8);
-
-		User authenticatedUser = SecurityHelper.getSubject();
-		ServletOutputStream outputStream = response.getOutputStream();
-		InputStream outputFileInputStream = executionService.getOutputFile(buildCompositeKey, executionId, filePath, authenticatedUser);
-		if (outputFileInputStream != null) {
-			try {
-				StreamUtils.copy(outputFileInputStream, outputStream);
-			} finally {
-				outputFileInputStream.close();
-			}
-		} else {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		}
 	}
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
