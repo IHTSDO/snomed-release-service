@@ -5,16 +5,17 @@
 #
 
 ensureCorrectResponse() {
-	read response
-
-	httpResponseCode=`echo $response | grep "HTTP" | awk '{print $2}'`
-	echo "Response received: HTTP/1.1 $httpResponseCode "
+	while read response 
+	do
+		httpResponseCode=`echo $response | grep "HTTP" | awk '{print $2}'`
+		echo " Response received: $response "
+		if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
+		then
+			echo "Failure detected with non-2xx HTTP response code received.  Script halted"
+			exit -1
+		fi
+	done
 	echo
-	if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
-	then
-		echo "Failure detected with non-2xx HTTP response code recevied.  Script halted"
-		exit -1
-	fi
 }
 
 if [ -z "$calling_program" ]
@@ -56,7 +57,7 @@ echo
 
 # Login
 echo "Login and record authorisation token."
-curl -${curlFlags} -F username=manager -F password=test123 ${api}/login > tmp/login-response.txt
+curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
 token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
 echo "Token is '${token}'"
 #Ensure we have a valid token before proceeding
@@ -84,7 +85,7 @@ echo "Upload Input Files:"
 for file in `ls ${inputFilesDir}`;
 do
 	echo "Upload Input File ${file}"
-	curl ${commonParams} -F "file=@${inputFilesDir}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | ensureCorrectResponse
+	curl ${commonParams} -F "file=@${inputFilesDir}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
 done
 
 #If we've done a different release before, then we need to delete the input files from the last run!
@@ -119,7 +120,7 @@ fi
  
 
 echo "Create Execution"
-curl ${commonParams} -X POST ${api}/builds/${buildId}/executions > tmp/execution-response.txt
+curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execution-response.txt | grep HTTP | ensureCorrectResponse
 executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 
