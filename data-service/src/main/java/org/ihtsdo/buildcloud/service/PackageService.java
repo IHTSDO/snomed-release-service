@@ -13,7 +13,7 @@ public interface PackageService extends EntityService<Package> {
 	
 	static final String FIRST_TIME_RELEASE = "firstTimeRelease";
 
-	static final String PREVIOUS_PUBLISHED_FULL_FILE = "previousPublishedFullFile";
+	static final String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 
 	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
 
