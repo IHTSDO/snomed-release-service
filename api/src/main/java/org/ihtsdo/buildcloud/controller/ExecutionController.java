@@ -7,9 +7,13 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
+import org.ihtsdo.buildcloud.service.InputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -31,6 +36,8 @@ import java.util.Map;
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/executions")
 public class ExecutionController {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
 
 	@Autowired
 	private ExecutionService executionService;
@@ -49,7 +56,7 @@ public class ExecutionController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
-											   HttpServletRequest request) throws IOException, BadConfigurationException {
+											   HttpServletRequest request) throws IOException, BadConfigurationException, NamingConflictException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 
@@ -164,8 +171,14 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
+		String lastPackage = "No Package";
 		for(Package pk: packages ){
-			publishService.publishExecutionPackage(execution, pk );
+			try{
+				lastPackage = pk.getBusinessKey();
+				publishService.publishExecutionPackage(execution, pk );
+			} catch (Exception e) {
+				LOGGER.error ("Failed to publish package {}", lastPackage, e);
+			}
 		}
 	}
 
