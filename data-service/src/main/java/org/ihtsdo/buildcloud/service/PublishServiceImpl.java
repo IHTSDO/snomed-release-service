@@ -55,7 +55,7 @@ public class PublishServiceImpl implements PublishService {
 			}
 		}
 		if( releaseFileName == null ){
-			throw new IllegalStateException("No zip file found in package;"+ pk.getBusinessKey() );
+			throw new IllegalStateException("No zip file found for package: "+ pk.getBusinessKey() );
 		}
 		String fullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName );
 		

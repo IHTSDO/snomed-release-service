@@ -215,8 +215,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 		for (S3ObjectSummary objectSummary : objectSummaries) {
 			String key = objectSummary.getKey();
-			LOGGER.debug("Found key {}", key);
 			if (key.contains("/status:")) {
+				LOGGER.debug("Found status key {}", key);
 				String[] keyParts = key.split("/");
 				String dateString = keyParts[2];
 				String status = keyParts[3].split(":")[1];
