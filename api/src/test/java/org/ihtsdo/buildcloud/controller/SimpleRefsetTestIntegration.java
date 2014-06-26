@@ -165,7 +165,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		jsonContent = "{ "
 				+ jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime))
-				+ (isFirstTime ? "" : "," + jsonPair(PackageService.PREVIOUS_PUBLISHED_FULL_FILE, previousPublishedFile))
+				+ (isFirstTime ? "" : "," + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile))
 				+ " }";
 		mockMvc.perform(
 				request(HttpMethod.PATCH, packageURL)

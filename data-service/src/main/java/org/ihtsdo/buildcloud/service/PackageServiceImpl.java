@@ -63,8 +63,8 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
 
-		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_FULL_FILE)) {
-			aPackage.setPreviousPublishedPackage(newPropertyValues.get(PREVIOUS_PUBLISHED_FULL_FILE));
+		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_PACKAGE)) {
+			aPackage.setPreviousPublishedPackage(newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE));
 		}
 
 		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {
