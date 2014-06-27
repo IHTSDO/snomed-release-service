@@ -4,16 +4,16 @@ import java.io.InputStream;
 
 public class ArchiveEntry {
 	
-	private String fileName;
+	private String filePath;
 	private InputStream inputStream;
 	
-	public ArchiveEntry (String fileName, InputStream inputStream) {
-		this.fileName = fileName;
+	public ArchiveEntry (String filePath, InputStream inputStream) {
+		this.filePath = filePath;
 		this.inputStream = inputStream;
 	}
 	
-	public String getFileName() {
-		return fileName;
+	public String getFilePath() {
+		return filePath;
 	}
 	public InputStream getInputStream() {
 		return inputStream;

@@ -1,20 +1,7 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
@@ -25,12 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StreamUtils;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 @Repository
 public class FileHelper {
@@ -121,7 +109,7 @@ public class FileHelper {
 	 * @throws IOException
 	 */
 	public ArchiveEntry getArchiveEntry(String targetFileName, String previousPublishedPackagePath, FileNameTransformation fnt) throws IOException {
-		
+
 		ArchiveEntry result = null;
 		//Get hold of the Archive Input Stream
 		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
@@ -137,14 +125,13 @@ public class FileHelper {
 		
 		//Now lets iterate through that zip archive and see if we can find it's partner
 		ZipEntry zEntry;
-		while ( (zEntry = zis.getNextEntry()) != null) {
+		while (result == null && (zEntry = zis.getNextEntry()) != null) {
 			//The Zip entry will contain the whole path to the file.  We'll just check the end string matches...should be ok.
 			if (!zEntry.isDirectory() && fnt.transformFilename(zEntry.getName()).endsWith(targetNameTemplate)) {
 				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
-				Path p = Paths.get(zEntry.getName());
-				result = new ArchiveEntry(p.getFileName().toString(), zis);
+				return new ArchiveEntry(zEntry.getName(), zis);
 			}
-		    }
+		}
 		return result;
 	}
 
