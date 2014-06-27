@@ -28,11 +28,12 @@ public class DatabasePopulator {
 		schemaFactory = new SchemaFactory();
 	}
 
-	public TableSchema createTable(String rf2Filename, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException {
+	public TableSchema createTable(String rf2Filename, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 
 			// Build Schema
 			String headerLine = reader.readLine();
+			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2Filename + " is empty.");
 			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2Filename, headerLine);
 
 			// Create Table
