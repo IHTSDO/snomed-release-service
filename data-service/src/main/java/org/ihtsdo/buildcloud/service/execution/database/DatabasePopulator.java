@@ -28,13 +28,14 @@ public class DatabasePopulator {
 		schemaFactory = new SchemaFactory();
 	}
 
-	public TableSchema createTable(String rf2Filename, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 
 			// Build Schema
 			String headerLine = reader.readLine();
-			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2Filename + " is empty.");
-			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2Filename, headerLine);
+			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+			String rf2FileName = rf2FilePath.substring(rf2FilePath.lastIndexOf("/") + 1);
+			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2FileName, headerLine);
 
 			// Create Table
 			String tableName = tableSchema.getName();

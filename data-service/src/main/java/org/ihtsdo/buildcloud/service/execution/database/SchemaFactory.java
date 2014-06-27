@@ -68,7 +68,7 @@ public class SchemaFactory {
 			}
 		} else {
 			throw new FileRecognitionException("Unexpected filename format. Filename contains " + (nameParts.length - 1) +
-					" underscores, expected 4.");
+					" underscores, expected 4. Filename: " + filename);
 		}
 
 	}

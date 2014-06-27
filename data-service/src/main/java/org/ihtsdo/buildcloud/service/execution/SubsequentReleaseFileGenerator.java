@@ -49,7 +49,7 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 			if ( previousFullFile == null ){
 			    throw new RuntimeException("No full file found in prevous published package:" + previousPublishedPackage);
 			}
-			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFileName(), previousFullFile.getInputStream());
+			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFilePath(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 							pkg.getBusinessKey(), transformedDeltDataFile);
 			databasePopulator.appendData(tableSchema, transformedDeltaInputStream);
