@@ -47,8 +47,8 @@ public class ExecutionController {
 	@Autowired
 	private PackageService packageService;
 
-	static final String[] EXECUTION_LINKS = {"configuration", "packages"};
-	static final String[] PACKAGE_LINKS = {"outputfiles"};
+	private static final String[] EXECUTION_LINKS = {"configuration", "packages"};
+	private static final String[] PACKAGE_LINKS = {"outputfiles"};
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody

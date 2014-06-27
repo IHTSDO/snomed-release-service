@@ -19,7 +19,7 @@ import java.util.HashMap;
 @ControllerAdvice
 public class GlobalControllerExceptionHandler {
 
-	public static final Logger LOGGER = LoggerFactory.getLogger(GlobalControllerExceptionHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalControllerExceptionHandler.class);
 
 	@ExceptionHandler(BadRequestException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)

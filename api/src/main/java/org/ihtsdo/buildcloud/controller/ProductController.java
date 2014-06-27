@@ -79,10 +79,10 @@ public class ProductController {
 		User authenticatedUser = SecurityHelper.getSubject();  
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		List<String> publishedPackages = publishService.getPublishedPackages(product);
-		Map<String, Object> jsonStructure = new HashMap <String, Object>();
+		Map<String, Object> jsonStructure = new HashMap<>();
 		jsonStructure.put("publishedPackages", publishedPackages);
 		boolean currentResource = true;
-		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request, null);
+		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request);
 
 	}
 
