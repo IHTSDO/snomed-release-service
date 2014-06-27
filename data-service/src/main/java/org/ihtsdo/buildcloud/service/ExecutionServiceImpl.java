@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -136,8 +137,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
+	public Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
+		
+		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> packageResults = new HashMap<String, Object>();
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		results.put("Execution", execution);
+		results.put("PackageResults", packageResults);
 		
 		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
 		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
@@ -148,17 +154,25 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//TODO Multithreading opportunity here!
 		List<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
+			String pkgResult = "pass";
+			String msg = "Process completed successfully";
 			try {
 				executePackage(execution, pkg);
 			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
+				pkgResult = "fail";
+				msg = e.getLocalizedMessage();
 				LOGGER.warn ("Failure while processing package {}." , pkg.getBusinessKey(), e);
 			}
+			Map<String, Object> thisResult = new HashMap<String, Object>();
+			thisResult.put("status", pkgResult);
+			thisResult.put("message", msg);
+			packageResults.put(pkg.getBusinessKey(), thisResult);
 		}
 		
 		dao.updateStatus(execution, Execution.Status.BUILT);
 
-		return execution;
+		return results;
 	}
 	
 	private void executePackage(Execution execution, Package pkg) throws Exception {

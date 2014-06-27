@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.HashMap;
 
 @ControllerAdvice
@@ -23,6 +25,14 @@ public class GlobalControllerExceptionHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public HashMap<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
+		logError(request, exception);
+		return getErrorMap(exception);
+	}
+	
+	@ExceptionHandler(ResourceNotFoundException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	@ResponseBody
+	public HashMap<String, String> handleResourceNotFoundError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception);
 	}
