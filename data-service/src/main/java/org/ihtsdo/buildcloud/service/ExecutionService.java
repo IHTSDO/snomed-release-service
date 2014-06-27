@@ -8,7 +8,6 @@ import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 
 public interface ExecutionService {
@@ -34,8 +33,6 @@ public interface ExecutionService {
 	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException;
 
 	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
-
-	void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException;
 
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser);
 
