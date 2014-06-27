@@ -1,16 +1,5 @@
 package org.ihtsdo.buildcloud.controller;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
@@ -22,12 +11,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}")
@@ -71,7 +65,7 @@ public class InputFileController {
 	public void getManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								HttpServletResponse response) {
 
-		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());) {
+		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
 				response.setContentType("application/xml");
 				StreamUtils.copy(fileStream, response.getOutputStream());
@@ -112,7 +106,7 @@ public class InputFileController {
 								@PathVariable String inputFileName,
 								HttpServletResponse response) {
 
-		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject());) {
+		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {

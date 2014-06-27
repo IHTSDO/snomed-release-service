@@ -49,7 +49,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 				String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
 				String[] credentials = credsString.split(":");
 
-				if (credentials != null && credentials.length > 0) {
+				if (credentials.length > 0) {
 					String authenticationToken = credentials[0];
 					validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
 				}
