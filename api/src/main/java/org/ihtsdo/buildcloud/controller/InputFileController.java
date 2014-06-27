@@ -126,26 +126,18 @@ public class InputFileController {
 
 	//Using Regex to match variable name here due to problems with .txt getting truncated
 	//See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
-	@RequestMapping(value = "/inputfiles/{inputFileName:.+}", method = RequestMethod.DELETE)
+	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								@PathVariable String inputFileName, HttpServletResponse response) throws IOException {
+								@PathVariable String inputFileNamePattern, HttpServletResponse response) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
+		
+		//Are we working with a file name or a pattern?
+		if (inputFileNamePattern.contains("*")) {
+			inputFileService.deleteFilesByPattern(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);						
+		} else {
+			inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);						
+		}
 		response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 	}
 	
-	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.*}", method = RequestMethod.DELETE)
-	@ResponseBody
-	public void deleteInputFilesByPattern( @PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-		@PathVariable String inputFileNamePattern, HttpServletResponse response){
-	    User authenticatedUser = SecurityHelper.getSubject();
-	    List<String> filesFound = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, authenticatedUser);
-	    Pattern pattern = Pattern.compile(inputFileNamePattern);
-	    for(String inputFileName : filesFound){
-		if( pattern.matcher(inputFileName).matches()){
-		    inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
-		}
-	    }
-	    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-	}
 }
