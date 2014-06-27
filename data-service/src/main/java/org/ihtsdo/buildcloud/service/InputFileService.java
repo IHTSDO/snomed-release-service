@@ -24,4 +24,8 @@ public interface InputFileService {
 
 	void deleteFile(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);
 
+	void deleteFilesByPattern(String buildCompositeKey,
+			String packageBusinessKey, String inputFileNamePattern,
+			User authenticatedUser);
+
 }

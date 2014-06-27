@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
@@ -108,6 +109,23 @@ public class InputFileServiceImpl implements InputFileService {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		String filePath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
 		fileHelper.deleteFile(filePath);
+	}
+
+	@Override
+	public void deleteFilesByPattern(String buildCompositeKey,
+			String packageBusinessKey, String inputFileNamePattern,
+			User authenticatedUser) {
+		
+		List<String> filesFound = listInputFilePaths(buildCompositeKey, packageBusinessKey, authenticatedUser);
+		
+		//Need to convert a standard file wildcard to a regex pattern
+		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
+		Pattern pattern = Pattern.compile(regexPattern);
+		for(String inputFileName : filesFound){
+			if( pattern.matcher(inputFileName).matches()){
+				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
+			}
+		}
 	}
 
 }
