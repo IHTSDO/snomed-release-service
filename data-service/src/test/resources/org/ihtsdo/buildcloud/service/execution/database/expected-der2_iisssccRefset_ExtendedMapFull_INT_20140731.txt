@@ -1,4 +1,4 @@
-id	effectiveTime	active	moduleId	refSetId	referencedComponentId	mapGroup	mapPriority	mapRule	mapAdvice	mapTarget	correlationId	mapCategoryIdid
+id	effectiveTime	active	moduleId	refSetId	referencedComponentId	mapGroup	mapPriority	mapRule	mapAdvice	mapTarget	correlationId	mapCategoryId
 e6e5b0d8-c95c-54fc-b4a9-e7ca5c24536c	20140131	1	449080006	447562003	291571000119106	1	8	OTHERWISE TRUE	ALWAYS I61.9	I61.9	447561005	447637006
 e6e5b0d8-c95c-54fc-b4a9-e7ca5c24536c	20140731	1	449080006	447562003	291571000119106	1	8	OTHERWISE TRUE	ALWAYS I61.9	I61.9	447561005	447637006
 e96b57c3-1a2f-5bc8-9a26-0c48e377df16	20130731	1	449080006	447562003	434611000124106	1	1	TRUE	ALWAYS Z29.2	Z29.2	447561005	447637006
