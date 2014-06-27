@@ -142,6 +142,7 @@ then
 	cat tmp/trigger-response.txt
 	echo
 	echo "Script Halted"
+	sleep 1s
 	exit -1
 fi
 

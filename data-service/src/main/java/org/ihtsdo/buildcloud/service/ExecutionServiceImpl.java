@@ -161,8 +161,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
 				pkgResult = "fail";
-				msg = e.getLocalizedMessage();
-				LOGGER.warn ("Failure while processing package {}." , pkg.getBusinessKey(), e);
+				msg = "Failure while processing package " 
+						+ pkg.getBusinessKey() 
+						+ " due to " 
+						+ e.getMessage();
+				LOGGER.warn (msg, e);
 			}
 			Map<String, Object> thisResult = new HashMap<String, Object>();
 			thisResult.put("status", pkgResult);

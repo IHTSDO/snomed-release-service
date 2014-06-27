@@ -67,9 +67,7 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
-		    	
-			String errorMsg = "Failed to generate subsequent full and snapshort release files for package:" + pkg.getBusinessKey();
-			LOGGER.error(errorMsg, e);
+			String errorMsg = "Failed to generate subsequent full and snapshort release files due to " + e.getMessage();
 			throw new ReleaseFileGenerationException(errorMsg, e);
 		}
 	}
