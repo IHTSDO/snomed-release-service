@@ -14,7 +14,9 @@ public class UUIDTransformation implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) {
-		columnValues[column] = UUID.randomUUID().toString();
+		if (columnValues[column].isEmpty()) {
+			columnValues[column] = UUID.randomUUID().toString();
+		}
 	}
 
 }

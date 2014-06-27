@@ -3,12 +3,20 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.manifest.FileType;
+import org.ihtsdo.buildcloud.manifest.FolderType;
+import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
+import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.execution.*;
+import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -17,12 +25,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -38,15 +53,26 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
+	@Autowired
+	private ReadmeGenerator readmeGenerator;
+
+	private static final String README_FILENAME_PREFIX = "Readme";
+	private static final String README_FILENAME_EXTENSION = ".txt";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException {
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
 		if (build.getEffectiveTime() != null) {
 
 			Date creationDate = new Date();
+			
+			//Do we already have an execution for that date?
+			Execution existingExecution = getExecution (build, creationDate);
+			if (existingExecution != null) {
+				throw new NamingConflictException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
+			}
 
 			Execution execution = new Execution(creationDate, build);
 
@@ -84,6 +110,32 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
+	public List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+		return getExecutionPackages(buildCompositeKey, executionId, null, authenticatedUser);
+	}
+
+	@Override
+	public ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		List<ExecutionPackageDTO> executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId, authenticatedUser);
+		return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
+	}
+
+	private List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
+		Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
+		List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
+		for (Map<String, Object> aPackage : packages) {
+			String id = (String) aPackage.get("id");
+			if (packageId == null || packageId.equals(id)) {
+				executionPackageDTOs.add(new ExecutionPackageDTO(id, (String) aPackage.get("name")));
+			}
+		}
+		return executionPackageDTOs;
+	}
+
+	@Override
 	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		
@@ -100,7 +152,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 				executePackage(execution, pkg);
 			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
-				LOGGER.warn ("Failure while processing package {} due to: {}" , pkg.getBusinessKey(), e.getMessage());
+				LOGGER.warn ("Failure while processing package {}." , pkg.getBusinessKey(), e);
 			}
 		}
 		
@@ -112,16 +164,23 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
-		if (dao.getManifestStream(execution, pkg) == null) {
-			throw new Exception ("Failed to find valid manifest file.");
+		InputStream manifestStream = dao.getManifestStream(execution, pkg);
+		if (manifestStream == null) {
+			throw new BadConfigurationException("Failed to find valid manifest file.");
+		} else {
+			manifestStream.close();
 		}
 		
 		transformFiles(execution, pkg);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
-		ReleaseFileGenerator generator = new ReleaseFileGenerator( execution, pkg, dao );
+		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
+		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
 		generator.generateReleaseFiles();
-		
+
+		// Generate readme file
+		generateReadmeFile(execution, pkg);
+
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
@@ -154,20 +213,17 @@ public class ExecutionServiceImpl implements ExecutionService {
 		for (String relativeFilePath : executionInputFilePaths) {
 
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-			if (relativeFilePath.endsWith(".txt")) {
+			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
+					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
 					asyncPipedStreamBean.waitForFinish();
-				} catch (IOException e) {
+				} catch (IOException | ExecutionException | InterruptedException e) {
 					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("IOException processing file {}", relativeFilePath, e);
-				} catch (InterruptedException e) {
-					LOGGER.error("InterruptedException uploading file {}", relativeFilePath, e);
-				} catch (ExecutionException e) {
-					LOGGER.error("ExecutionException uploading file {}", relativeFilePath, e);
+					LOGGER.error("Exception occured when transforming file {}", relativeFilePath, e);
 				}
 			} else {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
@@ -175,16 +231,23 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 	}
 
+	/**
+	 * @param fileName input text file name.
+	 * @param effectiveDate  date in format of "yyyyMMdd"
+	 */
+	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
+	    String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+	    //last segment will be like 20140131.txt
+	    String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
+	    if( !dateFromFile.equals(effectiveDate)){
+		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
+	    }
+	}
+
 	@Override
 	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException {
 		Execution execution = find(buildCompositeKey, executionId, authenticatedUser);
 		dao.streamBuildScriptsZip(execution, outputStream);
-	}
-
-	@Override
-	public void putOutputFile(String buildCompositeKey, String executionId, String filePath, InputStream inputStream, Long size, User authenticatedUser) {
-		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		dao.putOutputFile(execution, filePath, inputStream, size);
 	}
 
 	@Override
@@ -195,19 +258,69 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public InputStream getOutputFile(String buildCompositeKey, String executionId, String filePath, User authenticatedUser) {
+	public InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getOutputFile(execution, filePath);
+		return dao.getOutputFileStream(execution, packageId, outputFilePath);
+	}
+
+	@Override
+	public List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listOutputFilePaths(execution, packageId);
 	}
 
 	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		return dao.find(build, executionId);
 	}
+	
+	private Execution getExecution(Build build, Date creationTime) {
+		return dao.find(build, EntityHelper.formatAsIsoDateTime(creationTime));
+	}
+		
 
 	private Build getBuild(String buildCompositeKey, User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		return buildDAO.find(buildId, authenticatedUser);
 	}
-	
+
+	private void generateReadmeFile(Execution execution, Package pkg) throws BadConfigurationException, JAXBException, IOException,
+			ExecutionException, InterruptedException {
+
+		Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
+		InputStream manifestStream = dao.getManifestStream(execution, pkg);
+		ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+
+		String readmeFilename = null;
+		if (manifestListing != null) {
+			FolderType rootFolder = manifestListing.getFolder();
+			if (rootFolder != null) {
+				List<FileType> files = rootFolder.getFile();
+				for (FileType file : files) {
+					String filename = file.getName();
+					if (file.getName().startsWith(README_FILENAME_PREFIX) && filename.endsWith(README_FILENAME_EXTENSION)) {
+						readmeFilename = filename;
+						break;
+					}
+				}
+			}
+		} else {
+			LOGGER.warn("Can not generate readme, manifest listing is null.");
+		}
+		if (readmeFilename != null) {
+			AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
+			OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream();
+			try {
+				readmeGenerator.generate(pkg.getReadmeHeader(), manifestListing, readmeOutputStream);
+				asyncPipedStreamBean.waitForFinish();
+			} finally {
+				readmeOutputStream.close();
+			}
+
+		} else {
+			LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
+					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
+		}
+	}
+
 }

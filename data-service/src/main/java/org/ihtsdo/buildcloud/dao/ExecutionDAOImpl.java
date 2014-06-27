@@ -1,6 +1,22 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.model.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -13,6 +29,9 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +39,13 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.util.FileCopyUtils;
 
-import java.io.*;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
@@ -45,10 +61,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	
 	@Autowired
 	private String mavenBucketName;
-
-	private FileHelper executionFileHelper;
 	
-	private FileHelper mavenFileHelper;
+	@Autowired
+	private String publishedBucketName;
+
+	private final FileHelper executionFileHelper;
+	
+	private final FileHelper mavenFileHelper;
 	
 	@Autowired
 	private InputFileDAO inputFileDAO;
@@ -56,11 +75,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private JmsTemplate jmsTemplate;
 
-	private ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper;
 
 	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
+	private final S3ClientHelper s3ClientHelper;
 
 	@Autowired
 	public ExecutionDAOImpl(String mavenBucketName, String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
@@ -69,6 +89,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		mavenFileHelper = new FileHelper(mavenBucketName, s3Client, s3ClientHelper);
 		this.s3Client = s3Client;
+		this.s3ClientHelper = s3ClientHelper;
 	}
 
 	@Override
@@ -142,13 +163,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public void putOutputFile(Execution execution, String filePath, InputStream inputStream, Long size) {
-		LOGGER.debug("Saving execution output file path:{}, size:{}", filePath, size);
-		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
-		executionFileHelper.putFile(inputStream, size, outputFilePath);
-	}
-
-	@Override
 	public void updateStatus(Execution execution, Execution.Status newStatus) {
 		Execution.Status origStatus = execution.getStatus();
 		execution.setStatus(newStatus);
@@ -161,24 +175,20 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 	
+	@Override
 	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception {
 		if (execution.getStatus() != ensureStatus) {
-			throw new Exception ("Execution "	+ execution.getCreationTime() 
-												+ " is at status: " 
-												+ execution.getStatus().name() 
-												+ " and is expected to be at status:" 
-												+ ensureStatus.name());
+			throw new Exception ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
+						+ " and is expected to be at status:" + ensureStatus.name());
 		}
 	}
 
-/*	PGW: I think this method is wrong because an output file should be specific to a package
- *  Is it being used for writing execution logs or config or something? */
-  @Override
-	public InputStream getOutputFile(Execution execution, String filePath) {
-		String outputFilePath = pathHelper.getOutputFilePath(execution, filePath);
+	@Override
+	public InputStream getOutputFileStream(Execution execution, String packageId, String filePath) {
+		String outputFilePath = pathHelper.getOutputFilesPath(execution, packageId) + filePath;
 		return executionFileHelper.getFileStream(outputFilePath);
 	}
-	
+
 	@Override
 	public InputStream getManifestStream(Execution execution, Package pkg) {
 		StringBuffer manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
@@ -205,8 +215,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 		for (S3ObjectSummary objectSummary : objectSummaries) {
 			String key = objectSummary.getKey();
-			LOGGER.debug("Found key {}", key);
 			if (key.contains("/status:")) {
+				LOGGER.debug("Found status key {}", key);
 				String[] keyParts = key.split("/");
 				String dateString = keyParts[2];
 				String status = keyParts[3].split(":")[1];
@@ -345,8 +355,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public List<String> listOutputFilePaths(Execution execution,
 			String packageId) {
-		String outputFilePath = pathHelper.getOutputFilePath(execution, packageId).toString();
-		return executionFileHelper.listFiles(outputFilePath);
+		String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
+		return executionFileHelper.listFiles(outputFilesPath);
 	}
 
 	@Required
@@ -358,7 +368,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void setMavenBucketName(String mavenBucketName) {
 		this.mavenBucketName = mavenBucketName;
 	}
-
 	// Just for testing
 	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
@@ -369,6 +378,18 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	// Just for testing
 	void setJmsTemplate(JmsTemplate jmsTemplate) {
 		this.jmsTemplate = jmsTemplate;
+	}
+
+	@Required
+	public void setPublishedBucketName(String publishedBucketName) {
+		this.publishedBucketName = publishedBucketName;
+	}
+	
+	@Override
+	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
+		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
+		String previousPublishedPackagePath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
+		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());
 	}
 
 

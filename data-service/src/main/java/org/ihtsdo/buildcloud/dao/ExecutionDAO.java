@@ -5,6 +5,8 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,13 +35,11 @@ public interface ExecutionDAO {
 
 	void queueForBuilding(Execution execution);
 
-	void putOutputFile(Execution execution, String filePath, InputStream inputStream, Long size);
-
 	void updateStatus(Execution execution, Execution.Status newStatus);
 	
 	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
 
-	InputStream getOutputFile(Execution execution, String filePath);
+	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
 	
 	List<String> listInputFilePaths(Execution execution, String packageId);
 
@@ -71,5 +71,7 @@ public interface ExecutionDAO {
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
+
+	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
 }

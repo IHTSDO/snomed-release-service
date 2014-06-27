@@ -1,30 +1,36 @@
 package org.ihtsdo.buildcloud.dao.helper;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.buildcloud.service.file.FileNameTransformation;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StreamUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 @Repository
 public class FileHelper {
@@ -37,9 +43,9 @@ public class FileHelper {
 		this.s3Client = s3Client;
 	}
 
-	private S3ClientHelper s3ClientHelper;
+	private final S3ClientHelper s3ClientHelper;
 
-	private String bucketName;
+	private final String bucketName;
 	
 	public FileHelper (String bucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		this.bucketName = bucketName;
@@ -58,6 +64,7 @@ public class FileHelper {
 	 */
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
+		LOGGER.debug ("Publishing file to {}/{}", bucketName, targetFilePath);
 		s3Client.putObject(putRequest);
 	}
 	
@@ -104,6 +111,42 @@ public class FileHelper {
 		}
 		return null;
 	}
+	
+	/**
+	 * 
+	 * @param targetFileName
+	 * @param previousPublishedPackagePath
+	 * @param fnt - A FileTransformationObject that will strip out the releaseDate in the filenames to allow matching.
+	 * @return an inputStream positioned at the correct point in the archive.  Make sure you close it!
+	 * @throws IOException
+	 */
+	public ArchiveEntry getArchiveEntry(String targetFileName, String previousPublishedPackagePath, FileNameTransformation fnt) throws IOException {
+		
+		ArchiveEntry result = null;
+		//Get hold of the Archive Input Stream
+		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
+		
+		if (archiveInputStream == null) {
+			throw new FileNotFoundException ("Failed to find published package: " + previousPublishedPackagePath);
+		}
+		
+		ZipInputStream zis = new ZipInputStream (archiveInputStream);
+		
+		//Now what's our target filename template (ie with the date stripped off)
+		String targetNameTemplate = fnt.transformFilename(targetFileName);
+		
+		//Now lets iterate through that zip archive and see if we can find it's partner
+		ZipEntry zEntry;
+		while ( (zEntry = zis.getNextEntry()) != null) {
+			//The Zip entry will contain the whole path to the file.  We'll just check the end string matches...should be ok.
+			if (!zEntry.isDirectory() && fnt.transformFilename(zEntry.getName()).endsWith(targetNameTemplate)) {
+				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
+				Path p = Paths.get(zEntry.getName());
+				result = new ArchiveEntry(p.getFileName().toString(), zis);
+			}
+		    }
+		return result;
+	}
 
 	public List<String> listFiles(String directoryPath) {
 		ArrayList<String> files = new ArrayList<>();
@@ -127,6 +170,17 @@ public class FileHelper {
 	public void copyFile(String sourcePath, String targetPath) {
 		LOGGER.debug("Copy file '{}' to '{}'", sourcePath, targetPath);
 		s3Client.copyObject(bucketName, sourcePath, bucketName, targetPath);
+	}
+	
+	
+	/**
+	 * @param sourcePath source path
+	 * @param targetBucket target bucket name
+	 * @param targetPath target path
+	 */
+	public void copyFile(String sourcePath, String targetBucket, String targetPath) {
+		LOGGER.debug("Copy file '{}' to  bucket '{}' as file name'{}'", sourcePath, targetBucket, targetPath);
+		s3Client.copyObject(bucketName, sourcePath, targetBucket, targetPath);
 	}
 
 	public void putFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
