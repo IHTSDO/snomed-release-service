@@ -8,24 +8,24 @@
 			<folder Name="Full">
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="der2_Refset_SimpleFull_INT_20140131.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Full -->
 			<folder Name="Snapshot">
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="der2_Refset_SimpleSnapshot_INT_20140131.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapSnapshot_INT_20140131.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Snapshot -->
 			<folder Name="Delta">
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="der2_Refset_SimpleDelta_INT_20140131.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapDelta_INT_20140131.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Delta -->
 		</folder> <!-- RF2Release -->
-	</folder> <!-- SnomedCT_Release_INT_20140831 -->
+	</folder> <!-- SnomedCT_Release_INT_20140131 -->
 </listing>
