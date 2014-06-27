@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.service.execution;
 import com.google.common.io.Files;
 import org.apache.commons.io.FilenameUtils;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.maven.TestUtils;
+import org.ihtsdo.buildcloud.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

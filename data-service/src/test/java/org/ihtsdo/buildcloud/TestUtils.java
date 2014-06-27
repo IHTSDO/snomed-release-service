@@ -1,10 +1,10 @@
-package org.ihtsdo.buildcloud.service.maven;
-
-import java.io.File;
-import java.io.FileNotFoundException;
+package org.ihtsdo.buildcloud;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 
 public class TestUtils {
 	
