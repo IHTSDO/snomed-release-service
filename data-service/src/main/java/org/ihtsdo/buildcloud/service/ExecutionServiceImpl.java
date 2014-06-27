@@ -245,12 +245,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void streamBuildScriptsZip(String buildCompositeKey, String executionId, User authenticatedUser, OutputStream outputStream) throws IOException {
-		Execution execution = find(buildCompositeKey, executionId, authenticatedUser);
-		dao.streamBuildScriptsZip(execution, outputStream);
-	}
-
-	@Override
 	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		Execution.Status status = Execution.Status.valueOf(statusString);

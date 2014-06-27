@@ -1,23 +1,6 @@
 package org.ihtsdo.buildcloud.dao;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -36,16 +19,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.util.FileCopyUtils;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
@@ -60,9 +45,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private String executionBucketName;
 	
 	@Autowired
-	private String mavenBucketName;
-	
-	@Autowired
 	private String publishedBucketName;
 
 	private final FileHelper executionFileHelper;
@@ -71,9 +53,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	
 	@Autowired
 	private InputFileDAO inputFileDAO;
-
-	@Autowired
-	private JmsTemplate jmsTemplate;
 
 	private final ObjectMapper objectMapper;
 
@@ -105,8 +84,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public ArrayList<Execution> findAll(Build build) {
 		String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
-		ArrayList<Execution> executions = findExecutions(buildDirectoryPath, build);
-		return executions;
+		return findExecutions(buildDirectoryPath, build);
 	}
 
 	@Override
@@ -140,26 +118,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		} else {
 			return null;
 		}
-	}
-
-	@Override
-	public void saveBuildScripts(File sourceDirectory, Execution execution) {
-		executionFileHelper.putFiles(sourceDirectory, pathHelper.getBuildScriptsPath(execution));
-	}
-
-	@Override
-	public void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException {
-		StringBuffer buildScriptsPath = pathHelper.getBuildScriptsPath(execution);
-		executionFileHelper.streamS3FilesAsZip(buildScriptsPath.toString(), outputStream);
-	}
-
-	@Override
-	public void queueForBuilding(Execution execution) {
-		updateStatus(execution, Execution.Status.QUEUED);
-		// Note: this url will only work while the Builder is on the same server as the API.
-		String executionApiUrl = String.format("http://localhost/api/v1/builds/%s/executions/%s/", execution.getBuild().getId(), execution.getId());
-		LOGGER.info("Queuing Execution for building {}", executionApiUrl);
-		jmsTemplate.convertAndSend(executionApiUrl);
 	}
 
 	@Override
@@ -204,8 +162,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}	
 
-
-
 	private ArrayList<Execution> findExecutions(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
@@ -228,11 +184,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return executions;
 	}
 
-	private PutObjectResult putFile(String filePath, InputStream stream, Long size) {
-		ObjectMetadata objectMetadata = new ObjectMetadata();
-		objectMetadata.setContentLength(size);
-		return s3Client.putObject(executionBucketName, filePath, stream, objectMetadata);
-	}
 	@Override
 	public
 	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
@@ -291,8 +242,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return executionFileHelper.getFileStream(path);
 	}
 
-	@Override
-	public AsyncPipedStreamBean getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
+	private AsyncPipedStreamBean getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to executionFileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
@@ -308,7 +258,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 		return new AsyncPipedStreamBean(outputStream, future);
 	}
-	
+
 	private PutObjectResult putFile(String filePath, String contents) {
 		return s3Client.putObject(executionBucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
@@ -365,26 +315,10 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Required
-	public void setMavenBucketName(String mavenBucketName) {
-		this.mavenBucketName = mavenBucketName;
-	}
-	// Just for testing
-	public void setS3Client(S3Client s3Client) {
-		this.s3Client = s3Client;
-		this.executionFileHelper.setS3Client(s3Client);
-		this.mavenFileHelper.setS3Client(s3Client);
-	}
-
-	// Just for testing
-	void setJmsTemplate(JmsTemplate jmsTemplate) {
-		this.jmsTemplate = jmsTemplate;
-	}
-
-	@Required
 	public void setPublishedBucketName(String publishedBucketName) {
 		this.publishedBucketName = publishedBucketName;
 	}
-	
+
 	@Override
 	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
 		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
@@ -392,5 +326,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());
 	}
 
+	// Just for testing
+	public void setS3Client(S3Client s3Client) {
+		this.s3Client = s3Client;
+		this.executionFileHelper.setS3Client(s3Client);
+		this.mavenFileHelper.setS3Client(s3Client);
+	}
 
 }

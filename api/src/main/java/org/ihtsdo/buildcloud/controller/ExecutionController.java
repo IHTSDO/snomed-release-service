@@ -7,7 +7,6 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
-import org.ihtsdo.buildcloud.service.InputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
@@ -22,10 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -50,7 +47,7 @@ public class ExecutionController {
 	@Autowired
 	private PackageService packageService;
 
-	static final String[] EXECUTION_LINKS = {"configuration", "packages", "buildScripts|build-scripts.zip"};
+	static final String[] EXECUTION_LINKS = {"configuration", "packages"};
 	static final String[] PACKAGE_LINKS = {"outputfiles"};
 
 	@RequestMapping(method = RequestMethod.POST)
@@ -145,16 +142,6 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
-	}
-
-	@RequestMapping("/{executionId}/build-scripts.zip")
-	@ResponseBody
-	public void getBuildScrips(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-							   HttpServletResponse response) throws IOException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		response.setContentType("application/zip");
-		ServletOutputStream outputStream = response.getOutputStream();
-		executionService.streamBuildScriptsZip(buildCompositeKey, executionId, authenticatedUser, outputStream);
 	}
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)

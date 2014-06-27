@@ -11,7 +11,6 @@ import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +28,6 @@ public interface ExecutionDAO {
 
 	Map<String,Object> loadConfigurationMap(Execution execution) throws IOException;
 
-	void saveBuildScripts(File buildScriptsTmpDirectory, Execution execution);
-
-	void streamBuildScriptsZip(Execution execution, OutputStream outputStream) throws IOException;
-
-	void queueForBuilding(Execution execution);
-
 	void updateStatus(Execution execution, Execution.Status newStatus);
 	
 	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
@@ -46,8 +39,6 @@ public interface ExecutionDAO {
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
 	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
-
-	AsyncPipedStreamBean getFileAsOutputStream(String executionOutputFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
