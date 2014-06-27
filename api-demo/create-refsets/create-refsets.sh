@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Stop on error
+set -e;
+
 #
 # Command line statements which use the API to create a simple refset
 # Expects to be called from one of the run_*.sh scripts.
@@ -78,20 +82,23 @@ then
 	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
 
-echo "Upload Manifset"
-curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFileName}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
+manifestPath="manifest-files/${manifestFileName}"
+echo "Upload Manifest from ${manifestPath}"
+curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestPath}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
-echo "Upload Input Files:"
-for file in `ls ${inputFilesDir}`;
+inputFilesPath="input-files/${inputFilesDir}"
+echo "Upload Input Files from ${inputFilesPath}:"
+for file in `ls ${inputFilesPath}`;
 do
 	echo "Upload Input File ${file}"
-	curl ${commonParams} -F "file=@${inputFilesDir}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+	curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
 done
 
 #If we've done a different release before, then we need to delete the input files from the last run!
 #Not checking the return code from this call, doesn't matter if the files aren't there
-echo "Delete unwanted Input Files:"
-for file in `ls ${unwantedInputFilesDir}`;
+unwantedFilesPath="input-files/${unwantedInputFilesDir}"
+echo "Delete unwanted Input Files from ${unwantedFilesPath}:"
+for file in `ls ${unwantedFilesPath}`;
 do
 	echo "Delete Input File ${file}"
 	curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/${file} | grep HTTP 
