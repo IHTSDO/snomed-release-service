@@ -6,6 +6,8 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PackageService;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,6 +18,15 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 
 import javax.servlet.ServletException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -39,7 +50,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		String buildId = createBuildStructure();
 
 		// First time release
-		doExecution(buildId, "2014-01-31", null);
+		String executionURL = doExecution(buildId, "2014-01-31", null);
+		testOutput(executionURL);
 
 		// Second release
 		doExecution(buildId, "2014-07-31", "2014-01-31");
@@ -99,7 +111,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	 * @param previousEffectiveDate if null, then we'll treat this as a first time execution
 	 * @throws Exception
 	 */
-	private void doExecution(String buildId, String effectiveDate, String previousEffectiveDate) throws Exception {
+	private String doExecution(String buildId, String effectiveDate, String previousEffectiveDate) throws Exception {
 
 		boolean isFirstTime = previousEffectiveDate == null;
 
@@ -222,7 +234,68 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				.andExpect(status().isOk());
 		//.andExpect(content().contentType(APPLICATION_JSON_UTF8));
 
+		return executionURL;
+	}
 
+	private void testOutput(String executionURL) throws Exception {
+		MvcResult outputFileListResult = mockMvc.perform(
+				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles")
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andReturn();
+
+		String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
+		JSONArray jsonArray = new JSONArray(outputFileListJson);
+		Assert.assertEquals(5, jsonArray.length());
+
+		String zipFilePath = null;
+		for (int a = 0; a < jsonArray.length(); a++) {
+			JSONObject file = (JSONObject) jsonArray.get(a);
+			String filePath = file.getString("id");
+			if (filePath.endsWith(".zip")) {
+				zipFilePath = filePath;
+			}
+		}
+
+		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", zipFilePath);
+
+		ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath));
+		List<String> entryPaths = getZipEntryPaths(zipFile);
+		Assert.assertEquals("Zip entries expected.",
+				"SnomedCT_Release_INT_20140131/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/der2_Refset_SimpleSnapshot_INT_20140131.txt\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt",
+				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""));
+	}
+
+	private File downloadToTempFile(String executionURL, String zipFilePath) throws Exception {
+		MvcResult outputFileResult = mockMvc.perform(
+				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles/" + zipFilePath)
+						.header("Authorization", basicDigestHeaderValue)
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andExpect(status().isOk())
+				.andReturn();
+
+		Path tempFile = Files.createTempFile(getClass().getCanonicalName(), "output-file");
+		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
+			fileOutputStream.write(outputFileResult.getResponse().getContentAsByteArray());
+		}
+		return tempFile.toFile();
 	}
 
 	private String getPreviousPublishedPackage() throws Exception {
@@ -255,6 +328,15 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				.andReturn();
 
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
+	}
+
+	private List<String> getZipEntryPaths(ZipFile zipFile) {
+		List<String> entryPaths = new ArrayList();
+		Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+		while (zipEntries.hasMoreElements()) {
+			entryPaths.add(zipEntries.nextElement().getName());
+		}
+		return entryPaths;
 	}
 
 	/*
