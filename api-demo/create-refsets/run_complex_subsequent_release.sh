@@ -7,7 +7,6 @@ set -e;
 
 # Declare run specific parameters
 inputFilesDir="complex-subsequent"
-unwantedInputFilesDir="complex-first"
 manifestFileName="manifest_complex_20140731.xml"
 effectiveDate="2014-07-31"
 isFirstTime=false

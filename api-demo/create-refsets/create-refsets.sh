@@ -87,6 +87,12 @@ manifestPath="manifest-files/${manifestFileName}"
 echo "Upload Manifest from ${manifestPath}"
 curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestPath}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
+#If we've done a different release before, then we need to delete the input files from the last run!
+#Not checking the return code from this call, doesn't matter if the files aren't there
+echo "Delete previous delta Input Files "
+curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
+
+
 inputFilesPath="input-files/${inputFilesDir}"
 echo "Upload Input Files from ${inputFilesPath}:"
 for file in `ls ${inputFilesPath}`;
@@ -94,17 +100,6 @@ do
 	echo "Upload Input File ${file}"
 	curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
 done
-
-#If we've done a different release before, then we need to delete the input files from the last run!
-#Not checking the return code from this call, doesn't matter if the files aren't there
-unwantedFilesPath="input-files/${unwantedInputFilesDir}"
-echo "Delete unwanted Input Files from ${unwantedFilesPath}:"
-for file in `ls ${unwantedFilesPath}`;
-do
-	echo "Delete Input File ${file}"
-	curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/${file} | grep HTTP 
-done	
-
 
 echo "Set effectiveTime to ${effectiveDate}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"effectiveTime\" : \"${effectiveDate}\" }"  ${api}/builds/${buildId}  | grep HTTP | ensureCorrectResponse

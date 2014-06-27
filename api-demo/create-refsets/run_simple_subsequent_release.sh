@@ -7,7 +7,6 @@ set -e;
 
 # Declare run specific parameters
 inputFilesDir="simple-subsequent"
-unwantedInputFilesDir="simple-first"
 manifestFileName="manifest_simple_20140731.xml"
 effectiveDate="2014-07-31"
 isFirstTime=false
