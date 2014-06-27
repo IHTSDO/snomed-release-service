@@ -51,10 +51,44 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// First time release
 		String executionURL = doExecution(buildId, "2014-01-31", null);
-		testOutput(executionURL);
+
+		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
+		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/der2_Refset_SimpleSnapshot_INT_20140131.txt\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
+		testOutput(executionURL, expectedZipFilename, expectedZipEntries);
+
+		Thread.sleep(1000); // Next build has to have a different timestamp
 
 		// Second release
-		doExecution(buildId, "2014-07-31", "2014-01-31");
+		executionURL = doExecution(buildId, "2014-07-31", "2014-01-31");
+		expectedZipFilename = "SnomedCT_Release_INT_20140731.zip";
+		expectedZipEntries = "SnomedCT_Release_INT_20140731/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Full/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Full/Refset/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Full/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140731.txt\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Snapshot/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Snapshot/Refset/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Snapshot/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Snapshot/Refset/Content/der2_Refset_SimpleSnapshot_INT_20140731.txt\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Delta/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
+				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
+		testOutput(executionURL, expectedZipFilename, expectedZipEntries);
 	}
 
 	private String createBuildStructure() throws Exception {
@@ -237,7 +271,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		return executionURL;
 	}
 
-	private void testOutput(String executionURL) throws Exception {
+	private void testOutput(String executionURL, String expectedZipFilename, String expectedZipEntries) throws Exception {
 		MvcResult outputFileListResult = mockMvc.perform(
 				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles")
 						.header("Authorization", basicDigestHeaderValue)
@@ -260,25 +294,12 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 			}
 		}
 
-		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", zipFilePath);
+		Assert.assertEquals(expectedZipFilename, zipFilePath);
 
 		ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath));
 		List<String> entryPaths = getZipEntryPaths(zipFile);
 		Assert.assertEquals("Zip entries expected.",
-				"SnomedCT_Release_INT_20140131/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Content/der2_Refset_SimpleSnapshot_INT_20140131.txt\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Delta/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt",
+				expectedZipEntries,
 				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""));
 	}
 
