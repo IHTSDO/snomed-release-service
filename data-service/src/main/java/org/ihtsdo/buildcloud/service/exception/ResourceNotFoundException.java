@@ -1,8 +1,6 @@
-package org.ihtsdo.buildcloud;
+package org.ihtsdo.buildcloud.service.exception;
 
-import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(value = org.springframework.http.HttpStatus.NOT_FOUND)
 public class ResourceNotFoundException extends RuntimeException {
 
 	private static final long serialVersionUID = -4281549626769059242L;

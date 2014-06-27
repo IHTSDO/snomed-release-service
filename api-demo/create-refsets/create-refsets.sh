@@ -32,9 +32,10 @@ then
 fi
 
 # Declare common parameters
+
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api=http://localhost:8080/api/v1
-#api=http://local.ihtsdotools.org/api/v1
-api="https://uat-release.ihtsdotools.org/api/v1"
+api=http://local.ihtsdotools.org/api/v1
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
@@ -132,7 +133,17 @@ executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).
 echo "Execution ID is '${executionId}'"
 
 echo "Trigger Execution"
-curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | grep HTTP | ensureCorrectResponse
+curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
+triggerSuccess=`cat tmp/trigger-response.txt | grep pass`
+if [ -z "${triggerSuccess}" ]
+then
+	echo "Failed to successfully process any packages"
+	echo
+	cat tmp/trigger-response.txt
+	echo
+	echo "Script Halted"
+	exit -1
+fi
 
 echo "Publish the package"
 curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
