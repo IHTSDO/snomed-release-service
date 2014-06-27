@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.InputStream;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
@@ -9,24 +8,24 @@ import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
 
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
 	
-	private FileHelper executionFileHelper;
-	private FileHelper publishedFileHelper;
+	private final FileHelper executionFileHelper;
+	private final FileHelper publishedFileHelper;
 	@Autowired
 	private ExecutionS3PathHelper executionS3PathHelper;
 	private static final String SEPARATOR = "/";
-	
+	private final String publishedBucketName;
 	
 	/**
 	 * @param executionBucketName
@@ -36,6 +35,7 @@ public class PublishServiceImpl implements PublishService {
 	public PublishServiceImpl(String executionBucketName, String publishedBucketName,
 			S3Client s3Client, S3ClientHelper s3ClientHelper){
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
+		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 		
 	}
@@ -57,11 +57,9 @@ public class PublishServiceImpl implements PublishService {
 		if( releaseFileName == null ){
 			throw new IllegalStateException("No zip file found for package: "+ pk.getBusinessKey() );
 		}
-		String fullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName );
-		
-		InputStream releaseFileInput = executionFileHelper.getFileStream( fullPath);
+		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName );
 		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
-		publishedFileHelper.putFile(releaseFileInput, publishedFilePath);
+		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 		
 	}
 	
@@ -106,6 +104,7 @@ public class PublishServiceImpl implements PublishService {
 		return getPublishDirPath(execution) + releaseFileName;
 	}
 
+	@Override
 	public List<String> getPublishedPackages(Product product) {
 		return publishedFileHelper.listFiles(getPublishDirPath(product));
 	}

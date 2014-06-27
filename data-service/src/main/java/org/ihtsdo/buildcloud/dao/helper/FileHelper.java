@@ -171,6 +171,17 @@ public class FileHelper {
 		LOGGER.debug("Copy file '{}' to '{}'", sourcePath, targetPath);
 		s3Client.copyObject(bucketName, sourcePath, bucketName, targetPath);
 	}
+	
+	
+	/**
+	 * @param sourcePath source path
+	 * @param targetBucket target bucket name
+	 * @param targetPath target path
+	 */
+	public void copyFile(String sourcePath, String targetBucket, String targetPath) {
+		LOGGER.debug("Copy file '{}' to  bucket '{}' as file name'{}'", sourcePath, targetBucket, targetPath);
+		s3Client.copyObject(bucketName, sourcePath, targetBucket, targetPath);
+	}
 
 	public void putFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
 		File[] files = sourceDirectory.listFiles();
