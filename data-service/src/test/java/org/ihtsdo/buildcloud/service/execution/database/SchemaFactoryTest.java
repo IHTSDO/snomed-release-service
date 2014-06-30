@@ -22,6 +22,7 @@ public class SchemaFactoryTest {
 
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
 
+		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_Refset_SimpleDelta_INT_20140831", schemaBean.getName());
 		List<TableSchema.Field> fields = schemaBean.getFields();
 		Assert.assertEquals(6, fields.size());
@@ -35,6 +36,7 @@ public class SchemaFactoryTest {
 
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
 
+		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_cRefset_AttributeValueDelta_INT_20140831", schemaBean.getName());
 		List<TableSchema.Field> fields = schemaBean.getFields();
 		Assert.assertEquals(7, fields.size());
@@ -53,6 +55,7 @@ public class SchemaFactoryTest {
 
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
 
+		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_iisssccRefset_ExtendedMapDelta_INT_20140131", schemaBean.getName());
 		List<TableSchema.Field> fields = schemaBean.getFields();
 		Assert.assertEquals(13, fields.size());
@@ -79,6 +82,33 @@ public class SchemaFactoryTest {
 
 		Assert.assertEquals("mapCategoryId", fields.get(12).getName());
 		Assert.assertEquals(DataType.SCTID, fields.get(12).getType());
+	}
+
+	@Test
+	public void testCreateSchemaBeanConcept() throws Exception {
+		String filename = "sct2_Concept_Delta_INT_20140131.txt";
+
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, null);
+
+		Assert.assertEquals(TableType.CONCEPT, schemaBean.getTableType());
+		Assert.assertEquals("sct2_Concept_Delta_INT_20140131", schemaBean.getName());
+		List<TableSchema.Field> fields = schemaBean.getFields();
+		Assert.assertEquals(5, fields.size());
+
+		Assert.assertEquals("id", fields.get(0).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(0).getType());
+
+		Assert.assertEquals("effectiveTime", fields.get(1).getName());
+		Assert.assertEquals(DataType.TIME, fields.get(1).getType());
+
+		Assert.assertEquals("active", fields.get(2).getName());
+		Assert.assertEquals(DataType.BOOLEAN, fields.get(2).getType());
+
+		Assert.assertEquals("moduleId", fields.get(3).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(3).getType());
+
+		Assert.assertEquals("definitionStatusId", fields.get(4).getName());
+		Assert.assertEquals(DataType.SCTID, fields.get(4).getType());
 	}
 
 	@Test(expected = FileRecognitionException.class)

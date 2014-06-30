@@ -61,7 +61,54 @@ public class SchemaFactory {
 					}
 					return refset;
 				} else {
-					throw new FileRecognitionException("Content type '" + contentType + "' is not supported.");
+					throw new FileRecognitionException("File type '" + fileType + "' with Content type '" + contentType + "' is not supported.");
+				}
+			} else if (fileType.equals("sct2") || fileType.equals("xsct2")) {
+				if (contentType.equals("Concept")) {
+					return new TableSchema(TableType.CONCEPT, filenameNoExtension)
+							.field("id", DataType.SCTID)
+							.field("effectiveTime", DataType.TIME)
+							.field("active", DataType.BOOLEAN)
+							.field("moduleId", DataType.SCTID)
+							.field("definitionStatusId", DataType.SCTID);
+
+				} else if (contentType.equals("Description")) {
+					return new TableSchema(TableType.DESCRIPTION, filenameNoExtension)
+							.field("id", DataType.SCTID)
+							.field("effectiveTime", DataType.TIME)
+							.field("active", DataType.BOOLEAN)
+							.field("moduleId", DataType.SCTID)
+							.field("conceptId", DataType.SCTID)
+							.field("languageCode", DataType.STRING)
+							.field("typeId", DataType.SCTID)
+							.field("term", DataType.STRING)
+							.field("caseSignificanceId", DataType.SCTID);
+
+				} else if (contentType.equals("StatedRelationship") || contentType.equals("Relationship")) {
+					TableType tableType = contentType.equals("StatedRelationship") ? TableType.STATED_RELATIONSHIP : TableType.RELATIONSHIP;
+					return new TableSchema(tableType, filenameNoExtension)
+							.field("id", DataType.SCTID)
+							.field("effectiveTime", DataType.TIME)
+							.field("active", DataType.BOOLEAN)
+							.field("moduleId", DataType.SCTID)
+							.field("sourceId", DataType.SCTID)
+							.field("destinationId", DataType.SCTID)
+							.field("relationshipGroup", DataType.INTEGER)
+							.field("typeId", DataType.SCTID)
+							.field("characteristicTypeId", DataType.SCTID)
+							.field("modifierId", DataType.SCTID);
+
+				} else if (contentType.equals("Identifier")) {
+					return new TableSchema(TableType.IDENTIFIER, filenameNoExtension)
+							.field("identifierSchemeId", DataType.SCTID)
+							.field("alternateIdentifier", DataType.STRING)
+							.field("effectiveTime", DataType.TIME)
+							.field("active", DataType.BOOLEAN)
+							.field("moduleId", DataType.SCTID)
+							.field("referencedComponentId", DataType.SCTID);
+
+				} else {
+					throw new FileRecognitionException("File type '" + fileType + "' with Content type '" + contentType + "' is not supported.");
 				}
 			} else {
 				throw new FileRecognitionException("File type '" + fileType + "' is not supported.");
@@ -74,7 +121,7 @@ public class SchemaFactory {
 	}
 
 	private TableSchema createSimpleRefsetSchema(String filenameNoExtension) {
-		return new TableSchema(filenameNoExtension)
+		return new TableSchema(TableType.REFSET, filenameNoExtension)
 								.field("id", DataType.UUID)
 								.field("effectiveTime", DataType.TIME)
 								.field("active", DataType.BOOLEAN)
