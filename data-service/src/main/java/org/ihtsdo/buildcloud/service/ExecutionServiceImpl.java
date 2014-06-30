@@ -211,7 +211,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
 	 * @param execution
-	 * @throws IOException
 	 */
 	private void transformFiles(Execution execution, Package pkg) {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
@@ -238,9 +237,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
 					asyncPipedStreamBean.waitForFinish();
-				} catch (IOException | ExecutionException | InterruptedException e) {
+				} catch (TransformationException | IOException e) {
 					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("Exception occured when transforming file {}", relativeFilePath, e);
+					LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);
+				} catch (ExecutionException | InterruptedException e) {
+					LOGGER.error("Exception occurred when uploading transformed file {}", relativeFilePath, e);
 				}
 			} else {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
@@ -320,14 +321,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 		if (readmeFilename != null) {
 			AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
-			OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream();
-			try {
+			try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
 				readmeGenerator.generate(pkg.getReadmeHeader(), manifestListing, readmeOutputStream);
 				asyncPipedStreamBean.waitForFinish();
-			} finally {
-				readmeOutputStream.close();
 			}
-
 		} else {
 			LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
 					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);

@@ -17,7 +17,7 @@ public class StreamingFileTransformation {
 		lineTransformations = new ArrayList<>();
 	}
 
-	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException {
+	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException, TransformationException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8));
 		try {
