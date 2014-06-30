@@ -1,12 +1,9 @@
 package org.ihtsdo.buildcloud.service.file;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -15,25 +12,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class FileUtils {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 	
 	public static final String ZIP_EXTENSION = ".zip";
 
-	public static File createDirectoryOrThrow(File directory) throws IOException {
-		if (!directory.mkdirs()) {
-			throw new IOException("Unable to create directory " + directory.getAbsolutePath());
-		}
-		return directory;
-	}
-	
 	public static Map<String, String> examineZipContents(String filename, InputStream is){
 		//TODO Option to try treating this stream as GZip (GZipInputStream) also.
-		Map<String, String> contents = new HashMap<String, String>();
+		Map<String, String> contents = new HashMap<>();
 		try {
 			ZipInputStream zis = new ZipInputStream(is);
 			ZipEntry entry = zis.getNextEntry();
@@ -50,23 +37,6 @@ public class FileUtils {
 		
 		
 		return contents;
-	}
-	
-	public static InputStream[] cloneInputStream(InputStream is) throws IOException{
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-		byte[] buffer = new byte[1024];
-		int len;
-		while ((len = is.read(buffer)) > -1 ) {
-			baos.write(buffer, 0, len);
-		}
-		baos.flush();
-
-		// Open new InputStreams using the recorded bytes
-		InputStream is1 = new ByteArrayInputStream(baos.toByteArray()); 
-		InputStream is2 = new ByteArrayInputStream(baos.toByteArray()); 
-		
-		return new InputStream[] { is1, is2 };
 	}
 	
 	/**
@@ -100,15 +70,15 @@ public class FileUtils {
 			out.putNextEntry(new ZipEntry(relativePath));
 		}
 
-		for (int i = 0; i < files.length; i++) {
-			if (files[i].isDirectory()) {
-				addDir(files[i], out, parentPathLen);
+		for (File file : files) {
+			if (file.isDirectory()) {
+				addDir(file, out, parentPathLen);
 				continue;
 			}
 
-			FileInputStream in = new FileInputStream(files[i].getAbsolutePath());
-			LOGGER.debug(" Adding: " + files[i].getAbsolutePath());
-			String relativePath = files[i].getAbsolutePath().substring(parentPathLen);
+			FileInputStream in = new FileInputStream(file.getAbsolutePath());
+			LOGGER.debug(" Adding: " + file.getAbsolutePath());
+			String relativePath = file.getAbsolutePath().substring(parentPathLen);
 			out.putNextEntry(new ZipEntry(relativePath));
 			int len;
 			while ((len = in.read(tmpBuf)) > 0) {
@@ -128,15 +98,15 @@ public class FileUtils {
 		FileInputStream fis = new FileInputStream(file);
 		byte[] dataBytes = new byte[1024];
 
-		int nread = 0; 
-		while ((nread = fis.read(dataBytes)) != -1) {
-			md.update(dataBytes, 0, nread);
+		int bytesRead;
+		while ((bytesRead = fis.read(dataBytes)) != -1) {
+			md.update(dataBytes, 0, bytesRead);
 		}
 
 		//convert the byte to hex format
-		byte[] mdbytes = md.digest();
-		for (int i = 0; i < mdbytes.length; i++) {
-			sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
+		byte[] md5Bytes = md.digest();
+		for (int i = 0; i < md5Bytes.length; i++) {
+			sb.append(Integer.toString((md5Bytes[i] & 0xff) + 0x100, 16).substring(1));
 		}
 		fis.close();
 		return sb.toString();

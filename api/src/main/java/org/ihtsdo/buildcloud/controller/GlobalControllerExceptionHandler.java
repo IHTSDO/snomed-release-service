@@ -63,7 +63,7 @@ public class GlobalControllerExceptionHandler {
 
 	private HashMap<String, String> getErrorMap(Exception exception) {
 		HashMap<String, String> errorObject = new HashMap<>();
-		errorObject.put("message", exception.getLocalizedMessage());
+		errorObject.put(ControllerConstants.MESSAGE, exception.getLocalizedMessage());
 		return errorObject;
 	}
 

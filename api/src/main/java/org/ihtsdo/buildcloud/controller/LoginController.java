@@ -28,7 +28,7 @@ public class LoginController {
 			response.put("authenticationToken", authenticationToken);
 			return new ResponseEntity(response, HttpStatus.OK);
 		} else {
-			response.put("errorMessage", "Username or password are incorrect.");
+			response.put(ControllerConstants.ERROR_MESSAGE, "Username or password are incorrect.");
 			return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
 		}
 	}

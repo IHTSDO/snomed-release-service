@@ -40,7 +40,7 @@ import java.util.GregorianCalendar;
 public class ZipperTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ZipperTest.class);
-	
+
 	@Autowired
 	private ExecutionS3PathHelper pathHelper;
 	
@@ -63,7 +63,7 @@ public class ZipperTest {
 	private static final String TEST_BUCKET = "test-bucket";
 	
 	@Before
-	public void Setup() throws NoSuchAlgorithmException, IOException, DecoderException {
+	public void setup() throws NoSuchAlgorithmException, IOException, DecoderException {
 		
 		String testPackageName = TestEntityGenerator.packageNames[0][1][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
@@ -94,6 +94,7 @@ public class ZipperTest {
 	}
 	
 	@Test
+	// TODO: implement or delete
 	public void testZipper() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException {
 
 //		Zipper zipper = new Zipper (execution, pkg, executionDAO);

@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
@@ -20,9 +22,6 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.entity.Execution;
-
 
 public class Zipper {
 	
@@ -38,7 +37,7 @@ public class Zipper {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
 	
-	public Zipper (Execution execution, Package pkg, ExecutionDAO executionDAO) {
+	public Zipper(Execution execution, Package pkg, ExecutionDAO executionDAO) {
 		this.execution = execution;
 		this.pkg = pkg;
 		this.executionDAO = executionDAO;
@@ -56,7 +55,7 @@ public class Zipper {
 		//Load the manifest file xml into a java object hierarchy
 		JAXBContext jc = JAXBContext.newInstance( "org.ihtsdo.buildcloud.manifest");
 		Unmarshaller um = jc.createUnmarshaller();
-		manifestListing = um.unmarshal(new StreamSource(is),ListingType.class).getValue();
+		manifestListing = um.unmarshal(new StreamSource(is), ListingType.class).getValue();
 	}
 	
 	private File createArchive() throws IOException {
@@ -89,13 +88,16 @@ public class Zipper {
 			try {
 				InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName());
 				if (is != null) {
-					zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
-					IOUtils.copy(is, zos);
-					is.close();
+					try {
+						zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
+						IOUtils.copy(is, zos);
+					} finally {
+						is.close();
+					}
 				}
 			} catch (Exception e) {
 				//TODO We'll want to report missing files in the telemetry
-				LOGGER.warn ("Manifest failed to find expected output file: " + file.getName());
+				LOGGER.warn("Manifest failed to find expected output file: " + file.getName());
 			}
 		}
 

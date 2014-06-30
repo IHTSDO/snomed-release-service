@@ -40,7 +40,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	@Override
 	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		return new ArrayList<Package>(buildDAO.find(buildId, authenticatedUser).getPackages());
+		return new ArrayList<>(buildDAO.find(buildId, authenticatedUser).getPackages());
 	}
 
 	@Override
