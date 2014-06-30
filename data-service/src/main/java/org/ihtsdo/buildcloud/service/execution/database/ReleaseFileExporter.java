@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,8 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 
 public class ReleaseFileExporter {
 
@@ -52,13 +52,15 @@ public class ReleaseFileExporter {
 			builder.setLength(0);
 
 			// Variables for snapshot resolution
-			String currentId = null;
-			Long currentEffectiveTime = null;
 			String currentLine;
+			String currentId = null;
+			Long currentEffectiveTimeSeconds = null;
+			Long targetEffectiveTimeSeconds = targetEffectiveTime.getTime();
 			String lastId = null;
-			String lastLine = null;
-			String lastWrittenId = null;
-			Long lastEffectiveTime = null;
+			String validLine = null;
+			boolean movedToNewMember;
+			boolean passedTargetEffectiveTime;
+
 			// Iterate through data
 			while (resultSet.next()) {
 				// Assemble line for output
@@ -68,7 +70,7 @@ public class ReleaseFileExporter {
 						java.sql.Date date = resultSet.getDate(fieldIndex);
 						value = RF2Constants.DATE_FORMAT.format(date.getTime());
 						if (field.getName().equals(RF2Constants.EFFECTIVE_TIME)) {
-							currentEffectiveTime = date.getTime();
+							currentEffectiveTimeSeconds = date.getTime();
 						}
 					} else if (field.getType() == DataType.BOOLEAN) {
 						value = resultSet.getBoolean(fieldIndex) ? "1" : "0";
@@ -86,25 +88,35 @@ public class ReleaseFileExporter {
 				}
 				builder.append(RF2Constants.LINE_ENDING);
 				
-
 				// Write to Full file
 				currentLine = builder.toString();
 				fullWriter.append(currentLine);
-				boolean isTargetTimePassed = currentEffectiveTime > targetEffectiveTime.getTime();
-				// If moved on to a new member or passed target effectiveTime, write last line to Snapshot file
-				if (lastId != null && (!currentId.equals(lastId) || isTargetTimePassed ) && !lastId.equals(lastWrittenId)) {
-					// Write Snapshot file when effective time has not passed target time.
-				    	if ( !(lastEffectiveTime > targetEffectiveTime.getTime())){
-				    	    snapshotWriter.append(lastLine);
-				    	    lastWrittenId = lastId;
-				    	}
+
+				// If moved to new member or passed target effectiveTime write any previous valid line
+				movedToNewMember = lastId != null && !lastId.equals(currentId);
+				passedTargetEffectiveTime = currentEffectiveTimeSeconds > targetEffectiveTimeSeconds;
+				if (movedToNewMember || passedTargetEffectiveTime) {
+					if (validLine != null) {
+						snapshotWriter.append(validLine);
+						validLine = null;
+					}
 				}
-				// Record last variables
+
+				// Store valid line if effectiveTime not exceeded
+				if (!passedTargetEffectiveTime) {
+					validLine = currentLine;
+				}
+
+				// Record last id
 				lastId = currentId;
-				lastLine = currentLine;
-				lastEffectiveTime = currentEffectiveTime;
 				builder.setLength(0); // Reset builder, reuse is cheapest.
 			}
+
+			// Write out any valid line not yet written
+			if (validLine != null) {
+				snapshotWriter.append(validLine);
+			}
+
 		}
 
 	}
