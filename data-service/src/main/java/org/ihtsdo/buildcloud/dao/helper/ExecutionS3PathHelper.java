@@ -10,7 +10,6 @@ public class ExecutionS3PathHelper {
 	public static final String SEPARATOR = "/";
 	private static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
-	private static final String OUTPUT = "output/";
 	private static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String BUILD_FILES = "build-files";
@@ -90,10 +89,6 @@ public class ExecutionS3PathHelper {
 		path.append(executionId);
 		path.append(SEPARATOR);
 		return path;
-	}
-
-	public StringBuffer getBuildScriptsPath(Execution execution) {
-		return getExecutionPath(execution).append("build-scripts").append(SEPARATOR);
 	}
 
 	public String getConfigFilePath(Execution execution) {

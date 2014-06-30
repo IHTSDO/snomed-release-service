@@ -28,6 +28,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 	@Autowired
 	private BuildDAO buildDAO;
+
 	@Autowired
 	private ProductDAO productDAO;
 

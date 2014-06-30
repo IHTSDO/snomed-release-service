@@ -9,13 +9,11 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -23,22 +21,20 @@ import java.util.regex.Pattern;
 @Transactional
 public class InputFileServiceImpl implements InputFileService {
 
-	private FileHelper fileHelper;
-
 	@Autowired
 	private PackageDAO packageDAO;
-	
+
 	@Autowired
 	private InputFileDAO dao;
 
 	@Autowired
 	private ExecutionS3PathHelper s3PathHelper;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
+	private FileHelper fileHelper;
 
 	@Autowired
 	public InputFileServiceImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper (executionBucketName, s3Client, s3ClientHelper);
+		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -75,8 +71,6 @@ public class InputFileServiceImpl implements InputFileService {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		return dao.getManifestStream(aPackage);
 	}
-	
-
 
 	@Override
 	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) {
@@ -122,7 +116,7 @@ public class InputFileServiceImpl implements InputFileService {
 		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
 		Pattern pattern = Pattern.compile(regexPattern);
 		for(String inputFileName : filesFound){
-			if( pattern.matcher(inputFileName).matches()){
+			if(pattern.matcher(inputFileName).matches()){
 				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
 			}
 		}

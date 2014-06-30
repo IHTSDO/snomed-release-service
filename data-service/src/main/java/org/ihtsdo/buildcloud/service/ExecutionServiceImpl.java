@@ -70,7 +70,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			Date creationDate = new Date();
 			
 			//Do we already have an execution for that date?
-			Execution existingExecution = getExecution (build, creationDate);
+			Execution existingExecution = getExecution(build, creationDate);
 			if (existingExecution != null) {
 				throw new NamingConflictException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
 			}
@@ -139,8 +139,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
 		
-		Map<String, Object> results = new HashMap<String, Object>();
-		Map<String, Object> packageResults = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
+		Map<String, Object> packageResults = new HashMap<>();
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		results.put("Execution", execution);
 		results.put("PackageResults", packageResults);
@@ -158,16 +158,16 @@ public class ExecutionServiceImpl implements ExecutionService {
 			String msg = "Process completed successfully";
 			try {
 				executePackage(execution, pkg);
-			} catch (Exception e) {
+			} catch(Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
 				pkgResult = "fail";
 				msg = "Failure while processing package " 
 						+ pkg.getBusinessKey() 
 						+ " due to " 
 						+ e.getMessage();
-				LOGGER.warn (msg, e);
+				LOGGER.warn(msg, e);
 			}
-			Map<String, Object> thisResult = new HashMap<String, Object>();
+			Map<String, Object> thisResult = new HashMap<>();
 			thisResult.put("status", pkgResult);
 			thisResult.put("message", msg);
 			packageResults.put(pkg.getBusinessKey(), thisResult);
@@ -203,7 +203,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			File zip = zipper.createZipFile();
 			dao.putOutputFile(execution, pkg, zip, "", true);
 		} catch (Exception e)  {
-			throw (new Exception("Failure in Zip creation.", e));
+			throw new Exception("Failure in Zip creation.", e);
 		}
 
 	}

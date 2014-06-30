@@ -10,7 +10,6 @@ import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 @Repository
 public class FileHelper {
@@ -35,7 +33,7 @@ public class FileHelper {
 
 	private final String bucketName;
 	
-	public FileHelper (String bucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public FileHelper(String bucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		this.bucketName = bucketName;
 		this.s3Client = s3Client;
 		this.s3ClientHelper = s3ClientHelper;
@@ -129,7 +127,7 @@ public class FileHelper {
 			//The Zip entry will contain the whole path to the file.  We'll just check the end string matches...should be ok.
 			if (!zEntry.isDirectory() && fnt.transformFilename(zEntry.getName()).endsWith(targetNameTemplate)) {
 				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
-				return new ArchiveEntry(zEntry.getName(), zis);
+				result = new ArchiveEntry(zEntry.getName(), zis);
 			}
 		}
 		return result;
@@ -170,35 +168,4 @@ public class FileHelper {
 		s3Client.copyObject(bucketName, sourcePath, targetBucket, targetPath);
 	}
 
-	public void putFiles(File sourceDirectory, StringBuffer targetDirectoryPath) {
-		File[] files = sourceDirectory.listFiles();
-		for (File file : files) {
-			StringBuffer filePath = new StringBuffer(targetDirectoryPath).append(file.getName());
-			if (file.isFile()) {
-				s3Client.putObject(bucketName, filePath.toString(), file);
-			} else if (file.isDirectory()) {
-				filePath.append(File.separator);
-				putFiles(file, filePath);
-			}
-		}
-	}
-	
-	public void streamS3FilesAsZip(String buildScriptsPath, OutputStream outputStream) throws IOException {
-		LOGGER.debug("Serving zip of files in {}", buildScriptsPath);
-		ObjectListing objectListing = s3Client.listObjects(bucketName, buildScriptsPath);
-		int buildScriptsPathLength = buildScriptsPath.length();
-
-		ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
-		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-			String key = summary.getKey();
-			String relativePath = key.substring(buildScriptsPathLength);
-			LOGGER.debug("Zip entry. S3Key {}, Entry path {}", key, relativePath);
-			zipOutputStream.putNextEntry(new ZipEntry(relativePath));
-			S3Object object = s3Client.getObject(bucketName, key);
-			try (InputStream objectContent = object.getObjectContent()) {
-				StreamUtils.copy(objectContent, zipOutputStream);
-			}
-		}
-		zipOutputStream.close();
-	}
 }

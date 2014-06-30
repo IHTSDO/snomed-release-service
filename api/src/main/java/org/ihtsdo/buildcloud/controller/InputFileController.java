@@ -95,7 +95,7 @@ public class InputFileController {
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
 			HashMap<String, String> file = new HashMap<>();
-			file.put("id", filePath);
+			file.put(ControllerConstants.ID, filePath);
 			files.add(file);
 		}
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);

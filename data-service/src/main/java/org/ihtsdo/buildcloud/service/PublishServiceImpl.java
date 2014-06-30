@@ -1,20 +1,17 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.List;
-
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -65,7 +62,6 @@ public class PublishServiceImpl implements PublishService {
 	
 	/**
 	 * @param execution 
-	 * @param releaseFileName
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
@@ -75,8 +71,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 	
 	/**
-	 * @param execution 
-	 * @param releaseFileName
+	 * @param product
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */

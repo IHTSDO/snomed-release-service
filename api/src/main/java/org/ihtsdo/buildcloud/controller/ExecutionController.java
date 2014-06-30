@@ -33,11 +33,10 @@ import java.util.Map;
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/executions")
 public class ExecutionController {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
 
 	@Autowired
 	private ExecutionService executionService;
+
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
@@ -49,6 +48,7 @@ public class ExecutionController {
 
 	private static final String[] EXECUTION_LINKS = {"configuration", "packages"};
 	private static final String[] PACKAGE_LINKS = {"outputfiles"};
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
@@ -119,7 +119,7 @@ public class ExecutionController {
 		List<Map<String, String>> outputFiles = new ArrayList<>();
 		for (String relativeFilePath : relativeFilePaths) {
 			HashMap<String, String> file = new HashMap<>();
-			file.put("id", relativeFilePath);
+			file.put(ControllerConstants.ID, relativeFilePath);
 			outputFiles.add(file);
 		}
 		return hypermediaGenerator.getEntityCollectionHypermedia(outputFiles, request);
