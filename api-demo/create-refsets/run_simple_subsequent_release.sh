@@ -6,7 +6,7 @@
 set -e;
 
 # Declare run specific parameters
-inputFilesDir="simple-subsequent"
+executionName="simple-subsequent" # used to find input-files and name output
 manifestFileName="manifest_simple_20140731.xml"
 effectiveDate="2014-07-31"
 isFirstTime=false
