@@ -92,7 +92,7 @@ echo "Delete previous delta Input Files "
 curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
 
 
-inputFilesPath="input-files/${inputFilesDir}"
+inputFilesPath="input-files/${executionName}"
 echo "Upload Input Files from ${inputFilesPath}:"
 for file in `ls ${inputFilesPath}`;
 do
@@ -145,7 +145,7 @@ curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/p
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
-localDownloadDirectory=`echo "tmp/output_${executionId}" | sed s/://g`
+localDownloadDirectory=`echo "tmp/output_${executionName}_${executionId}" | sed s/://g`
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
 
 
