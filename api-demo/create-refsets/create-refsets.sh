@@ -61,7 +61,7 @@ echo
 echo "Login and record authorisation token."
 curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
 token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
-echo "Token is '${token}'"
+echo "Authorisation Token is '${token}'"
 #Ensure we have a valid token before proceeding
 if [ -z "${token}" ]
 then
