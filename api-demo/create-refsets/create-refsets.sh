@@ -8,6 +8,26 @@ set -e;
 # Expects to be called from one of the run_*.sh scripts.
 #
 
+# Declare common parameters
+api=http://localhost:8080/api/v1
+#api="https://local.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
+#api="http://dev-release.ihtsdotools.org/api/v1"
+#api="http://release.ihtsdotools.org/api/v1"
+
+rcId=international
+extId=snomed_ct_international_edition
+prodId=snomed_ct_release
+buildId="1_20140731_international_release_build"
+packageId="snomed_release_package"
+readmeHeader="readme-header.txt"
+
+#Set curl verbocity
+curlFlags="isS"
+# i - Show response header
+# s - quiet
+# S - show errors
+
 ensureCorrectResponse() {
 	while read response 
 	do
@@ -31,28 +51,6 @@ then
 	exit -1	
 fi
 
-# Declare common parameters
-
-api=http://localhost:8080/api/v1
-#api="https://uat-release.ihtsdotools.org/api/v1"
-#api="http://dev-release.ihtsdotools.org/api/v1"
-#api="http://release.ihtsdotools.org/api/v1"
-
-#Build and Package the same for first and subsequent lines
-rcId=international
-extId=snomed_ct_international_edition
-prodId=snomed_ct_release
-buildId="1_20140731_international_release_build"
-packageId="snomed_release_package"
-readmeHeader="readme-header.txt"
-
-#Set curl verbocity
-curlFlags="isS"
-# i - Show response header
-# s - quiet
-# S - show errors
-
-
 echo
 echo "Target API URL is '${api}'"
 echo "Target Build ID is '${buildId}'"
@@ -70,7 +68,9 @@ then
 	echo "Cannot proceed further if we haven't logged in!"
 	exit -1
 fi
+commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
+
 echo
 
 #Only need a readme header for a first time run
@@ -155,7 +155,7 @@ downloadFile() {
 	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
 	#Using curl as the MAC doesn't have wget loaded by default
 	#wget -P ${localDownloadDirectory} ${downloadUrlRoot}/${fileName}
-	curl ${commonParams} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
 }
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
