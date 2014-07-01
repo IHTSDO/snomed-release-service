@@ -1,6 +1,6 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
-
+import org.ihtsdo.buildcloud.service.execution.CachedSctidFactory;
 import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.execution.database.TableType;
@@ -15,16 +15,22 @@ public class TransformationFactory {
 	private final StreamingFileTransformation descriptionTransformation;
 	private final StreamingFileTransformation relationshipFileTransformation;
 	private final StreamingFileTransformation identifierFileTransformation;
+	private final StreamingFileTransformation preProcessConceptFileTransformation;
 
 	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
 
+		preProcessConceptFileTransformation = buildPreProcessConceptFileTransformation();
 		refsetTransformation = buildRefsetFileTransformation();
 		conceptTransformation = buildConceptFileTransformation();
 		descriptionTransformation = buildDescriptionFileTransformation();
 		relationshipFileTransformation = buildRelationshipFileTransformation();
 		identifierFileTransformation = buildIdentifierFileTransformation();
+	}
+
+	public StreamingFileTransformation getPreProcessConceptFileTransformation() {
+		return preProcessConceptFileTransformation;
 	}
 
 	public StreamingFileTransformation getSteamingFileTransformation(TableType tableType) throws FileRecognitionException {
@@ -56,6 +62,14 @@ public class TransformationFactory {
 		return transformation;
 	}
 
+	private StreamingFileTransformation buildPreProcessConceptFileTransformation() {
+		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
+		return new StreamingFileTransformation()
+				// id
+				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+
+	}
+
 	private StreamingFileTransformation buildRefsetFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2rfs_spec_simple_struct
 		return new StreamingFileTransformation()
@@ -68,14 +82,13 @@ public class TransformationFactory {
 	private StreamingFileTransformation buildConceptFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
 		return new StreamingFileTransformation()
+				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
-				// id
-				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
 				// moduleId
-				.addLineTransformation(new SCTIDTransformation(3, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
-				.addLineTransformation(new SCTIDTransformation(4, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory));
 	}
 
 	private StreamingFileTransformation buildDescriptionFileTransformation() {
@@ -86,13 +99,13 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
 				// moduleId
-				.addLineTransformation(new SCTIDTransformation(3, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
-				.addLineTransformation(new SCTIDTransformation(4, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// typeId
-				.addLineTransformation(new SCTIDTransformation(6, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(6, cachedSctidFactory))
 				// caseSignificanceId
-				.addLineTransformation(new SCTIDTransformation(8, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
 				;
 
 	}
@@ -105,17 +118,17 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
 				// moduleId
-				.addLineTransformation(new SCTIDTransformation(3, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// sourceId
-				.addLineTransformation(new SCTIDTransformation(4, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// destinationId
-				.addLineTransformation(new SCTIDTransformation(5, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory))
 				// typeId
-				.addLineTransformation(new SCTIDTransformation(7, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(7, cachedSctidFactory))
 				// characteristicTypeId
-				.addLineTransformation(new SCTIDTransformation(8, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
 				// modifierId
-				.addLineTransformation(new SCTIDTransformation(9, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(9, cachedSctidFactory))
 				;
 	}
 
@@ -127,9 +140,9 @@ public class TransformationFactory {
 				// identifierSchemeId
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
 				// moduleId
-				.addLineTransformation(new SCTIDTransformation(4, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// referencedComponentId
-				.addLineTransformation(new SCTIDTransformation(5, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+				.addLineTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory));
 	}
 
 }

@@ -1,5 +1,6 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
+import org.ihtsdo.buildcloud.service.execution.CachedSctidFactory;
 import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
 
 import java.rmi.RemoteException;

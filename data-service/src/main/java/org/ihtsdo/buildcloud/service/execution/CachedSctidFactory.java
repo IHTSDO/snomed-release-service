@@ -30,4 +30,8 @@ public class CachedSctidFactory {
 		return uuidToSctidCache.get(componentUuid);
 	}
 
+	public Long getSCTIDFromCache(String uuidString) {
+		return uuidToSctidCache.get(uuidString);
+	}
+
 }

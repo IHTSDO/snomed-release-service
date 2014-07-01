@@ -1,5 +1,6 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.Before;
 import org.junit.Test;
 

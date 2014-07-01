@@ -13,16 +13,15 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
-import org.ihtsdo.buildcloud.service.execution.*;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
-import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
-import org.ihtsdo.buildcloud.service.execution.database.TableType;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
+import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
-import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,16 +32,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -62,10 +56,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private ReadmeGenerator readmeGenerator;
 
 	@Autowired
-	private SchemaFactory schemaFactory;
-
-	@Autowired
-	private IdAssignmentBI idAssignmentBI;
+	private TransformationService transformationService;
 
 	private static final String README_FILENAME_PREFIX = "Readme";
 	private static final String README_FILENAME_EXTENSION = ".txt";
@@ -199,8 +190,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} else {
 			manifestStream.close();
 		}
-		
-		transformFiles(execution, pkg);
+
+		transformationService.transformFiles(execution, pkg);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
@@ -218,71 +209,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation.", e);
 		}
 
-	}
-
-	/**
-	 * A streaming transformation of execution input files, creating execution output files.
-	 * @param execution
-	 */
-	private void transformFiles(Execution execution, Package pkg) {
-		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
-		String releaseId = effectiveDateInSnomedFormat;
-		String executionId = execution.getId();
-		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(null, releaseId, executionId, idAssignmentBI);
-		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory);
-
-		String packageBusinessKey = pkg.getBusinessKey();
-		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
-
-		// Iterate each execution input file
-		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
-
-		for (String relativeFilePath : executionInputFilePaths) {
-			// Transform all txt files
-			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
-				try {
-					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
-					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
-
-					String fileName = relativeFilePath.substring(relativeFilePath.lastIndexOf("/") + 1);
-					TableType tableType = schemaFactory.getTableType(fileName);
-
-					// Get appropriate transformations for this file type.
-					StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableType);
-
-					// Apply transformations
-					steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
-
-					// Wait for upload of transformed file to finish
-					asyncPipedStreamBean.waitForFinish();
-
-				} catch (FileRecognitionException e) {
-					LOGGER.error("Did not recognise input file '{}'.", relativeFilePath, e);
-				} catch (TransformationException | IOException e) {
-					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);
-				} catch (ExecutionException | InterruptedException e) {
-					LOGGER.error("Exception occurred when uploading transformed file {}", relativeFilePath, e);
-				}
-			} else {
-				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
-			}
-		}
-	}
-
-	/**
-	 * @param fileName input text file name.
-	 * @param effectiveDate  date in format of "yyyyMMdd"
-	 */
-	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
-	    String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
-	    //last segment will be like 20140131.txt
-	    String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
-	    if( !dateFromFile.equals(effectiveDate)){
-		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
-	    }
 	}
 
 	@Override
