@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution;
 
 import com.google.common.io.Files;
+
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -8,6 +9,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,7 +46,7 @@ public class Zipper {
 		this.executionDAO = executionDAO;
 	}
 	
-	public File createZipFile() throws JAXBException, IOException {
+	public File createZipFile() throws JAXBException, IOException, ResourceNotFoundException {
 		//Get the manifest file as an input stream
 		InputStream is = executionDAO.getManifestStream(execution, pkg);
 		loadManifest(is);
@@ -51,19 +54,27 @@ public class Zipper {
 		return zipFile;
 	}
 	
-	private void loadManifest(InputStream is) throws JAXBException{
+	private void loadManifest(InputStream is) throws JAXBException, ResourceNotFoundException{
+		
+		if ( is == null) {
+			throw new ResourceNotFoundException ("Failed to load manifest due to null inputstream");
+		}
 		//Load the manifest file xml into a java object hierarchy
 		JAXBContext jc = JAXBContext.newInstance( "org.ihtsdo.buildcloud.manifest");
 		Unmarshaller um = jc.createUnmarshaller();
 		manifestListing = um.unmarshal(new StreamSource(is), ListingType.class).getValue();
 	}
 	
-	private File createArchive() throws IOException {
+	private File createArchive() throws IOException, ResourceNotFoundException {
 		
 		String targetPath = Files.createTempDir().getAbsolutePath();
 		
 		//Zip file name is the same as the root folder defined in manifest, with .zip appended
 		FolderType rootFolder = manifestListing.getFolder();
+		
+		if (rootFolder == null) {
+			throw new ResourceNotFoundException ("Failed to recover root folder from manifest");
+		}
 		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
 		//Option to use Google's InputStreamFromOutputStream here to feed directly 
