@@ -8,7 +8,15 @@ public class SchemaFactory {
 	public static final char REFSET_FILENAME_INTEGER_FIELD = 'i';
 	public static final char REFSET_FILENAME_STRING_FIELD = 's';
 
+	public TableType getTableType(String filename) throws FileRecognitionException {
+		return createSchemaBean(filename, null, false).getTableType();
+	}
+
 	public TableSchema createSchemaBean(String filename, String headerLine) throws FileRecognitionException {
+		return createSchemaBean(filename, headerLine, true);
+	}
+
+	private TableSchema createSchemaBean(String filename, String headerLine, boolean useHeaderLine) throws FileRecognitionException {
 
 		// General File Naming Pattern
 		// <FileType>_<ContentType>_<ContentSubType>_<Country|Namespace>_<VersionDate>.<Extension>
@@ -34,30 +42,32 @@ public class SchemaFactory {
 					// Start with Simple Refset
 					TableSchema refset = createSimpleRefsetSchema(filenameNoExtension);
 
-					// Use the contentType prefix characters for datatypes and the header line for names of additional fields.
-					char[] additionalFieldTypes = contentType.replace("Refset", "").toCharArray();
-					String[] fieldNames = headerLine.split(RF2Constants.COLUMN_SEPARATOR);
-					int fieldOffset = refset.getFields().size() - 1;
+					if (useHeaderLine) {
+						// Use the contentType prefix characters for datatypes and the header line for names of additional fields.
+						char[] additionalFieldTypes = contentType.replace("Refset", "").toCharArray();
+						String[] fieldNames = headerLine.split(RF2Constants.COLUMN_SEPARATOR);
+						int fieldOffset = refset.getFields().size() - 1;
 
-					for (char additionalFieldType : additionalFieldTypes) {
-						fieldOffset++;
-						DataType type;
-						switch (additionalFieldType) {
-							case REFSET_FILENAME_CONCEPT_FIELD:
-								type = DataType.SCTID;
-								break;
-							case REFSET_FILENAME_INTEGER_FIELD:
-								type = DataType.INTEGER;
-								break;
-							case REFSET_FILENAME_STRING_FIELD:
-								type = DataType.STRING;
-								break;
-							default:
-								throw new FileRecognitionException("Unexpected character '" + additionalFieldType + "' within content " +
-										"type section of Refset filename.");
+						for (char additionalFieldType : additionalFieldTypes) {
+							fieldOffset++;
+							DataType type;
+							switch (additionalFieldType) {
+								case REFSET_FILENAME_CONCEPT_FIELD:
+									type = DataType.SCTID;
+									break;
+								case REFSET_FILENAME_INTEGER_FIELD:
+									type = DataType.INTEGER;
+									break;
+								case REFSET_FILENAME_STRING_FIELD:
+									type = DataType.STRING;
+									break;
+								default:
+									throw new FileRecognitionException("Unexpected character '" + additionalFieldType + "' within content " +
+											"type section of Refset filename.");
+							}
+							String fieldName = fieldNames[fieldOffset];
+							refset.field(fieldName, type);
 						}
-						String fieldName = fieldNames[fieldOffset];
-						refset.field(fieldName, type);
 					}
 					return refset;
 				} else {
