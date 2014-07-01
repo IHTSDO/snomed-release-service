@@ -73,7 +73,8 @@ public class Zipper {
 		FolderType rootFolder = manifestListing.getFolder();
 		
 		if (rootFolder == null) {
-			throw new ResourceNotFoundException ("Failed to recover root folder from manifest");
+			throw new ResourceNotFoundException ("Failed to recover root folder from manifest.  Ensure the root element is named 'listing' " 
+												+ "and it has a namespace of  xmlns=\"http://release.ihtsdo.org/manifest/1.0.0\" ");
 		}
 		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
