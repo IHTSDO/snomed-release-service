@@ -203,7 +203,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			File zip = zipper.createZipFile();
 			dao.putOutputFile(execution, pkg, zip, "", true);
 		} catch (Exception e)  {
-			throw new Exception("Failure in Zip creation.", e);
+			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
 	}
