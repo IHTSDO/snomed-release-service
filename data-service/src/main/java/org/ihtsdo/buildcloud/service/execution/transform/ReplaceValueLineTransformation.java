@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
 public class ReplaceValueLineTransformation implements LineTransformation {
 

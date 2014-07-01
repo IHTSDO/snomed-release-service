@@ -8,9 +8,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +36,8 @@ public interface ExecutionDAO {
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
+	InputStream getLocalInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
+
 	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
@@ -57,10 +57,12 @@ public interface ExecutionDAO {
 
 	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
+	OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
+
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
-	
+
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
-	
+
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
 
 	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
