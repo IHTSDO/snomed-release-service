@@ -16,9 +16,13 @@ import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.execution.*;
+import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.buildcloud.service.execution.database.TableType;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
+import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +60,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
+
+	@Autowired
+	private SchemaFactory schemaFactory;
+
+	@Autowired
+	private IdAssignmentBI idAssignmentBI;
 
 	private static final String README_FILENAME_PREFIX = "Readme";
 	private static final String README_FILENAME_EXTENSION = ".txt";
@@ -180,6 +190,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 
+		// TODO: Refactor: Process each input file in a separate thread where appropriate.
+
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
 		if (manifestStream == null) {
@@ -213,12 +225,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 	 * @param execution
 	 */
 	private void transformFiles(Execution execution, Package pkg) {
-		StreamingFileTransformation transformation = new StreamingFileTransformation();
-
-		// Add streaming transformation of effectiveDate
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
-		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
-		transformation.addLineTransformation(new UUIDTransformation(0));
+		String releaseId = effectiveDateInSnomedFormat;
+		String executionId = execution.getId();
+		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(null, releaseId, executionId, idAssignmentBI);
+		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory);
 
 		String packageBusinessKey = pkg.getBusinessKey();
 		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
@@ -227,16 +238,28 @@ public class ExecutionServiceImpl implements ExecutionService {
 		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
 
 		for (String relativeFilePath : executionInputFilePaths) {
-
-			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
+			// Transform all txt files
 			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
 					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
-					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+
+					String fileName = relativeFilePath.substring(relativeFilePath.lastIndexOf("/") + 1);
+					TableType tableType = schemaFactory.getTableType(fileName);
+
+					// Get appropriate transformations for this file type.
+					StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableType);
+
+					// Apply transformations
+					steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+
+					// Wait for upload of transformed file to finish
 					asyncPipedStreamBean.waitForFinish();
+
+				} catch (FileRecognitionException e) {
+					LOGGER.error("Did not recognise input file '{}'.", relativeFilePath, e);
 				} catch (TransformationException | IOException e) {
 					// Catch blocks just log and let the next file get processed.
 					LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);

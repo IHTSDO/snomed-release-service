@@ -66,8 +66,9 @@ public class StreamingFileTransformation {
 		}
 	}
 
-	public void addLineTransformation(LineTransformation transformation) {
+	public StreamingFileTransformation addLineTransformation(LineTransformation transformation) {
 		lineTransformations.add(transformation);
+		return this;
 	}
 
 }
