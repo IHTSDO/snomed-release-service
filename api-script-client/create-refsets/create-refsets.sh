@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
+#api=http://localhost:8080/api/v1
 #api="https://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
@@ -126,17 +126,18 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execu
 executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 
+echo "Preparation complete.  Time taken so far ${SECONDS}s"
+
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
-triggerSuccess=`cat tmp/trigger-response.txt | grep pass`
+triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true #Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
-	echo "Failed to successfully process any packages"
+	echo "Failed to successfully process any packages.  Received response: "
 	echo
 	cat tmp/trigger-response.txt
 	echo
-	echo "Script Halted"
-	sleep 1s
+	echo "Script Halted after ${SECONDS}s "
 	exit -1
 fi
 
@@ -160,6 +161,6 @@ downloadFile() {
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
-echo "Process Complete"
+echo "Process Complete in ${SECONDS}s"
 echo
 
