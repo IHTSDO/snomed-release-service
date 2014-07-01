@@ -10,7 +10,7 @@ set -e;
 
 # Declare common parameters
 #api=http://localhost:8080/api/v1
-#api="https://local.ihtsdotools.org/api/v1"
+#api="http://local.ihtsdotools.org/api/v1"
 api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
@@ -42,14 +42,45 @@ ensureCorrectResponse() {
 	echo
 }
 
+getElapsedTime() {
+	seconds=${SECONDS}
+	hours=$((seconds / 3600))
+	seconds=$((seconds % 3600))
+	minutes=$((seconds / 60))
+	seconds=$((seconds % 60))
+	
+	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+#Check command line arguments
 if [ -z "$calling_program" ]
 then
-	echo "Usage"
-	echo "------"
 	echo "Please call this script from one of the 'run' scripts."
 	echo
+	echo "Script Halted"
 	exit -1	
 fi
+
+skipLoad=false
+listOnly=false
+
+while getopts ":sl" opt
+do
+	case $opt in
+		s) 
+			skipLoad=true
+			echo "Option set to skip input file load"
+		;;
+		l) 
+			listOnly=true
+			echo "Option set to list input files only"
+		;;
+		help|\?) 
+			echo -e "Usage: [-s] [-l] \n  s - skips the upload of input files (say if you've already run the process and they don't need to change).\n  l - just lists the current input files and does no further processing." 
+			exit 0
+		;;
+	esac
+done
 
 echo
 echo "Target API URL is '${api}'"
@@ -72,9 +103,18 @@ commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
 
 echo
+#Are we just listing the input files and stopping there?
+if ${listOnly}
+then
+	echo "Recover input file list"
+	curl ${commonParams} ${api}/builds/${buildId}/packages/${packageId}/inputfiles | tee tmp/listing-response.txt | grep HTTP | ensureCorrectResponse 
+	echo "Input delta files currently held:"
+	cat tmp/listing-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'
+	exit 0
+fi
 
 #Only need a readme header for a first time run
-if [ "${isFirstTime}"=true ]
+if ${isFirstTime}
 then
 	echo "Set Readme Header"
 	readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
@@ -86,19 +126,23 @@ manifestPath="manifest-files/${manifestFileName}"
 echo "Upload Manifest from ${manifestPath}"
 curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestPath}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
-#If we've done a different release before, then we need to delete the input files from the last run!
-#Not checking the return code from this call, doesn't matter if the files aren't there
-echo "Delete previous delta Input Files "
-curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
 
-
-inputFilesPath="input-files/${executionName}"
-echo "Upload Input Files from ${inputFilesPath}:"
-for file in `ls ${inputFilesPath}`;
-do
-	echo "Upload Input File ${file}"
-	curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
-done
+if ! ${skipLoad}
+then
+	#If we've done a different release before, then we need to delete the input files from the last run!
+	#Not checking the return code from this call, doesn't matter if the files aren't there
+	echo "Delete previous delta Input Files "
+	curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
+	
+	
+	inputFilesPath="input-files/${executionName}"
+	echo "Upload Input Files from ${inputFilesPath}:"
+	for file in `ls ${inputFilesPath}`;
+	do
+		echo "Upload Input File ${file}"
+		curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+	done
+fi
 
 echo "Set effectiveTime to ${effectiveDate}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"effectiveTime\" : \"${effectiveDate}\" }"  ${api}/builds/${buildId}  | grep HTTP | ensureCorrectResponse
@@ -111,7 +155,7 @@ then
 else
 	echo "Recover previously published release"
 	# eg /centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_release/published
-	curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published > tmp/published-response.txt
+curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published | tee tmp/published-response.txt | grep HTTP | ensureCorrectResponse 
 	publishedName=`cat tmp/published-response.txt | grep "publishedPackages" | sed 's/.*: \[ "\([^"]*\).*".*/\1/g'`
 	echo "Previously published package detected as ${publishedName}"
 	
@@ -126,7 +170,7 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execu
 executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 
-echo "Preparation complete.  Time taken so far ${SECONDS}s"
+echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
@@ -137,7 +181,7 @@ then
 	echo
 	cat tmp/trigger-response.txt
 	echo
-	echo "Script Halted after ${SECONDS}s "
+	echo "Script Halted after $(getElapsedTime) "
 	exit -1
 fi
 
@@ -161,6 +205,6 @@ downloadFile() {
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
-echo "Process Complete in ${SECONDS}s"
+echo "Process Complete in $(getElapsedTime)"
 echo
 
