@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutionException;
 
 public class TransformationService {
 
+	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
+
 	@Autowired
 	private SchemaFactory schemaFactory;
 
@@ -43,7 +45,7 @@ public class TransformationService {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String releaseId = effectiveDateInSnomedFormat;
 		String executionId = execution.getId();
-		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(null, releaseId, executionId, idAssignmentBI);
+		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, releaseId, executionId, idAssignmentBI);
 		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory);
 
 		String packageBusinessKey = pkg.getBusinessKey();
