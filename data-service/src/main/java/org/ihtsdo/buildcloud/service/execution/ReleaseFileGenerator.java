@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -48,29 +49,35 @@ public abstract class ReleaseFileGenerator {
 	/**
 	 * @return the transformed delta file name exception if not found.
 	 */
-	protected String getTransformedDeltaFile() {
+	protected List<String> getTransformedDeltaFiles() {
 		String businessKey = pkg.getBusinessKey();
-		List<String> transformedFilePaths = executionDao.listTransformedFilePaths(
-				execution, businessKey);
+		List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
+		List<String> validFiles = new ArrayList<String>();
 		if (transformedFilePaths.size() < 1) {
 			throw new RuntimeException(
 					"Failed to find any transformed files to convert to output delta files.");
 		}
-		String deltaFileName = null;
+
 		for (String fileName : transformedFilePaths) {
 			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
 					&& fileName.contains(RF2Constants.DELTA)) {
-				deltaFileName = fileName;
-				//expects to be only one
-				break;
+				validFiles.add(fileName);
 			}
 		}
-		if (deltaFileName == null) {
+		if (validFiles.size() == 0) {
 			throw new ReleaseFileGenerationException(
 					"Failed to find any files of type *Delta*.txt transformed in package:"
 							+ businessKey);
 		}
-		return deltaFileName;
+		return validFiles;
+	}
+	
+	protected final void generateDeltaFiles(final boolean isFirstRelease) {
+		List<String> transformedDeltaFiles = getTransformedDeltaFiles();
+		for (String thisFile : transformedDeltaFiles) {
+			generateDeltaFile(thisFile, isFirstRelease);
+		}
+		
 	}
 
 	/**
@@ -80,7 +87,7 @@ public abstract class ReleaseFileGenerator {
 	 * @param isFirstRelease
 	 *            true if it is the first time release
 	 */
-	protected final void generateDeltaFiles(final String deltaFileName,
+	protected final void generateDeltaFile(final String deltaFileName,
 			final boolean isFirstRelease) {
 		String businessKey = pkg.getBusinessKey();
 		if (isFirstRelease) {
