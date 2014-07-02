@@ -17,13 +17,9 @@ public class FirstReleaseFileGenerator extends ReleaseFileGenerator{
 	 */
 	@Override
 	public void generateReleaseFiles() {
-
-		//get the current transformed delta file
-		String deltaFile = getTransformedDeltaFile();
-		generateDeltaFiles( deltaFile, true );
+		generateDeltaFiles(true);
 		convertDeltaFilesTo(RF2Constants.FULL);
 		convertDeltaFilesTo(RF2Constants.SNAPSHOT);
-		
 	}
 
 	/**
