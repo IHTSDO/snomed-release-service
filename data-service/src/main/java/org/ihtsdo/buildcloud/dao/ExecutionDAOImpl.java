@@ -308,6 +308,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
 		File localFile = getLocalFile(transformedFilePath);
+		localFile.getParentFile().mkdirs();
 		return new FileOutputStream(localFile);
 	}
 
