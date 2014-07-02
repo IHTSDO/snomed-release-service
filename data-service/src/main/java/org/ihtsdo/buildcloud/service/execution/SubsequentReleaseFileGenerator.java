@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -22,9 +23,9 @@ import org.slf4j.LoggerFactory;
  * Release file generator for subsequent release.
  */
 public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(SubsequentReleaseFileGenerator.class);
-        
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SubsequentReleaseFileGenerator.class);
+		
 	/**
 	 * @param execution an execution.
 	 * @param pkg a package name
@@ -33,32 +34,41 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 	public SubsequentReleaseFileGenerator(final Execution execution, final Package pkg, ExecutionDAO dao) {
 		super(execution, pkg, dao);
 	}
-
+	
 	@Override
 	public final void generateReleaseFiles() {
+		List<String> transformedFiles = getTransformedDeltaFiles();
+		for (String thisFile : transformedFiles) {
+			generateReleaseFile(thisFile);
+		}
+	}
+
+
+	private final void generateReleaseFile(String transformedDeltaDataFile) {
 		// get the current transformed delta file
-		String transformedDeltDataFile = getTransformedDeltaFile();
-		generateDeltaFiles(transformedDeltDataFile, false);
+		generateDeltaFile(transformedDeltaDataFile, false);
 		// load previous full release, add delta input file, export new full
 		// file, export new snapshot file
 		try (Connection connection = getConnection(pkg.getBusinessKey())) {
 			DatabasePopulator databasePopulator = getDatabasePopulator(connection);
 			String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-			String currentFullFileName = transformedDeltDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 			ArchiveEntry previousFullFile = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
 			if ( previousFullFile == null ){
-			    throw new RuntimeException("No full file found in prevous published package:" + previousPublishedPackage);
+				throw new RuntimeException("No full file equivalent of:  " 
+											+ currentFullFileName 
+											+ " found in prevous published package:" + previousPublishedPackage);
 			}
 			TableSchema tableSchema = databasePopulator.createTable(previousFullFile.getFilePath(), previousFullFile.getInputStream());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
-							pkg.getBusinessKey(), transformedDeltDataFile);
+							pkg.getBusinessKey(), transformedDeltaDataFile);
 			databasePopulator.appendData(tableSchema, transformedDeltaInputStream);
 			ReleaseFileExporter releaseFileExporter = new ReleaseFileExporter();
 			Date targetEffectiveTime = pkg.getBuild().getEffectiveTime();
 			AsyncPipedStreamBean fullFileAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), currentFullFileName);
 
-			String currentSnapshot = transformedDeltDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			String currentSnapshot = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			AsyncPipedStreamBean snapshotAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), currentSnapshot);
 			releaseFileExporter.exportFullAndSnapshot(connection, tableSchema,
@@ -75,11 +85,11 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 	//in case we need to mock out for testing
 	 DatabasePopulator getDatabasePopulator(Connection connection)
 		throws DatabasePopulatorException {
-	    DatabasePopulator databasePopulator = new DatabasePopulator(connection);
-	    return databasePopulator;
+		DatabasePopulator databasePopulator = new DatabasePopulator(connection);
+		return databasePopulator;
 	}
 	
 	 Connection getConnection( String uniqueId) throws ClassNotFoundException, SQLException{
-	    return new DatabaseManager().createConnection(uniqueId);
+		return new DatabaseManager().createConnection(uniqueId);
 	}
 }
