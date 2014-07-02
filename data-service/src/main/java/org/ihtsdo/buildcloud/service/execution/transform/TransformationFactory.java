@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import org.ihtsdo.buildcloud.service.execution.CachedSctidFactory;
 import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.execution.database.TableType;

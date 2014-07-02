@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import org.ihtsdo.buildcloud.service.execution.CachedSctidFactory;
-
 public class SCTIDTransformationFromCache implements LineTransformation {
 
 	private final CachedSctidFactory sctidFactory;
