@@ -128,6 +128,9 @@ echo "Execution ID is '${executionId}'"
 
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
+
+cat tmp/trigger-response.txt
+
 triggerSuccess=`cat tmp/trigger-response.txt | grep pass`
 if [ -z "${triggerSuccess}" ]
 then
