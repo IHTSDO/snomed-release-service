@@ -4,7 +4,6 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
-import org.ihtsdo.buildcloud.service.execution.CachedSctidFactory;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
