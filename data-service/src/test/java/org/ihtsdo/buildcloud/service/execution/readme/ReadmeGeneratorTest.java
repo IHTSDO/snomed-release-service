@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.readme;
 
-import org.ihtsdo.StreamTestUtils;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.Assert;
