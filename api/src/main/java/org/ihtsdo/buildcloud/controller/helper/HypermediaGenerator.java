@@ -11,15 +11,15 @@ public class HypermediaGenerator {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks) {
+	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<?> entities, HttpServletRequest request, String[] entityLinks) {
 		return getEntityCollectionHypermedia(entities, request, entityLinks, null);
 	}
 
-	public List<Map<String,Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request) {
+	public List<Map<String,Object>> getEntityCollectionHypermedia(Collection<?> entities, HttpServletRequest request) {
 		return getEntityCollectionHypermedia(entities, request, null, null);
 	}
 
-	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<? extends Object> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
+	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<?> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
 		String url = getUrl(request);
 		String apiRootUrl = getApiRootUrl(url, request);
 		if (instanceRoot != null) {

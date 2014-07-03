@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface BuildService extends EntityService<Build> {
+	
+	static final String EFFECTIVE_TIME = "effectiveTime";
 
 	List<Build> findAll(EnumSet<FilterOption> filterOptions, User authenticatedUser);
 

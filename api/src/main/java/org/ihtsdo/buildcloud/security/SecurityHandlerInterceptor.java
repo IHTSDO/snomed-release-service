@@ -17,9 +17,9 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 	@Autowired
 	private AuthenticationService authenticationService;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandlerInterceptor.class);
-
 	private static final String AUTH_TOKEN_NAME = "auth_token";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandlerInterceptor.class);
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -49,7 +49,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 				String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
 				String[] credentials = credsString.split(":");
 
-				if (credentials != null && credentials.length > 0) {
+				if (credentials.length > 0) {
 					String authenticationToken = credentials[0];
 					validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
 				}
