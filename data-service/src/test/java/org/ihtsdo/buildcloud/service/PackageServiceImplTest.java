@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +62,10 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 		Assert.assertEquals(build, aPackage.getBuild());
 	}
 
-
+	@Test(expected = EntityAlreadyExistsException.class)
+	public void testCreateSamePackageTwice() throws Exception {
+		packageService.create(buildCompKey, "test-package", authenticatedUser);
+		packageService.create(buildCompKey, "test-package", authenticatedUser);
+	}
 
 }

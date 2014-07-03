@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class DevDatabasePrimerDAO extends TestEntityGenerator{
@@ -51,7 +52,7 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 				List <Build> builds = product.getBuilds();
 				for (Build build : builds) {
 					session.save(build);
-					List <Package> packages = build.getPackages();
+					Set<Package> packages = build.getPackages();
 					for (Package pkg: packages){  //package is a reserved work
 						session.save(pkg);
 					}

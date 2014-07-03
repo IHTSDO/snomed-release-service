@@ -153,7 +153,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		//Run transformation on each of our packages in turn.
 		//TODO Multithreading opportunity here!
-		List<Package> packages = execution.getBuild().getPackages();
+		Set<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
 			String pkgResult = "pass";
 			String msg = "Process completed successfully";
