@@ -87,8 +87,8 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
-	public void uploadDeltaInputFile(String deltaFileName, Object o) throws Exception {
-		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", o.getClass().getResourceAsStream(deltaFileName));
+	public void uploadDeltaInputFile(String deltaFileName, Class classpathResourceOwner) throws Exception {
+		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", classpathResourceOwner.getResourceAsStream(deltaFileName));
 		mockMvc.perform(
 				fileUpload(PACKAGE_URL + "/inputfiles")
 						.file(deltaFile)
@@ -107,8 +107,8 @@ public class IntegrationTestHelper {
 				.andExpect(status().isNoContent());
 	}
 
-	public void uploadManifest(String manifestFileName, Object o) throws Exception {
-		MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", o.getClass().getResourceAsStream(manifestFileName));
+	public void uploadManifest(String manifestFileName, Class classpathResourceOwner) throws Exception {
+		MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
 		mockMvc.perform(
 				fileUpload(PACKAGE_URL + "/manifest")
 						.file(manifestFile)
@@ -259,7 +259,7 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public void testOutput(String executionURL, String expectedZipFilename, String expectedZipEntries, Object o) throws Exception {
+	public ZipFile testZipNameAndEntryNames(String executionURL, int expectedOutputFileCount, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileListResult = mockMvc.perform(
 				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -271,7 +271,7 @@ public class IntegrationTestHelper {
 
 		String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
 		JSONArray jsonArray = new JSONArray(outputFileListJson);
-		Assert.assertEquals(5, jsonArray.length());
+		Assert.assertEquals(expectedOutputFileCount, jsonArray.length());
 
 		String zipFilePath = null;
 		for (int a = 0; a < jsonArray.length(); a++) {
@@ -284,14 +284,15 @@ public class IntegrationTestHelper {
 
 		Assert.assertEquals(expectedZipFilename, zipFilePath);
 
-		ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath, o));
+		ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath, classpathResourceOwner));
 		List<String> entryPaths = getZipEntryPaths(zipFile);
 		Assert.assertEquals("Zip entries expected.",
 				expectedZipEntries,
 				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""));
+		return zipFile;
 	}
 
-	public File downloadToTempFile(String executionURL, String zipFilePath, Object o) throws Exception {
+	private File downloadToTempFile(String executionURL, String zipFilePath, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileResult = mockMvc.perform(
 				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -300,7 +301,7 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk())
 				.andReturn();
 
-		Path tempFile = Files.createTempFile(o.getClass().getCanonicalName(), "output-file");
+		Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
 		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
 			fileOutputStream.write(outputFileResult.getResponse().getContentAsByteArray());
 		}
