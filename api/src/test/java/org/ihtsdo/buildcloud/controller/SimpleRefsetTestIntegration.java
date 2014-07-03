@@ -19,13 +19,13 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+//		integrationTestHelper.createTestBuildStructure();
 
 
 		// Perform first time release
 		String effectiveTime = "20140131";
-		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", this);
-		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveTime + ".xml", this);
+		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
@@ -50,7 +50,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		integrationTestHelper.testOutput(executionURL1, expectedZipFilename, expectedZipEntries, this);
+		integrationTestHelper.testZipNameAndEntryNames(executionURL1, 5, expectedZipFilename, expectedZipEntries, getClass());
 
 
 		// Sleep for a second. Next build must have a different timestamp.
@@ -60,8 +60,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		// Perform second release
 		String effectiveDateTime = "20140731";
 		integrationTestHelper.deletePreviousTxtInputFiles();
-		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", this);
-		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveDateTime + ".xml", this);
+		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
+		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveDateTime);
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
@@ -87,7 +87,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
-		integrationTestHelper.testOutput(executionURL2, expectedZipFilename, expectedZipEntries, this);
+		integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
 	}
 
 	@Override
