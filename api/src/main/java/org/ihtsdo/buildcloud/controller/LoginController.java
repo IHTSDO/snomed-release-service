@@ -21,15 +21,15 @@ public class LoginController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity login(@RequestParam String username, @RequestParam String password) {
+	public ResponseEntity<HashMap<String,String>> login(@RequestParam String username, @RequestParam String password) {
 		String authenticationToken = authenticationService.authenticate(username, password);
 		HashMap<String, String> response = new HashMap<>();
 		if (authenticationToken != null) {
 			response.put("authenticationToken", authenticationToken);
-			return new ResponseEntity(response, HttpStatus.OK);
+			return new ResponseEntity<HashMap<String,String>>(response, HttpStatus.OK);
 		} else {
 			response.put(ControllerConstants.ERROR_MESSAGE, "Username or password are incorrect.");
-			return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<HashMap<String,String>>(response, HttpStatus.BAD_REQUEST);
 		}
 	}
 
