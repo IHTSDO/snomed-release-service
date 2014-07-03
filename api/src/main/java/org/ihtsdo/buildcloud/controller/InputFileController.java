@@ -113,7 +113,7 @@ public class InputFileController {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			}
 		} catch (IOException e) {
-			LOGGER.error("Failed to stream manifest file from storage.", e);
+			LOGGER.error("Failed to stream input file from storage.", e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -1,16 +1,21 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
 import java.util.List;
 
 @Service
@@ -21,6 +26,10 @@ public class PublishServiceImpl implements PublishService {
 	private final FileHelper publishedFileHelper;
 	@Autowired
 	private ExecutionS3PathHelper executionS3PathHelper;
+	
+	@Autowired
+	ProductDAO productDAO;
+	
 	private static final String SEPARATOR = "/";
 	private final String publishedBucketName;
 	
@@ -59,6 +68,8 @@ public class PublishServiceImpl implements PublishService {
 		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 		
 	}
+	
+
 	
 	/**
 	 * @param execution 
@@ -102,5 +113,26 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public List<String> getPublishedPackages(Product product) {
 		return publishedFileHelper.listFiles(getPublishDirPath(product));
+	}
+
+	@Override
+	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, 
+			InputStream inputStream,	String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException {
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
+		
+		if (product == null) {
+			throw new ResourceNotFoundException ("Failed to recover product " + releaseCenterBusinessKey 
+													+ "/" + extensionBusinessKey
+													+ "/" + productBusinessKey);
+		}
+		
+		//We're expecting a zip file only
+		if (!FileUtils.isZip(originalFilename)) {
+			throw new BadRequestException ("File " + originalFilename + " is not named as a zip archive");
+		}
+		
+		String path = getPublishDirPath(product) + SEPARATOR + originalFilename;
+		publishedFileHelper.putFile(inputStream, size, path);
+		
 	}
 }

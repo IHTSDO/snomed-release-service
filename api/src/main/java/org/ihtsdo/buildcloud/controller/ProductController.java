@@ -6,6 +6,8 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.PublishService;
+import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -84,7 +86,17 @@ public class ProductController {
 		jsonStructure.put("publishedPackages", publishedPackages);
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request);
-
 	}
+	
+	
+	@RequestMapping(value = "/{productBusinessKey}/published", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<Void> uploadInputFileFile(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
+											 @RequestParam(value = "file") MultipartFile file) throws IOException, ResourceNotFoundException, BadRequestException {
+
+		publishService.publishPackage(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+	}
+
 
 }
