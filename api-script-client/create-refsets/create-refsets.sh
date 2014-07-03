@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-#api=http://localhost:8080/api/v1
+api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-api="https://uat-release.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
@@ -63,8 +63,9 @@ fi
 
 skipLoad=false
 listOnly=false
+autoPublish=false
 
-while getopts ":sl" opt
+while getopts ":slap:" opt
 do
 	case $opt in
 		s) 
@@ -75,8 +76,19 @@ do
 			listOnly=true
 			echo "Option set to list input files only"
 		;;
+		a) 
+			autoPublish=true
+			echo "Option set to automatically publish packages on successful execution"
+		;;
+		p) 
+			publishFile=$OPTARG
+			echo "Option set to upload ${publishFile} for publishing only"
+		;;
 		help|\?) 
-			echo -e "Usage: [-s] [-l] \n  s - skips the upload of input files (say if you've already run the process and they don't need to change).\n  l - just lists the current input files and does no further processing." 
+			echo -e "Usage: [-s] [-l] [-a] [-p <filename>]\n\t s - skips the upload of input files (say if you've already run the process and they don't need to change)."
+			echo -e "\t l - just lists the current input files and does no further processing." 
+			echo -e "\t a - automatically publish packages on successful execution." 
+			echo -e "\t p <filename> uploads the specified zip file for publishing independent of any execution (eg for priming the system with a previous release)"
 			exit 0
 		;;
 	esac
@@ -110,6 +122,15 @@ then
 	curl ${commonParams} ${api}/builds/${buildId}/packages/${packageId}/inputfiles | tee tmp/listing-response.txt | grep HTTP | ensureCorrectResponse 
 	echo "Input delta files currently held:"
 	cat tmp/listing-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'
+	exit 0
+fi
+
+#Are we just uploading a file for publishing and stopping there?
+if [ -n "${publishFile}" ]
+then
+	echo "Upload file to be published: ${publishFile}"
+	curl ${commonParams} -X POST -F "file=@${publishFile}" ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published  | grep HTTP | ensureCorrectResponse 
+	echo "File successfully published"
 	exit 0
 fi
 
@@ -155,7 +176,7 @@ then
 else
 	echo "Recover previously published release"
 	# eg /centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_release/published
-curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published | tee tmp/published-response.txt | grep HTTP | ensureCorrectResponse 
+	curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published | tee tmp/published-response.txt | grep HTTP | ensureCorrectResponse 
 	publishedName=`cat tmp/published-response.txt | grep "publishedPackages" | sed 's/.*: \[ "\([^"]*\).*".*/\1/g'`
 	echo "Previously published package detected as ${publishedName}"
 	
@@ -185,8 +206,11 @@ then
 	exit -1
 fi
 
-echo "Publish the package"
-curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
+if ${autoPublish}
+then
+	echo "Publish the package"
+	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
+fi
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
