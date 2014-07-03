@@ -65,7 +65,7 @@ public class InputFileController {
 	public void getManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								HttpServletResponse response) {
 
-		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());) {
+		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
 				response.setContentType("application/xml");
 				StreamUtils.copy(fileStream, response.getOutputStream());
@@ -95,7 +95,7 @@ public class InputFileController {
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
 			HashMap<String, String> file = new HashMap<>();
-			file.put("id", filePath);
+			file.put(ControllerConstants.ID, filePath);
 			files.add(file);
 		}
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
@@ -106,7 +106,7 @@ public class InputFileController {
 								@PathVariable String inputFileName,
 								HttpServletResponse response) {
 
-		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject());) {
+		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
@@ -118,12 +118,20 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName}", method = RequestMethod.DELETE)
+	//Using Regex to match variable name here due to problems with .txt getting truncated
+	//See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
+	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								@PathVariable String inputFileName, HttpServletResponse response) throws IOException {
+								@PathVariable String inputFileNamePattern, HttpServletResponse response) throws IOException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
+		
+		//Are we working with a file name or a pattern?
+		if (inputFileNamePattern.contains("*")) {
+			inputFileService.deleteFilesByPattern(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);						
+		} else {
+			inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);						
+		}
 		response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 	}
-
+	
 }

@@ -2,12 +2,11 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-
-import java.io.InputStream;
-
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+
+import java.io.InputStream;
 
 /**
  * Wraps the JetS3t ObjectMetadata enabling builder pattern.
@@ -31,7 +30,7 @@ public class S3PutRequestBuilder extends PutObjectRequest {
 		byte[] decodedHex = Hex.decodeHex(md5HexString.toCharArray());
 		
 		//Apparently we need the unchunked string encoding method here to match what AWS is expecting.
-		String md5Base64 = Base64.encodeBase64String(decodedHex).toString();
+		String md5Base64 = Base64.encodeBase64String(decodedHex);
 		this.getMetadata().setContentMD5(md5Base64);
 		return this;
 	}

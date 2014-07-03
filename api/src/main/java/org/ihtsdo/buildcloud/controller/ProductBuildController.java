@@ -26,6 +26,8 @@ public class ProductBuildController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
+	public static final String NAME = "name";
+
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterBusinessKey,
@@ -43,7 +45,7 @@ public class ProductBuildController {
 											 @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws Exception {
 		//TODO Return 404 rather than throw exception if extension not found.
-		String name = json.get("name");
+		String name = json.get(NAME);
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedUser);
 

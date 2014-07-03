@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -29,12 +28,9 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 	@Autowired
 	private BuildDAO buildDAO;
+
 	@Autowired
 	private ProductDAO productDAO;
-
-	private static final String FIRST_TIME_RELEASE = "firstTimeRelease";
-	private static final String EFFECTIVE_TIME = "effectiveTime";
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 
@@ -86,9 +82,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException {
 		LOGGER.debug("update, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
-		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
-			build.setFirstTimeRelease("true".equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
-		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
 				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));

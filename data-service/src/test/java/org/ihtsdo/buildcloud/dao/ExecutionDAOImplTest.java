@@ -4,14 +4,11 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -23,17 +20,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -54,9 +46,6 @@ public class ExecutionDAOImplTest {
 	@Autowired
 	protected BuildDAO buildDAO;
 
-	@Autowired
-	private JmsTemplate jmsTemplate;
-
 	private Build build;
 	protected Execution execution;
 	private MocksControl mocksControl;
@@ -67,8 +56,6 @@ public class ExecutionDAOImplTest {
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		executionDAO.setS3Client(mockS3Client);
-		this.jmsTemplate = mocksControl.createMock(JmsTemplate.class);
-		executionDAO.setJmsTemplate(jmsTemplate);
 
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
@@ -149,7 +136,7 @@ public class ExecutionDAOImplTest {
 	
 	
 	@Test
-	public void testPutOutputFile() throws Exception, FileNotFoundException, IOException, NoSuchAlgorithmException, DecoderException {
+	public void testPutOutputFile() throws Exception {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		boolean offlineMode = true; 
@@ -172,41 +159,10 @@ public class ExecutionDAOImplTest {
 		Assert.assertNotNull(is);
 	}
 
-	@Test
-	public void testQueueForBuilding() {
-		execution.setStatus(Execution.Status.BEFORE_TRIGGER);
-
-		Capture<String> oldStatusPathCapture = new Capture<>();
-		Capture<String> newStatusPathCapture = new Capture<>();
-		mockS3Client.deleteObject(EasyMock.isA(String.class), EasyMock.capture(oldStatusPathCapture));
-		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(newStatusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
-		Capture<String> jmsMessageCapture = new Capture<>();
-		jmsTemplate.convertAndSend(EasyMock.capture(jmsMessageCapture));
-
-		mocksControl.replay();
-		executionDAO.queueForBuilding(execution);
-		mocksControl.verify();
-
-		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", oldStatusPathCapture.getValue());
-		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:QUEUED", newStatusPathCapture.getValue());
-		Assert.assertEquals("http://localhost/api/v1/builds/1/executions/2014-02-04T10:30:01/", jmsMessageCapture.getValue());
-	}
-	
-	@Test
-	public void testExecutionOutputFileOutputStream() throws IOException {
-		AsyncPipedStreamBean asyncPipedStreamBean = executionDAO.getFileAsOutputStream("out.txt");
-		Assert.assertNotNull(asyncPipedStreamBean);
-		OutputStream outputStream = asyncPipedStreamBean.getOutputStream();
-		Assert.assertNotNull(outputStream);
-		outputStream.close();
-	}
-
 	private void addObjectSummary(ObjectListing objectListing, String path) {
 		S3ObjectSummary summary = new S3ObjectSummary();
 		summary.setKey(path);
 		objectListing.getObjectSummaries().add(summary);
 	}
 	
-
-
 }

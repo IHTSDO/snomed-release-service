@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.service.PublishService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,11 +26,14 @@ public class ProductController {
 
 	@Autowired
 	private ProductService productService;
+	
+	@Autowired
+	private PublishService publishService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PRODUCT_LINKS = {"builds"};
+	private static final String[] PRODUCT_LINKS = {"builds", "published"};
 
 	@RequestMapping
 	@ResponseBody
@@ -61,8 +67,22 @@ public class ProductController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
+
+	}
+	
+	@RequestMapping("/{productBusinessKey}/published")
+	@ResponseBody
+	public Map getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+
+		User authenticatedUser = SecurityHelper.getSubject();  
+		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+		List<String> publishedPackages = publishService.getPublishedPackages(product);
+		Map<String, Object> jsonStructure = new HashMap<>();
+		jsonStructure.put("publishedPackages", publishedPackages);
+		boolean currentResource = true;
+		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request);
 
 	}
 

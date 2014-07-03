@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,13 +50,22 @@ public class PackageController {
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
-	public Map getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(aPackage, currentResource, request, PACKAGE_LINKS);
+	}
+
+	@RequestMapping(value = "/{packageBusinessKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	public Map<String, Object> updatePackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) {
+		User authenticatedUser = SecurityHelper.getSubject();
+		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json, authenticatedUser);
+		return hypermediaGenerator.getEntityHypermedia(aPackage, true, request, PACKAGE_LINKS);
 	}
 
 }

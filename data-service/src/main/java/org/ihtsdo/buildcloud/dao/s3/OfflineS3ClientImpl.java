@@ -4,7 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
 
-import org.apache.commons.io.FileUtils;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -48,7 +48,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 			return listing;
 		}
 		
-		Collection<File> list = FileUtils.listFiles(searchStartDir, null, true); //No filter files, yes search recursively
+		Collection<File> list = org.apache.commons.io.FileUtils.listFiles(searchStartDir, null, true); //No filter files, yes search recursively
 		
 		if (list != null) {
 			for (File file : list) {
@@ -94,6 +94,13 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	@Override
 	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException, AmazonServiceException {
 		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
+		
+		//For ease of testing, if we're writing the final results (eg a zip file) we'll output the full path to STDOUT
+		String outputFilePath = outFile.getAbsolutePath();
+		if (FileUtils.isZip(outputFilePath)) {
+			LOGGER.info("Writing out local results file to {}", outputFilePath);
+		}
+		
 		if (inputStream != null) {
 			try {
 				//As per the online implmentation, if the file is already there we will overwrite it.
@@ -154,7 +161,11 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
 		File file = getFile(bucketName, key, false);
-		file.delete();
+		LOGGER.debug("Deleting file {}.", file.getAbsoluteFile());
+		boolean deletedOK = file.delete();
+		if (!deletedOK) {
+			throw new AmazonServiceException ("Failed to delete " + file.getAbsoluteFile());
+		}
 	}
 
 	@Override

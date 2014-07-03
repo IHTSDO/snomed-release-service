@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
+
 import java.util.List;
 
 @Entity
@@ -27,6 +28,12 @@ public class Package {
 	@Transient
 	@JsonIgnore
 	private List<String> inputFiles;
+
+	private String readmeHeader;
+	
+	private boolean firstTimeRelease = false;
+
+	private String previousPublishedPackage;
 
 	public Package() {
 
@@ -74,4 +81,27 @@ public class Package {
 		this.inputFiles = inputFiles;
 	}
 
+	public String getReadmeHeader() {
+		return readmeHeader;
+	}
+
+	public void setReadmeHeader(String readmeHeader) {
+		this.readmeHeader = readmeHeader;
+	}
+	
+	public boolean isFirstTimeRelease() {
+		return firstTimeRelease;
+	}
+
+	public void setFirstTimeRelease(boolean firstTimeRelease) {
+		this.firstTimeRelease = firstTimeRelease;
+	}
+
+	public void setPreviousPublishedPackage(String previousPublishedFileName) {
+		previousPublishedPackage = previousPublishedFileName;
+	}
+
+	public String getPreviousPublishedPackage() {
+		return previousPublishedPackage;
+	}
 }
