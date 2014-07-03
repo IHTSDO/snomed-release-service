@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class UserController {
 
 	@RequestMapping
 	@ResponseBody
-	public Map getCurrentUser(HttpServletRequest request) {
+	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		HashMap<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
 		boolean currentResource = false;

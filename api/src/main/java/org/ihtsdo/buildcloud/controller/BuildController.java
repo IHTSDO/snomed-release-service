@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class BuildController {
 
 	@RequestMapping("/{buildCompositeKey}")
 	@ResponseBody
-	public Map getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+	public Map<String, Object> getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.find(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);

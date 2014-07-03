@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class RootController {
 
 	@RequestMapping
 	@ResponseBody
-	public Map getRoot(HttpServletRequest request) {
+	public Map<String, Object> getRoot(HttpServletRequest request) {
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(new HashMap<String, String>(), currentResource, request, ROOT_LINK);
 	}

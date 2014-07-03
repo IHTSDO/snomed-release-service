@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -45,7 +46,7 @@ public class ProductController {
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createProduct(@PathVariable String releaseCenterBusinessKey,
+	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws IOException {
@@ -57,12 +58,12 @@ public class ProductController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
 
-		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
-	public Map getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
@@ -74,7 +75,7 @@ public class ProductController {
 	
 	@RequestMapping("/{productBusinessKey}/published")
 	@ResponseBody
-	public Map getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
 
 		User authenticatedUser = SecurityHelper.getSubject();  
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
