@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.StreamTestUtils;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.After;
 import org.junit.Before;

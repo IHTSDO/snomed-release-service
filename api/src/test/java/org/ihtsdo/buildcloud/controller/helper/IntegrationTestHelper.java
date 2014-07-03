@@ -5,6 +5,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PackageService;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -307,6 +309,26 @@ public class IntegrationTestHelper {
 		}
 		return tempFile.toFile();
 	}
+
+	public void assertZipContents(String expectedOutputPackageName, ZipFile zipFile, Class classpathResourceOwner) throws IOException {
+		Enumeration<? extends ZipEntry> entries = zipFile.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry zipEntry = entries.nextElement();
+			if (!zipEntry.isDirectory()) {
+				String zipEntryName = getFileName(zipEntry);
+				StreamTestUtils.assertStreamsEqualLineByLine(
+						zipEntryName,
+						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
+						zipFile.getInputStream(zipEntry));
+			}
+		}
+	}
+
+	private String getFileName(ZipEntry zipEntry) {
+		String name = zipEntry.getName();
+		return name.substring(name.lastIndexOf("/") + 1);
+	}
+
 
 	public String getBasicDigestHeaderValue() {
 		return basicDigestHeaderValue;

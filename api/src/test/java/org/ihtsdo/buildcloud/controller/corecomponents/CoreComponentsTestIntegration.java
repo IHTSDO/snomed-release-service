@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.ServletException;
+import java.util.zip.ZipFile;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
@@ -55,7 +56,9 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_20140131.txt";
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, 11, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 11, expectedZipFilename, expectedZipEntries, getClass());
+
+		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}
 
 	@Override
