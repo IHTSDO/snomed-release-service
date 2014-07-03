@@ -73,7 +73,7 @@ public class ExecutionConfigurationJsonGenerator {
 		return config;
 	}
 
-	private List<Map> getPackagesConfig(List<Package> packages) {
+	private List<Map> getPackagesConfig(SortedSet<Package> packages) {
 		List<Map> configList = new ArrayList<>();
 		for (Package aPackage : packages) {
 			configList.add(getConfig(aPackage));
