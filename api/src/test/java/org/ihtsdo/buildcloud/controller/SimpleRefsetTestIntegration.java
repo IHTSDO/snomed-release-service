@@ -19,7 +19,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-//		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestBuildStructure();
 
 
 		// Perform first time release
