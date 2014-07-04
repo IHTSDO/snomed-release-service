@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import com.jayway.jsonpath.JsonPath;
+
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.service.BuildService;
@@ -9,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,7 +28,6 @@ import java.util.zip.ZipFile;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -96,6 +97,17 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk());
+	}
+	
+	public void publishFile(String publishFileName, Class classpathResourceOwner, HttpStatus expectedStatus) throws Exception {
+		MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
+		mockMvc.perform(
+				fileUpload(PRODUCT_URL + "/published")
+						.file(publishFile)
+						.header("Authorization", getBasicDigestHeaderValue())
+		)
+				.andDo(print())
+				.andExpect(status().is(expectedStatus.value()));
 	}
 
 	public void deletePreviousTxtInputFiles() throws Exception {
