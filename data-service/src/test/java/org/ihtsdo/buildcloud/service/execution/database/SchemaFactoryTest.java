@@ -20,7 +20,8 @@ public class SchemaFactoryTest {
 		String filename = "der2_Refset_SimpleDelta_INT_20140831.txt";
 		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId";
 
-		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
 		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_Refset_SimpleDelta_INT_20140831", schemaBean.getName());
@@ -34,7 +35,8 @@ public class SchemaFactoryTest {
 		String filename = "der2_cRefset_AttributeValueDelta_INT_20140831.txt";
 		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\tvalueId";
 
-		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
 		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_cRefset_AttributeValueDelta_INT_20140831", schemaBean.getName());
@@ -53,7 +55,8 @@ public class SchemaFactoryTest {
 		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\t" +
 				"mapGroup\tmapPriority\tmapRule\tmapAdvice\tmapTarget\tcorrelationId\tmapCategoryId";
 
-		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, headerLine);
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
 		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
 		Assert.assertEquals("der2_iisssccRefset_ExtendedMapDelta_INT_20140131", schemaBean.getName());
@@ -88,7 +91,7 @@ public class SchemaFactoryTest {
 	public void testCreateSchemaBeanConcept() throws Exception {
 		String filename = "sct2_Concept_Delta_INT_20140131.txt";
 
-		TableSchema schemaBean = schemaFactory.createSchemaBean(filename, null);
+		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
 
 		Assert.assertEquals(TableType.CONCEPT, schemaBean.getTableType());
 		Assert.assertEquals("sct2_Concept_Delta_INT_20140131", schemaBean.getName());
@@ -114,10 +117,8 @@ public class SchemaFactoryTest {
 	@Test(expected = FileRecognitionException.class)
 	public void testCreateSchemaBeanBadNameRefset() throws Exception {
 		String filename = "der2_aRefset_SimpleDelta_INT_20140831.txt";
-		String headerLine = "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId\tsomething";
 
-		schemaFactory.createSchemaBean(filename, headerLine);
-
+		schemaFactory.createSchemaBean(filename);
 	}
 
 	private void assertFirstSixSimpleRefsetFields(List<TableSchema.Field> fields) {

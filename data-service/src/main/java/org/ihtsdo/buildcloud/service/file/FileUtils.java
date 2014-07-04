@@ -149,4 +149,8 @@ public class FileUtils {
 		return hasExtension (fileName, ZIP_EXTENSION);
 	}
 
+	public static String getFilenameFromPath(String filePath) {
+		return filePath.substring(filePath.lastIndexOf("/") + 1);
+	}
+
 }

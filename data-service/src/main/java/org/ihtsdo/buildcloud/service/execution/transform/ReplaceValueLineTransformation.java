@@ -15,4 +15,9 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 		columnValues[column] = value;
 	}
 
+	@Override
+	public int getColumnIndex() {
+		return column;
+	}
+
 }

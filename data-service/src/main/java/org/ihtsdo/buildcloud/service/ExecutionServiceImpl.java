@@ -18,8 +18,12 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
+import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.slf4j.Logger;
@@ -54,6 +58,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
+
+	@Autowired
+	private SchemaFactory schemaFactory;
 
 	@Autowired
 	private TransformationService transformationService;
@@ -191,11 +198,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 			manifestStream.close();
 		}
 
-		transformationService.transformFiles(execution, pkg);
+		Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
+
+		transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
+		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
 		generator.generateReleaseFiles();
 
 		// Generate readme file
@@ -209,6 +218,17 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation.", e);
 		}
 
+	}
+
+	private Map<String, TableSchema> getInputFileSchemaMap(Execution execution, Package pkg) throws FileRecognitionException {
+		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, pkg.getBusinessKey());
+		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
+		for (String executionInputFilePath : executionInputFilePaths) {
+			String filename = FileUtils.getFilenameFromPath(executionInputFilePath);
+			TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
+		}
+		return inputFileSchemaMap;
 	}
 
 	@Override
