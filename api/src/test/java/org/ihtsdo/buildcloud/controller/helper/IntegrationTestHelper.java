@@ -320,7 +320,7 @@ public class IntegrationTestHelper {
 			ZipEntry zipEntry = entries.nextElement();
 			if (!zipEntry.isDirectory()) {
 				String zipEntryName = getFileName(zipEntry);
-				StreamTestUtils.assertStreamsEqualLineByLine(
+				StreamTestUtils.assertStreamsEqualLineByLineUsePatterns(
 						zipEntryName,
 						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
 						zipFile.getInputStream(zipEntry));

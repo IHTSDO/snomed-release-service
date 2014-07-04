@@ -13,20 +13,28 @@ public class TransformationFactory {
 	private final StreamingFileTransformation relationshipFileTransformation;
 	private final StreamingFileTransformation identifierFileTransformation;
 	private final StreamingFileTransformation preProcessConceptFileTransformation;
+	private final StreamingFileTransformation preProcessDescriptionFileTransformation;
 
 	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
 
 		preProcessConceptFileTransformation = buildPreProcessConceptFileTransformation();
+		preProcessDescriptionFileTransformation = buildPreProcessDescriptionFileTransformation();
 		conceptTransformation = buildConceptFileTransformation();
 		descriptionTransformation = buildDescriptionFileTransformation();
 		relationshipFileTransformation = buildRelationshipFileTransformation();
 		identifierFileTransformation = buildIdentifierFileTransformation();
 	}
 
-	public StreamingFileTransformation getPreProcessConceptFileTransformation() {
-		return preProcessConceptFileTransformation;
+	public StreamingFileTransformation getPreProcessFileTransformation(TableType tableType) {
+		if (tableType == TableType.CONCEPT) {
+			return preProcessConceptFileTransformation;
+		} else if (tableType == TableType.DESCRIPTION) {
+			return preProcessDescriptionFileTransformation;
+		} else {
+			return null;
+		}
 	}
 
 	public StreamingFileTransformation getSteamingFileTransformation(TableSchema tableSchema) throws FileRecognitionException {
@@ -63,7 +71,13 @@ public class TransformationFactory {
 		return new StreamingFileTransformation()
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+	}
 
+	private StreamingFileTransformation buildPreProcessDescriptionFileTransformation() {
+		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
+		return new StreamingFileTransformation()
+				// id
+				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory));
 	}
 
 	private StreamingFileTransformation buildConceptFileTransformation() {
@@ -81,8 +95,7 @@ public class TransformationFactory {
 	private StreamingFileTransformation buildDescriptionFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_des
 		return new StreamingFileTransformation()
-				// id
-				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
+				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
 				// moduleId
