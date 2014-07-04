@@ -99,11 +99,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	private void runPreconditionChecks(Execution execution) {
 
-		PreconditionManager mgr = new PreconditionManager(execution);
-		mgr.add(new CheckFirstReleaseFlag());
+		PreconditionManager mgr = PreconditionManager.build(execution)
+										.add(new CheckFirstReleaseFlag());
 		Map<String, Object> preConditionReport = mgr.runPreconditionChecks();
 		execution.setPreConditionReport(preConditionReport);
-		
 	}
 
 	@Override

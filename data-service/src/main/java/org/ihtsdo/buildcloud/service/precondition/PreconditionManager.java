@@ -14,14 +14,19 @@ public class PreconditionManager {
 	
 	private Execution execution;
 	
-	public PreconditionManager(Execution execution) {
+	private PreconditionManager(Execution execution) {
 		preconditionChecksToRun = new ArrayList<PreconditionCheck>();
 		this.execution = execution;
 	}
 	
-	public void add (PreconditionCheck pcc) {
+	public static PreconditionManager build(Execution execution){
+		return new PreconditionManager(execution);
+	}
+	
+	public PreconditionManager add (PreconditionCheck pcc) {
 		pcc.setExecution(execution);
-		preconditionChecksToRun.add(pcc);
+		this.preconditionChecksToRun.add(pcc);
+		return this;
 	}
 	
 	/**

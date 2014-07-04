@@ -38,8 +38,8 @@ public class PreconditionManagerTest {
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, build);
-		mgr = new PreconditionManager(execution);
-		mgr.add(new CheckFirstReleaseFlag());
+		mgr = PreconditionManager.build(execution)
+					.add(new CheckFirstReleaseFlag());
 	}
 
 	@Test
