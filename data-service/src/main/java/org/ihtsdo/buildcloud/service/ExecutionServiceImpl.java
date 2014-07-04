@@ -19,6 +19,8 @@ import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
+import org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +81,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			// Copy all files from Build input and manifest directory to Execution input and manifest directory
 			dao.copyAll(build, execution);
+			
+			//Perform Pre-condition testing (loops through each package)
+			runPreconditionChecks(execution);
 
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
@@ -90,6 +95,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} else {
 			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
 		}
+	}
+
+	private void runPreconditionChecks(Execution execution) {
+
+		PreconditionManager mgr = new PreconditionManager(execution);
+		mgr.add(new CheckFirstReleaseFlag());
+		Map<String, Object> preConditionReport = mgr.runPreconditionChecks();
+		execution.setPreConditionReport(preConditionReport);
+		
 	}
 
 	@Override
