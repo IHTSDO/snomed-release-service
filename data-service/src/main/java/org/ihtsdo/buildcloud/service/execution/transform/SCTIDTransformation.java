@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
-
 import java.rmi.RemoteException;
+
+import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
 
 public class SCTIDTransformation implements LineTransformation {
 
@@ -21,7 +21,10 @@ public class SCTIDTransformation implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
-		if (columnValues[componentIdCol].contains("-")) {
+	    if( columnValues == null){
+	    	    throw new TransformationException("Column values are null");
+	    	}
+		if (columnValues.length > componentIdCol && columnValues[componentIdCol].contains("-")) {
 			// Value is temp UUID from authoring tool.
 			// Replace with SCTID.
 			try {

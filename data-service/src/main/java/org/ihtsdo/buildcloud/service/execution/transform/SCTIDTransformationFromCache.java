@@ -13,7 +13,10 @@ public class SCTIDTransformationFromCache implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
-		if (columnValues[sctIdCol].contains("-")) {
+	    	if( columnValues == null){
+	    	    throw new TransformationException("Column values are null");
+	    	}
+	    	if (columnValues.length > sctIdCol && columnValues[sctIdCol].contains("-")) {
 			// Value is temp UUID from authoring tool.
 			// Replace with SCTID.
 			String uuidString = columnValues[sctIdCol];

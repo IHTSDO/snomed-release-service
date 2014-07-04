@@ -1,5 +1,12 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -14,13 +21,6 @@ import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class TransformationService {
 
@@ -63,7 +63,6 @@ public class TransformationService {
 
 					// Apply transformations
 					steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
-
 				} catch (TransformationException | IOException e) {
 					// Catch blocks just log and let the next file get processed.
 					LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);

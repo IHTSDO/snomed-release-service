@@ -12,7 +12,9 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) {
+	    if(columnValues != null && columnValues.length > column){
 		columnValues[column] = value;
+	    }
 	}
 
 	@Override
