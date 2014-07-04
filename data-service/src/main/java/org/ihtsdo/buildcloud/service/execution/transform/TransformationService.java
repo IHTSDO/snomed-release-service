@@ -53,12 +53,13 @@ public class TransformationService {
 		// Process just the id column of any Concept files.
 		for (String relativeFilePath : executionInputFilePaths) {
 			TableSchema tableSchema = inputFileSchemaMap.get(relativeFilePath);
-			if (tableSchema != null && tableSchema.getTableType() == TableType.CONCEPT) {
+			TableType tableType = tableSchema.getTableType();
+			if (tableSchema != null && isPreProcessType(tableType)) {
 				try {
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
 
-					StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessConceptFileTransformation();
+					StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(tableType);
 
 					// Apply transformations
 					steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
@@ -83,7 +84,7 @@ public class TransformationService {
 
 				try {
 					InputStream executionInputFileInputStream;
-					if (tableSchema.getTableType() == TableType.CONCEPT) {
+					if (isPreProcessType(tableSchema.getTableType())) {
 						executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, relativeFilePath);
 					} else {
 						executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
@@ -114,6 +115,10 @@ public class TransformationService {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 			}
 		}
+	}
+
+	private boolean isPreProcessType(TableType tableType) {
+		return tableType == TableType.CONCEPT || tableType == TableType.DESCRIPTION;
 	}
 
 	/**

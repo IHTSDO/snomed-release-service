@@ -19,7 +19,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 
 	@Test
-	public void testMultipleReleases() throws Exception {
+	public void testFirstRelease() throws Exception {
 		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestBuildStructure();
 
@@ -30,6 +30,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.uploadDeltaInputFile("sct2_Concept_Delta_INT_20140131.txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("sct2_Description_Delta-en_INT_20140131.txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("sct2_StatedRelationship_Delta_INT_20140131.txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("der2_cRefset_LanguageDelta-en_INT_20140131.txt", getClass());
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first core release.\\nTable of contents:\\n");
 		String executionURL1 = integrationTestHelper.createExecution();
@@ -42,21 +43,30 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Language/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Terminology/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Terminology/sct2_Concept_Full_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Language/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Terminology/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Language/\n" +
+				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Language/der2_cRefset_LanguageDelta-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_20140131.txt";
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 11, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 14, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}
