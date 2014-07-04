@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,8 +10,13 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DatabasePopulator {
 
+	private static final String HYPHEN = "-";
 	private final Connection connection;
 	private final H2DataTypeConverter dataTypeConverter;
 	private final SchemaFactory schemaFactory;
@@ -35,6 +36,9 @@ public class DatabasePopulator {
 			String headerLine = reader.readLine();
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
+//			String rf2FileName = rf2FilePath.substring(rf2FilePath.lastIndexOf("/") + 1);
+//			//replace any hyphen character to empty space for example sct2_Description_Full-en_INT_20140131
+//			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2FileName.replace(HYPHEN, ""), headerLine);
 
 			// Create Table
 			String tableName = tableSchema.getName();

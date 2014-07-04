@@ -1,14 +1,14 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.buildcloud.test.StreamTestUtils;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.sql.Connection;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ReleaseFileExporterTest {
 
@@ -24,6 +24,9 @@ public class ReleaseFileExporterTest {
 	private static final String CURRENT_EXTENDED_MAP_REFSET_DELTA = "der2_iisssccRefset_ExtendedMapDelta_INT_20140731.txt";
 	private static final String EXPECTED_EXTENDED_MAP_SNAPSHOT_INT = "expected-der2_iisssccRefset_ExtendedMapSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_EXTENDED_MAP_FULL_20140731 = "expected-der2_iisssccRefset_ExtendedMapFull_INT_20140731.txt";
+	private static final String PREVIOUS_CONCEPT_FULL = "sct2_Concept_Full_INT_20140131.txt";
+	private static final String PREVIOUS_DESCRIPTION_FULL = "sct2_Description_Full-en_INT_20140131.txt";
+	private static final String PREVIOUS_STATEDRELATIONSHIP_FULL = "sct2_StatedRelationship_Full_INT_20140131.txt";
 	
 	private Connection testConnection;
 	private TableSchema tableSchema;
@@ -99,7 +102,7 @@ public class ReleaseFileExporterTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_SNAPSHOT_INT), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	}
-
+	
 	@After
 	public void tearDown() throws Exception {
 		testConnection.close();
