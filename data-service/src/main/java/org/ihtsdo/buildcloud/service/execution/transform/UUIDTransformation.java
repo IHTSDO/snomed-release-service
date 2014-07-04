@@ -19,4 +19,9 @@ public class UUIDTransformation implements LineTransformation {
 		}
 	}
 
+	@Override
+	public int getColumnIndex() {
+		return column;
+	}
+
 }

@@ -6,7 +6,6 @@ public class SCTIDTransformationFromCache implements LineTransformation {
 
 	private final int sctIdCol;
 
-//	public SCTIDTransformationFromCache(int sctIdCol, CachedSctidFactory sctidFactory) {
 	public SCTIDTransformationFromCache(int sctIdCol, CachedSctidFactory sctidFactory) {
 		this.sctidFactory = sctidFactory;
 		this.sctIdCol = sctIdCol;
@@ -25,6 +24,11 @@ public class SCTIDTransformationFromCache implements LineTransformation {
 				throw new TransformationException("SCTID does not exist in cache for UUID '" + uuidString + "'");
 			}
 		}
+	}
+
+	@Override
+	public int getColumnIndex() {
+		return sctIdCol;
 	}
 
 }

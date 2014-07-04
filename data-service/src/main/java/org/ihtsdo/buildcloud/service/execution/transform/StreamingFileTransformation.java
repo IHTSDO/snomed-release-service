@@ -72,4 +72,8 @@ public class StreamingFileTransformation {
 		return this;
 	}
 
+	public List<LineTransformation> getLineTransformations() {
+		return lineTransformations;
+	}
+
 }

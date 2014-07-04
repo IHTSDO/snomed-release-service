@@ -37,4 +37,9 @@ public class SCTIDTransformation implements LineTransformation {
 		}
 	}
 
+	@Override
+	public int getColumnIndex() {
+		return componentIdCol;
+	}
+
 }

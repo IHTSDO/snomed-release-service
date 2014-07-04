@@ -32,7 +32,7 @@ public class TableSchema {
 		return fields;
 	}
 
-	static class Field {
+	public static class Field {
 
 		private String name;
 		private DataType type;
@@ -44,6 +44,10 @@ public class TableSchema {
 
 		public String getName() {
 			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 
 		public DataType getType() {
