@@ -1,10 +1,14 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +34,7 @@ public class StreamingFileTransformationTest {
 	}
 
 	@Test
-	public void testStreamsClosed() throws IOException {
+	public void testStreamsClosed() throws Exception {
 		fileTransformation.addLineTransformation(new ReplaceValueLineTransformation(1, "03062014"));
 		FileInputStream inputStream = new FileInputStream(rf2File);
 		FileOutputStream outputStream = new FileOutputStream(tempOutputFile);
@@ -54,7 +58,7 @@ public class StreamingFileTransformationTest {
 	}
 
 	@Test
-	public void testReplaceSingleColumnValue() throws IOException {
+	public void testReplaceSingleColumnValue() throws Exception {
 		fileTransformation.addLineTransformation(new ReplaceValueLineTransformation(1, "03062014"));
 
 		// Assert preconditions
@@ -74,7 +78,7 @@ public class StreamingFileTransformationTest {
 	}
 
 	@Test
-	public void testReplaceManyColumnValues() throws IOException {
+	public void testReplaceManyColumnValues() throws Exception {
 		fileTransformation.addLineTransformation(new ReplaceValueLineTransformation(1, "03062014"));
 		fileTransformation.addLineTransformation(new ReplaceValueLineTransformation(2, "0"));
 
@@ -95,7 +99,7 @@ public class StreamingFileTransformationTest {
 	}
 	
 	@Test
-	public void testReplaceUUID() throws IOException {
+	public void testReplaceUUID() throws Exception {
 		fileTransformation.addLineTransformation(new UUIDTransformation(0));
 
 		// Assert preconditions

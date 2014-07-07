@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.slf4j.Logger;
@@ -65,11 +66,11 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws Exception{
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException{
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		
 		if (product == null) {
-			throw new Exception ("Unable to find product with path: " + releaseCenterBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product with path: " + releaseCenterBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
 		}
 		
 		Build build = new Build(name);

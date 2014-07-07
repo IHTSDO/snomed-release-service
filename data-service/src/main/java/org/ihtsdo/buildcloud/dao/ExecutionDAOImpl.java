@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
+import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -35,7 +36,6 @@ import java.util.concurrent.Future;
 public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private S3Client s3Client;
-	
 	private final ExecutorService executorService;
 
 	@Autowired
@@ -43,18 +43,20 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Autowired
 	private String executionBucketName;
-	
+
 	@Autowired
 	private String publishedBucketName;
 
 	private final FileHelper executionFileHelper;
-	
+
 	private final FileHelper mavenFileHelper;
-	
+
 	@Autowired
 	private InputFileDAO inputFileDAO;
 
 	private final ObjectMapper objectMapper;
+
+	private final File tempDir;
 
 	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
@@ -69,6 +71,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		mavenFileHelper = new FileHelper(mavenBucketName, s3Client, s3ClientHelper);
 		this.s3Client = s3Client;
 		this.s3ClientHelper = s3ClientHelper;
+		this.tempDir = Files.createTempDir();
 	}
 
 	@Override
@@ -224,6 +227,13 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
+	public InputStream getLocalInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException {
+		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		File localFile = getLocalFile(transformedFilePath);
+		return new FileInputStream(localFile);
+	}
+
+	@Override
 	public AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
 		return getFileAsOutputStream(executionOutputFilePath);
@@ -293,11 +303,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
 		return getFileAsOutputStream(transformedFilePath);
 	}
-	
+
+	@Override
+	public OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException {
+		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		File localFile = getLocalFile(transformedFilePath);
+		localFile.getParentFile().mkdirs();
+		return new FileOutputStream(localFile);
+	}
+
 	@Override
 	public List<String> listTransformedFilePaths(Execution execution,
 			String packageId) {
-		
+
 		String transformedFilesPath = pathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
 		return executionFileHelper.listFiles(transformedFilesPath);
 	}
@@ -324,6 +342,10 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 		String previousPublishedPackagePath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
 		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());
+	}
+
+	private File getLocalFile(String transformedFilePath) throws FileNotFoundException {
+		return new File(tempDir, transformedFilePath);
 	}
 
 	// Just for testing

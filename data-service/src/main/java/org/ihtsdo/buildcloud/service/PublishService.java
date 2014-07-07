@@ -21,4 +21,5 @@ public interface PublishService {
 	void publishPackage(String buildCompositeKey, String packageBusinessKey,
 			String productBusinessKey, InputStream inputStream, String originalFilename, long size,
 			User subject) throws ResourceNotFoundException, BadRequestException;
+	boolean exists(Product product, String previouslyPublishedPackageName);
 }

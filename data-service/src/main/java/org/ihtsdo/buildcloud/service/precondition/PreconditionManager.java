@@ -12,7 +12,8 @@ public class PreconditionManager {
 	
 	private List <PreconditionCheck> preconditionChecksToRun;
 	
-	private Execution execution;
+	//Package level modifier as the unit tests will need to change the execution at runtime
+	Execution execution;
 	
 	private PreconditionManager(Execution execution) {
 		preconditionChecksToRun = new ArrayList<PreconditionCheck>();
@@ -24,7 +25,7 @@ public class PreconditionManager {
 	}
 	
 	public PreconditionManager add (PreconditionCheck pcc) {
-		pcc.setExecution(execution);
+		pcc.setManager(this);
 		this.preconditionChecksToRun.add(pcc);
 		return this;
 	}

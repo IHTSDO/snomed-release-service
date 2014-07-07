@@ -14,6 +14,8 @@ public interface InputFileService {
 
 	InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
 
+	InputStream getManifestStream(Package pkg);
+
 	void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser);
 
 	InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser);

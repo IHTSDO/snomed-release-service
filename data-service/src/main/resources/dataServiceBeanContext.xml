@@ -28,6 +28,7 @@
 		<property name="location" value="+{dataServicePropertiesPath}" />
 	</bean>
 
+	<bean class="org.ihtsdo.buildcloud.dao.DAOFactory"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
@@ -133,5 +134,24 @@
 	<bean class="org.springframework.security.crypto.keygen.KeyGenerators" factory-method="string"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
+
+	<bean class="org.ihtsdo.buildcloud.service.execution.database.SchemaFactory"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.execution.transform.TransformationService"/>
+
+	<bean factory-bean="idAssignmentBIFactory" factory-method="getInstance">
+		<constructor-arg value="${offlineMode}" />
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIFactory" name="idAssignmentBIFactory">
+		<constructor-arg>
+			<bean class="org.ihtsdo.idgeneration.IdAssignmentImpl" >
+				<constructor-arg value="${idGenerator.url}" />
+			</bean>
+		</constructor-arg>
+		<constructor-arg>
+			<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl"/>
+		</constructor-arg>
+	</bean>
 
 </beans>

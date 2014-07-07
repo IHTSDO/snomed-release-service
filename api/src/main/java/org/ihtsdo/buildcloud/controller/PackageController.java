@@ -6,12 +6,16 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +41,7 @@ public class PackageController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException {
+	public Map<String, Object> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException, EntityAlreadyExistsException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		String name = json.get("name");
 		if (name != null) {
@@ -62,7 +66,7 @@ public class PackageController {
 	@RequestMapping(value = "/{packageBusinessKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
 	public Map<String, Object> updatePackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) {
+							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(aPackage, true, request, PACKAGE_LINKS);

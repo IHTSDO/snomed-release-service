@@ -193,7 +193,7 @@ fi
 
 echo "Create Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execution-response.txt | grep HTTP | ensureCorrectResponse
-executionId=`cat tmp/execution-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
+executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
@@ -234,4 +234,8 @@ cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | s
 
 echo
 echo "Process Complete in $(getElapsedTime)"
+if ! ${autoPublish} 
+then
+	echo "Run again with the -a flag to publish the packages"
+fi
 echo
