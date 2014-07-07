@@ -1,21 +1,28 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.util.UUID;
 
 /** Replace id in RefSet files with UUID generated.
  */
 public class UUIDTransformation implements LineTransformation {
 
 	public int column;
+	private final UUIDGenerator uuidGenerator;
+	
+	public UUIDTransformation(int column, UUIDGenerator uuidGenerator) {
+		this.column = column;
+		this.uuidGenerator = uuidGenerator;
+	}
 
 	public UUIDTransformation(int column) {
-		this.column = column;
+	    this.column = column;
+	    this.uuidGenerator = new RandomUUIDGenerator();
 	}
 
 	@Override
 	public void transformLine(String[] columnValues) {
-		if (columnValues[column].isEmpty()) {
-			columnValues[column] = UUID.randomUUID().toString();
+		if ( columnValues != null && columnValues.length > column 
+			&& columnValues[column].isEmpty()) {
+			columnValues[column] = uuidGenerator.uuid();
 		}
 	}
 
