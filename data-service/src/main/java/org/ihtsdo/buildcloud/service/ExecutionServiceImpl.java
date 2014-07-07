@@ -55,6 +55,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
+	
+	@Autowired
+	private InputFileService inputFileService;
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
