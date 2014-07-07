@@ -1,8 +1,12 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-
-import org.ihtsdo.buildcloud.service.execution.database.*;
-
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.execution.database.DataType;
+import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
+import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
+import org.ihtsdo.buildcloud.service.execution.database.TableType;
 
 public class TransformationFactory {
 
@@ -14,8 +18,9 @@ public class TransformationFactory {
 	private final StreamingFileTransformation identifierFileTransformation;
 	private final StreamingFileTransformation preProcessConceptFileTransformation;
 	private final StreamingFileTransformation preProcessDescriptionFileTransformation;
+	private final UUIDGenerator uuidGenerator;
 
-	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory) {
+	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory, UUIDGenerator uuidGeneratorX) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
 
@@ -25,6 +30,7 @@ public class TransformationFactory {
 		descriptionTransformation = buildDescriptionFileTransformation();
 		relationshipFileTransformation = buildRelationshipFileTransformation();
 		identifierFileTransformation = buildIdentifierFileTransformation();
+		uuidGenerator = uuidGeneratorX;
 	}
 
 	public StreamingFileTransformation getPreProcessFileTransformation(TableType tableType) {
@@ -163,7 +169,7 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2rfs_spec_simple_struct
 		return new StreamingFileTransformation()
 				// id
-				.addLineTransformation(new UUIDTransformation(0))
+				.addLineTransformation(new UUIDTransformation(0, uuidGenerator))
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
 				// moduleId

@@ -93,5 +93,4 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
 		integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
 	}
-
 }

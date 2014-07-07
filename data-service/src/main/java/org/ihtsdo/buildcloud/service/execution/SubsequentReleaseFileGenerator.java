@@ -1,17 +1,23 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.service.execution.database.*;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
-
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.execution.database.DatabaseManager;
+import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulator;
+import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.service.execution.database.ReleaseFileExporter;
+import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
+import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Release file generator for subsequent release.
@@ -19,6 +25,7 @@ import java.util.Map;
 public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 	
 	private final Map<String, TableSchema> inputFileSchemaMap;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SubsequentReleaseFileGenerator.class);
 
 	/**
 	 * @param execution an execution.
@@ -38,8 +45,8 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 			generateReleaseFile(thisFile);
 		}
 	}
-	
-	public void generateReleaseFile(String transformedDeltaDataFile) {
+
+	private final void generateReleaseFile(String transformedDeltaDataFile) {
 		// get the current transformed delta file
 		generateDeltaFile(transformedDeltaDataFile, false);
 
