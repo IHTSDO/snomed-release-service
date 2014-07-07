@@ -151,7 +151,7 @@ public class ExecutionDAOImplTest {
 		S3Client onlineS3Client = factory.getClient(offlineMode);
 		executionDAO.setS3Client(onlineS3Client);
 		
-		Package pkg = execution.getBuild().getPackages().get(0);
+		Package pkg = execution.getBuild().getPackages().iterator().next();
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
 		boolean calcMD5 = true;
 		String md5Received = executionDAO.putOutputFile(execution, pkg, new File(testFile), "", calcMD5);

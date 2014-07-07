@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
 import java.util.UUID;
 
@@ -17,6 +17,11 @@ public class UUIDTransformation implements LineTransformation {
 		if (columnValues[column].isEmpty()) {
 			columnValues[column] = UUID.randomUUID().toString();
 		}
+	}
+
+	@Override
+	public int getColumnIndex() {
+		return column;
 	}
 
 }

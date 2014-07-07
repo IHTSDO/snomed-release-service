@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,13 +50,16 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	}
 
 	@Override
-	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) {
+	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) throws EntityAlreadyExistsException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Build build = buildDAO.find(buildId, authenticatedUser);
 		Package pkg = new Package(name);
-		build.addPackage(pkg);
-		packageDAO.save(pkg);
-		return pkg;
+		if(build.addPackage(pkg)) {
+			packageDAO.save(pkg);
+			return pkg;
+		} else {
+			throw new EntityAlreadyExistsException();
+		}
 	}
 
 	@Override
