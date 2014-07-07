@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class ProductBuildController {
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createBuild(@PathVariable String releaseCenterBusinessKey,
+	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
@@ -52,7 +53,7 @@ public class ProductBuildController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS);
 
-		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
 	}		
 
 }

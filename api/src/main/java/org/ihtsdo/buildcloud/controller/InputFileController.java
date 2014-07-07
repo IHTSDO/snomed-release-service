@@ -39,12 +39,12 @@ public class InputFileController {
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+	public ResponseEntity<Void> uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 											 @RequestParam(value = "file") MultipartFile file,
 											 HttpServletResponse response) throws IOException {
 
 		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<Void>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/manifest")
@@ -80,11 +80,11 @@ public class InputFileController {
 
 	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity uploadInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
+	public ResponseEntity<Void> uploadInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 											 @RequestParam(value = "file") MultipartFile file) throws IOException {
 
 		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<Void>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/inputfiles")
@@ -113,7 +113,7 @@ public class InputFileController {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			}
 		} catch (IOException e) {
-			LOGGER.error("Failed to stream manifest file from storage.", e);
+			LOGGER.error("Failed to stream input file from storage.", e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}

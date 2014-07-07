@@ -19,6 +19,8 @@ import org.ihtsdo.buildcloud.service.execution.*;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
+import org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +81,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			// Copy all files from Build input and manifest directory to Execution input and manifest directory
 			dao.copyAll(build, execution);
+			
+			//Perform Pre-condition testing (loops through each package)
+			runPreconditionChecks(execution);
 
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
@@ -90,6 +95,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} else {
 			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
 		}
+	}
+
+	private void runPreconditionChecks(Execution execution) {
+
+		PreconditionManager mgr = PreconditionManager.build(execution)
+										.add(new CheckFirstReleaseFlag());
+		Map<String, Object> preConditionReport = mgr.runPreconditionChecks();
+		execution.setPreConditionReport(preConditionReport);
 	}
 
 	@Override
@@ -188,12 +201,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 			manifestStream.close();
 		}
 		
-		transformFiles(execution, pkg);
-		
-		//Convert Delta files to Full, Snapshot and delta release files
-		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
-		generator.generateReleaseFiles();
+		transformFilesOrCopyFiles(execution, pkg);
+
+		if (!pkg.isJustPackage()) {
+			//Convert Delta files to Full, Snapshot and delta release files
+			ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
+			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, dao);
+			generator.generateReleaseFiles();
+		}
 
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
@@ -213,7 +228,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	 * @param execution
 	 * @throws IOException
 	 */
-	private void transformFiles(Execution execution, Package pkg) {
+	private void transformFilesOrCopyFiles(Execution execution, Package pkg) {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
 
 		// Add streaming transformation of effectiveDate
@@ -230,7 +245,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		for (String relativeFilePath : executionInputFilePaths) {
 
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+			if (!pkg.isJustPackage() && relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
 					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);

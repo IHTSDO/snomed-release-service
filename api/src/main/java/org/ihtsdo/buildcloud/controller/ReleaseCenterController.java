@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class ReleaseCenterController {
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
+	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws IOException {
 		String name = json.get("name");
 		String shortName = json.get("shortName");
@@ -50,12 +51,12 @@ public class ReleaseCenterController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 
-		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
-	public Map updateReleaseCenter(@PathVariable String releaseCenterBusinessKey,
+	public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterBusinessKey,
 												   @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws IOException {
 
@@ -71,7 +72,7 @@ public class ReleaseCenterController {
 
 	@RequestMapping("/{releaseCenterBusinessKey}")
 	@ResponseBody
-	public Map getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
