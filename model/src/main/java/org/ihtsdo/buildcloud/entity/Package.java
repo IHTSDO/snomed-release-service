@@ -33,6 +33,8 @@ public class Package {
 	
 	private boolean firstTimeRelease = false;
 
+	private boolean justPackage = false;
+
 	private String previousPublishedPackage;
 
 	public Package() {
@@ -95,6 +97,14 @@ public class Package {
 
 	public void setFirstTimeRelease(boolean firstTimeRelease) {
 		this.firstTimeRelease = firstTimeRelease;
+	}
+
+	public boolean isJustPackage() {
+		return justPackage;
+	}
+
+	public void setJustPackage(boolean justPackage) {
+		this.justPackage = justPackage;
 	}
 
 	public void setPreviousPublishedPackage(String previousPublishedFileName) {
