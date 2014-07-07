@@ -1,8 +1,24 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -14,7 +30,6 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
@@ -24,11 +39,8 @@ import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException
 import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
 import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.service.execution.transform.ReplaceValueLineTransformation;
-import org.ihtsdo.buildcloud.service.execution.transform.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.execution.transform.UUIDTransformation;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
@@ -41,18 +53,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 @Service
 @Transactional
@@ -236,7 +236,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
 			generator.generateReleaseFiles();
 		}
+		Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
 
+		transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
+		
+		//Convert Delta files to Full, Snapshot and delta release files
+		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
+		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
+		generator.generateReleaseFiles();
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
 
@@ -273,7 +280,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (String executionInputFilePath : executionInputFilePaths) {
 			String filename = FileUtils.getFilenameFromPath(executionInputFilePath);
-			TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+			//language file has (-) in the file name for example:der2_cRefset_LanguageDelta-en_INT_20140131.txt
+			TableSchema schemaBean = schemaFactory.createSchemaBean(filename.replace("-", ""));
 			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
 		}
 		return inputFileSchemaMap;

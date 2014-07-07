@@ -1,14 +1,14 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.buildcloud.test.StreamTestUtils;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.sql.Connection;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ReleaseFileExporterTest {
 
@@ -99,7 +99,6 @@ public class ReleaseFileExporterTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_SNAPSHOT_INT), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	}
-
 	@After
 	public void tearDown() throws Exception {
 		testConnection.close();

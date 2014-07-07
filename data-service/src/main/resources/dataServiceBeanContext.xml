@@ -153,5 +153,15 @@
 			<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl"/>
 		</constructor-arg>
 	</bean>
-
+	<bean factory-bean="uuIdGeneratorFactory" factory-method="getInstance">
+		<constructor-arg value="${offlineMode}" />
+	</bean>
+	<bean class="org.ihtsdo.buildcloud.service.execution.transform.UUIDGeneratorFactory" name ="uuIdGeneratorFactory">
+		<constructor-arg>
+			<bean class="org.ihtsdo.buildcloud.service.execution.transform.RandomUUIDGenerator"/>
+		</constructor-arg>
+		<constructor-arg>
+			<bean class="org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator"/>
+		</constructor-arg>
+	</bean>
 </beans>

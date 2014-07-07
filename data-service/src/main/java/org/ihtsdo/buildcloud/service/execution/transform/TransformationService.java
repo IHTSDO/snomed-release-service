@@ -1,7 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -16,13 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 public class TransformationService {
 
 	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
@@ -33,6 +32,9 @@ public class TransformationService {
 	@Autowired
 	private ExecutionDAO dao;
 
+	@Autowired
+	private UUIDGenerator uuidGenerator;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
 	/**
@@ -42,8 +44,7 @@ public class TransformationService {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
-		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory);
-
+		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
 		String packageBusinessKey = pkg.getBusinessKey();
 		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
 
@@ -82,7 +83,7 @@ public class TransformationService {
 		for (String relativeFilePath : executionInputFilePaths) {
 			// Transform all txt files
 			TableSchema tableSchema = inputFileSchemaMap.get(relativeFilePath);
-			if ( tableSchema != null) {
+			if (tableSchema != null) {
 				// Recognised RF2 file
 
 				String filename = FileUtils.getFilenameFromPath(relativeFilePath);
@@ -122,7 +123,11 @@ public class TransformationService {
 			}
 		}
 	}
-	
+
+	private boolean isPreProcessType(TableType tableType) {
+		return tableType == TableType.CONCEPT || tableType == TableType.DESCRIPTION;
+	}
+
 	/**
 	 * @param fileName input text file name.
 	 * @param effectiveDate  date in format of "yyyyMMdd"
@@ -135,9 +140,4 @@ public class TransformationService {
 		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
 		}
 	}
-
-	private boolean isPreProcessType(TableType tableType) {
-		return tableType == TableType.CONCEPT || tableType == TableType.DESCRIPTION;
-	}
-
 }
