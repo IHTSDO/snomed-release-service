@@ -20,7 +20,9 @@ import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag;
+import org.ihtsdo.buildcloud.service.precondition.ManifestCheck;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.precondition.ReadmeHeaderCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +105,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private void runPreconditionChecks(Execution execution) {
 
 		PreconditionManager mgr = PreconditionManager.build(execution)
-										.add(new CheckFirstReleaseFlag());
+										.add(new CheckFirstReleaseFlag())
+										.add(new ManifestCheck())
+										.add(new ReadmeHeaderCheck());
 		Map<String, Object> preConditionReport = mgr.runPreconditionChecks();
 		execution.setPreConditionReport(preConditionReport);
 	}
