@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
+
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
@@ -166,6 +167,14 @@ public class FileHelper {
 	public void copyFile(String sourcePath, String targetBucket, String targetPath) {
 		LOGGER.debug("Copy file '{}' to  bucket '{}' as file name'{}'", sourcePath, targetBucket, targetPath);
 		s3Client.copyObject(bucketName, sourcePath, targetBucket, targetPath);
+	}
+
+	/**
+	 * @param targetFilePath
+	 * @return true if the target file actually exists in the fileStore (online or offline)
+	 */
+	public boolean exists(String targetFilePath) {
+		return getFileStream(targetFilePath) == null ? false : true ;
 	}
 
 }
