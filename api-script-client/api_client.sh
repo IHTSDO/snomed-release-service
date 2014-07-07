@@ -53,7 +53,7 @@ getElapsedTime() {
 }
 
 # Check command line arguments
-if [ -z "$calling_program" ]
+if [ -z "$effectiveDate" ]
 then
 	echo "Please call this script from one of the 'run' scripts."
 	echo
@@ -136,12 +136,10 @@ fi
 
 echo "Set Readme Header"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
-#echo "readmeHeaderContents: ${readmeHeaderContents}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
-manifestPath="manifest-files/${manifestFileName}"
-echo "Upload Manifest from ${manifestPath}"
-curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestPath}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
+echo "Upload Manifest"
+curl ${commonParams} --write-out \\n%{http_code} -F "file=@manifest.xml" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
 
 if ! ${skipLoad}
@@ -153,11 +151,11 @@ then
 	
 	
 	inputFilesPath="input-files/${executionName}"
-	echo "Upload Input Files from ${inputFilesPath}:"
-	for file in `ls ${inputFilesPath}`;
+	echo "Upload Input Files:"
+	for file in `ls input_files`;
 	do
 		echo "Upload Input File ${file}"
-		curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+		curl ${commonParams} -F "file=@input_files/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
 	done
 fi
 
@@ -165,6 +163,7 @@ echo "Set effectiveTime to ${effectiveDate}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"effectiveTime\" : \"${effectiveDate}\" }"  ${api}/builds/${buildId}  | grep HTTP | ensureCorrectResponse
 
 # Set the first time release flag, and if a subsequent release, recover the previously published package and set that
+firstTimeStr="${isFirstTime}"
 if ${isFirstTime}
 then
 	echo "Set first time flag to ${firstTimeStr}"
@@ -210,11 +209,11 @@ fi
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
-localDownloadDirectory=`echo "tmp/output_${executionName}_${executionId}" | sed s/://g`
+localDownloadDirectory=output
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
 
 
-mkdir ${localDownloadDirectory}
+mkdir -p ${localDownloadDirectory}
 downloadFile() {
 	read fileName
 	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
