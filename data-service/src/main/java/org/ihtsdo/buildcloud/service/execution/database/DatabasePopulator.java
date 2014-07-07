@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 public class DatabasePopulator {
 
-	private static final String HYPHEN = "-";
 	private final Connection connection;
 	private final H2DataTypeConverter dataTypeConverter;
 	private final SchemaFactory schemaFactory;
@@ -36,10 +35,6 @@ public class DatabasePopulator {
 			String headerLine = reader.readLine();
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
-//			String rf2FileName = rf2FilePath.substring(rf2FilePath.lastIndexOf("/") + 1);
-//			//replace any hyphen character to empty space for example sct2_Description_Full-en_INT_20140131
-//			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2FileName.replace(HYPHEN, ""), headerLine);
-
 			// Create Table
 			String tableName = tableSchema.getName();
 			createTable(tableSchema);

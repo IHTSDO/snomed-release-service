@@ -231,7 +231,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (String executionInputFilePath : executionInputFilePaths) {
 			String filename = FileUtils.getFilenameFromPath(executionInputFilePath);
-			TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+			//language file has (-) in the file name for example:der2_cRefset_LanguageDelta-en_INT_20140131.txt
+			TableSchema schemaBean = schemaFactory.createSchemaBean(filename.replace("-", ""));
 			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
 		}
 		return inputFileSchemaMap;

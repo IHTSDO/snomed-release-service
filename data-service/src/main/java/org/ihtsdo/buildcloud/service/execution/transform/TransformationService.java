@@ -31,6 +31,9 @@ public class TransformationService {
 
 	@Autowired
 	private ExecutionDAO dao;
+	
+	@Autowired
+	private UUIDGenerator uuidGenerator;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
@@ -41,7 +44,7 @@ public class TransformationService {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
-		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory);
+		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
 
 		String packageBusinessKey = pkg.getBusinessKey();
 		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);

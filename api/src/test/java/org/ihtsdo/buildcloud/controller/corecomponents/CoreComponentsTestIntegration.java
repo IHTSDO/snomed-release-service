@@ -23,7 +23,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 
 	@Test
-	public void testFirstRelease() throws Exception {
+	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestBuildStructure();
 		performFirstRelease("20140131");
@@ -60,7 +60,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	    // Assert first release output expectations
 	    String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
 	    String expectedZipEntries = createExpectedZipEntries(releaseDate);
-	    ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 11, expectedZipFilename, expectedZipEntries, getClass());
+	    ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 14, expectedZipFilename, expectedZipEntries, getClass());
 
 	    integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}
@@ -68,30 +68,40 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
 	   
 	    integrationTestHelper.uploadManifest("core_manifest_"+releaseDate+".xml", getClass());
-	    integrationTestHelper.uploadDeltaInputFile("sct2_Concept_Delta_INT_"+releaseDate+".txt", getClass());
-	    integrationTestHelper.uploadDeltaInputFile("sct2_Description_Delta-en_INT_"+releaseDate+".txt", getClass());
-	    integrationTestHelper.uploadDeltaInputFile("sct2_StatedRelationship_Delta_INT_"+releaseDate+".txt", getClass());
+	    integrationTestHelper.uploadDeltaInputFile("sct2_Concept_Delta_INT_"+releaseDate +".txt", getClass());
+	    integrationTestHelper.uploadDeltaInputFile("sct2_Description_Delta-en_INT_"+releaseDate +".txt", getClass());
+	    integrationTestHelper.uploadDeltaInputFile("sct2_StatedRelationship_Delta_INT_"+releaseDate +".txt", getClass());
+	    integrationTestHelper.uploadDeltaInputFile("der2_cRefset_LanguageDelta-en_INT_" + releaseDate +".txt", getClass());
 	    integrationTestHelper.setReadmeHeader("This is the readme for the first core release.\\nTable of contents:\\n");
 	}
-
+	
 	private String createExpectedZipEntries(String effectiveTime) {
-	    String expectedZipEntries = INTERNATIONAL_RELEASE+effectiveTime+"/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Full/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Full/Terminology/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Snapshot/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Snapshot/Terminology/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Delta/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Delta/Terminology/\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+effectiveTime+".txt\n" +
-	    		INTERNATIONAL_RELEASE+effectiveTime+"/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+effectiveTime+".txt";
+	    String expectedZipEntries = INTERNATIONAL_RELEASE + effectiveTime + "/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/Language/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime + ".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Language/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT_"+ effectiveTime +".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime+".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Language/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Language/der2_cRefset_LanguageDelta-en_INT_"+ effectiveTime + ".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime +".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime +".txt\n" +
+	    		INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime +".txt";
 	    return expectedZipEntries;
 	}
 

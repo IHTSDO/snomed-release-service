@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
+import java.util.List;
+
 import org.ihtsdo.buildcloud.service.execution.database.DataType;
 import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
@@ -8,8 +10,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-
 public class TransformationFactoryTest {
 
 	private TransformationFactory transformationFactory;
@@ -17,7 +17,7 @@ public class TransformationFactoryTest {
 
 	@Before
 	public void setup() throws FileRecognitionException {
-		transformationFactory = new TransformationFactory("01012014", new CachedSctidFactory(null, null, null, null));
+		transformationFactory = new TransformationFactory("01012014", new CachedSctidFactory(null, null, null, null), new RandomUUIDGenerator());
 		schemaBean = new SchemaFactory().createSchemaBean("der2_iisssccRefset_ExtendedMapDelta_INT_20140131.txt");
 		List<TableSchema.Field> fields = schemaBean.getFields();
 		Assert.assertEquals(13, fields.size());
