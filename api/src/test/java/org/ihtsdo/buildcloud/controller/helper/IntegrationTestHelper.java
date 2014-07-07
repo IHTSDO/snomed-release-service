@@ -249,7 +249,7 @@ public class IntegrationTestHelper {
 
 		//Recover URL of published things from Product
 		MvcResult productResult = mockMvc.perform(
-				post(PRODUCT_URL)
+				get(PRODUCT_URL)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -265,7 +265,7 @@ public class IntegrationTestHelper {
 
 		//Recover list of published packages
 		MvcResult publishedResult = mockMvc.perform(
-				post(publishedURL)
+				get(publishedURL)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)

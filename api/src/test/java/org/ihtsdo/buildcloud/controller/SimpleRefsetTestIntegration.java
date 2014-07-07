@@ -38,7 +38,6 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.triggerExecution(executionURL1);
 		integrationTestHelper.publishOutput(executionURL1);
 
-
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
