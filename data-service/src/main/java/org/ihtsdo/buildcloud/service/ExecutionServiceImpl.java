@@ -201,12 +201,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 			manifestStream.close();
 		}
 		
-		transformFiles(execution, pkg);
-		
-		//Convert Delta files to Full, Snapshot and delta release files
-		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
-		generator.generateReleaseFiles();
+		transformFilesOrCopyFiles(execution, pkg);
+
+		if (!pkg.isJustPackage()) {
+			//Convert Delta files to Full, Snapshot and delta release files
+			ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
+			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, dao);
+			generator.generateReleaseFiles();
+		}
 
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
@@ -226,7 +228,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	 * @param execution
 	 * @throws IOException
 	 */
-	private void transformFiles(Execution execution, Package pkg) {
+	private void transformFilesOrCopyFiles(Execution execution, Package pkg) {
 		StreamingFileTransformation transformation = new StreamingFileTransformation();
 
 		// Add streaming transformation of effectiveDate
@@ -243,7 +245,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		for (String relativeFilePath : executionInputFilePaths) {
 
 			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+			if (!pkg.isJustPackage() && relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				try {
 					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
 					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);

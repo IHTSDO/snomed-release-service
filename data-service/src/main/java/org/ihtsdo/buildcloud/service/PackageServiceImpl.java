@@ -59,6 +59,10 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 
+		if (newPropertyValues.containsKey(PackageService.JUST_PACKAGE)) {
+			aPackage.setJustPackage(TRUE.equals(newPropertyValues.get(JUST_PACKAGE)));
+		}
+
 		if (newPropertyValues.containsKey(PackageService.FIRST_TIME_RELEASE)) {
 			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
