@@ -8,8 +8,7 @@ import org.ihtsdo.buildcloud.entity.Package;
  *
  */
 public class CheckFirstReleaseFlag extends PreconditionCheck {
-
-	@Override
+	
 	public void runCheck(Package pkg) {
 		//Perhaps another example where we should be driving off the execution's copy, not the build?
 

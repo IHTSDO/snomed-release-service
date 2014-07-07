@@ -20,6 +20,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 	private ExecutionS3PathHelper s3PathHelper;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
+	
+	public static final String SEPARATOR = "/";
 
 	@Autowired
 	public InputFileDAOImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
@@ -42,6 +44,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
+	//Version called when we're expecting a manifest to exist
 	public String getManifestPath(Package aPackage) {
 		String manifestDirectoryPath = s3PathHelper.getPackageManifestDirectoryPath(aPackage).toString();
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
@@ -52,6 +55,34 @@ public class InputFileDAOImpl implements InputFileDAO {
 		} else {
 			return null;
 		}
+	}
+	
+	@Override
+	//Version called when we have a manifest file and we want a path to upload it to
+	public String getManifestPath(Package pkg, String filename) {
+		return s3PathHelper.getPackageManifestDirectoryPath(pkg).append(filename).toString();
+	}
+
+	@Override
+	public void putManifestFile(Package pkg, InputStream inputStream, String originalFilename, long fileSize) {
+
+		// Fist delete any existing manifest files
+		deleteManifest(pkg);
+
+		// Put new manifest file
+		String filePath = getManifestPath(pkg, originalFilename);
+		fileHelper.putFile(inputStream, fileSize, filePath);
+	}
+
+	@Override
+	public void deleteManifest(Package pkg) {
+		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(pkg);
+		String directoryPath = manifestDirectoryPathSB.toString();
+		List<String> files = fileHelper.listFiles(directoryPath);
+		for (String file : files) {
+			fileHelper.deleteFile(directoryPath + file);
+		}
+		
 	}
 
 }

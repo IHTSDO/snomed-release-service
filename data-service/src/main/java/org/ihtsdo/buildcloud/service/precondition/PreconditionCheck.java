@@ -32,9 +32,17 @@ public abstract class PreconditionCheck {
 	
 	private String responseMessage = "";
 	
-	protected Execution execution;
+	protected PreconditionManager manager;
 
-	public abstract void runCheck(Package p);
+	public PreconditionManager getManager() {
+		return manager;
+	}
+
+	public void setManager(PreconditionManager manager) {
+		this.manager = manager;
+	}
+
+	public abstract void runCheck(Package pkg);
 	
 	public  Map<ResponseKey, String> getResult() {
 		Map<ResponseKey, String> result = new HashMap<ResponseKey, String>();
@@ -75,10 +83,7 @@ public abstract class PreconditionCheck {
 	}
 
 	public Execution getExecution() {
-		return execution;
+		return manager.execution;
 	}
 
-	public void setExecution(Execution execution) {
-		this.execution = execution;
-	}
 }

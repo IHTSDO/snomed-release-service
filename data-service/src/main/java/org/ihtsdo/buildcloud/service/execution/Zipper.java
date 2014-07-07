@@ -34,12 +34,22 @@ public class Zipper {
 	
 	private Package pkg;
 	
+	private InputStream manifestInputSteam;
+	
 	private ListingType manifestListing;
 	
 	private static final String PATH_CHAR = "/";
 	
+	private boolean isInitialised = false;
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
 	
+	private FolderType rootFolder;
+	
+	public FolderType getRootFolder() {
+		return rootFolder;
+	}
+
 	public Zipper(Execution execution, Package pkg, ExecutionDAO executionDAO) {
 		this.execution = execution;
 		this.pkg = pkg;
@@ -47,35 +57,37 @@ public class Zipper {
 	}
 	
 	public File createZipFile() throws JAXBException, IOException, ResourceNotFoundException {
-		//Get the manifest file as an input stream
-		InputStream is = executionDAO.getManifestStream(execution, pkg);
-		loadManifest(is);
+		loadManifest();
 		File zipFile = createArchive();
 		return zipFile;
 	}
 	
-	private void loadManifest(InputStream is) throws JAXBException, ResourceNotFoundException{
+	public void loadManifest() throws JAXBException, ResourceNotFoundException{
+		//Get the manifest file as an input stream
+		manifestInputSteam = executionDAO.getManifestStream(execution, pkg);
 		
-		if ( is == null) {
+		if ( manifestInputSteam == null) {
 			throw new ResourceNotFoundException ("Failed to load manifest due to null inputstream");
 		}
 		//Load the manifest file xml into a java object hierarchy
 		JAXBContext jc = JAXBContext.newInstance( "org.ihtsdo.buildcloud.manifest");
 		Unmarshaller um = jc.createUnmarshaller();
-		manifestListing = um.unmarshal(new StreamSource(is), ListingType.class).getValue();
-	}
-	
-	private File createArchive() throws IOException, ResourceNotFoundException {
-		
-		String targetPath = Files.createTempDir().getAbsolutePath();
-		
+		manifestListing = um.unmarshal(new StreamSource(manifestInputSteam), ListingType.class).getValue();
 		//Zip file name is the same as the root folder defined in manifest, with .zip appended
-		FolderType rootFolder = manifestListing.getFolder();
+		rootFolder = manifestListing.getFolder();
 		
 		if (rootFolder == null) {
 			throw new ResourceNotFoundException ("Failed to recover root folder from manifest.  Ensure the root element is named 'listing' " 
 												+ "and it has a namespace of  xmlns=\"http://release.ihtsdo.org/manifest/1.0.0\" ");
 		}
+		isInitialised = true;
+	}
+	
+	private File createArchive() throws IOException {
+		
+		assert(isInitialised);  //Would be a coding error if this tripped
+		
+		String targetPath = Files.createTempDir().getAbsolutePath();
 		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
 		//Option to use Google's InputStreamFromOutputStream here to feed directly 

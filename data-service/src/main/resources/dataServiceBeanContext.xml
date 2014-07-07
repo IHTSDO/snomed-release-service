@@ -28,6 +28,7 @@
 		<property name="location" value="+{dataServicePropertiesPath}" />
 	</bean>
 
+	<bean class="org.ihtsdo.buildcloud.dao.DAOFactory"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
