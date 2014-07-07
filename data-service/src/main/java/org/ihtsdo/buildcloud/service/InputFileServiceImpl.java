@@ -39,19 +39,8 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Override
 	public void putManifestFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String originalFilename, long fileSize, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
-		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(aPackage);
-
-		// Fist delete any existing manifest files
-		String directoryPath = manifestDirectoryPathSB.toString();
-		List<String> files = fileHelper.listFiles(directoryPath);
-		for (String file : files) {
-			fileHelper.deleteFile(directoryPath + file);
-		}
-
-		// Put new manifest file
-		String filePath = manifestDirectoryPathSB.append(originalFilename).toString();
-		fileHelper.putFile(inputStream, fileSize, filePath);
+		Package pkg = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+		dao.putManifestFile(pkg, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
@@ -70,6 +59,10 @@ public class InputFileServiceImpl implements InputFileService {
 	public InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		return dao.getManifestStream(aPackage);
+	}
+	
+	public InputStream getManifestStream(Package pkg) {
+		return dao.getManifestStream(pkg);
 	}
 
 	@Override

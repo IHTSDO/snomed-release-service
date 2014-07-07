@@ -13,4 +13,11 @@ public interface InputFileDAO {
 
 	String getManifestPath(Package aPackage);
 
+	void putManifestFile(Package pkg, InputStream inputStream,
+			String originalFilename, long fileSize);
+
+	void deleteManifest(Package pkg);
+
+	String getManifestPath(Package pkg, String filename);
+
 }

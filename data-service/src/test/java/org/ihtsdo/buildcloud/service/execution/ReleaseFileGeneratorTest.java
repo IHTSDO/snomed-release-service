@@ -1,37 +1,33 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.test.DummyFuture;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 @RunWith(JMockit.class)
@@ -106,8 +102,7 @@ public class ReleaseFileGeneratorTest {
 	
 	@Test
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution, 
-			@Injectable final ExecutionDAO dao) throws Exception
-			{
+			@Injectable final ExecutionDAO dao) throws Exception {
 		final List<Package> packages = createPackages( false );
 		new NonStrictExpectations() {{
 			execution.getBuild();
@@ -125,6 +120,9 @@ public class ReleaseFileGeneratorTest {
 		final List<String> fileNames = mockTransformedFileNames();
 		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
 		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
+		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
+		inputFileSchemaMap.put(DELTA_FILE_NAME, new SchemaFactory().createSchemaBean(DELTA_FILE_NAME));
+
 		new Expectations(){{
 			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
 			returns(fileNames);
@@ -145,12 +143,13 @@ public class ReleaseFileGeneratorTest {
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
 			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
 		}};
-		
-		
-		for( Package pkg : packages ){
-			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, dao);
+
+
+		for (Package pkg : packages) {
+			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
 			generator.generateReleaseFiles();
 		}
+
 		//add assert to check files are generated
 		File fullFile = new File( currentFullFile);
 		File snapshotFile = new File( currentSnapshotFile);

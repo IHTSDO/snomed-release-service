@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class GlobalControllerExceptionHandler {
 		logError(request, exception);
 		return getErrorMap(exception);
 	}
-	
+
 	@ExceptionHandler(ResourceNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ResponseBody
@@ -49,6 +50,14 @@ public class GlobalControllerExceptionHandler {
 	@ResponseStatus(HttpStatus.PRECONDITION_FAILED)
 	@ResponseBody
 	public HashMap<String, String> handleBadConfigurationException(Exception exception, HttpServletRequest request) {
+		logError(request, exception);
+		return getErrorMap(exception);
+	}
+
+	@ExceptionHandler(EntityAlreadyExistsException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	@ResponseBody
+	public HashMap<String, String> handleEntityAlreadyExistsException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception);
 	}

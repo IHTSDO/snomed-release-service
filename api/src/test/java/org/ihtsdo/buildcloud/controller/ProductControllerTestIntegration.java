@@ -31,7 +31,7 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 
 	@Override
 	@Before
-	public void setup() throws ServletException {
+	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc);
 		((TestS3Client) s3Client).deleteBuckets();
