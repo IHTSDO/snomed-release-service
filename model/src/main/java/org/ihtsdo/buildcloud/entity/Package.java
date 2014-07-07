@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.util.List;
 
 @Entity
-public class Package {
+public class Package implements Comparable<Package> {
 
 	@Id
 	@GeneratedValue
@@ -104,4 +104,30 @@ public class Package {
 	public String getPreviousPublishedPackage() {
 		return previousPublishedPackage;
 	}
+
+	@Override
+	public int compareTo(Package aPackage) {
+		return this.getBusinessKey().compareTo(aPackage.getBusinessKey());
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof Package)) return false;
+
+		Package aPackage = (Package) o;
+
+		if (!build.equals(aPackage.build)) return false;
+		if (!businessKey.equals(aPackage.businessKey)) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = businessKey.hashCode();
+		result = 31 * result + build.hashCode();
+		return result;
+	}
+
 }

@@ -13,10 +13,17 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
-import org.ihtsdo.buildcloud.service.execution.*;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
+import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
+import org.ihtsdo.buildcloud.service.execution.Zipper;
+import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag;
@@ -33,16 +40,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -63,6 +65,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
+
+	@Autowired
+	private SchemaFactory schemaFactory;
+
+	@Autowired
+	private TransformationService transformationService;
 
 	private static final String README_FILENAME_PREFIX = "Readme";
 	private static final String README_FILENAME_EXTENSION = ".txt";
@@ -172,7 +180,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		
 		//Run transformation on each of our packages in turn.
 		//TODO Multithreading opportunity here!
-		List<Package> packages = execution.getBuild().getPackages();
+		Set<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
 			String pkgResult = "pass";
 			String msg = "Process completed successfully";
@@ -200,6 +208,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 
+		// TODO: Refactor: Process each input file in a separate thread where appropriate.
+
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
 		if (manifestStream == null) {
@@ -207,12 +217,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} else {
 			manifestStream.close();
 		}
-		
-		transformFiles(execution, pkg);
+
+		Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
+
+		transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
 		
 		//Convert Delta files to Full, Snapshot and delta release files
 		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator( execution, pkg, dao);
+		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
 		generator.generateReleaseFiles();
 
 		// Generate readme file
@@ -228,57 +240,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	}
 
-	/**
-	 * A streaming transformation of execution input files, creating execution output files.
-	 * @param execution
-	 * @throws IOException
-	 */
-	private void transformFiles(Execution execution, Package pkg) {
-		StreamingFileTransformation transformation = new StreamingFileTransformation();
-
-		// Add streaming transformation of effectiveDate
-		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
-		transformation.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveDateInSnomedFormat));
-		transformation.addLineTransformation(new UUIDTransformation(0));
-
-		String packageBusinessKey = pkg.getBusinessKey();
-		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
-
-		// Iterate each execution input file
-		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
-
-		for (String relativeFilePath : executionInputFilePaths) {
-
-			// Transform all txt files. We are assuming they are all RefSet files for this Epic.
-			if (relativeFilePath.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
-				try {
-					checkFileHasGotMatchingEffectiveDate(relativeFilePath, effectiveDateInSnomedFormat);
-					InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
-					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
-					transformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
-					asyncPipedStreamBean.waitForFinish();
-				} catch (IOException | ExecutionException | InterruptedException e) {
-					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("Exception occured when transforming file {}", relativeFilePath, e);
-				}
-			} else {
-				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
-			}
+	private Map<String, TableSchema> getInputFileSchemaMap(Execution execution, Package pkg) throws FileRecognitionException {
+		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, pkg.getBusinessKey());
+		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
+		for (String executionInputFilePath : executionInputFilePaths) {
+			String filename = FileUtils.getFilenameFromPath(executionInputFilePath);
+			TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
+			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
 		}
-	}
-
-	/**
-	 * @param fileName input text file name.
-	 * @param effectiveDate  date in format of "yyyyMMdd"
-	 */
-	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
-	    String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
-	    //last segment will be like 20140131.txt
-	    String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
-	    if( !dateFromFile.equals(effectiveDate)){
-		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
-	    }
+		return inputFileSchemaMap;
 	}
 
 	@Override
@@ -340,14 +310,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 		if (readmeFilename != null) {
 			AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
-			OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream();
-			try {
+			try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
 				readmeGenerator.generate(pkg.getReadmeHeader(), manifestListing, readmeOutputStream);
 				asyncPipedStreamBean.waitForFinish();
-			} finally {
-				readmeOutputStream.close();
 			}
-
 		} else {
 			LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
 					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);

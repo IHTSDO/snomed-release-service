@@ -135,4 +135,23 @@
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
 
+	<bean class="org.ihtsdo.buildcloud.service.execution.database.SchemaFactory"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.execution.transform.TransformationService"/>
+
+	<bean factory-bean="idAssignmentBIFactory" factory-method="getInstance">
+		<constructor-arg value="${offlineMode}" />
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIFactory" name="idAssignmentBIFactory">
+		<constructor-arg>
+			<bean class="org.ihtsdo.idgeneration.IdAssignmentImpl" >
+				<constructor-arg value="${idGenerator.url}" />
+			</bean>
+		</constructor-arg>
+		<constructor-arg>
+			<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl"/>
+		</constructor-arg>
+	</bean>
+
 </beans>

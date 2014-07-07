@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.StreamTestUtils;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.After;
 import org.junit.Before;
@@ -31,6 +31,8 @@ public class ReleaseFileExporterTest {
 	private ByteArrayOutputStream fullOutputStream;
 	private ByteArrayOutputStream snapshotOutputStream;
 	private  DatabasePopulator databasePopulator;
+	private TableSchema simpleRefsetSchema;
+	private TableSchema extendedMapSchema;
 
 	@Before
 	public void setUp() throws Exception {
@@ -39,6 +41,9 @@ public class ReleaseFileExporterTest {
 	    releaseFileExporter = new ReleaseFileExporter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
+		SchemaFactory schemaFactory = new SchemaFactory();
+		simpleRefsetSchema = schemaFactory.createSchemaBean(SIMPLE_REFSET_FULL_PLUS_DELTA);
+		extendedMapSchema = schemaFactory.createSchemaBean(PREVIOUS_EXTENDED_MAP_REFSET_FULL);
 	}
 
 	/** Testing simple refset export using full plus delta file
@@ -47,7 +52,7 @@ public class ReleaseFileExporterTest {
 	@Test
 	public void testSimpleRefsetExport() throws Exception {
 		// Prepare test object for this test
-	    tableSchema = databasePopulator.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
+	    tableSchema = databasePopulator.createTable(simpleRefsetSchema, SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
 
 		// Run target test method
 		releaseFileExporter.exportFullAndSnapshot(testConnection, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
@@ -62,7 +67,7 @@ public class ReleaseFileExporterTest {
 	 */
 	@Test
 	public void testSimpleRefsetExportWithAppendData() throws Exception {
-	    tableSchema = databasePopulator.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL));
+	    tableSchema = databasePopulator.createTable(simpleRefsetSchema, PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL));
 	    databasePopulator.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA));
 
 		releaseFileExporter.exportFullAndSnapshot(testConnection, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
@@ -77,7 +82,7 @@ public class ReleaseFileExporterTest {
 	 */
 	@Test
 	public void testSimpleRefsetSnapshotExportUsingPreviousReleaseDate() throws Exception {
-	    tableSchema = databasePopulator.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
+	    tableSchema = databasePopulator.createTable(simpleRefsetSchema, SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
 
 	    releaseFileExporter.exportFullAndSnapshot(testConnection, tableSchema, RF2Constants.DATE_FORMAT.parse(PREVIOUS_RELEASE_DATE), fullOutputStream, snapshotOutputStream);
 
@@ -86,7 +91,7 @@ public class ReleaseFileExporterTest {
 
 	@Test
 	public void testExtendedMapRefsetExport() throws Exception {
-	    tableSchema = databasePopulator.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL));
+	    tableSchema = databasePopulator.createTable(extendedMapSchema, PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL));
 	    databasePopulator.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA));
 
 	    releaseFileExporter.exportFullAndSnapshot(testConnection, tableSchema, RF2Constants.DATE_FORMAT.parse("20140731"), fullOutputStream, snapshotOutputStream);
