@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
@@ -46,7 +47,7 @@ public class ExtensionController {
 
 	@RequestMapping("/{extensionBusinessKey}")
 	@ResponseBody
-	public Map getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		boolean currentResource = false;
@@ -54,7 +55,7 @@ public class ExtensionController {
 	}
 	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map> createExtension(@PathVariable String releaseCenterBusinessKey,
+	public ResponseEntity<Map<String, Object>> createExtension(@PathVariable String releaseCenterBusinessKey,
 											   @RequestBody(required = false) Map<String, String> json,
 											   HttpServletRequest request) throws IOException {
 
@@ -64,7 +65,7 @@ public class ExtensionController {
 		
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
-		return new ResponseEntity<Map>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
 	}
 	
 	@RequestMapping("/{extensionBusinessKey}/builds")

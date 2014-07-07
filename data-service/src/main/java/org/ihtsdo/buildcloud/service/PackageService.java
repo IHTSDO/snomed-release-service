@@ -11,6 +11,8 @@ public interface PackageService extends EntityService<Package> {
 
 	static final String README_HEADER = "readmeHeader";
 	
+	static final String JUST_PACKAGE = "justPackage";
+
 	static final String FIRST_TIME_RELEASE = "firstTimeRelease";
 
 	static final String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";

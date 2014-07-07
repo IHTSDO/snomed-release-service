@@ -4,6 +4,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * An Execution is a snapshot of a Build and may be used to run the release process.
@@ -18,9 +19,11 @@ public class Execution {
 
 	@JsonIgnore
 	private final Build build;
+	
+	private Map<String, Object> preConditionReport;
 
 	public static enum Status {
-		BEFORE_TRIGGER, QUEUED, BUILDING, BUILT
+		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
 	}
 
 	public Execution(String creationTime, String statusString, Build build) {
@@ -52,6 +55,14 @@ public class Execution {
 
 	public Build getBuild() {
 		return build;
+	}
+
+	public void setPreConditionReport(Map<String, Object> preConditionReport) {
+		this.preConditionReport = preConditionReport;
+	}
+
+	public Map<String, Object> getPreConditionReport() {
+		return preConditionReport;
 	}
 
 }
