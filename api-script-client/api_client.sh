@@ -22,7 +22,7 @@ buildId="1_20140731_international_release_build"
 packageId="snomed_release_package"
 readmeHeader="readme-header.txt"
 
-#Set curl verbocity
+# Set curl verbocity
 curlFlags="isS"
 # i - Show response header
 # s - quiet
@@ -52,7 +52,7 @@ getElapsedTime() {
 	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
 }
 
-#Check command line arguments
+# Check command line arguments
 if [ -z "$calling_program" ]
 then
 	echo "Please call this script from one of the 'run' scripts."
@@ -105,7 +105,7 @@ echo "Login and record authorisation token."
 curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
 token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
 echo "Authorisation Token is '${token}'"
-#Ensure we have a valid token before proceeding
+# Ensure we have a valid token before proceeding
 if [ -z "${token}" ]
 then
 	echo "Cannot proceed further if we haven't logged in!"
@@ -115,7 +115,7 @@ commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
 
 echo
-#Are we just listing the input files and stopping there?
+# Are we just listing the input files and stopping there?
 if ${listOnly}
 then
 	echo "Recover input file list"
@@ -125,7 +125,7 @@ then
 	exit 0
 fi
 
-#Are we just uploading a file for publishing and stopping there?
+# Are we just uploading a file for publishing and stopping there?
 if [ -n "${publishFile}" ]
 then
 	echo "Upload file to be published: ${publishFile}"
@@ -146,8 +146,8 @@ curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestPath}" ${ap
 
 if ! ${skipLoad}
 then
-	#If we've done a different release before, then we need to delete the input files from the last run!
-	#Not checking the return code from this call, doesn't matter if the files aren't there
+	# If we've done a different release before, then we need to delete the input files from the last run!
+	# Not checking the return code from this call, doesn't matter if the files aren't there
 	echo "Delete previous delta Input Files "
 	curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
 	
@@ -164,7 +164,7 @@ fi
 echo "Set effectiveTime to ${effectiveDate}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"effectiveTime\" : \"${effectiveDate}\" }"  ${api}/builds/${buildId}  | grep HTTP | ensureCorrectResponse
 
-#Set the first time release flag, and if a subsequent release, recover the previously published package and set that
+# Set the first time release flag, and if a subsequent release, recover the previously published package and set that
 if ${isFirstTime}
 then
 	echo "Set first time flag to ${firstTimeStr}"
@@ -191,7 +191,7 @@ echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
-triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true #Do not fail on exit here, some reporting first
+triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
 	echo "Failed to successfully process any packages.  Received response: "
@@ -218,8 +218,7 @@ mkdir ${localDownloadDirectory}
 downloadFile() {
 	read fileName
 	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
-	#Using curl as the MAC doesn't have wget loaded by default
-	#wget -P ${localDownloadDirectory} ${downloadUrlRoot}/${fileName}
+	# Using curl as the MAC doesn't have wget loaded by default
 	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
 }
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
@@ -227,4 +226,3 @@ cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | s
 echo
 echo "Process Complete in $(getElapsedTime)"
 echo
-
