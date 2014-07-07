@@ -134,14 +134,10 @@ then
 	exit 0
 fi
 
-#Only need a readme header for a first time run
-if ${isFirstTime}
-then
-	echo "Set Readme Header"
-	readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
-	#echo "readmeHeaderContents: ${readmeHeaderContents}"
-	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
-fi
+echo "Set Readme Header"
+readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
+#echo "readmeHeaderContents: ${readmeHeaderContents}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
 manifestPath="manifest-files/${manifestFileName}"
 echo "Upload Manifest from ${manifestPath}"
