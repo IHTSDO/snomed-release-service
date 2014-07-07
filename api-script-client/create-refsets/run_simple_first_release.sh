@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Sets up variables to be consumed by create-refsets
+# Sets up variables to be consumed by api_client
 
 # Stop on error
 set -e;
@@ -14,4 +14,4 @@ firstTimeStr="true"
 
 #Pass control to our busy worker bee
 calling_program=`basename $0`
-source create-refsets.sh
+source api_client.sh
