@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletException;
+
 import java.nio.charset.Charset;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -33,7 +34,7 @@ public abstract class AbstractControllerTest {
 	private WebApplicationContext wac;
 
 	@Before
-	public void setup() throws ServletException {
+	public void setup() throws ServletException, Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
 	}

@@ -4,7 +4,9 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,9 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 
 	@Autowired
 	private BuildDAO buildDAO;
+	
+	@Autowired
+	PublishService publishService;
 
 	@Autowired
 	protected PackageServiceImpl(final PackageDAO dao) {
@@ -55,16 +60,31 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 
 	@Override
 	public final Package update(final String buildCompositeKey, final String packageBusinessKey,
-			final Map<String, String> newPropertyValues, final User authenticatedUser) {
+			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
+		Product product = aPackage.getBuild().getProduct();
 
 		if (newPropertyValues.containsKey(PackageService.FIRST_TIME_RELEASE)) {
 			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
 
 		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_PACKAGE)) {
-			aPackage.setPreviousPublishedPackage(newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE));
+			String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
+			//Validate that a file of that name actually exists
+			boolean pppExists = false;
+			Exception rootCause = new Exception ("No further information");
+			try {
+				pppExists = publishService.exists(product, pPP); 
+			} catch (Exception e) {
+				rootCause = e;
+			}
+			
+			if (pppExists) {
+				aPackage.setPreviousPublishedPackage(pPP);
+			} else {
+				throw new ResourceNotFoundException ("Could not find previously published package: " + pPP, rootCause);
+			}
 		}
 
 		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {

@@ -15,12 +15,19 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	private S3Client s3Client;
 
 	private IntegrationTestHelper integrationTestHelper;
+	
+	@Override
+	@Before
+	public void setup() throws Exception {
+		super.setup();
+		integrationTestHelper = new IntegrationTestHelper(mockMvc);
+		((TestS3Client) s3Client).deleteBuckets();
+	}
 
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestBuildStructure();
-
 
 		// Perform first time release
 		String effectiveTime = "20140131";
@@ -88,14 +95,6 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
 		integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
-	}
-
-	@Override
-	@Before
-	public void setup() throws ServletException {
-		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc);
-		((TestS3Client) s3Client).deleteBuckets();
 	}
 
 }

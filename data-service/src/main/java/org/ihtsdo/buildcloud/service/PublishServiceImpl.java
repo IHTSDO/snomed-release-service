@@ -114,6 +114,12 @@ public class PublishServiceImpl implements PublishService {
 	public List<String> getPublishedPackages(Product product) {
 		return publishedFileHelper.listFiles(getPublishDirPath(product));
 	}
+	
+	@Override
+	public boolean exists(Product product, String targetFileName) {
+		String path = getPublishDirPath(product) + SEPARATOR + targetFileName;
+		return publishedFileHelper.exists(path);
+	}
 
 	@Override
 	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, 
