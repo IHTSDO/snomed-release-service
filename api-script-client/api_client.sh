@@ -100,6 +100,8 @@ echo "Target Build ID is '${buildId}'"
 echo "Target Package ID is '${packageId}'"
 echo
 
+mkdir -p tmp
+
 # Login
 echo "Login and record authorisation token."
 curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
