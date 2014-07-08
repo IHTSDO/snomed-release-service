@@ -25,6 +25,9 @@ public class SchemaFactory {
 
 			String filenameNoExtension = filename.substring(0, filename.indexOf("."));
 
+			// Language refset has '-' in the file name for example:der2_cRefset_LanguageDelta-en_INT_20140131.txt
+			filenameNoExtension = filenameNoExtension.replace("-", "");
+
 			String[] nameParts = filenameNoExtension.split(RF2Constants.FILE_NAME_SEPARATOR);
 			if (nameParts.length == 5) {
 				String fileType = nameParts[0];
