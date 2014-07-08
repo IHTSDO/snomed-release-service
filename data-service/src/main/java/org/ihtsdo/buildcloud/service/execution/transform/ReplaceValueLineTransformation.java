@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
 public class ReplaceValueLineTransformation implements LineTransformation {
 
@@ -12,7 +12,13 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) {
+	    if(columnValues != null && columnValues.length > column){
 		columnValues[column] = value;
+	    }
 	}
 
+	@Override
+	public int getColumnIndex() {
+		return column;
+	}
 }

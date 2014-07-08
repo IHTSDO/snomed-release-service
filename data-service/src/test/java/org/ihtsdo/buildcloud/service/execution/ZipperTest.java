@@ -56,6 +56,9 @@ public class ZipperTest {
 	@Autowired
 	private String executionBucketName;
 	
+	@Autowired 
+	S3Client s3client;
+	
 	protected Package pkg;
 	
 	protected Execution execution;
@@ -73,10 +76,10 @@ public class ZipperTest {
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, pkg.getBuild());
 		
-		Path tempDirectory = Files.createTempDirectory(getClass().getName());
+		/*Path tempDirectory = Files.createTempDirectory(getClass().getName());
 		Assert.assertTrue(new File(tempDirectory.toFile(), TEST_BUCKET).mkdirs());
 		S3Client s3OfflineClient = new OfflineS3ClientImpl(tempDirectory.toFile());
-		executionDAO.setS3Client(s3OfflineClient);
+		executionDAO.setS3Client(s3OfflineClient);*/
 		
 		//We're going to locally copy a manifest file for the test
 		URL fileURL = getClass().getResource("simple_refset_manifest.xml");
@@ -89,7 +92,7 @@ public class ZipperTest {
 		File testRefset = new File(fileURL.getFile());
 		Assert.assertTrue(testManifest.exists());
 		String targetPath = pathHelper.getExecutionOutputFilePath(execution, pkg.getBusinessKey(), testRefset.getName());
-		FileHelper fileHelper = new FileHelper(executionBucketName, s3OfflineClient, new S3ClientHelper(s3OfflineClient));
+		FileHelper fileHelper = new FileHelper(executionBucketName, s3client, new S3ClientHelper(s3client));
 		fileHelper.putFile(testManifest, targetPath);
 	}
 	

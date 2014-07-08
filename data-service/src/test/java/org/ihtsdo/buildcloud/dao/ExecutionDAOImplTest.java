@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -15,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +48,9 @@ public class ExecutionDAOImplTest {
 	@Autowired
 	protected BuildDAO buildDAO;
 
+	@Autowired
+	private S3Client s3Client;
+
 	private Build build;
 	protected Execution execution;
 	private MocksControl mocksControl;
@@ -60,6 +65,12 @@ public class ExecutionDAOImplTest {
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, build);
+	}
+	
+	@After
+	public void tearDown() {
+		//Need to return the executionDAO to it's original state for other unitTests which expect to use the Offline client
+		executionDAO.setS3Client(s3Client);
 	}
 
 	@Test
@@ -143,7 +154,7 @@ public class ExecutionDAOImplTest {
 		S3Client onlineS3Client = factory.getClient(offlineMode);
 		executionDAO.setS3Client(onlineS3Client);
 		
-		Package pkg = execution.getBuild().getPackages().get(0);
+		Package pkg = execution.getBuild().getPackages().iterator().next();
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
 		boolean calcMD5 = true;
 		String md5Received = executionDAO.putOutputFile(execution, pkg, new File(testFile), "", calcMD5);

@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.4.1</version>
+		<version>0.1.5</version>
 	</parent>
 
 	<artifactId>data-service</artifactId>
@@ -16,6 +16,17 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>model</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.ihtsdo.snomed.release.idgen</groupId>
+			<artifactId>id-generation-api</artifactId>
+			<version>1.1.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>javassist</groupId>

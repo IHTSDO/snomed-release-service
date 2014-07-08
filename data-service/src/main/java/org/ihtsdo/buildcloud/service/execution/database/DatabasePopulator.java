@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +9,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasePopulator {
 
@@ -28,15 +28,13 @@ public class DatabasePopulator {
 		schemaFactory = new SchemaFactory();
 	}
 
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(TableSchema tableSchema, String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 
 			// Build Schema
 			String headerLine = reader.readLine();
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
-			String rf2FileName = rf2FilePath.substring(rf2FilePath.lastIndexOf("/") + 1);
-			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2FileName, headerLine);
-
+			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 			// Create Table
 			String tableName = tableSchema.getName();
 			createTable(tableSchema);

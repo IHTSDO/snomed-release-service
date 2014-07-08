@@ -6,9 +6,11 @@ import java.util.List;
 public class TableSchema {
 
 	private String name;
+	private TableType tableType;
 	private List<Field> fields;
 
-	public TableSchema(String name) {
+	public TableSchema(TableType tableType, String name) {
+		this.tableType = tableType;
 		this.name = name;
 		fields = new ArrayList<>();
 	}
@@ -16,6 +18,10 @@ public class TableSchema {
 	public TableSchema field(String name, DataType type) {
 		fields.add(new Field(name, type));
 		return this;
+	}
+
+	public TableType getTableType() {
+		return tableType;
 	}
 
 	public String getName() {
@@ -26,7 +32,7 @@ public class TableSchema {
 		return fields;
 	}
 
-	static class Field {
+	public static class Field {
 
 		private String name;
 		private DataType type;
@@ -38,6 +44,10 @@ public class TableSchema {
 
 		public String getName() {
 			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 
 		public DataType getType() {
