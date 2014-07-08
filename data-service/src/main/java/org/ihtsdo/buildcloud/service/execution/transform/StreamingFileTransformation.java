@@ -1,5 +1,6 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ public class StreamingFileTransformation {
 		lineTransformations = new ArrayList<>();
 	}
 
-	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException {
+	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException, TransformationException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8));
 		try {
@@ -66,8 +67,13 @@ public class StreamingFileTransformation {
 		}
 	}
 
-	public void addLineTransformation(LineTransformation transformation) {
+	public StreamingFileTransformation addLineTransformation(LineTransformation transformation) {
 		lineTransformations.add(transformation);
+		return this;
+	}
+
+	public List<LineTransformation> getLineTransformations() {
+		return lineTransformations;
 	}
 
 }

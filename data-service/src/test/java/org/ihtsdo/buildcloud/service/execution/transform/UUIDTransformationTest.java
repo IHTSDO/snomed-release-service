@@ -1,7 +1,7 @@
-package org.ihtsdo.buildcloud.service.execution;
+package org.ihtsdo.buildcloud.service.execution.transform;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,8 +11,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.junit.Before;
+import org.junit.Test;
 
 public class UUIDTransformationTest {
 
@@ -23,7 +24,7 @@ public class UUIDTransformationTest {
 
 	@Before
 	public void setup() throws URISyntaxException, IOException {
-		uuidTransformation = new UUIDTransformation(0);
+		uuidTransformation = new UUIDTransformation(0, new RandomUUIDGenerator());
 		File origFile = new File(getClass().getResource("refSet-without-uuid.txt").toURI());
 		Path tempFile = Files.createTempFile(getClass().getName(), origFile.getName());
 		Files.copy(origFile.toPath(), tempFile, StandardCopyOption.REPLACE_EXISTING);

@@ -3,12 +3,14 @@ package org.ihtsdo.buildcloud.entity;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.hibernate.annotations.Sort;
+import org.hibernate.annotations.SortType;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 @Entity
 public class Build {
@@ -32,13 +34,14 @@ public class Build {
 	private Product product;
 
 	@OneToMany(mappedBy = "build")
+	@Sort(type = SortType.NATURAL)
 	@JsonIgnore
-	private List<Package> packages;
+	private SortedSet<Package> packages;
 
 	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
 
 	public Build() {
-		packages = new ArrayList<>();
+		packages = new TreeSet<>();
 	}
 
 	public Build(String name) {
@@ -57,9 +60,13 @@ public class Build {
 		this.id = id;
 	}
 
-	public void addPackage(Package aPackage) {
-		packages.add(aPackage);
+	public boolean addPackage(Package aPackage) {
 		aPackage.setBuild(this);
+		if (packages.add(aPackage)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@JsonProperty("id")
@@ -114,7 +121,7 @@ public class Build {
 		this.product = product;
 	}
 
-	public List<Package> getPackages() {
+	public SortedSet<Package> getPackages() {
 		return packages;
 	}
 
@@ -129,4 +136,25 @@ public class Build {
 	public void setStarred(boolean isStarred) {
 		this.starred = isStarred;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof Build)) return false;
+
+		Build build = (Build) o;
+
+		if (!businessKey.equals(build.businessKey)) return false;
+		if (!product.equals(build.product)) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = businessKey.hashCode();
+		result = 31 * result + product.hashCode();
+		return result;
+	}
+
 }
