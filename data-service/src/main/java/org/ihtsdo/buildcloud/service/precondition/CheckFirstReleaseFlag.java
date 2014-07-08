@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
+import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 
 /**
@@ -9,7 +10,7 @@ import org.ihtsdo.buildcloud.entity.Package;
  */
 public class CheckFirstReleaseFlag extends PreconditionCheck {
 	
-	public void runCheck(Package pkg) {
+	public void runCheck(Package pkg, Execution execution) {
 		//Perhaps another example where we should be driving off the execution's copy, not the build?
 
 		if (pkg.isFirstTimeRelease() && pkg.getPreviousPublishedPackage() != null) {

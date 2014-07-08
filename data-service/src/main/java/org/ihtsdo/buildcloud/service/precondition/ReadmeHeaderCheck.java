@@ -1,11 +1,12 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
+import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 
 public class ReadmeHeaderCheck extends PreconditionCheck {
 
 	@Override
-	public void runCheck(Package pkg) {
+	public void runCheck(Package pkg, Execution execution) {
 
 		//Do we have a readme header?
 		if ( pkg.getReadmeHeader() != null && pkg.getReadmeHeader().length() > 0 ) {

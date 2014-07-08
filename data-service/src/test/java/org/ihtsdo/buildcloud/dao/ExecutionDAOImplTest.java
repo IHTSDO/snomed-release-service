@@ -48,6 +48,9 @@ public class ExecutionDAOImplTest {
 	@Autowired
 	protected BuildDAO buildDAO;
 
+	@Autowired
+	private S3Client s3Client;
+
 	private Build build;
 	protected Execution execution;
 	private MocksControl mocksControl;
@@ -67,7 +70,7 @@ public class ExecutionDAOImplTest {
 	@After
 	public void tearDown() {
 		//Need to return the executionDAO to it's original state for other unitTests which expect to use the Offline client
-		executionDAO.setS3Client(DAOFactory.getS3Client());
+		executionDAO.setS3Client(s3Client);
 	}
 
 	@Test

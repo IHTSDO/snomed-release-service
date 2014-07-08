@@ -4,4 +4,8 @@
 
 	<import resource="../dataServiceBeanContext.xml"/>
 
+	<bean class="org.ihtsdo.buildcloud.test.TestUtils"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
+
 </beans>

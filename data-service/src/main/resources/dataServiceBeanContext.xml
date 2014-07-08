@@ -28,7 +28,6 @@
 		<property name="location" value="+{dataServicePropertiesPath}" />
 	</bean>
 
-	<bean class="org.ihtsdo.buildcloud.dao.DAOFactory"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExtensionDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
@@ -132,6 +131,16 @@
 	</bean>
 
 	<bean class="org.springframework.security.crypto.keygen.KeyGenerators" factory-method="string"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.precondition.PreconditionManager">
+		<property name="preconditionChecks">
+			<list>
+				<bean class="org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag"/>
+				<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
+				<bean class="org.ihtsdo.buildcloud.service.precondition.ReadmeHeaderCheck"/>
+			</list>
+		</property>
+	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
 

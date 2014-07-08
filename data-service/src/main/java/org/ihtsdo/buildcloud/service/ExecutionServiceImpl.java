@@ -44,10 +44,7 @@ import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
-import org.ihtsdo.buildcloud.service.precondition.CheckFirstReleaseFlag;
-import org.ihtsdo.buildcloud.service.precondition.ManifestCheck;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
-import org.ihtsdo.buildcloud.service.precondition.ReadmeHeaderCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +63,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
-	
+
+	@Autowired
+	private PreconditionManager preconditionManager;
+
 	@Autowired
 	private InputFileService inputFileService;
 
@@ -118,12 +118,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	private void runPreconditionChecks(Execution execution) {
-
-		PreconditionManager mgr = PreconditionManager.build(execution)
-										.add(new CheckFirstReleaseFlag())
-										.add(new ManifestCheck())
-										.add(new ReadmeHeaderCheck());
-		Map<String, Object> preConditionReport = mgr.runPreconditionChecks();
+		Map<String, Object> preConditionReport = preconditionManager.runPreconditionChecks(execution);
 		execution.setPreConditionReport(preConditionReport);
 	}
 
@@ -260,7 +255,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
 	 * @param execution
-	 * @throws TransformationException 
+	 * @throws TransformationException
 	 * @throws IOException
 	 */
 	private void copyFilesForJustPackaging(Execution execution, Package pkg) {
