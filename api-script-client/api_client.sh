@@ -132,7 +132,7 @@ if [ -n "${publishFile}" ]
 then
 	echo "Upload file to be published: ${publishFile}"
 	curl ${commonParams} -X POST -F "file=@${publishFile}" ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published  | grep HTTP | ensureCorrectResponse 
-	echo "File successfully published"
+	echo "File successfully published in $(getElapsedTime)"
 	exit 0
 fi
 

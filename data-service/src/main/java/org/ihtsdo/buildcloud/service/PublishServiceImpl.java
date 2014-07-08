@@ -137,7 +137,7 @@ public class PublishServiceImpl implements PublishService {
 			throw new BadRequestException ("File " + originalFilename + " is not named as a zip archive");
 		}
 		
-		String path = getPublishDirPath(product) + SEPARATOR + originalFilename;
+		String path = getPublishDirPath(product) + originalFilename;
 		publishedFileHelper.putFile(inputStream, size, path);
 		
 	}
