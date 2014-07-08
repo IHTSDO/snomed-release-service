@@ -12,8 +12,7 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 	@Before
 	public void setup() {
 		super.setup();
-		manager = PreconditionManager.build(execution)
-				.add(new CheckFirstReleaseFlag());
+		manager = new PreconditionManager().preconditionChecks(new CheckFirstReleaseFlag());
 	}
 
 	@Test

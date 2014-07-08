@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class PreconditionCheck {
 	
@@ -32,19 +32,9 @@ public abstract class PreconditionCheck {
 	
 	private String responseMessage = "";
 	
-	protected PreconditionManager manager;
-
-	public PreconditionManager getManager() {
-		return manager;
-	}
-
-	public void setManager(PreconditionManager manager) {
-		this.manager = manager;
-	}
-
-	public abstract void runCheck(Package pkg);
+	public abstract void runCheck(Package pkg, Execution execution);
 	
-	public  Map<ResponseKey, String> getResult() {
+	public Map<ResponseKey, String> getResult() {
 		Map<ResponseKey, String> result = new HashMap<ResponseKey, String>();
 		result.put(ResponseKey.PRE_CHECK_NAME, getTestName());
 		result.put(ResponseKey.RESULT, state.toString());
@@ -52,7 +42,7 @@ public abstract class PreconditionCheck {
 		return result;
 	}
 	
-	protected void pass()  {
+	protected void pass() {
 		this.state = State.PASS;
 	}
 	
@@ -80,10 +70,6 @@ public abstract class PreconditionCheck {
 	//Default behaviour is to return the class name
 	public String getTestName() {
 		return this.getClass().getSimpleName();
-	}
-
-	public Execution getExecution() {
-		return manager.execution;
 	}
 
 }
