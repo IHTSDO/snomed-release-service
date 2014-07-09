@@ -10,7 +10,6 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +23,16 @@ public class PublishServiceImpl implements PublishService {
 	
 	private final FileHelper executionFileHelper;
 	private final FileHelper publishedFileHelper;
+
 	@Autowired
 	private ExecutionS3PathHelper executionS3PathHelper;
-	
+
 	@Autowired
 	ProductDAO productDAO;
-	
+
 	private static final String SEPARATOR = "/";
 	private final String publishedBucketName;
-	
+
 	/**
 	 * @param executionBucketName
 	 * @param publishedBucketName
@@ -43,30 +43,26 @@ public class PublishServiceImpl implements PublishService {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-		
 	}
 
 	@Override
 	public void publishExecutionPackage(Execution execution, Package pk) {
-		
-		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey() ).toString();
+		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
-		for( String fileName : filesFound ){
-			if ( FileUtils.isZip(fileName))
-			{
+		for(String fileName : filesFound){
+			if (FileUtils.isZip(fileName)) {
 				releaseFileName = fileName;
 				//only one zip file per package
 				break;
 			}
 		}
-		if( releaseFileName == null ){
-			throw new IllegalStateException("No zip file found for package: "+ pk.getBusinessKey() );
+		if (releaseFileName == null) {
+			throw new IllegalStateException("No zip file found for package: " + pk.getBusinessKey());
 		}
-		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName );
+		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
 		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
 		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-		
 	}
 	
 
@@ -87,9 +83,8 @@ public class PublishServiceImpl implements PublishService {
 	 * releaseCenter/extension/product/
 	 */
 	private String getPublishDirPath(Product product) {
-		
 		Extension extension = product.getExtension();
-		ReleaseCenter releaseCenter =  extension.getReleaseCenter();
+		ReleaseCenter releaseCenter = extension.getReleaseCenter();
 		StringBuffer path = new StringBuffer();
 		path.append(releaseCenter.getBusinessKey());
 		path.append(SEPARATOR);
@@ -123,22 +118,22 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, 
-			InputStream inputStream,	String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException {
+			InputStream inputStream, String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
 		
 		if (product == null) {
-			throw new ResourceNotFoundException ("Failed to recover product " + releaseCenterBusinessKey 
+			throw new ResourceNotFoundException("Failed to recover product " + releaseCenterBusinessKey
 													+ "/" + extensionBusinessKey
 													+ "/" + productBusinessKey);
 		}
 		
 		//We're expecting a zip file only
 		if (!FileUtils.isZip(originalFilename)) {
-			throw new BadRequestException ("File " + originalFilename + " is not named as a zip archive");
+			throw new BadRequestException("File " + originalFilename + " is not named as a zip archive");
 		}
 		
 		String path = getPublishDirPath(product) + originalFilename;
 		publishedFileHelper.putFile(inputStream, size, path);
-		
 	}
+
 }
