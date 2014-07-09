@@ -64,31 +64,53 @@ fi
 skipLoad=false
 listOnly=false
 autoPublish=false
+completePublish=false
 
-while getopts ":slap:" opt
+while getopts ":slcar:p:" opt
 do
 	case $opt in
 		s) 
 			skipLoad=true
-			echo "Option set to skip input file load"
+			echo "Option set to skip input file load."
 		;;
 		l) 
 			listOnly=true
-			echo "Option set to list input files only"
+			echo "Option set to list input files only."
 		;;
 		a) 
 			autoPublish=true
-			echo "Option set to automatically publish packages on successful execution"
+			echo "Option set to automatically publish packages on successful execution."
 		;;
 		p) 
 			publishFile=$OPTARG
-			echo "Option set to upload ${publishFile} for publishing only"
+			echo "Option set to upload ${publishFile} for publishing only."
+		;;
+		c) 
+			completePublish=true
+			if [ -n "${publishFile}" ] || ${autoPublish} 
+			then
+				echo "Mutually exclusive command line options set"
+				exit -1
+			fi
+			echo "Option set to complete.  Last execution will be published."
+		;;
+		r) 
+			replaceInputFile=$OPTARG
+			if  ${skipLoad} 
+			then
+				echo "Mutually exclusive command line options set"
+				exit -1
+			fi
+			echo "Option set to replace input file ${replaceInputFile} and execute a build."
 		;;
 		help|\?) 
-			echo -e "Usage: [-s] [-l] [-a] [-p <filename>]\n\t s - skips the upload of input files (say if you've already run the process and they don't need to change)."
-			echo -e "\t l - just lists the current input files and does no further processing." 
+			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>]"
+			echo -e "\t s - skip.  Skips the upload of input files (say if you've already run the process and they don't need to change)."
+			echo -e "\t l - list.  Just lists the current input files and does no further processing." 
+			echo -e "\t r <filename> - replace.  Uploads just the file specified and then runs the execution."
+			echo -e "\t c - complete.  Completes the execution by publishing the last generated zip file."
 			echo -e "\t a - automatically publish packages on successful execution." 
-			echo -e "\t p <filename> uploads the specified zip file for publishing independent of any execution (eg for priming the system with a previous release)"
+			echo -e "\t p <filename> - publish. Uploads the specified zip file for publishing independent of any execution (eg for priming the system with a previous release)."
 			exit 0
 		;;
 	esac
@@ -136,6 +158,18 @@ then
 	exit 0
 fi
 
+# Are we just publishing the last execution and stopping there?
+if ${completePublish}
+then 
+	# Recover the last known execution ID
+	executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
+	echo "Execution ID is '${executionId}'"
+	echo "Publish the package"
+	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
+	echo "Process Complete in $(getElapsedTime)"
+	exit 0
+fi
+
 echo "Set Readme Header"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
@@ -146,19 +180,27 @@ curl ${commonParams} --write-out \\n%{http_code} -F "file=@manifest.xml" ${api}/
 
 if ! ${skipLoad}
 then
-	# If we've done a different release before, then we need to delete the input files from the last run!
-	# Not checking the return code from this call, doesn't matter if the files aren't there
-	echo "Delete previous delta Input Files "
-	curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
-	
-	
-	inputFilesPath="input-files/${executionName}"
-	echo "Upload Input Files:"
-	for file in `ls input_files`;
-	do
-		echo "Upload Input File ${file}"
-		curl ${commonParams} -F "file=@input_files/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
-	done
+	# Are we just replacing one file, or uploading the whole lot?
+	if [ -n "${replaceInputFile}" ]
+	then
+			echo "Replacing Input File ${replaceInputFile}"
+			curl ${commonParams} -F "file=@${replaceInputFile}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+				
+	else
+		# If we've done a different release before, then we need to delete the input files from the last run!
+		# Not checking the return code from this call, doesn't matter if the files aren't there
+		echo "Delete previous delta Input Files "
+		curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
+		
+		
+		inputFilesPath="input-files/${executionName}"
+		echo "Upload Input Files:"
+		for file in `ls input_files`;
+		do
+			echo "Upload Input File ${file}"
+			curl ${commonParams} -F "file=@input_files/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+		done
+	fi
 fi
 
 echo "Set effectiveTime to ${effectiveDate}"
@@ -232,6 +274,6 @@ echo
 echo "Process Complete in $(getElapsedTime)"
 if ! ${autoPublish} 
 then
-	echo "Run again with the -a flag to publish the packages"
+	echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
 fi
 echo
