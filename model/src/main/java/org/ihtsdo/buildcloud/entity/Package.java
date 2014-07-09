@@ -30,6 +30,8 @@ public class Package implements Comparable<Package> {
 	private List<String> inputFiles;
 
 	private String readmeHeader;
+
+	private String readmeEndDate;
 	
 	private boolean firstTimeRelease = false;
 
@@ -90,7 +92,15 @@ public class Package implements Comparable<Package> {
 	public void setReadmeHeader(String readmeHeader) {
 		this.readmeHeader = readmeHeader;
 	}
-	
+
+	public String getReadmeEndDate() {
+		return readmeEndDate;
+	}
+
+	public void setReadmeEndDate(String readmeEndDate) {
+		this.readmeEndDate = readmeEndDate;
+	}
+
 	public boolean isFirstTimeRelease() {
 		return firstTimeRelease;
 	}

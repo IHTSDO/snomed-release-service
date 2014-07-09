@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -16,6 +12,10 @@ import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -98,6 +98,11 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {
 			String readmeHeader = newPropertyValues.get(PackageService.README_HEADER);
 			aPackage.setReadmeHeader(readmeHeader);
+		}
+
+		if (newPropertyValues.containsKey(PackageService.README_END_DATE)) {
+			String readmeEndDate = newPropertyValues.get(PackageService.README_END_DATE);
+			aPackage.setReadmeEndDate(readmeEndDate);
 		}
 
 		packageDAO.update(aPackage);

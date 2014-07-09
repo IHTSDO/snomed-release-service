@@ -338,7 +338,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		if (readmeFilename != null) {
 			AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
 			try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-				readmeGenerator.generate(pkg.getReadmeHeader(), manifestListing, readmeOutputStream);
+				readmeGenerator.generate(pkg.getReadmeHeader(), pkg.getReadmeEndDate(), manifestListing, readmeOutputStream);
 				asyncPipedStreamBean.waitForFinish();
 			}
 		} else {

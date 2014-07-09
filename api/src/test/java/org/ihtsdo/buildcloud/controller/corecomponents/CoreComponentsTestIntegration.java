@@ -35,6 +35,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setEffectiveTime("20140131");
+		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2014");
 		loadDeltaFilesToInputDirectory("20140131");
 		executeAndVerfiyResults("20140131");
 
@@ -44,6 +46,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setEffectiveTime("20140731");
+		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		loadDeltaFilesToInputDirectory("20140731");
@@ -59,7 +63,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 14, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 15, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}
@@ -70,16 +74,17 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-en_INT_"+releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_"+releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate +".txt", getClass());
-		integrationTestHelper.setReadmeHeader("This is the readme for the first core release.\\nTable of contents:\\n");
 	}
 	
 	private String createExpectedZipEntries(String effectiveTime) {
-		String expectedZipEntries = INTERNATIONAL_RELEASE + effectiveTime + "/\n" +
+		String expectedZipEntries =
+			INTERNATIONAL_RELEASE + effectiveTime + "/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/Readme_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/Language/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime +  "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Language/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+effectiveTime+".txt\n" +

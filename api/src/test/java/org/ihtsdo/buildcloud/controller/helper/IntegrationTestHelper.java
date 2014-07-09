@@ -203,6 +203,18 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
+	public void setReadmeEndDate(String readmeEndDate) throws Exception {
+		mockMvc.perform(
+				request(HttpMethod.PATCH, getPackageUrl())
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }")
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+	}
+
 	public String createExecution() throws Exception {
 		MvcResult createExecutionResult = mockMvc.perform(
 				post("/builds/" + buildId + "/executions")
@@ -323,8 +335,11 @@ public class IntegrationTestHelper {
 				.andReturn();
 
 		Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
-		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
-			fileOutputStream.write(outputFileResult.getResponse().getContentAsByteArray());
+		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
+			 FileOutputStream tmp = new FileOutputStream("/tmp/zip1.zip")) {
+			byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
+			fileOutputStream.write(contentAsByteArray);
+			tmp.write(contentAsByteArray);
 		}
 		return tempFile.toFile();
 	}
