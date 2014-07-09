@@ -188,7 +188,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 				msg = "Failure while processing package " 
 						+ pkg.getBusinessKey() 
 						+ " due to " 
-						+ e.getMessage();
+						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
 				LOGGER.warn(msg, e);
 			}
 			Map<String, Object> thisResult = new HashMap<>();
@@ -218,11 +218,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 			copyFilesForJustPackaging(execution, pkg);
 		} else {
 			Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
-			transformationService.transformFiles(execution, pkg,inputFileSchemaMap);
-			
+			transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
+			Map<String, TableSchema> transformedFileSchemaMap = getTransformedFileSchemaMap(inputFileSchemaMap);
+
 			//Convert Delta files to Full, Snapshot and delta release files
 			ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
+			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, transformedFileSchemaMap, dao);
 			generator.generateReleaseFiles();
 		}
 
@@ -239,6 +240,16 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	}
 
+	private Map<String, TableSchema> getTransformedFileSchemaMap(Map<String, TableSchema> inputFileSchemaMap) {
+		Map<String, TableSchema> transformedFileSchemaMap = new HashMap<>();
+		for (TableSchema tableSchema : inputFileSchemaMap.values()) {
+			if (tableSchema != null) {
+				transformedFileSchemaMap.put(tableSchema.getFilename(), tableSchema);
+			}
+		}
+		return transformedFileSchemaMap;
+	}
+
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
 	 * @param execution
@@ -251,14 +262,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 		LOGGER.info("Just copying files in execution {}, package {} for packaging", execution.getId(), packageBusinessKey);
 
 		// Iterate each execution input file
-		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
+		List<String> executionInputFilePaths = dao.listInputFileNames(execution, packageBusinessKey);
 		for (String relativeFilePath : executionInputFilePaths) {
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 		}
 	}
 
 	private Map<String, TableSchema> getInputFileSchemaMap(Execution execution, Package pkg) throws FileRecognitionException {
-		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, pkg.getBusinessKey());
+		List<String> executionInputFilePaths = dao.listInputFileNames(execution, pkg.getBusinessKey());
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (String executionInputFilePath : executionInputFilePaths) {
 			TableSchema schemaBean = schemaFactory.createSchemaBean(FileUtils.getFilenameFromPath(executionInputFilePath));

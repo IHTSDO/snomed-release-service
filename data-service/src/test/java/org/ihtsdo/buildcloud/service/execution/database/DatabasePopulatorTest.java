@@ -26,7 +26,7 @@ public class DatabasePopulatorTest {
 		testConnection = new DatabaseManager().createConnection("test");
 		databasePopulator = new DatabasePopulator(testConnection);
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
-		rf2DeltaFilename = "der2_Refset_SimpleDelta_INT_20130930.txt";
+		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
 		fullSchema = new SchemaFactory().createSchemaBean(rf2FullFilename);
 	}
 

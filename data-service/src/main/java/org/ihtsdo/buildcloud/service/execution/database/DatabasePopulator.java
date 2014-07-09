@@ -1,5 +1,9 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,10 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
-
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DatabasePopulator {
 
@@ -36,7 +36,7 @@ public class DatabasePopulator {
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 			// Create Table
-			String tableName = tableSchema.getName();
+			String tableName = tableSchema.getTableName();
 			createTable(tableSchema);
 
 			// Insert Data
@@ -51,7 +51,7 @@ public class DatabasePopulator {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 			reader.readLine(); // Discard header line
 
-			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getName());
+			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getTableName());
 			insertData(reader, tableSchema, insertStatement);
 		}
 	}
@@ -63,7 +63,7 @@ public class DatabasePopulator {
 	private void createTable(TableSchema tableSchema) throws SQLException {
 		StringBuilder builder = new StringBuilder()
 				.append("create table ")
-				.append(tableSchema.getName())
+				.append(tableSchema.getTableName())
 				.append(" (");
 
 		boolean firstField = true;

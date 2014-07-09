@@ -32,7 +32,7 @@ public interface ExecutionDAO {
 
 	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
 	
-	List<String> listInputFilePaths(Execution execution, String packageId);
+	List<String> listInputFileNames(Execution execution, String packageId);
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
