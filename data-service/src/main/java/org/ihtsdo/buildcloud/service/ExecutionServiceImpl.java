@@ -225,14 +225,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
 			generator.generateReleaseFiles();
 		}
-		Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
 
-		transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
-		
-		//Convert Delta files to Full, Snapshot and delta release files
-		ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-		ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
-		generator.generateReleaseFiles();
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
 
