@@ -18,7 +18,7 @@ public class ReleaseFileExporter {
 	public void exportFullAndSnapshot(Connection connection, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
 
 		PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from " + schema.getName() + " " +
+				"select * from " + schema.getTableName() + " " +
 				"order by id, effectiveTime"
 		);
 

@@ -29,7 +29,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Perform first time release
 		String effectiveTime = "20140131";
-		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("/rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
@@ -64,7 +64,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		// Perform second release
 		String effectiveDateTime = "20140731";
 		integrationTestHelper.deletePreviousTxtInputFiles();
-		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("/rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
 		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveDateTime);
 		integrationTestHelper.setFirstTimeRelease(false);

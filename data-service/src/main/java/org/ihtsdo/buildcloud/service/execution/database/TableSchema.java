@@ -1,17 +1,20 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TableSchema {
 
-	private String name;
+	private String filenameNoExtension;
 	private TableType tableType;
 	private List<Field> fields;
 
-	public TableSchema(TableType tableType, String name) {
+	public TableSchema(TableType tableType, String filenameNoExtension) {
 		this.tableType = tableType;
-		this.name = name;
+		this.filenameNoExtension = filenameNoExtension;
+
 		fields = new ArrayList<>();
 	}
 
@@ -24,8 +27,12 @@ public class TableSchema {
 		return tableType;
 	}
 
-	public String getName() {
-		return name;
+	public String getTableName() {
+		return filenameNoExtension.replace("-", "");
+	}
+
+	public String getFilename() {
+		return filenameNoExtension + RF2Constants.TXT_FILE_EXTENSION;
 	}
 
 	public List<Field> getFields() {

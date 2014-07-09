@@ -215,7 +215,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 	
 	@Override
-	public List<String> listInputFilePaths(Execution execution, String packageId) {
+	public List<String> listInputFileNames(Execution execution, String packageId) {
 		String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
 		return executionFileHelper.listFiles(executionInputFilesPath);
 	}
