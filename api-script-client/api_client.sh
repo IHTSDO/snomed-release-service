@@ -180,14 +180,8 @@ else
 		echo "Set first time flag to ${firstTimeStr}"
 		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"firstTimeRelease\" : \"${firstTimeStr}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 	else
-		echo "Recover previously published release"
-		# eg /centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_release/published
-		curl ${commonParams} ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published | tee tmp/published-response.txt | grep HTTP | ensureCorrectResponse
-		publishedName=`cat tmp/published-response.txt | grep "publishedPackages" | sed 's/.*: \[ "\([^"]*\).*".*/\1/g'`
-		echo "Previously published package detected as ${publishedName}"
-
-		echo "Set first time flag to ${firstTimeStr} and previous published package to ${publishedName}"
-		updateJSON="{ \"firstTimeRelease\" : \"${firstTimeStr}\", \"previousPublishedPackage\" : \"${publishedName}\" }"
+		echo "Set first time flag to ${firstTimeStr} and previous published package to ${previousPublishedPackageName}"
+		updateJSON="{ \"firstTimeRelease\" : \"${firstTimeStr}\", \"previousPublishedPackage\" : \"${previousPublishedPackageName}\" }"
 		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "$updateJSON" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 	fi
 
