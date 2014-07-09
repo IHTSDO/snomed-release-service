@@ -4,7 +4,7 @@ The SNOMED CT files are designed as relational tables with each line in the file
 
 The SNOMED CT International Release is delivered to IHTSDO Member National Centers and authorized Affiliate Licensees via Internet download.
 
-© 2002-2014 The International Health Terminology Standards Development Organisation (IHTSDO).  All Rights Reserved.  SNOMED CT® was originally created by The College of American Pathologists.  "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
+© 2002-{readmeEndDate} The International Health Terminology Standards Development Organisation (IHTSDO).  All Rights Reserved.  SNOMED CT® was originally created by The College of American Pathologists.  "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
 
 SNOMED CT has been created by combining SNOMED RT and a computer based nomenclature and classification known as Clinical Terms Version 3, formerly known as Read Codes Version 3, which was created on behalf of the UK Department of Health and is Crown copyright.
 

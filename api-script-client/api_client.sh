@@ -170,9 +170,9 @@ then
 	exit 0
 fi
 
-echo "Set Readme Header"
+echo "Set Readme Header and readmeEndDate"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
-curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\", \"readmeEndDate\" : \"${readmeEndDate}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
 echo "Upload Manifest"
 curl ${commonParams} --write-out \\n%{http_code} -F "file=@manifest.xml" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
