@@ -1,5 +1,5 @@
 <listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
-	<folder Name="SnomedCT_Release_INT_20140131">
+	<folder Name="ExampleCore_Release_INT_20140131">
 		<folder Name="RF2Release">
 			<folder Name="Full">
 				<folder Name="Refset">

@@ -1,5 +1,5 @@
 <listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
-	<folder Name="SnomedCT_Release_INT_20140731">
+	<folder Name="ExampleJustPackage_Release_INT_20140731">
 		<file Name="Readme_en_20140731.txt"/>
 		<folder Name="Documentation">
 			<file Name="documentation.pdf"/>
