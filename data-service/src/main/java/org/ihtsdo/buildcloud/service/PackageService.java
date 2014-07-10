@@ -16,11 +16,11 @@ public interface PackageService extends EntityService<Package> {
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";
 
-	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser);
+	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException;
 
-	List<Package> findAll(String buildCompositeKey, User authenticatedUser);
+	List<Package> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 	
-	Package create(String buildBusinessKey, String name, User authenticatedUser) throws EntityAlreadyExistsException;
+	Package create(String buildBusinessKey, String name, User authenticatedUser) throws EntityAlreadyExistsException, ResourceNotFoundException;
 
 	Package update(String buildCompositeKey, String packageBusinessKey, Map<String, String> newPropertyValues, User authenticatedUser) throws ResourceNotFoundException;
 

@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -72,10 +73,14 @@ public class ReleaseCenterController {
 
 	@RequestMapping("/{releaseCenterBusinessKey}")
 	@ResponseBody
-	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
+		
+		if (center == null) {
+			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+		}
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);

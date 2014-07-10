@@ -27,7 +27,7 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(ResourceNotFoundException.class)
@@ -35,7 +35,7 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleResourceNotFoundError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.NOT_FOUND);
 	}
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)
@@ -43,7 +43,7 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(BadConfigurationException.class)
@@ -51,7 +51,7 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleBadConfigurationException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.PRECONDITION_FAILED);
 	}
 
 	@ExceptionHandler(EntityAlreadyExistsException.class)
@@ -59,7 +59,7 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleEntityAlreadyExistsException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.CONFLICT);
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -67,12 +67,13 @@ public class GlobalControllerExceptionHandler {
 	@ResponseBody
 	public HashMap<String, String> handleError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
-		return getErrorMap(exception);
+		return getErrorMap(exception, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	private HashMap<String, String> getErrorMap(Exception exception) {
+	private HashMap<String, String> getErrorMap(Exception exception, HttpStatus httpStatus) {
 		HashMap<String, String> errorObject = new HashMap<>();
-		errorObject.put(ControllerConstants.MESSAGE, exception.getLocalizedMessage());
+		errorObject.put(ControllerConstants.ERROR_MESSAGE, exception.getLocalizedMessage());
+		errorObject.put(ControllerConstants.HTTP_STATUS, httpStatus.toString());
 		return errorObject;
 	}
 

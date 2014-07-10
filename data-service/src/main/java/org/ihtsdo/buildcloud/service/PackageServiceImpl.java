@@ -38,21 +38,33 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	}
 
 	@Override
-	public final Package find(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) {
+	public final Package find(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}
 		return packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 	}
 
 	@Override
-	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) {
+	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}
 		return new ArrayList<>(buildDAO.find(buildId, authenticatedUser).getPackages());
 	}
 
 	@Override
-	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) throws EntityAlreadyExistsException {
+	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) throws EntityAlreadyExistsException, ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build identifier from: " +  buildCompositeKey);
+		}
 		Build build = buildDAO.find(buildId, authenticatedUser);
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
 		Package pkg = new Package(name);
 		if(build.addPackage(pkg)) {
 			packageDAO.save(pkg);
@@ -66,7 +78,14 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	public final Package update(final String buildCompositeKey, final String packageBusinessKey,
 			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
+		if (aPackage == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+		}
 		Product product = aPackage.getBuild().getProduct();
 
 		if (newPropertyValues.containsKey(PackageService.JUST_PACKAGE)) {
