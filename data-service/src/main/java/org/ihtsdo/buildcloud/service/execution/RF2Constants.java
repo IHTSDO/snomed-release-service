@@ -17,5 +17,10 @@ public class RF2Constants {
 	public static final String EFFECTIVE_TIME = "effectiveTime";
 	public static final String MANIFEST_CONTEXT_PATH = "org.ihtsdo.buildcloud.manifest";
 	public static final String FILE_NAME_SEPARATOR = "_";
+	public static final String INPUT_FILE_PREFIX="rel2";
+	public static final String DER2 = "der2";
+	public static final String SCT2="sct2";
+	public static final String README_FILENAME_PREFIX = "Readme";
+	public static final String README_FILENAME_EXTENSION = ".txt";
 
 }

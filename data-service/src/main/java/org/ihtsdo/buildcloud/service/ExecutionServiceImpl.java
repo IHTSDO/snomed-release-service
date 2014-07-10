@@ -1,5 +1,23 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -37,18 +55,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-
 @Service
 @Transactional
 public class ExecutionServiceImpl implements ExecutionService {
@@ -76,9 +82,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private TransformationService transformationService;
-
-	private static final String README_FILENAME_PREFIX = "Readme";
-	private static final String README_FILENAME_EXTENSION = ".txt";
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override

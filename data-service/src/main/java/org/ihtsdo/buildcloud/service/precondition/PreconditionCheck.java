@@ -1,18 +1,19 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
+
 public abstract class PreconditionCheck {
 	
-	public enum State { NOT_RUN("NotRun"), PASS("Pass"), FAIL("Fail");
+	public enum State { NOT_RUN("NotRun"), PASS("Pass"), FAIL("Fail"),FATAL_ERROR("Fatal error");
 		private final String value;
 		private State (String value) {
 			this.value = value;
 		}
+		@Override
 		public String toString() {
 			return this.value;
 		}
@@ -23,6 +24,7 @@ public abstract class PreconditionCheck {
 		private ResponseKey (String value) {
 			this.value = value;
 		}
+		@Override
 		public String toString() {
 			return this.value;
 		}
@@ -49,6 +51,10 @@ public abstract class PreconditionCheck {
 	protected void fail(String msg) {
 		this.state = State.FAIL;
 		this.responseMessage = msg;
+	}
+	protected void fatalError(String error){
+	    state = State.FATAL_ERROR;
+	    responseMessage = error;
 	}
 	
 	public State getState() {
