@@ -21,6 +21,8 @@ prodId=snomed_ct_release
 buildId="1_20140731_international_release_build"
 packageId="snomed_release_package"
 readmeHeader="readme-header.txt"
+externalDataRoot="../../../snomed-release-service-data/api-script-client-data/"
+
 
 # Set curl verbocity
 curlFlags="isS"
@@ -192,13 +194,19 @@ then
 		echo "Delete previous delta Input Files "
 		curl ${commonParams} -X DELETE ${api}/builds/${buildId}/packages/${packageId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
 		
+		if [ -n "$externalDataLocation" ]
+		then
+			source ../setup_external_data_location.sh
+			inputFilesPath=${externalDataRoot}${externalDataLocation}
+		else
+			inputFilesPath="input-files"
+		fi
 		
-		inputFilesPath="input-files/${executionName}"
-		echo "Upload Input Files:"
-		for file in `ls input_files`;
+		echo "Upload Input Files from ${inputFilesPath}:"
+		for file in `ls ${inputFilesPath}`;
 		do
 			echo "Upload Input File ${file}"
-			curl ${commonParams} -F "file=@input_files/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+			curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
 		done
 	fi
 fi
