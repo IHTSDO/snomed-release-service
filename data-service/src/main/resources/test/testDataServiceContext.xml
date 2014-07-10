@@ -7,5 +7,6 @@
 	<bean class="org.ihtsdo.buildcloud.test.TestUtils"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
+	<bean class="org.ihtsdo.buildcloud.service.precondition.InputFilesExistenceCheck"/>
 
 </beans>
