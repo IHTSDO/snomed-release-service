@@ -7,6 +7,8 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.ExtensionService;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,7 +41,7 @@ public class ExtensionController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<Extension> extensions = extensionService.findAll(releaseCenterBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
@@ -47,9 +49,14 @@ public class ExtensionController {
 
 	@RequestMapping("/{extensionBusinessKey}")
 	@ResponseBody
-	public Map<String, Object> getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+		
+		if (extension == null) {
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey,extensionBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find extension: " +  item);
+		}
 		boolean currentResource = false;
 		return hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
 	}
@@ -57,7 +64,7 @@ public class ExtensionController {
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createExtension(@PathVariable String releaseCenterBusinessKey,
 											   @RequestBody(required = false) Map<String, String> json,
-											   HttpServletRequest request) throws IOException {
+											   HttpServletRequest request) throws IOException, ResourceNotFoundException {
 
 		String name = json.get("name");
 		User authenticatedUser = SecurityHelper.getSubject();

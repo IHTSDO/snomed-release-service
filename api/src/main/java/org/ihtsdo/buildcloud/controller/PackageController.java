@@ -13,6 +13,7 @@ import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -36,7 +37,7 @@ public class PackageController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(packages, request, PACKAGE_LINKS);
@@ -44,7 +45,7 @@ public class PackageController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException, EntityAlreadyExistsException {
+	public Map<String, Object> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException, EntityAlreadyExistsException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		String name = json.get("name");
 		if (name != null) {
@@ -57,10 +58,15 @@ public class PackageController {
 
 	@RequestMapping("/{packageBusinessKey}")
 	@ResponseBody
-	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey, authenticatedUser);
+		
+		if (aPackage == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey,packageBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+		}
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(aPackage, currentResource, request, PACKAGE_LINKS);
@@ -72,6 +78,10 @@ public class PackageController {
 							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json, authenticatedUser);
+		if (aPackage == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey,packageBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+		}
 		return hypermediaGenerator.getEntityHypermedia(aPackage, true, request, PACKAGE_LINKS);
 	}
 

@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,7 +34,7 @@ public class ProductBuildController {
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterBusinessKey,
 											   @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
-											   HttpServletRequest request) {
+											   HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
@@ -45,9 +46,10 @@ public class ProductBuildController {
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
 												   HttpServletRequest request) throws Exception {
-		//TODO Return 404 rather than throw exception if extension not found.
 		String name = json.get(NAME);
 		User authenticatedUser = SecurityHelper.getSubject();
+		
+		//Build service will throw ResourceNotFoundException if the parent object doesn't exist.
 		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedUser);
 
 		boolean currentResource = true;

@@ -14,6 +14,7 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
@@ -34,10 +35,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +82,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException {
+	public Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 
 		if (build.getEffectiveTime() != null) {
@@ -88,7 +92,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			//Do we already have an execution for that date?
 			Execution existingExecution = getExecution(build, creationDate);
 			if (existingExecution != null) {
-				throw new NamingConflictException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
+				throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
 			}
 
 			Execution execution = new Execution(creationDate, build);
@@ -117,37 +121,55 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAll(String buildCompositeKey, User authenticatedUser) {
+	public List<Execution> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
+
 		return dao.findAll(build);
 	}
 
 	@Override
-	public Execution find(String buildCompositeKey, String executionId, User authenticatedUser) {
+	public Execution find(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
+		
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
+
 		return dao.find(build, executionId);
 	}
 
 	@Override
-	public String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+	public String loadConfiguration(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
 		return dao.loadConfiguration(execution);
 	}
 
 	@Override
-	public List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException {
+	public List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		return getExecutionPackages(buildCompositeKey, executionId, null, authenticatedUser);
 	}
 
 	@Override
-	public ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+	public ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		List<ExecutionPackageDTO> executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
 	}
 
-	private List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+	private List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
 		Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
 		Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
 		List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
@@ -166,6 +188,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Map<String, Object> results = new HashMap<>();
 		Map<String, Object> packageResults = new HashMap<>();
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
+		
 		results.put("Execution", execution);
 		results.put("PackageResults", packageResults);
 		
@@ -279,26 +307,44 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) {
+	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) throws ResourceNotFoundException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
+		
 		Execution.Status status = Execution.Status.valueOf(statusString);
 		dao.updateStatus(execution, status);
 	}
 
 	@Override
-	public InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser) {
+	public InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser) throws ResourceNotFoundException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
 		return dao.getOutputFileStream(execution, packageId, outputFilePath);
 	}
 
 	@Override
-	public List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException {
+	public List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
 		return dao.listOutputFilePaths(execution, packageId);
 	}
 
-	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) {
+	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
 		return dao.find(build, executionId);
 	}
 	
@@ -307,8 +353,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 		
 
-	private Build getBuild(String buildCompositeKey, User authenticatedUser) {
+	private Build getBuild(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}	
 		return buildDAO.find(buildId, authenticatedUser);
 	}
 

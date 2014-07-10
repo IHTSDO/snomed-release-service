@@ -6,6 +6,8 @@ import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +30,13 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 
 	@Override
-	public List<Extension> findAll(String releaseCenterBusinessKey, User authenticatedUser) {
-		List<Extension> extensions = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser).getExtensions();
+	public List<Extension> findAll(String releaseCenterBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
+		if (releaseCenter == null) {
+			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+		}				
+				
+		List<Extension> extensions = releaseCenter.getExtensions();
 		Hibernate.initialize(extensions);
 		return extensions;
 	}
@@ -40,8 +47,11 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 	
 	@Override
-	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) {
+	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException {
 		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
+		if (releaseCenter == null) {
+			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+		}
 		Extension extension = new Extension(name);
 		releaseCenter.addExtension(extension);
 		extensionDAO.save(extension);

@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -122,9 +123,8 @@ public class PublishServiceImpl implements PublishService {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
 		
 		if (product == null) {
-			throw new ResourceNotFoundException("Failed to recover product " + releaseCenterBusinessKey
-													+ "/" + extensionBusinessKey
-													+ "/" + productBusinessKey);
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product: " +  item);
 		}
 		
 		//We're expecting a zip file only

@@ -46,14 +46,23 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build find(String buildCompositeKey, User authenticatedUser) {
+	public Build find(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
+		if (id == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}		
 		return buildDAO.find(id, authenticatedUser);
 	}
 	
 	@Override
-	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) {
-		List<Build> builds = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser).getBuilds();
+	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+		
+		if (product == null) {
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product: " + item);
+		}
+		List<Build> builds = product.getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
 	}
@@ -70,7 +79,8 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 		
 		if (product == null) {
-			throw new ResourceNotFoundException ("Unable to find product with path: " + releaseCenterBusinessKey + "/" +  extensionBusinessKey + "/" + productBusinessKey);
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product: " + item);
 		}
 		
 		Build build = new Build(name);
@@ -80,9 +90,13 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException {
+	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException, ResourceNotFoundException {
 		LOGGER.debug("update, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
+		
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
 				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
