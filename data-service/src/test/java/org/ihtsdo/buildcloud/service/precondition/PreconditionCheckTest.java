@@ -16,6 +16,8 @@ import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.InputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -75,7 +77,7 @@ public abstract class PreconditionCheckTest {
 		executionDAO.copyAll(build, execution);
 	}
 
-	protected String runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
+	protected State runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
 		
 		//Do we need an execution?
 		if (execution == null) {
@@ -83,22 +85,19 @@ public abstract class PreconditionCheckTest {
 		}
 		
 		//Create a manager for this test
-		Map<String, Object> report = manager.runPreconditionChecks(execution);
+		Map<String, List<PreConditionCheckReport>> report = manager.runPreconditionChecks(execution);
 		Assert.assertNotNull(report);
 
-		@SuppressWarnings("unchecked") //Am hiding complexity from external code components, but keeping strict type checking within the class
-		List<Map<PreconditionCheck.ResponseKey,String>> allPrechecks = List.class.cast(report.get(TestEntityGenerator.packageNames[0][0][0]));		//For the "Snomed Release Package"
-		Map<PreconditionCheck.ResponseKey,String> testResults = allPrechecks.get(0);												//Get the first test run
+		List<PreConditionCheckReport> allPrechecks = report.get(TestEntityGenerator.packageNames[0][0][0]);		//For the "Snomed Release Package"
+		PreConditionCheckReport testResult = allPrechecks.get(0);												//Get the first test run
 		
-		String testName = testResults.get(PreconditionCheck.ResponseKey.PRE_CHECK_NAME);
+		String testName = testResult.getPreConditionCheckName();
 		Assert.assertEquals (classUnderTest.getSimpleName(), testName);
 		
-		String resultString = testResults.get(PreconditionCheck.ResponseKey.RESULT);
-		
 		//If it's a fail, we'll debug that message just for testing purposes
-		if (!resultString.equals(PreconditionCheck.State.PASS))
-			LOGGER.warn ("Test {} Reported {}",testName,testResults.get(PreconditionCheck.ResponseKey.MESSAGE));
-		return resultString;
+		if (State.PASS != testResult.getResult())
+			LOGGER.warn ("Test {} Reported {}",testName,testResult.getMessage());
+		return testResult.getResult();
 	}
 	
 	protected void loadManifest(String filename) throws FileNotFoundException {

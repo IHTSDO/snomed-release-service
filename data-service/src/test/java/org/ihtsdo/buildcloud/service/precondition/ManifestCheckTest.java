@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 import java.io.FileNotFoundException;
 
 import org.ihtsdo.buildcloud.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,29 +27,29 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkNoManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest(null);
-		String actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( PreconditionCheck.State.FAIL.toString(), actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class);
+		Assert.assertEquals( State.FAIL, actualResult);
 	}
 
 	@Test
 	public void checkValidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("valid_manifest.xml");
-		String actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals(PreconditionCheck.State.PASS.toString(), actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class);
+		Assert.assertEquals(State.PASS, actualResult);
 	}
 
 	@Test
 	public void checkInvalidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("invalid_manifest.xml");
-		String actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( PreconditionCheck.State.FAIL.toString(), actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class);
+		Assert.assertEquals( State.FAIL, actualResult);
 	}
 
 	@Test
 	public void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
-		String actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( PreconditionCheck.State.FAIL.toString(), actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class);
+		Assert.assertEquals( State.FAIL, actualResult);
 	}
 
 }

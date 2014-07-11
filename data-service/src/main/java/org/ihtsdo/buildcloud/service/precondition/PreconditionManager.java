@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,13 +17,13 @@ public class PreconditionManager {
 	 * For each package in turn, loops through each check that has been added to the manager
 	 * @return the report in a JSON friendly structure
 	 */
-	public Map<String, Object> runPreconditionChecks(Execution execution) {
-		Map<String, Object> results = new HashMap<>();
+	public Map<String, List<PreConditionCheckReport>> runPreconditionChecks(final Execution execution) {
+		Map<String, List<PreConditionCheckReport>> results = new HashMap<>();
 		for (Package pkg : execution.getBuild().getPackages()) {
-			List<Map<PreconditionCheck.ResponseKey, String>> thisPackageResults = new ArrayList<>();
+			List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
 			for (PreconditionCheck thisCheck : preconditionChecks) {
 				thisCheck.runCheck(pkg, execution);
-				thisPackageResults.add(thisCheck.getResult());
+				thisPackageResults.add(thisCheck.getReport());
 			}
 			results.put(pkg.getName(), thisPackageResults);
 		}
