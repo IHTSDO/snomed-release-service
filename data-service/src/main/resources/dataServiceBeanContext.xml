@@ -139,8 +139,13 @@
 				<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
 				<bean class="org.ihtsdo.buildcloud.service.precondition.InputFilesExistenceCheck"/>
 				<bean class="org.ihtsdo.buildcloud.service.precondition.ReadmeHeaderCheck"/>
+				<bean class="org.ihtsdo.buildcloud.service.precondition.RF2FilesCheck"/>
 			</list>
 		</property>
+	</bean>
+
+	<bean id="releaseValidationFrameworkUrl" class="java.lang.String" >
+		<constructor-arg value="${releaseValidationFramework.url}"/>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
