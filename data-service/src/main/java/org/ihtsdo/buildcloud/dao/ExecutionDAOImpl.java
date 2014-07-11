@@ -132,7 +132,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String newStatusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus());
 		// Put new status before deleting old to avoid there being none.
 		putFile(newStatusFilePath, BLANK);
-		if (origStatus != null) {
+		if (origStatus != null && origStatus != newStatus) {
 			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
