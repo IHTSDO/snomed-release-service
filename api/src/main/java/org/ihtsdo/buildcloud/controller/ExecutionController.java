@@ -50,7 +50,8 @@ public class ExecutionController {
 	private PackageService packageService;
 
 	private static final String[] EXECUTION_LINKS = {"configuration", "packages"};
-	private static final String[] PACKAGE_LINKS = {"outputfiles"};
+	private static final String[] PACKAGE_LINKS = {"outputfiles", "logs"};
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
 
 	@RequestMapping(method = RequestMethod.POST)
@@ -124,13 +125,7 @@ public class ExecutionController {
 															HttpServletRequest request) throws IOException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
-		List<Map<String, String>> outputFiles = new ArrayList<>();
-		for (String relativeFilePath : relativeFilePaths) {
-			HashMap<String, String> file = new HashMap<>();
-			file.put(ControllerConstants.ID, relativeFilePath);
-			outputFiles.add(file);
-		}
-		return hypermediaGenerator.getEntityCollectionHypermedia(outputFiles, request);
+		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
 	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles/{outputFileName:.*}")
@@ -139,6 +134,26 @@ public class ExecutionController {
 											HttpServletResponse response) throws IOException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
+		}
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/logs")
+	@ResponseBody
+	public List<Map<String, Object>> listPackageLogFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+														 @PathVariable String packageId,
+														 HttpServletRequest request) throws IOException, ResourceNotFoundException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<String> relativeFilePaths = executionService.getExecutionPackageLogFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		return convertFileListToEntities(request, relativeFilePaths);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/logs/{logFileName:.*}")
+	public void getPackageLogFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+									 @PathVariable String packageId, @PathVariable String logFileName,
+									 HttpServletResponse response) throws IOException, ResourceNotFoundException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		try (InputStream outputFileStream = executionService.getLogFile(buildCompositeKey, executionId, packageId, logFileName, authenticatedUser)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -162,15 +177,15 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
 	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId) throws ResourceNotFoundException{
-		
+
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
-		
+
 		if (execution == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
 			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
 		}
-		
+
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		String lastPackage = "No Package";
 		for(Package pk: packages ){
@@ -181,6 +196,16 @@ public class ExecutionController {
 				LOGGER.error ("Failed to publish package {}", lastPackage, e);
 			}
 		}
+	}
+
+	private List<Map<String, Object>> convertFileListToEntities(HttpServletRequest request, List<String> relativeFilePaths) {
+		List<Map<String, String>> files = new ArrayList<>();
+		for (String relativeFilePath : relativeFilePaths) {
+			HashMap<String, String> file = new HashMap<>();
+			file.put(ControllerConstants.ID, relativeFilePath);
+			files.add(file);
+		}
+		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
 }

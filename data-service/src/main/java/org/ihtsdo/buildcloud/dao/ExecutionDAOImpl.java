@@ -242,6 +242,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
+	public AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+		String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getFileAsOutputStream(executionLogFilePath);
+	}
+
+	@Override
 	public void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath) {
 		String executionInputFilePath = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, relativeFilePath);
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
@@ -327,6 +333,18 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			String packageId) {
 		String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
 		return executionFileHelper.listFiles(outputFilesPath);
+	}
+
+	@Override
+	public InputStream getLogFileStream(Execution execution, String packageId, String logFileName) {
+		String logFilePath = pathHelper.getExecutionLogFilePath(execution, packageId, logFileName);
+		return executionFileHelper.getFileStream(logFilePath);
+	}
+
+	@Override
+	public List<String> listLogFilePaths(Execution execution, String packageId) {
+		String logFilesPath = pathHelper.getExecutionLogFilesPath(execution, packageId).toString();
+		return executionFileHelper.listFiles(logFilesPath);
 	}
 
 	@Required
