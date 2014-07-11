@@ -28,11 +28,12 @@ if [ ! -d "${project}" ]; then
 	repoUrl=${protocol}${collabnetUsername}${repository}
 	echo "Cloning repository: ${repoUrl}"
 	${command} ${repoUrl}
+else
+	# We just need an update of the directory that's already there
+	echo "Updating ${project}"
+	cd ${project}
+	git pull
 fi
-
-echo "Updating ${project}"
-cd ${project}
-git pull
 
 echo "Returning to ${origDir}"
 cd ${origDir}
