@@ -28,7 +28,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	public void checkNoManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest(null);
 		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FAIL, actualResult);
+		Assert.assertEquals( State.FATAL, actualResult);
 	}
 
 	@Test
@@ -42,14 +42,14 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	public void checkInvalidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("invalid_manifest.xml");
 		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FAIL, actualResult);
+		Assert.assertEquals( State.FATAL, actualResult);
 	}
 
 	@Test
 	public void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
 		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FAIL, actualResult);
+		Assert.assertEquals( State.FATAL, actualResult);
 	}
 
 }
