@@ -63,15 +63,6 @@ public class TestEntityGenerator {
 															"RF1 Compatibility Package (es-ar)",
 															"RF2 to RF1 Conversion (es-ar)" }}};
 
-	// packageInputFile string format is name|groupId|artifactId|version
-	public static final String [] packageInputFiles = {
-			"concepts rf2|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2_release.input.concepts_rf2|2014-03-19T14-14-48",
-			"RF1CompatibilityPackage|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf1compatibilitypackage.input.rf1compatibilitypackage|2014-03-27T08-44-32",
-			"RF2_RF1_Converter|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_international_edition.20140731_international_release|rf2torf1conversion.input.rf2_rf1_converter|2014-03-27T08-45-12"
-	};
-	
-	public static final String manifestFileStr = "SnomedCT_Release_INT_20140131.xml|org.ihtsdo.release.international.snomed_ct_international_edition.snomed_ct_release.20140731_international_release_build|snomed_release_package.input.snomedct_release_int_20140131xml|2014-05-15T15-29-58";
-	
 	protected ReleaseCenter createTestReleaseCenter() {
 		ReleaseCenter internationalReleaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
 		addExtensionsToReleaseCenter(internationalReleaseCenter);
