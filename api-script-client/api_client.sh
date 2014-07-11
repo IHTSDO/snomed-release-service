@@ -241,8 +241,10 @@ echo "Create Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execution-response.txt | grep HTTP | ensureCorrectResponse
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
+echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
 
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
+echo
 
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
@@ -263,20 +265,28 @@ then
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
 
+downloadFile() {
+	read fileName
+	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
+	mkdir -p ${localDownloadDirectory}
+	# Using curl as the MAC doesn't have wget loaded by default
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
+}
+
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
 localDownloadDirectory=output
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
-
-
-mkdir -p ${localDownloadDirectory}
-downloadFile() {
-	read fileName
-	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
-	# Using curl as the MAC doesn't have wget loaded by default
-	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
-}
+# Download files
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+echo
+
+echo "List the logs"
+downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+# Download files
+cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
 echo "Process Complete in $(getElapsedTime)"

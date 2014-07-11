@@ -40,6 +40,8 @@ public interface ExecutionDAO {
 
 	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
+	AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
 	void copyAll(Build buildSource, Execution execution);
@@ -54,6 +56,10 @@ public interface ExecutionDAO {
 	List<String> listTransformedFilePaths(Execution execution, String packageId);
 	
 	List<String> listOutputFilePaths(Execution execution, String packageId);
+
+	List<String> listLogFilePaths(Execution execution, String packageId);
+
+	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
 
 	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
