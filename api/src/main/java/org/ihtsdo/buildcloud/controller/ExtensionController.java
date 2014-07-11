@@ -57,7 +57,7 @@ public class ExtensionController {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey,extensionBusinessKey);
 			throw new ResourceNotFoundException ("Unable to find extension: " +  item);
 		}
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
 	}
 	
