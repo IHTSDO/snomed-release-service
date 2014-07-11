@@ -1,5 +1,5 @@
 <listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
-	<folder Name="Example_Full_Release_INT_20140131">
+	<folder Name="Example_Full_Release_20140131">
 		<file Name="Readme_en_20140131.txt"/>
 		<folder Name="Documentation">
 			<file Name="documentation.pdf" />
