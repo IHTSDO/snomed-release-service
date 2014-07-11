@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
@@ -12,6 +13,7 @@ import java.util.Map;
  *
  * This entity is stored via S3, not Hibernate.
  */
+@JsonPropertyOrder({"id", "name"})
 public class Execution {
 
 	private final String creationTime;

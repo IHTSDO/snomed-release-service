@@ -1,11 +1,14 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
 @Entity
+@JsonPropertyOrder({"id", "name"})
 public class ReleaseCenterMembership {
 
 	@Id
