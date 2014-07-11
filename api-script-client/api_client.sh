@@ -199,7 +199,7 @@ then
 			source ../setup_external_data_location.sh
 			inputFilesPath=${externalDataRoot}${externalDataLocation}
 		else
-			inputFilesPath="input-files"
+			inputFilesPath="input_files"
 		fi
 		
 		echo "Upload Input Files from ${inputFilesPath}:"
