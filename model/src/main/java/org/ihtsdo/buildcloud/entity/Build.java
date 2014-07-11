@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.entity;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.hibernate.annotations.Sort;
 import org.hibernate.annotations.SortType;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
@@ -13,6 +14,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 @Entity
+@JsonPropertyOrder({"id", "name"})
 public class Build {
 
 	@Id
