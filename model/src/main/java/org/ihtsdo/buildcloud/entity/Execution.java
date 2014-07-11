@@ -4,6 +4,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,7 +21,7 @@ public class Execution {
 	@JsonIgnore
 	private final Build build;
 	
-	private Map<String, Object> preConditionReport;
+	private Map<String, List<PreConditionCheckReport>> preConditionCheckReports;
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
@@ -57,12 +58,12 @@ public class Execution {
 		return build;
 	}
 
-	public void setPreConditionReport(Map<String, Object> preConditionReport) {
-		this.preConditionReport = preConditionReport;
+	public void setPreConditionCheckReports(Map<String, List<PreConditionCheckReport>> preConditionReports) {
+		this.preConditionCheckReports = preConditionReports;
 	}
 
-	public Map<String, Object> getPreConditionReport() {
-		return preConditionReport;
+	public Map<String, List<PreConditionCheckReport>> getPreConditionCheckReports() {
+		return preConditionCheckReports;
 	}
 
 }

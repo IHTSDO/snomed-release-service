@@ -18,13 +18,17 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
@@ -105,7 +109,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			dao.copyAll(build, execution);
 			
 			//Perform Pre-condition testing (loops through each package)
-			runPreconditionChecks(execution);
+			 runPreconditionChecks(execution);
 
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
@@ -120,8 +124,22 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	private void runPreconditionChecks(Execution execution) {
-		Map<String, Object> preConditionReport = preconditionManager.runPreconditionChecks(execution);
-		execution.setPreConditionReport(preConditionReport);
+		Map<String, List<PreConditionCheckReport>> preConditionReports = preconditionManager.runPreconditionChecks(execution);
+		execution.setPreConditionCheckReports(preConditionReports);
+		//analyze report to check whether there is fatal error for all packages
+		int fatalCountByPkg = 0;
+		for(String pkgName : preConditionReports.keySet()){
+		    for(PreConditionCheckReport report : preConditionReports.get(pkgName)){
+			if(report.getResult() == State.FATAL){
+			    fatalCountByPkg ++;
+			    break;
+			}
+		    }
+		}
+		//need to alert release manager as all packages have fatal pre-condition check error.
+		if(fatalCountByPkg > 0 && fatalCountByPkg == preConditionReports.keySet().size()){
+		    execution.setStatus(Status.FAILED_PRE_CONDITIONS);
+		}
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
+
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -12,6 +13,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
@@ -79,9 +81,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		// Save config file
 		String configPath = pathHelper.getConfigFilePath(execution);
 		putFile(configPath, jsonConfig);
-
 		// Save status file
-		updateStatus(execution, Execution.Status.BEFORE_TRIGGER);
+		Status status = execution.getStatus() == null ? Execution.Status.BEFORE_TRIGGER : execution.getStatus();
+		updateStatus(execution, status);
 	}
 
 	@Override

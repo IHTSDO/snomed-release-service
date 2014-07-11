@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +10,7 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 	
 	private static final String PPP = "SomeValue.zip";
 
+	@Override
 	@Before
 	public void setup() {
 		super.setup();
@@ -23,8 +25,8 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 			p.setPreviousPublishedPackage(null);
 		}
 		
-		String actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
-		Assert.assertEquals( PreconditionCheck.State.PASS.toString(), actualResult);		
+		State actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
+		Assert.assertEquals( State.PASS, actualResult);		
 
 	}
 	
@@ -36,8 +38,8 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 			p.setPreviousPublishedPackage(PPP);
 		}
 		
-		String actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
-		Assert.assertEquals( PreconditionCheck.State.FAIL.toString(), actualResult);		
+		State actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
+		Assert.assertEquals( State.FAIL, actualResult);		
 	}
 	
 	@Test
@@ -48,8 +50,8 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 			p.setPreviousPublishedPackage(PPP);
 		}
 		
-		String actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
-		Assert.assertEquals( PreconditionCheck.State.PASS.toString(), actualResult);	
+		State actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
+		Assert.assertEquals( State.PASS, actualResult);	
 	}
 	
 	@Test
@@ -60,8 +62,8 @@ public class CheckFirstReleaseFlagTest extends PreconditionCheckTest {
 			p.setPreviousPublishedPackage(null);
 		}
 		
-		String actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
-		Assert.assertEquals( PreconditionCheck.State.FAIL.toString(), actualResult);	
+		State actualResult = runPreConditionCheck(CheckFirstReleaseFlag.class);
+		Assert.assertEquals( State.FAIL, actualResult);	
 	}
 	
 
