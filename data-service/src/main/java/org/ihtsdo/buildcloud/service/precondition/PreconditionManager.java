@@ -20,12 +20,14 @@ public class PreconditionManager {
 	public Map<String, List<PreConditionCheckReport>> runPreconditionChecks(final Execution execution) {
 		Map<String, List<PreConditionCheckReport>> results = new HashMap<>();
 		for (Package pkg : execution.getBuild().getPackages()) {
-			List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
-			for (PreconditionCheck thisCheck : preconditionChecks) {
-				thisCheck.runCheck(pkg, execution);
-				thisPackageResults.add(thisCheck.getReport());
+			if (!pkg.isJustPackage()) {
+				List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
+				for (PreconditionCheck thisCheck : preconditionChecks) {
+					thisCheck.runCheck(pkg, execution);
+					thisPackageResults.add(thisCheck.getReport());
+				}
+				results.put(pkg.getName(), thisPackageResults);
 			}
-			results.put(pkg.getName(), thisPackageResults);
 		}
 		return results;
 	}
