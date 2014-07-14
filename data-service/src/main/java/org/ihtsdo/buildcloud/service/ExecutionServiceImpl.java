@@ -109,7 +109,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			dao.copyAll(build, execution);
 			
 			//Perform Pre-condition testing (loops through each package)
-			 runPreconditionChecks(execution);
+			runPreconditionChecks(execution);
 
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
@@ -128,16 +128,16 @@ public class ExecutionServiceImpl implements ExecutionService {
 		execution.setPreConditionCheckReports(preConditionReports);
 		//analyze report to check whether there is fatal error for all packages
 		int fatalCountByPkg = 0;
-		for(String pkgName : preConditionReports.keySet()){
-		    for(PreConditionCheckReport report : preConditionReports.get(pkgName)){
-			if(report.getResult() == State.FATAL){
-			    fatalCountByPkg ++;
-			    break;
+		for (String pkgName : preConditionReports.keySet()) {
+		    for (PreConditionCheckReport report : preConditionReports.get(pkgName)) {
+				if (report.getResult() == State.FATAL) {
+					fatalCountByPkg++;
+					break;
+				}
 			}
-		    }
 		}
 		//need to alert release manager as all packages have fatal pre-condition check error.
-		if(fatalCountByPkg > 0 && fatalCountByPkg == preConditionReports.keySet().size()){
+		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
 		    execution.setStatus(Status.FAILED_PRE_CONDITIONS);
 		}
 	}
