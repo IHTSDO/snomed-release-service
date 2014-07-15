@@ -9,8 +9,8 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
-#api="http://local.ihtsdotools.org/api/v1"
+#api=http://localhost:8080/api/v1
+api="http://local.ihtsdotools.org/api/v1"
 #api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
@@ -18,7 +18,7 @@ api=http://localhost:8080/api/v1
 rcId=international
 extId=snomed_ct_international_edition
 prodId=snomed_ct_release
-buildId="1_20140731_international_release_build"
+#buildId="1_20140731_international_release_build"
 packageId="snomed_release_package"
 readmeHeader="readme-header.txt"
 externalDataRoot="../../../snomed-release-service-data/api-script-client-data/"
@@ -118,12 +118,6 @@ do
 	esac
 done
 
-echo
-echo "Target API URL is '${api}'"
-echo "Target Build ID is '${buildId}'"
-echo "Target Package ID is '${packageId}'"
-echo
-
 mkdir -p tmp
 
 # Login
@@ -139,6 +133,16 @@ then
 fi
 commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
+
+# Do we need to create a build or can we just find our buildID?
+
+source ../setup_build.sh
+
+echo
+echo "Target API URL is '${api}'"
+echo "Target Build ID is '${buildId}'"
+echo "Target Package ID is '${packageId}'"
+echo
 
 echo
 # Are we just listing the input files and stopping there?
