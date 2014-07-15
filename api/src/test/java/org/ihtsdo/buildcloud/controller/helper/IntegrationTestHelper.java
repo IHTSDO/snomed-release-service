@@ -177,6 +177,19 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
+	public void setJustPackage(boolean justPackage) throws Exception {
+		String jsonContent = "{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }";
+		mockMvc.perform(
+				request(HttpMethod.PATCH, getPackageUrl())
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+	}
+
 	public void setPreviousPublishedPackage(String previousPublishedFile) throws Exception {
 		String jsonContent = "{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }";
 		mockMvc.perform(
