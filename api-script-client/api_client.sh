@@ -15,11 +15,14 @@ api=http://localhost:8080/api/v1
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
-rcId=international
-extId=snomed_ct_international_edition
-prodId=snomed_ct_release
-#buildId="1_20140731_international_release_build"
-packageId="snomed_release_package"
+# Should come from caller script:
+# 	extensionName
+# 	productName
+#	buildName
+#	packageName
+
+
+releaseCentreId="international"
 readmeHeader="readme-header.txt"
 externalDataRoot="../../../snomed-release-service-data/api-script-client-data/"
 
@@ -52,6 +55,40 @@ getElapsedTime() {
 	seconds=$((seconds % 60))
 	
 	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+findEntity() {
+	curl ${entityUrl} 2>/dev/null | grep -i -B1 "\"name\" : \"${entityName}\"" | head -n1 | sed 's/.*: "\(.*\)",/\1/'
+}
+findOrCreateEntity() {
+	# Gather params
+	entityType=$1
+	entityUrl=$2
+	entityName=$3
+
+	if [ -z "${entityName}" ]
+	then
+		echo "${entityType} name not specified."
+		echo
+		echo "Script Halted"
+		exit -1
+	fi
+
+	# Find existing entity
+	entityId="`findEntity`"
+
+	# Test if entity found
+	if [ -z "${entityId}" ]
+	then
+		# Entity doesn't exist, create
+		echo "Creating ${entityType}"
+		curl ${commonParams} -X POST -H 'Content-Type:application/json' --data-binary "{ \"name\" : \"${entityName}\" }" ${entityUrl} | grep HTTP | ensureCorrectResponse
+		# Retrieve new entity id
+		entityId="`findEntity`"
+	fi
+
+	echo "${entityType} Name '${entityName}', ID '${entityId}'."
+	echo
 }
 
 # Check command line arguments
@@ -133,18 +170,34 @@ then
 fi
 commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
-
-# Do we need to create a build or can we just find our buildID?
-
-source ../setup_build.sh
-
 echo
+
+# This be printed first - before we start using it!
 echo "Target API URL is '${api}'"
-echo "Target Build ID is '${buildId}'"
-echo "Target Package ID is '${packageId}'"
 echo
 
-echo
+findOrCreateEntity "Extension" "${api}/centers/${releaseCentreId}/extensions" "${extensionName}"
+extensionId=${entityId}
+
+findOrCreateEntity "Product" "${api}/centers/${releaseCentreId}/extensions/${extensionId}/products" "${productName}"
+productId=${entityId}
+
+# Default build name to product name
+if [ -z "${buildName}" ]
+then
+	buildName="${productName}"
+fi
+findOrCreateEntity "Build" "${api}/centers/${releaseCentreId}/extensions/${extensionId}/products/${productId}/builds" "${buildName}"
+buildId=${entityId}
+
+# Default package name to build name
+if [ -z "${packageName}" ]
+then
+	packageName="${buildName}"
+fi
+findOrCreateEntity "Package" "${api}/builds/${buildId}/packages" "${packageName}"
+packageId=${entityId}
+
 # Are we just listing the input files and stopping there?
 if ${listOnly}
 then
@@ -159,7 +212,7 @@ fi
 if [ -n "${publishFile}" ]
 then
 	echo "Upload file to be published: ${publishFile}"
-	curl ${commonParams} -X POST -F "file=@${publishFile}" ${api}/centers/${rcId}/extensions/${extId}/products/${prodId}/published  | grep HTTP | ensureCorrectResponse 
+	curl ${commonParams} -X POST -F "file=@${publishFile}" ${api}/centers/${releaseCentreId}/products/${extensionId}/products/${productId}/published  | grep HTTP | ensureCorrectResponse
 	echo "File successfully published in $(getElapsedTime)"
 	exit 0
 fi
