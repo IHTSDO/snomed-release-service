@@ -36,7 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class InputFilesExistenceCheck extends PreconditionCheck {
 
-    private static final String ERROR_MSG = "The file required by manifest but doesn't exist in the input files directory:";
+    private static final String ERROR_MSG = "The input files directory doesn't contain the following  files required by the manifest.xml:";
     @Autowired
     private ExecutionDAO executionDAO;
     
@@ -82,13 +82,21 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 		
 	    }
 	  //get a list of input file names
-	    List<String> inpufilesList=executionDAO.listInputFileNames(execution, pkg.getBusinessKey());
+	    List<String> inputfilesList=executionDAO.listInputFileNames(execution, pkg.getBusinessKey());
 	    //check expected against input files 
+	    StringBuilder msgBuilder = new StringBuilder();
+	    int counter=0;
 	    for(String expectedFileName : filesExpected){
-		if(!inpufilesList.contains(expectedFileName)){
-		    fatalError( ERROR_MSG + expectedFileName);
-		    isFailed = true;
+		if(!inputfilesList.contains(expectedFileName)){
+		    if(counter++>0){
+			 msgBuilder.append(",");
+		    }
+		    msgBuilder.append(expectedFileName);
 		}
+	    }
+	    if(counter>0){
+		 fatalError( msgBuilder.toString() + ERROR_MSG);
+		 isFailed=true;
 	    }
 	   
 	} catch (JAXBException | ResourceNotFoundException e) {
