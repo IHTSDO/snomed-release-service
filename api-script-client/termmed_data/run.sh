@@ -6,7 +6,8 @@ effectiveDate="2014-07-31"
 readmeEndDate="2014"
 isFirstTime=false
 previousPublishedPackageName="SnomedCT_Release_INT_20140131.zip"
-buildName="TermmedDataRelease"
+productName="TermmedDataRelease"
+extensionName="Examples"
 
 # Call api_client
 source ../api_client.sh
