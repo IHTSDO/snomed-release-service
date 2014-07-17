@@ -18,7 +18,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc);
+		integrationTestHelper = new IntegrationTestHelper(mockMvc,"simple_refset_test");
 		((TestS3Client) s3Client).deleteBuckets();
 	}
 
@@ -54,8 +54,9 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, 5, expectedZipFilename, expectedZipEntries, getClass());
-
+		
+		int expectedFileCount = 5;  //So the 3 files there and then we're expecting the readmefile as well.
+		integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedFileCount, expectedZipFilename, expectedZipEntries, getClass());
 
 		// Sleep for a second. Next build must have a different timestamp.
 		Thread.sleep(1000);
@@ -68,6 +69,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveDateTime);
 		integrationTestHelper.setFirstTimeRelease(false);
+		integrationTestHelper.setJustPackage(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
 		String executionURL2 = integrationTestHelper.createExecution();
