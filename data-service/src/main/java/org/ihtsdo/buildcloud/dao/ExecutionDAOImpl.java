@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
@@ -139,9 +140,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 	
 	@Override
-	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception {
+	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException {
 		if (execution.getStatus() != ensureStatus) {
-			throw new Exception ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
+			throw new BadConfigurationException ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
 						+ " and is expected to be at status:" + ensureStatus.name());
 		}
 	}
