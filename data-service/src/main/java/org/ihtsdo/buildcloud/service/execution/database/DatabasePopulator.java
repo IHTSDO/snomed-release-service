@@ -1,6 +1,10 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +71,7 @@ public class DatabasePopulator {
 				.append(" (");
 
 		boolean firstField = true;
-		for (TableSchema.Field field : tableSchema.getFields()) {
+		for (Field field : tableSchema.getFields()) {
 
 			if (firstField) {
 				firstField = false;
@@ -95,7 +99,7 @@ public class DatabasePopulator {
 				.append(" (");
 
 		boolean firstField = true;
-		for (TableSchema.Field field : schema.getFields()) {
+		for (Field field : schema.getFields()) {
 			if (firstField) {
 				firstField = false;
 			} else {
@@ -107,7 +111,7 @@ public class DatabasePopulator {
 
 		builder.append(" values (");
 		firstField = true;
-		for (TableSchema.Field field : schema.getFields()) {
+		for (Field field : schema.getFields()) {
 			if (firstField) {
 				firstField = false;
 			} else {
@@ -121,7 +125,7 @@ public class DatabasePopulator {
 	}
 
 	private void insertData(BufferedReader reader, TableSchema tableSchema, PreparedStatement insertStatement) throws IOException, SQLException, ParseException {
-		List<TableSchema.Field> fields = tableSchema.getFields();
+		List<Field> fields = tableSchema.getFields();
 		int fieldCount = fields.size();
 
 		int executeBatchSize = 10000;

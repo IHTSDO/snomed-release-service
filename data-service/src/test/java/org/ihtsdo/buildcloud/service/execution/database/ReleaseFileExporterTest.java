@@ -6,6 +6,8 @@ import java.sql.Connection;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

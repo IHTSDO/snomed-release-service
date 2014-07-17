@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,9 +24,9 @@ public class SchemaFactoryTest {
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
 		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
-		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
+		Assert.assertEquals(ComponentType.REFSET, schemaBean.getComponentType());
 		Assert.assertEquals("der2_Refset_SimpleDelta_INT_20140831", schemaBean.getTableName());
-		List<TableSchema.Field> fields = schemaBean.getFields();
+		List<Field> fields = schemaBean.getFields();
 		Assert.assertEquals(6, fields.size());
 		assertFirstSixSimpleRefsetFields(fields);
 	}
@@ -38,9 +39,9 @@ public class SchemaFactoryTest {
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
 		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
-		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
+		Assert.assertEquals(ComponentType.REFSET, schemaBean.getComponentType());
 		Assert.assertEquals("der2_cRefset_AttributeValueDelta_INT_20140831", schemaBean.getTableName());
-		List<TableSchema.Field> fields = schemaBean.getFields();
+		List<Field> fields = schemaBean.getFields();
 		Assert.assertEquals(7, fields.size());
 		assertFirstSixSimpleRefsetFields(fields);
 
@@ -58,9 +59,9 @@ public class SchemaFactoryTest {
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
 		schemaFactory.populateExtendedRefsetAdditionalFieldNames(schemaBean, headerLine);
 
-		Assert.assertEquals(TableType.REFSET, schemaBean.getTableType());
+		Assert.assertEquals(ComponentType.REFSET, schemaBean.getComponentType());
 		Assert.assertEquals("der2_iisssccRefset_ExtendedMapDelta_INT_20140131", schemaBean.getTableName());
-		List<TableSchema.Field> fields = schemaBean.getFields();
+		List<Field> fields = schemaBean.getFields();
 		Assert.assertEquals(13, fields.size());
 		assertFirstSixSimpleRefsetFields(fields);
 
@@ -93,9 +94,9 @@ public class SchemaFactoryTest {
 
 		TableSchema schemaBean = schemaFactory.createSchemaBean(filename);
 
-		Assert.assertEquals(TableType.CONCEPT, schemaBean.getTableType());
+		Assert.assertEquals(ComponentType.CONCEPT, schemaBean.getComponentType());
 		Assert.assertEquals("sct2_Concept_Delta_INT_20140131", schemaBean.getTableName());
-		List<TableSchema.Field> fields = schemaBean.getFields();
+		List<Field> fields = schemaBean.getFields();
 		Assert.assertEquals(5, fields.size());
 
 		Assert.assertEquals("id", fields.get(0).getName());
@@ -121,7 +122,7 @@ public class SchemaFactoryTest {
 		schemaFactory.createSchemaBean(filename);
 	}
 
-	private void assertFirstSixSimpleRefsetFields(List<TableSchema.Field> fields) {
+	private void assertFirstSixSimpleRefsetFields(List<Field> fields) {
 		Assert.assertEquals("id", fields.get(0).getName());
 		Assert.assertEquals(DataType.UUID, fields.get(0).getType());
 

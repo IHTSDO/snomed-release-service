@@ -1,6 +1,9 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,13 +32,13 @@ public class ReleaseFileExporter {
 
 			// Declare a few objects to reuse over and over.
 			final StringBuilder builder = new StringBuilder();
-			final List<TableSchema.Field> fields = schema.getFields();
+			final List<Field> fields = schema.getFields();
 			int fieldIndex = 1;
 			String value;
 
 			// Build header
 			boolean firstField = true;
-			for (TableSchema.Field field : fields) {
+			for (Field field : fields) {
 				if (firstField) {
 					firstField = false;
 				} else {
@@ -65,7 +68,7 @@ public class ReleaseFileExporter {
 			while (resultSet.next()) {
 				// Assemble line for output
 				fieldIndex = 1;
-				for (TableSchema.Field field : fields) {
+				for (Field field : fields) {
 					if (field.getType() == DataType.TIME) {
 						java.sql.Date date = resultSet.getDate(fieldIndex);
 						value = RF2Constants.DATE_FORMAT.format(date.getTime());

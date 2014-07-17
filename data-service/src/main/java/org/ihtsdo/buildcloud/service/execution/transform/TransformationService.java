@@ -7,8 +7,8 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
-import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
-import org.ihtsdo.buildcloud.service.execution.database.TableType;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,13 +59,13 @@ public class TransformationService {
 				if (tableSchema == null) {
 					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
 				} else {
-					TableType tableType = tableSchema.getTableType();
-					if (isPreProcessType(tableType)) {
+					ComponentType componentType = tableSchema.getComponentType();
+					if (isPreProcessType(componentType)) {
 		
 						InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
 						OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
 	
-						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(tableType);
+						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 	
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
@@ -89,7 +89,7 @@ public class TransformationService {
 
 				try {
 					InputStream executionInputFileInputStream;
-					if (isPreProcessType(tableSchema.getTableType())) {
+					if (isPreProcessType(tableSchema.getComponentType())) {
 						executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, inputFileName);
 					} else {
 						executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
@@ -122,8 +122,8 @@ public class TransformationService {
 		}
 	}
 
-	private boolean isPreProcessType(TableType tableType) {
-		return tableType == TableType.CONCEPT || tableType == TableType.DESCRIPTION;
+	private boolean isPreProcessType(ComponentType componentType) {
+		return componentType == ComponentType.CONCEPT || componentType == ComponentType.DESCRIPTION;
 	}
 
 	/**

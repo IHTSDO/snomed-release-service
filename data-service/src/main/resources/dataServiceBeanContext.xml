@@ -150,7 +150,7 @@
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
 
-	<bean class="org.ihtsdo.buildcloud.service.execution.database.SchemaFactory"/>
+	<bean class="org.ihtsdo.snomed.util.rf2.schema.SchemaFactory"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.transform.TransformationService"/>
 
