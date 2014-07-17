@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.ExtensionService;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
@@ -64,7 +65,7 @@ public class ExtensionController {
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createExtension(@PathVariable String releaseCenterBusinessKey,
 											   @RequestBody(required = false) Map<String, String> json,
-											   HttpServletRequest request) throws IOException, ResourceNotFoundException {
+											   HttpServletRequest request) throws IOException, ResourceNotFoundException, EntityAlreadyExistsException {
 
 		String name = json.get("name");
 		User authenticatedUser = SecurityHelper.getSubject();

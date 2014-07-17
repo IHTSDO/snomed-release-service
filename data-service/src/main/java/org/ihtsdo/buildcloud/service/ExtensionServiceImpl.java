@@ -6,8 +6,9 @@ import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,10 +48,17 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 	
 	@Override
-	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException {
+	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
 		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+		}
+		
+		//Check that we don't already have one of these
+		String extensionBusinessKey = EntityHelper.formatAsBusinessKey(name);
+		Extension existingProduct = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+		if (existingProduct != null) {
+			throw new EntityAlreadyExistsException(name + " already exists.");
 		}
 		Extension extension = new Extension(name);
 		releaseCenter.addExtension(extension);

@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,11 +48,12 @@ public class ProductController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
+
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException, ResourceNotFoundException {
+												   HttpServletRequest request) throws IOException, ResourceNotFoundException, EntityAlreadyExistsException {
 
 		String name = json.get("name");
 		User authenticatedUser = SecurityHelper.getSubject();

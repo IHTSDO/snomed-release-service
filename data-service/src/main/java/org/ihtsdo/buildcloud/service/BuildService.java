@@ -18,6 +18,8 @@ public interface BuildService extends EntityService<Build> {
 
 	Build find(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 	
+	Build find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildName, User authenticatedUser) throws ResourceNotFoundException;
+	
 	List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser);
 	
 	List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException;

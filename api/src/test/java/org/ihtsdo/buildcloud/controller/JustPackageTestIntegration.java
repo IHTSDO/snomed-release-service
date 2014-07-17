@@ -18,7 +18,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc);
+		integrationTestHelper = new IntegrationTestHelper(mockMvc,"just_package_test");
 		((TestS3Client) s3Client).deleteBuckets();
 	}
 
