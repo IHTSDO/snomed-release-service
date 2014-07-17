@@ -26,7 +26,6 @@ releaseCentreId="international"
 readmeHeader="readme-header.txt"
 externalDataRoot="../../../snomed-release-service-data/api-script-client-data/"
 
-
 # Set curl verbocity
 curlFlags="isS"
 # i - Show response header
@@ -58,7 +57,11 @@ getElapsedTime() {
 }
 
 findEntity() {
-	curl ${entityUrl} 2>/dev/null | grep -i -B1 "\"name\" : \"${entityName}\"" | head -n1 | sed 's/.*: "\(.*\)",/\1/'
+	# Gather params
+	entityType=$1
+	entityResponseFile="tmp/entity-${entityType}-response.txt"
+	curl ${entityUrl} 2>/dev/null | tee ${entityResponseFile} | grep HTTP | ensureCorrectResponse >/dev/null
+	cat ${entityResponseFile} | grep -i -B1 "\"name\" : \"${entityName}\"" | head -n1 | sed 's/.*: "\(.*\)",/\1/'
 }
 findOrCreateEntity() {
 	# Gather params
@@ -75,16 +78,17 @@ findOrCreateEntity() {
 	fi
 
 	# Find existing entity
-	entityId="`findEntity`"
+	entityId="`findEntity ${entityType}`"
 
 	# Test if entity found
 	if [ -z "${entityId}" ]
 	then
 		# Entity doesn't exist, create
-		echo "Creating ${entityType}"
-		curl ${commonParams} -X POST -H 'Content-Type:application/json' --data-binary "{ \"name\" : \"${entityName}\" }" ${entityUrl} | grep HTTP | ensureCorrectResponse
+		echo "Creating ${entityType}: ${entityName} using URL ${entityUrl}"
+		jsonData="{ \"name\" : \"${entityName}\" }"
+		curl ${commonParams} -X POST -H 'Content-Type:application/json' --data-binary "$jsonData" ${entityUrl} | grep HTTP | ensureCorrectResponse
 		# Retrieve new entity id
-		entityId="`findEntity`"
+		entityId="`findEntity ${entityType}-create`"
 	fi
 
 	echo "${entityType} Name '${entityName}', ID '${entityId}'."
@@ -198,13 +202,18 @@ fi
 findOrCreateEntity "Package" "${api}/builds/${buildId}/packages" "${packageName}"
 packageId=${entityId}
 
-# Are we just listing the input files and stopping there?
+# Are we just listing the input and published files and stopping there?
 if ${listOnly}
 then
 	echo "Recover input file list"
 	curl ${commonParams} ${api}/builds/${buildId}/packages/${packageId}/inputfiles | tee tmp/listing-response.txt | grep HTTP | ensureCorrectResponse 
 	echo "Input delta files currently held:"
 	cat tmp/listing-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'
+	
+	echo "Recover list of published files"
+	curl ${commonParams} ${api}/centers/${releaseCentreId}/products/${productId}/published | tee tmp/published-listing-response.txt | grep HTTP | ensureCorrectResponse 
+	echo "Published files for product ${productName}:"
+	cat tmp/published-listing-response.txt 
 	exit 0
 fi
 
@@ -299,9 +308,19 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execu
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
-
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
+
+# Has there been a fatal pre-condition failure?  We'll stop the script if so.
+preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FATAL` || true
+if [ -n "${preConditionFailures}" ]
+then
+	echo "Fatal failure detected in Pre-Condition Check: "
+	echo ${preConditionFailures}
+	echo "Script Halted"
+	exit 0
+fi
+
 
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
