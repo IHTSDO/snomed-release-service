@@ -41,7 +41,7 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
 import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;

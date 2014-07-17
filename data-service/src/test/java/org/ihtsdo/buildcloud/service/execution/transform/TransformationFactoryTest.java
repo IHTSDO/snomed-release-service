@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service.execution.transform;
 import java.util.List;
 
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;

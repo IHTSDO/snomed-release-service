@@ -1,5 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 
