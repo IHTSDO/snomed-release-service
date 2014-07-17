@@ -1,10 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
