@@ -1,6 +1,7 @@
-package org.ihtsdo.buildcloud.service.execution.database;
+package org.ihtsdo.snomed.util.rf2.schema;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,17 +9,19 @@ import java.util.List;
 
 public class SchemaFactory {
 
-	public static final char REFSET_FILENAME_CONCEPT_FIELD = 'c';
-	public static final char REFSET_FILENAME_INTEGER_FIELD = 'i';
-	public static final char REFSET_FILENAME_STRING_FIELD = 's';
 	public static final int SIMPLE_REFSET_FIELD_COUNT = 6;
 
-	private static final String NO_MATCH_PREFIX = "Input file not RF2, ";
-	private static final Logger LOGGER = LoggerFactory.getLogger(SchemaFactory.class);
 	private static final String REL_2 = "rel2";
 	private static final String DER_2 = "der2";
 	private static final String SCT_2 = "sct2";
+
 	private static final String REFSET = "Refset";
+	private static final char REFSET_FILENAME_CONCEPT_FIELD = 'c';
+	private static final char REFSET_FILENAME_INTEGER_FIELD = 'i';
+	private static final char REFSET_FILENAME_STRING_FIELD = 's';
+
+	private static final String NO_MATCH_PREFIX = "Input file not RF2, ";
+	private static final Logger LOGGER = LoggerFactory.getLogger(SchemaFactory.class);
 
 	public TableSchema createSchemaBean(String filename) throws FileRecognitionException {
 		TableSchema schema = null;
@@ -83,7 +86,7 @@ public class SchemaFactory {
 					}
 				} else if (fileType.equals(SCT_2)) {
 					if (contentType.equals("Concept")) {
-						schema = new TableSchema(TableType.CONCEPT, filenameNoExtension)
+						schema = new TableSchema(ComponentType.CONCEPT, filenameNoExtension)
 								.field("id", DataType.SCTID)
 								.field("effectiveTime", DataType.TIME)
 								.field("active", DataType.BOOLEAN)
@@ -91,7 +94,7 @@ public class SchemaFactory {
 								.field("definitionStatusId", DataType.SCTID);
 
 					} else if (contentType.equals("Description")) {
-						schema = new TableSchema(TableType.DESCRIPTION, filenameNoExtension)
+						schema = new TableSchema(ComponentType.DESCRIPTION, filenameNoExtension)
 								.field("id", DataType.SCTID)
 								.field("effectiveTime", DataType.TIME)
 								.field("active", DataType.BOOLEAN)
@@ -103,8 +106,8 @@ public class SchemaFactory {
 								.field("caseSignificanceId", DataType.SCTID);
 
 					} else if (contentType.equals("StatedRelationship") || contentType.equals("Relationship")) {
-						TableType tableType = contentType.equals("StatedRelationship") ? TableType.STATED_RELATIONSHIP : TableType.RELATIONSHIP;
-						schema = new TableSchema(tableType, filenameNoExtension)
+						ComponentType componentType = contentType.equals("StatedRelationship") ? ComponentType.STATED_RELATIONSHIP : ComponentType.RELATIONSHIP;
+						schema = new TableSchema(componentType, filenameNoExtension)
 								.field("id", DataType.SCTID)
 								.field("effectiveTime", DataType.TIME)
 								.field("active", DataType.BOOLEAN)
@@ -117,7 +120,7 @@ public class SchemaFactory {
 								.field("modifierId", DataType.SCTID);
 
 					} else if (contentType.equals("Identifier")) {
-						schema = new TableSchema(TableType.IDENTIFIER, filenameNoExtension)
+						schema = new TableSchema(ComponentType.IDENTIFIER, filenameNoExtension)
 								.field("identifierSchemeId", DataType.SCTID)
 								.field("alternateIdentifier", DataType.STRING)
 								.field("effectiveTime", DataType.TIME)
@@ -142,9 +145,9 @@ public class SchemaFactory {
 
 	public void populateExtendedRefsetAdditionalFieldNames(TableSchema schema, String headerLine) {
 		String[] fieldNames = headerLine.split(RF2Constants.COLUMN_SEPARATOR);
-		List<TableSchema.Field> fields = schema.getFields();
+		List<Field> fields = schema.getFields();
 		for (int i = 0; i < fields.size(); i++) {
-			TableSchema.Field field = fields.get(i);
+			Field field = fields.get(i);
 			if (field.getName() == null) {
 				field.setName(fieldNames[i]);
 			}
@@ -152,7 +155,7 @@ public class SchemaFactory {
 	}
 
 	private TableSchema createSimpleRefsetSchema(String filenameNoExtension) {
-		return new TableSchema(TableType.REFSET, filenameNoExtension)
+		return new TableSchema(ComponentType.REFSET, filenameNoExtension)
 								.field("id", DataType.UUID)
 								.field("effectiveTime", DataType.TIME)
 								.field("active", DataType.BOOLEAN)

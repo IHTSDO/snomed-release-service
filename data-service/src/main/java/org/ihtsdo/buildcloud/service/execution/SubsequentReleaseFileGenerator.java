@@ -1,11 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -14,10 +8,16 @@ import org.ihtsdo.buildcloud.service.execution.database.DatabaseManager;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulator;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.ReleaseFileExporter;
-import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Release file generator for subsequent release.

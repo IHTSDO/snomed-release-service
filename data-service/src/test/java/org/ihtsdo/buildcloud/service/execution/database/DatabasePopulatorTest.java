@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
