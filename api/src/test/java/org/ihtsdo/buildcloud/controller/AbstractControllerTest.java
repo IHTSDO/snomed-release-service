@@ -1,5 +1,8 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -33,10 +36,18 @@ public abstract class AbstractControllerTest {
 	@Autowired
 	private WebApplicationContext wac;
 
+	@Autowired
+	private UUIDGenerator uuidGenerator;
+
 	@Before
 	public void setup() throws ServletException, Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
+	}
+
+	@After
+	public void tearDown() {
+		((PesudoUUIDGenerator)uuidGenerator).reset();
 	}
 
 }
