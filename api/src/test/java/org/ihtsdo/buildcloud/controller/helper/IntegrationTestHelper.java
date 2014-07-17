@@ -348,11 +348,9 @@ public class IntegrationTestHelper {
 				.andReturn();
 
 		Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
-		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
-			 FileOutputStream tmp = new FileOutputStream("/tmp/zip1.zip")) {
+		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
 			byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
 			fileOutputStream.write(contentAsByteArray);
-			tmp.write(contentAsByteArray);
 		}
 		return tempFile.toFile();
 	}
