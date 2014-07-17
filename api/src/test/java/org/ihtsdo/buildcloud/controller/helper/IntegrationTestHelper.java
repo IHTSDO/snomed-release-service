@@ -1,8 +1,10 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import com.jayway.jsonpath.JsonPath;
+
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
@@ -30,23 +32,26 @@ import java.util.zip.ZipFile;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class IntegrationTestHelper {
 
 	public static final String PRODUCT_URL = "/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset";
-	public static final String TEST_PACKAGE = "testpackage";
-	public static final String BUILD_NAME = "test-build";
 
 	private final MockMvc mockMvc;
 	private String basicDigestHeaderValue;
 	private String buildId;
+	private String buildBusinessKey;
+	private String packageBusinessKey;
 
-	public IntegrationTestHelper(MockMvc mockMvc) {
+	public IntegrationTestHelper(MockMvc mockMvc, String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
+		
+		//We'll work with a build and package that are specific to this test
+		this.buildBusinessKey = EntityHelper.formatAsBusinessKey(testName);
+		this.packageBusinessKey = EntityHelper.formatAsBusinessKey(testName);
 	}
 
 	public void loginAsManager() throws Exception {
@@ -66,33 +71,62 @@ public class IntegrationTestHelper {
 	}
 
 	public void createTestBuildStructure() throws Exception {
-		// Create Build
-		MvcResult createBuildResult = mockMvc.perform(
-				post(PRODUCT_URL + "/builds")
+		
+		this.buildId = findOrCreateBuild();
+		findOrCreatePackage();
+		
+	}
+	
+	private String findOrCreateBuild() throws Exception {
+		//Does the build already exist or do we need to create it?
+		MvcResult buildResult = mockMvc.perform(
+				get(PRODUCT_URL + "/builds/" +  this.buildBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"name\" : \"" + BUILD_NAME + "\" }")
 		)
 				.andDo(print())
-				.andExpect(status().isCreated())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
+		
+		if (buildResult.getResponse().getStatus() == 404) {
+			// Create Build
+			 buildResult = mockMvc.perform(
+					post(PRODUCT_URL + "/builds")
+							.header("Authorization", getBasicDigestHeaderValue())
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{ \"name\" : \"" + buildBusinessKey + "\" }")
+			)
+					.andDo(print())
+					.andExpect(status().isCreated())
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+					.andReturn();
+		}
 
-		String createBuildResponseString = createBuildResult.getResponse().getContentAsString();
+		String createBuildResponseString = buildResult.getResponse().getContentAsString();
 		int idStartIndex = createBuildResponseString.indexOf("\"id\" :") + 8;
 		int idEndIndex = createBuildResponseString.indexOf("\"", idStartIndex);
-		this.buildId = createBuildResponseString.substring(idStartIndex, idEndIndex);
-
-		// Create Package
-		mockMvc.perform(
-				post("/builds/" + buildId + "/packages")
+		return createBuildResponseString.substring(idStartIndex, idEndIndex);
+	}
+	
+	private void findOrCreatePackage() throws Exception {
+		//Does the product already exist or do we need to create it?
+		MvcResult packageResult = mockMvc.perform(
+				get(PRODUCT_URL + "/builds/" + this.buildId + "/packages/"  + this.packageBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"name\" : \"" + TEST_PACKAGE + "\" }")
 		)
 				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+				.andReturn();
+		
+		if (packageResult.getResponse().getStatus() == 404) {
+			// Create Package
+			mockMvc.perform(
+					post("/builds/" + buildId + "/packages")
+							.header("Authorization", getBasicDigestHeaderValue())
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{ \"name\" : \"" + this.packageBusinessKey + "\" }")
+			)
+					.andDo(print())
+					//.andExpect((status().isOk()))  //Will return 409 if package already exists
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		}
 	}
 
 	public void uploadDeltaInputFile(String deltaFileName, Class classpathResourceOwner) throws Exception {
@@ -307,7 +341,7 @@ public class IntegrationTestHelper {
 
 	public ZipFile testZipNameAndEntryNames(String executionURL, int expectedOutputFileCount, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileListResult = mockMvc.perform(
-				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles")
+				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -340,7 +374,7 @@ public class IntegrationTestHelper {
 
 	private File downloadToTempFile(String executionURL, String zipFilePath, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileResult = mockMvc.perform(
-				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles/" + zipFilePath)
+				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -380,7 +414,7 @@ public class IntegrationTestHelper {
 	}
 
 	public String getPackageUrl() {
-		return "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
+		return "/builds/" + buildId + "/packages/" + this.packageBusinessKey;
 	}
 	
 }

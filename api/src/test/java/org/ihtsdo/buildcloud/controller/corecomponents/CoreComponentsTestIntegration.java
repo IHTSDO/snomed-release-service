@@ -24,7 +24,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc);
+		integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
 		((TestS3Client) s3Client).deleteBuckets();
 	}
 	@Test
