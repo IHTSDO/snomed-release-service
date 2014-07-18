@@ -1,11 +1,14 @@
-package org.ihtsdo.buildcloud.controller;
+package org.ihtsdo.buildcloud.integration.simplerefset;
 
+import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.zip.ZipFile;
 
 public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
@@ -29,8 +32,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Perform first time release
 		String effectiveTime = "20140131";
-		integrationTestHelper.uploadDeltaInputFile("/rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
-		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveTime + ".xml", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadManifest("simple_refset_manifest_" + effectiveTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
@@ -54,9 +57,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		
-		int expectedFileCount = 5;  //So the 3 files there and then we're expecting the readmefile as well.
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedFileCount, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 5, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.assertZipContents("expectedoutput", zipFileFirstRelease, getClass());
 
 		// Sleep for a second. Next build must have a different timestamp.
 		Thread.sleep(1000);
@@ -65,11 +67,10 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		// Perform second release
 		String effectiveDateTime = "20140731";
 		integrationTestHelper.deletePreviousTxtInputFiles();
-		integrationTestHelper.uploadDeltaInputFile("/rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
-		integrationTestHelper.uploadManifest("/simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
+		integrationTestHelper.uploadManifest("simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveDateTime);
 		integrationTestHelper.setFirstTimeRelease(false);
-		integrationTestHelper.setJustPackage(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
 		String executionURL2 = integrationTestHelper.createExecution();
@@ -93,6 +94,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
-		integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileSecondRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.assertZipContents("expectedoutput", zipFileSecondRelease, getClass());
 	}
+
 }
