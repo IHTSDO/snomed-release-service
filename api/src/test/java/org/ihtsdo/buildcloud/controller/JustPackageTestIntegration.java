@@ -46,7 +46,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, 3, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
 	}
 
 }
