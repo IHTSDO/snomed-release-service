@@ -53,7 +53,7 @@ public class FileHelper {
 	 */
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
-		LOGGER.debug ("Publishing file to {}/{}", bucketName, targetFilePath);
+		LOGGER.debug ("Putting file to {}/{}", bucketName, targetFilePath);
 		s3Client.putObject(putRequest);
 	}
 	
