@@ -74,8 +74,9 @@ public class ReleaseFileGeneratorTest {
 			}
 		}};
 	
+		int maxRetries = 0;
 		for (Package pkg : packages) {
-			ReleaseFileGenerator generator = new FirstReleaseFileGenerator(execution, pkg, dao);
+			ReleaseFileGenerator generator = new FirstReleaseFileGenerator(execution, pkg, dao, maxRetries);
 			generator.generateReleaseFiles();
 		}
 		
@@ -144,9 +145,9 @@ public class ReleaseFileGeneratorTest {
 			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
 		}};
 
-
+		int maxRetries = 0;
 		for (Package pkg : packages) {
-			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao);
+			ReleaseFileGenerator generator = new SubsequentReleaseFileGenerator(execution, pkg, inputFileSchemaMap, dao, maxRetries);
 			generator.generateReleaseFiles();
 		}
 
