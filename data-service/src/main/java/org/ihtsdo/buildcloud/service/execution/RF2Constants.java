@@ -22,5 +22,6 @@ public class RF2Constants {
 	public static final String SCT2="sct2";
 	public static final String README_FILENAME_PREFIX = "Readme";
 	public static final String README_FILENAME_EXTENSION = ".txt";
+	public static final String ZIP_FILE_EXTENSION = ".zip";
 
 }

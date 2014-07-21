@@ -21,6 +21,7 @@ import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.InputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,14 +57,19 @@ public abstract class PreconditionCheckTest {
 	@Autowired
 	protected InputFileService inputFileService;
 	
+	protected static final String JULY_RELEASE = "20140731";
+	
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionCheckTest.class);
 	
 	static int executionIdx = 0;
 	
 	@Before
-	public void setup(){
+	public void setup() throws Exception{
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
+		  if (build.getEffectiveTime() == null){
+		    	    build.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
+		    	}
 	}
 	
 	protected void createNewExecution() {
@@ -77,7 +83,7 @@ public abstract class PreconditionCheckTest {
 		executionDAO.copyAll(build, execution);
 	}
 
-	protected State runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
+	protected PreConditionCheckReport runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
 		
 		//Do we need an execution?
 		if (execution == null) {
@@ -97,7 +103,7 @@ public abstract class PreconditionCheckTest {
 		//If it's a fail, we'll debug that message just for testing purposes
 		if (State.PASS != testResult.getResult())
 			LOGGER.warn ("Test {} Reported {}",testName,testResult.getMessage());
-		return testResult.getResult();
+		return testResult;
 	}
 	
 	protected void loadManifest(String filename) throws FileNotFoundException {

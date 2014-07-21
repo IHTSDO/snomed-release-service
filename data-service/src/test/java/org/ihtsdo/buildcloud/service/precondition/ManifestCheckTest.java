@@ -19,37 +19,37 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 
 	@Override
 	@Before
-	public void setup() {
+	public final void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager().preconditionChecks(manifestCheck);
 	}
 
 	@Test
-	public void checkNoManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkNoManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest(null);
-		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FATAL, actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
+		Assert.assertEquals(State.FATAL, actualResult);
 	}
 
 	@Test
-	public void checkValidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkValidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("valid_manifest.xml");
-		State actualResult = runPreConditionCheck(ManifestCheck.class);
+		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.PASS, actualResult);
 	}
 
 	@Test
-	public void checkInvalidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkInvalidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("invalid_manifest.xml");
-		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FATAL, actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
+		Assert.assertEquals(State.FATAL, actualResult);
 	}
 
 	@Test
-	public void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
-		State actualResult = runPreConditionCheck(ManifestCheck.class);
-		Assert.assertEquals( State.FATAL, actualResult);
+		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
+		Assert.assertEquals(State.FATAL, actualResult);
 	}
 
 }
