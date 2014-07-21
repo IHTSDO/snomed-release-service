@@ -39,7 +39,7 @@ ensureCorrectResponse() {
 		echo " Response received: $response "
 		if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
 		then
-			echo "Failure detected with non-2xx HTTP response code received.  Script halted"
+			echo -e "Failure detected with non-2xx HTTP response code received.\nScript halted."
 			exit -1
 		fi
 	done
@@ -71,9 +71,7 @@ findOrCreateEntity() {
 
 	if [ -z "${entityName}" ]
 	then
-		echo "${entityType} name not specified."
-		echo
-		echo "Script Halted"
+		echo -e "${entityType} name not specified.\nScript halted."
 		exit -1
 	fi
 
@@ -98,9 +96,7 @@ findOrCreateEntity() {
 # Check command line arguments
 if [ -z "$effectiveDate" ]
 then
-	echo "Please call this script from one of the 'run' scripts."
-	echo
-	echo "Script Halted"
+	echo -e "Please call this script from one of the 'run' scripts.\nScript halted."
 	exit -1	
 fi
 
@@ -268,12 +264,20 @@ then
 			inputFilesPath="input_files"
 		fi
 		
+		filesUploaded=0
 		echo "Upload Input Files from ${inputFilesPath}:"
 		for file in `ls ${inputFilesPath}`;
 		do
 			echo "Upload Input File ${file}"
 			curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
+			((filesUploaded++))
 		done
+		
+		if [ ${filesUploaded} -lt 1 ] 
+		then
+			echo -e "Failed to find files to upload.\nScript halted."
+			exit -1
+		fi
 	fi
 fi
 
@@ -331,7 +335,7 @@ then
 	echo
 	cat tmp/trigger-response.txt
 	echo
-	echo "Script Halted after $(getElapsedTime) "
+	echo "Script halted after $(getElapsedTime) "
 	exit -1
 fi
 
