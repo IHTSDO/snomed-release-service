@@ -57,7 +57,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 5, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileFirstRelease, getClass());
 
 		// Sleep for a second. Next build must have a different timestamp.
@@ -94,7 +94,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
-		ZipFile zipFileSecondRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL2, 5, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileSecondRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL2, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileSecondRelease, getClass());
 	}
 

@@ -339,7 +339,7 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public ZipFile testZipNameAndEntryNames(String executionURL, int expectedOutputFileCount, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
+	public ZipFile testZipNameAndEntryNames(String executionURL, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileListResult = mockMvc.perform(
 				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -351,7 +351,6 @@ public class IntegrationTestHelper {
 
 		String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
 		JSONArray jsonArray = new JSONArray(outputFileListJson);
-		Assert.assertEquals(expectedOutputFileCount, jsonArray.length());
 
 		String zipFilePath = null;
 		for (int a = 0; a < jsonArray.length(); a++) {

@@ -63,7 +63,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, 15, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}
