@@ -50,7 +50,9 @@
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PackageServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.InputFileServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl"/>
+	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl">
+		<property name="fileProcessingFailureMaxRetry" ref="fileProcessingFailureMaxRetry"/>
+	</bean>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PublishServiceImpl">
@@ -116,6 +118,10 @@
 	
 	<bean class="java.lang.String" id="publishedBucketName">
 		<constructor-arg value="ire.published.release.ihtsdo" />
+	</bean>
+	
+	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">
+		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
 	</bean>
 
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>

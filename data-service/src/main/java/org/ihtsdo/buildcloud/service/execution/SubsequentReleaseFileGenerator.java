@@ -32,9 +32,10 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 	 * @param pkg a package name
 	 * @param inputFileSchemaMap
 	 * @param dao  execution dao.
+	 * @param maxRetries 
 	 */
-	public SubsequentReleaseFileGenerator(final Execution execution, final Package pkg, Map<String, TableSchema> inputFileSchemaMap, ExecutionDAO dao) {
-		super(execution, pkg, dao);
+	public SubsequentReleaseFileGenerator(final Execution execution, final Package pkg, Map<String, TableSchema> inputFileSchemaMap, ExecutionDAO dao, int maxRetries) {
+		super(execution, pkg, dao, maxRetries);
 		this.inputFileSchemaMap = inputFileSchemaMap;
 	}
 	
@@ -42,7 +43,21 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 	public final void generateReleaseFiles() {
 		List<String> transformedFiles = getTransformedDeltaFiles();
 		for (String thisFile : transformedFiles) {
-			generateReleaseFile(thisFile);
+			int failureCount = 0;
+			boolean success = false;
+			do {
+				try {
+					generateReleaseFile(thisFile);
+					success = true;
+				} catch (ReleaseFileGenerationException e) {
+					failureCount++;
+					if (failureCount > maxRetries) {
+						throw new ReleaseFileGenerationException ("Maximum failure recount of " + maxRetries + " exceeeded.", e);
+					} else {
+						LOGGER.warn("Failure while processing {} due to {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
+					}
+				}
+			} while (!success);
 		}
 	}
 
@@ -88,7 +103,7 @@ public class SubsequentReleaseFileGenerator extends ReleaseFileGenerator {
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
-			String errorMsg = "Failed to generate subsequent full and snapshort release files due to " + e.getMessage();
+			String errorMsg = "Failed to generate subsequent full and snapshort release file related to " + transformedDeltaDataFile + " due to " + e.getMessage();
 			throw new ReleaseFileGenerationException(errorMsg, e);
 		}
 	}

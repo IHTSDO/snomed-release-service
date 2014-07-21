@@ -26,6 +26,7 @@ public abstract class ReleaseFileGenerator {
 	final Package pkg;
 	final Product product;
 	final ExecutionDAO executionDao;
+	final int maxRetries;
 
 	/**
 	 * Constructor.
@@ -33,12 +34,14 @@ public abstract class ReleaseFileGenerator {
 	 *            An Execution
 	 * @param pkgX
 	 *            A package.
+	 * @param maxRetries 
 	 */
-	public ReleaseFileGenerator(final Execution executionX, final Package pkgX, final ExecutionDAO dao) {
+	public ReleaseFileGenerator(final Execution executionX, final Package pkgX, final ExecutionDAO dao, int maxRetries) {
 		execution = executionX;
 		pkg = pkgX;
 		product = pkg.getBuild().getProduct();
 		executionDao = dao;
+		this.maxRetries = maxRetries;
 	}
 
 	/**

@@ -87,6 +87,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Autowired
 	private TransformationService transformationService;
 	
+	@Autowired
+	private Integer fileProcessingFailureMaxRetry;
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -259,7 +262,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			//Convert Delta files to Full, Snapshot and delta release files
 			ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, transformedFileSchemaMap, dao);
+			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, transformedFileSchemaMap, dao, fileProcessingFailureMaxRetry.intValue());
 			generator.generateReleaseFiles();
 		}
 
@@ -410,5 +413,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
 		}
 	}
-
+	
+	public void setFileProcessingFailureMaxRetry(Integer fileProcessingFailureMaxRetry) {
+		this.fileProcessingFailureMaxRetry = fileProcessingFailureMaxRetry;
+	}
 }

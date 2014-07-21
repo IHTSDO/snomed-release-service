@@ -8,8 +8,8 @@ import java.util.List;
 
 public class FirstReleaseFileGenerator extends ReleaseFileGenerator{
 	
-	public FirstReleaseFileGenerator(Execution execution, Package pkg, ExecutionDAO dao) {
-		super(execution, pkg, dao);
+	public FirstReleaseFileGenerator(Execution execution, Package pkg, ExecutionDAO dao, int maxRetries) {
+		super(execution, pkg, dao, maxRetries);
 	}
 
 	/**
