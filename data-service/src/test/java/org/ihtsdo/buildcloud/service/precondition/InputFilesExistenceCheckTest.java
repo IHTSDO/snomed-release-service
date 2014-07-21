@@ -14,7 +14,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest{
 
     @Override
     @Before
-    public void setup() {
+    public void setup() throws Exception{
 	super.setup();
 	manager = new PreconditionManager().preconditionChecks(inputFilesCheck);
     }
@@ -22,7 +22,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest{
     @Test
     public void checkInputFilesNotExisting() throws Exception {
 	loadManifest("valid_manifest.xml");
-	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class);
+	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
 	Assert.assertEquals( State.FATAL, actualResult);
     }
 
@@ -30,7 +30,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest{
     public void checkInputFilesNotMatchingManifest() throws Exception {
 	addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140831.txt");
 	loadManifest("valid_manifest.xml");
-	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class);
+	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
 	Assert.assertEquals( State.FATAL, actualResult);
     }
 
@@ -38,7 +38,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest{
     public void checkInputFilesMatchingManifest() throws Exception {
 	addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140831.txt");
 	loadManifest("valid_manifest.xml");
-	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class);
+	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
 	Assert.assertEquals( State.PASS, actualResult);
     }
     
@@ -53,7 +53,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest{
 	addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 	addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
 	loadManifest("valid_core_manifest.xml");
-	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class);
+	State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
 	Assert.assertEquals( State.PASS, actualResult);
     }
     
