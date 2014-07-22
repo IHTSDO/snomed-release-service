@@ -2,11 +2,8 @@ package org.ihtsdo.buildcloud.controller.corecomponents;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.zip.ZipFile;
@@ -15,9 +12,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	private static final String INTERNATIONAL_RELEASE = "SnomedCT_Release_INT_";
 
-	@Autowired
-	private S3Client s3Client;
-
 	private IntegrationTestHelper integrationTestHelper;
 
 	@Override
@@ -25,7 +19,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
-		((TestS3Client) s3Client).deleteBuckets();
 	}
 	@Test
 	public void testMultipleReleases() throws Exception {

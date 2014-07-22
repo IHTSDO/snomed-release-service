@@ -1,35 +1,14 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
-
+import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
@@ -38,12 +17,8 @@ import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.ReleaseFileGenerator;
-import org.ihtsdo.buildcloud.service.execution.ReleaseFileGeneratorFactory;
+import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
@@ -51,13 +26,28 @@ import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_EXTENSION;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_PREFIX;
 
 @Service
 @Transactional
@@ -258,11 +248,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} else {
 			Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
 			transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
-			Map<String, TableSchema> transformedFileSchemaMap = getTransformedFileSchemaMap(inputFileSchemaMap);
 
 			//Convert Delta files to Full, Snapshot and delta release files
-			ReleaseFileGeneratorFactory generatorFactory = new ReleaseFileGeneratorFactory();
-			ReleaseFileGenerator generator = generatorFactory.createReleaseFileGenerator(execution, pkg, transformedFileSchemaMap, dao, fileProcessingFailureMaxRetry.intValue());
+			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 		}
 
@@ -277,16 +265,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
-	}
-
-	private Map<String, TableSchema> getTransformedFileSchemaMap(Map<String, TableSchema> inputFileSchemaMap) {
-		Map<String, TableSchema> transformedFileSchemaMap = new HashMap<>();
-		for (TableSchema tableSchema : inputFileSchemaMap.values()) {
-			if (tableSchema != null) {
-				transformedFileSchemaMap.put(tableSchema.getFilename(), tableSchema);
-			}
-		}
-		return transformedFileSchemaMap;
 	}
 
 	/**

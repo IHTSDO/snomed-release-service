@@ -33,38 +33,37 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
+	public void createBucket(String bucketName) {
+		getBucket(bucketName, true);
+	}
+
+	@Override
 	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
 		ObjectListing listing = new ObjectListing();
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
 
-		String searchLocation = bucketName + File.separator + getPlatformDependantPath(prefix);
+		String searchLocation = getPlatformDependantPath(prefix);
 		File searchStartDir;
-		
-		try {
-			searchStartDir = getBucket(searchLocation, false);
-		} catch (Exception e) {
-			//It's not a problem if we're listing files in a non-existent directory.  Just note and return empty list.
-			LOGGER.debug("Failed to find files at {} due to {}", searchLocation, e);
-			return listing;
-		}
-		
-		Collection<File> list = org.apache.commons.io.FileUtils.listFiles(searchStartDir, null, true); //No filter files, yes search recursively
-		
-		if (list != null) {
-			for (File file : list) {
-				String key = getRelativePathAsKey(bucketName, file);
-				S3ObjectSummary summary = new S3ObjectSummary();
-				summary.setKey(key);
-				summary.setBucketName(bucketName);
-				objectSummaries.add(summary);
+
+		File bucket = getBucket(bucketName, false);
+		searchStartDir = new File(bucket, searchLocation);
+		if (searchStartDir.isDirectory()) {
+			Collection<File> list = org.apache.commons.io.FileUtils.listFiles(searchStartDir, null, true); //No filter files, yes search recursively
+			if (list != null) {
+				for (File file : list) {
+					String key = getRelativePathAsKey(bucketName, file);
+					S3ObjectSummary summary = new S3ObjectSummary();
+					summary.setKey(key);
+					summary.setBucketName(bucketName);
+					objectSummaries.add(summary);
+				}
 			}
+			listing.setBucketName(bucketName);
+
+			//Mac appears to return these objects in a sorted list, Ubuntu does not.
+			//Sorting programatically for now until we can get this nailed down.
+			Collections.sort(objectSummaries, new S3ObjectSummaryComparator());
 		}
-		listing.setBucketName(bucketName);
-		
-		//Mac appears to return these objects in a sorted list, Ubuntu does not.   
-		//Sorting programatically for now until we can get this nailed down.
-		Collections.sort(objectSummaries, new S3ObjectSummaryComparator());
-		
 		return listing;
 	}
 
@@ -82,7 +81,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		if (file.isFile()) {
 			return new OfflineS3Object(bucketName, key, file);
 		} else {
-			throw new AmazonClientException("Object does not exist.");
+			return null;
 		}
 	}
 
@@ -94,6 +93,9 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	@Override
 	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException, AmazonServiceException {
 		File outFile = getFile(bucketName, key, true);  //Create the target bucket if required
+
+		// Create the target directory
+		outFile.getParentFile().mkdirs();
 		
 		//For ease of testing, if we're writing the final results (eg a zip file) we'll output the full path to STDOUT
 		String outputFilePath = outFile.getAbsolutePath();
@@ -221,12 +223,9 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	private File getFile(String bucketName, String key, boolean createIfRequired) {
 		//Limitations on length of filename mean we have to use the slashed elements in the key as a directory path, unlike in the online implementation
-		//split the last filename off to create the parent directory as required.
+		File bucket = getBucket(bucketName, createIfRequired);
 		key = getPlatformDependantPath(key);
-		File relativeLocation = new File(bucketName + File.separator + key);
-		File subBucket = getBucket(relativeLocation.getParent(), createIfRequired);
-		File file = new File (subBucket.getAbsolutePath() + File.separator + relativeLocation.getName());
-		return file;
+		return new File(bucket, key);
 	}
 
 	/**

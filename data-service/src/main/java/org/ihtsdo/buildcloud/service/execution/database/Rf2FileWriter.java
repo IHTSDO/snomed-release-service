@@ -9,24 +9,37 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-public class ReleaseFileExporter {
+public class Rf2FileWriter {
 
-	public void exportFullAndSnapshot(Connection connection, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
+	public void exportDelta(ResultSet resultSet, TableSchema tableSchema, OutputStream deltaOutputStream) throws IOException, SQLException {
+		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream))) {
+			List<Field> fields = tableSchema.getFields();
 
-		String idFieldName = schema.getFields().get(0).getName();
-		PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from " + schema.getTableName() + " " +
-				"order by " + idFieldName + ", effectiveTime"
-		);
+			// Write header
+			String header = buildHeader(fields);
+			deltaWriter.write(header);
 
-		ResultSet resultSet = preparedStatement.executeQuery();
+			final StringBuilder builder = new StringBuilder();
+			int fieldIndex;
+
+			while (resultSet.next()) {
+				fieldIndex = 1;
+				for (Field field : fields) {
+					writeField(resultSet, field, fieldIndex++, builder);
+				}
+				builder.append(RF2Constants.LINE_ENDING);
+				deltaWriter.append(builder);
+				builder.setLength(0);
+			}
+		}
+	}
+
+	public void exportFullAndSnapshot(ResultSet resultSet, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
 
 		try (BufferedWriter fullWriter = new BufferedWriter(new OutputStreamWriter(fullOutputStream));
 				BufferedWriter snapshotWriter = new BufferedWriter(new OutputStreamWriter(snapshotOutputStream))) {
@@ -34,26 +47,13 @@ public class ReleaseFileExporter {
 			// Declare a few objects to reuse over and over.
 			final StringBuilder builder = new StringBuilder();
 			final List<Field> fields = schema.getFields();
-			int fieldIndex = 1;
+			int fieldIndex;
 			String value;
 
 			// Build header
-			boolean firstField = true;
-			for (Field field : fields) {
-				if (firstField) {
-					firstField = false;
-				} else {
-					builder.append(RF2Constants.COLUMN_SEPARATOR);
-				}
-				builder.append(field.getName());
-			}
-			builder.append(RF2Constants.LINE_ENDING);
-
-			// Write header to both files
-			String header = builder.toString();
+			String header = buildHeader(fields);
 			fullWriter.write(header);
 			snapshotWriter.write(header);
-			builder.setLength(0);
 
 			// Variables for snapshot resolution
 			String currentLine;
@@ -70,28 +70,17 @@ public class ReleaseFileExporter {
 				// Assemble line for output
 				fieldIndex = 1;
 				for (Field field : fields) {
-					if (field.getType() == DataType.TIME) {
-						java.sql.Date date = resultSet.getDate(fieldIndex);
-						value = RF2Constants.DATE_FORMAT.format(date.getTime());
-						if (field.getName().equals(RF2Constants.EFFECTIVE_TIME)) {
-							currentEffectiveTimeSeconds = date.getTime();
-						}
-					} else if (field.getType() == DataType.BOOLEAN) {
-						value = resultSet.getBoolean(fieldIndex) ? "1" : "0";
-					} else {
-						value = resultSet.getString(fieldIndex);
-					}
-					if (fieldIndex > 1) {
-						builder.append(RF2Constants.COLUMN_SEPARATOR);
-					}
+					value = writeField(resultSet, field, fieldIndex, builder);
 					if (fieldIndex == 1) {
 						currentId = value;
 					}
-					builder.append(value);
+					if (field.getName().equals(RF2Constants.EFFECTIVE_TIME)) {
+						currentEffectiveTimeSeconds = resultSet.getDate(fieldIndex).getTime();
+					}
 					fieldIndex++;
 				}
 				builder.append(RF2Constants.LINE_ENDING);
-				
+
 				// Write to Full file
 				currentLine = builder.toString();
 				fullWriter.append(currentLine);
@@ -123,6 +112,37 @@ public class ReleaseFileExporter {
 
 		}
 
+	}
+
+	private String buildHeader(List<Field> fields) {
+		StringBuilder builder = new StringBuilder();
+		boolean firstField = true;
+		for (Field field : fields) {
+			if (firstField) {
+				firstField = false;
+			} else {
+				builder.append(RF2Constants.COLUMN_SEPARATOR);
+			}
+			builder.append(field.getName());
+		}
+		builder.append(RF2Constants.LINE_ENDING);
+		return builder.toString();
+	}
+
+	private String writeField(ResultSet resultSet, Field field, int fieldIndex, StringBuilder builder) throws SQLException {
+		String value;
+		if (field.getType() == DataType.TIME) {
+			value = RF2Constants.DATE_FORMAT.format(resultSet.getDate(fieldIndex).getTime());
+		} else if (field.getType() == DataType.BOOLEAN) {
+			value = resultSet.getBoolean(fieldIndex) ? RF2Constants.BOOLEAN_TRUE : RF2Constants.BOOLEAN_FALSE;
+		} else {
+			value = resultSet.getString(fieldIndex);
+		}
+		if (fieldIndex > 1) {
+			builder.append(RF2Constants.COLUMN_SEPARATOR);
+		}
+		builder.append(value);
+		return value;
 	}
 
 }

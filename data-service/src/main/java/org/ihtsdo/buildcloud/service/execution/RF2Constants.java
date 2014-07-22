@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.nio.charset.Charset;
-
 import org.apache.commons.lang3.time.FastDateFormat;
+
+import java.nio.charset.Charset;
 
 public class RF2Constants {
 
@@ -23,5 +23,7 @@ public class RF2Constants {
 	public static final String README_FILENAME_PREFIX = "Readme";
 	public static final String README_FILENAME_EXTENSION = ".txt";
 	public static final String ZIP_FILE_EXTENSION = ".zip";
+	public static final String BOOLEAN_TRUE = "1";
+	public static final String BOOLEAN_FALSE = "0";
 
 }
