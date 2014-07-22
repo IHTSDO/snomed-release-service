@@ -3,6 +3,9 @@ package org.ihtsdo.buildcloud.service.precondition;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.service.NetworkRequired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +15,9 @@ import java.util.Map;
 public class PreconditionManager {
 
 	private List <PreconditionCheck> preconditionChecks;
+	private boolean onlineMode;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
 
 	/**
 	 * For each package in turn, loops through each check that has been added to the manager
@@ -23,8 +29,12 @@ public class PreconditionManager {
 			if (!pkg.isJustPackage()) {
 				List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
 				for (PreconditionCheck thisCheck : preconditionChecks) {
-					thisCheck.runCheck(pkg, execution);
-					thisPackageResults.add(thisCheck.getReport());
+					if (onlineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())) {
+						thisCheck.runCheck(pkg, execution);
+						thisPackageResults.add(thisCheck.getReport());
+					} else {
+						LOGGER.warn("Skipping {} as requires network.", thisCheck.getClass().getName());
+					}
 				}
 				results.put(pkg.getName(), thisPackageResults);
 			}
@@ -43,6 +53,10 @@ public class PreconditionManager {
 
 	public void setPreconditionChecks(List<PreconditionCheck> preconditionChecks) {
 		this.preconditionChecks = preconditionChecks;
+	}
+
+	public void setOfflineMode(boolean offlineMode) {
+		this.onlineMode = !offlineMode;
 	}
 
 }
