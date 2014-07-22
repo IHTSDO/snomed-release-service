@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -14,6 +16,7 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -37,7 +40,7 @@ public class Rf2FileExportService {
 		executionDao = dao;
 		this.maxRetries = maxRetries;
 	}
-	
+
 	public final void generateReleaseFiles() {
 		boolean firstTimeRelease = pkg.isFirstTimeRelease();
 		List<String> transformedFiles = getTransformedDeltaFiles();
@@ -51,14 +54,29 @@ public class Rf2FileExportService {
 					success = true;
 				} catch (ReleaseFileGenerationException e) {
 					failureCount++;
+					// Is this an error that it's worth retrying eg root cause IOException or AWS Related?
+					Throwable cause = e.getCause();
 					if (failureCount > maxRetries) {
-						throw new ReleaseFileGenerationException("Maximum failure recount of " + maxRetries + " exceeeded.", e);
+						throw new ReleaseFileGenerationException("Maximum failure recount of " + maxRetries + " exceeeded. Last error: "
+								+ e.getMessage(), e);
+					} else if (!isNetworkRelated(cause)) {
+						// If this isn't something we think we might recover from by retrying, then just re-throw the existing error without
+						// modification
+						throw e;
 					} else {
 						LOGGER.warn("Failure while processing {} due to {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
-					}
-				}
+					}				}
 			} while (!success);
 		}
+	}
+
+	private boolean isNetworkRelated (Throwable cause) {
+		boolean isNetworkRelated = false;
+		if (cause != null &&
+				(cause instanceof IOException || cause instanceof AmazonServiceException || cause instanceof AmazonClientException)) {
+			isNetworkRelated = true;
+		}
+		return isNetworkRelated;
 	}
 
 	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease) {
