@@ -186,4 +186,10 @@ public class RF2TableDAO {
 		return tableSchema.getFields().get(0).getName();
 	}
 
+	public void dropTable(TableSchema tableSchema) throws SQLException {
+		assert (tableSchema.getTableName() != null);
+		String sqlDrop = "drop table " + tableSchema.getTableName();
+		connection.createStatement().execute(sqlDrop);
+	}
+
 }

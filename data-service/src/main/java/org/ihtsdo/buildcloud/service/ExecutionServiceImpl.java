@@ -214,9 +214,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			} catch(Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
 				pkgResult = "fail";
-				msg = "Failure while processing package " 
-						+ pkg.getBusinessKey() 
-						+ " due to " 
+				msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
 						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
 				LOGGER.warn(msg, e);
 			}

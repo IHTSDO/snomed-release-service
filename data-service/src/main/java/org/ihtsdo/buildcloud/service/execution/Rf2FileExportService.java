@@ -64,7 +64,7 @@ public class Rf2FileExportService {
 						// modification
 						throw e;
 					} else {
-						LOGGER.warn("Failure while processing {} due to {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
+						LOGGER.warn("Failure while processing {} due to: {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
 					}				}
 			} while (!success);
 		}
@@ -80,14 +80,17 @@ public class Rf2FileExportService {
 	}
 
 	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease) {
-		try (Connection connection = getConnection(pkg.getBusinessKey())) {
-
+		RF2TableDAO rf2TableDAO = null;
+		TableSchema tableSchema = null;
+		Connection connection = null;
+		try {
 			// Create table containing transformed input delta
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
-			RF2TableDAO rf2TableDAO = getDatabasePopulator(connection);
-			TableSchema tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
+			connection = getConnection(pkg.getBusinessKey());
+			rf2TableDAO = getDatabasePopulator(connection);
+			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
 
 			// Export ordered Delta file
 			Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
@@ -134,8 +137,20 @@ public class Rf2FileExportService {
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
-			String errorMsg = "Failed to generate subsequent full and snapshort release files due to " + e.getMessage();
+			String errorMsg = "Failed to generate subsequent full and snapshort release files due to: " + e.getMessage();
 			throw new ReleaseFileGenerationException(errorMsg, e);
+		} finally {
+			// Clean up time
+			if (tableSchema != null) {
+				assert (rf2TableDAO != null);
+				assert (connection != null);
+				try {
+					rf2TableDAO.dropTable(tableSchema);
+					connection.close();
+				} catch (Exception e) {
+					LOGGER.error("Failure while trying to clean up after {}", tableSchema.getTableName(), e);
+				}
+			}
 		}
 	}
 
