@@ -9,15 +9,15 @@ public class StreamTestUtils {
 
 	private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 
+	public static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, InputStream actualInputStream) throws IOException {
+		assertStreamsEqualLineByLine(streamName, expectedInputStream, actualInputStream, false);
+	}
+
 	public static void assertStreamsEqualLineByLine(InputStream expectedInputStream, InputStream actualInputStream) throws IOException {
 		assertStreamsEqualLineByLine(null, expectedInputStream, actualInputStream, false);
 	}
 
-	public static void assertStreamsEqualLineByLineUsePatterns(String streamName, InputStream expectedInputStream, InputStream actualInputStream) throws IOException {
-		assertStreamsEqualLineByLine(streamName, expectedInputStream, actualInputStream, true);
-	}
-
-	public static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, InputStream actualInputStream, boolean usePatterns) throws IOException {
+	private static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, InputStream actualInputStream, boolean usePatterns) throws IOException {
 		String errorMessageNamePart = streamName != null ? " in stream '" + streamName + "'" : "";
 
 		Assert.assertNotNull("Expected InputStream should not be null" + errorMessageNamePart + ".", expectedInputStream);

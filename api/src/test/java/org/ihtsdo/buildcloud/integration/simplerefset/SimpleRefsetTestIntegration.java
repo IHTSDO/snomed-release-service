@@ -12,9 +12,6 @@ import java.util.zip.ZipFile;
 
 public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
-	@Autowired
-	private S3Client s3Client;
-
 	private IntegrationTestHelper integrationTestHelper;
 	
 	@Override
@@ -22,7 +19,6 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"simple_refset_test");
-		((TestS3Client) s3Client).deleteBuckets();
 	}
 
 	@Test

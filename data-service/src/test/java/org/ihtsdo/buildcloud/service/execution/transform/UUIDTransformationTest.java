@@ -1,7 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class UUIDTransformationTest {
 
@@ -35,7 +35,7 @@ public class UUIDTransformationTest {
 	public void testReplaceSingleColumnValue() throws IOException {
 		List<String> lines = Files.readAllLines(refSetFile.toPath(), RF2Constants.UTF_8);
 		assertEquals(5, lines.size());
-		assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefSetId\treferencedComponentId", lines.get(0));
+		assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", lines.get(0));
 		for (int i = 1; i < lines.size(); i++) {
 			String[] values = lines.get(i).split("\t");
 			assertEquals(EMPTY_SPACE, values[0]);

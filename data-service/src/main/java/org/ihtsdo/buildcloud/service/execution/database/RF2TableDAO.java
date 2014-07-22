@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,31 +12,35 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
 
-public class DatabasePopulator {
+public class RF2TableDAO {
 
 	private final Connection connection;
 	private final H2DataTypeConverter dataTypeConverter;
 	private final SchemaFactory schemaFactory;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DatabasePopulator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAO.class);
 
-	public DatabasePopulator(Connection connection) throws DatabasePopulatorException {
+	public RF2TableDAO(Connection connection) throws DatabasePopulatorException {
 		this.connection = connection;
 		dataTypeConverter = new H2DataTypeConverter();
 		schemaFactory = new SchemaFactory();
 	}
 
-	public TableSchema createTable(TableSchema tableSchema, String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
 
 			// Build Schema
+			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
 			String headerLine = reader.readLine();
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2Filename);
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
+
 			// Create Table
 			String tableName = tableSchema.getTableName();
 			createTable(tableSchema);
@@ -154,6 +159,31 @@ public class DatabasePopulator {
 			}
 		}
 		insertStatement.executeBatch();
+	}
+
+	public ResultSet selectAllOrdered(TableSchema tableSchema) throws SQLException {
+		String idFieldName = getIdFieldName(tableSchema);
+		PreparedStatement preparedStatement = connection.prepareStatement(
+				"select * from " + tableSchema.getTableName() + " " +
+						"order by " + idFieldName + ", effectiveTime"
+		);
+
+		return preparedStatement.executeQuery();
+	}
+
+	public ResultSet selectNone(TableSchema tableSchema) throws SQLException {
+		String idFieldName = getIdFieldName(tableSchema);
+		PreparedStatement preparedStatement = connection.prepareStatement(
+				"select * from " + tableSchema.getTableName() + " " +
+						"order by " + idFieldName + ", effectiveTime " +
+						"limit 0"
+		);
+
+		return preparedStatement.executeQuery();
+	}
+
+	private String getIdFieldName(TableSchema tableSchema) {
+		return tableSchema.getFields().get(0).getName();
 	}
 
 }

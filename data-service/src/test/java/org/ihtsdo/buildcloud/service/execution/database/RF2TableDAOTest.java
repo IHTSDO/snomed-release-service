@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Assert;
@@ -15,26 +14,24 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabasePopulatorTest {
+public class RF2TableDAOTest {
 
-	private DatabasePopulator databasePopulator;
+	private RF2TableDAO RF2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
 	private Connection testConnection;
-	private TableSchema fullSchema;
 
 	@Before
 	public void setup() throws Exception {
 		testConnection = new DatabaseManager().createConnection("test");
-		databasePopulator = new DatabasePopulator(testConnection);
+		RF2TableDAO = new RF2TableDAO(testConnection);
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
 		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
-		fullSchema = new SchemaFactory().createSchemaBean(rf2FullFilename);
 	}
 
 	@Test
 	public void testCreateTable() throws Exception {
-		databasePopulator.createTable(fullSchema, rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		RF2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
@@ -80,9 +77,9 @@ public class DatabasePopulatorTest {
 
 	@Test
 	public void testAppendData() throws Exception {
-		TableSchema tableSchema = databasePopulator.createTable(fullSchema, rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		TableSchema tableSchema = RF2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
 
-		databasePopulator.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename));
+		RF2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename));
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
@@ -129,7 +126,7 @@ public class DatabasePopulatorTest {
 
 	@After
 	public void tearDown() throws SQLException {
-		databasePopulator.closeConnection();
+		RF2TableDAO.closeConnection();
 	}
 
 }
