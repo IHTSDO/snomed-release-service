@@ -20,9 +20,10 @@ public class ReleaseFileExporter {
 
 	public void exportFullAndSnapshot(Connection connection, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
 
+		String idFieldName = schema.getFields().get(0).getName();
 		PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from " + schema.getTableName() + " " +
-				"order by id, effectiveTime"
+				"order by " + idFieldName + ", effectiveTime"
 		);
 
 		ResultSet resultSet = preparedStatement.executeQuery();
