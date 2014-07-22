@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.NetworkRequired;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class RF2FilesCheck extends PreconditionCheck {
+public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired {
 
 	@Autowired
 	private ExecutionDAO executionDAO;

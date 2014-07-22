@@ -147,6 +147,7 @@
 				<bean class="org.ihtsdo.buildcloud.service.precondition.RF2FilesCheck"/>
 			</list>
 		</property>
+		<property name="offlineMode" value="${offlineMode}"/>
 	</bean>
 
 	<bean id="releaseValidationFrameworkUrl" class="java.lang.String" >
