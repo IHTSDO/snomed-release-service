@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class Rf2FileExportServiceTest {
 
 		final List<Package> packages = createPackages(true);
 		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
-		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
+		File outputDeltaFile = Files.createTempFile(getClass().getCanonicalName(), DELTA_FILE_NAME).toFile();
 		build.setProduct(new Product("Test Product"));
 
 		new NonStrictExpectations() {{
@@ -58,6 +59,9 @@ public class Rf2FileExportServiceTest {
 		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
 		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
 
+		final OutputStream deltaOutputStream = new FileOutputStream(outputDeltaFile);
+		final AsyncPipedStreamBean deltaAsyncPipedStreamBean = new AsyncPipedStreamBean(deltaOutputStream, new DummyFuture());
+
 		new Expectations() {{
 			dao.listTransformedFilePaths(withInstanceOf(Execution.class), anyString);
 			returns(fileNames);
@@ -65,8 +69,8 @@ public class Rf2FileExportServiceTest {
 			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
 			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
 
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentFullFile));
+			dao.getOutputFileOutputStream(execution, anyString, "der2_Refset_SimpleDelta_INT_20140831.txt");
+			returns(deltaAsyncPipedStreamBean);
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
 			returns(getDummyAsyncPipedStreamBean(currentFullFile));
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
