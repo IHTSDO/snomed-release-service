@@ -22,29 +22,24 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @RunWith(JMockit.class)
 public class Rf2FileExportServiceTest {
-    
+
 	private static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 	private static final String FuLL_FILE_NAME = "der2_Refset_SimpleFull_INT_20140731.txt";
-	
-	@Mocked Build build;
-	@Mocked Product product;
 
-	// TODO: Fix this in the next commit.
+	@Mocked
+	private Build build;
+
+	@Mocked
+	private Product product;
 
 	@Test
-	public void dummyTest() {
-
-	}
-
-//	@Test
 	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception {
 
 		final List<Package> packages = createPackages(true);
-		final List<String> fileNames = mockTransformedFileNames();
-
+		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
+		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
 		build.setProduct(new Product("Test Product"));
 
 		new NonStrictExpectations() {{
@@ -52,25 +47,30 @@ public class Rf2FileExportServiceTest {
 			returns(build);
 			build.getPackages();
 			returns(packages);
+			build.getProduct();
+			returns(product);
+			build.getEffectiveTime();
+			SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
+			returns(formater.parse("20130831"));
+		}};
+
+		final List<String> fileNames = mockTransformedFileNames();
+		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
+		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
+
+		new Expectations() {{
 			dao.listTransformedFilePaths(withInstanceOf(Execution.class), anyString);
 			returns(fileNames);
-			dao.copyTransformedFileToOutput(execution, anyString, anyString, anyString);
-		}};
-		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
-		String outputDeltaFile = deltaFile.replace(".txt", "_output.txt");
-		final InputStream inputStream = getFileInputStreamFromResource(DELTA_FILE_NAME);
 
-		final OutputStream outputStream = new FileOutputStream(outputDeltaFile);
-		final AsyncPipedStreamBean asyncPipedStreamBean = new AsyncPipedStreamBean(outputStream, new DummyFuture());
-		new Expectations() {{
-			for (Package pkg : packages) {
-				for (String fileName : fileNames) {
-					dao.getTransformedFileAsInputStream(execution, pkg.getBusinessKey(), fileName);
-					returns(inputStream);
-					dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), fileName);
-					returns(asyncPipedStreamBean);
-				}
-			}
+			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
+			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
+
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentFullFile));
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentFullFile));
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
 		}};
 
 		int maxRetries = 0;
@@ -88,24 +88,28 @@ public class Rf2FileExportServiceTest {
 		}
 
 		//check and make sure the output delta file has only header line
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-				new FileInputStream(outputDeltaFile)))) {
-
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputDeltaFile)))) {
 			String actualHeader = reader.readLine();
 			if ((reader.readLine()) != null) {
 				Assert.fail("It should not contain more than one line!");
 			}
 			Assert.assertEquals("Header lines should match", actualHeader, headerLine);
 		}
+
+		//add assert to check files are generated
+		File fullFile = new File(currentFullFile);
+		File snapshotFile = new File(currentSnapshotFile);
+		Assert.assertTrue("Full file should be generated", fullFile.exists());
+		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists());
 	}
 
-//	@Test
+	@Test
 	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution,
-			@Injectable final ExecutionDAO dao) throws Exception {
-		final List<Package> packages = createPackages( false );
+													  @Injectable final ExecutionDAO dao) throws Exception {
+		final List<Package> packages = createPackages(false);
 		new NonStrictExpectations() {{
 			execution.getBuild();
-			returns( build);
+			returns(build);
 			build.getPackages();
 			returns(packages);
 			build.getProduct();
@@ -113,28 +117,27 @@ public class Rf2FileExportServiceTest {
 			build.getEffectiveTime();
 			SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
 			returns(formater.parse("20130831"));
-
 		}};
 
 		final List<String> fileNames = mockTransformedFileNames();
 		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
 		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
 
-		new Expectations(){{
-			dao.listTransformedFilePaths( withInstanceOf(Execution.class),anyString );
+		new Expectations() {{
+			dao.listTransformedFilePaths(withInstanceOf(Execution.class), anyString);
 			returns(fileNames);
-			//only for delta file at the moment.
-			dao.copyTransformedFileToOutput(execution, packages.get(0).getBusinessKey(), fileNames.get(0));
+
+			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
+			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
+
+			dao.getOutputFileOutputStream(execution, anyString, anyString);
+			returns(getDummyAsyncPipedStreamBean(currentFullFile));
 
 			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
 
 			ArchiveEntry entry = new ArchiveEntry(FuLL_FILE_NAME, getFileInputStreamFromResource(FuLL_FILE_NAME));
 			returns(entry);
 
-			dao.getTransformedFileAsInputStream( withInstanceOf(Execution.class), anyString, anyString);
-			returns( getFileInputStreamFromResource(DELTA_FILE_NAME));
-			
-			
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
 			returns(getDummyAsyncPipedStreamBean(currentFullFile));
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
@@ -148,10 +151,10 @@ public class Rf2FileExportServiceTest {
 		}
 
 		//add assert to check files are generated
-		File fullFile = new File( currentFullFile);
-		File snapshotFile = new File( currentSnapshotFile);
-		Assert.assertTrue("Full file should be generated", fullFile.exists() );
-		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists() );		
+		File fullFile = new File(currentFullFile);
+		File snapshotFile = new File(currentSnapshotFile);
+		Assert.assertTrue("Full file should be generated", fullFile.exists());
+		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists());
 	}
 
 	private List<String> mockTransformedFileNames() {
@@ -159,8 +162,8 @@ public class Rf2FileExportServiceTest {
 		fileNames.add(DELTA_FILE_NAME);
 		return fileNames;
 	}
-	
-	private List<Package> createPackages( boolean isFirstRelease) {
+
+	private List<Package> createPackages(boolean isFirstRelease) {
 		List<Package> packages = new ArrayList<>();
 		Package pk = new Package("PK1");
 		pk.setBuild(build);
@@ -168,21 +171,20 @@ public class Rf2FileExportServiceTest {
 		packages.add(pk);
 		return packages;
 	}
-	
-	private InputStream getFileInputStreamFromResource(String fileName) throws FileNotFoundException{
-	    String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ fileName).getFile();
-	    return new FileInputStream(filePath);
+
+	private InputStream getFileInputStreamFromResource(String fileName) throws FileNotFoundException {
+		String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + fileName).getFile();
+		return new FileInputStream(filePath);
 	}
-	
-	private AsyncPipedStreamBean getDummyAsyncPipedStreamBean( String fileName) throws FileNotFoundException{
+
+	private AsyncPipedStreamBean getDummyAsyncPipedStreamBean(String fileName) throws FileNotFoundException {
 		final OutputStream outputStream = new FileOutputStream(fileName);
 		return new AsyncPipedStreamBean(outputStream, new DummyFuture());
 	}
-	
-	private String getCurrentReleaseFile(String fileType){
-	    String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ DELTA_FILE_NAME).getFile();
-	    return deltaFile.replace(RF2Constants.DELTA, fileType);
-	}
 
+	private String getCurrentReleaseFile(String fileType) {
+		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
+		return deltaFile.replace(RF2Constants.DELTA, fileType);
+	}
 
 }
