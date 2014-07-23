@@ -23,9 +23,10 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
  */
 public class ConfigurationCheck extends PreconditionCheck {
 
+    private static final String NO_README_HEADER_DETECTED = "No Readme Header detected.";
     private static final String NO_COPYRIGHT_END_DATE = "The copyright end date is not set.";
-    private static final String INVALID_RELEASE_DATE_FORMAT = "Expecting release date format in pakcage file name to be yyyyMMdd but is %s";
-    private static final String INVALID_PREVIOUS_PUBLISHED_RELEASE_DATE = "Previous release date %s in published pakcage is not before current effective time %s";
+    private static final String INVALID_RELEASE_DATE_FORMAT = "Expecting release date format in package file name to be yyyyMMdd but is %s";
+    private static final String INVALID_PREVIOUS_PUBLISHED_RELEASE_DATE = "Previous release date %s in published package is not before current effective time %s";
     private static final String NO_EFFECTIVE_TIME = "Effective time is not specified in the build.";
     private static final String INVALID_SUBSEQUENT_RELEASE_CONFIG_ERROR_MSG = "Subsequent releases must have a previous published package specified.";
     private static final String INVALID_FIRST_TIME_REPLEASE_CONFIG_ERROR_MSG = "Cannot have a previous published package specified for a first time release.";
@@ -61,12 +62,13 @@ public class ConfigurationCheck extends PreconditionCheck {
 		}
 	    }
 	}
-	if (pkg.getReadmeEndDate() == null) {
+	String readmeEndDate = pkg.getReadmeEndDate();
+	if (readmeEndDate == null || readmeEndDate.length() < 4) {
 	    errorList.add(NO_COPYRIGHT_END_DATE);
 	}
 	
 	if (pkg.getReadmeHeader() == null || pkg.getReadmeHeader().isEmpty()) {
-	    errorList.add("No Readme Header detected.");
+	    errorList.add(NO_README_HEADER_DETECTED);
 	}
 
 	if (errorList.size() > 0) {

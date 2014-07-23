@@ -23,6 +23,8 @@ public abstract class PreconditionCheck {
 
     protected void pass() {
 	this.state = State.PASS;
+	//need to update this
+	this.responseMessage="";
     }
 
     protected void fail(String msg) {

@@ -315,9 +315,31 @@ echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
 
-# Has there been a fatal pre-condition failure?  We'll stop the script if so.
-preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FATAL` || true
+#Check whether any pre-condition checks failed and get users confirmation to continue or not if failures occcured
+preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FAIL` || true
 if [ -n "${preConditionFailures}" ]
+then
+    echo "Failures detected in Pre-Condition Check: "
+    echo ${preConditionFailures}
+    echo
+    while read -p "Please confirm whether you still want to continue (y/n):" choice
+    do
+        case "$choice" in
+        y|Y)
+            break
+            ;;
+        n|N)
+            echo "Script is stopped by user."
+        exit 0
+        ;;
+        esac
+    done
+fi
+
+
+# Has there been a fatal pre-condition failure?  We'll stop the script if so.
+preConditionFatalFailures=`cat tmp/execution-response.txt | grep -C1 FATAL` || true
+if [ -n "${preConditionFatalFailures}" ]
 then
 	echo "Fatal failure detected in Pre-Condition Check: "
 	echo ${preConditionFailures}
