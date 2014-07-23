@@ -16,22 +16,22 @@ import java.util.List;
 
 public class RF2TableDAOTest {
 
-	private RF2TableDAO RF2TableDAO;
+	private RF2TableDAO rf2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
 	private Connection testConnection;
 
 	@Before
 	public void setup() throws Exception {
-		testConnection = new DatabaseManager().createConnection("test");
-		RF2TableDAO = new RF2TableDAO(testConnection);
+		rf2TableDAO = new RF2TableDAO("test");
+		testConnection = rf2TableDAO.getConnection();
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
 		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
 	}
 
 	@Test
 	public void testCreateTable() throws Exception {
-		RF2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
@@ -77,9 +77,9 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testAppendData() throws Exception {
-		TableSchema tableSchema = RF2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
 
-		RF2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename));
+		rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename));
 
 		List<String> tableNames = getTableNames();
 		Assert.assertEquals(1, tableNames.size());
@@ -125,8 +125,8 @@ public class RF2TableDAOTest {
 	}
 
 	@After
-	public void tearDown() throws SQLException {
-		RF2TableDAO.closeConnection();
+	public void tearDown() throws Exception {
+		rf2TableDAO.closeConnection();
 	}
 
 }

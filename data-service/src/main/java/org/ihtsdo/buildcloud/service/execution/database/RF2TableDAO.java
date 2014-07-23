@@ -25,8 +25,8 @@ public class RF2TableDAO {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAO.class);
 
-	public RF2TableDAO(Connection connection) throws DatabasePopulatorException {
-		this.connection = connection;
+	public RF2TableDAO(String uniqueId) throws DatabasePopulatorException, SQLException, ClassNotFoundException {
+		this.connection = new DatabaseManager().createConnection(uniqueId);
 		dataTypeConverter = new H2DataTypeConverter();
 		schemaFactory = new SchemaFactory();
 	}
@@ -60,10 +60,6 @@ public class RF2TableDAO {
 			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getTableName());
 			insertData(reader, tableSchema, insertStatement);
 		}
-	}
-
-	public void closeConnection() throws SQLException {
-		connection.close();
 	}
 
 	private void createTable(TableSchema tableSchema) throws SQLException {
@@ -186,11 +182,12 @@ public class RF2TableDAO {
 		return tableSchema.getFields().get(0).getName();
 	}
 
-	public void dropTable(TableSchema tableSchema) throws SQLException {
-		assert (tableSchema.getTableName() != null);
-		String sqlDrop = "drop table " + tableSchema.getTableName();
-		LOGGER.debug("Dropping table {}", tableSchema.getTableName());
-		connection.createStatement().execute(sqlDrop);
+	public void closeConnection() throws SQLException {
+		connection.close();
+	}
+
+	protected Connection getConnection() {
+		return connection;
 	}
 
 }

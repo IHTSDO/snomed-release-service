@@ -7,8 +7,6 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.execution.database.DatabaseManager;
-import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.Rf2FileWriter;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
@@ -18,9 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,14 +78,12 @@ public class Rf2FileExportService {
 	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease) {
 		RF2TableDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
-		Connection connection = null;
 		try {
 			// Create table containing transformed input delta
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
-			connection = getConnection(pkg.getBusinessKey());
-			rf2TableDAO = getDatabasePopulator(connection);
+			rf2TableDAO = new RF2TableDAO(pkg.getBusinessKey());
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
 
 			// Export ordered Delta file
@@ -141,26 +135,14 @@ public class Rf2FileExportService {
 			throw new ReleaseFileGenerationException(errorMsg, e);
 		} finally {
 			// Clean up time
-			if (tableSchema != null) {
-				assert (rf2TableDAO != null);
-				assert (connection != null);
+			if (rf2TableDAO != null) {
 				try {
-					rf2TableDAO.dropTable(tableSchema);
-					connection.close();
+					rf2TableDAO.closeConnection();
 				} catch (Exception e) {
 					LOGGER.error("Failure while trying to clean up after {}", tableSchema.getTableName(), e);
 				}
 			}
 		}
-	}
-
-	//in case we need to mock out for testing
-	RF2TableDAO getDatabasePopulator(Connection connection) throws DatabasePopulatorException {
-		return new RF2TableDAO(connection);
-	}
-	
-	Connection getConnection(String uniqueId) throws ClassNotFoundException, SQLException{
-		return new DatabaseManager().createConnection(uniqueId);
 	}
 
 	/**

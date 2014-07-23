@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.sql.Connection;
 import java.sql.ResultSet;
 
 public class Rf2FileWriterTest {
@@ -27,7 +26,6 @@ public class Rf2FileWriterTest {
 	private static final String EXPECTED_EXTENDED_MAP_SNAPSHOT_INT = "expected-der2_iisssccRefset_ExtendedMapSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_EXTENDED_MAP_FULL_20140731 = "expected-der2_iisssccRefset_ExtendedMapFull_INT_20140731.txt";
 
-	private Connection testConnection;
 	private TableSchema tableSchema;
 	private Rf2FileWriter rf2FileWriter;
 	private ByteArrayOutputStream fullOutputStream;
@@ -37,8 +35,7 @@ public class Rf2FileWriterTest {
 
 	@Before
 	public void setUp() throws Exception {
-	    testConnection = new DatabaseManager().createConnection("test");
-	    rf2TableDAO = new RF2TableDAO(testConnection);
+	    rf2TableDAO = new RF2TableDAO("test");
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
@@ -115,9 +112,10 @@ public class Rf2FileWriterTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_SNAPSHOT_INT), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	}
+
 	@After
 	public void tearDown() throws Exception {
-		testConnection.close();
+		rf2TableDAO.closeConnection();
 	}
 
 }
