@@ -12,22 +12,24 @@ productName="Snomed CT Release"
 buildName="TestSuite"
 
 
-while getopts "t:" opt
+while getopts ":t:" opt
 do
 	case $opt in
-		t) 
+		t)
 			testIndex=$OPTARG
-			echo "Running test ${testIndex}."
 		;;
 	esac
 done
 
-if [ -n "${testIndex}" ] && [[ $testIndex =~ ^-?[0-9]+$ ]] 
+if [ -n "${testIndex}" ] && [[ $testIndex =~ ^-?[0-9]+$ ]]
 then
+	echo "Running test ${testIndex}."
 	externalDataLocation="${externalDataLocation}/test_${testIndex}"
-	# Call api_client
-	source ../api_client.sh
-else 
-	echo "Please call using parameter -t <integer> to indicate test to run"
-	echo "Script halted."
+else
+	echo "Warn - No parameter -t <integer> to indicate test to run"
+	echo
+	# Reset getopts
+	OPTIND=1
 fi
+
+source ../api_client.sh
