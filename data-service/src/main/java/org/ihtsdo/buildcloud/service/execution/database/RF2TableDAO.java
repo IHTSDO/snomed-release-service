@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.ParseException;
 import java.util.List;
 
@@ -163,11 +164,18 @@ public class RF2TableDAO {
 
 	public ResultSet selectAllOrdered(TableSchema tableSchema) throws SQLException {
 		String idFieldName = getIdFieldName(tableSchema);
+		// @formatter:off
 		PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from " + tableSchema.getTableName() + " " +
-						"order by " + idFieldName + ", effectiveTime"
+				"select * from " + tableSchema.getTableName() + 
+				" order by " + 
+				idFieldName + ", effectiveTime", 
+				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
 		);
+		// @formatter:on
 
+		// Negative values are not allowed, would need to extend JDBCStatement
+		// preparedStatement.setFetchSize(Integer.MIN_VALUE); // Apparently stops the db driver caching the results
+		// see http://stackoverflow.com/questions/14010595/resultset-type-forward-only-in-java#comment38287217_14010595
 		return preparedStatement.executeQuery();
 	}
 
@@ -176,8 +184,8 @@ public class RF2TableDAO {
 		PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from " + tableSchema.getTableName() + " " +
 						"order by " + idFieldName + ", effectiveTime " +
-						"limit 0"
-		);
+						"limit 0",
+		ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
 		return preparedStatement.executeQuery();
 	}
@@ -189,8 +197,7 @@ public class RF2TableDAO {
 	public void dropTable(TableSchema tableSchema) throws SQLException {
 		assert (tableSchema.getTableName() != null);
 		String sqlDrop = "drop table " + tableSchema.getTableName();
-		LOGGER.debug("Dropping table {}", tableSchema.getTableName());
-		connection.createStatement().execute(sqlDrop);
+		connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).execute(sqlDrop);
 	}
 
 }
