@@ -113,7 +113,9 @@ public class Rf2FileExportService {
 				}
 
 				// Append transformed previous full file
+				LOGGER.debug("Start: Insert previous release data into {}", tableSchema.getTableName());
 				rf2TableDAO.appendData(tableSchema, previousFullFile.getInputStream());
+				LOGGER.debug("Finish: Insert previous release data into {}", tableSchema.getTableName());
 			}
 
 			// Export Full and Snapshot files
@@ -128,6 +130,7 @@ public class Rf2FileExportService {
 			rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
 					pkg.getBuild().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
 					snapshotAsyncPipe.getOutputStream());
+			LOGGER.debug("Processing {} complete, waiting for data transfer to catch up.", tableSchema.getTableName());
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
