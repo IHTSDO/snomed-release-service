@@ -31,11 +31,11 @@ public class Rf2FileWriterTest {
 	private ByteArrayOutputStream fullOutputStream;
 	private ByteArrayOutputStream snapshotOutputStream;
 	private ByteArrayOutputStream deltaOutputStream;
-	private RF2TableDAO rf2TableDAO;
+	private RF2TableDAOHsqlImpl rf2TableDAO;
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAO("test");
+	    rf2TableDAO = new RF2TableDAOHsqlImpl("test");
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
