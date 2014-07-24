@@ -39,7 +39,7 @@ ensureCorrectResponse() {
 		echo " Response received: $response "
 		if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
 		then
-			echo -e "Failure detected with non-2xx HTTP response code received.\nScript halted."
+			echo -e "Failure detected with non-2xx HTTP response code received at $(getElapsedTime).\nScript halted."
 			exit -1
 		fi
 	done
@@ -359,6 +359,8 @@ then
 	echo
 	echo "Script halted after $(getElapsedTime) "
 	exit -1
+else
+	echo "Build execution complete at $(getElapsedTime)"
 fi
 
 if ${autoPublish}
@@ -391,7 +393,7 @@ curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HT
 cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
-echo "Process Complete in $(getElapsedTime)"
+echo "Script Complete in $(getElapsedTime)"
 if ! ${autoPublish} 
 then
 	echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
