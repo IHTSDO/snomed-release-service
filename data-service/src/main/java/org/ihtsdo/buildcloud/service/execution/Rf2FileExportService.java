@@ -81,12 +81,14 @@ public class Rf2FileExportService {
 		TableSchema tableSchema = null;
 		try {
 			// Create table containing transformed input delta
+			LOGGER.debug("Creating table for {}", tableSchema.getTableName());
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
 			rf2TableDAO = new RF2TableDAOHsqlImpl(pkg.getBusinessKey());
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
-
+			
+			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
 			// Export ordered Delta file
 			Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
 			AsyncPipedStreamBean deltaFileAsyncPipe = executionDao
@@ -99,7 +101,9 @@ public class Rf2FileExportService {
 				deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
 			}
 			rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream());
+			LOGGER.debug("Completed processing delta file for {}, waiting for network", tableSchema.getTableName());
 			deltaFileAsyncPipe.waitForFinish();
+			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
 			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 
@@ -131,7 +135,7 @@ public class Rf2FileExportService {
 			rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
 					pkg.getBuild().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
 					snapshotAsyncPipe.getOutputStream());
-			LOGGER.debug("Processing {} complete, waiting for data transfer to catch up.", tableSchema.getTableName());
+			LOGGER.debug("Completed processing full and snapshot files for {} , waiting for network.", tableSchema.getTableName());
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
