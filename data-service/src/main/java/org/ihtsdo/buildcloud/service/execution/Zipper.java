@@ -87,6 +87,7 @@ public class Zipper {
 		
 		assert(isInitialised);  //Would be a coding error if this tripped
 		
+
 		String targetPath = Files.createTempDir().getAbsolutePath();
 		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
@@ -94,11 +95,13 @@ public class Zipper {
 		//up to S3, but that would use another thread in parallel, so not without risk.
 		//Simpler to write to local disk for now and upload when complete.
 		
+		LOGGER.debug("Start: Zipping file structure {}", rootFolder.getName());
 		File zipFile = new File(zipLocation);
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		ZipOutputStream zos = new ZipOutputStream(fos);
 		walkFolders(rootFolder, zos, "");
 		zos.close();
+		LOGGER.debug("Finished: Zipping file structure {}", rootFolder.getName());
 		return zipFile;
 	}
 	
