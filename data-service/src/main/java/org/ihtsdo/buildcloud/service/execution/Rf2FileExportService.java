@@ -118,9 +118,9 @@ public class Rf2FileExportService {
 				}
 
 				// Append transformed previous full file
-				LOGGER.debug("Start: Insert previous release data into {}", tableSchema.getTableName());
+				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
 				rf2TableDAO.appendData(tableSchema, previousFullFile.getInputStream());
-				LOGGER.debug("Finish: Insert previous release data into {}", tableSchema.getTableName());
+				LOGGER.debug("Finish: Insert previous release data into table {}", tableSchema.getTableName());
 			}
 
 			// Export Full and Snapshot files
