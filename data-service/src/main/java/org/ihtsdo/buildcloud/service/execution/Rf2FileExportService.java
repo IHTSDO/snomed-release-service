@@ -81,7 +81,7 @@ public class Rf2FileExportService {
 		TableSchema tableSchema = null;
 		try {
 			// Create table containing transformed input delta
-			LOGGER.debug("Creating table for {}", tableSchema.getTableName());
+			LOGGER.debug("Creating table for {}", transformedDeltaDataFile);
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
