@@ -111,6 +111,7 @@ public class FileHelper {
 	 */
 	public ArchiveEntry getArchiveEntry(String targetFileName, String previousPublishedPackagePath, FileNameTransformation fnt) throws IOException {
 
+		LOGGER.debug("Start: Search Archive for previously published file {}", targetFileName);
 		ArchiveEntry result = null;
 		//Get hold of the Archive Input Stream
 		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
@@ -133,6 +134,7 @@ public class FileHelper {
 				result = new ArchiveEntry(zEntry.getName(), zis);
 			}
 		}
+		LOGGER.debug("Finish: Search Archive for previously published file {}", targetFileName);
 		return result;
 	}
 
