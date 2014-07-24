@@ -25,6 +25,7 @@ if [ -n "${testIndex}" ] && [[ $testIndex =~ ^-?[0-9]+$ ]]
 then
 	echo "Running test ${testIndex}."
 	externalDataLocation="${externalDataLocation}/test_${testIndex}"
+				buildName=${buildName}${testIndex}
 else
 	echo "Warn - No parameter -t <integer> to indicate test to run"
 	echo
