@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.execution.database;
+package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;

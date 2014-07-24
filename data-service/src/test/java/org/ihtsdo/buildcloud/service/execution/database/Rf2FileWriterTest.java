@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.database.hsql.RF2TableDAOHsqlImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
@@ -9,7 +10,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.sql.ResultSet;
 
 public class Rf2FileWriterTest {
 
@@ -31,7 +31,7 @@ public class Rf2FileWriterTest {
 	private ByteArrayOutputStream fullOutputStream;
 	private ByteArrayOutputStream snapshotOutputStream;
 	private ByteArrayOutputStream deltaOutputStream;
-	private RF2TableDAOHsqlImpl rf2TableDAO;
+	private RF2TableDAO rf2TableDAO;
 
 	@Before
 	public void setUp() throws Exception {
@@ -49,10 +49,10 @@ public class Rf2FileWriterTest {
 	public void testSimpleRefsetExportFullAndSnapshot() throws Exception {
 		// Prepare test object for this test
 		tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
-		ResultSet resultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		// Run target test method
-		rf2FileWriter.exportFullAndSnapshot(resultSet, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
+		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
 
 		// Assert expectations
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_REFSET_SIMPLE_FULL_20130930), new ByteArrayInputStream(fullOutputStream.toByteArray()));
@@ -63,10 +63,10 @@ public class Rf2FileWriterTest {
 	public void testSimpleRefsetExportDelta() throws Exception {
 		// Prepare test object for this test
 		tableSchema = rf2TableDAO.createTable(CURRENT_SIMPLE_REFSET_DELTA, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA));
-		ResultSet resultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		// Run target test method
-		rf2FileWriter.exportDelta(resultSet, tableSchema, deltaOutputStream);
+		rf2FileWriter.exportDelta(tableResults, tableSchema, deltaOutputStream);
 
 		// Assert expectations
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), new ByteArrayInputStream(deltaOutputStream.toByteArray()));
@@ -79,9 +79,9 @@ public class Rf2FileWriterTest {
 	public void testSimpleRefsetExportWithAppendData() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL));
 	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA));
-		ResultSet resultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
-		rf2FileWriter.exportFullAndSnapshot(resultSet, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
+		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
 
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_REFSET_SIMPLE_FULL_20130930), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_REFSET_SIMPLE_SNAPSHOT_20130930), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
@@ -94,9 +94,9 @@ public class Rf2FileWriterTest {
 	@Test
 	public void testSimpleRefsetSnapshotExportUsingPreviousReleaseDate() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
-		ResultSet resultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
-		rf2FileWriter.exportFullAndSnapshot(resultSet, tableSchema, RF2Constants.DATE_FORMAT.parse(PREVIOUS_RELEASE_DATE), fullOutputStream, snapshotOutputStream);
+		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(PREVIOUS_RELEASE_DATE), fullOutputStream, snapshotOutputStream);
 
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_SIMPLE_SNAPSHOT_INT_20130630), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
 	}
@@ -105,9 +105,9 @@ public class Rf2FileWriterTest {
 	public void testExtendedMapRefsetExport() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL));
 	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA));
-		ResultSet resultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
-		rf2FileWriter.exportFullAndSnapshot(resultSet, tableSchema, RF2Constants.DATE_FORMAT.parse("20140731"), fullOutputStream, snapshotOutputStream);
+		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse("20140731"), fullOutputStream, snapshotOutputStream);
 
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_SNAPSHOT_INT), new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));

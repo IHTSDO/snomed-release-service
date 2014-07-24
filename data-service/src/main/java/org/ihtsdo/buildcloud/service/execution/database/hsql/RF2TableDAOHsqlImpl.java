@@ -1,6 +1,9 @@
-package org.ihtsdo.buildcloud.service.execution.database;
+package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.slf4j.Logger;
@@ -65,7 +68,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public ResultSet selectNone(TableSchema tableSchema) throws SQLException {
+	public RF2TableResults selectNone(TableSchema tableSchema) throws SQLException {
 		String idFieldName = getIdFieldName(tableSchema);
 		PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from " + tableSchema.getTableName() + " " +
@@ -75,11 +78,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 				ResultSet.CONCUR_READ_ONLY
 		);
 
-		return preparedStatement.executeQuery();
+		return new RF2TableResultsHsqlImpl(preparedStatement.executeQuery(), tableSchema);
 	}
 
 	@Override
-	public ResultSet selectAllOrdered(TableSchema tableSchema) throws SQLException {
+	public RF2TableResultsHsqlImpl selectAllOrdered(TableSchema tableSchema) throws SQLException {
 		String idFieldName = getIdFieldName(tableSchema);
 		// @formatter:off
 		PreparedStatement preparedStatement = connection.prepareStatement(
@@ -93,7 +96,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		// Negative values are not allowed, would need to extend JDBCStatement
 		// preparedStatement.setFetchSize(Integer.MIN_VALUE); // Apparently stops the db driver caching the results
 		// see http://stackoverflow.com/questions/14010595/resultset-type-forward-only-in-java#comment38287217_14010595
-		return preparedStatement.executeQuery();
+		return new RF2TableResultsHsqlImpl(preparedStatement.executeQuery(), tableSchema);
 	}
 
 	@Override
