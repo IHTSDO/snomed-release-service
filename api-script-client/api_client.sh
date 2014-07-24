@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
+#api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="http://release.ihtsdotools.org/api/v1"
 
@@ -157,6 +157,12 @@ done
 
 mkdir -p tmp
 
+# If we're setting up external data, lets do that now while we have the user's attention
+if [ -n "$externalDataLocation" ]
+then
+	source ../setup_external_data_location.sh
+fi
+
 # Make sure we're starting with a clean slate
 rm tmp/*  || true
 rm logs/* || true
@@ -263,7 +269,6 @@ then
 		
 		if [ -n "$externalDataLocation" ]
 		then
-			source ../setup_external_data_location.sh
 			inputFilesPath=${externalDataRoot}${externalDataLocation}
 		else
 			inputFilesPath="input_files"
