@@ -14,16 +14,16 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RF2TableDAOTest {
+public class RF2TableDAOHsqlImplTest {
 
-	private RF2TableDAO rf2TableDAO;
+	private RF2TableDAOHsqlImpl rf2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
 	private Connection testConnection;
 
 	@Before
 	public void setup() throws Exception {
-		rf2TableDAO = new RF2TableDAO("test");
+		rf2TableDAO = new RF2TableDAOHsqlImpl("test");
 		testConnection = rf2TableDAO.getConnection();
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
 		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
