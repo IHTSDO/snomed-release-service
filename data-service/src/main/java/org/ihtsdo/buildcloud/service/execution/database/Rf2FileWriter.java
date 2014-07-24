@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
@@ -9,14 +8,14 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
 public class Rf2FileWriter {
 
-	public void exportDelta(ResultSet resultSet, TableSchema tableSchema, OutputStream deltaOutputStream) throws IOException, SQLException {
+	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws IOException, SQLException {
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream))) {
 			List<Field> fields = tableSchema.getFields();
 
@@ -24,22 +23,14 @@ public class Rf2FileWriter {
 			String header = buildHeader(fields);
 			deltaWriter.write(header);
 
-			final StringBuilder builder = new StringBuilder();
-			int fieldIndex;
-
-			while (resultSet.next()) {
-				fieldIndex = 1;
-				for (Field field : fields) {
-					writeField(resultSet, field, fieldIndex++, builder);
-				}
-				builder.append(RF2Constants.LINE_ENDING);
-				deltaWriter.append(builder);
-				builder.setLength(0);
+			String line;
+			while ((line = tableResults.nextLine()) != null) {
+				deltaWriter.append(line);
 			}
 		}
 	}
 
-	public void exportFullAndSnapshot(ResultSet resultSet, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
+	public void exportFullAndSnapshot(RF2TableResults tableResults, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
 
 		try (BufferedWriter fullWriter = new BufferedWriter(new OutputStreamWriter(fullOutputStream));
 				BufferedWriter snapshotWriter = new BufferedWriter(new OutputStreamWriter(snapshotOutputStream))) {
@@ -57,37 +48,27 @@ public class Rf2FileWriter {
 
 			// Variables for snapshot resolution
 			String currentLine;
-			String currentId = null;
-			Long currentEffectiveTimeSeconds = null;
-			Long targetEffectiveTimeSeconds = targetEffectiveTime.getTime();
+			String currentId;
+			Integer currentEffectiveTimeInt;
+			Integer targetEffectiveTimeInt = Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(targetEffectiveTime));
 			String lastId = null;
 			String validLine = null;
 			boolean movedToNewMember;
 			boolean passedTargetEffectiveTime;
 
 			// Iterate through data
-			while (resultSet.next()) {
-				// Assemble line for output
-				fieldIndex = 1;
-				for (Field field : fields) {
-					value = writeField(resultSet, field, fieldIndex, builder);
-					if (fieldIndex == 1) {
-						currentId = value;
-					}
-					if (field.getName().equals(RF2Constants.EFFECTIVE_TIME)) {
-						currentEffectiveTimeSeconds = resultSet.getDate(fieldIndex).getTime();
-					}
-					fieldIndex++;
-				}
-				builder.append(RF2Constants.LINE_ENDING);
-
+			while ((currentLine = tableResults.nextLine()) != null) {
 				// Write to Full file
-				currentLine = builder.toString();
 				fullWriter.append(currentLine);
+
+				// Parse out id and effectiveTime
+				String[] lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+				currentId = lineParts[0];
+				currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
 
 				// If moved to new member or passed target effectiveTime write any previous valid line
 				movedToNewMember = lastId != null && !lastId.equals(currentId);
-				passedTargetEffectiveTime = currentEffectiveTimeSeconds > targetEffectiveTimeSeconds;
+				passedTargetEffectiveTime = currentEffectiveTimeInt > targetEffectiveTimeInt;
 				if (movedToNewMember || passedTargetEffectiveTime) {
 					if (validLine != null) {
 						snapshotWriter.append(validLine);
@@ -127,22 +108,6 @@ public class Rf2FileWriter {
 		}
 		builder.append(RF2Constants.LINE_ENDING);
 		return builder.toString();
-	}
-
-	private String writeField(ResultSet resultSet, Field field, int fieldIndex, StringBuilder builder) throws SQLException {
-		String value;
-		if (field.getType() == DataType.TIME) {
-			value = RF2Constants.DATE_FORMAT.format(resultSet.getDate(fieldIndex).getTime());
-		} else if (field.getType() == DataType.BOOLEAN) {
-			value = resultSet.getBoolean(fieldIndex) ? RF2Constants.BOOLEAN_TRUE : RF2Constants.BOOLEAN_FALSE;
-		} else {
-			value = resultSet.getString(fieldIndex);
-		}
-		if (fieldIndex > 1) {
-			builder.append(RF2Constants.COLUMN_SEPARATOR);
-		}
-		builder.append(value);
-		return value;
 	}
 
 }
