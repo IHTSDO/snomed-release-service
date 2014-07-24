@@ -157,6 +157,11 @@ done
 
 mkdir -p tmp
 
+# Make sure we're starting with a clean slate
+rm tmp/*  || true
+rm logs/* || true
+rm output/*  || true
+
 # Login
 echo "Login and record authorisation token."
 curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
