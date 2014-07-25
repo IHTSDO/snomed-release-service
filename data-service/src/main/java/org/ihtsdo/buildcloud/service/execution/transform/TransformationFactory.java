@@ -11,6 +11,7 @@ public class TransformationFactory {
 	private final CachedSctidFactory cachedSctidFactory;
 	private final StreamingFileTransformation conceptTransformation;
 	private final StreamingFileTransformation descriptionTransformation;
+	private final StreamingFileTransformation textDefinitionFileTransformation;
 	private final StreamingFileTransformation relationshipFileTransformation;
 	private final StreamingFileTransformation identifierFileTransformation;
 	private final StreamingFileTransformation preProcessConceptFileTransformation;
@@ -25,6 +26,7 @@ public class TransformationFactory {
 		preProcessDescriptionFileTransformation = buildPreProcessDescriptionFileTransformation();
 		conceptTransformation = buildConceptFileTransformation();
 		descriptionTransformation = buildDescriptionFileTransformation();
+		textDefinitionFileTransformation = buildTextDefinitionFileTransformation();
 		relationshipFileTransformation = buildRelationshipFileTransformation();
 		identifierFileTransformation = buildIdentifierFileTransformation();
 		uuidGenerator = uuidGeneratorX;
@@ -49,6 +51,9 @@ public class TransformationFactory {
 				break;
 			case DESCRIPTION:
 				transformation = descriptionTransformation;
+				break;
+			case TEXT_DEFINITION:
+				transformation = textDefinitionFileTransformation;
 				break;
 			case STATED_RELATIONSHIP:
 				transformation = relationshipFileTransformation;
@@ -99,6 +104,24 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_des
 		return new StreamingFileTransformation()
 				// id transform already done
+				// effectiveTime
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
+						// moduleId
+				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
+						// conceptId
+				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
+						// typeId
+				.addLineTransformation(new SCTIDTransformationFromCache(6, cachedSctidFactory))
+						// caseSignificanceId
+				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
+				;
+
+	}
+
+	private StreamingFileTransformation buildTextDefinitionFileTransformation() {
+		return new StreamingFileTransformation()
+				// id
+				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
 				// moduleId
