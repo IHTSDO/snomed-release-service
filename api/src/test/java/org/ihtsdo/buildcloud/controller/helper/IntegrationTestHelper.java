@@ -1,28 +1,10 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import com.jayway.jsonpath.JsonPath;
 
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
@@ -36,21 +18,40 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import com.jayway.jsonpath.JsonPath;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class IntegrationTestHelper {
 
 	public static final String PRODUCT_URL = "/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset";
-	public static final String TEST_PACKAGE = "testpackage";
-	public static final String BUILD_NAME = "test-build";
 
 	private final MockMvc mockMvc;
 	private String basicDigestHeaderValue;
 	private String buildId;
+	private String buildBusinessKey;
+	private String packageBusinessKey;
 
-	public IntegrationTestHelper(MockMvc mockMvc) {
+	public IntegrationTestHelper(MockMvc mockMvc, String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
+		
+		//We'll work with a build and package that are specific to this test
+		this.buildBusinessKey = EntityHelper.formatAsBusinessKey(testName);
+		this.packageBusinessKey = EntityHelper.formatAsBusinessKey(testName);
 	}
 
 	public void loginAsManager() throws Exception {
@@ -70,37 +71,68 @@ public class IntegrationTestHelper {
 	}
 
 	public void createTestBuildStructure() throws Exception {
-		// Create Build
-		MvcResult createBuildResult = mockMvc.perform(
-				post(PRODUCT_URL + "/builds")
+		
+		this.buildId = findOrCreateBuild();
+		findOrCreatePackage();
+		
+	}
+	
+	private String findOrCreateBuild() throws Exception {
+		//Does the build already exist or do we need to create it?
+		MvcResult buildResult = mockMvc.perform(
+				get(PRODUCT_URL + "/builds/" +  this.buildBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"name\" : \"" + BUILD_NAME + "\" }")
 		)
 				.andDo(print())
-				.andExpect(status().isCreated())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
+		
+		if (buildResult.getResponse().getStatus() == 404) {
+			// Create Build
+			 buildResult = mockMvc.perform(
+					post(PRODUCT_URL + "/builds")
+							.header("Authorization", getBasicDigestHeaderValue())
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{ \"name\" : \"" + buildBusinessKey + "\" }")
+			)
+					.andDo(print())
+					.andExpect(status().isCreated())
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+					.andReturn();
+		}
 
-		String createBuildResponseString = createBuildResult.getResponse().getContentAsString();
+		String createBuildResponseString = buildResult.getResponse().getContentAsString();
 		int idStartIndex = createBuildResponseString.indexOf("\"id\" :") + 8;
 		int idEndIndex = createBuildResponseString.indexOf("\"", idStartIndex);
-		this.buildId = createBuildResponseString.substring(idStartIndex, idEndIndex);
-
-		// Create Package
-		mockMvc.perform(
-				post("/builds/" + buildId + "/packages")
+		return createBuildResponseString.substring(idStartIndex, idEndIndex);
+	}
+	
+	private void findOrCreatePackage() throws Exception {
+		//Does the product already exist or do we need to create it?
+		MvcResult packageResult = mockMvc.perform(
+				get(PRODUCT_URL + "/builds/" + this.buildId + "/packages/"  + this.packageBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"name\" : \"" + TEST_PACKAGE + "\" }")
 		)
 				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+				.andReturn();
+		
+		if (packageResult.getResponse().getStatus() == 404) {
+			// Create Package
+			mockMvc.perform(
+					post("/builds/" + buildId + "/packages")
+							.header("Authorization", getBasicDigestHeaderValue())
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{ \"name\" : \"" + this.packageBusinessKey + "\" }")
+			)
+					.andDo(print())
+					//.andExpect((status().isOk()))  //Will return 409 if package already exists
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		}
 	}
 
 	public void uploadDeltaInputFile(String deltaFileName, Class classpathResourceOwner) throws Exception {
-		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", classpathResourceOwner.getResourceAsStream(deltaFileName));
+		InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
+		Assert.assertNotNull(deltaFileName + " stream is null.", resourceAsStream);
+		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
 				fileUpload(getPackageUrl() + "/inputfiles")
 						.file(deltaFile)
@@ -179,6 +211,19 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
+	public void setJustPackage(boolean justPackage) throws Exception {
+		String jsonContent = "{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }";
+		mockMvc.perform(
+				request(HttpMethod.PATCH, getPackageUrl())
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+	}
+
 	public void setPreviousPublishedPackage(String previousPublishedFile) throws Exception {
 		String jsonContent = "{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }";
 		mockMvc.perform(
@@ -199,6 +244,18 @@ public class IntegrationTestHelper {
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{ \"readmeHeader\" : \"" + readmeHeader + "\" }")
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+	}
+
+	public void setReadmeEndDate(String readmeEndDate) throws Exception {
+		mockMvc.perform(
+				request(HttpMethod.PATCH, getPackageUrl())
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }")
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
@@ -282,9 +339,9 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public ZipFile testZipNameAndEntryNames(String executionURL, int expectedOutputFileCount, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
+	public ZipFile testZipNameAndEntryNames(String executionURL, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileListResult = mockMvc.perform(
-				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles")
+				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -294,7 +351,6 @@ public class IntegrationTestHelper {
 
 		String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
 		JSONArray jsonArray = new JSONArray(outputFileListJson);
-		Assert.assertEquals(expectedOutputFileCount, jsonArray.length());
 
 		String zipFilePath = null;
 		for (int a = 0; a < jsonArray.length(); a++) {
@@ -317,7 +373,7 @@ public class IntegrationTestHelper {
 
 	private File downloadToTempFile(String executionURL, String zipFilePath, Class classpathResourceOwner) throws Exception {
 		MvcResult outputFileResult = mockMvc.perform(
-				get(executionURL + "/packages/" + TEST_PACKAGE + "/outputfiles/" + zipFilePath)
+				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -325,8 +381,11 @@ public class IntegrationTestHelper {
 				.andReturn();
 
 		Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
-		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
-			fileOutputStream.write(outputFileResult.getResponse().getContentAsByteArray());
+		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
+			 FileOutputStream tmp = new FileOutputStream("/tmp/zip.zip")) {
+			byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
+			fileOutputStream.write(contentAsByteArray);
+			tmp.write(contentAsByteArray);
 		}
 		return tempFile.toFile();
 	}
@@ -337,7 +396,7 @@ public class IntegrationTestHelper {
 			ZipEntry zipEntry = entries.nextElement();
 			if (!zipEntry.isDirectory()) {
 				String zipEntryName = getFileName(zipEntry);
-				StreamTestUtils.assertStreamsEqualLineByLineUsePatterns(
+				StreamTestUtils.assertStreamsEqualLineByLine(
 						zipEntryName,
 						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
 						zipFile.getInputStream(zipEntry));
@@ -354,7 +413,7 @@ public class IntegrationTestHelper {
 	}
 
 	public String getPackageUrl() {
-		return "/builds/" + buildId + "/packages/" + TEST_PACKAGE;
+		return "/builds/" + buildId + "/packages/" + this.packageBusinessKey;
 	}
 	
 }

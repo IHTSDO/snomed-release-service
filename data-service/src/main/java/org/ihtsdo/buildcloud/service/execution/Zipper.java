@@ -18,6 +18,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +51,8 @@ public class Zipper {
 	public FolderType getRootFolder() {
 		return rootFolder;
 	}
+
+	private static final int BUFFER_SIZE = 64 * 1024;
 
 	public Zipper(Execution execution, Package pkg, ExecutionDAO executionDAO) {
 		this.execution = execution;
@@ -87,6 +91,7 @@ public class Zipper {
 		
 		assert(isInitialised);  //Would be a coding error if this tripped
 		
+
 		String targetPath = Files.createTempDir().getAbsolutePath();
 		String zipLocation = targetPath + File.separator + rootFolder.getName() + ".zip";
 
@@ -94,11 +99,14 @@ public class Zipper {
 		//up to S3, but that would use another thread in parallel, so not without risk.
 		//Simpler to write to local disk for now and upload when complete.
 		
+		LOGGER.debug("Start: Zipping file structure {}", rootFolder.getName());
 		File zipFile = new File(zipLocation);
 		FileOutputStream fos = new FileOutputStream(zipFile);
-		ZipOutputStream zos = new ZipOutputStream(fos);
+		BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
+		ZipOutputStream zos = new ZipOutputStream(bos);
 		walkFolders(rootFolder, zos, "");
 		zos.close();
+		LOGGER.debug("Finished: Zipping file structure {}", rootFolder.getName());
 		return zipFile;
 	}
 	
@@ -111,11 +119,14 @@ public class Zipper {
 		for(FileType file : f.getFile()) {
 			try {
 				InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName());
+				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
 				if (is != null) {
 					try {
+
 						zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
-						IOUtils.copy(is, zos);
+						IOUtils.copy(bis, zos);
 					} finally {
+						zos.closeEntry();
 						is.close();
 					}
 				}

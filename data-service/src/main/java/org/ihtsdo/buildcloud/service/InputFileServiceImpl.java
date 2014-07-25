@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,14 +39,14 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putManifestFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String originalFilename, long fileSize, User authenticatedUser) {
-		Package pkg = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public void putManifestFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String originalFilename, long fileSize, User authenticatedUser) throws ResourceNotFoundException {
+		Package pkg = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		dao.putManifestFile(pkg, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
-	public String getManifestFileName(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public String getManifestFileName(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(aPackage);
 		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
 		if (!files.isEmpty()) {
@@ -56,8 +57,8 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public InputStream getManifestStream(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return dao.getManifestStream(aPackage);
 	}
 	
@@ -66,15 +67,15 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
 		fileHelper.putFile(inputStream, fileSize, pathPath);
 	}
 	
 	@Override
-	public InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return getFileInputStream(aPackage, filename);
 	}
 	
@@ -86,14 +87,14 @@ public class InputFileServiceImpl implements InputFileService {
 	
 
 	@Override
-	public List<String> listInputFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public List<String> listInputFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return dao.listInputFilePaths(aPackage);
 	}
 
 	@Override
-	public void deleteFile(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) {
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+	public void deleteFile(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		String filePath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
 		fileHelper.deleteFile(filePath);
 	}
@@ -101,7 +102,7 @@ public class InputFileServiceImpl implements InputFileService {
 	@Override
 	public void deleteFilesByPattern(String buildCompositeKey,
 			String packageBusinessKey, String inputFileNamePattern,
-			User authenticatedUser) {
+			User authenticatedUser) throws ResourceNotFoundException {
 		
 		List<String> filesFound = listInputFilePaths(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		
@@ -113,6 +114,19 @@ public class InputFileServiceImpl implements InputFileService {
 				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
 			}
 		}
+	}
+	
+	private Package getPackage (String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
+		if (buildId == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+		}
+		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+		if (aPackage == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+		}
+		return aPackage;
 	}
 
 }

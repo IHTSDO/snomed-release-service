@@ -41,7 +41,7 @@ public class ReadmeGeneratorTest {
 		ByteArrayOutputStreamRecordClose readmeOutputStream = new ByteArrayOutputStreamRecordClose();
 		Assert.assertFalse(readmeOutputStream.closeCalled);
 
-		readmeGenerator.generate(readmeHeader, manifestListing, readmeOutputStream);
+		readmeGenerator.generate(readmeHeader, "2014", manifestListing, readmeOutputStream);
 
 		Assert.assertTrue("OutputStream should be closed", readmeOutputStream.closeCalled);
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream("expected-readme.txt"), new ByteArrayInputStream(readmeOutputStream.toByteArray()));

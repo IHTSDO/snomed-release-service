@@ -2,13 +2,16 @@ package org.ihtsdo.buildcloud.entity;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@JsonPropertyOrder({"id", "name"})
 public class Package implements Comparable<Package> {
 
 	@Id
@@ -30,6 +33,8 @@ public class Package implements Comparable<Package> {
 	private List<String> inputFiles;
 
 	private String readmeHeader;
+
+	private String readmeEndDate;
 	
 	private boolean firstTimeRelease = false;
 
@@ -38,7 +43,7 @@ public class Package implements Comparable<Package> {
 	private String previousPublishedPackage;
 
 	public Package() {
-
+		inputFiles = new ArrayList<>();
 	}
 
 	public Package(String name) {
@@ -90,7 +95,15 @@ public class Package implements Comparable<Package> {
 	public void setReadmeHeader(String readmeHeader) {
 		this.readmeHeader = readmeHeader;
 	}
-	
+
+	public String getReadmeEndDate() {
+		return readmeEndDate;
+	}
+
+	public void setReadmeEndDate(String readmeEndDate) {
+		this.readmeEndDate = readmeEndDate;
+	}
+
 	public boolean isFirstTimeRelease() {
 		return firstTimeRelease;
 	}

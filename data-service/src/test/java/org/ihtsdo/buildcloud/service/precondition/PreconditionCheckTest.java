@@ -1,10 +1,27 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Map;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.InputFileService;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,11 +33,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 @Transactional
@@ -31,6 +43,9 @@ public abstract class PreconditionCheckTest {
 
 	@Autowired
 	private ExecutionDAO executionDAO;
+	
+	@Autowired
+	private InputFileDAO inputFileDAO;
 
 	@Autowired
 	private TestUtils testUtils;
@@ -39,14 +54,22 @@ public abstract class PreconditionCheckTest {
 	protected Execution execution = null;
 	
 	protected PreconditionManager manager;
+	@Autowired
+	protected InputFileService inputFileService;
+	
+	protected static final String JULY_RELEASE = "20140731";
+	
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionCheckTest.class);
 	
 	static int executionIdx = 0;
 	
 	@Before
-	public void setup() {
+	public void setup() throws Exception{
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
+		  if (build.getEffectiveTime() == null){
+		    	    build.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
+		    	}
 	}
 	
 	protected void createNewExecution() {
@@ -60,7 +83,7 @@ public abstract class PreconditionCheckTest {
 		executionDAO.copyAll(build, execution);
 	}
 
-	protected String runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
+	protected PreConditionCheckReport runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
 		
 		//Do we need an execution?
 		if (execution == null) {
@@ -68,22 +91,61 @@ public abstract class PreconditionCheckTest {
 		}
 		
 		//Create a manager for this test
-		Map<String, Object> report = manager.runPreconditionChecks(execution);
+		Map<String, List<PreConditionCheckReport>> report = manager.runPreconditionChecks(execution);
 		Assert.assertNotNull(report);
 
-		@SuppressWarnings("unchecked") //Am hiding complexity from external code components, but keeping strict type checking within the class
-		List<Map<PreconditionCheck.ResponseKey,String>> allPrechecks = List.class.cast(report.get(TestEntityGenerator.packageNames[0][0][0]));		//For the "Snomed Release Package"
-		Map<PreconditionCheck.ResponseKey,String> testResults = allPrechecks.get(0);												//Get the first test run
+		List<PreConditionCheckReport> allPrechecks = report.get(TestEntityGenerator.packageNames[0][0][0]);		//For the "Snomed Release Package"
+		PreConditionCheckReport testResult = allPrechecks.get(0);												//Get the first test run
 		
-		String testName = testResults.get(PreconditionCheck.ResponseKey.PRE_CHECK_NAME);
+		String testName = testResult.getPreConditionCheckName();
 		Assert.assertEquals (classUnderTest.getSimpleName(), testName);
 		
-		String resultString = testResults.get(PreconditionCheck.ResponseKey.RESULT);
-		
 		//If it's a fail, we'll debug that message just for testing purposes
-		if (!resultString.equals(PreconditionCheck.State.PASS))
-			LOGGER.warn ("Test {} Reported {}",testName,testResults.get(PreconditionCheck.ResponseKey.MESSAGE));
-		return resultString;
+		if (State.PASS != testResult.getResult())
+			LOGGER.warn ("Test {} Reported {}",testName,testResult.getMessage());
+		return testResult;
 	}
 	
+	protected void loadManifest(String filename) throws FileNotFoundException {
+		for (Package pkg : build.getPackages()) {
+			if (filename != null) {
+				String testFilePath = getClass().getResource(filename).getFile();
+				File testManifest = new File (testFilePath);
+				inputFileDAO.putManifestFile(pkg, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+			} else {
+				inputFileDAO.deleteManifest(pkg);
+			}
+		}
+		
+		//When we load a manifest, we need that copied over to a new execution
+		createNewExecution();
+	}
+	
+	/** call before loadManifest.
+	 * @param filename
+	 * @throws ResourceNotFoundException
+	 * @throws IOException
+	 */
+	protected void addEmptyFileToInputDirectory(String filename) throws ResourceNotFoundException, IOException{
+	    for( Package pkg : build.getPackages()){
+	    File tempFile = File.createTempFile("testTemp",".txt");
+	    try( InputStream inputStream = new FileInputStream(tempFile)){
+		
+		
+		    inputFileService.putInputFile(build.getCompositeKey(), pkg.getBusinessKey(), 
+			    inputStream, filename, 0L,  TestEntityGenerator.TEST_USER);
+	    }
+	    finally{
+		tempFile.deleteOnExit();
+	    }
+	   }
+	}
+	
+	protected void deleteFilesFromInputFileByPattern(String fileExtension) throws ResourceNotFoundException{
+	    for( Package pkg : build.getPackages()){
+		inputFileService.deleteFilesByPattern(build.getCompositeKey(), pkg.getBusinessKey(),
+			    fileExtension,TestEntityGenerator.TEST_USER);
+	    }
+	}
+	    
 }

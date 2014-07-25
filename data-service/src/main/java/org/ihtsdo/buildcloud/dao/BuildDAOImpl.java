@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.stereotype.Repository;
@@ -23,11 +24,6 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	
 	@Override
 	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User user) {
-		
-		/*List<Build> testList = new Vector<Build>();
-		Build b = new Build("Peter");
-		testList.add(b);
-		return testList;*/
 		
 		String filter = "";
 		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
@@ -79,6 +75,33 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 				"order by build.id ");
 		query.setEntity("user", user);
 		query.setLong("buildId", id);
+		return (Build) query.uniqueResult();
+	}
+
+	/**
+	 * Look for a specific build where the id (primary key) is not necessarily known
+	 */
+	@Override
+	public Build find(String releaseCenterBusinessKey,
+			String extensionBusinessKey, String productBusinessKey,
+			String buildBusinessKey, User user) {
+		Query query = getCurrentSession().createQuery(
+				"select build " +
+				"from ReleaseCenterMembership membership " +
+				"join membership.releaseCenter releaseCenter " +
+				"join releaseCenter.extensions extension " +
+				"join extension.products product " +
+				"join product.builds build " +
+				"where membership.user = :user " +
+				"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
+				"and extension.businessKey = :extensionBusinessKey " +
+				"and product.businessKey = :productBusinessKey " +
+				"and build.businessKey = :buildBusinessKey " );
+		query.setEntity("user", user);
+		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
+		query.setString("extensionBusinessKey", extensionBusinessKey);
+		query.setString("productBusinessKey", productBusinessKey);
+		query.setString("buildBusinessKey", buildBusinessKey);
 		return (Build) query.uniqueResult();
 	}
 

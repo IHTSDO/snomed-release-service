@@ -1,26 +1,25 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
-import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
-import org.ihtsdo.buildcloud.service.execution.database.TableType;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class TransformationService {
 
@@ -49,24 +48,24 @@ public class TransformationService {
 		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
 
 		// Iterate each execution input file
-		List<String> executionInputFilePaths = dao.listInputFilePaths(execution, packageBusinessKey);
+		List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
 
 		// Phase 1
 		// Process just the id column of any Concept files.
-		for (String relativeFilePath : executionInputFilePaths) {
+		for (String inputFileName : executionInputFileNames) {
 			try {			
-				TableSchema tableSchema = inputFileSchemaMap.get(relativeFilePath);
+				TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
 				
 				if (tableSchema == null) {
-					LOGGER.warn ("No table schema found in map for file: {}",relativeFilePath);
+					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
 				} else {
-					TableType tableType = tableSchema.getTableType();
-					if ( isPreProcessType(tableType)) {
+					ComponentType componentType = tableSchema.getComponentType();
+					if (isPreProcessType(componentType)) {
 		
-						InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
-						OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+						InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+						OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
 	
-						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(tableType);
+						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 	
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
@@ -74,30 +73,29 @@ public class TransformationService {
 				}
 			} catch (TransformationException | IOException e) {
 				// Catch blocks just log and let the next file get processed.
-				LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);
+				LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
 			}
 		}
 
 		// Phase 2
 		// Process all files
-		for (String relativeFilePath : executionInputFilePaths) {
+		for (String inputFileName : executionInputFileNames) {
 			// Transform all txt files
-			TableSchema tableSchema = inputFileSchemaMap.get(relativeFilePath);
+			TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
 			if (tableSchema != null) {
 				// Recognised RF2 file
 
-				String filename = FileUtils.getFilenameFromPath(relativeFilePath);
-				checkFileHasGotMatchingEffectiveDate(filename, effectiveDateInSnomedFormat);
+				checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
 				try {
 					InputStream executionInputFileInputStream;
-					if (isPreProcessType(tableSchema.getTableType())) {
-						executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, relativeFilePath);
+					if (isPreProcessType(tableSchema.getComponentType())) {
+						executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, inputFileName);
 					} else {
-						executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, relativeFilePath);
+						executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
 					}
 
-					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, relativeFilePath);
+					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
 					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 
 					// Get appropriate transformations for this file.
@@ -110,22 +108,22 @@ public class TransformationService {
 					asyncPipedStreamBean.waitForFinish();
 
 				} catch (FileRecognitionException e) {
-					LOGGER.error("Did not recognise input file '{}'.", relativeFilePath, e);
+					LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
 				} catch (TransformationException | IOException e) {
 					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("Exception occurred when transforming file {}", relativeFilePath, e);
+					LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
 				} catch (ExecutionException | InterruptedException e) {
-					LOGGER.error("Exception occurred when uploading transformed file {}", relativeFilePath, e);
+					LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
 				}
 			} else {
 				// Not recognised as an RF2 file, copy across without transform
-				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
+				dao.copyInputFileToOutputFile(execution, packageBusinessKey, inputFileName);
 			}
 		}
 	}
 
-	private boolean isPreProcessType(TableType tableType) {
-		return tableType == TableType.CONCEPT || tableType == TableType.DESCRIPTION;
+	private boolean isPreProcessType(ComponentType componentType) {
+		return componentType == ComponentType.CONCEPT || componentType == ComponentType.DESCRIPTION;
 	}
 
 	/**

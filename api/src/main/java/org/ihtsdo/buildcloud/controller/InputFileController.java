@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -41,7 +43,7 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Void> uploadManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 											 @RequestParam(value = "file") MultipartFile file,
-											 HttpServletResponse response) throws IOException {
+											 HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
 		return new ResponseEntity<Void>(HttpStatus.OK);
@@ -50,7 +52,7 @@ public class InputFileController {
 	@RequestMapping(value = "/manifest")
 	@ResponseBody
 	public Map<String, Object> getManifest(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-										   HttpServletRequest request) {
+										   HttpServletRequest request) throws ResourceNotFoundException {
 		String manifestFileName = inputFileService.getManifestFileName(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
 		Map<String, String> objectHashMap = new HashMap<>();
 		if (manifestFileName != null) {
@@ -63,7 +65,7 @@ public class InputFileController {
 
 	@RequestMapping(value = "/manifest/file", produces="application/xml")
 	public void getManifestFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								HttpServletResponse response) {
+								HttpServletResponse response) throws ResourceNotFoundException {
 
 		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
@@ -81,7 +83,7 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-											 @RequestParam(value = "file") MultipartFile file) throws IOException {
+											 @RequestParam(value = "file") MultipartFile file) throws IOException, ResourceNotFoundException {
 
 		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
 		return new ResponseEntity<Void>(HttpStatus.OK);
@@ -90,7 +92,7 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles")
 	@ResponseBody
 	public List<Map<String, Object>> listInputFiles(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-													HttpServletRequest request) {
+													HttpServletRequest request) throws ResourceNotFoundException {
 		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
@@ -104,7 +106,7 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/{inputFileName:.*}")
 	public void getInputFileFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
 								@PathVariable String inputFileName,
-								HttpServletResponse response) {
+								HttpServletResponse response) throws ResourceNotFoundException {
 
 		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject())) {
 			if (fileStream != null) {
@@ -122,7 +124,7 @@ public class InputFileController {
 	//See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
 	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-								@PathVariable String inputFileNamePattern, HttpServletResponse response) throws IOException {
+								@PathVariable String inputFileNamePattern, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		
 		//Are we working with a file name or a pattern?

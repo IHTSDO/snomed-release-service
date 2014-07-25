@@ -5,6 +5,8 @@ import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,7 +42,7 @@ public class ReleaseCenterController {
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException {
+												   HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
 		String name = json.get("name");
 		String shortName = json.get("shortName");
 
@@ -72,10 +74,14 @@ public class ReleaseCenterController {
 
 	@RequestMapping("/{releaseCenterBusinessKey}")
 	@ResponseBody
-	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
+		
+		if (center == null) {
+			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+		}
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);

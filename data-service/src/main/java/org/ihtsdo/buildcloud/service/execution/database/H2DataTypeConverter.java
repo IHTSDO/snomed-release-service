@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+
 public class H2DataTypeConverter {
 
 	/**

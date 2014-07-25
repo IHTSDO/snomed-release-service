@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -47,18 +48,26 @@ public class BuildController {
 
 	@RequestMapping("/{buildCompositeKey}")
 	@ResponseBody
-	public Map<String, Object> getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) {
+	public Map<String, Object> getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.find(buildCompositeKey, authenticatedUser);
+		
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
+		
 		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);
 	}
 
 	@RequestMapping(value = "/{buildCompositeKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateBuild(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json,
-										   HttpServletRequest request) throws BadRequestException {
+										   HttpServletRequest request) throws BadRequestException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Build build = buildService.update(buildCompositeKey, json, authenticatedUser);
+		if (build == null) {
+			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+		}
 		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);
 	}
 	
