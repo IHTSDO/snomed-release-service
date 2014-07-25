@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -278,14 +279,28 @@ public class IntegrationTestHelper {
 	}
 
 	public void triggerExecution(String executionURL) throws Exception {
-		mockMvc.perform(
+		MvcResult triggerResult = mockMvc.perform(
 				post(executionURL + "/trigger")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andReturn();
+
+		String outputFileListJson = triggerResult.getResponse().getContentAsString();
+		JSONObject jsonObject = new JSONObject(outputFileListJson);
+		JSONObject packageResults = jsonObject.getJSONObject("PackageResults");
+		Iterator packages = packageResults.keys();
+		String expectedStatus = "pass";
+		while (packages.hasNext()) {
+			String packageName = (String) packages.next();
+			JSONObject packageResult = packageResults.getJSONObject(packageName);
+			String status = packageResult.getString("status");
+			String message = packageResult.getString("message");
+			Assert.assertEquals("Package " + packageName + " bad status. Message: " + message, expectedStatus, status);
+		}
 	}
 
 	public void publishOutput(String executionURL) throws Exception {
