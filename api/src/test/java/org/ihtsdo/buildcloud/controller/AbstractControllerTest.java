@@ -1,5 +1,10 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
+import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -33,10 +38,27 @@ public abstract class AbstractControllerTest {
 	@Autowired
 	private WebApplicationContext wac;
 
+	@Autowired
+	private S3Client s3Client;
+
+	@Autowired
+	private UUIDGenerator uuidGenerator;
+
 	@Before
 	public void setup() throws ServletException, Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
+		((PesudoUUIDGenerator)uuidGenerator).reset();
+
+		TestS3Client testS3Client = (TestS3Client) s3Client;
+		testS3Client.deleteBuckets();
+		testS3Client.createBucket("ire.execution.release.ihtsdo");
+		testS3Client.createBucket("ire.published.release.ihtsdo");
+	}
+
+	@After
+	public void tearDown() {
+		((PesudoUUIDGenerator)uuidGenerator).reset();
 	}
 
 }

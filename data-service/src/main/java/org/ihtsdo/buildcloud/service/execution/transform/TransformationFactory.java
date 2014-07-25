@@ -1,12 +1,9 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import java.util.List;
-
-import org.ihtsdo.buildcloud.service.execution.database.DataType;
-import org.ihtsdo.buildcloud.service.execution.database.FileRecognitionException;
-import org.ihtsdo.buildcloud.service.execution.database.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
-import org.ihtsdo.buildcloud.service.execution.database.TableSchema;
-import org.ihtsdo.buildcloud.service.execution.database.TableType;
+import org.ihtsdo.snomed.util.rf2.schema.*;
+
+import java.util.List;
 
 public class TransformationFactory {
 
@@ -33,10 +30,10 @@ public class TransformationFactory {
 		uuidGenerator = uuidGeneratorX;
 	}
 
-	public StreamingFileTransformation getPreProcessFileTransformation(TableType tableType) {
-		if (tableType == TableType.CONCEPT) {
+	public StreamingFileTransformation getPreProcessFileTransformation(ComponentType componentType) {
+		if (componentType == ComponentType.CONCEPT) {
 			return preProcessConceptFileTransformation;
-		} else if (tableType == TableType.DESCRIPTION) {
+		} else if (componentType == ComponentType.DESCRIPTION) {
 			return preProcessDescriptionFileTransformation;
 		} else {
 			return null;
@@ -46,7 +43,7 @@ public class TransformationFactory {
 	public StreamingFileTransformation getSteamingFileTransformation(TableSchema tableSchema) throws FileRecognitionException {
 		StreamingFileTransformation transformation;
 
-		switch (tableSchema.getTableType()) {
+		switch (tableSchema.getComponentType()) {
 			case CONCEPT:
 				transformation = conceptTransformation;
 				break;
@@ -155,9 +152,9 @@ public class TransformationFactory {
 		StreamingFileTransformation transformation = createSimpleRefsetTransformation();
 
 		// Add any additional transformations for extended refsets.
-		List<TableSchema.Field> fields = tableSchema.getFields();
+		List<Field> fields = tableSchema.getFields();
 		for (int i = SchemaFactory.SIMPLE_REFSET_FIELD_COUNT; i < fields.size(); i++) {
-			TableSchema.Field field = fields.get(i);
+			Field field = fields.get(i);
 			if(field.getType().equals(DataType.SCTID)) {
 				transformation.addLineTransformation(new SCTIDTransformationFromCache(i, cachedSctidFactory));
 			}

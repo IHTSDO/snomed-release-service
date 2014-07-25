@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.service.file;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 public class FileUtilsTest {
 
@@ -24,7 +24,7 @@ public class FileUtilsTest {
 		//If we're running on Unix, we can compare that to the stock method of generating an MD5 
 		//This would need Apache Commons Exec and it's such a bad idea that I'm not going to do it.
 		//Have copied MD5 generated from the Mac command line instead.
-		Assert.assertEquals ("83cb608b8cbcf800542c13006e0a1d88", md5);
+		Assert.assertEquals ("c56243ebe22a12dba48b023daf3e2937", md5);
 		/*
 		if (SystemUtils.IS_OS_UNIX) {
 			String line = "md5 " + testFile.getAbsolutePath();

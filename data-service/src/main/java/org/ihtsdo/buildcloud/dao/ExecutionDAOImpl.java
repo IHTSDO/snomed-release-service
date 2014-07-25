@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
+
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -12,8 +13,10 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
@@ -79,9 +82,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		// Save config file
 		String configPath = pathHelper.getConfigFilePath(execution);
 		putFile(configPath, jsonConfig);
-
 		// Save status file
-		updateStatus(execution, Execution.Status.BEFORE_TRIGGER);
+		Status status = execution.getStatus() == null ? Execution.Status.BEFORE_TRIGGER : execution.getStatus();
+		updateStatus(execution, status);
 	}
 
 	@Override
@@ -130,16 +133,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String newStatusFilePath = pathHelper.getStatusFilePath(execution, execution.getStatus());
 		// Put new status before deleting old to avoid there being none.
 		putFile(newStatusFilePath, BLANK);
-		if (origStatus != null) {
+		if (origStatus != null && origStatus != newStatus) {
 			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
 	
 	@Override
-	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception {
+	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException {
 		if (execution.getStatus() != ensureStatus) {
-			throw new Exception ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
+			throw new BadConfigurationException ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
 						+ " and is expected to be at status:" + ensureStatus.name());
 		}
 	}
@@ -215,7 +218,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 	
 	@Override
-	public List<String> listInputFilePaths(Execution execution, String packageId) {
+	public List<String> listInputFileNames(Execution execution, String packageId) {
 		String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
 		return executionFileHelper.listFiles(executionInputFilesPath);
 	}
@@ -237,6 +240,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
 		return getFileAsOutputStream(executionOutputFilePath);
+	}
+
+	@Override
+	public AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException {
+		String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getFileAsOutputStream(executionLogFilePath);
 	}
 
 	@Override
@@ -325,6 +334,18 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			String packageId) {
 		String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
 		return executionFileHelper.listFiles(outputFilesPath);
+	}
+
+	@Override
+	public InputStream getLogFileStream(Execution execution, String packageId, String logFileName) {
+		String logFilePath = pathHelper.getExecutionLogFilePath(execution, packageId, logFileName);
+		return executionFileHelper.getFileStream(logFilePath);
+	}
+
+	@Override
+	public List<String> listLogFilePaths(Execution execution, String packageId) {
+		String logFilesPath = pathHelper.getExecutionLogFilesPath(execution, packageId).toString();
+		return executionFileHelper.listFiles(logFilesPath);
 	}
 
 	@Required

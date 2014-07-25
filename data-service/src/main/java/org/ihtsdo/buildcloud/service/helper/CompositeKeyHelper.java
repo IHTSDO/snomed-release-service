@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service.helper;
 
 import java.util.regex.Pattern;
 
+import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+
 public class CompositeKeyHelper {
 
 	private static final Pattern LONG_PATTERN = Pattern.compile("\\d+");
@@ -15,6 +17,15 @@ public class CompositeKeyHelper {
 			}
 		}
 		return null;
+	}
+	
+	public static String getPath (String... pathElements) {
+		StringBuffer sb = new StringBuffer();
+		for (String element : pathElements) {
+			sb.append(ExecutionS3PathHelper.SEPARATOR)
+			.append(element);
+		}
+		return sb.toString();
 	}
 
 }

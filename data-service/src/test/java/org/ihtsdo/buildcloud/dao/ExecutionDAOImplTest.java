@@ -158,10 +158,11 @@ public class ExecutionDAOImplTest {
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
 		boolean calcMD5 = true;
 		String md5Received = executionDAO.putOutputFile(execution, pkg, new File(testFile), "", calcMD5);
-		
-		//Amazon are expecting the md5 to be g8tgi4y8+ABULBMAbgodiA==
+		System.out.println(md5Received);
+
+		//Amazon are expecting the md5 to be xWJD6+IqEtukiwI9rz4pNw==
 		//Offline test is just going to return the MD5 input, so this test only makes sense in online mode.
-		byte[] md5BytesExpected = Base64.decodeBase64("g8tgi4y8+ABULBMAbgodiA==");
+		byte[] md5BytesExpected = Base64.decodeBase64("xWJD6+IqEtukiwI9rz4pNw==");
 		byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
 		Assert.assertArrayEquals(md5BytesExpected, md5BytesReceived);
 		

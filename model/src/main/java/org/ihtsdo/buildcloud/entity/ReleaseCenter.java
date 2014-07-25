@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@JsonPropertyOrder({"id"})
+@JsonPropertyOrder({"id", "name"})
 public class ReleaseCenter {
 
 	@Id

@@ -32,13 +32,15 @@ public interface ExecutionDAO {
 
 	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
 	
-	List<String> listInputFilePaths(Execution execution, String packageId);
+	List<String> listInputFileNames(Execution execution, String packageId);
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
 
 	InputStream getLocalInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
 
 	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+
+	AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
 	
@@ -54,6 +56,10 @@ public interface ExecutionDAO {
 	List<String> listTransformedFilePaths(Execution execution, String packageId);
 	
 	List<String> listOutputFilePaths(Execution execution, String packageId);
+
+	List<String> listLogFilePaths(Execution execution, String packageId);
+
+	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
 
 	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 

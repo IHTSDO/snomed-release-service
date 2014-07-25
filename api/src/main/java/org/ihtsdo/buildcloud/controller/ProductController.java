@@ -7,7 +7,9 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,17 +43,17 @@ public class ProductController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
-		//TODO PETER - Return 404 rather than throw exception if extension not found.
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<Product> products = productService.findAll(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
+
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterBusinessKey,
 											 @PathVariable String extensionBusinessKey,
 											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException {
+												   HttpServletRequest request) throws IOException, ResourceNotFoundException, EntityAlreadyExistsException {
 
 		String name = json.get("name");
 		User authenticatedUser = SecurityHelper.getSubject();
@@ -65,10 +67,15 @@ public class ProductController {
 
 	@RequestMapping("/{productBusinessKey}")
 	@ResponseBody
-	public Map<String, Object> getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+		
+		if (product == null) {
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+		}
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
@@ -77,10 +84,16 @@ public class ProductController {
 	
 	@RequestMapping("/{productBusinessKey}/published")
 	@ResponseBody
-	public Map<String, Object> getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) {
+	public Map<String, Object> getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();  
 		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+		
+		if (product == null) {
+			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
+			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+		}
+		
 		List<String> publishedPackages = publishService.getPublishedPackages(product);
 		Map<String, Object> jsonStructure = new HashMap<>();
 		jsonStructure.put("publishedPackages", publishedPackages);

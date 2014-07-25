@@ -4,4 +4,6 @@ public interface TestS3Client {
 
 	void deleteBuckets();
 
+	void createBucket(String bucketName);
+
 }

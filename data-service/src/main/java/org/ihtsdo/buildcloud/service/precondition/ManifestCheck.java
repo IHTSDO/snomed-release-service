@@ -22,7 +22,7 @@ public class ManifestCheck extends PreconditionCheck {
 			zipper.loadManifest();
 			pass();
 		} catch (Exception e) {
-			fail ("Package manifest is missing or invalid: " + e.getMessage());
+			fatalError("Package manifest is missing or invalid: " + e.getMessage());
 		}
 	}
 

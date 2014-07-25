@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 	private Build build;
 
 	@Before
-	public void setup() {
+	public void setup() throws ResourceNotFoundException {
 		authenticatedUser = TestEntityGenerator.TEST_USER;
 		Assert.assertNotNull(packageService);
 		String releaseCenterName  = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);

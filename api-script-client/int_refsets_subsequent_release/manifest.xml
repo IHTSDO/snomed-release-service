@@ -1,0 +1,76 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="Example_Refsets_Release_INT_20140731">
+		<file Name="Readme_en_20140731.txt"/>
+		<folder Name="Documentation">
+			<file Name="documentation.pdf" />
+		</folder>
+
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Terminology">
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceFull_INT_20140731.txt"/>
+						<file Name="der2_cRefset_AttributeValueFull_INT_20140731.txt"/>
+						<file Name="der2_Refset_SimpleFull_INT_20140731.txt"/>	
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapFull_INT_20140731.txt"/>
+					</folder>
+					<folder Name="Language">
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorFull_INT_20140731.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencyFull_INT_20140731.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeFull_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Full -->
+
+			<folder Name="Snapshot">
+				<folder Name="Terminology">
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceSnapshot_INT_20140731.txt"/>
+						<file Name="der2_cRefset_AttributeValueSnapshot_INT_20140731.txt"/>
+						<file Name="der2_Refset_SimpleSnapshot_INT_20140731.txt"/>	
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20140731.txt"/>
+					</folder>
+					<folder Name="Language">
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorSnapshot_INT_20140731.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencySnapshot_INT_20140731.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeSnapshot_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Snapshot -->
+
+			<folder Name="Delta">
+				<folder Name="Terminology">
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_cRefset_AssociationReferenceDelta_INT_20140731.txt"/>
+						<file Name="der2_cRefset_AttributeValueDelta_INT_20140731.txt"/>
+						<file Name="der2_Refset_SimpleDelta_INT_20140731.txt"/>
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapDelta_INT_20140731.txt"/>
+					</folder>
+					<folder Name="Language">
+					</folder>
+					<folder Name="Metadata">
+						<file Name="der2_cciRefset_RefsetDescriptorDelta_INT_20140731.txt"/>
+						<file Name="der2_ssRefset_ModuleDependencyDelta_INT_20140731.txt"/>
+						<file Name="der2_ciRefset_DescriptionTypeDelta_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Delta -->
+		</folder> <!-- RF2Release -->
+	</folder> <!-- SnomedCT_Release_INT_20140731 -->
+</listing>

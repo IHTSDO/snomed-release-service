@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.1.5</version>
+	<version>0.1.6</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -34,6 +34,11 @@
 	</scm>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.ihtsdo.snomed.util</groupId>
+			<artifactId>snomed-utilities</artifactId>
+			<version>1.0.3</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
