@@ -11,9 +11,9 @@ set -e;
 # Declare common parameters
 #api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-api="https://uat-release.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
-#api="http://release.ihtsdotools.org/api/v1"
+api="https://release.ihtsdotools.org/api/v1"
 
 # Should come from caller script:
 # 	extensionName
@@ -325,6 +325,14 @@ echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
 
+
+echo "List the logs"
+downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+# Download files
+cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+
 #Check whether any pre-condition checks failed and get users confirmation to continue or not if failures occcured
 preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FAIL` || true
 if [ -n "${preConditionFailures}" ]
@@ -394,13 +402,6 @@ curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep
 # Download files
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 echo
-
-echo "List the logs"
-downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
-localDownloadDirectory=logs
-curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
-# Download files
-cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
 echo "Script Complete in $(getElapsedTime)"
