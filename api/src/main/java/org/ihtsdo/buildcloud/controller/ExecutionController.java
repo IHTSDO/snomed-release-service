@@ -176,7 +176,7 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
-	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId) throws ResourceNotFoundException{
+	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId) throws ResourceNotFoundException {
 
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
@@ -189,11 +189,12 @@ public class ExecutionController {
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		String lastPackage = "No Package";
 		for(Package pk: packages ){
-			try{
+			try {
 				lastPackage = pk.getBusinessKey();
 				publishService.publishExecutionPackage(execution, pk );
-			} catch (Exception e) {
-				LOGGER.error ("Failed to publish package {}", lastPackage, e);
+			} catch(Exception e) {
+				LOGGER.error("Failed to publish package {}", lastPackage, e);
+				throw new InternalError("Failed to publish package " + lastPackage);
 			}
 		}
 	}
