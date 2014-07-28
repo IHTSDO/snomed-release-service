@@ -11,17 +11,23 @@ import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 
-import java.io.InputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
-	
+
 	private final FileHelper executionFileHelper;
 	private final FileHelper publishedFileHelper;
 
@@ -33,6 +39,8 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final String SEPARATOR = "/";
 	private final String publishedBucketName;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
 	/**
 	 * @param executionBucketName
@@ -47,7 +55,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishExecutionPackage(Execution execution, Package pk) {
+	public void publishExecutionPackage(Execution execution, Package pk) throws IOException {
 		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
@@ -64,12 +72,12 @@ public class PublishServiceImpl implements PublishService {
 		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
 		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
 		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-	}
-	
 
-	
+		publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+	}
+
 	/**
-	 * @param execution 
+	 * @param execution
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
@@ -77,7 +85,7 @@ public class PublishServiceImpl implements PublishService {
 		Product product = execution.getBuild().getProduct();
 		return getPublishDirPath(product);
 	}
-	
+
 	/**
 	 * @param product
 	 * @return a file structure like
@@ -95,9 +103,9 @@ public class PublishServiceImpl implements PublishService {
 		path.append(SEPARATOR);
 		return path.toString();
 	}
-	
+
 	/**
-	 * @param execution 
+	 * @param execution
 	 * @param releaseFileName
 	 * @return a file structure like
 	 * releaseCenter/extension/product/releaseFileName.zip
@@ -110,7 +118,7 @@ public class PublishServiceImpl implements PublishService {
 	public List<String> getPublishedPackages(Product product) {
 		return publishedFileHelper.listFiles(getPublishDirPath(product));
 	}
-	
+
 	@Override
 	public boolean exists(Product product, String targetFileName) {
 		String path = getPublishDirPath(product) + targetFileName;
@@ -118,22 +126,63 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, 
-			InputStream inputStream, String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException {
+	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey,
+			InputStream inputStream, String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException, IOException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
-		
+
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
 			throw new ResourceNotFoundException ("Unable to find product: " +  item);
 		}
-		
+
 		//We're expecting a zip file only
 		if (!FileUtils.isZip(originalFilename)) {
 			throw new BadRequestException("File " + originalFilename + " is not named as a zip archive");
 		}
-		
-		String path = getPublishDirPath(product) + originalFilename;
-		publishedFileHelper.putFile(inputStream, size, path);
+
+		LOGGER.debug("Reading stream to temp file");
+		File tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
+		try (InputStream in = inputStream;
+			OutputStream out = new FileOutputStream(tempZipFile)) {
+			StreamUtils.copy(in, out);
+		}
+
+		// Upload file
+		String publishFilePath = getPublishDirPath(product) + originalFilename;
+		LOGGER.info("Uploading package to {}", publishFilePath);
+		publishedFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
+
+		publishExtractedPackage(publishFilePath, new FileInputStream(tempZipFile));
+
+		// Delete temp zip file
+		tempZipFile.delete();
+	}
+
+	// Publish extracted entries in a directory of the same name
+	private void publishExtractedPackage(String publishFilePath, InputStream fileStream) throws IOException {
+		String zipExtractPath = publishFilePath.replace(".zip", "/");
+		LOGGER.info("Uploading extracted package to {}", zipExtractPath);
+		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
+			ZipEntry entry;
+			zipInputStream.closeEntry();
+			while ((entry = zipInputStream.getNextEntry()) != null) {
+				if (!entry.isDirectory()) {
+					String name = entry.getName();
+
+					// Copy to temp file first to prevent zip input stream being closed
+					File tempFile = Files.createTempFile(getClass().getCanonicalName(), "zip-entry").toFile();
+					try (FileOutputStream out = new FileOutputStream(tempFile)) {
+						StreamUtils.copy(zipInputStream, out);
+					}
+
+					String targetFilePath = zipExtractPath + name;
+					try (FileInputStream tempEntryInputStream = new FileInputStream(tempFile)) {
+						publishedFileHelper.putFile(tempEntryInputStream, entry.getSize(), targetFilePath);
+					}
+					tempFile.delete();
+				}
+			}
+		}
 	}
 
 }

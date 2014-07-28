@@ -10,7 +10,6 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAOHsqlImpl;
 import org.ihtsdo.buildcloud.service.execution.database.Rf2FileWriter;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,8 +109,8 @@ public class Rf2FileExportService {
 			if (!firstTimeRelease) {
 				// Find previous published package
 				String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-				ArchiveEntry previousFullFile = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
-				if (previousFullFile == null) {
+				InputStream previousFullFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
+				if (previousFullFileStream == null) {
 					throw new RuntimeException("No full file equivalent of:  "
 							+ currentFullFileName
 							+ " found in prevous published package:" + previousPublishedPackage);
@@ -119,7 +118,7 @@ public class Rf2FileExportService {
 
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
-				rf2TableDAO.appendData(tableSchema, previousFullFile.getInputStream());
+				rf2TableDAO.appendData(tableSchema, previousFullFileStream);
 				LOGGER.debug("Finish: Insert previous release data into table {}", tableSchema.getTableName());
 			}
 
