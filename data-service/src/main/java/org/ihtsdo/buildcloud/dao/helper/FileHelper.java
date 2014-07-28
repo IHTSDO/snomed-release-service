@@ -2,11 +2,8 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.service.file.FileNameTransformation;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
@@ -178,7 +175,17 @@ public class FileHelper {
 	 * @return true if the target file actually exists in the fileStore (online or offline)
 	 */
 	public boolean exists(String targetFilePath) {
-		return getFileStream(targetFilePath) == null ? false : true ;
+		InputStream fileStream = getFileStream(targetFilePath);
+		if (fileStream != null) {
+			try {
+				fileStream.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close stream {}", targetFilePath, e);
+			}
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 }
