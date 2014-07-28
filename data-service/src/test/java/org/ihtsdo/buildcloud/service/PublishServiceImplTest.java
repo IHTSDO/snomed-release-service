@@ -1,29 +1,28 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.List;
-
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import mockit.Deencapsulation;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
 import mockit.integration.junit4.JMockit;
-
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
+import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 @RunWith(JMockit.class)
 public class PublishServiceImplTest {
     
@@ -36,17 +35,17 @@ public class PublishServiceImplTest {
     @Mocked private S3Client s3Client;
     @Mocked private S3ClientHelper s3ClientHelper;
     @Mocked  ExecutionS3PathHelper s3PathHelper;
-    
+
     @Before
     public void setUp(){
 	publishServiceImpl = new PublishServiceImpl(EXECUTION_BUCKET_NAME, PUBLISHED_BUCKET_NAME, s3Client, s3ClientHelper);
 	Deencapsulation.setField(publishServiceImpl, s3PathHelper);
-	//use Deencapsulation in JMockit or use 
+	//use Deencapsulation in JMockit or use
 	//ReflectionTestUtils.setField(publishServiceImpl, "executionS3PathHelper", s3PathHelper);
     }
     
     @Test
-    public void testPublishExecutionPackage( @Injectable final Execution execution, @Injectable final Package pk){
+    public void testPublishExecutionPackage( @Injectable final Execution execution, @Injectable final Package pk) throws IOException {
 	final Build build = createDummyBuild();
 	new Expectations() { {
 	    s3PathHelper.getExecutionOutputFilesPath(execution, anyString);
@@ -62,12 +61,23 @@ public class PublishServiceImplTest {
 	    
 	    execution.getBuild();
 	    returns(build);
-	  
-	    s3Client.copyObject(EXECUTION_BUCKET_NAME, fileToBePublished, PUBLISHED_BUCKET_NAME, 
-		    getExpectedPublishFileDir(build.getProduct()).toLowerCase() + TEST_ZIP);
+
+		String zipKey = getExpectedPublishFileDir(build.getProduct()).toLowerCase() + TEST_ZIP;
+		s3Client.copyObject(EXECUTION_BUCKET_NAME, fileToBePublished, PUBLISHED_BUCKET_NAME,
+				zipKey);
 	    
-	    
-	    
+	    s3Client.getObject(PUBLISHED_BUCKET_NAME, zipKey);
+		S3Object s3Object = new S3Object();
+		s3Object.setObjectContent(getClass().getResourceAsStream("/test.zip"));
+		returns(s3Object);
+
+		s3ClientHelper.newPutRequest(anyString, anyString, withInstanceOf(InputStream.class));
+		returns(new S3PutRequestBuilder(null, null, null, s3ClientHelper));
+
+		s3ClientHelper.useBucketAcl(withInstanceOf(PutObjectRequest.class));
+
+		s3Client.putObject(withInstanceOf(PutObjectRequest.class));
+		returns(null);
 	}};
 	publishServiceImpl.publishExecutionPackage(execution, pk);
 	
