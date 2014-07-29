@@ -11,16 +11,15 @@ set -e;
 # Declare common parameters
 #api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
-api="https://release.ihtsdotools.org/api/v1"
+#api="https://release.ihtsdotools.org/api/v1"
 
 # Should come from caller script:
 # 	extensionName
 # 	productName
 #	buildName
 #	packageName
-
 
 releaseCentreId="international"
 readmeHeader="readme-header.txt"
@@ -54,6 +53,14 @@ getElapsedTime() {
 	seconds=$((seconds % 60))
 	
 	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+downloadFile() {
+	read fileName
+	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
+	mkdir -p ${localDownloadDirectory}
+	# Using curl as the MAC doesn't have wget loaded by default
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
 }
 
 findEntity() {
@@ -105,7 +112,9 @@ listOnly=false
 autoPublish=false
 completePublish=false
 
-while getopts ":slcar:p:" opt
+# Reset getopts 
+OPTIND=1
+while getopts ":slcart:p:" opt
 do
 	case $opt in
 		s) 
@@ -249,8 +258,13 @@ echo "Set Readme Header and readmeEndDate"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\", \"readmeEndDate\" : \"${readmeEndDate}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
-echo "Upload Manifest"
-curl ${commonParams} --write-out \\n%{http_code} -F "file=@manifest.xml" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
+#Are we using the assumed filename for the manifest file?
+if [ -z "${manifestFile}" ] 
+then
+	manifestFile="manifest.xml"
+fi
+echo "Upload Manifest: ${manifestFile}"
+curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFile}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
 
 if ! ${skipLoad}
@@ -386,14 +400,6 @@ then
 	echo "Publish the package"
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
-
-downloadFile() {
-	read fileName
-	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
-	mkdir -p ${localDownloadDirectory}
-	# Using curl as the MAC doesn't have wget loaded by default
-	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
-}
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
