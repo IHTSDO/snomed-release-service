@@ -57,7 +57,7 @@ public class PublishServiceImplTest {
 				returns(new StringBuffer(EXECUTION_OUTPUT));
 
 				s3Client.listObjects(EXECUTION_BUCKET_NAME, anyString);
-				ObjectListing ol = createDummyObjectListing(EXECUTION_OUTPUT + TEST_ZIP);
+				ObjectListing ol = createDummyObjectListing(EXECUTION_OUTPUT);
 				returns(ol);
 
 				s3PathHelper.getExecutionOutputFilePath(execution, anyString, anyString);
@@ -121,19 +121,25 @@ public class PublishServiceImplTest {
 		final Product product = createDummyBuild().getProduct();
 		new Expectations() {{
 			s3Client.listObjects(PUBLISHED_BUCKET_NAME, getExpectedPublishFileDir(product).toLowerCase());
-			ObjectListing ol = createDummyObjectListing(getExpectedPublishFileDir(product) + TEST_ZIP);
+			ObjectListing ol = createDummyObjectListing(getExpectedPublishFileDir(product));
 			returns(ol);
 		}};
 		List<String> result = publishServiceImpl.getPublishedPackages(product);
+		Assert.assertEquals("Text file should be filtered out.", 1, result.size());
 		Assert.assertEquals("Published file should be there", TEST_ZIP, result.get(0));
 	}
 
-	private ObjectListing createDummyObjectListing(String keyName) {
+	private ObjectListing createDummyObjectListing(String dirName) {
 		ObjectListing ol = new ObjectListing();
-		S3ObjectSummary summary = new S3ObjectSummary();
-		summary.setKey(keyName);
-		ol.getObjectSummaries().add(summary);
+		ol.getObjectSummaries().add(getS3ObjectSummary(dirName + TEST_ZIP));
+		ol.getObjectSummaries().add(getS3ObjectSummary(dirName + "test/file.txt"));
 		return ol;
+	}
+
+	private S3ObjectSummary getS3ObjectSummary(String key) {
+		S3ObjectSummary summary = new S3ObjectSummary();
+		summary.setKey(key);
+		return summary;
 	}
 
 }
