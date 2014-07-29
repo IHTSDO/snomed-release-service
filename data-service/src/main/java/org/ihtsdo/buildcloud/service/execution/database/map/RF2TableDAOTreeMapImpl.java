@@ -23,7 +23,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	public static final String FORMAT = "%s" + RF2Constants.COLUMN_SEPARATOR + "%s";
 	private final SchemaFactory schemaFactory;
 	private TableSchema tableSchema;
-	private Map<String, String> table;
+	private Map<Key, String> table;
 
 	public RF2TableDAOTreeMapImpl() {
 		schemaFactory = new SchemaFactory();
@@ -63,7 +63,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	@Override
 	public RF2TableResults selectNone(TableSchema tableSchema) throws SQLException {
-		return new RF2TableResultsMapImpl(new TreeMap<String, String>());
+		return new RF2TableResultsMapImpl(new TreeMap<Key, String>());
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		table = null;
 	}
 
-	public Map<String, String> getTable() {
+	public Map<Key, String> getTable() {
 		return table;
 	}
 
@@ -79,7 +79,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		String line;
 		while ((line = reader.readLine()) != null) {
 			String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			table.put(String.format(FORMAT, parts[0], parts[1]), parts[2]);
+			table.put(new Key(parts[0], parts[1]), parts[2]);
 		}
 	}
 

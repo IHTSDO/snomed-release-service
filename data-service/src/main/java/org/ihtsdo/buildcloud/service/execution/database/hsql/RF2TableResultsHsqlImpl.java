@@ -33,7 +33,6 @@ public class RF2TableResultsHsqlImpl implements RF2TableResults {
 			for (Field field : fields) {
 				writeField(resultSet, field, fieldIndex++, builder);
 			}
-			builder.append(RF2Constants.LINE_ENDING);
 			return builder.toString();
 		} else {
 			return null;

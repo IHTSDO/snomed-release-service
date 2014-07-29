@@ -10,12 +10,12 @@ import java.util.Set;
 
 public class RF2TableResultsMapImpl implements RF2TableResults {
 
-	public static final String FORMAT = "%s" + RF2Constants.COLUMN_SEPARATOR + "%s" + RF2Constants.LINE_ENDING;
-	private final Map<String, String> table;
-	private Set<String> keys;
-	private Iterator<String> iterator;
+	public static final String FORMAT = "%s" + RF2Constants.COLUMN_SEPARATOR + "%s" + RF2Constants.COLUMN_SEPARATOR + "%s";
+	private final Map<Key, String> table;
+	private Set<Key> keys;
+	private Iterator<Key> iterator;
 
-	public RF2TableResultsMapImpl(Map<String, String> table) {
+	public RF2TableResultsMapImpl(Map<Key, String> table) {
 		this.table = table;
 		keys = table.keySet();
 		iterator = keys.iterator();
@@ -24,8 +24,8 @@ public class RF2TableResultsMapImpl implements RF2TableResults {
 	@Override
 	public String nextLine() throws SQLException {
 		if (iterator.hasNext()) {
-			String key = iterator.next();
-			return String.format(FORMAT, key, table.get(key));
+			Key key = iterator.next();
+			return String.format(FORMAT, key.getUuidString(), key.getDate(), table.get(key));
 		} else {
 			return null;
 		}
