@@ -258,7 +258,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
 			File zip = zipper.createZipFile();
+			LOGGER.debug("Start: Upload zip file {}", zip.getName());
 			dao.putOutputFile(execution, pkg, zip, "", true);
+			LOGGER.debug("Finish: Upload zip file {}", zip.getName());
 		} catch (Exception e)  {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
