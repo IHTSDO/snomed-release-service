@@ -15,7 +15,7 @@ public class S3PutRequestBuilder extends PutObjectRequest {
 
 	private S3ClientHelper helper;
 
-	protected S3PutRequestBuilder(String bucketName, String key, InputStream input, S3ClientHelper helper) {
+	public S3PutRequestBuilder(String bucketName, String key, InputStream input, S3ClientHelper helper) {
 		super(bucketName, key, input, new ObjectMetadata());
 		this.helper = helper;
 	}

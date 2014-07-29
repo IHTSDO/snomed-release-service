@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
-
 import org.apache.commons.codec.DecoderException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -17,7 +16,7 @@ import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +46,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Autowired
 	private String executionBucketName;
 
-	@Autowired
-	private String publishedBucketName;
-
 	private final FileHelper executionFileHelper;
 
 	private final FileHelper mavenFileHelper;
@@ -61,20 +57,25 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final File tempDir;
 
+	private final FileHelper publishedFileHelper;
+
+	private final Rf2FileNameTransformation rf2FileNameTransformation;
+
+	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
 	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
-	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
-	private final S3ClientHelper s3ClientHelper;
 
 	@Autowired
-	public ExecutionDAOImpl(String mavenBucketName, String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public ExecutionDAOImpl(String mavenBucketName, String executionBucketName, String publishedBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		objectMapper = new ObjectMapper();
 		executorService = Executors.newCachedThreadPool();
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		mavenFileHelper = new FileHelper(mavenBucketName, s3Client, s3ClientHelper);
+		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
+
 		this.s3Client = s3Client;
-		this.s3ClientHelper = s3ClientHelper;
 		this.tempDir = Files.createTempDir();
+		rf2FileNameTransformation = new Rf2FileNameTransformation();
 	}
 
 	@Override
@@ -353,16 +354,19 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		this.executionBucketName = executionBucketName;
 	}
 
-	@Required
-	public void setPublishedBucketName(String publishedBucketName) {
-		this.publishedBucketName = publishedBucketName;
-	}
-
 	@Override
-	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
-		FileHelper publisheFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-		String previousPublishedPackagePath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
-		return publisheFileHelper.getArchiveEntry(targetFileName, previousPublishedPackagePath, new Rf2FileNameTransformation());
+	public InputStream getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException {
+		String publishedZipPath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
+		String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
+		String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
+		List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
+		for (String filePath : filePaths) {
+			String filename = FileUtils.getFilenameFromPath(filePath);
+			if (filename.startsWith(targetFileNameStripped)) {
+				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
+			}
+		}
+		return null;
 	}
 
 	private File getLocalFile(String transformedFilePath) throws FileNotFoundException {
