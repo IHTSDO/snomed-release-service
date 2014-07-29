@@ -26,11 +26,14 @@ then
 	echo "Running test ${testIndex}."
 	externalDataLocation="${externalDataLocation}/test_${testIndex}"
 	buildName="${buildName}${testIndex}"
+	
+	if [ "${testIndex}" -eq "8" ]
+	then
+		manifestFile="manifest_20240731.xml"
+		effectiveDate="2024-07-31"
+	fi
 else
 	echo "Warn - No parameter -t <integer> to indicate test to run"
-	echo
-	# Reset getopts
-	OPTIND=1
 fi
 
 source ../api_client.sh
