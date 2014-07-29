@@ -8,6 +8,11 @@
 		<folder Name="RF2Release">
 			<folder Name="Full">
 				<folder Name="Terminology">
+					<file Name="sct2_Concept_Full_INT_20240731.txt"/>
+					<file Name="sct2_Description_Full-en_INT_20240731.txt"/>
+					<file Name="sct2_StatedRelationship_Full_INT_20240731.txt"/>
+					<file Name="sct2_Identifier_Full_INT_20240731.txt"/>
+					<file Name="sct2_TextDefinition_Full-en_INT_20240731.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
@@ -17,8 +22,11 @@
 					</folder>
 					<folder Name="Map">
 						<file Name="der2_sRefset_SimpleMapFull_INT_20240731.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapFull_INT_20240731.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapFull_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageFull-en_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Metadata">
 						<file Name="der2_cciRefset_RefsetDescriptorFull_INT_20240731.txt"/>
@@ -30,6 +38,11 @@
 
 			<folder Name="Snapshot">
 				<folder Name="Terminology">
+					<file Name="sct2_Concept_Snapshot_INT_20240731.txt"/>
+					<file Name="sct2_Description_Snapshot-en_INT_20240731.txt"/>
+					<file Name="sct2_StatedRelationship_Snapshot_INT_20240731.txt"/>
+					<file Name="sct2_Identifier_Snapshot_INT_20240731.txt"/>
+					<file Name="sct2_TextDefinition_Snapshot-en_INT_20240731.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
@@ -39,8 +52,11 @@
 					</folder>
 					<folder Name="Map">
 						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20240731.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapSnapshot_INT_20240731.txt"/>
+						<file Name="der2_iisssccRefset_ExtendedMapSnapshot_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageSnapshot-en_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Metadata">
 						<file Name="der2_cciRefset_RefsetDescriptorSnapshot_INT_20240731.txt"/>
@@ -52,6 +68,11 @@
 
 			<folder Name="Delta">
 				<folder Name="Terminology">
+					<file Name="sct2_Concept_Delta_INT_20240731.txt"/>
+					<file Name="sct2_Description_Delta-en_INT_20240731.txt"/>
+					<file Name="sct2_StatedRelationship_Delta_INT_20240731.txt"/>
+					<file Name="sct2_Identifier_Delta_INT_20240731.txt"/>
+					<file Name="sct2_TextDefinition_Delta-en_INT_20240731.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
@@ -60,9 +81,12 @@
 						<file Name="der2_Refset_SimpleDelta_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Map">
+						<file Name="der2_iisssccRefset_ExtendedMapDelta_INT_20240731.txt"/>
 						<file Name="der2_sRefset_SimpleMapDelta_INT_20240731.txt"/>
+						<file Name="der2_iissscRefset_ComplexMapDelta_INT_20240731.txt"/>
 					</folder>
 					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageDelta-en_INT_20240731.txt"/>	
 					</folder>
 					<folder Name="Metadata">
 						<file Name="der2_cciRefset_RefsetDescriptorDelta_INT_20240731.txt"/>
