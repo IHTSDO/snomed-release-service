@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
+#api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
@@ -173,9 +173,14 @@ then
 fi
 
 # Make sure we're starting with a clean slate
-rm tmp/*  || true
+# But not if we're completing 'cos we'll need the execution id from the last run
+if [ -z "${completePublish}" ]
+then
+	rm tmp/*  || true
+fi
 rm logs/* || true
 rm output/*  || true
+
 
 # Login
 echo "Login and record authorisation token."
