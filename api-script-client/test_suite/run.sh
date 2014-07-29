@@ -32,6 +32,13 @@ then
 		manifestFile="manifest_20240731.xml"
 		effectiveDate="2024-07-31"
 	fi
+	
+	if [[ "${testIndex}" -gt 8 && "${testIndex}" -lt 15 ]] 
+	then
+		manifestFile="manifest_20250131.xml"
+		effectiveDate="2025-01-31"		
+		echo "Running Test Tranche Beta"
+	fi
 else
 	echo "Warn - No parameter -t <integer> to indicate test to run"
 fi
