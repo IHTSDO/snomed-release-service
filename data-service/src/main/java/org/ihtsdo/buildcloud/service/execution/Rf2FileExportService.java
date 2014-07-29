@@ -134,7 +134,7 @@ public class Rf2FileExportService {
 			rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
 					pkg.getBuild().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
 					snapshotAsyncPipe.getOutputStream());
-			LOGGER.debug("Completed processing full and snapshot files for {} , waiting for network.", tableSchema.getTableName());
+			LOGGER.debug("Completed processing full and snapshot files for {}, waiting for network.", tableSchema.getTableName());
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
 		} catch (Exception e) {
