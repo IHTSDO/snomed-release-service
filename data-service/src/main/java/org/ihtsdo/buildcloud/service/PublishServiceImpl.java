@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -116,7 +118,14 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public List<String> getPublishedPackages(Product product) {
-		return publishedFileHelper.listFiles(getPublishDirPath(product));
+		List<String> packages = new ArrayList<>();
+		List<String> allFiles = publishedFileHelper.listFiles(getPublishDirPath(product));
+		for (String file : allFiles) {
+			if (file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
+				packages.add(file);
+			}
+		}
+		return packages;
 	}
 
 	@Override
