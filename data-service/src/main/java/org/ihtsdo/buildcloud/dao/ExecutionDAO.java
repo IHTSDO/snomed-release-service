@@ -6,7 +6,6 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
@@ -71,6 +70,6 @@ public interface ExecutionDAO {
 
 	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
 
-	public ArchiveEntry getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
+	public InputStream getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
 }

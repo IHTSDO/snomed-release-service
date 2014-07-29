@@ -11,7 +11,6 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
 import org.ihtsdo.buildcloud.test.DummyFuture;
 import org.junit.Assert;
 import org.junit.Test;
@@ -138,9 +137,7 @@ public class Rf2FileExportServiceTest {
 			returns(getDummyAsyncPipedStreamBean(currentFullFile));
 
 			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
-
-			ArchiveEntry entry = new ArchiveEntry(FuLL_FILE_NAME, getFileInputStreamFromResource(FuLL_FILE_NAME));
-			returns(entry);
+			returns(getFileInputStreamFromResource(FuLL_FILE_NAME));
 
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
 			returns(getDummyAsyncPipedStreamBean(currentFullFile));
