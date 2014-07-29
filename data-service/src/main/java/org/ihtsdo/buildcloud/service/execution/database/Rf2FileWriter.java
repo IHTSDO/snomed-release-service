@@ -22,10 +22,12 @@ public class Rf2FileWriter {
 			// Write header
 			String header = buildHeader(fields);
 			deltaWriter.write(header);
+			deltaWriter.append(RF2Constants.LINE_ENDING);
 
 			String line;
 			while ((line = tableResults.nextLine()) != null) {
 				deltaWriter.append(line);
+				deltaWriter.append(RF2Constants.LINE_ENDING);
 			}
 		}
 	}
@@ -44,7 +46,9 @@ public class Rf2FileWriter {
 			// Build header
 			String header = buildHeader(fields);
 			fullWriter.write(header);
+			fullWriter.append(RF2Constants.LINE_ENDING);
 			snapshotWriter.write(header);
+			snapshotWriter.append(RF2Constants.LINE_ENDING);
 
 			// Variables for snapshot resolution
 			String currentLine;
@@ -60,6 +64,7 @@ public class Rf2FileWriter {
 			while ((currentLine = tableResults.nextLine()) != null) {
 				// Write to Full file
 				fullWriter.append(currentLine);
+				fullWriter.append(RF2Constants.LINE_ENDING);
 
 				// Parse out id and effectiveTime
 				String[] lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
@@ -72,6 +77,7 @@ public class Rf2FileWriter {
 				if (movedToNewMember || passedTargetEffectiveTime) {
 					if (validLine != null) {
 						snapshotWriter.append(validLine);
+						snapshotWriter.append(RF2Constants.LINE_ENDING);
 						validLine = null;
 					}
 				}
@@ -89,6 +95,7 @@ public class Rf2FileWriter {
 			// Write out any valid line not yet written
 			if (validLine != null) {
 				snapshotWriter.append(validLine);
+				snapshotWriter.append(RF2Constants.LINE_ENDING);
 			}
 
 		}
@@ -106,7 +113,6 @@ public class Rf2FileWriter {
 			}
 			builder.append(field.getName());
 		}
-		builder.append(RF2Constants.LINE_ENDING);
 		return builder.toString();
 	}
 

@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.database.hsql.RF2TableDAOHsqlImpl;
+import org.ihtsdo.buildcloud.service.execution.database.map.RF2TableDAOTreeMapImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
@@ -35,7 +35,7 @@ public class Rf2FileWriterTest {
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAOHsqlImpl("test");
+	    rf2TableDAO = new RF2TableDAOTreeMapImpl();
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
