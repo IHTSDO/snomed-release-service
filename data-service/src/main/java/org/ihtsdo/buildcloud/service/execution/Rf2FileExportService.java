@@ -10,7 +10,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.execution.database.Rf2FileWriter;
-import org.ihtsdo.buildcloud.service.execution.database.hsql.RF2TableDAOHsqlImpl;
+import org.ihtsdo.buildcloud.service.execution.database.map.RF2TableDAOTreeMapImpl;
 import org.ihtsdo.buildcloud.service.helper.StatTimer;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
@@ -86,7 +86,7 @@ public class Rf2FileExportService {
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
-			rf2TableDAO = new RF2TableDAOHsqlImpl(pkg.getBusinessKey());
+			rf2TableDAO = new RF2TableDAOTreeMapImpl();
 			timer.split();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
