@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.execution.database;
+package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
 

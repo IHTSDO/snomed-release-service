@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-#api=http://localhost:8080/api/v1
+api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-api="https://uat-release.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
@@ -20,7 +20,6 @@ api="https://uat-release.ihtsdotools.org/api/v1"
 # 	productName
 #	buildName
 #	packageName
-
 
 releaseCentreId="international"
 readmeHeader="readme-header.txt"
@@ -54,6 +53,14 @@ getElapsedTime() {
 	seconds=$((seconds % 60))
 	
 	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+downloadFile() {
+	read fileName
+	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
+	mkdir -p ${localDownloadDirectory}
+	# Using curl as the MAC doesn't have wget loaded by default
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}" | grep HTTP | ensureCorrectResponse >/dev/null
 }
 
 findEntity() {
@@ -105,7 +112,9 @@ listOnly=false
 autoPublish=false
 completePublish=false
 
-while getopts ":slcar:p:" opt
+# Reset getopts 
+OPTIND=1
+while getopts ":slcart:p:" opt
 do
 	case $opt in
 		s) 
@@ -164,9 +173,14 @@ then
 fi
 
 # Make sure we're starting with a clean slate
-rm tmp/*  || true
+# But not if we're completing 'cos we'll need the execution id from the last run
+if [ -z "${completePublish}" ]
+then
+	rm tmp/*  || true
+fi
 rm logs/* || true
 rm output/*  || true
+
 
 # Login
 echo "Login and record authorisation token."
@@ -249,8 +263,13 @@ echo "Set Readme Header and readmeEndDate"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\", \"readmeEndDate\" : \"${readmeEndDate}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
-echo "Upload Manifest"
-curl ${commonParams} --write-out \\n%{http_code} -F "file=@manifest.xml" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
+#Are we using the assumed filename for the manifest file?
+if [ -z "${manifestFile}" ] 
+then
+	manifestFile="manifest.xml"
+fi
+echo "Upload Manifest: ${manifestFile}"
+curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFile}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 
 
 if ! ${skipLoad}
@@ -325,6 +344,14 @@ echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
 
+
+echo "List the logs"
+downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+# Download files
+cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+
 #Check whether any pre-condition checks failed and get users confirmation to continue or not if failures occcured
 preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FAIL` || true
 if [ -n "${preConditionFailures}" ]
@@ -379,14 +406,6 @@ then
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
 
-downloadFile() {
-	read fileName
-	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
-	mkdir -p ${localDownloadDirectory}
-	# Using curl as the MAC doesn't have wget loaded by default
-	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
-}
-
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
 localDownloadDirectory=output
@@ -394,13 +413,6 @@ curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep
 # Download files
 cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 echo
-
-echo "List the logs"
-downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
-localDownloadDirectory=logs
-curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
-# Download files
-cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo
 echo "Script Complete in $(getElapsedTime)"

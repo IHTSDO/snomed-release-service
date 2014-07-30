@@ -2,24 +2,20 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.file.ArchiveEntry;
-import org.ihtsdo.buildcloud.service.file.FileNameTransformation;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Repository
 public class FileHelper {
@@ -43,7 +39,9 @@ public class FileHelper {
 	}
 
 	public void putFile(InputStream fileStream, long fileSize, String targetFilePath) {
-		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).length(fileSize).useBucketAcl();
+		S3PutRequestBuilder s3PutRequestBuilder = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream);
+		S3PutRequestBuilder length = s3PutRequestBuilder.length(fileSize);
+		S3PutRequestBuilder putRequest = length.useBucketAcl();
 		s3Client.putObject(putRequest);
 	}
 
@@ -87,7 +85,6 @@ public class FileHelper {
 	}
 
 	public InputStream getFileStream(String filePath) {
-
 		try {
 			S3Object s3Object = s3Client.getObject(bucketName, filePath);
 			if (s3Object != null) {
@@ -101,43 +98,6 @@ public class FileHelper {
 		return null;
 	}
 	
-	/**
-	 * 
-	 * @param targetFileName
-	 * @param previousPublishedPackagePath
-	 * @param fnt - A FileTransformationObject that will strip out the releaseDate in the filenames to allow matching.
-	 * @return an inputStream positioned at the correct point in the archive.  Make sure you close it!
-	 * @throws IOException
-	 */
-	public ArchiveEntry getArchiveEntry(String targetFileName, String previousPublishedPackagePath, FileNameTransformation fnt) throws IOException {
-
-		LOGGER.debug("Start: Search Archive for previously published file {}", targetFileName);
-		ArchiveEntry result = null;
-		//Get hold of the Archive Input Stream
-		InputStream archiveInputStream = getFileStream(previousPublishedPackagePath);
-		
-		if (archiveInputStream == null) {
-			throw new FileNotFoundException ("Failed to find published package: " + previousPublishedPackagePath);
-		}
-		
-		ZipInputStream zis = new ZipInputStream (archiveInputStream);
-		
-		//Now what's our target filename template (ie with the date stripped off)
-		String targetNameTemplate = fnt.transformFilename(targetFileName);
-		
-		//Now lets iterate through that zip archive and see if we can find it's partner
-		ZipEntry zEntry;
-		while (result == null && (zEntry = zis.getNextEntry()) != null) {
-			//The Zip entry will contain the whole path to the file.  We'll just check the end string matches...should be ok.
-			if (!zEntry.isDirectory() && fnt.transformFilename(zEntry.getName()).endsWith(targetNameTemplate)) {
-				//I have to expose this inputStream.  The alternative is to copy N bytes into memory!
-				result = new ArchiveEntry(zEntry.getName(), zis);
-			}
-		}
-		LOGGER.debug("Finish: Search Archive for previously published file {}", targetFileName);
-		return result;
-	}
-
 	public List<String> listFiles(String directoryPath) {
 		ArrayList<String> files = new ArrayList<>();
 		try {
@@ -178,7 +138,17 @@ public class FileHelper {
 	 * @return true if the target file actually exists in the fileStore (online or offline)
 	 */
 	public boolean exists(String targetFilePath) {
-		return getFileStream(targetFilePath) == null ? false : true ;
+		InputStream fileStream = getFileStream(targetFilePath);
+		if (fileStream != null) {
+			try {
+				fileStream.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close stream {}", targetFilePath, e);
+			}
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 }
