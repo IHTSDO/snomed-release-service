@@ -25,7 +25,7 @@ public class RF2TableResultsMapImpl implements RF2TableResults {
 	public String nextLine() throws SQLException {
 		if (iterator.hasNext()) {
 			Key key = iterator.next();
-			return String.format(FORMAT, key.getUuidString(), key.getDate(), table.get(key));
+			return String.format(FORMAT, key.getIdString(), key.getDate(), table.get(key));
 		} else {
 			return null;
 		}
