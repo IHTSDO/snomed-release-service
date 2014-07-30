@@ -9,14 +9,23 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
@@ -67,10 +76,29 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) throws ResourceNotFoundException {
+	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) throws ResourceNotFoundException, IOException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
-		fileHelper.putFile(inputStream, fileSize, pathPath);
+
+		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
+			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
+			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+				ZipEntry entry;
+				while ((entry = zipInputStream.getNextEntry()) != null) {
+					String path = entry.getName();
+					String entryFilename = FileUtils.getFilenameFromPath(path);
+					String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, entryFilename);
+					Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+					try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
+						fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), pathPath);
+					}
+				}
+			} finally {
+				tempFile.toFile().delete();
+			}
+		} else {
+			String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
+			fileHelper.putFile(inputStream, fileSize, pathPath);
+		}
 	}
 	
 	@Override
