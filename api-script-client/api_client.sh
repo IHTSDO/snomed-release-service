@@ -60,7 +60,7 @@ downloadFile() {
 	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
 	mkdir -p ${localDownloadDirectory}
 	# Using curl as the MAC doesn't have wget loaded by default
-	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}"
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}" | grep HTTP | ensureCorrectResponse >/dev/null
 }
 
 findEntity() {
