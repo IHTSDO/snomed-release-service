@@ -170,7 +170,7 @@ public class PublishServiceImpl implements PublishService {
 	// Publish extracted entries in a directory of the same name
 	private void publishExtractedPackage(String publishFilePath, InputStream fileStream) throws IOException {
 		String zipExtractPath = publishFilePath.replace(".zip", "/");
-		LOGGER.info("Uploading extracted package to {}", zipExtractPath);
+		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
 			ZipEntry entry;
 			zipInputStream.closeEntry();
@@ -192,6 +192,7 @@ public class PublishServiceImpl implements PublishService {
 				}
 			}
 		}
+		LOGGER.info("Finish: Upload extracted package to {}", zipExtractPath);
 	}
 
 }
