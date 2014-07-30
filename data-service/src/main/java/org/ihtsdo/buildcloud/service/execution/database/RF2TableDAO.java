@@ -5,7 +5,6 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 
@@ -15,9 +14,9 @@ public interface RF2TableDAO {
 
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException;
 
-	ResultSet selectAllOrdered(TableSchema tableSchema) throws SQLException;
+	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
-	ResultSet selectNone(TableSchema tableSchema) throws SQLException;
+	RF2TableResults selectNone(TableSchema tableSchema) throws SQLException;
 
 	void closeConnection() throws SQLException;
 
