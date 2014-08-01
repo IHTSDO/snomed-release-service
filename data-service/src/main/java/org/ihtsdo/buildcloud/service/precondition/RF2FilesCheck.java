@@ -28,6 +28,8 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 	@Autowired
 	private ExecutionDAO executionDAO;
 
+	private static int SENSIBLE_AMOUNT_OF_DATA = 50;
+
 	@Autowired
 	private String releaseValidationFrameworkUrl;
 
@@ -56,6 +58,10 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 						AsyncPipedStreamBean logFileOutputStream = executionDAO.getLogFileOutputStream(execution, pkgBusinessKey, "precheck-rvf-" + inputFile + ".log");
 						try (InputStream content = response.getEntity().getContent();
 							OutputStream logOutputStream = logFileOutputStream.getOutputStream()) {
+							// Did we get a sensible amount of data back from the RVF?
+							if (content.available() < SENSIBLE_AMOUNT_OF_DATA) {
+								StreamUtils.copy("Suspiciously small content warning.\n".getBytes(), logOutputStream);
+							}
 							StreamUtils.copy(content, logOutputStream);
 						}
 						logFileOutputStream.waitForFinish();
@@ -63,10 +69,19 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 						if (200 == statusCode) {
 							pass();
 						} else {
-							fail("Invalid RF2 file.");
+							fail("RVF Service failure: HTTP " + statusCode);
 						}
 					} catch (InterruptedException | ExecutionException | IOException e) {
-						LOGGER.error("Failed to check input file {} against RVF.", inputFile, e);
+						String errorMessage = "Failed to check input file against RVF: " + inputFile + " due to " + e.getMessage();
+						LOGGER.error(errorMessage, e);
+						try {
+							OutputStream os = executionDAO.getLogFileOutputStream(execution, pkgBusinessKey,
+									"precheck-rvf-" + inputFile + ".log").getOutputStream();
+							StreamUtils.copy(errorMessage.getBytes(), os);
+							os.close();
+						} catch (Exception e2) {
+							// We're already logging an exception, can't do more.
+						}
 					}
 					LOGGER.info("RVF precondition check of {} complete.", inputFile);
 				}
