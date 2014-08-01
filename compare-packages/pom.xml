@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.ihtsdo.snomed.release</groupId>
+	<artifactId>international-daily-legacy-diff</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<packaging>pom</packaging>
+	<name>Compare Daily Builds</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<slf4j.version>1.7.5</slf4j.version>
+		<daily_legacy_build_output>target/daily_legacy_build</daily_legacy_build_output>
+		<daily_release_service_build_output>target/daily_release_service_build</daily_release_service_build_output>
+	</properties>
+
+	<dependencies>
+		<!-- For Jenkins trigger -->
+		<dependency>
+			<groupId>org.ihtsdo.intl.release.process</groupId>
+			<artifactId>wb-release-process</artifactId>
+			<version>1.18-SNAPSHOT</version>
+			<classifier>full</classifier>
+			<type>zip</type>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.3.2</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>/bin/sh</executable>
+							<arguments>
+								<argument>download-latest-release-service-build.sh</argument>
+								<argument>${daily_release_service_build_output}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.8</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>package</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>org.ihtsdo.intl.release.process</groupId>
+									<artifactId>wb-release-process</artifactId>
+									<version>1.18-SNAPSHOT</version>
+									<classifier>delta</classifier>
+									<type>zip</type>
+									<outputDirectory>${daily_legacy_build_output}</outputDirectory>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ihtsdo.intl.release.process</groupId>
+									<artifactId>wb-release-process</artifactId>
+									<version>1.18-SNAPSHOT</version>
+									<classifier>snapshot</classifier>
+									<type>zip</type>
+									<outputDirectory>${daily_legacy_build_output}</outputDirectory>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ihtsdo.intl.release.process</groupId>
+									<artifactId>wb-release-process</artifactId>
+									<version>1.18-SNAPSHOT</version>
+									<classifier>full</classifier>
+									<type>zip</type>
+									<outputDirectory>${daily_legacy_build_output}</outputDirectory>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>maestro</id>
+			<name>IHTSDO Maestro</name>
+			<url>https://mgr.servers.aceworkspace.net/apps/ihtsdo-archiva/repository/all</url>
+		</repository>
+	</repositories>
+
+</project>
