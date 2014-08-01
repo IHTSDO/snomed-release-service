@@ -299,7 +299,7 @@ then
 		do
 			echo "Upload Input File ${file}"
 			curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
-			((filesUploaded++))
+			filesUploaded=$((filesUploaded+1))
 		done
 		
 		if [ ${filesUploaded} -lt 1 ] 
