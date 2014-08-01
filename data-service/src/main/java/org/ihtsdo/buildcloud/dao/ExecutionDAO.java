@@ -17,7 +17,7 @@ public interface ExecutionDAO {
 
 	void save(Execution execution, String jsonConfig);
 
-	ArrayList<Execution> findAll(Build build);
+	ArrayList<Execution> findAllDesc(Build build);
 
 	Execution find(Build build, String executionId);
 

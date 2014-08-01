@@ -25,7 +25,7 @@ public interface ExecutionService {
 	 */
 	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException;
 
-	List<Execution> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
+	List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 
 	Execution find(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException;
 
