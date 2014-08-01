@@ -69,7 +69,7 @@ public class ExecutionController {
 	@ResponseBody
 	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		List<Execution> executions = executionService.findAll(buildCompositeKey, authenticatedUser);
+		List<Execution> executions = executionService.findAllDesc(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
 	}
 

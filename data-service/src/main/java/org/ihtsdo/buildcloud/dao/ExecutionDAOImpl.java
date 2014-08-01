@@ -26,10 +26,7 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -89,15 +86,15 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public ArrayList<Execution> findAll(Build build) {
+	public ArrayList<Execution> findAllDesc(Build build) {
 		String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
-		return findExecutions(buildDirectoryPath, build);
+		return findExecutionsDesc(buildDirectoryPath, build);
 	}
 
 	@Override
 	public Execution find(Build build, String executionId) {
 		String executionDirectoryPath = pathHelper.getExecutionPath(build, executionId).toString();
-		ArrayList<Execution> executions = findExecutions(executionDirectoryPath, build);
+		ArrayList<Execution> executions = findExecutionsDesc(executionDirectoryPath, build);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
 		} else {
@@ -169,7 +166,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}	
 
-	private ArrayList<Execution> findExecutions(String buildDirectoryPath, Build build) {
+	private ArrayList<Execution> findExecutionsDesc(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
 		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 1000);
@@ -188,6 +185,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		}
 		LOGGER.debug("Found {} Executions", executions.size());
+		Collections.reverse(executions);
 		return executions;
 	}
 

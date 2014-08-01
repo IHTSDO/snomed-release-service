@@ -136,13 +136,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
+	public List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		if (build == null) {
 			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
 		}
 
-		return dao.findAll(build);
+		return dao.findAllDesc(build);
 	}
 
 	@Override
