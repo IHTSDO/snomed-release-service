@@ -1,9 +1,4 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,6 +8,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class StreamingFileTransformationTest {
 
@@ -116,6 +116,28 @@ public class StreamingFileTransformationTest {
 		for( int i =1; i < linesAfter.size() ; i++ ){
 			Assert.assertNotEquals("UUID should be changed", linesBefore.get(i), linesAfter.get(i));
 		}
+	}
+	
+	@Test
+	public void testReplaceEffectiveDateWhenValueIsAbsent() throws Exception {
+		fileTransformation.addLineTransformation(new ReplaceValueLineTransformation(1, "20140731", true));
+
+		// Assert preconditions
+		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), RF2Constants.UTF_8);
+		Assert.assertEquals(5, linesBefore.size());
+		Assert.assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0));
+		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
+		Assert.assertEquals("Second line as expected", "\t\t1\t900000000000207008\t450990004\t293507007", linesBefore.get(2));
+		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
+
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile));
+
+		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
+		Assert.assertEquals(5, linesAfter.size());
+		Assert.assertEquals("Header unchanged", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0));
+		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesAfter.get(1));
+		Assert.assertEquals("Second line as expected", "\t20140731\t1\t900000000000207008\t450990004\t293507007", linesAfter.get(2));
+		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesAfter.get(4));
 	}
 
 }
