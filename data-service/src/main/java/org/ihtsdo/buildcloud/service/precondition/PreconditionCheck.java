@@ -6,54 +6,55 @@ import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 
 public abstract class PreconditionCheck {
-	
-    private State state = State.NOT_RUN;
 
-    private String responseMessage = "";
+	private State state = State.NOT_RUN;
 
-    public abstract void runCheck(Package pkg, Execution execution);
+	private String responseMessage = "";
 
-    public PreConditionCheckReport getReport() {
-	PreConditionCheckReport report = new PreConditionCheckReport();
-	report.setPreConditionCheckName(getTestName());
-	report.setResult(state);
-	report.setMessage(getResponseMessage());
-	return report;
-    }
+	public abstract void runCheck(Package pkg, Execution execution);
 
-    protected void pass() {
-	this.state = State.PASS;
-	//need to update this
-	this.responseMessage="";
-    }
+	public PreConditionCheckReport getReport() {
+		PreConditionCheckReport report = new PreConditionCheckReport();
+		report.setPreConditionCheckName(getTestName());
+		report.setResult(state);
+		report.setMessage(getResponseMessage());
+		return report;
+	}
 
-    protected void fail(String msg) {
-	this.state = State.FAIL;
-	this.responseMessage = msg;
-    }
-    protected void fatalError(String error){
-	state = State.FATAL;
-	responseMessage = error;
-    }
+	protected void pass() {
+		this.state = State.PASS;
+		//need to update this
+		this.responseMessage = "";
+	}
 
-    public State getState() {
-	return state;
-    }
+	protected void fail(String msg) {
+		this.state = State.FAIL;
+		this.responseMessage = msg;
+	}
 
-    protected void setState(State state) {
-	this.state = state;
-    }
+	protected void fatalError(String error) {
+		state = State.FATAL;
+		responseMessage = error;
+	}
 
-    public String getResponseMessage() {
-	return responseMessage;
-    }
+	public State getState() {
+		return state;
+	}
 
-    protected void setResponseMessage(String responseMessage) {
-	this.responseMessage = responseMessage;
-    }
+	protected void setState(State state) {
+		this.state = state;
+	}
 
-    //Default behaviour is to return the class name
-    public String getTestName() {
-	return this.getClass().getSimpleName();
-    }
+	public String getResponseMessage() {
+		return responseMessage;
+	}
+
+	protected void setResponseMessage(String responseMessage) {
+		this.responseMessage = responseMessage;
+	}
+
+	//Default behaviour is to return the class name
+	public String getTestName() {
+		return this.getClass().getSimpleName();
+	}
 }
