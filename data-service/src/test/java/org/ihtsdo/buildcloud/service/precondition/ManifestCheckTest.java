@@ -1,18 +1,14 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import java.io.FileNotFoundException;
-
-import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class ManifestCheckTest extends PreconditionCheckTest {
+import java.io.FileNotFoundException;
 
-	@Autowired
-	private InputFileDAO inputFileDAO;
+public class ManifestCheckTest extends PreconditionCheckTest {
 
 	@Autowired
 	private ManifestCheck manifestCheck;

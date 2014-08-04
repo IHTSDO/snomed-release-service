@@ -20,7 +20,6 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.service.execution.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -64,9 +63,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private PreconditionManager preconditionManager;
-
-	@Autowired
-	private InputFileService inputFileService;
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
@@ -173,6 +169,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
 	}
 
+	@SuppressWarnings("unchecked")
 	private List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException {
 		List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
@@ -267,12 +264,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	}
 
-	/**
-	 * A streaming transformation of execution input files, creating execution output files.
-	 * @param execution
-	 * @throws TransformationException
-	 * @throws IOException
-	 */
 	private void copyFilesForJustPackaging(Execution execution, Package pkg) {
 
 		String packageBusinessKey = pkg.getBusinessKey();
@@ -395,4 +386,5 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public void setFileProcessingFailureMaxRetry(Integer fileProcessingFailureMaxRetry) {
 		this.fileProcessingFailureMaxRetry = fileProcessingFailureMaxRetry;
 	}
+
 }

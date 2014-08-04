@@ -109,8 +109,8 @@ public class PublishServiceImplTest {
 		String centerName = extension.getReleaseCenter().getShortName();
 		StringBuilder publishedFilePath = new StringBuilder();
 		publishedFilePath.append(centerName);
-		publishedFilePath.append(PATH_SEPARATOR + extensionName);
-		publishedFilePath.append(PATH_SEPARATOR + productName);
+		publishedFilePath.append(PATH_SEPARATOR).append(extensionName);
+		publishedFilePath.append(PATH_SEPARATOR).append(productName);
 		publishedFilePath.append(PATH_SEPARATOR);
 		return publishedFilePath.toString();
 

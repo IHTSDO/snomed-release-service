@@ -10,10 +10,6 @@ import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
 @Service
 @Transactional
 public class AuthenticationServiceImpl implements AuthenticationService {

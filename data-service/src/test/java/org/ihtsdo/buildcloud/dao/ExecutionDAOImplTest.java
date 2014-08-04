@@ -63,7 +63,7 @@ public class ExecutionDAOImplTest {
 		executionDAO.setS3Client(mockS3Client);
 
 		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
-		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
+		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
 		execution = new Execution(creationTime, build);
 	}
 	
@@ -151,8 +151,8 @@ public class ExecutionDAOImplTest {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		boolean offlineMode = true; 
-		S3Client onlineS3Client = factory.getClient(offlineMode);
-		executionDAO.setS3Client(onlineS3Client);
+		S3Client s3Client1 = factory.getClient(offlineMode);
+		executionDAO.setS3Client(s3Client1);
 		
 		Package pkg = execution.getBuild().getPackages().iterator().next();
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
