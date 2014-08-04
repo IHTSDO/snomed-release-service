@@ -37,17 +37,13 @@ public class PublishServiceImpl implements PublishService {
 	private ExecutionS3PathHelper executionS3PathHelper;
 
 	@Autowired
-	ProductDAO productDAO;
+	private ProductDAO productDAO;
 
 	private static final String SEPARATOR = "/";
 	private final String publishedBucketName;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
-	/**
-	 * @param executionBucketName
-	 * @param publishedBucketName
-	 */
 	@Autowired
 	public PublishServiceImpl(String executionBucketName, String publishedBucketName,
 			S3Client s3Client, S3ClientHelper s3ClientHelper){
@@ -164,7 +160,9 @@ public class PublishServiceImpl implements PublishService {
 		publishExtractedPackage(publishFilePath, new FileInputStream(tempZipFile));
 
 		// Delete temp zip file
-		tempZipFile.delete();
+		if (!tempZipFile.delete()) {
+			LOGGER.warn("Failed to delete file {}", tempZipFile.getAbsolutePath());
+		}
 	}
 
 	// Publish extracted entries in a directory of the same name
@@ -188,7 +186,9 @@ public class PublishServiceImpl implements PublishService {
 					try (FileInputStream tempEntryInputStream = new FileInputStream(tempFile)) {
 						publishedFileHelper.putFile(tempEntryInputStream, entry.getSize(), targetFilePath);
 					}
-					tempFile.delete();
+					if (!tempFile.delete()) {
+						LOGGER.warn("Failed to delete file {}", tempFile.getAbsolutePath());
+					}
 				}
 			}
 		}

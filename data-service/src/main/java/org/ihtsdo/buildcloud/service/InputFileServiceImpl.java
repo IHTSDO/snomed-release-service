@@ -12,6 +12,8 @@ import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,8 @@ public class InputFileServiceImpl implements InputFileService {
 
 	private FileHelper fileHelper;
 
+	public static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
+
 	@Autowired
 	public InputFileServiceImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
@@ -71,10 +75,6 @@ public class InputFileServiceImpl implements InputFileService {
 		return dao.getManifestStream(aPackage);
 	}
 	
-	public InputStream getManifestStream(Package pkg) {
-		return dao.getManifestStream(pkg);
-	}
-
 	@Override
 	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) throws ResourceNotFoundException, IOException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
@@ -93,7 +93,9 @@ public class InputFileServiceImpl implements InputFileService {
 					}
 				}
 			} finally {
-				tempFile.toFile().delete();
+				if (!tempFile.toFile().delete()) {
+					LOGGER.warn("Failed to delete temp file {}", tempFile.toFile().getAbsolutePath());
+				}
 			}
 		} else {
 			String pathPath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
@@ -107,12 +109,10 @@ public class InputFileServiceImpl implements InputFileService {
 		return getFileInputStream(aPackage, filename);
 	}
 	
-	@Override
-	public InputStream getFileInputStream(Package pkg, String filename) {
+	private InputStream getFileInputStream(Package pkg, String filename) {
 		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
 		return fileHelper.getFileStream(filePath);
 	}
-	
 
 	@Override
 	public List<String> listInputFilePaths(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {

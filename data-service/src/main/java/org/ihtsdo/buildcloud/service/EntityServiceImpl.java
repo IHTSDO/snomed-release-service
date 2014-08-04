@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public abstract class EntityServiceImpl<T> implements EntityService<T> {
 
-	private final EntityDAO dao;
+	private final EntityDAO<T> dao;
 
 	protected EntityServiceImpl(EntityDAO<T> dao) {
 		this.dao = dao;

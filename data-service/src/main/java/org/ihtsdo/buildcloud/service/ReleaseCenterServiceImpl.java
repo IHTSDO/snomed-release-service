@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAO;
-import org.ihtsdo.buildcloud.dao.UserDAO;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.ReleaseCenterMembership;
 import org.ihtsdo.buildcloud.entity.User;
@@ -23,9 +22,6 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 
 	@Autowired
 	private ReleaseCenterMembershipDAO membershipDAO;
-
-	@Autowired
-	private UserDAO userDAO;
 
 	@Autowired
 	public ReleaseCenterServiceImpl(ReleaseCenterDAO dao) {
