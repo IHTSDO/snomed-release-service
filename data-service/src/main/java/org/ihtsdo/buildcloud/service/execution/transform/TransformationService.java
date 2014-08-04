@@ -69,6 +69,9 @@ public class TransformationService {
 				if (tableSchema == null) {
 					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
 				} else {
+
+					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
+
 					ComponentType componentType = tableSchema.getComponentType();
 					if (isPreProcessType(componentType)) {
 		
