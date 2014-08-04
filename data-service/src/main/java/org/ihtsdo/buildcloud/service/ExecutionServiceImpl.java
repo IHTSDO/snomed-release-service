@@ -227,10 +227,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 	
 	private void executePackage(Execution execution, Package pkg) throws Exception {
-
-		// TODO: Refactor: Process each input file in a separate thread where appropriate.
-
-		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding 
+		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
 		if (manifestStream == null) {
 			throw new BadConfigurationException("Failed to find valid manifest file.");
@@ -272,7 +269,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		// Iterate each execution input file
 		List<String> executionInputFilePaths = dao.listInputFileNames(execution, packageBusinessKey);
 		for (String relativeFilePath : executionInputFilePaths) {
-				dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
+			dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
 		}
 	}
 

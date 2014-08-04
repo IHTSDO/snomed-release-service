@@ -6,10 +6,10 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.idgeneration.IdAssignmentBI;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TransformationService {
 
@@ -34,17 +38,23 @@ public class TransformationService {
 	@Autowired
 	private UUIDGenerator uuidGenerator;
 
+	private ExecutorService executorService;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
+
+	public TransformationService() {
+		executorService = Executors.newCachedThreadPool();
+	}
 
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
 	 */
-	public void transformFiles(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) {
+	public void transformFiles(final Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ExecutionException {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
-		TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
-		String packageBusinessKey = pkg.getBusinessKey();
+		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
+		final String packageBusinessKey = pkg.getBusinessKey();
 		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
 
 		// Iterate each execution input file
@@ -79,45 +89,62 @@ public class TransformationService {
 
 		// Phase 2
 		// Process all files
-		for (String inputFileName : executionInputFileNames) {
+		List<Future> concurrentTasks = new ArrayList<>();
+		for (final String inputFileName : executionInputFileNames) {
 			// Transform all txt files
-			TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
+			final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
 			if (tableSchema != null) {
 				// Recognised RF2 file
 
 				checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
-				try {
-					InputStream executionInputFileInputStream;
-					if (isPreProcessType(tableSchema.getComponentType())) {
-						executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, inputFileName);
-					} else {
-						executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+				Future<?> future = executorService.submit(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							InputStream executionInputFileInputStream;
+							if (isPreProcessType(tableSchema.getComponentType())) {
+								executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, inputFileName);
+							} else {
+								executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+							}
+
+							AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
+							OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+
+							// Get appropriate transformations for this file.
+							StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
+
+							// Apply transformations
+							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+
+							// Wait for upload of transformed file to finish
+							asyncPipedStreamBean.waitForFinish();
+
+						} catch (FileRecognitionException e) {
+							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
+						} catch (TransformationException | IOException e) {
+							// Catch blocks just log and let the next file get processed.
+							LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
+						} catch (ExecutionException | InterruptedException e) {
+							LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
+						}
 					}
+				});
+				concurrentTasks.add(future);
 
-					AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
-					OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
-
-					// Get appropriate transformations for this file.
-					StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
-
-					// Apply transformations
-					steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
-
-					// Wait for upload of transformed file to finish
-					asyncPipedStreamBean.waitForFinish();
-
-				} catch (FileRecognitionException e) {
-					LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
-				} catch (TransformationException | IOException e) {
-					// Catch blocks just log and let the next file get processed.
-					LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
-				} catch (ExecutionException | InterruptedException e) {
-					LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
-				}
 			} else {
 				// Not recognised as an RF2 file, copy across without transform
 				dao.copyInputFileToOutputFile(execution, packageBusinessKey, inputFileName);
+			}
+
+			// Wait for all concurrent tasks to finish
+			for (Future concurrentTask : concurrentTasks) {
+				try {
+					concurrentTask.get();
+				} catch (InterruptedException e) {
+					LOGGER.error("Thread interrupted while waiting for future result.", e);
+				}
 			}
 		}
 	}
