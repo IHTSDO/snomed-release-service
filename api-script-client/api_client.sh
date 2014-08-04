@@ -346,7 +346,8 @@ echo
 
 
 echo "List the logs"
-downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+logsUrl=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+downloadUrlRoot="$logsUrl"
 localDownloadDirectory=logs
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
 # Download files
@@ -405,6 +406,12 @@ then
 	echo "Publish the package"
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
+
+echo "Download post condition logs"
+downloadUrlRoot="$logsUrl"
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+grep -v 'precheck' tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
