@@ -30,10 +30,32 @@ public class RVFClient implements Closeable {
 	}
 
 	public String checkInputFile(InputStream inputFileStream, String inputFileName, AsyncPipedStreamBean logFileOutputStream) {
-		HttpPost post = new HttpPost(releaseValidationFrameworkUrl + "/test-file");
+		return checkFile(inputFileStream, inputFileName, logFileOutputStream, true);
+	}
+
+	public String checkOutputPackage(File zipPackage, AsyncPipedStreamBean logFileOutputStream) throws IOException {
+		return checkFile(new FileInputStream(zipPackage), zipPackage.getName(), logFileOutputStream, false);
+	}
+
+	private String checkFile(InputStream inputFileStream, String inputFileName, AsyncPipedStreamBean logFileOutputStream, boolean preCheck) {
+		String fileType;
+		String checkType;
+		String targetUrl;
+
+		if (preCheck) {
+			fileType = "input";
+			checkType = "precondition";
+			targetUrl = "/test-pre";
+		} else {
+			fileType = "output";
+			checkType = "postcondition";
+			targetUrl = "/test-post";
+		}
+
+		HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		post.setEntity(MultipartEntityBuilder.create().addPart("file", new InputStreamBody(inputFileStream, inputFileName)).build());
 
-		LOGGER.info("Posting input file {} to RVF for precondition check.", inputFileName);
+		LOGGER.info("Posting input file {} to RVF for {} check.", checkType, inputFileName);
 
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			int statusCode = response.getStatusLine().getStatusCode();
@@ -45,6 +67,8 @@ public class RVFClient implements Closeable {
 
 				String line = responseReader.readLine(); // read header
 				if (line != null) {
+					logWriter.write(line);
+					logWriter.write(RF2Constants.LINE_ENDING);
 					while ((line = responseReader.readLine()) != null) {
 						if (!line.startsWith(SUCCESS)) {
 							failureCount++;
@@ -71,7 +95,7 @@ public class RVFClient implements Closeable {
 				return errorMessage;
 			}
 		} catch (InterruptedException | ExecutionException | IOException e) {
-			String errorMessage = "Failed to check input file against RVF: " + inputFileName + " due to " + e.getMessage();
+			String errorMessage = "Failed to check " + fileType + " file against RVF: " + inputFileName + " due to " + e.getMessage();
 			LOGGER.error(errorMessage, e);
 			try (OutputStream logOutputStream = logFileOutputStream.getOutputStream()) {
 				StreamUtils.copy(errorMessage.getBytes(), logOutputStream);
@@ -81,7 +105,7 @@ public class RVFClient implements Closeable {
 			}
 			return "RVF Client error. See logs for details.";
 		} finally {
-			LOGGER.info("RVF precondition check of {} complete.", inputFileName);
+			LOGGER.info("RVF {} check of {} complete.", checkType, inputFileName);
 		}
 	}
 
@@ -89,5 +113,4 @@ public class RVFClient implements Closeable {
 	public void close() throws IOException {
 		httpClient.close();
 	}
-
 }

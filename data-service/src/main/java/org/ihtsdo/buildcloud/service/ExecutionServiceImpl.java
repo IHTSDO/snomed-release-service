@@ -25,6 +25,7 @@ import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -75,7 +76,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	@Autowired
 	private Integer fileProcessingFailureMaxRetry;
-	
+
+	@Autowired
+	private String releaseValidationFrameworkUrl;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -249,16 +253,25 @@ public class ExecutionServiceImpl implements ExecutionService {
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
 
+		File zipPackage;
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
-			File zip = zipper.createZipFile();
-			LOGGER.debug("Start: Upload zip file {}", zip.getName());
-			dao.putOutputFile(execution, pkg, zip, "", true);
-			LOGGER.debug("Finish: Upload zip file {}", zip.getName());
+			zipPackage = zipper.createZipFile();
+			LOGGER.debug("Start: Upload zipPackage file {}", zipPackage.getName());
+			dao.putOutputFile(execution, pkg, zipPackage, "", true);
+			LOGGER.debug("Finish: Upload zipPackage file {}", zipPackage.getName());
 		} catch (Exception e)  {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
+		runPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+	}
+
+	private void runPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException {
+		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
+			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-" + zipPackage.getName() + ".log");) {
+			rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+		}
 	}
 
 	private void copyFilesForJustPackaging(Execution execution, Package pkg) {
