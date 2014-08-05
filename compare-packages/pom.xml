@@ -24,6 +24,12 @@
 			<version>1.18-SNAPSHOT</version>
 			<classifier>full</classifier>
 			<type>zip</type>
+			<exclusions>
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
@@ -40,7 +46,7 @@
 							<goal>exec</goal>
 						</goals>
 						<configuration>
-							<executable>/bin/sh</executable>
+							<executable>/bin/bash</executable>
 							<arguments>
 								<argument>download-latest-release-service-build.sh</argument>
 								<argument>${daily_release_service_build_output}</argument>
