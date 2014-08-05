@@ -395,19 +395,17 @@ then
 	echo
 	cat tmp/trigger-response.txt
 	echo
-	echo "Script halted after $(getElapsedTime) "
-	exit -1
-else
-	echo "Build execution complete at $(getElapsedTime)"
 fi
+echo "Build execution ended at $(getElapsedTime)"
+echo
 
-if ${autoPublish}
+if [ ! -z "${triggerSuccess}" ] && ${autoPublish}
 then
 	echo "Publish the package"
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
 
-echo "Download post condition logs"
+echo "List post condition logs"
 downloadUrlRoot="$logsUrl"
 localDownloadDirectory=logs
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
@@ -423,8 +421,14 @@ echo
 
 echo
 echo "Script Complete in $(getElapsedTime)"
-if ! ${autoPublish} 
+if [ -z "${triggerSuccess}" ]
 then
-	echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
+	echo
+	echo ' !! There were failures !!'
+else
+	if ! ${autoPublish}
+	then
+		echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
+	fi
 fi
 echo
