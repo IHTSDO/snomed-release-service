@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,8 @@ public class Execution {
 	private final Build build;
 	
 	private Map<String, List<PreConditionCheckReport>> preConditionCheckReports;
+
+	private Map<String, Map<String, String>> executionReport;
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
@@ -66,6 +69,30 @@ public class Execution {
 
 	public Map<String, List<PreConditionCheckReport>> getPreConditionCheckReports() {
 		return preConditionCheckReports;
+	}
+
+	public Map<String, Map<String, String>> getExecutionReport() {
+		return executionReport;
+	}
+
+	public void setExecutionReport(Map<String, Map<String, String>> executionReport) {
+		this.executionReport = executionReport;
+	}
+
+	public void addToExecutionReport(Package pkg, String executionStage, String result) {
+		// Do we have an execution Report object
+		if (this.executionReport == null) {
+			this.executionReport = new HashMap<String, Map<String, String>>();
+		}
+
+		// Do we already know about this package?
+		if (!this.executionReport.containsKey(pkg.getName())) {
+			this.executionReport.put(pkg.getName(), (Map<String, String>) new HashMap<String, String>());
+		}
+
+		// Add/Replace this report item
+		Map<String, String> reportItem = this.executionReport.get(pkg.getName());
+		reportItem.put(executionStage, result);
 	}
 
 }

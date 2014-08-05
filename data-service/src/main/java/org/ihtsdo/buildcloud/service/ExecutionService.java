@@ -36,7 +36,7 @@ public interface ExecutionService {
 
 	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
 
-	Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
+	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
 
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser) throws ResourceNotFoundException;
 

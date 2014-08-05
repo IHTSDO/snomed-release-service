@@ -88,12 +88,12 @@ public class RVFClient implements Closeable {
 
 			if (200 == statusCode) {
 				if (failureCount == 0) {
-					return null;
+					return "";
 				} else {
 					return "There were " + failureCount + " RVF " + checkType + " test failures.";
 				}
 			} else {
-				String errorMessage = "Response HTTP status code " + statusCode;
+				String errorMessage = "RVF response HTTP status code " + statusCode;
 				LOGGER.info("RVF Service failure: {}", errorMessage);
 				return errorMessage;
 			}

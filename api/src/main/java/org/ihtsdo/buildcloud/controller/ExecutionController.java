@@ -163,8 +163,8 @@ public class ExecutionController {
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 											HttpServletRequest request) throws Exception {
 		User authenticatedUser = SecurityHelper.getSubject();
-		Map<String, Object> executionState = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermediaOfAction(executionState, request, EXECUTION_LINKS);
+		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
+		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
