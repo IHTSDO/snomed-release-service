@@ -46,7 +46,7 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	public PublishServiceImpl(String executionBucketName, String publishedBucketName,
-			S3Client s3Client, S3ClientHelper s3ClientHelper){
+			S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
@@ -57,7 +57,7 @@ public class PublishServiceImpl implements PublishService {
 		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
-		for(String fileName : filesFound){
+		for (String fileName : filesFound) {
 			if (FileUtils.isZip(fileName)) {
 				releaseFileName = fileName;
 				//only one zip file per package
@@ -137,7 +137,7 @@ public class PublishServiceImpl implements PublishService {
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+			throw new ResourceNotFoundException("Unable to find product: " + item);
 		}
 
 		//We're expecting a zip file only
@@ -148,7 +148,7 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.debug("Reading stream to temp file");
 		File tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
 		try (InputStream in = inputStream;
-			OutputStream out = new FileOutputStream(tempZipFile)) {
+			 OutputStream out = new FileOutputStream(tempZipFile)) {
 			StreamUtils.copy(in, out);
 		}
 

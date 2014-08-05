@@ -35,9 +35,9 @@ public class StreamTestUtils {
 				Assert.fail("Line count mismatch" + errorMessageNamePart + ". Expected stream has ended but Actual stream has more lines starting with line " + line + ": " + actualLine);
 			} else {
 				if (usePatterns) {
-					assertEqualsWithPatterns("Content should match pattern" + errorMessageNamePart +" on line " + line, expectedLine, actualLine);
+					assertEqualsWithPatterns("Content should match pattern" + errorMessageNamePart + " on line " + line, expectedLine, actualLine);
 				} else {
-					Assert.assertEquals("Content should be equal" + errorMessageNamePart +" on line " + line, expectedLine, actualLine);
+					Assert.assertEquals("Content should be equal" + errorMessageNamePart + " on line " + line, expectedLine, actualLine);
 				}
 			}
 			line++;

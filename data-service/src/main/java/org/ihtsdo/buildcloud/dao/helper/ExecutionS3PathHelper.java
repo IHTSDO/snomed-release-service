@@ -14,7 +14,7 @@ public class ExecutionS3PathHelper {
 	private static final String INPUT_FILES = "input-files";
 	private static final String BUILD_FILES = "build-files";
 	private static final String MANIFEST = "manifest";
-	private static final String TRANSFORMED_FILES ="transformed-files";
+	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
 
 	public StringBuffer getBuildPath(Build build) {
@@ -26,7 +26,7 @@ public class ExecutionS3PathHelper {
 		path.append(SEPARATOR);
 		return path;
 	}
-	
+
 	public StringBuffer getProductPath(Product product) {
 		StringBuffer path = new StringBuffer();
 		path.append(product.getExtension().getReleaseCenter().getBusinessKey());
@@ -45,7 +45,7 @@ public class ExecutionS3PathHelper {
 	public String getPackageInputFilePath(Package aPackage, String filename) {
 		return getPackageFilesPathAsStringBuffer(aPackage, INPUT_FILES).append(filename).toString();
 	}
-	
+
 	//Note that getPackageOutputFilePath(Package aPackage, String filename) should not exist because all output 
 	//files are specific to the execution that creates them.  See getExecutionOutputFilePath instead.
 
@@ -54,7 +54,7 @@ public class ExecutionS3PathHelper {
 		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 		return buildPath;
 	}
-	
+
 	//There will also be a copy of the manifest for each execution's package
 	public StringBuffer getExecutionManifestDirectoryPath(Execution execution, Package pkg) {
 		return getExecutionPath(execution.getBuild(), execution.getId()).append(pkg.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
@@ -117,6 +117,7 @@ public class ExecutionS3PathHelper {
 		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(directionModifier).append(SEPARATOR);
 		return buildPath;
 	}
+
 	private String getFilePath(Execution execution, String relativePath) {
 		return getExecutionPath(execution).append(relativePath).toString();
 	}

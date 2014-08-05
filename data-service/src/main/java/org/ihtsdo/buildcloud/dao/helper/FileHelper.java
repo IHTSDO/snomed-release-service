@@ -19,7 +19,7 @@ import java.util.List;
 
 @Repository
 public class FileHelper {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileHelper.class);
 
 	private S3Client s3Client;
@@ -31,7 +31,7 @@ public class FileHelper {
 	private final S3ClientHelper s3ClientHelper;
 
 	private final String bucketName;
-	
+
 	public FileHelper(String bucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		this.bucketName = bucketName;
 		this.s3Client = s3Client;
@@ -51,36 +51,36 @@ public class FileHelper {
 	 */
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
-		LOGGER.debug ("Putting file to {}/{}", bucketName, targetFilePath);
+		LOGGER.debug("Putting file to {}/{}", bucketName, targetFilePath);
 		s3Client.putObject(putRequest);
 	}
-	
+
 	public String putFile(File file, String targetFilePath) throws NoSuchAlgorithmException, IOException, DecoderException {
 		return putFile(file, targetFilePath, false);
 	}
-	
+
 
 	public String putFile(File file, String targetFilePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 
-		InputStream is = new FileInputStream (file);
+		InputStream is = new FileInputStream(file);
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, is).length(file.length()).useBucketAcl();
-		if (calcMD5){
+		if (calcMD5) {
 			String md5 = FileUtils.calculateMD5(file);
 			putRequest.withMD5(md5);
-		}		
+		}
 		PutObjectResult putResult = s3Client.putObject(putRequest);
 		String md5Received = (putResult == null ? null : putResult.getContentMd5());
-		LOGGER.debug ("S3Client put request returned MD5: " + md5Received);
-		
-		if (calcMD5){
+		LOGGER.debug("S3Client put request returned MD5: " + md5Received);
+
+		if (calcMD5) {
 			//Also upload the hex encoded (ie normal) md5 digest in a file
 			String md5TargetPath = targetFilePath + ".md5";
 			File md5File = FileUtils.createMD5File(file);
-			InputStream isMD5 = new FileInputStream (md5File);
+			InputStream isMD5 = new FileInputStream(md5File);
 			S3PutRequestBuilder md5PutRequest = s3ClientHelper.newPutRequest(bucketName, md5TargetPath, isMD5).length(md5File.length()).useBucketAcl();
 			s3Client.putObject(md5PutRequest);
 		}
-		
+
 		return md5Received;
 	}
 
@@ -97,7 +97,7 @@ public class FileHelper {
 		}
 		return null;
 	}
-	
+
 	public List<String> listFiles(String directoryPath) {
 		ArrayList<String> files = new ArrayList<>();
 		try {
@@ -121,12 +121,12 @@ public class FileHelper {
 		LOGGER.debug("Copy file '{}' to '{}'", sourcePath, targetPath);
 		s3Client.copyObject(bucketName, sourcePath, bucketName, targetPath);
 	}
-	
-	
+
+
 	/**
-	 * @param sourcePath source path
+	 * @param sourcePath   source path
 	 * @param targetBucket target bucket name
-	 * @param targetPath target path
+	 * @param targetPath   target path
 	 */
 	public void copyFile(String sourcePath, String targetBucket, String targetPath) {
 		LOGGER.debug("Copy file '{}' to  bucket '{}' as file name'{}'", sourcePath, targetBucket, targetPath);
@@ -149,5 +149,5 @@ public class FileHelper {
 			}
 		}
 	}
-	
+
 }

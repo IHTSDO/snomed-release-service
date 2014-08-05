@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 @Repository
-public class DevDatabasePrimerDAO extends TestEntityGenerator{
+public class DevDatabasePrimerDAO extends TestEntityGenerator {
 
 	@Autowired
 	private SessionFactory sessionFactory;
@@ -39,21 +39,21 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator{
 		}
 	}
 
-	private void save(ReleaseCenter releaseCenter){
+	private void save(ReleaseCenter releaseCenter) {
 		//Work down the hierarchy saving objects as we go
 		Session session = getSession();
 		session.save(releaseCenter);
 		List<Extension> extensions = releaseCenter.getExtensions();
 		for (Extension extension : extensions) {
 			session.save(extension);
-			List <Product> products = extension.getProducts();
+			List<Product> products = extension.getProducts();
 			for (Product product : products) {
 				session.save(product);
-				List <Build> builds = product.getBuilds();
+				List<Build> builds = product.getBuilds();
 				for (Build build : builds) {
 					session.save(build);
 					Set<Package> packages = build.getPackages();
-					for (Package pkg: packages){  //package is a reserved work
+					for (Package pkg : packages) {  //package is a reserved work
 						session.save(pkg);
 					}
 				}

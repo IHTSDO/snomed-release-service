@@ -63,9 +63,9 @@ public class TransformationService {
 		// Phase 1
 		// Process just the id column of any Concept files.
 		for (String inputFileName : executionInputFileNames) {
-			try {			
+			try {
 				TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
-				
+
 				if (tableSchema == null) {
 					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
 				} else {
@@ -74,12 +74,12 @@ public class TransformationService {
 
 					ComponentType componentType = tableSchema.getComponentType();
 					if (isPreProcessType(componentType)) {
-		
+
 						InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
 						OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
-	
+
 						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
-	
+
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
 					}
@@ -157,15 +157,15 @@ public class TransformationService {
 	}
 
 	/**
-	 * @param fileName input text file name.
-	 * @param effectiveDate  date in format of "yyyyMMdd"
+	 * @param fileName      input text file name.
+	 * @param effectiveDate date in format of "yyyyMMdd"
 	 */
 	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
 		String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 		//last segment will be like 20140131.txt
 		String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
-		if( !dateFromFile.equals(effectiveDate)){
-		throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
+		if (!dateFromFile.equals(effectiveDate)) {
+			throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.helper;
 
-public enum FilterOption{
-	
+public enum FilterOption {
+
 	INCLUDE_REMOVED,
 	STARRED_ONLY
 }

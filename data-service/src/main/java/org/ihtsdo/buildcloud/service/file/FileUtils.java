@@ -13,12 +13,12 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
-	
+
 	public static final String ZIP_EXTENSION = ".zip";
 
-	public static Map<String, String> examineZipContents(String filename, InputStream is){
+	public static Map<String, String> examineZipContents(String filename, InputStream is) {
 		//TODO Option to try treating this stream as GZip (GZipInputStream) also.
 		Map<String, String> contents = new HashMap<>();
 		try {
@@ -27,20 +27,21 @@ public class FileUtils {
 			int idx = 0;
 			while (entry != null) {
 				contents.put("zip_content_" + idx, entry.getName());
-				LOGGER.debug (filename + "[" + idx + "]: " + entry.getName());
+				LOGGER.debug(filename + "[" + idx + "]: " + entry.getName());
 				entry = zis.getNextEntry();
 				idx++;
 			}
 		} catch (Exception e) {
-			LOGGER.debug("Failed to enumerate zip file contents",e);
+			LOGGER.debug("Failed to enumerate zip file contents", e);
 		}
-		
-		
+
+
 		return contents;
 	}
-	
+
 	/**
 	 * Modified functionality to add folder as root object ie relative path to the parent.
+	 *
 	 * @param zipFilePath
 	 * @param dirToZip
 	 * @throws Exception
@@ -62,10 +63,10 @@ public class FileUtils {
 	public static void addDir(File dirObj, ZipOutputStream out, int parentPathLen) throws IOException {
 		File[] files = dirObj.listFiles();
 		byte[] tmpBuf = new byte[1024];
-		
+
 		//We also want directories to be represented in the zip file, even if they're empty
 		//but no need to do that for the top level directory, so check for that first
-		if (dirObj.getAbsolutePath().length() > parentPathLen){
+		if (dirObj.getAbsolutePath().length() > parentPathLen) {
 			String relativePath = dirObj.getAbsolutePath().substring(parentPathLen) + File.separator;
 			out.putNextEntry(new ZipEntry(relativePath));
 		}
@@ -88,7 +89,7 @@ public class FileUtils {
 			in.close();
 		}
 	}
-	
+
 	/*
 	 *@author http://www.mkyong.com/java/how-to-generate-a-file-checksum-value-in-java/
 	 */
@@ -111,15 +112,16 @@ public class FileUtils {
 		fis.close();
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Creates a file in the same directory as hashMe, using the same name with .md5 appended to it.
+	 *
 	 * @param hashMe
 	 * @return
-	 * @throws IOException 
-	 * @throws NoSuchAlgorithmException 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
 	 */
-	public static File createMD5File (File hashMe) throws NoSuchAlgorithmException, IOException {
+	public static File createMD5File(File hashMe) throws NoSuchAlgorithmException, IOException {
 		String md5String = calculateMD5(hashMe);
 		String resultFilePath = hashMe.getAbsolutePath() + ".md5";
 
@@ -140,13 +142,13 @@ public class FileUtils {
 
 		return resultFile;
 	}
-	
-	public static boolean hasExtension (String fileName, String extension) {
+
+	public static boolean hasExtension(String fileName, String extension) {
 		return fileName.endsWith(extension);
 	}
-	
-	public static boolean isZip (String fileName) {
-		return hasExtension (fileName, ZIP_EXTENSION);
+
+	public static boolean isZip(String fileName) {
+		return hasExtension(fileName, ZIP_EXTENSION);
 	}
 
 	public static String getFilenameFromPath(String filePath) {

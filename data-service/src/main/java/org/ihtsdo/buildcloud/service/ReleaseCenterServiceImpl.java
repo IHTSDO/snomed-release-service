@@ -40,14 +40,14 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 
 	@Override
 	public ReleaseCenter create(String name, String shortName, User user) throws EntityAlreadyExistsException {
-		
+
 		//Check that we don't already have one of these
 		String releaseCenterBusinessKey = EntityHelper.formatAsBusinessKey(shortName);
 		ReleaseCenter existingRC = dao.find(releaseCenterBusinessKey, user);
 		if (existingRC != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}
-		
+
 		ReleaseCenter releaseCenter = new ReleaseCenter(name, shortName);
 		dao.save(releaseCenter);
 

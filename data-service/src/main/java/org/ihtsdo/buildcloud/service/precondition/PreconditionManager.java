@@ -14,13 +14,14 @@ import java.util.Map;
 
 public class PreconditionManager {
 
-	private List <PreconditionCheck> preconditionChecks;
+	private List<PreconditionCheck> preconditionChecks;
 	private boolean onlineMode;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
 
 	/**
 	 * For each package in turn, loops through each check that has been added to the manager
+	 *
 	 * @return the report in a JSON friendly structure
 	 */
 	public Map<String, List<PreConditionCheckReport>> runPreconditionChecks(final Execution execution) {

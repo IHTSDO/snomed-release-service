@@ -34,12 +34,12 @@ public class PackageBuilder {
 	private final String targetPath;
 	private final String manifestPath;
 	private final String zipName;
-	
+
 	private int filesInManifest = 0;
 	private int filesAssembled = 0;
 	private int directoriesInManifest = 0;
 	private int directoriesAssembled = 0;
-	
+
 	private boolean warnOnMissingFiles = true;
 	private boolean createZip = false;
 
@@ -53,7 +53,7 @@ public class PackageBuilder {
 			LOGGER.error(e.getLocalizedMessage(), e);
 		}
 	}
-	
+
 	public void warnOnMissingFiles(boolean doWarnings) {
 		this.warnOnMissingFiles = doWarnings;
 	}
@@ -67,8 +67,8 @@ public class PackageBuilder {
 		manifestPath = props.getProperty("packaging.xmlFile", DEFAULT_XML_FILE_LOCATION);
 		zipName = null;
 	}
-	
-	public PackageBuilder (String sourceDir, String targetDir, String zipName, String manifestPath) {
+
+	public PackageBuilder(String sourceDir, String targetDir, String zipName, String manifestPath) {
 		this.sourcePath = sourceDir;
 		this.targetPath = targetDir;
 		this.manifestPath = manifestPath;
@@ -77,7 +77,6 @@ public class PackageBuilder {
 	}
 
 	/**
-	 * 
 	 * @return A File object representing a zip file created in the parent directory of the target path
 	 * @throws Exception
 	 */
@@ -88,7 +87,7 @@ public class PackageBuilder {
 		parseDocument(dom);
 
 		LOGGER.debug("Manifest directories {}, files {}.  Assembled directories {}, files {}", directoriesInManifest, filesInManifest, directoriesAssembled, filesAssembled);
-		
+
 		if (createZip) {
 			String zipLocation = FilenameUtils.getFullPathNoEndSeparator(this.targetPath) + File.separator + this.zipName;
 			result = FileUtils.zipDir(zipLocation, this.targetPath);
@@ -137,11 +136,11 @@ public class PackageBuilder {
 				} catch (FileNotFoundException fnf) {
 					//TODO Telemetry will know the process name and current stage, just need info here.
 					if (warnOnMissingFiles) {
-					 LOGGER.warn ("File not Found during package building at manifest element [{}: {} {}] {}",i, n.getNodeName(), getAttribute(n, "Name", "unknown"), fnf.getLocalizedMessage() );
+						LOGGER.warn("File not Found during package building at manifest element [{}: {} {}] {}", i, n.getNodeName(), getAttribute(n, "Name", "unknown"), fnf.getLocalizedMessage());
 					}
-			
+
 				} catch (Exception e) {
-					LOGGER.warn ("Unexpected problem during package building at manifest element [{}: {} {}] {}",i, n.getNodeName(), getAttribute(n, "Name", "unknown"), e.getLocalizedMessage() );
+					LOGGER.warn("Unexpected problem during package building at manifest element [{}: {} {}] {}", i, n.getNodeName(), getAttribute(n, "Name", "unknown"), e.getLocalizedMessage());
 				}
 			}
 		} else {
@@ -171,11 +170,11 @@ public class PackageBuilder {
 	private void copy(String source, String destination) throws IOException {
 		File destFile = new File(destination);
 		File sourceFile = new File(source);
-		
+
 		if (!sourceFile.exists()) {
-			throw new FileNotFoundException ("Failed to find expected file: " + source);
+			throw new FileNotFoundException("Failed to find expected file: " + source);
 		}
-		
+
 		if (!destFile.isFile()) {
 			Files.copy(sourceFile.toPath(), destFile.toPath());
 			LOGGER.debug("File copied to: {}", destination);

@@ -5,7 +5,6 @@ import org.ihtsdo.snomed.util.rf2.schema.DataType;
 public class H2DataTypeConverter {
 
 	/**
-	 *
 	 * @param type
 	 * @return a <code>String</code> containing the H2 data type.
 	 */
@@ -25,8 +24,8 @@ public class H2DataTypeConverter {
 				h2Type = "TIMESTAMP";
 				break;
 			case INTEGER:
-			    	h2Type = "INTEGER";
-			    	break;
+				h2Type = "INTEGER";
+				break;
 			case STRING:
 				h2Type = "VARCHAR";
 				break;

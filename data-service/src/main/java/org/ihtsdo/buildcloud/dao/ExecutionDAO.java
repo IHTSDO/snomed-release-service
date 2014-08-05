@@ -23,14 +23,14 @@ public interface ExecutionDAO {
 
 	String loadConfiguration(Execution execution) throws IOException;
 
-	Map<String,Object> loadConfigurationMap(Execution execution) throws IOException;
+	Map<String, Object> loadConfigurationMap(Execution execution) throws IOException;
 
 	void updateStatus(Execution execution, Execution.Status newStatus);
-	
+
 	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
 
 	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
-	
+
 	List<String> listInputFileNames(Execution execution, String packageId);
 
 	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
@@ -42,7 +42,7 @@ public interface ExecutionDAO {
 	AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
-	
+
 	void copyAll(Build buildSource, Execution execution);
 
 	InputStream getOutputFileInputStream(Execution execution, Package pkg, String name);
@@ -50,10 +50,10 @@ public interface ExecutionDAO {
 	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5)
 			throws NoSuchAlgorithmException, IOException, DecoderException;
 
-	InputStream getManifestStream(Execution execution, Package pkg); 
-	
+	InputStream getManifestStream(Execution execution, Package pkg);
+
 	List<String> listTransformedFilePaths(Execution execution, String packageId);
-	
+
 	List<String> listOutputFilePaths(Execution execution, String packageId);
 
 	List<String> listLogFilePaths(Execution execution, String packageId);
@@ -64,7 +64,7 @@ public interface ExecutionDAO {
 
 	OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
 
-	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName );
+	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName);
 
 	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
 
