@@ -18,10 +18,12 @@ public class StreamingFileTransformation {
 		lineTransformations = new ArrayList<>();
 	}
 
-	public void transformFile(InputStream inputStream, OutputStream outputStream) throws IOException, TransformationException {
+	public void transformFile(InputStream inputStream, OutputStream outputStream, String fileName) throws IOException,
+			TransformationException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8));
 		try {
+			LOGGER.debug("Start: Transform file {}.", fileName);
 			// Iterate input lines
 			String line;
 			StringBuilder stringBuilder = new StringBuilder();
@@ -53,6 +55,7 @@ public class StreamingFileTransformation {
 					writer.write(stringBuilder.toString());
 				}
 			}
+			LOGGER.debug("Finish: Transform file {}.", fileName);
 		} finally {
 			try {
 				writer.close();

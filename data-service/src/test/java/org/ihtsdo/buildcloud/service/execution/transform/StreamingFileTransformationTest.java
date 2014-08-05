@@ -38,7 +38,7 @@ public class StreamingFileTransformationTest {
 		FileInputStream inputStream = new FileInputStream(rf2File);
 		FileOutputStream outputStream = new FileOutputStream(tempOutputFile);
 
-		fileTransformation.transformFile(inputStream, outputStream);
+		fileTransformation.transformFile(inputStream, outputStream, rf2File.getName());
 
 		try {
 			inputStream.available();
@@ -67,7 +67,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile));
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -88,7 +88,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile));
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -108,7 +108,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile));
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -130,7 +130,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("Second line as expected", "\t\t1\t900000000000207008\t450990004\t293507007", linesBefore.get(2));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile));
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
