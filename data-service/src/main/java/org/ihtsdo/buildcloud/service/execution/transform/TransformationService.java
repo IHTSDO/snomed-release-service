@@ -59,11 +59,13 @@ public class TransformationService {
 
 		// Iterate each execution input file
 		List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
+		LOGGER.info("Found {} files to process", executionInputFileNames.size());
 
 		// Phase 1
 		// Process just the id column of any Concept files.
 		for (String inputFileName : executionInputFileNames) {
 			try {
+				LOGGER.info("Processing file: {}", inputFileName);
 				TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
 
 				if (tableSchema == null) {
@@ -81,7 +83,7 @@ public class TransformationService {
 						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 
 						// Apply transformations
-						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream);
+						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName);
 					}
 				}
 			} catch (TransformationException | IOException e) {
@@ -119,7 +121,8 @@ public class TransformationService {
 							StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
 							// Apply transformations
-							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream);
+							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream,
+									tableSchema.getFilename());
 
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
