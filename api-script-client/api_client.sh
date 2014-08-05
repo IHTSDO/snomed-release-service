@@ -11,7 +11,7 @@ set -e;
 # Declare common parameters
 api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
@@ -289,6 +289,9 @@ then
 		if [ -n "$externalDataLocation" ]
 		then
 			inputFilesPath=${externalDataRoot}${externalDataLocation}
+		elif [ -n "$dataLocation" ]
+		then
+			inputFilesPath="$dataLocation"
 		else
 			inputFilesPath="input_files"
 		fi
@@ -357,21 +360,26 @@ cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 
 preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FAIL` || true
 if [ -n "${preConditionFailures}" ]
 then
-    echo "Failures detected in Pre-Condition Check: "
-    echo ${preConditionFailures}
-    echo
-    while read -p "Please confirm whether you still want to continue (y/n):" choice
-    do
-        case "$choice" in
-        y|Y)
-            break
-            ;;
-        n|N)
-            echo "Script is stopped by user."
-        exit 0
-        ;;
-        esac
-    done
+	echo "Failures detected in Pre-Condition Check: "
+	echo ${preConditionFailures}
+	echo
+	
+	#Only ask the question if we've got someone there to answer it
+	if ! ${headless}
+	then
+		while read -p "Please confirm whether you still want to continue (y/n):" choice
+		do
+			case "$choice" in
+			y|Y)
+				break
+				;;
+			n|N)
+				echo "Script is stopped by user."
+			exit 0
+			;;
+			esac
+		done
+	fi
 fi
 
 
@@ -380,7 +388,7 @@ preConditionFatalFailures=`cat tmp/execution-response.txt | grep -C1 FATAL` || t
 if [ -n "${preConditionFatalFailures}" ]
 then
 	echo "Fatal failure detected in Pre-Condition Check: "
-	echo ${preConditionFailures}
+	echo ${preConditionFatalFailures}
 	echo "Script Halted"
 	exit 0
 fi
