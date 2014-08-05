@@ -81,8 +81,16 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		if (file.isFile()) {
 			return new OfflineS3Object(bucketName, key, file);
 		} else {
-			return null;
+			AmazonS3Exception amazonS3Exception = new AmazonS3Exception("Object does not exist.");
+			amazonS3Exception.setStatusCode(404);
+			throw amazonS3Exception;
 		}
+	}
+
+	@Override
+	public ObjectMetadata getObjectMetadata(String bucketName, String key) {
+		getObject(bucketName, key);
+		return new ObjectMetadata();
 	}
 
 	@Override

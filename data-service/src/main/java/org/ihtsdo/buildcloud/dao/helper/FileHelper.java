@@ -138,16 +138,15 @@ public class FileHelper {
 	 * @return true if the target file actually exists in the fileStore (online or offline)
 	 */
 	public boolean exists(String targetFilePath) {
-		InputStream fileStream = getFileStream(targetFilePath);
-		if (fileStream != null) {
-			try {
-				fileStream.close();
-			} catch (IOException e) {
-				LOGGER.error("Failed to close stream {}", targetFilePath, e);
+		try {
+			s3Client.getObjectMetadata(bucketName, targetFilePath);
+			return true; // No 404 exception .. object exists
+		} catch (AmazonS3Exception e) {
+			if (e.getStatusCode() == 404) {
+				return false;
+			} else {
+				throw e;
 			}
-			return true;
-		} else {
-			return false;
 		}
 	}
 	
