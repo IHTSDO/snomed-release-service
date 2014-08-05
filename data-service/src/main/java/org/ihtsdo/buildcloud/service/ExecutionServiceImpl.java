@@ -194,14 +194,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
+	public Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
 
-		Map<String, Object> results = new HashMap<>();
-		Map<String, Object> packageResults = new HashMap<>();
+
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-
-		results.put("Execution", execution);
-		results.put("PackageResults", packageResults);
 
 		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
 		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
@@ -215,23 +211,21 @@ public class ExecutionServiceImpl implements ExecutionService {
 			String pkgResult = "pass";
 			String msg = "Process completed successfully";
 			try {
-				executePackage(execution, pkg);
-			} catch (Exception e) {
+				executePackage(execution, pkg); // This could add entries to the execution report also
+			} catch(Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
 				pkgResult = "fail";
 				msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
 						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
 				LOGGER.warn(msg, e);
 			}
-			Map<String, Object> thisResult = new HashMap<>();
-			thisResult.put("status", pkgResult);
-			thisResult.put("message", msg);
-			packageResults.put(pkg.getBusinessKey(), thisResult);
+			execution.addToExecutionReport(pkg, "status", pkgResult);
+			execution.addToExecutionReport(pkg, "message", msg);
 		}
 
 		dao.updateStatus(execution, Execution.Status.BUILT);
 
-		return results;
+		return execution;
 	}
 
 	private void executePackage(Execution execution, Package pkg) throws Exception {
@@ -268,18 +262,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
+		String rvfResult = "RVF validation did not run.";
 		if (!offlineMode) {
-			runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+			rvfResult = runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
 		}
+		execution.addToExecutionReport(pkg, "RVF Test Failures", rvfResult);
 	}
 
-	private void runRVFPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException, PostConditionException {
+	private String runRVFPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException,
+			PostConditionException {
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-" + zipPackage.getName() + ".log")) {
-			String rvfErrorMessage = rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
-			if (rvfErrorMessage != null) {
-				throw new PostConditionException(rvfErrorMessage);
-			}
+				AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-"
+						+ zipPackage.getName() + ".log")) {
+			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
 		}
 	}
 

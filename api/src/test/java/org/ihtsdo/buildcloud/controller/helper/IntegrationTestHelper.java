@@ -291,7 +291,7 @@ public class IntegrationTestHelper {
 
 		String outputFileListJson = triggerResult.getResponse().getContentAsString();
 		JSONObject jsonObject = new JSONObject(outputFileListJson);
-		JSONObject packageResults = jsonObject.getJSONObject("PackageResults");
+		JSONObject packageResults = jsonObject.getJSONObject("executionReport");
 		Iterator packages = packageResults.keys();
 		String expectedStatus = "pass";
 		while (packages.hasNext()) {
