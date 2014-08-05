@@ -15,6 +15,7 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
+import org.ihtsdo.buildcloud.service.exception.PostConditionException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
@@ -79,6 +80,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private String releaseValidationFrameworkUrl;
+
+	@Autowired
+	private Boolean offlineMode;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
@@ -229,7 +233,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 		return results;
 	}
-	
+
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
@@ -264,13 +268,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
-		runPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+		if (!offlineMode) {
+			runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+		}
 	}
 
-	private void runPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException {
+	private void runRVFPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException, PostConditionException {
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-" + zipPackage.getName() + ".log");) {
-			rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-" + zipPackage.getName() + ".log")) {
+			String rvfErrorMessage = rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+			if (rvfErrorMessage != null) {
+				throw new PostConditionException(rvfErrorMessage);
+			}
 		}
 	}
 
