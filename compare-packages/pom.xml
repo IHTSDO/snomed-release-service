@@ -41,6 +41,7 @@
 				<version>1.3.2</version>
 				<executions>
 					<execution>
+						<id>item_one</id>
 						<phase>initialize</phase>
 						<goals>
 							<goal>exec</goal>
@@ -49,6 +50,21 @@
 							<executable>/bin/bash</executable>
 							<arguments>
 								<argument>download-latest-release-service-build.sh</argument>
+								<argument>${daily_release_service_build_output}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>item_two</id>
+						<phase>test</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>/bin/bash</executable>
+							<arguments>
+								<!-- This wrapper will call compare packages and email us the results -->
+								<argument>email-wrapper.sh</argument>
 								<argument>${daily_release_service_build_output}</argument>
 							</arguments>
 						</configuration>
@@ -62,7 +78,7 @@
 				<executions>
 					<execution>
 						<id>unpack</id>
-						<phase>package</phase>
+						<phase>process-sources</phase>
 						<goals>
 							<goal>unpack</goal>
 						</goals>
