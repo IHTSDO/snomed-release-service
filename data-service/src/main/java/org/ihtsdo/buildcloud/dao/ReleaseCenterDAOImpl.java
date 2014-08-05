@@ -18,9 +18,9 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 	public List<ReleaseCenter> findAll(User user) {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCenter " +
-				"from ReleaseCenterMembership m " +
-				"where m.user = :user " +
-				"order by m.releaseCenter.id ");
+						"from ReleaseCenterMembership m " +
+						"where m.user = :user " +
+						"order by m.releaseCenter.id ");
 		query.setEntity("user", user);
 		return query.list();
 	}
@@ -29,10 +29,10 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 	public ReleaseCenter find(String businessKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCenter " +
-				"from ReleaseCenterMembership m " +
-				"where m.user = :user " +
-				"and m.releaseCenter.businessKey = :businessKey " +
-				"order by m.releaseCenter.id ");
+						"from ReleaseCenterMembership m " +
+						"where m.user = :user " +
+						"and m.releaseCenter.businessKey = :businessKey " +
+						"order by m.releaseCenter.id ");
 		query.setEntity("user", user);
 		query.setString("businessKey", businessKey);
 		return (ReleaseCenter) query.uniqueResult();

@@ -18,12 +18,12 @@ public class CompositeKeyHelper {
 		}
 		return null;
 	}
-	
-	public static String getPath (String... pathElements) {
+
+	public static String getPath(String... pathElements) {
 		StringBuffer sb = new StringBuffer();
 		for (String element : pathElements) {
 			sb.append(ExecutionS3PathHelper.SEPARATOR)
-			.append(element);
+					.append(element);
 		}
 		return sb.toString();
 	}

@@ -58,7 +58,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final Rf2FileNameTransformation rf2FileNameTransformation;
 
-	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
+	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {
+	};
 	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 
@@ -136,12 +137,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
-	
+
 	@Override
 	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException {
 		if (execution.getStatus() != ensureStatus) {
-			throw new BadConfigurationException ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
-						+ " and is expected to be at status:" + ensureStatus.name());
+			throw new BadConfigurationException("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name()
+					+ " and is expected to be at status:" + ensureStatus.name());
 		}
 	}
 
@@ -164,7 +165,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		} else {
 			return null;
 		}
-	}	
+	}
 
 	private ArrayList<Execution> findExecutionsDesc(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
@@ -190,12 +191,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public
-	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 		String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
 		return executionFileHelper.putFile(file, outputFilePath, calcMD5);
 	}
-	
+
 	@Override
 	public void copyAll(Build buildSource, Execution execution) {
 		for (Package buildPackage : buildSource.getPackages()) {
@@ -215,7 +215,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		}
 	}
-	
+
 	@Override
 	public List<String> listInputFileNames(Execution execution, String packageId) {
 		String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
@@ -253,7 +253,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
 		executionFileHelper.copyFile(executionInputFilePath, executionOutputFilePath);
 	}
-	
+
 	@Override
 	public InputStream getOutputFileInputStream(Execution execution, Package pkg, String name) {
 		String path = pathHelper.getExecutionOutputFilePath(execution, pkg.getBusinessKey(), name);
@@ -281,7 +281,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return s3Client.putObject(executionBucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
 	}
-	
+
 	@Override
 	public void copyTransformedFileToOutput(Execution execution,
 			String packageBusinessKey, String relativeFilePath) {
@@ -296,7 +296,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
 		executionFileHelper.copyFile(transformedFilePath, executionOutputFilePath);
-		
+
 	}
 
 	@Override

@@ -51,48 +51,48 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	public Build find(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		if (id == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
-		}		
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
+		}
 		return buildDAO.find(id, authenticatedUser);
 	}
-	
+
 	@Override
 	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
-		
+
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " + item);
+			throw new ResourceNotFoundException("Unable to find product: " + item);
 		}
 		List<Build> builds = product.getBuilds();
 		Hibernate.initialize(builds);
 		return builds;
 	}
-	
+
 	@Override
 	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser) {
-		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey,  filterOptions, authenticatedUser);
+		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
 		Hibernate.initialize(builds);
 		return builds;
 	}
 
 	@Override
-	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException{
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
-		
+
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " + item);
+			throw new ResourceNotFoundException("Unable to find product: " + item);
 		}
-		
+
 		//Check that we don't already have one of these
 		String buildBusinessKey = EntityHelper.formatAsBusinessKey(name);
 		Build existingBuild = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
 		if (existingBuild != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}
-		
-		
+
+
 		Build build = new Build(name);
 		product.addBuild(build);
 		buildDAO.save(build);
@@ -103,9 +103,9 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException, ResourceNotFoundException {
 		LOGGER.debug("update, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
-		
+
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
@@ -125,7 +125,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 			User authenticatedUser) throws ResourceNotFoundException {
 		Build build = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildBusinessKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildBusinessKey);
 		}
 		return build;
 	}

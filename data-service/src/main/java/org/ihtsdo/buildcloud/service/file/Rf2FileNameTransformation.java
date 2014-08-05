@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.service.file;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 
 public class Rf2FileNameTransformation implements FileNameTransformation {
-	
+
 	// General File Naming Pattern
 	// <FileType>_<ContentType>_<ContentSubType>_<Country|Namespace>_<VersionDate>.<Extension>
 	// See http://www.snomed.org/tig?t=fng2_convention

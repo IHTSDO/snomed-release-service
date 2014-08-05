@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-
-/** Replace id in RefSet files with UUID generated.
+/**
+ * Replace id in RefSet files with UUID generated.
  */
 public class UUIDTransformation implements LineTransformation {
 

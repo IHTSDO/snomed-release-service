@@ -1,13 +1,9 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import java.util.List;
 
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
+
+import java.util.List;
 
 public class TransformationFactory {
 
@@ -110,13 +106,13 @@ public class TransformationFactory {
 				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
-						// moduleId
+				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
-						// conceptId
+				// conceptId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
-						// typeId
+				// typeId
 				.addLineTransformation(new SCTIDTransformationFromCache(6, cachedSctidFactory))
-						// caseSignificanceId
+				// caseSignificanceId
 				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
 				;
 
@@ -182,7 +178,7 @@ public class TransformationFactory {
 		List<Field> fields = tableSchema.getFields();
 		for (int i = SchemaFactory.SIMPLE_REFSET_FIELD_COUNT; i < fields.size(); i++) {
 			Field field = fields.get(i);
-			if(field.getType().equals(DataType.SCTID)) {
+			if (field.getType().equals(DataType.SCTID)) {
 				transformation.addLineTransformation(new SCTIDTransformationFromCache(i, cachedSctidFactory));
 			}
 		}

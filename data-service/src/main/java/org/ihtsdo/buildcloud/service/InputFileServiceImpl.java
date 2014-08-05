@@ -74,7 +74,7 @@ public class InputFileServiceImpl implements InputFileService {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return dao.getManifestStream(aPackage);
 	}
-	
+
 	@Override
 	public void putInputFile(String buildCompositeKey, String packageBusinessKey, InputStream inputStream, String filename, long fileSize, User authenticatedUser) throws ResourceNotFoundException, IOException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
@@ -102,13 +102,13 @@ public class InputFileServiceImpl implements InputFileService {
 			fileHelper.putFile(inputStream, fileSize, pathPath);
 		}
 	}
-	
+
 	@Override
 	public InputStream getFileInputStream(String buildCompositeKey, String packageBusinessKey, String filename, User authenticatedUser) throws ResourceNotFoundException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
 		return getFileInputStream(aPackage, filename);
 	}
-	
+
 	private InputStream getFileInputStream(Package pkg, String filename) {
 		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
 		return fileHelper.getFileStream(filePath);
@@ -131,28 +131,28 @@ public class InputFileServiceImpl implements InputFileService {
 	public void deleteFilesByPattern(String buildCompositeKey,
 			String packageBusinessKey, String inputFileNamePattern,
 			User authenticatedUser) throws ResourceNotFoundException {
-		
+
 		List<String> filesFound = listInputFilePaths(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		
+
 		//Need to convert a standard file wildcard to a regex pattern
 		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
 		Pattern pattern = Pattern.compile(regexPattern);
-		for(String inputFileName : filesFound){
-			if(pattern.matcher(inputFileName).matches()){
+		for (String inputFileName : filesFound) {
+			if (pattern.matcher(inputFileName).matches()) {
 				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
 			}
 		}
 	}
-	
-	private Package getPackage (String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
+
+	private Package getPackage(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
 		if (aPackage == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+			throw new ResourceNotFoundException("Unable to find package: " + item);
 		}
 		return aPackage;
 	}

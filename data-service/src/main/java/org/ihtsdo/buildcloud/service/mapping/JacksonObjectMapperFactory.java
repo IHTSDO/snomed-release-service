@@ -7,6 +7,7 @@ public class JacksonObjectMapperFactory {
 
 	/**
 	 * Creates the Jackson ObjectMapper with the options we want.
+	 *
 	 * @return
 	 */
 	public ObjectMapper createObjectMapper() {

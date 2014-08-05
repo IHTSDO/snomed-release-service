@@ -56,10 +56,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private ExecutionDAO dao;
-	
+
 	@Autowired
 	private BuildDAO buildDAO;
-	
+
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
 
@@ -74,7 +74,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private TransformationService transformationService;
-	
+
 	@Autowired
 	private Integer fileProcessingFailureMaxRetry;
 
@@ -93,7 +93,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		if (build.getEffectiveTime() != null) {
 
 			Date creationDate = new Date();
-			
+
 			//Do we already have an execution for that date?
 			Execution existingExecution = getExecution(build, creationDate);
 			if (existingExecution != null) {
@@ -104,7 +104,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			// Copy all files from Build input and manifest directory to Execution input and manifest directory
 			dao.copyAll(build, execution);
-			
+
 			//Perform Pre-condition testing (loops through each package)
 			runPreconditionChecks(execution);
 
@@ -126,7 +126,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//analyze report to check whether there is fatal error for all packages
 		int fatalCountByPkg = 0;
 		for (String pkgName : preConditionReports.keySet()) {
-		    for (PreConditionCheckReport report : preConditionReports.get(pkgName)) {
+			for (PreConditionCheckReport report : preConditionReports.get(pkgName)) {
 				if (report.getResult() == State.FATAL) {
 					fatalCountByPkg++;
 					break;
@@ -135,7 +135,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 		//need to alert release manager as all packages have fatal pre-condition check error.
 		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
-		    execution.setStatus(Status.FAILED_PRE_CONDITIONS);
+			execution.setStatus(Status.FAILED_PRE_CONDITIONS);
 		}
 	}
 
@@ -143,7 +143,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 
 		return dao.findAllDesc(build);
@@ -152,9 +152,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Execution find(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
-		
+
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 
 		return dao.find(build, executionId);
@@ -195,19 +195,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws Exception {
-		
+
 		Map<String, Object> results = new HashMap<>();
 		Map<String, Object> packageResults = new HashMap<>();
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		
+
 		results.put("Execution", execution);
 		results.put("PackageResults", packageResults);
-		
+
 		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
 		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
-		
+
 		dao.updateStatus(execution, Execution.Status.BUILDING);
-		
+
 		//Run transformation on each of our packages in turn.
 		//TODO Multithreading opportunity here!
 		Set<Package> packages = execution.getBuild().getPackages();
@@ -216,7 +216,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			String msg = "Process completed successfully";
 			try {
 				executePackage(execution, pkg);
-			} catch(Exception e) {
+			} catch (Exception e) {
 				//Each package could fail independently, record telemetry and move on to next package
 				pkgResult = "fail";
 				msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
@@ -228,7 +228,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			thisResult.put("message", msg);
 			packageResults.put(pkg.getBusinessKey(), thisResult);
 		}
-		
+
 		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return results;
@@ -264,7 +264,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			LOGGER.debug("Start: Upload zipPackage file {}", zipPackage.getName());
 			dao.putOutputFile(execution, pkg, zipPackage, "", true);
 			LOGGER.debug("Finish: Upload zipPackage file {}", zipPackage.getName());
-		} catch (Exception e)  {
+		} catch (Exception e) {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
@@ -308,7 +308,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public void updateStatus(String buildCompositeKey, String executionId, String statusString, User authenticatedUser) throws ResourceNotFoundException {
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		
+
 		Execution.Status status = Execution.Status.valueOf(statusString);
 		dao.updateStatus(execution, status);
 	}
@@ -341,7 +341,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		if (execution == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
-			throw new ResourceNotFoundException("Unable to find execution: " +  item);
+			throw new ResourceNotFoundException("Unable to find execution: " + item);
 		}
 		return execution;
 	}
@@ -349,21 +349,21 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private Execution getExecution(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
 		Build build = getBuild(buildCompositeKey, authenticatedUser);
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		return dao.find(build, executionId);
 	}
-	
+
 	private Execution getExecution(Build build, Date creationTime) {
 		return dao.find(build, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
-		
+
 
 	private Build getBuild(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
-		}	
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
+		}
 		return buildDAO.find(buildId, authenticatedUser);
 	}
 
@@ -401,7 +401,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
 		}
 	}
-	
+
 	public void setFileProcessingFailureMaxRetry(Integer fileProcessingFailureMaxRetry) {
 		this.fileProcessingFailureMaxRetry = fileProcessingFailureMaxRetry;
 	}

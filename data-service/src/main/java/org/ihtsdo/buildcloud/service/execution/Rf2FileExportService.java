@@ -62,12 +62,13 @@ public class Rf2FileExportService {
 						throw e;
 					} else {
 						LOGGER.warn("Failure while processing {} due to: {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
-					}				}
+					}
+				}
 			} while (!success);
 		}
 	}
 
-	private boolean isNetworkRelated (Throwable cause) {
+	private boolean isNetworkRelated(Throwable cause) {
 		boolean isNetworkRelated = false;
 		if (cause != null &&
 				(cause instanceof IOException || cause instanceof AmazonServiceException || cause instanceof AmazonClientException)) {
