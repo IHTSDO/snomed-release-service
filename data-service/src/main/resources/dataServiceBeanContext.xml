@@ -123,6 +123,10 @@
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
 	</bean>
 
+	<bean class="java.lang.Boolean" id="offlineMode" >
+		<constructor-arg value="${offlineMode}"/>
+	</bean>
+
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>
 
 	<bean id="objectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>

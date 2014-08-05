@@ -15,6 +15,7 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
+import org.ihtsdo.buildcloud.service.exception.PostConditionException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
@@ -25,6 +26,7 @@ import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -75,7 +77,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 	
 	@Autowired
 	private Integer fileProcessingFailureMaxRetry;
-	
+
+	@Autowired
+	private String releaseValidationFrameworkUrl;
+
+	@Autowired
+	private Boolean offlineMode;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -225,7 +233,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 		return results;
 	}
-	
+
 	private void executePackage(Execution execution, Package pkg) throws Exception {
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
@@ -249,16 +257,30 @@ public class ExecutionServiceImpl implements ExecutionService {
 		// Generate readme file
 		generateReadmeFile(execution, pkg);
 
+		File zipPackage;
 		try {
 			Zipper zipper = new Zipper(execution, pkg, dao);
-			File zip = zipper.createZipFile();
-			LOGGER.debug("Start: Upload zip file {}", zip.getName());
-			dao.putOutputFile(execution, pkg, zip, "", true);
-			LOGGER.debug("Finish: Upload zip file {}", zip.getName());
+			zipPackage = zipper.createZipFile();
+			LOGGER.debug("Start: Upload zipPackage file {}", zipPackage.getName());
+			dao.putOutputFile(execution, pkg, zipPackage, "", true);
+			LOGGER.debug("Finish: Upload zipPackage file {}", zipPackage.getName());
 		} catch (Exception e)  {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
+		if (!offlineMode) {
+			runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+		}
+	}
+
+	private void runRVFPostConditionCheck(File zipPackage, Execution execution, String pkgBusinessKey) throws IOException, PostConditionException {
+		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
+			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-" + zipPackage.getName() + ".log")) {
+			String rvfErrorMessage = rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+			if (rvfErrorMessage != null) {
+				throw new PostConditionException(rvfErrorMessage);
+			}
+		}
 	}
 
 	private void copyFilesForJustPackaging(Execution execution, Package pkg) {
