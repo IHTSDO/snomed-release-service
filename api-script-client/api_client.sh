@@ -9,7 +9,7 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
+#api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
 api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
@@ -399,11 +399,14 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/
 triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
-	echo "Failed to successfully process any packages.  Received response: "
-	echo
-	cat tmp/trigger-response.txt
-	echo
+	echo "Failed to successfully process any packages. "
 fi
+
+#Output the execution return object which will contain the processing report, in all cases
+echo "Received response: "
+cat tmp/trigger-response.txt
+echo
+
 echo "Build execution ended at $(getElapsedTime)"
 echo
 
