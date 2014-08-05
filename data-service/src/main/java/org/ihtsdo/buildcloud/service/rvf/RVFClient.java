@@ -25,6 +25,9 @@ public class RVFClient implements Closeable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
 
 	public RVFClient(String releaseValidationFrameworkUrl) {
+		if (releaseValidationFrameworkUrl == null) {
+			throw new RuntimeException("Null RVF host URL.");
+		}
 		this.releaseValidationFrameworkUrl = releaseValidationFrameworkUrl;
 		httpClient = HttpClients.createDefault();
 	}
@@ -87,7 +90,7 @@ public class RVFClient implements Closeable {
 				if (failureCount == 0) {
 					return null;
 				} else {
-					return "There were " + failureCount + " RVF test failures.";
+					return "There were " + failureCount + " RVF " + checkType + " test failures.";
 				}
 			} else {
 				String errorMessage = "Response HTTP status code " + statusCode;
