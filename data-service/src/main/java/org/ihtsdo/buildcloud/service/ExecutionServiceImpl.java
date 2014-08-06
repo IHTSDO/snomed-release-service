@@ -208,7 +208,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//TODO Multithreading opportunity here!
 		Set<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
-			String pkgResult = "pass";
+			String pkgResult = "completed";
 			String msg = "Process completed successfully";
 			try {
 				executePackage(execution, pkg); // This could add entries to the execution report also
