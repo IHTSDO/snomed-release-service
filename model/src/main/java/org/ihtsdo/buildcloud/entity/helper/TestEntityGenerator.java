@@ -83,7 +83,13 @@ public class TestEntityGenerator {
 					
 					//Do we have packages to add to all builds of this product?
 					if (packageNames.length > iEx && packageNames[iEx].length > iPrd){
-						for (int pkgIdx = 0; pkgIdx < packageNames[iEx][iPrd].length; pkgIdx++) {
+						int packageNamesAvailable = packageNames[iEx][iPrd].length;
+
+						// Daily Build to only have one package
+						if (iEx == 0 && iPrd == 0 && iBld == 4)
+							packageNamesAvailable = 1;
+
+						for (int pkgIdx = 0; pkgIdx < packageNamesAvailable; pkgIdx++) {
 							Package pkg = new Package(packageNames[iEx][iPrd][pkgIdx]);
 							build.addPackage(pkg);
 						}
