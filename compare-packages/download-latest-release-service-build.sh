@@ -6,13 +6,15 @@ outputDir=$1
 api="https://uat-release.ihtsdotools.org/api/v1"
 timeoutMins=3
 
+
 function getBuiltExecutionId {
 	curl -s $api/builds/5_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$today" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
 }
 
-today="2014-06-26T20:45:00"
-#today=$(date +%Y-%m-%d)
+today=$(date +%Y-%m-%d)
 attempt=1
+executionsURL="${api}/builds/5_int_daily_build/executions"
+echo "Looking for executions files at ${executionsURL} with date ${today}"
 builtExecutionId=$(getBuiltExecutionId)
 while [ "$builtExecutionId" == "" ] && [ $attempt -le $timeoutMins ]; do
 	echo "Built execution not available, sleeping a minute."
@@ -21,9 +23,12 @@ while [ "$builtExecutionId" == "" ] && [ $attempt -le $timeoutMins ]; do
 	builtExecutionId=$(getBuiltExecutionId)
 done
 
+outputFilesURL="${api}/builds/5_int_daily_build/executions/${builtExecutionId}/packages/snomed_release_package/outputfiles"
+echo "Looking for output files at ${outputFilesURL}"
+
 if [ "$builtExecutionId" != "" ]; then
 	echo "builtExecutionId = $builtExecutionId"
-	releaseFile=$(curl -s ${api}/builds/5_int_daily_build/executions/${builtExecutionId}/packages/snomed_release_package/outputfiles | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
+	releaseFile=$(curl -s outputFilesURL | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
 	echo "Downloading $releaseFile"
 	mkdir -p $outputDir
 	cd $outputDir
