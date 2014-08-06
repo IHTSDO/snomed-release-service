@@ -7,7 +7,7 @@ api="https://uat-release.ihtsdotools.org/api/v1"
 timeoutMins=3
 
 function getBuiltExecutionId {
-	curl -s $api/builds/10_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$today" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
+	curl -s $api/builds/5_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$today" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
 }
 
 today="2014-06-26T20:45:00"
@@ -23,7 +23,7 @@ done
 
 if [ "$builtExecutionId" != "" ]; then
 	echo "builtExecutionId = $builtExecutionId"
-	releaseFile=$(curl -s ${api}/builds/10_int_daily_build/executions/${builtExecutionId}/packages/snomed_release_package/outputfiles | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
+	releaseFile=$(curl -s ${api}/builds/5_int_daily_build/executions/${builtExecutionId}/packages/snomed_release_package/outputfiles | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
 	echo "Downloading $releaseFile"
 	mkdir -p $outputDir
 	cd $outputDir
