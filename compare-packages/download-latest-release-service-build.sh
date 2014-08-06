@@ -28,7 +28,7 @@ echo "Looking for output files at ${outputFilesURL}"
 
 if [ "$builtExecutionId" != "" ]; then
 	echo "builtExecutionId = $builtExecutionId"
-	releaseFile=$(curl -s outputFilesURL | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
+	releaseFile=$(curl -s ${outputFilesURL} | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
 	echo "Downloading $releaseFile"
 	mkdir -p $outputDir
 	cd $outputDir
