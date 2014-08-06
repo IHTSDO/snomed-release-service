@@ -37,7 +37,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesMatchingManifest() throws Exception {
 		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140831.txt");
-		loadManifest("valid_manifest.xml");
+		loadManifest("august_release_manifest.xml");
 		State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
 		Assert.assertEquals(State.PASS, actualResult);
 	}
