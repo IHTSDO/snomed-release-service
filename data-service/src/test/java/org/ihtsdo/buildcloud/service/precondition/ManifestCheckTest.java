@@ -1,12 +1,12 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
+import java.io.FileNotFoundException;
+
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.FileNotFoundException;
 
 public class ManifestCheckTest extends PreconditionCheckTest {
 
@@ -46,6 +46,13 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
 		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.FATAL, actualResult);
+	}
+	
+	@Test
+	public final void checkManifestWithNotMachedDate() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+		loadManifest("august_release_manifest.xml");
+		State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 
 }

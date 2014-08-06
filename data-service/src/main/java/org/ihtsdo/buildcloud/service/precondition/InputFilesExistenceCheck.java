@@ -1,22 +1,28 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.DELTA;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.DER2;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.FILE_NAME_SEPARATOR;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.FULL;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.INPUT_FILE_PREFIX;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_PREFIX;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SCT2;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SNAPSHOT;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -42,11 +48,11 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 	@Override
 	public void runCheck(Package pkg, Execution execution) {
 		//check against the manifest file
-		InputStream manifestInputSteam = executionDAO.getManifestStream(execution, pkg);
 		boolean isFailed = false;
 		ListingType listingType;
-		try {
-			listingType = parseManifestFile(manifestInputSteam);
+		try( InputStream manifestInputSteam = executionDAO.getManifestStream(execution, pkg) ) {
+		    	ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			listingType = parser.parse(manifestInputSteam);
 			List<String> filesFromManifiest = ManifestFileListingHelper.listAllFiles(listingType);
 			Set<String> filesExpected = new HashSet<>();
 			boolean isFirstReadmeFound = false;
@@ -94,8 +100,8 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				isFailed = true;
 			}
 
-		} catch (JAXBException | ResourceNotFoundException e) {
-			fatalError("Failed to load manifest file." + e.getMessage());
+		} catch (JAXBException | ResourceNotFoundException | IOException e) {
+			fatalError("Failed to parse manifest xml file." + e.getMessage());
 			isFailed = true;
 		}
 		if (!isFailed) {
@@ -103,16 +109,4 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 		}
 
 	}
-
-	private ListingType parseManifestFile(InputStream manifestInputSteam) throws JAXBException, ResourceNotFoundException {
-		//Get the manifest file as an input stream
-		if (manifestInputSteam == null) {
-			throw new ResourceNotFoundException("Failed to load manifest due to null inputstream");
-		}
-		//Load the manifest file xml into a java object hierarchy
-		JAXBContext jc = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH);
-		Unmarshaller um = jc.createUnmarshaller();
-		return um.unmarshal(new StreamSource(manifestInputSteam), ListingType.class).getValue();
-	}
-
 }
