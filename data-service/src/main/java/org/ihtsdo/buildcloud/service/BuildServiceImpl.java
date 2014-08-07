@@ -1,5 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.text.ParseException;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -18,12 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.text.ParseException;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -78,7 +78,8 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 	@Override
 	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
-		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+	    LOGGER.info("create build, releaseCenterBusinessKey: {}, extensionBusinessKey: {}", releaseCenterBusinessKey, extensionBusinessKey);
+	    Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
@@ -101,7 +102,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 	@Override
 	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException, ResourceNotFoundException {
-		LOGGER.debug("update, newPropertyValues: {}", newPropertyValues);
+		LOGGER.info("update build, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
 
 		if (build == null) {
