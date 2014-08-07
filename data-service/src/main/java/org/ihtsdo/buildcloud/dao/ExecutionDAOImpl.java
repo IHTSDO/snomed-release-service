@@ -45,8 +45,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final FileHelper executionFileHelper;
 
-	private final FileHelper mavenFileHelper;
-
 	@Autowired
 	private InputFileDAO inputFileDAO;
 
@@ -64,11 +62,10 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 
 	@Autowired
-	public ExecutionDAOImpl(String mavenBucketName, String executionBucketName, String publishedBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public ExecutionDAOImpl(String executionBucketName, String publishedBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		objectMapper = new ObjectMapper();
 		executorService = Executors.newCachedThreadPool();
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
-		mavenFileHelper = new FileHelper(mavenBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 
 		this.s3Client = s3Client;
@@ -375,7 +372,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 		this.executionFileHelper.setS3Client(s3Client);
-		this.mavenFileHelper.setS3Client(s3Client);
 	}
 
 }
