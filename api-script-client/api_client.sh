@@ -427,7 +427,7 @@ downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${pa
 localDownloadDirectory=output
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
 # Download files
-cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+cat tmp/output-file-listing.txt | grep "\"id\"" | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 echo
 
 echo
