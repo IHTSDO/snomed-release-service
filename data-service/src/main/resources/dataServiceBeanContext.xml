@@ -117,11 +117,11 @@
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
 
 	<bean class="java.lang.String" id="executionBucketName">
-		<constructor-arg value="ire.execution.release.ihtsdo" />
+		<constructor-arg value="${executionBucketName}" />
 	</bean>
 	
 	<bean class="java.lang.String" id="publishedBucketName">
-		<constructor-arg value="ire.published.release.ihtsdo" />
+		<constructor-arg value="${publishedBucketName}" />
 	</bean>
 	
 	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">

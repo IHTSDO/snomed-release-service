@@ -11,3 +11,6 @@
 
 #idGenerator.url =
 #releaseValidationFramework.url =
+
+#executionBucketName =
+#publishedBucketName =
