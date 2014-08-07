@@ -116,10 +116,6 @@
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
 
-	<bean class="java.lang.String" id="mavenBucketName">
-		<constructor-arg value="ire.maven.release.ihtsdo" />
-	</bean>
-
 	<bean class="java.lang.String" id="executionBucketName">
 		<constructor-arg value="ire.execution.release.ihtsdo" />
 	</bean>
