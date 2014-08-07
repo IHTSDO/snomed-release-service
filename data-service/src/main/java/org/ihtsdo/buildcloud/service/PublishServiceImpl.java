@@ -66,21 +66,33 @@ public class PublishServiceImpl implements PublishService {
 		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
+		String md5FileName = null;
 		for (String fileName : filesFound) {
-			if (FileUtils.isZip(fileName)) {
+			if (releaseFileName == null && FileUtils.isZip(fileName)) {
 				releaseFileName = fileName;
 				//only one zip file per package
-				break;
+			}
+			if (md5FileName == null && FileUtils.isMD5(fileName)) {
+			  //expected to be only one MD5 file.
+			    md5FileName = fileName;
 			}
 		}
 		if (releaseFileName == null) {
-			throw new IllegalStateException("No zip file found for package: " + pk.getBusinessKey());
+		    LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
+		} else {
+		    String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
+		    String publishedFilePath = getPublishFilePath(execution, releaseFileName);
+		    executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+		    LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+		    publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
 		}
-		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
-		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
-		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-		LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-		publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+		//copy MD5 file if available
+		if (md5FileName != null) {
+		    String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
+		    String target = getPublishFilePath(execution, md5FileName);
+		    executionFileHelper.copyFile(source, publishedBucketName, target);
+		    LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+		}
 	}
 
 	/**
