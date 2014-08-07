@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 
 public class RVFClient implements Closeable {
 
+	public static final String TOTAL_NUMBER_OF_FAILURES = "Total number of failures: ";
 	private final String releaseValidationFrameworkUrl;
 	private final CloseableHttpClient httpClient;
 	private static final String ERROR_NO_LINES_RECEIVED_FROM_RVF = "Error - No lines received from RVF!";
@@ -68,23 +69,10 @@ public class RVFClient implements Closeable {
 				 BufferedReader responseReader = new BufferedReader(new InputStreamReader(content));
 				 BufferedWriter logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream.getOutputStream()))) {
 
-				String line = responseReader.readLine(); // read header
-				if (line != null) {
-					logWriter.write(line);
-					logWriter.write(RF2Constants.LINE_ENDING);
-					while ((line = responseReader.readLine()) != null) {
-						if (!line.startsWith(SUCCESS)) {
-							failureCount++;
-						}
-						logWriter.write(line);
-						logWriter.write(RF2Constants.LINE_ENDING);
-					}
-				} else {
-					logWriter.write(ERROR_NO_LINES_RECEIVED_FROM_RVF);
-					logWriter.write(RF2Constants.LINE_ENDING);
-				}
+				failureCount = processResponse(responseReader, logWriter);
+			} finally {
+				logFileOutputStream.waitForFinish();
 			}
-			logFileOutputStream.waitForFinish();
 
 			if (200 == statusCode) {
 				if (failureCount == 0) {
@@ -97,7 +85,7 @@ public class RVFClient implements Closeable {
 				LOGGER.info("RVF Service failure: {}", errorMessage);
 				return errorMessage;
 			}
-		} catch (InterruptedException | ExecutionException | IOException e) {
+		} catch (InterruptedException | ExecutionException | IOException | RVFClientException e) {
 			String errorMessage = "Failed to check " + fileType + " file against RVF: " + inputFileName + " due to " + e.getMessage();
 			LOGGER.error(errorMessage, e);
 			try (OutputStream logOutputStream = logFileOutputStream.getOutputStream()) {
@@ -109,6 +97,43 @@ public class RVFClient implements Closeable {
 			return "RVF Client error. See logs for details.";
 		} finally {
 			LOGGER.info("RVF {} check of {} complete.", checkType, inputFileName);
+		}
+	}
+
+	protected long processResponse(BufferedReader responseReader, BufferedWriter logWriter) throws IOException, RVFClientException {
+		long failureCount = 0;
+		boolean foundFailureCount = false;
+
+		String line = responseReader.readLine(); // read header
+		if (line != null) {
+			// write header
+			logWriter.write(line);
+			logWriter.write(RF2Constants.LINE_ENDING);
+
+			// read all other lines
+			boolean endOfValuesReached = false; // Optimisation so we don't inspect every line.
+			while ((line = responseReader.readLine()) != null) {
+				if (endOfValuesReached) {
+					if (line.startsWith(TOTAL_NUMBER_OF_FAILURES)) {
+						failureCount = Integer.parseInt(line.substring(TOTAL_NUMBER_OF_FAILURES.length()));
+						foundFailureCount = true;
+					}
+				}
+				if (line.isEmpty()) {
+					endOfValuesReached = true;
+				}
+				logWriter.write(line);
+				logWriter.write(RF2Constants.LINE_ENDING);
+			}
+		} else {
+			logWriter.write(ERROR_NO_LINES_RECEIVED_FROM_RVF);
+			logWriter.write(RF2Constants.LINE_ENDING);
+		}
+
+		if (foundFailureCount) {
+			return failureCount;
+		} else {
+			throw new RVFClientException("Failure count not found in RVF response.");
 		}
 	}
 
