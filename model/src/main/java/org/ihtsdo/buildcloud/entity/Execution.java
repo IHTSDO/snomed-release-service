@@ -26,7 +26,7 @@ public class Execution {
 	
 	private Map<String, List<PreConditionCheckReport>> preConditionCheckReports;
 
-	private Map<String, Map<String, String>> executionReport;
+	ExecutionReport executionReport;
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
@@ -71,28 +71,15 @@ public class Execution {
 		return preConditionCheckReports;
 	}
 
-	public Map<String, Map<String, String>> getExecutionReport() {
+	public ExecutionReport getExecutionReport() {
+		if (executionReport == null) {
+			this.executionReport = new ExecutionReport();
+		}
 		return executionReport;
 	}
 
-	public void setExecutionReport(Map<String, Map<String, String>> executionReport) {
+	public void setExecutionReport(ExecutionReport executionReport) {
 		this.executionReport = executionReport;
-	}
-
-	public void addToExecutionReport(Package pkg, String executionStage, String result) {
-		// Do we have an execution Report object
-		if (this.executionReport == null) {
-			this.executionReport = new HashMap<String, Map<String, String>>();
-		}
-
-		// Do we already know about this package?
-		if (!this.executionReport.containsKey(pkg.getName())) {
-			this.executionReport.put(pkg.getName(), (Map<String, String>) new HashMap<String, String>());
-		}
-
-		// Add/Replace this report item
-		Map<String, String> reportItem = this.executionReport.get(pkg.getName());
-		reportItem.put(executionStage, result);
 	}
 
 }

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
+import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,6 +20,7 @@ public class StreamingFileTransformationTest {
 	private StreamingFileTransformation fileTransformation;
 	private File rf2File;
 	private File tempOutputFile;
+	private ExecutionPackageReport report;
 
 	@Before
 	public void setup() throws URISyntaxException, IOException {
@@ -30,6 +32,7 @@ public class StreamingFileTransformationTest {
 		rf2File = tempFile.toFile();
 
 		tempOutputFile = Files.createTempFile(getClass().getName(), origRf2File.getName() + "output").toFile();
+		report = ExecutionPackageReport.getDummyReport();
 	}
 
 	@Test
@@ -38,7 +41,7 @@ public class StreamingFileTransformationTest {
 		FileInputStream inputStream = new FileInputStream(rf2File);
 		FileOutputStream outputStream = new FileOutputStream(tempOutputFile);
 
-		fileTransformation.transformFile(inputStream, outputStream, rf2File.getName());
+		fileTransformation.transformFile(inputStream, outputStream, rf2File.getName(), report);
 
 		try {
 			inputStream.available();
@@ -67,7 +70,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -88,7 +91,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -108,7 +111,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());
@@ -130,7 +133,7 @@ public class StreamingFileTransformationTest {
 		Assert.assertEquals("Second line as expected", "\t\t1\t900000000000207008\t450990004\t293507007", linesBefore.get(2));
 		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
 
-		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName());
+		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
 		Assert.assertEquals(5, linesAfter.size());

@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.execution.transform;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -49,7 +50,8 @@ public class TransformationService {
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
 	 */
-	public void transformFiles(final Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ExecutionException {
+	public void transformFiles(final Execution execution, final Package pkg, Map<String, TableSchema> inputFileSchemaMap)
+			throws ExecutionException {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
@@ -83,7 +85,9 @@ public class TransformationService {
 						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 
 						// Apply transformations
-						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName);
+						ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName,
+								report);
 					}
 				}
 			} catch (TransformationException | IOException e) {
@@ -120,9 +124,11 @@ public class TransformationService {
 							// Get appropriate transformations for this file.
 							StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
+							// Get the report to output to
+							ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 							// Apply transformations
 							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream,
-									tableSchema.getFilename());
+									tableSchema.getFilename(), report);
 
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
