@@ -34,6 +34,7 @@
 				<value>+{dataServicePropertiesPath}</value>
 			</list>
 		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
