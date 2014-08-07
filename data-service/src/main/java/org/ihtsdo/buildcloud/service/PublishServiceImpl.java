@@ -1,12 +1,28 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -18,13 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
@@ -45,15 +54,15 @@ public class PublishServiceImpl implements PublishService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
 	@Autowired
-	public PublishServiceImpl(String executionBucketName, String publishedBucketName,
-			S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public PublishServiceImpl(final String executionBucketName, final String publishedBucketName,
+			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
-	public void publishExecutionPackage(Execution execution, Package pk) throws IOException {
+	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
 		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
@@ -70,7 +79,7 @@ public class PublishServiceImpl implements PublishService {
 		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
 		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
 		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-
+		LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 		publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
 	}
 
@@ -79,7 +88,7 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
-	private String getPublishDirPath(Execution execution) {
+	private String getPublishDirPath(final Execution execution) {
 		Product product = execution.getBuild().getProduct();
 		return getPublishDirPath(product);
 	}
@@ -89,7 +98,7 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
-	private String getPublishDirPath(Product product) {
+	private String getPublishDirPath(final Product product) {
 		Extension extension = product.getExtension();
 		ReleaseCenter releaseCenter = extension.getReleaseCenter();
 		StringBuffer path = new StringBuffer();
@@ -108,12 +117,12 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/releaseFileName.zip
 	 */
-	private String getPublishFilePath(Execution execution, String releaseFileName) {
+	private String getPublishFilePath(final Execution execution, final String releaseFileName) {
 		return getPublishDirPath(execution) + releaseFileName;
 	}
 
 	@Override
-	public List<String> getPublishedPackages(Product product) {
+	public List<String> getPublishedPackages(final Product product) {
 		List<String> packages = new ArrayList<>();
 		List<String> allFiles = publishedFileHelper.listFiles(getPublishDirPath(product));
 		for (String file : allFiles) {
@@ -125,14 +134,14 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public boolean exists(Product product, String targetFileName) {
+	public boolean exists(final Product product, final String targetFileName) {
 		String path = getPublishDirPath(product) + targetFileName;
 		return publishedFileHelper.exists(path);
 	}
 
 	@Override
-	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey,
-			InputStream inputStream, String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException, IOException {
+	public void publishPackage(final String releaseCenterBusinessKey, final String extensionBusinessKey, final String productBusinessKey,
+			final InputStream inputStream, final String originalFilename, final long size, final User subject) throws ResourceNotFoundException, BadRequestException, IOException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
 
 		if (product == null) {
@@ -166,7 +175,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	// Publish extracted entries in a directory of the same name
-	private void publishExtractedPackage(String publishFilePath, InputStream fileStream) throws IOException {
+	private void publishExtractedPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
 		String zipExtractPath = publishFilePath.replace(".zip", "/");
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {

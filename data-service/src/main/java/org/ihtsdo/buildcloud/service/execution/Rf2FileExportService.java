@@ -1,7 +1,10 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -16,10 +19,8 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 
 public class Rf2FileExportService {
 
@@ -41,7 +42,6 @@ public class Rf2FileExportService {
 	public final void generateReleaseFiles() {
 		boolean firstTimeRelease = pkg.isFirstTimeRelease();
 		List<String> transformedFiles = getTransformedDeltaFiles();
-
 		for (String thisFile : transformedFiles) {
 			int failureCount = 0;
 			boolean success = false;
@@ -78,6 +78,7 @@ public class Rf2FileExportService {
 	}
 
 	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease) {
+	    	LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
