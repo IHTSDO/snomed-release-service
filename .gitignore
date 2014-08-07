@@ -3,8 +3,7 @@ target
 *.iml
 *.project
 *.classpath
-vagrant/cache
-vagrant/tomcat-webapps
+data-service.properties*
 *.sh
 rebel.xml
 tmp
