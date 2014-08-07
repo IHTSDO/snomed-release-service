@@ -1,9 +1,10 @@
 package org.ihtsdo.buildcloud.service.file;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -12,13 +13,18 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FileUtils {
+
+	private static final String MD5_EXTENSION = ".md5";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
 	public static final String ZIP_EXTENSION = ".zip";
 
-	public static Map<String, String> examineZipContents(String filename, InputStream is) {
+	public static Map<String, String> examineZipContents(final String filename, final InputStream is) {
 		//TODO Option to try treating this stream as GZip (GZipInputStream) also.
 		Map<String, String> contents = new HashMap<>();
 		try {
@@ -47,7 +53,7 @@ public class FileUtils {
 	 * @throws Exception
 	 * @author http://www.java2s.com/Code/Java/File-Input-Output/Makingazipfileofdirectoryincludingitssubdirectoriesrecursively.htm
 	 */
-	public static File zipDir(String zipFilePath, String dirToZip) throws Exception {
+	public static File zipDir(final String zipFilePath, final String dirToZip) throws Exception {
 		File dirObj = new File(dirToZip);
 		File zipFile = new File(zipFilePath);
 		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -60,7 +66,7 @@ public class FileUtils {
 	/*
 	 * @param parentPathLength We will deduct this parent path from files/directories put into the zip file
 	 */
-	public static void addDir(File dirObj, ZipOutputStream out, int parentPathLen) throws IOException {
+	public static void addDir(final File dirObj, final ZipOutputStream out, final int parentPathLen) throws IOException {
 		File[] files = dirObj.listFiles();
 		byte[] tmpBuf = new byte[1024];
 
@@ -93,7 +99,7 @@ public class FileUtils {
 	/*
 	 *@author http://www.mkyong.com/java/how-to-generate-a-file-checksum-value-in-java/
 	 */
-	public static String calculateMD5(File file) throws NoSuchAlgorithmException, IOException {
+	public static String calculateMD5(final File file) throws NoSuchAlgorithmException, IOException {
 		StringBuffer sb = new StringBuffer("");
 		MessageDigest md = MessageDigest.getInstance("MD5");
 		FileInputStream fis = new FileInputStream(file);
@@ -121,9 +127,9 @@ public class FileUtils {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
 	 */
-	public static File createMD5File(File hashMe) throws NoSuchAlgorithmException, IOException {
+	public static File createMD5File(final File hashMe) throws NoSuchAlgorithmException, IOException {
 		String md5String = calculateMD5(hashMe);
-		String resultFilePath = hashMe.getAbsolutePath() + ".md5";
+		String resultFilePath = hashMe.getAbsolutePath() + MD5_EXTENSION;
 
 		File resultFile = new File(resultFilePath);
 		FileOutputStream fop = new FileOutputStream(resultFile);
@@ -143,16 +149,20 @@ public class FileUtils {
 		return resultFile;
 	}
 
-	public static boolean hasExtension(String fileName, String extension) {
+	public static boolean hasExtension(final String fileName, final String extension) {
 		return fileName.endsWith(extension);
 	}
 
-	public static boolean isZip(String fileName) {
+	public static boolean isZip(final String fileName) {
 		return hasExtension(fileName, ZIP_EXTENSION);
 	}
 
-	public static String getFilenameFromPath(String filePath) {
+	public static String getFilenameFromPath(final String filePath) {
 		return filePath.substring(filePath.lastIndexOf("/") + 1);
+	}
+	
+	public static boolean isMD5(final String fileName) {
+	    return hasExtension(fileName, MD5_EXTENSION);
 	}
 
 }
