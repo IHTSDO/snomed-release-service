@@ -42,6 +42,8 @@ public class RVFClient implements Closeable {
 	}
 
 	private String checkFile(InputStream inputFileStream, String inputFileName, AsyncPipedStreamBean logFileOutputStream, boolean preCheck) {
+		String errorMessage = "Check not complete.";
+
 		String fileType;
 		String checkType;
 		String targetUrl;
@@ -76,17 +78,16 @@ public class RVFClient implements Closeable {
 
 			if (200 == statusCode) {
 				if (failureCount == 0) {
-					return "";
+					errorMessage = null;
 				} else {
-					return "There were " + failureCount + " RVF " + checkType + " test failures.";
+					errorMessage = "There were " + failureCount + " RVF " + checkType + " test failures.";
 				}
 			} else {
-				String errorMessage = "RVF response HTTP status code " + statusCode;
+				errorMessage = "RVF response HTTP status code " + statusCode;
 				LOGGER.info("RVF Service failure: {}", errorMessage);
-				return errorMessage;
 			}
 		} catch (InterruptedException | ExecutionException | IOException | RVFClientException e) {
-			String errorMessage = "Failed to check " + fileType + " file against RVF: " + inputFileName + " due to " + e.getMessage();
+			errorMessage = "Failed to check " + fileType + " file against RVF: " + inputFileName + " due to " + e.getMessage();
 			LOGGER.error(errorMessage, e);
 			try (OutputStream logOutputStream = logFileOutputStream.getOutputStream()) {
 				StreamUtils.copy(errorMessage.getBytes(), logOutputStream);
@@ -94,10 +95,11 @@ public class RVFClient implements Closeable {
 			} catch (Exception e2) {
 				LOGGER.error("Failed to write exception to log.", e);
 			}
-			return "RVF Client error. See logs for details.";
 		} finally {
 			LOGGER.info("RVF {} check of {} complete.", checkType, inputFileName);
 		}
+
+		return errorMessage;
 	}
 
 	protected long processResponse(BufferedReader responseReader, BufferedWriter logWriter) throws IOException, RVFClientException {
