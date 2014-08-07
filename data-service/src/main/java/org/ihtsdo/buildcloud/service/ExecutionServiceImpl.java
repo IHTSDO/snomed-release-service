@@ -27,6 +27,7 @@ import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
+import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
@@ -212,7 +213,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Execution triggerBuild(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws Exception {
 
-	    	LOGGER.info("Trigger build for buildCompositeKey:{}, executionId:{}", buildCompositeKey, executionId );
+		LOGGER.info("Trigger build for buildCompositeKey:{}, executionId:{}", buildCompositeKey, executionId);
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
 
 		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
@@ -224,6 +225,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//TODO Multithreading opportunity here!
 		Set<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
+			ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 			String pkgResult = "completed";
 			String msg = "Process completed successfully";
 			try {
@@ -235,8 +237,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
 				LOGGER.warn(msg, e);
 			}
-			execution.addToExecutionReport(pkg, "status", pkgResult);
-			execution.addToExecutionReport(pkg, "message", msg);
+			report.add("status", pkgResult);
+			report.add("message", msg);
 		}
 
 		dao.updateStatus(execution, Execution.Status.BUILT);
@@ -245,8 +247,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	private void executePackage(final Execution execution, final Package pkg) throws Exception {
-	    	
-	    	LOGGER.info("Start executing package {}", pkg.getName());
+
+		LOGGER.info("Start executing package {}", pkg.getName());
+		ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding
 		InputStream manifestStream = dao.getManifestStream(execution, pkg);
 		if (manifestStream == null) {
@@ -284,7 +287,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		if (!offlineMode) {
 			rvfResult = runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
 		}
-		execution.addToExecutionReport(pkg, "RVF Test Failures", rvfResult);
+		report.add("RVF Test Failures", rvfResult);
 		LOGGER.info("End of executing package {}", pkg.getName());
 	}
 
