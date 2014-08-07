@@ -1,6 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
+
+if [ -z "${1}" ]
+then
+	echo -e "Usage download-latest-release-service-build.sh <output directory>\nScript Halted."
+	exit -1
+fi
 
 outputDir=$1
 api="https://uat-release.ihtsdotools.org/api/v1"
@@ -29,10 +35,10 @@ echo "Looking for output files at ${outputFilesURL}"
 if [ "$builtExecutionId" != "" ]; then
 	releaseFile=$(curl -s ${outputFilesURL} | grep '"url"' | grep '.zip"' | awk -F \" '{ print $4 }')
 	echo "Downloading $releaseFile"
-	mkdir -p $outputDir
+	mkdir -p $outputDir > /dev/null
 	cd $outputDir
 	curl -sO $releaseFile
-	cd -
+	cd -  > /dev/null
 	echo "Done"
 else
 	echo "Built execution not available. Reached timeout."

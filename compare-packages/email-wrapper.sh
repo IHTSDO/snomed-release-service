@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Alas neither mail nor uuencode is installed in Ubuntu by default
+
 set -e
 
 ./compare-packages.sh $1 $2  | tee /tmp/daily_comparison.txt

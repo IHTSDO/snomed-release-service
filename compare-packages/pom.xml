@@ -63,9 +63,9 @@
 						<configuration>
 							<executable>/bin/bash</executable>
 							<arguments>
-								<!-- This wrapper will call compare packages and email us the results -->
-								<argument>email-wrapper.sh</argument>
-								<argument>${daily_release_service_build_output}</argument>
+								<argument>compare-packages.sh</argument>
+								<argument>${daily_release_service_build_output}/SRS_Daily_Build_20150131.zip</argument>
+								<argument>${daily_legacy_build_output}/destination</argument>
 							</arguments>
 						</configuration>
 					</execution>
