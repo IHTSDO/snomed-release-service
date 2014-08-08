@@ -22,7 +22,6 @@ function createLists {
 	dir=$2
 	home=`pwd`
 	cd $dir
-	find . -type d > ${home}/target/${listName}_dir_list.txt
 	find . -type f > ${home}/target/${listName}_file_list.txt
 	cd - > /dev/null
 }
@@ -45,10 +44,6 @@ find ${legacyLocation} -type f | xargs -I {} mv {} target/b
 
 createLists "srs" "target/a"
 createLists "legacy" "target/b"
-
-echo -e "_Directory list differences SRS vs Legacy_\n"
-diff target/srs_dir_list.txt target/legacy_dir_list.txt && echo "None"
-echo
 
 echo -e "_File list differences SRS vs Legacy_\n"
 diff target/srs_file_list.txt target/legacy_file_list.txt && echo "None"
