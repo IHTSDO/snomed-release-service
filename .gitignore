@@ -3,7 +3,7 @@ target
 *.iml
 *.project
 *.classpath
-data-service.properties*
+*data-service.properties
 *.sh
 rebel.xml
 tmp
