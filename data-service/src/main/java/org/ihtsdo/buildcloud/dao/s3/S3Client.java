@@ -27,4 +27,6 @@ public interface S3Client {
 
 	AccessControlList getBucketAcl(String bucketName);
 
+	ObjectMetadata getObjectMetadata(String bucketName, String key) throws AmazonClientException;
+
 }

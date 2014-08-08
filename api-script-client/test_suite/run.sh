@@ -41,7 +41,7 @@ then
 		echo "Running Test Tranche Beta"
 	fi
 	
-	if [[ "${testIndex}" -gt 14 && "${testIndex}" -lt 19 ]] 
+	if [[ "${testIndex}" -gt 14 && "${testIndex}" -lt 100 ]] 
 	then
 		manifestFile="manifest_20250731.xml"
 		effectiveDate="2025-07-31"		

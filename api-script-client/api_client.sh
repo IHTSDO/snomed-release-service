@@ -9,9 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-api=http://localhost:8080/api/v1
+#api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
 #api="http://dev-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
@@ -289,6 +289,9 @@ then
 		if [ -n "$externalDataLocation" ]
 		then
 			inputFilesPath=${externalDataRoot}${externalDataLocation}
+		elif [ -n "$dataLocation" ]
+		then
+			inputFilesPath="$dataLocation"
 		else
 			inputFilesPath="input_files"
 		fi
@@ -299,7 +302,7 @@ then
 		do
 			echo "Upload Input File ${file}"
 			curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/builds/${buildId}/packages/${packageId}/inputfiles | grep HTTP | ensureCorrectResponse
-			((filesUploaded++))
+			filesUploaded=$((filesUploaded+1))
 		done
 		
 		if [ ${filesUploaded} -lt 1 ] 
@@ -346,7 +349,8 @@ echo
 
 
 echo "List the logs"
-downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+logsUrl=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/logs
+downloadUrlRoot="$logsUrl"
 localDownloadDirectory=logs
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
 # Download files
@@ -356,21 +360,26 @@ cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 
 preConditionFailures=`cat tmp/execution-response.txt | grep -C1 FAIL` || true
 if [ -n "${preConditionFailures}" ]
 then
-    echo "Failures detected in Pre-Condition Check: "
-    echo ${preConditionFailures}
-    echo
-    while read -p "Please confirm whether you still want to continue (y/n):" choice
-    do
-        case "$choice" in
-        y|Y)
-            break
-            ;;
-        n|N)
-            echo "Script is stopped by user."
-        exit 0
-        ;;
-        esac
-    done
+	echo "Failures detected in Pre-Condition Check: "
+	echo ${preConditionFailures}
+	echo
+	
+	#Only ask the question if we've got someone there to answer it
+	if ! ${headless}
+	then
+		while read -p "Please confirm whether you still want to continue (y/n):" choice
+		do
+			case "$choice" in
+			y|Y)
+				break
+				;;
+			n|N)
+				echo "Script is stopped by user."
+			exit 0
+			;;
+			esac
+		done
+	fi
 fi
 
 
@@ -379,7 +388,7 @@ preConditionFatalFailures=`cat tmp/execution-response.txt | grep -C1 FATAL` || t
 if [ -n "${preConditionFatalFailures}" ]
 then
 	echo "Fatal failure detected in Pre-Condition Check: "
-	echo ${preConditionFailures}
+	echo ${preConditionFatalFailures}
 	echo "Script Halted"
 	exit 0
 fi
@@ -390,34 +399,47 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/
 triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
-	echo "Failed to successfully process any packages.  Received response: "
-	echo
-	cat tmp/trigger-response.txt
-	echo
-	echo "Script halted after $(getElapsedTime) "
-	exit -1
-else
-	echo "Build execution complete at $(getElapsedTime)"
+	echo "Failed to successfully process any packages. "
 fi
 
-if ${autoPublish}
+#Output the execution return object which will contain the processing report, in all cases
+echo "Received response: "
+cat tmp/trigger-response.txt
+echo
+
+echo "Build execution ended at $(getElapsedTime)"
+echo
+
+if [ ! -z "${triggerSuccess}" ] && ${autoPublish}
 then
 	echo "Publish the package"
 	curl ${commonParams} ${api}/builds/${buildId}/executions/${executionId}/output/publish  | grep HTTP | ensureCorrectResponse
 fi
+
+echo "List post condition logs"
+downloadUrlRoot="$logsUrl"
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+grep -v 'precheck' tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
 localDownloadDirectory=output
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
 # Download files
-cat tmp/output-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+cat tmp/output-file-listing.txt | grep "\"id\"" | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
 echo
 
 echo
 echo "Script Complete in $(getElapsedTime)"
-if ! ${autoPublish} 
+if [ -z "${triggerSuccess}" ]
 then
-	echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
+	echo
+	echo ' !! There were failures !!'
+else
+	if ! ${autoPublish}
+	then
+		echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole execution and automatically publish the results."
+	fi
 fi
 echo

@@ -32,12 +32,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws Exception{
+	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws Exception {
 		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
-		
+
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find extension: " +  item);
+			throw new ResourceNotFoundException("Unable to find extension: " + item);
 		}
 		List<Product> products = extension.getProducts();
 		Hibernate.initialize(products);
@@ -54,9 +54,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find extension: " +  item);
+			throw new ResourceNotFoundException("Unable to find extension: " + item);
 		}
-		
+
 		//Check that we don't already have one of these
 		String productBusinessKey = EntityHelper.formatAsBusinessKey(name);
 		Product existingProduct = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);

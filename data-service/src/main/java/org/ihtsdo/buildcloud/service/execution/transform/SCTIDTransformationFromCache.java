@@ -13,17 +13,17 @@ public class SCTIDTransformationFromCache implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
-	    if (columnValues!= null && columnValues.length > sctIdCol && columnValues[sctIdCol].contains("-")) {
-		// Value is temp UUID from authoring tool.
-		// Replace with SCTID.
-		String uuidString = columnValues[sctIdCol];
-		Long sctid = sctidFactory.getSCTIDFromCache(uuidString);
-		if (sctid != null) {
-		    columnValues[sctIdCol] = sctid.toString();
-		} else {
-		    throw new TransformationException("SCTID does not exist in cache for UUID '" + uuidString + "'");
+		if (columnValues != null && columnValues.length > sctIdCol && columnValues[sctIdCol].contains("-")) {
+			// Value is temp UUID from authoring tool.
+			// Replace with SCTID.
+			String uuidString = columnValues[sctIdCol];
+			Long sctid = sctidFactory.getSCTIDFromCache(uuidString);
+			if (sctid != null) {
+				columnValues[sctIdCol] = sctid.toString();
+			} else {
+				throw new TransformationException("SCTID does not exist in cache for UUID '" + uuidString + "'");
+			}
 		}
-	    }
 	}
 
 	@Override

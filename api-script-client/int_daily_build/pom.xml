@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.ihtsdo.snomed.release</groupId>
+	<artifactId>snomed-release-service-diff</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<packaging>pom</packaging>
+	<name>SNOMED CT Release Service - Daily Build</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<slf4j.version>1.7.5</slf4j.version>
+		<daily_export_output>target/daily_export</daily_export_output>
+	</properties>
+
+	<dependencies>
+		<!-- Daily export -->
+		<dependency>
+			<groupId>org.ihtsdo</groupId>
+			<artifactId>delta-export-runner</artifactId>
+			<version>1.0-SNAPSHOT</version>
+			<type>zip</type>
+			<exclusions>
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.8</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>org.ihtsdo</groupId>
+									<artifactId>delta-export-runner</artifactId>
+									<version>1.0-SNAPSHOT</version>
+									<type>zip</type>
+									<outputDirectory>${daily_export_output}</outputDirectory>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.3.2</version>
+				<executions>
+					<execution>
+						<id>Task_1</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>/bin/bash</executable>
+							<arguments>
+								<argument>convert_export_to_rel2_files.sh</argument>
+								<argument>${daily_export_output}/delta</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>Task_2</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>/bin/bash</executable>
+							<arguments>
+								<argument>run.sh</argument>
+								<argument>${daily_export_output}/delta</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>maestro</id>
+			<name>IHTSDO Maestro</name>
+			<url>https://mgr.servers.aceworkspace.net/apps/ihtsdo-archiva/repository/all</url>
+		</repository>
+	</repositories>
+
+</project>

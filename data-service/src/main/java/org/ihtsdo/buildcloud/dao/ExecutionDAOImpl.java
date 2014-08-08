@@ -26,10 +26,7 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,8 +45,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final FileHelper executionFileHelper;
 
-	private final FileHelper mavenFileHelper;
-
 	@Autowired
 	private InputFileDAO inputFileDAO;
 
@@ -61,16 +56,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final Rf2FileNameTransformation rf2FileNameTransformation;
 
-	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {};
+	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {
+	};
 	private static final String BLANK = "";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
 
 	@Autowired
-	public ExecutionDAOImpl(String mavenBucketName, String executionBucketName, String publishedBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public ExecutionDAOImpl(String executionBucketName, String publishedBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		objectMapper = new ObjectMapper();
 		executorService = Executors.newCachedThreadPool();
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
-		mavenFileHelper = new FileHelper(mavenBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 
 		this.s3Client = s3Client;
@@ -89,15 +84,15 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public ArrayList<Execution> findAll(Build build) {
+	public ArrayList<Execution> findAllDesc(Build build) {
 		String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
-		return findExecutions(buildDirectoryPath, build);
+		return findExecutionsDesc(buildDirectoryPath, build);
 	}
 
 	@Override
 	public Execution find(Build build, String executionId) {
 		String executionDirectoryPath = pathHelper.getExecutionPath(build, executionId).toString();
-		ArrayList<Execution> executions = findExecutions(executionDirectoryPath, build);
+		ArrayList<Execution> executions = findExecutionsDesc(executionDirectoryPath, build);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
 		} else {
@@ -139,12 +134,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
-	
+
 	@Override
 	public void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException {
 		if (execution.getStatus() != ensureStatus) {
-			throw new BadConfigurationException ("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name() 
-						+ " and is expected to be at status:" + ensureStatus.name());
+			throw new BadConfigurationException("Execution " + execution.getCreationTime() + " is at status: " + execution.getStatus().name()
+					+ " and is expected to be at status:" + ensureStatus.name());
 		}
 	}
 
@@ -167,9 +162,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		} else {
 			return null;
 		}
-	}	
+	}
 
-	private ArrayList<Execution> findExecutions(String buildDirectoryPath, Build build) {
+	private ArrayList<Execution> findExecutionsDesc(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
 		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 1000);
@@ -188,16 +183,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		}
 		LOGGER.debug("Found {} Executions", executions.size());
+		Collections.reverse(executions);
 		return executions;
 	}
 
 	@Override
-	public
-	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
 		String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
 		return executionFileHelper.putFile(file, outputFilePath, calcMD5);
 	}
-	
+
 	@Override
 	public void copyAll(Build buildSource, Execution execution) {
 		for (Package buildPackage : buildSource.getPackages()) {
@@ -217,7 +212,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		}
 	}
-	
+
 	@Override
 	public List<String> listInputFileNames(Execution execution, String packageId) {
 		String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
@@ -255,7 +250,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
 		executionFileHelper.copyFile(executionInputFilePath, executionOutputFilePath);
 	}
-	
+
 	@Override
 	public InputStream getOutputFileInputStream(Execution execution, Package pkg, String name) {
 		String path = pathHelper.getExecutionOutputFilePath(execution, pkg.getBusinessKey(), name);
@@ -283,7 +278,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return s3Client.putObject(executionBucketName, filePath,
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
 	}
-	
+
 	@Override
 	public void copyTransformedFileToOutput(Execution execution,
 			String packageBusinessKey, String relativeFilePath) {
@@ -298,7 +293,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
 		String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
 		executionFileHelper.copyFile(transformedFilePath, executionOutputFilePath);
-		
+
 	}
 
 	@Override
@@ -377,7 +372,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public void setS3Client(S3Client s3Client) {
 		this.s3Client = s3Client;
 		this.executionFileHelper.setS3Client(s3Client);
-		this.mavenFileHelper.setS3Client(s3Client);
 	}
 
 }

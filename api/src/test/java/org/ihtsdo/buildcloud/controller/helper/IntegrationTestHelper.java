@@ -46,6 +46,8 @@ public class IntegrationTestHelper {
 	private String buildBusinessKey;
 	private String packageBusinessKey;
 
+	public static final String COMPLETION_STATUS = "completed";
+
 	public IntegrationTestHelper(MockMvc mockMvc, String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
@@ -291,15 +293,15 @@ public class IntegrationTestHelper {
 
 		String outputFileListJson = triggerResult.getResponse().getContentAsString();
 		JSONObject jsonObject = new JSONObject(outputFileListJson);
-		JSONObject packageResults = jsonObject.getJSONObject("PackageResults");
+		JSONObject packageResults = jsonObject.getJSONObject("executionReport");
 		Iterator packages = packageResults.keys();
-		String expectedStatus = "pass";
+
 		while (packages.hasNext()) {
 			String packageName = (String) packages.next();
 			JSONObject packageResult = packageResults.getJSONObject(packageName);
 			String status = packageResult.getString("status");
 			String message = packageResult.getString("message");
-			Assert.assertEquals("Package " + packageName + " bad status. Message: " + message, expectedStatus, status);
+			Assert.assertEquals("Package " + packageName + " bad status. Message: " + message, COMPLETION_STATUS, status);
 		}
 	}
 

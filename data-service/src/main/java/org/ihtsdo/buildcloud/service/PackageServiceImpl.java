@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 @Transactional
 public class PackageServiceImpl extends EntityServiceImpl<Package> implements PackageService {
-	
+
 	private static final String TRUE = "true";
 
 	@Autowired
@@ -28,7 +28,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 
 	@Autowired
 	private BuildDAO buildDAO;
-	
+
 	@Autowired
 	PublishService publishService;
 
@@ -41,7 +41,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	public final Package find(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		return packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 	}
@@ -50,7 +50,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		return new ArrayList<>(buildDAO.find(buildId, authenticatedUser).getPackages());
 	}
@@ -59,14 +59,14 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) throws EntityAlreadyExistsException, ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build identifier from: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build identifier from: " + buildCompositeKey);
 		}
 		Build build = buildDAO.find(buildId, authenticatedUser);
 		if (build == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " +  buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		Package pkg = new Package(name);
-		if(build.addPackage(pkg)) {
+		if (build.addPackage(pkg)) {
 			packageDAO.save(pkg);
 			return pkg;
 		} else {
@@ -79,12 +79,12 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
-			throw new ResourceNotFoundException ("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
 		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
 		if (aPackage == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+			throw new ResourceNotFoundException("Unable to find package: " + item);
 		}
 		Product product = aPackage.getBuild().getProduct();
 
@@ -100,17 +100,17 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
 			//Validate that a file of that name actually exists
 			boolean pppExists = false;
-			Exception rootCause = new Exception ("No further information");
+			Exception rootCause = new Exception("No further information");
 			try {
-				pppExists = publishService.exists(product, pPP); 
+				pppExists = publishService.exists(product, pPP);
 			} catch (Exception e) {
 				rootCause = e;
 			}
-			
+
 			if (pppExists) {
 				aPackage.setPreviousPublishedPackage(pPP);
 			} else {
-				throw new ResourceNotFoundException ("Could not find previously published package: " + pPP, rootCause);
+				throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
 			}
 		}
 

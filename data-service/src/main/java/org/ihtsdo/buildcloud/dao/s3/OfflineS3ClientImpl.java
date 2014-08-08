@@ -81,8 +81,16 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		if (file.isFile()) {
 			return new OfflineS3Object(bucketName, key, file);
 		} else {
-			return null;
+			AmazonS3Exception amazonS3Exception = new AmazonS3Exception("Object does not exist.");
+			amazonS3Exception.setStatusCode(404);
+			throw amazonS3Exception;
 		}
+	}
+
+	@Override
+	public ObjectMetadata getObjectMetadata(String bucketName, String key) {
+		getObject(bucketName, key);
+		return new ObjectMetadata();
 	}
 
 	@Override
@@ -96,13 +104,13 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 		// Create the target directory
 		outFile.getParentFile().mkdirs();
-		
+
 		//For ease of testing, if we're writing the final results (eg a zip file) we'll output the full path to STDOUT
 		String outputFilePath = outFile.getAbsolutePath();
 		if (FileUtils.isZip(outputFilePath)) {
 			LOGGER.info("Writing out local results file to {}", outputFilePath);
 		}
-		
+
 		if (inputStream != null) {
 			try {
 				//As per the online implmentation, if the file is already there we will overwrite it.
@@ -120,13 +128,13 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 		} else {
 			throw new AmazonClientException("Failed to store object, no input given.");
 		}
-		
+
 		PutObjectResult result = new PutObjectResult();
 		//For the offline implmentation we'll just copy the incoming MD5 and say we received the same thing
 		if (metadata != null) {
 			result.setContentMd5(metadata.getContentMD5());
 		}
-		
+
 		return result;
 	}
 
@@ -163,7 +171,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	@Override
 	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
 		File file = getFile(bucketName, key);
-		
+
 		//Are we deleting a file or a directory?
 		if (file.isDirectory()) {
 			try {
@@ -176,14 +184,14 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 			LOGGER.debug("Deleting file {}.", file.getAbsoluteFile());
 			boolean deletedOK = file.delete();
 			if (!deletedOK) {
-				throw new AmazonServiceException ("Failed to delete " + file.getAbsoluteFile());
-			}			
+				throw new AmazonServiceException("Failed to delete " + file.getAbsoluteFile());
+			}
 		} else {
 			//Does it, in fact, not exist already? No foul if so
 			if (!file.exists()) {
-				throw new AmazonServiceException ("Attempted to delete entity, but it does not exist: " + file.getAbsoluteFile());
+				throw new AmazonServiceException("Attempted to delete entity, but it does not exist: " + file.getAbsoluteFile());
 			} else {
-				throw new AmazonServiceException ("Encountered unexpected thing: " + file.getAbsolutePath());
+				throw new AmazonServiceException("Encountered unexpected thing: " + file.getAbsolutePath());
 			}
 		}
 	}
@@ -210,7 +218,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 			//Attempt to create - will fail if file already exists at that location.
 			boolean success = bucket.mkdirs();
 			if (!success) {
-				throw new AmazonServiceException("Could neither find nor create Bucket at: "  + bucketsDirectory + File.separator + bucketName);
+				throw new AmazonServiceException("Could neither find nor create Bucket at: " + bucketsDirectory + File.separator + bucketName);
 			}
 		}
 		return bucket;
@@ -224,7 +232,6 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	/**
-	 *
 	 * @param file
 	 * @return The path relative to the bucket directory and bucket
 	 */

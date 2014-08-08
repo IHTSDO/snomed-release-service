@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,8 @@ public class Execution {
 	private final Build build;
 	
 	private Map<String, List<PreConditionCheckReport>> preConditionCheckReports;
+
+	ExecutionReport executionReport;
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
@@ -66,6 +69,17 @@ public class Execution {
 
 	public Map<String, List<PreConditionCheckReport>> getPreConditionCheckReports() {
 		return preConditionCheckReports;
+	}
+
+	public ExecutionReport getExecutionReport() {
+		if (executionReport == null) {
+			this.executionReport = new ExecutionReport();
+		}
+		return executionReport;
+	}
+
+	public void setExecutionReport(ExecutionReport executionReport) {
+		this.executionReport = executionReport;
 	}
 
 }

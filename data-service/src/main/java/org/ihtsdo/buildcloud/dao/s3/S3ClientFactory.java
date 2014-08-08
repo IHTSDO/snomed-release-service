@@ -12,11 +12,11 @@ public class S3ClientFactory {
 	private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientFactory.class);
 
 	public S3Client getClient(boolean offlineMode) throws Exception {
-		
+
 		if (onlineImplementation == null) {
-			throw new Exception ("S3 Client Factory has not been instantiated properly.  Is there an Autowire missing somewhere?");
+			throw new Exception("S3 Client Factory has not been instantiated properly.  Is there an Autowire missing somewhere?");
 		}
-		
+
 		if (offlineMode) {
 			LOGGER.info("Using OFFLINE S3 store");
 			return offlineImplementation;

@@ -24,11 +24,11 @@ public class S3PutRequestBuilder extends PutObjectRequest {
 		this.getMetadata().setContentLength(contentLength);
 		return this;
 	}
-	
+
 	public S3PutRequestBuilder withMD5(String md5HexString) throws DecoderException {
 		//Amazon expects the md5 value to be base64 encoded
 		byte[] decodedHex = Hex.decodeHex(md5HexString.toCharArray());
-		
+
 		//Apparently we need the unchunked string encoding method here to match what AWS is expecting.
 		String md5Base64 = Base64.encodeBase64String(decodedHex);
 		this.getMetadata().setContentMD5(md5Base64);
