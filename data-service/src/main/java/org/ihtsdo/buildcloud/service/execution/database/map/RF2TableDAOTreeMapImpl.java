@@ -50,7 +50,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	@Override
 	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader);
 		}
