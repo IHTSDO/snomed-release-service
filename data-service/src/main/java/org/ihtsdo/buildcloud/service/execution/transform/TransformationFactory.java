@@ -1,5 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 
@@ -93,7 +93,7 @@ public class TransformationFactory {
 		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
@@ -105,14 +105,14 @@ public class TransformationFactory {
 		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
-						// moduleId
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
-						// conceptId
+				// conceptId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
-						// typeId
+				// typeId
 				.addLineTransformation(new SCTIDTransformationFromCache(6, cachedSctidFactory))
-						// caseSignificanceId
+				// caseSignificanceId
 				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
 				;
 
@@ -123,7 +123,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
@@ -142,7 +142,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// sourceId
@@ -164,7 +164,7 @@ public class TransformationFactory {
 				// identifierSchemeId
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat))
+				.addLineTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, true))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// referencedComponentId
@@ -178,7 +178,7 @@ public class TransformationFactory {
 		List<Field> fields = tableSchema.getFields();
 		for (int i = SchemaFactory.SIMPLE_REFSET_FIELD_COUNT; i < fields.size(); i++) {
 			Field field = fields.get(i);
-			if(field.getType().equals(DataType.SCTID)) {
+			if (field.getType().equals(DataType.SCTID)) {
 				transformation.addLineTransformation(new SCTIDTransformationFromCache(i, cachedSctidFactory));
 			}
 		}
@@ -191,7 +191,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new UUIDTransformation(0, uuidGenerator))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// refsetId

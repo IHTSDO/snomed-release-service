@@ -1,12 +1,28 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -19,13 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
@@ -37,45 +46,53 @@ public class PublishServiceImpl implements PublishService {
 	private ExecutionS3PathHelper executionS3PathHelper;
 
 	@Autowired
-	ProductDAO productDAO;
+	private ProductDAO productDAO;
 
 	private static final String SEPARATOR = "/";
 	private final String publishedBucketName;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
-	/**
-	 * @param executionBucketName
-	 * @param publishedBucketName
-	 */
 	@Autowired
-	public PublishServiceImpl(String executionBucketName, String publishedBucketName,
-			S3Client s3Client, S3ClientHelper s3ClientHelper){
+	public PublishServiceImpl(final String executionBucketName, final String publishedBucketName,
+			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
-	public void publishExecutionPackage(Execution execution, Package pk) throws IOException {
+	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
 		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
 		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 		String releaseFileName = null;
-		for(String fileName : filesFound){
-			if (FileUtils.isZip(fileName)) {
+		String md5FileName = null;
+		for (String fileName : filesFound) {
+			if (releaseFileName == null && FileUtils.isZip(fileName)) {
 				releaseFileName = fileName;
 				//only one zip file per package
-				break;
+			}
+			if (md5FileName == null && FileUtils.isMD5(fileName)) {
+			  //expected to be only one MD5 file.
+			    md5FileName = fileName;
 			}
 		}
 		if (releaseFileName == null) {
-			throw new IllegalStateException("No zip file found for package: " + pk.getBusinessKey());
+		    LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
+		} else {
+		    String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
+		    String publishedFilePath = getPublishFilePath(execution, releaseFileName);
+		    executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+		    LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+		    publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
 		}
-		String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
-		String publishedFilePath = getPublishFilePath(execution, releaseFileName);
-		executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-
-		publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+		//copy MD5 file if available
+		if (md5FileName != null) {
+		    String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
+		    String target = getPublishFilePath(execution, md5FileName);
+		    executionFileHelper.copyFile(source, publishedBucketName, target);
+		    LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+		}
 	}
 
 	/**
@@ -83,7 +100,7 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
-	private String getPublishDirPath(Execution execution) {
+	private String getPublishDirPath(final Execution execution) {
 		Product product = execution.getBuild().getProduct();
 		return getPublishDirPath(product);
 	}
@@ -93,7 +110,7 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/
 	 */
-	private String getPublishDirPath(Product product) {
+	private String getPublishDirPath(final Product product) {
 		Extension extension = product.getExtension();
 		ReleaseCenter releaseCenter = extension.getReleaseCenter();
 		StringBuffer path = new StringBuffer();
@@ -112,12 +129,12 @@ public class PublishServiceImpl implements PublishService {
 	 * @return a file structure like
 	 * releaseCenter/extension/product/releaseFileName.zip
 	 */
-	private String getPublishFilePath(Execution execution, String releaseFileName) {
+	private String getPublishFilePath(final Execution execution, final String releaseFileName) {
 		return getPublishDirPath(execution) + releaseFileName;
 	}
 
 	@Override
-	public List<String> getPublishedPackages(Product product) {
+	public List<String> getPublishedPackages(final Product product) {
 		List<String> packages = new ArrayList<>();
 		List<String> allFiles = publishedFileHelper.listFiles(getPublishDirPath(product));
 		for (String file : allFiles) {
@@ -129,19 +146,19 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public boolean exists(Product product, String targetFileName) {
+	public boolean exists(final Product product, final String targetFileName) {
 		String path = getPublishDirPath(product) + targetFileName;
 		return publishedFileHelper.exists(path);
 	}
 
 	@Override
-	public void publishPackage(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey,
-			InputStream inputStream, String originalFilename, long size, User subject) throws ResourceNotFoundException, BadRequestException, IOException {
+	public void publishPackage(final String releaseCenterBusinessKey, final String extensionBusinessKey, final String productBusinessKey,
+			final InputStream inputStream, final String originalFilename, final long size, final User subject) throws ResourceNotFoundException, BadRequestException, IOException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+			throw new ResourceNotFoundException("Unable to find product: " + item);
 		}
 
 		//We're expecting a zip file only
@@ -152,7 +169,7 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.debug("Reading stream to temp file");
 		File tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
 		try (InputStream in = inputStream;
-			OutputStream out = new FileOutputStream(tempZipFile)) {
+			 OutputStream out = new FileOutputStream(tempZipFile)) {
 			StreamUtils.copy(in, out);
 		}
 
@@ -164,11 +181,13 @@ public class PublishServiceImpl implements PublishService {
 		publishExtractedPackage(publishFilePath, new FileInputStream(tempZipFile));
 
 		// Delete temp zip file
-		tempZipFile.delete();
+		if (!tempZipFile.delete()) {
+			LOGGER.warn("Failed to delete file {}", tempZipFile.getAbsolutePath());
+		}
 	}
 
 	// Publish extracted entries in a directory of the same name
-	private void publishExtractedPackage(String publishFilePath, InputStream fileStream) throws IOException {
+	private void publishExtractedPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
 		String zipExtractPath = publishFilePath.replace(".zip", "/");
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
@@ -188,7 +207,9 @@ public class PublishServiceImpl implements PublishService {
 					try (FileInputStream tempEntryInputStream = new FileInputStream(tempFile)) {
 						publishedFileHelper.putFile(tempEntryInputStream, entry.getSize(), targetFilePath);
 					}
-					tempFile.delete();
+					if (!tempFile.delete()) {
+						LOGGER.warn("Failed to delete file {}", tempFile.getAbsolutePath());
+					}
 				}
 			}
 		}

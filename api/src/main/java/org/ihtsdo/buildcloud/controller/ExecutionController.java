@@ -69,7 +69,7 @@ public class ExecutionController {
 	@ResponseBody
 	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		List<Execution> executions = executionService.findAll(buildCompositeKey, authenticatedUser);
+		List<Execution> executions = executionService.findAllDesc(buildCompositeKey, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
 	}
 
@@ -163,8 +163,8 @@ public class ExecutionController {
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 											HttpServletRequest request) throws Exception {
 		User authenticatedUser = SecurityHelper.getSubject();
-		Map<String, Object> executionState = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
-		return hypermediaGenerator.getEntityHypermediaOfAction(executionState, request, EXECUTION_LINKS);
+		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
+		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface PackageService extends EntityService<Package> {
-	
+
 	String README_HEADER = "readmeHeader";
 	String JUST_PACKAGE = "justPackage";
 	String FIRST_TIME_RELEASE = "firstTimeRelease";
@@ -19,7 +19,7 @@ public interface PackageService extends EntityService<Package> {
 	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException;
 
 	List<Package> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
-	
+
 	Package create(String buildBusinessKey, String name, User authenticatedUser) throws EntityAlreadyExistsException, ResourceNotFoundException;
 
 	Package update(String buildCompositeKey, String packageBusinessKey, Map<String, String> newPropertyValues, User authenticatedUser) throws ResourceNotFoundException;

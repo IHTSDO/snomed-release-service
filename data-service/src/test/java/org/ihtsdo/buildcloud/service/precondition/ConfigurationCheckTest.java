@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import java.text.ParseException;
-
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
@@ -9,8 +7,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.text.ParseException;
+
 public class ConfigurationCheckTest extends PreconditionCheckTest {
-	
 	
 	private static final String README_HEADER = "readmeHeader";
 	private static final String PUBLISHED_PACKAGE_IN_JAN = "SnomedCT_Release_INT_20140131.zip";

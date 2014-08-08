@@ -44,6 +44,12 @@ public abstract class AbstractControllerTest {
 	@Autowired
 	private UUIDGenerator uuidGenerator;
 
+	@Autowired
+	private String executionBucketName;
+
+	@Autowired
+	private String publishedBucketName;
+
 	@Before
 	public void setup() throws ServletException, Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
@@ -52,8 +58,8 @@ public abstract class AbstractControllerTest {
 
 		TestS3Client testS3Client = (TestS3Client) s3Client;
 		testS3Client.deleteBuckets();
-		testS3Client.createBucket("ire.execution.release.ihtsdo");
-		testS3Client.createBucket("ire.published.release.ihtsdo");
+		testS3Client.createBucket(executionBucketName);
+		testS3Client.createBucket(publishedBucketName);
 	}
 
 	@After

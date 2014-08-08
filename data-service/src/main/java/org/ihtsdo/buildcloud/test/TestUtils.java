@@ -17,14 +17,16 @@ public class TestUtils {
 	private String executionBucketName;
 
 	/**
-	 * Deletes the entire structure under an execution.  To ONLY BE USED with unit tests, 
+	 * Deletes the entire structure under an execution.  To ONLY BE USED with unit tests,
 	 * as in the normal course of events we expect execution files to be immutable
+	 *
 	 * @param execution
 	 */
-	public void scrubExecution (Execution execution) {
+	public void scrubExecution(Execution execution) {
 		String directoryPath = pathHelper.getExecutionPath(execution).toString();
 		try {
 			s3Client.deleteObject(executionBucketName, directoryPath);
-		} catch (Exception e) {}  //That's fine if the thing to delete doesn't exist.
+		} catch (Exception e) {
+		}  //That's fine if the thing to delete doesn't exist.
 	}
 }

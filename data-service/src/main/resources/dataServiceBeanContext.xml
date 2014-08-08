@@ -18,14 +18,23 @@
 		<property name="placeholderPrefix" value="+{"/>
 		<property name="properties">
 			<props>
-				<prop key="dataServicePropertiesPath">classpath:data-service-defaults.properties</prop>
+				<!-- Default path to override properties file -->
+				<prop key="dataServicePropertiesPath">classpath:data-service.properties</prop>
 			</props>
 		</property> 
 		<property name="ignoreUnresolvablePlaceholders" value="true"/>
 	</bean>
 
 	<bean id="configurer2" class="org.ihtsdo.context.OrderedPropertyPlaceholderConfigurer">
-		<property name="location" value="+{dataServicePropertiesPath}" />
+		<property name="locations">
+			<list>
+				<!-- Default properties file -->
+				<value>classpath:data-service-defaults.properties</value>
+				<!-- Override properties file -->
+				<value>+{dataServicePropertiesPath}</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
@@ -107,20 +116,20 @@
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
 
-	<bean class="java.lang.String" id="mavenBucketName">
-		<constructor-arg value="ire.maven.release.ihtsdo" />
-	</bean>
-
 	<bean class="java.lang.String" id="executionBucketName">
-		<constructor-arg value="ire.execution.release.ihtsdo" />
+		<constructor-arg value="${executionBucketName}" />
 	</bean>
 	
 	<bean class="java.lang.String" id="publishedBucketName">
-		<constructor-arg value="ire.published.release.ihtsdo" />
+		<constructor-arg value="${publishedBucketName}" />
 	</bean>
 	
 	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
+	</bean>
+
+	<bean class="java.lang.Boolean" id="offlineMode" >
+		<constructor-arg value="${offlineMode}"/>
 	</bean>
 
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>

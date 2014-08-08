@@ -16,13 +16,13 @@ public class ExtensionDAOImpl extends EntityDAOImpl<Extension> implements Extens
 	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select extension " +
-				"from ReleaseCenterMembership membership " +
-				"join membership.releaseCenter releaseCenter " +
-				"join releaseCenter.extensions extension " +
-				"where membership.user = :user " +
-				"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey " +
-				"order by extension.id ");
+						"from ReleaseCenterMembership membership " +
+						"join membership.releaseCenter releaseCenter " +
+						"join releaseCenter.extensions extension " +
+						"where membership.user = :user " +
+						"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
+						"and extension.businessKey = :extensionBusinessKey " +
+						"order by extension.id ");
 		query.setEntity("user", user);
 		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);

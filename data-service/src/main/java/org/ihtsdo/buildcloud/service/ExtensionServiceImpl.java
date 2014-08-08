@@ -34,9 +34,9 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	public List<Extension> findAll(String releaseCenterBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
 		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
 		if (releaseCenter == null) {
-			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
-		}				
-				
+			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
+		}
+
 		List<Extension> extensions = releaseCenter.getExtensions();
 		Hibernate.initialize(extensions);
 		return extensions;
@@ -46,14 +46,14 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) {
 		return extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 	}
-	
+
 	@Override
 	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
 		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
 		if (releaseCenter == null) {
-			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
 		}
-		
+
 		//Check that we don't already have one of these
 		String extensionBusinessKey = EntityHelper.formatAsBusinessKey(name);
 		Extension existingProduct = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
@@ -64,5 +64,5 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 		releaseCenter.addExtension(extension);
 		extensionDAO.save(extension);
 		return extension;
-	}	
+	}
 }

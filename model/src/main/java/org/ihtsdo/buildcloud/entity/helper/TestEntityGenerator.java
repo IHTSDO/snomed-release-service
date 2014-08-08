@@ -24,10 +24,10 @@ public class TestEntityGenerator {
 
 													{"Spanish Release"} };
 
-	public static final int totalBuildCount = 9;
+	public static final int totalBuildCount = 10;
 	
 	//Number of builds per extension
-	public static final int [] buildCount = { 5,
+	public static final int [] buildCount = { 6,
 											  4};
 	
 	//Build array dimensions are extension, products, build
@@ -36,8 +36,9 @@ public class TestEntityGenerator {
 	public static final String [][][] buildNames = { 	{ 	{	"20140731 International Release Build",
 																"20140131 International Release Build",
 																"20130731 International Release Build",
-																"20130131 International Release Build"} , 
-															{"20140831 Simple Refset Build"}, {}, {}, {}, {} },
+																"20130131 International Release Build",
+																 "Int Daily Build"} , 
+					{ "20140831 Simple Refset Build" }, {}, {}, {}, {} },
 														{ {	"20140731 Spanish Release Build",
 															"20140131 Spanish Release Build",
 															"20130731 Spanish Release Build",
@@ -50,8 +51,7 @@ public class TestEntityGenerator {
 	public static final int [] starredCount = { 4,
 												2};
 	
-	public static final boolean [][][] starredBuilds = {	{{ true, true, true, false  }, {true}, {}, {}, {}, {} },
-
+	public static final boolean[][][] starredBuilds = { { { true, true, true, false, false }, { true }, {}, {}, {}, {} },
 															{{ true, false, true, false }} };
 	
 	//Doing this on a per product basis just like the builds, ie all builds in a product will feature the same package
@@ -83,7 +83,13 @@ public class TestEntityGenerator {
 					
 					//Do we have packages to add to all builds of this product?
 					if (packageNames.length > iEx && packageNames[iEx].length > iPrd){
-						for (int pkgIdx = 0; pkgIdx < packageNames[iEx][iPrd].length; pkgIdx++) {
+						int packageNamesAvailable = packageNames[iEx][iPrd].length;
+
+						// Daily Build to only have one package
+						if (iEx == 0 && iPrd == 0 && iBld == 4)
+							packageNamesAvailable = 1;
+
+						for (int pkgIdx = 0; pkgIdx < packageNamesAvailable; pkgIdx++) {
 							Package pkg = new Package(packageNames[iEx][iPrd][pkgIdx]);
 							build.addPackage(pkg);
 						}

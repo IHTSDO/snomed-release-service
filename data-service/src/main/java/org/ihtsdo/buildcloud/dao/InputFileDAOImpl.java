@@ -15,19 +15,19 @@ import java.util.List;
 public class InputFileDAOImpl implements InputFileDAO {
 
 	private FileHelper fileHelper;
-	
+
 	@Autowired
 	private ExecutionS3PathHelper s3PathHelper;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
-	
+
 	public static final String SEPARATOR = "/";
 
 	@Autowired
 	public InputFileDAOImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper (executionBucketName, s3Client, s3ClientHelper);
+		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 	}
-	
+
 	public List<String> listInputFilePaths(Package aPackage) {
 		String directoryPath = s3PathHelper.getPackageInputFilesPath(aPackage);
 		return fileHelper.listFiles(directoryPath);
@@ -56,7 +56,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 			return null;
 		}
 	}
-	
+
 	@Override
 	//Version called when we have a manifest file and we want a path to upload it to
 	public String getManifestPath(Package pkg, String filename) {
@@ -82,7 +82,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 		for (String file : files) {
 			fileHelper.deleteFile(directoryPath + file);
 		}
-		
+
 	}
 
 }

@@ -16,16 +16,17 @@ public interface ExecutionService {
 
 	/**
 	 * Create snapshot of build files and configuration for review and possibly using to run a build.
+	 *
 	 * @param buildCompositeKey
 	 * @param authenticatedUser
 	 * @return
 	 * @throws IOException
-	 * @throws NamingConflictException 
-	 * @throws ResourceNotFoundException 
+	 * @throws NamingConflictException
+	 * @throws ResourceNotFoundException
 	 */
 	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException;
 
-	List<Execution> findAll(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
+	List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 
 	Execution find(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException;
 
@@ -35,7 +36,7 @@ public interface ExecutionService {
 
 	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
 
-	Map<String, Object> triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
+	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws IOException, Exception;
 
 	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser) throws ResourceNotFoundException;
 

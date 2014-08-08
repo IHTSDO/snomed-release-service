@@ -16,15 +16,15 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
-				"from ReleaseCenterMembership membership " +
-				"join membership.releaseCenter releaseCenter " +
-				"join releaseCenter.extensions extension " +
-				"join extension.products product " +
-				"where membership.user = :user " +
-				"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
-				"and extension.businessKey = :extensionBusinessKey " +
-				"and product.businessKey = :productBusinessKey " +
-				"order by product.id ");
+						"from ReleaseCenterMembership membership " +
+						"join membership.releaseCenter releaseCenter " +
+						"join releaseCenter.extensions extension " +
+						"join extension.products product " +
+						"where membership.user = :user " +
+						"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
+						"and extension.businessKey = :extensionBusinessKey " +
+						"and product.businessKey = :productBusinessKey " +
+						"order by product.id ");
 		query.setEntity("user", user);
 		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		query.setString("extensionBusinessKey", extensionBusinessKey);

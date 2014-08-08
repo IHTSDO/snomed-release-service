@@ -5,9 +5,7 @@ import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorExcepti
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,6 +21,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	public static final String FORMAT = "%s" + RF2Constants.COLUMN_SEPARATOR + "%s";
 	private final SchemaFactory schemaFactory;
 	private TableSchema tableSchema;
+	private DataType idType;
 	private Map<Key, String> table;
 
 	public RF2TableDAOTreeMapImpl() {
@@ -38,6 +37,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 			String headerLine = reader.readLine();
 			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
 			tableSchema = schemaFactory.createSchemaBean(rf2Filename);
+			idType = tableSchema.getFields().get(0).getType();
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 
 			// Insert Data
@@ -50,7 +50,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	@Override
 	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader);
 		}
@@ -79,7 +79,11 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		String line;
 		while ((line = reader.readLine()) != null) {
 			String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			table.put(new Key(parts[0], parts[1]), parts[2]);
+			if (idType == DataType.SCTID) {
+				table.put(new SCTIDKey(parts[0], parts[1]), parts[2]);
+			} else {
+				table.put(new UUIDKey(parts[0], parts[1]), parts[2]);
+			}
 		}
 	}
 
