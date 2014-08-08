@@ -17,7 +17,7 @@ public class ReadmeGenerator {
 
 	public void generate(String readmeHeader, String readmeEndDate, ListingType manifestListing, OutputStream readmeOutputStream) throws IOException, BadConfigurationException {
 		readmeHeader = readmeHeader.replace("{readmeEndDate}", readmeEndDate);
-		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(readmeOutputStream))) {
+		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(readmeOutputStream, RF2Constants.UTF_8))) {
 			writer.write(readmeHeader);
 			writer.write(RF2Constants.LINE_ENDING);
 			FolderType rootFolder = manifestListing.getFolder();

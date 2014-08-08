@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.test;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +25,8 @@ public class StreamTestUtils {
 		Assert.assertNotNull("Expected InputStream should not be null" + errorMessageNamePart + ".", expectedInputStream);
 		Assert.assertNotNull("Actual InputStream should not be null" + errorMessageNamePart + ".", actualInputStream);
 
-		BufferedReader expectedReader = new BufferedReader(new InputStreamReader(expectedInputStream));
-		BufferedReader actualReader = new BufferedReader(new InputStreamReader(actualInputStream));
+		BufferedReader expectedReader = new BufferedReader(new InputStreamReader(expectedInputStream, RF2Constants.UTF_8));
+		BufferedReader actualReader = new BufferedReader(new InputStreamReader(actualInputStream, RF2Constants.UTF_8));
 
 		int line = 1;
 		String actualLine;
