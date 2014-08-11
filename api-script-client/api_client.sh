@@ -348,6 +348,7 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execu
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
+echo
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
 
@@ -397,7 +398,7 @@ then
 	exit 0
 fi
 
-
+echo
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
 triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
@@ -425,6 +426,7 @@ downloadUrlRoot="$logsUrl"
 localDownloadDirectory=logs
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
 grep -v 'precheck' tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+echo
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
