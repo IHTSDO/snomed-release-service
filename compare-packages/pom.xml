@@ -51,6 +51,7 @@
 							<arguments>
 								<argument>download-latest-release-service-build.sh</argument>
 								<argument>${daily_release_service_build_output}</argument>
+								<argument>${api_host}</argument>
 							</arguments>
 						</configuration>
 					</execution>
