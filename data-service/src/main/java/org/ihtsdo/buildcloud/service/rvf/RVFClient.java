@@ -68,8 +68,8 @@ public class RVFClient implements Closeable {
 			long failureCount = 0;
 
 			try (InputStream content = response.getEntity().getContent();
-				 BufferedReader responseReader = new BufferedReader(new InputStreamReader(content));
-				 BufferedWriter logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream.getOutputStream()))) {
+				 BufferedReader responseReader = new BufferedReader(new InputStreamReader(content, RF2Constants.UTF_8));
+				 BufferedWriter logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream.getOutputStream(), RF2Constants.UTF_8))) {
 
 				failureCount = processResponse(responseReader, logWriter);
 			} finally {

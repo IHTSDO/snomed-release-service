@@ -36,7 +36,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 
 	@Override
 	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
@@ -59,7 +59,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 
 	@Override
 	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 
 			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getTableName());

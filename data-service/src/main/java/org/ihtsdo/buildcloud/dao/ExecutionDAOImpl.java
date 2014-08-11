@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.slf4j.Logger;
@@ -106,7 +107,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		S3Object s3Object = s3Client.getObject(executionBucketName, configFilePath);
 		if (s3Object != null) {
 			S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			return FileCopyUtils.copyToString(new InputStreamReader(objectContent)); // Closes stream
+			return FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8)); // Closes stream
 		} else {
 			return null;
 		}
