@@ -3,11 +3,9 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -30,6 +28,10 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	public OfflineS3ClientImpl(File bucketsDirectory) {
 		this.bucketsDirectory = bucketsDirectory;
+	}
+
+	public OfflineS3ClientImpl() throws IOException {
+		this(Files.createTempDirectory(OfflineS3ClientImpl.class.getName() + "-mock-s3").toFile());
 	}
 
 	@Override
@@ -206,8 +208,8 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	 * Part of the TestS3Client interface.
 	 * For clearing down before and after testing.
 	 */
-	public void deleteBuckets() {
-		FileSystemUtils.deleteRecursively(bucketsDirectory);
+	public void freshBucketStore() throws IOException {
+		bucketsDirectory = Files.createTempDirectory(getClass().getName() + "-temp-S3").toFile();
 	}
 
 	private File getBucket(String bucketName) {

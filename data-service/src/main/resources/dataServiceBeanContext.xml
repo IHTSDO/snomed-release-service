@@ -108,9 +108,7 @@
 			</bean>
 		</property>
 		<property name="offlineImplementation">
-			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl">
-				<constructor-arg value="${s3Offline.bucketsPath}"/>
-			</bean>
+			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl"/>
 		</property>
 	</bean>
 
