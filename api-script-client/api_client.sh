@@ -184,10 +184,10 @@ fi
 # But not if we're completing 'cos we'll need the execution id from the last run
 if [ -z "${completePublish}" ]
 then
-	rm tmp/*  || true
+	rm -rf tmp/*  || true
 fi
-rm logs/* || true
-rm output/*  || true
+rm -rf logs/* || true
+rm -rf output/*  || true
 
 
 # Login
