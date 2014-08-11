@@ -168,6 +168,10 @@ do
 	esac
 done
 
+echo
+echo "Target API URL: ${api}/"
+echo
+
 mkdir -p tmp
 
 # If we're setting up external data, lets do that now while we have the user's attention
@@ -199,10 +203,6 @@ then
 fi
 commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
-echo
-
-# This be printed first - before we start using it!
-echo "Target API URL is '${api}'"
 echo
 
 findOrCreateEntity "Extension" "${api}/centers/${releaseCentreId}/extensions" "${extensionName}"
