@@ -113,7 +113,7 @@ completePublish=false
 
 # Reset getopts 
 OPTIND=1
-while getopts ":slcart:p:" opt
+while getopts ":slcart:p:h:" opt
 do
 	case $opt in
 		s) 
@@ -150,14 +150,19 @@ do
 			fi
 			echo "Option set to replace input file ${replaceInputFile} and execute a build."
 		;;
-		help|\?) 
-			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>]"
+		h)
+			apiHost=$OPTARG
+			api="https://${apiHost}/api/v1"
+		;;
+		help|\?)
+			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>] -h [api-host]"
 			echo -e "\t s - skip.  Skips the upload of input files (say if you've already run the process and they don't need to change)."
 			echo -e "\t l - list.  Just lists the current input files and does no further processing." 
 			echo -e "\t r <filename> - replace.  Uploads just the file specified and then runs the execution."
 			echo -e "\t c - complete.  Completes the execution by publishing the last generated zip file."
 			echo -e "\t a - automatically publish packages on successful execution." 
 			echo -e "\t p <filename> - publish. Uploads the specified zip file for publishing independent of any execution (eg for priming the system with a previous release)."
+			echo -e "\t h <api-host> - target api host. Overrides the host to target, assumes URL https://HOST/api/v1"
 			exit 0
 		;;
 	esac
