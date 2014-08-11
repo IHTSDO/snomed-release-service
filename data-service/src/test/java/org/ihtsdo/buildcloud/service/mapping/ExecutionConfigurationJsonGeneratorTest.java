@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.mapping;
 
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class ExecutionConfigurationJsonGeneratorTest {
 		inputFiles.add("sct2_Relationship_Delta_INT_20140131.txt");
 		internationalPackage.setInputFiles(inputFiles);
 		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 0).getTime(), internationalPackage.getBuild());
-		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json")));
+		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json"), RF2Constants.UTF_8));
 	}
 
 	@Test

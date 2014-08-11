@@ -85,13 +85,13 @@ public class Rf2FileExportServiceTest {
 		//get the original header line from delta file
 		String headerLine = null;
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-				new FileInputStream(deltaFile)))) {
+				new FileInputStream(deltaFile), RF2Constants.UTF_8))) {
 
 			headerLine = reader.readLine();
 		}
 
 		//check and make sure the output delta file has only header line
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputDeltaFile)))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputDeltaFile), RF2Constants.UTF_8))) {
 			String actualHeader = reader.readLine();
 			if ((reader.readLine()) != null) {
 				Assert.fail("It should not contain more than one line!");
