@@ -9,10 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-#api=http://localhost:8080/api/v1
+api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-api="https://uat-release.ihtsdotools.org/api/v1"
-#api="http://dev-release.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
 # Should come from caller script:
