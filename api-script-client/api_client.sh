@@ -9,10 +9,9 @@ set -e;
 #
 
 # Declare common parameters
-#api=http://localhost:8080/api/v1
+api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-api="https://uat-release.ihtsdotools.org/api/v1"
-#api="http://dev-release.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
 #api="https://release.ihtsdotools.org/api/v1"
 
 # Should come from caller script:
@@ -114,7 +113,7 @@ completePublish=false
 
 # Reset getopts 
 OPTIND=1
-while getopts ":slcart:p:" opt
+while getopts ":slcart:p:h:" opt
 do
 	case $opt in
 		s) 
@@ -151,18 +150,27 @@ do
 			fi
 			echo "Option set to replace input file ${replaceInputFile} and execute a build."
 		;;
-		help|\?) 
-			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>]"
+		h)
+			apiHost=$OPTARG
+			api="https://${apiHost}/api/v1"
+		;;
+		help|\?)
+			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>] -h [api-host]"
 			echo -e "\t s - skip.  Skips the upload of input files (say if you've already run the process and they don't need to change)."
 			echo -e "\t l - list.  Just lists the current input files and does no further processing." 
 			echo -e "\t r <filename> - replace.  Uploads just the file specified and then runs the execution."
 			echo -e "\t c - complete.  Completes the execution by publishing the last generated zip file."
 			echo -e "\t a - automatically publish packages on successful execution." 
 			echo -e "\t p <filename> - publish. Uploads the specified zip file for publishing independent of any execution (eg for priming the system with a previous release)."
+			echo -e "\t h <api-host> - target api host. Overrides the host to target, assumes URL https://HOST/api/v1"
 			exit 0
 		;;
 	esac
 done
+
+echo
+echo "Target API URL: ${api}/"
+echo
 
 mkdir -p tmp
 
@@ -176,10 +184,10 @@ fi
 # But not if we're completing 'cos we'll need the execution id from the last run
 if [ -z "${completePublish}" ]
 then
-	rm tmp/*  || true
+	rm -rf tmp/*  || true
 fi
-rm logs/* || true
-rm output/*  || true
+rm -rf logs/* || true
+rm -rf output/*  || true
 
 
 # Login
@@ -195,10 +203,6 @@ then
 fi
 commonParamsSilent="-s --retry 0 -u ${token}:"
 commonParams="-${curlFlags} --retry 0 -u ${token}:"
-echo
-
-# This be printed first - before we start using it!
-echo "Target API URL is '${api}'"
 echo
 
 findOrCreateEntity "Extension" "${api}/centers/${releaseCentreId}/extensions" "${extensionName}"
@@ -344,6 +348,7 @@ curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execu
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
 echo "Execution ID is '${executionId}'"
 echo "Execution URL is '${api}/builds/${buildId}/executions/${executionId}'"
+echo
 echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
 echo
 
@@ -393,7 +398,7 @@ then
 	exit 0
 fi
 
-
+echo
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
 triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
@@ -421,6 +426,7 @@ downloadUrlRoot="$logsUrl"
 localDownloadDirectory=logs
 curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
 grep -v 'precheck' tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+echo
 
 echo "List the output files"
 downloadUrlRoot=${api}/builds/${buildId}/executions/${executionId}/packages/${packageId}/outputfiles
