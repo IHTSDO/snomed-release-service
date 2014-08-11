@@ -8,8 +8,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
-import javax.servlet.ServletException;
-
 public class ProductControllerTestIntegration extends AbstractControllerTest {
 
 	@Autowired
@@ -34,7 +32,7 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc, "ProductControllerTest");
-		((TestS3Client) s3Client).deleteBuckets();
+		((TestS3Client) s3Client).freshBucketStore();
 	}
 
 }
