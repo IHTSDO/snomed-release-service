@@ -89,6 +89,7 @@
 							<arguments>
 								<argument>run.sh</argument>
 								<argument>${daily_export_output}/delta</argument>
+								<argument>${host}</argument><!-- From command line -->
 							</arguments>
 						</configuration>
 					</execution>
