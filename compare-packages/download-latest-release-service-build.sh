@@ -9,13 +9,19 @@ then
 fi
 
 outputDir=$1
-api="https://uat-release.ihtsdotools.org/api/v1"
+apiHost=$2
+if [ -n "$apiHost" ]; then
+	api="https://$apiHost/api/v1"
+else
+	api="http://localhost:8080/api/v1"
+fi
 timeoutMins=3
-
 
 function getBuiltExecutionId {
 	curl -s $api/builds/5_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$today" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
 }
+
+echo "Target API URL: ${api}/"
 
 today=$(date +%Y-%m-%d)
 attempt=1
