@@ -178,7 +178,7 @@ public class TransformationFactory {
 		List<Field> fields = tableSchema.getFields();
 		for (int i = SchemaFactory.SIMPLE_REFSET_FIELD_COUNT; i < fields.size(); i++) {
 			Field field = fields.get(i);
-			if (field.getType().equals(DataType.SCTID)) {
+			if (field.getType().equals(DataType.SCTID) || field.getType().equals(DataType.SCTID_OR_UUID)) {
 				transformation.addLineTransformation(new SCTIDTransformationFromCache(i, cachedSctidFactory));
 			}
 		}

@@ -57,7 +57,7 @@ public abstract class AbstractControllerTest {
 		((PesudoUUIDGenerator)uuidGenerator).reset();
 
 		TestS3Client testS3Client = (TestS3Client) s3Client;
-		testS3Client.deleteBuckets();
+		testS3Client.freshBucketStore();
 		testS3Client.createBucket(executionBucketName);
 		testS3Client.createBucket(publishedBucketName);
 	}

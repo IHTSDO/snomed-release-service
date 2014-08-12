@@ -35,6 +35,11 @@
 			</list>
 		</property>
 		<property name="ignoreResourceNotFound" value="true"/>
+		<property name="properties">
+			<props>
+				<prop key="localRvf">false</prop>
+			</props>
+		</property>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
@@ -108,9 +113,7 @@
 			</bean>
 		</property>
 		<property name="offlineImplementation">
-			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl">
-				<constructor-arg value="${s3Offline.bucketsPath}"/>
-			</bean>
+			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl"/>
 		</property>
 	</bean>
 
@@ -130,6 +133,11 @@
 
 	<bean class="java.lang.Boolean" id="offlineMode" >
 		<constructor-arg value="${offlineMode}"/>
+	</bean>
+
+	<!-- Used to enable RVF calls when in offlineMode is true -->
+	<bean class="java.lang.Boolean" id="localRvf" >
+		<constructor-arg value="${localRvf}"/>
 	</bean>
 
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>
