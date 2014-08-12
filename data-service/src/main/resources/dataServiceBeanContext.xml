@@ -35,6 +35,11 @@
 			</list>
 		</property>
 		<property name="ignoreResourceNotFound" value="true"/>
+		<property name="properties">
+			<props>
+				<prop key="localRvf">false</prop>
+			</props>
+		</property>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
@@ -128,6 +133,11 @@
 
 	<bean class="java.lang.Boolean" id="offlineMode" >
 		<constructor-arg value="${offlineMode}"/>
+	</bean>
+
+	<!-- Used to enable RVF calls when in offlineMode is true -->
+	<bean class="java.lang.Boolean" id="localRvf" >
+		<constructor-arg value="${localRvf}"/>
 	</bean>
 
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>

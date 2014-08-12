@@ -3,9 +3,9 @@ package org.ihtsdo.buildcloud.service.precondition;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
-import org.ihtsdo.buildcloud.service.NetworkRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +16,9 @@ public class PreconditionManager {
 
 	private List<PreconditionCheck> preconditionChecks;
 	private boolean onlineMode;
+
+	@Autowired
+	private Boolean localRvf;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
 
@@ -30,7 +33,7 @@ public class PreconditionManager {
 			if (!pkg.isJustPackage()) {
 				List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
 				for (PreconditionCheck thisCheck : preconditionChecks) {
-					if (onlineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())) {
+					if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
 						thisCheck.runCheck(pkg, execution);
 						thisPackageResults.add(thisCheck.getReport());
 					} else {
