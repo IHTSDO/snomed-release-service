@@ -106,7 +106,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 		// Create the target directory
 		outFile.getParentFile().mkdirs();
-
+		LOGGER.info("Offline bucket location {}", outFile.getAbsolutePath());
 		//For ease of testing, if we're writing the final results (eg a zip file) we'll output the full path to STDOUT
 		String outputFilePath = outFile.getAbsolutePath();
 		if (FileUtils.isZip(outputFilePath)) {
