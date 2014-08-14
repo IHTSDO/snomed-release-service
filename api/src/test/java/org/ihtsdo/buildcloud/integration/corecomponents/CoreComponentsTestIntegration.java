@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.controller.corecomponents;
+package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
