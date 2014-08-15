@@ -60,10 +60,10 @@ for file in `find target/a -type f | sed "s/target\/a\///"`; do
 	then 
 		echo "Comparing ${file}"
 
-		leftFileCount=`wc -l ${leftFile}`
+		leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
 		echo "SRS line count: $leftFileCount"
 
-		rightFileCount=`wc -l ${rightFile}`
+		rightFileCount=`wc -l ${rightFile} | awk '{print $1}'`
 		echo "WBRP line count: $rightFileCount"
 
 		echo "Line count diff: $[$leftFileCount-$rightFileCount]"
