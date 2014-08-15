@@ -34,7 +34,8 @@ public class StreamTestUtils {
 		while ((actualLine = actualReader.readLine()) != null) {
 			expectedLine = expectedReader.readLine();
 			if (expectedLine == null) {
-				Assert.fail("Line count mismatch" + errorMessageNamePart + ". Expected stream has ended but Actual stream has more lines starting with line " + line + ": " + actualLine);
+				int moreLinesCount = 1 + countRemainingLines(actualReader);
+				Assert.fail("Line count mismatch" + errorMessageNamePart + ". Expected stream has ended but Actual stream has " + moreLinesCount + " more lines starting with line " + line + ": " + actualLine);
 			} else {
 				if (usePatterns) {
 					assertEqualsWithPatterns("Content should match pattern" + errorMessageNamePart + " on line " + line, expectedLine, actualLine);
@@ -45,8 +46,17 @@ public class StreamTestUtils {
 			line++;
 		}
 		if ((expectedLine = expectedReader.readLine()) != null) {
-			Assert.fail("Line count mismatch" + errorMessageNamePart + ". Actual stream has ended but Expected stream has more lines starting with line " + line + ": " + expectedLine);
+			int moreLinesCount = 1 + countRemainingLines(expectedReader);
+			Assert.fail("Line count mismatch" + errorMessageNamePart + ". Actual stream has ended but Expected stream has " + moreLinesCount + " more lines starting with line " + line + ": " + expectedLine);
 		}
+	}
+
+	private static int countRemainingLines(BufferedReader reader) throws IOException {
+		int moreLinesCount = 0;
+		while (reader.readLine() != null) {
+			moreLinesCount++;
+		}
+		return moreLinesCount;
 	}
 
 	static void assertEqualsWithPatterns(String message, String expectedLine, String actualLine) {
