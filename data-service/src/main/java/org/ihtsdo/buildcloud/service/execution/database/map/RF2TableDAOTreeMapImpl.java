@@ -71,9 +71,9 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void discardAlreadyPublishedDeltaStates(InputStream previousFullFileStream, String currentFullFileName, String effectiveTime) throws IOException, DatabasePopulatorException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousFullFileStream, RF2Constants.UTF_8))) {
-			getHeader(currentFullFileName, reader);
+	public void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			getHeader(currentSnapshotFileName, reader);
 
 			String line;
 			String value;

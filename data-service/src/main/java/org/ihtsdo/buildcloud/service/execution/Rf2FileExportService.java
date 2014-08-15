@@ -92,16 +92,15 @@ public class Rf2FileExportService {
 			timer.split();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
 
-			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			String previousPublishedPackage = null;
 			if (!firstTimeRelease) {
 				// Find previous published package
 				previousPublishedPackage = pkg.getPreviousPublishedPackage();
-				InputStream previousFullFileStream = getPreviousFullStream(previousPublishedPackage, currentFullFileName);
 
 				// Workbench workaround - use full file to discard invalid delta entries
 				// See interface javadoc for more info.
-				rf2TableDAO.discardAlreadyPublishedDeltaStates(previousFullFileStream, currentFullFileName, effectiveTime);
+				rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
 			}
 
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
@@ -130,8 +129,9 @@ public class Rf2FileExportService {
 			deltaFileAsyncPipe.waitForFinish();
 			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
+			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 			if (!firstTimeRelease) {
-				InputStream previousFullFileStream = getPreviousFullStream(previousPublishedPackage, currentFullFileName);
+				InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, currentFullFileName);
 
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
@@ -167,20 +167,21 @@ public class Rf2FileExportService {
 				try {
 					rf2TableDAO.closeConnection();
 				} catch (Exception e) {
-					LOGGER.error("Failure while trying to clean up after {}", tableSchema.getTableName(), e);
+					LOGGER.error("Failure while trying to clean up after {}",
+							tableSchema != null ? tableSchema.getTableName() : "No table yet.", e);
 				}
 			}
 		}
 	}
 
-	private InputStream getPreviousFullStream(String previousPublishedPackage, String currentFullFileName) throws IOException {
-		InputStream previousFullFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
-		if (previousFullFileStream == null) {
-			throw new RuntimeException("No full file equivalent of:  "
-					+ currentFullFileName
-					+ " found in prevous published package:" + previousPublishedPackage);
+	private InputStream getPreviousFileStream(String previousPublishedPackage, String currentFileName) throws IOException {
+		InputStream previousFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFileName, previousPublishedPackage);
+		if (previousFileStream == null) {
+			throw new RuntimeException("No equivalent of:  "
+					+ currentFileName
+					+ " found in previous published package:" + previousPublishedPackage);
 		}
-		return previousFullFileStream;
+		return previousFileStream;
 	}
 
 	/**
