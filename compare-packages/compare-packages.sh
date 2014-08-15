@@ -50,20 +50,34 @@ diff target/srs_file_list.txt target/legacy_file_list.txt && echo "None"
 echo
 
 mkdir -p target/c
-echo -e "_File content differences_\n"
+echo "_File content differences_"
+echo "Line count diff is SRS minus WBRP"
+echo
 for file in `find target/a -type f | sed "s/target\/a\///"`; do
 	leftFile="target/a/${file}"
 	rightFile="target/b/${file}"
 	if [ -f "${rightFile}" ]
 	then 
-		echo "Comparing File" $file
-		sort ${leftFile} > tmp.txt 
+		echo "Comparing ${file}"
+
+		leftFileCount=`wc -l ${leftFile}`
+		echo "SRS line count: $leftFileCount"
+
+		rightFileCount=`wc -l ${rightFile}`
+		echo "WBRP line count: $rightFileCount"
+
+		echo "Line count diff: $[$leftFileCount-$rightFileCount]"
+
+		sort ${leftFile} > tmp.txt
 		mv tmp.txt ${leftFile}
 		sort ${rightFile} > tmp.txt 
 		mv tmp.txt ${rightFile}
-		echo -n "${file} differences count: "
-		diff  ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l 
+		echo -n "Content differences count (x2): "
+		diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
+
+		echo
 	else
-		echo "Skipping file ${file} - no counterpart in the legacy build"
+		echo "Skipping ${file} - no counterpart in the legacy build"
+		echo
 	fi
 done
