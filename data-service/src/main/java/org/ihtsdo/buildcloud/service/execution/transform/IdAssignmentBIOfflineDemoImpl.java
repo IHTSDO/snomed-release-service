@@ -17,7 +17,7 @@ public class IdAssignmentBIOfflineDemoImpl implements IdAssignmentBI {
 	private static final NotImplementedException NOT_IMPLEMENTED_EXCEPTION = new NotImplementedException("Not implemented in the offline demo id generator.");
 
 	public IdAssignmentBIOfflineDemoImpl() {
-		sctid = 800000L;
+		reset();
 	}
 
 	@Override
@@ -70,4 +70,9 @@ public class IdAssignmentBIOfflineDemoImpl implements IdAssignmentBI {
 	public HashMap<UUID, HashMap<IDENTIFIER, String>> createConceptIDList(HashMap<UUID, String> componentUUIDandParentSnomedId, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateConceptIDListFaultException {
 		throw NOT_IMPLEMENTED_EXCEPTION;
 	}
+
+	public void reset() {
+		sctid = 800000L;
+	}
+
 }
