@@ -20,4 +20,14 @@ public interface RF2TableDAO {
 
 	void closeConnection() throws SQLException;
 
+	/**
+	 * This is a workaround for fact that Workbench does not consider the published state when exporting modified content.
+	 * If an author has changed and component and then changed it back both states get exported to the release process when neither should.
+	 * This functionality should be deleted when the Workbench authoring tool is replaced.
+	 *  @param previousFullFileStream InputStream of previous published full RF2 file.
+	 * @param currentFullFileName
+	 * @param effectiveTime
+	 */
+	void discardAlreadyPublishedDeltaStates(InputStream previousFullFileStream, String currentFullFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+
 }
