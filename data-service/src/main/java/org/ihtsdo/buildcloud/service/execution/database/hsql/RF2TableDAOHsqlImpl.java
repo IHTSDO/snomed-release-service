@@ -104,6 +104,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		connection.close();
 	}
 
+	@Override
+	public void discardAlreadyPublishedDeltaStates(InputStream previousFullFileStream, String currentFullFileName, String effectiveTime) {
+		throw new UnsupportedOperationException("This method is not yet written for this implementation (" + getClass().getName() + ")");
+	}
+
 	private void createTable(TableSchema tableSchema) throws SQLException {
 		StringBuilder builder = new StringBuilder()
 				.append("create table ")

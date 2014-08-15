@@ -1,0 +1,37 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_Release_INTBadDelta_20140131">
+		<file Name="Readme_20140131.txt"/>
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Refset">
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageFull-en_INT_20140131.txt"/>
+					</folder>
+				</folder>
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Full_INT_20140131.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Snapshot">
+				<folder Name="Refset">
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageSnapshot-en_INT_20140131.txt"/>
+					</folder>
+				</folder>
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Snapshot_INT_20140131.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Delta">
+				<folder Name="Refset">
+					<folder Name="Language">
+						<file Name="der2_cRefset_LanguageDelta-en_INT_20140131.txt"/>
+					</folder>
+				</folder>
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Delta_INT_20140131.txt"/>
+				</folder>
+			</folder>
+		</folder>
+	</folder>
+</listing>

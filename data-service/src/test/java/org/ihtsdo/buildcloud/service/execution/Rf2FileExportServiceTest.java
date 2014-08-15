@@ -133,6 +133,9 @@ public class Rf2FileExportServiceTest {
 			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
 			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
 
+			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
+			returns(getFileInputStreamFromResource(FuLL_FILE_NAME));
+
 			dao.getOutputFileOutputStream(execution, anyString, anyString);
 			returns(getDummyAsyncPipedStreamBean(currentFullFile));
 

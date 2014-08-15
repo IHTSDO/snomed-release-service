@@ -1,10 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -19,8 +16,10 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Rf2FileExportService {
 
@@ -41,13 +40,14 @@ public class Rf2FileExportService {
 
 	public final void generateReleaseFiles() {
 		boolean firstTimeRelease = pkg.isFirstTimeRelease();
+		String effectiveTime = pkg.getBuild().getEffectiveTimeSnomedFormat();
 		List<String> transformedFiles = getTransformedDeltaFiles();
 		for (String thisFile : transformedFiles) {
 			int failureCount = 0;
 			boolean success = false;
 			do {
 				try {
-					generateReleaseFile(thisFile, firstTimeRelease);
+					generateReleaseFile(thisFile, firstTimeRelease, effectiveTime);
 					success = true;
 				} catch (ReleaseFileGenerationException e) {
 					failureCount++;
@@ -77,7 +77,7 @@ public class Rf2FileExportService {
 		return isNetworkRelated;
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease) {
+	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease, String effectiveTime) {
 	    	LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
@@ -91,6 +91,19 @@ public class Rf2FileExportService {
 			rf2TableDAO = new RF2TableDAOTreeMapImpl();
 			timer.split();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
+
+			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			String previousPublishedPackage = null;
+			if (!firstTimeRelease) {
+				// Find previous published package
+				previousPublishedPackage = pkg.getPreviousPublishedPackage();
+				InputStream previousFullFileStream = getPreviousFullStream(previousPublishedPackage, currentFullFileName);
+
+				// Workbench workaround - use full file to discard invalid delta entries
+				// See interface javadoc for more info.
+				rf2TableDAO.discardAlreadyPublishedDeltaStates(previousFullFileStream, currentFullFileName, effectiveTime);
+			}
+
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
 			timer.setTargetEntity(tableSchema.getTableName());
 			timer.logTimeTaken("Create table");
@@ -117,17 +130,8 @@ public class Rf2FileExportService {
 			deltaFileAsyncPipe.waitForFinish();
 			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
-			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
-
 			if (!firstTimeRelease) {
-				// Find previous published package
-				String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-				InputStream previousFullFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
-				if (previousFullFileStream == null) {
-					throw new RuntimeException("No full file equivalent of:  "
-							+ currentFullFileName
-							+ " found in prevous published package:" + previousPublishedPackage);
-				}
+				InputStream previousFullFileStream = getPreviousFullStream(previousPublishedPackage, currentFullFileName);
 
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
@@ -167,6 +171,16 @@ public class Rf2FileExportService {
 				}
 			}
 		}
+	}
+
+	private InputStream getPreviousFullStream(String previousPublishedPackage, String currentFullFileName) throws IOException {
+		InputStream previousFullFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFullFileName, previousPublishedPackage);
+		if (previousFullFileStream == null) {
+			throw new RuntimeException("No full file equivalent of:  "
+					+ currentFullFileName
+					+ " found in prevous published package:" + previousPublishedPackage);
+		}
+		return previousFullFileStream;
 	}
 
 	/**
