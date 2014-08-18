@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -57,7 +58,8 @@ public class ExecutionController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
-											   HttpServletRequest request) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException {
+											   HttpServletRequest request) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException,
+											   EntityAlreadyExistsException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 

@@ -2,8 +2,10 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
+import org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
+import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -18,7 +20,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletException;
-
 import java.nio.charset.Charset;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -45,6 +46,9 @@ public abstract class AbstractControllerTest {
 	private UUIDGenerator uuidGenerator;
 
 	@Autowired
+	private IdAssignmentBI idAssignmentBI;
+
+	@Autowired
 	private String executionBucketName;
 
 	@Autowired
@@ -55,6 +59,7 @@ public abstract class AbstractControllerTest {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
 		((PesudoUUIDGenerator)uuidGenerator).reset();
+		((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
 
 		TestS3Client testS3Client = (TestS3Client) s3Client;
 		testS3Client.freshBucketStore();

@@ -93,7 +93,7 @@ public class TransformationFactory {
 		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
@@ -105,7 +105,7 @@ public class TransformationFactory {
 		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
@@ -123,7 +123,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
@@ -142,7 +142,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// sourceId
@@ -164,7 +164,7 @@ public class TransformationFactory {
 				// identifierSchemeId
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// referencedComponentId
@@ -191,7 +191,7 @@ public class TransformationFactory {
 				// id
 				.addLineTransformation(new UUIDTransformation(0, uuidGenerator))
 				// effectiveTime
-				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true))
+				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// refsetId

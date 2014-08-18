@@ -34,8 +34,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
-			String headerLine = reader.readLine();
-			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+			String headerLine = getHeader(rf2FilePath, reader);
 			tableSchema = schemaFactory.createSchemaBean(rf2Filename);
 			idType = tableSchema.getFields().get(0).getType();
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
@@ -71,20 +70,52 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		table = null;
 	}
 
+	@Override
+	public void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			getHeader(currentSnapshotFileName, reader);
+
+			String line;
+			String value;
+			while ((line = reader.readLine()) != null) {
+				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+				Key key = getKey(parts[0], effectiveTime);
+				if ((value = table.get(key)) != null) {
+					if (value.equals(parts[2])) {
+						// Fields after second column
+						table.remove(key);
+					}
+				}
+			}
+		}
+	}
+
 	public Map<Key, String> getTable() {
 		return table;
+	}
+
+	private String getHeader(String rf2FilePath, BufferedReader reader) throws IOException, DatabasePopulatorException {
+		String headerLine = reader.readLine();
+		if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+		return headerLine;
 	}
 
 	private void insertData(BufferedReader reader) throws IOException {
 		String line;
 		while ((line = reader.readLine()) != null) {
 			String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			if (idType == DataType.SCTID) {
-				table.put(new SCTIDKey(parts[0], parts[1]), parts[2]);
-			} else {
-				table.put(new UUIDKey(parts[0], parts[1]), parts[2]);
-			}
+			table.put(getKey(parts[0], parts[1]), parts[2]);
 		}
+	}
+
+	private Key getKey(String part0, String part1) {
+		Key key;
+		if (idType == DataType.SCTID) {
+			key = new SCTIDKey(part0, part1);
+		} else {
+			key = new UUIDKey(part0, part1);
+		}
+		return key;
 	}
 
 }

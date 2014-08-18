@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 
@@ -23,8 +24,9 @@ public interface ExecutionService {
 	 * @throws IOException
 	 * @throws NamingConflictException
 	 * @throws ResourceNotFoundException
+	 * @throws EntityAlreadyExistsException 
 	 */
-	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException;
+	Execution create(String buildCompositeKey, User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException, EntityAlreadyExistsException;
 
 	List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 
