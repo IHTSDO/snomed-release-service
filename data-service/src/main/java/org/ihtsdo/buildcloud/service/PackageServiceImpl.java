@@ -70,7 +70,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			packageDAO.save(pkg);
 			return pkg;
 		} else {
-			throw new EntityAlreadyExistsException();
+			throw new EntityAlreadyExistsException("Package:"+ pkg.getBusinessKey() + " already exists!");
 		}
 	}
 

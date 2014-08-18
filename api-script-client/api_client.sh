@@ -267,17 +267,16 @@ echo "Set Readme Header and readmeEndDate"
 readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\", \"readmeEndDate\" : \"${readmeEndDate}\" }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
-#Are we using the assumed filename for the manifest file?
-if [ -z "${manifestFile}" ] 
-then
-	manifestFile="manifest.xml"
-fi
-echo "Upload Manifest: ${manifestFile}"
-curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFile}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
-
 
 if ! ${skipLoad}
 then
+    #Are we using the assumed filename for the manifest file?
+    if [ -z "${manifestFile}" ]
+    then
+    manifestFile="manifest.xml"
+    fi
+    echo "Upload Manifest: ${manifestFile}"
+    curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFile}" ${api}/builds/${buildId}/packages/${packageId}/manifest  | grep HTTP | ensureCorrectResponse
 	# Are we just replacing one file, or uploading the whole lot?
 	if [ -n "${replaceInputFile}" ]
 	then

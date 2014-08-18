@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -14,6 +13,7 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
 import org.ihtsdo.buildcloud.service.exception.PostConditionException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -40,6 +40,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,39 +91,38 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
-	public Execution create(final String buildCompositeKey, final User authenticatedUser) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException {
-		
-	    	LOGGER.info("Create execution for build: {}", buildCompositeKey);
-	    	Build build = getBuild(buildCompositeKey, authenticatedUser);
-
-		if (build.getEffectiveTime() != null) {
-
-			Date creationDate = new Date();
-
+	public Execution create(final String buildCompositeKey, final User authenticatedUser) 
+			throws IOException, BadConfigurationException, 
+			NamingConflictException, ResourceNotFoundException, EntityAlreadyExistsException {
+		Date creationDate = new Date();
+		Build build = getBuild(buildCompositeKey, authenticatedUser);
+		if (build.getEffectiveTime() == null) {
+			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
+		}
+		Execution execution = null;
+		synchronized (buildCompositeKey) {
 			//Do we already have an execution for that date?
 			Execution existingExecution = getExecution(build, creationDate);
 			if (existingExecution != null) {
-				throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists at timestamp " + creationDate);
+				throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists with execution id " + existingExecution.getId());
 			}
-
-			Execution execution = new Execution(creationDate, build);
-
-			// Copy all files from Build input and manifest directory to Execution input and manifest directory
-			dao.copyAll(build, execution);
-
-			//Perform Pre-condition testing (loops through each package)
-			runPreconditionChecks(execution);
-
+			execution = new Execution(creationDate, build);
 			// Create Build config export
 			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
-
-			// Persist export
+			// save execution with config
 			dao.save(execution, jsonConfig);
-
-			return execution;
-		} else {
-			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
+			LOGGER.info("Created execution for build: {} with execution id: {}", buildCompositeKey, execution.getId());
+			// Copy all files from Build input and manifest directory to Execution input and manifest directory
+			dao.copyAll(build, execution);
 		}
+		//Perform Pre-condition testing (loops through each package)
+		Status preStatus = execution.getStatus();
+		runPreconditionChecks(execution);
+		Status newStatus = execution.getStatus();
+		if (newStatus != preStatus) {
+			dao.updateStatus(execution, newStatus);
+		}
+		return execution;
 	}
 
 	private void runPreconditionChecks(final Execution execution) {
@@ -135,7 +135,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			for (PreConditionCheckReport report : preConditionReports.get(pkgName)) {
 				if (report.getResult() == State.FATAL) {
 					fatalCountByPkg++;
-					LOGGER.warn("Fatal error occurred during pre-condition check for package {}", pkgName );
+					LOGGER.warn("Fatal error occurred during pre-condition check for package {}", pkgName);
 					break;
 				}
 			}
@@ -143,7 +143,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		//need to alert release manager as all packages have fatal pre-condition check error.
 		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
 			execution.setStatus(Status.FAILED_PRE_CONDITIONS);
-			LOGGER.warn("Fatal error occurred for all packages during pre-condition checks and execution {} will be halted.", execution.getId() );
+			LOGGER.warn("Fatal error occurred for all packages during pre-condition checks and execution {} will be halted.", execution.getId());
 		}
 		LOGGER.info("End of Pre-condition checks");
 	}
@@ -283,7 +283,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		LOGGER.info("End of executing package {}", pkg.getName());
 	}
 
-	private String runRVFPostConditionCheck( final File zipPackage, final Execution execution, final String pkgBusinessKey) throws IOException,
+	private String runRVFPostConditionCheck(final File zipPackage, final Execution execution, final String pkgBusinessKey) throws IOException,
 			PostConditionException {
 	    	LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
@@ -367,7 +367,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private Execution getExecution(final Build build, final Date creationTime) {
 		return dao.find(build, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
-
+	
 
 	private Build getBuild(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);

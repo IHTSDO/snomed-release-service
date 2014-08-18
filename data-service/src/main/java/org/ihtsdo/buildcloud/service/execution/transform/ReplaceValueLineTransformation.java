@@ -4,12 +4,12 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 
 	public int column;
 	public String value;
-	private final boolean replaceWhenAbsentOnly;
+	private final boolean keepExistingValueIfPresent;
 
-	public ReplaceValueLineTransformation(int column, String value, boolean replaceWhenAbsentOnly) {
+	public ReplaceValueLineTransformation(int column, String value, boolean keepExistingValueIfPresent) {
 		this.column = column;
 		this.value = value;
-		this.replaceWhenAbsentOnly = replaceWhenAbsentOnly;
+		this.keepExistingValueIfPresent = keepExistingValueIfPresent;
 	}
 
 
@@ -20,7 +20,7 @@ public class ReplaceValueLineTransformation implements LineTransformation {
 	@Override
 	public void transformLine(String[] columnValues) {
 		if (columnValues != null && columnValues.length > column) {
-			if (!replaceWhenAbsentOnly) {
+			if (!keepExistingValueIfPresent) {
 				columnValues[column] = value;
 			} else {
 				if (columnValues[column] == null || columnValues[column].isEmpty()) {

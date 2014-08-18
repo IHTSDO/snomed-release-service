@@ -7,4 +7,4 @@ echo
 echo "Starting API webapp in offline mode.."
 echo
 sleep 1
-java -jar api/target/exec-api.jar
+java -Xmx3g -jar api/target/exec-api.jar
