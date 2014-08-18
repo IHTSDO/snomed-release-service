@@ -168,7 +168,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private ArrayList<Execution> findExecutionsDesc(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 1000);
+		// This code would allow us to only return status objects, so as to ameliorate the 1000 object limit issue.
+		// But since we need to know the actual status (after the colon) we might be better moving to a paging solution
+		// using 'marker'. In the meantime, I'll bump the limit up 10 fold.
+		// final String DELIMITER = "/status:";
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 		List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
 
