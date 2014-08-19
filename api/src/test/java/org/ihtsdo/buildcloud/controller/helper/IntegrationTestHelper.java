@@ -193,72 +193,41 @@ public class IntegrationTestHelper {
 		return effectiveDate.substring(0, 4) + "-" + effectiveDate.substring(4, 6) + "-" + effectiveDate.substring(6, 8);
 	}
 
-	/*
-		 * @return a string formatted for use as a JSON key/value pair eg 	"\"effectiveTime\" : \""+ effectiveDate + "\","
-		 * with a trailing comma just in case you want more than one and json is OK with that if there's only one
-		 */
-	public String jsonPair(String key, String value) {
-		return "  \"" + key + "\" : \"" + value + "\" ";
-	}
-
 	public void setFirstTimeRelease(boolean isFirstTime) throws Exception {
-		String jsonContent = "{ " + jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }";
-		mockMvc.perform(
-				request(HttpMethod.PATCH, getPackageUrl())
-						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(jsonContent)
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		setPackageProperty("{ " + jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
 	public void setJustPackage(boolean justPackage) throws Exception {
-		String jsonContent = "{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }";
-		mockMvc.perform(
-				request(HttpMethod.PATCH, getPackageUrl())
-						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(jsonContent)
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		setPackageProperty("{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
 	}
 
 	public void setPreviousPublishedPackage(String previousPublishedFile) throws Exception {
-		String jsonContent = "{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }";
-		mockMvc.perform(
-				request(HttpMethod.PATCH, getPackageUrl())
-						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(jsonContent)
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		setPackageProperty("{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
 
 	}
 
 	public void setReadmeHeader(String readmeHeader) throws Exception {
-		mockMvc.perform(
-				request(HttpMethod.PATCH, getPackageUrl())
-						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"readmeHeader\" : \"" + readmeHeader + "\" }")
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+		setPackageProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
 	}
 
 	public void setReadmeEndDate(String readmeEndDate) throws Exception {
+		setPackageProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
+	}
+
+	/*
+		 * @return a string formatted for use as a JSON key/value pair eg 	"\"effectiveTime\" : \""+ effectiveDate + "\","
+		 * with a trailing comma just in case you want more than one and json is OK with that if there's only one
+		 */
+	private String jsonPair(String key, String value) {
+		return "  \"" + key + "\" : \"" + value + "\" ";
+	}
+
+	private void setPackageProperty(String jsonContent) throws Exception {
 		mockMvc.perform(
 				request(HttpMethod.PATCH, getPackageUrl())
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
-						.content("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }")
+						.content(jsonContent)
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
@@ -425,6 +394,7 @@ public class IntegrationTestHelper {
 		String name = zipEntry.getName();
 		return name.substring(name.lastIndexOf("/") + 1);
 	}
+
 	public String getBasicDigestHeaderValue() {
 		return basicDigestHeaderValue;
 	}
@@ -432,5 +402,5 @@ public class IntegrationTestHelper {
 	public String getPackageUrl() {
 		return "/builds/" + buildId + "/packages/" + this.packageBusinessKey;
 	}
-	
+
 }
