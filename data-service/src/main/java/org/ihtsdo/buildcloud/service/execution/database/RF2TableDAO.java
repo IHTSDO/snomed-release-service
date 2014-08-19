@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
@@ -10,9 +11,9 @@ import java.text.ParseException;
 
 public interface RF2TableDAO {
 
-	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
+	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
 
-	void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException;
+	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException;
 
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
@@ -30,4 +31,33 @@ public interface RF2TableDAO {
 	 */
 	void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
 
+	/**
+	 * This is a workaround for Workbench. Workbench exports refset members with the wrong UUID.
+	 * This functionality should be deleted when the Workbench authoring tool is replaced.
+	 * @param previousSnapshotFileStream
+	 * @param currentSnapshotFileName
+	 * @param effectiveTime
+	 */
+	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+	 
+	/** 
+	 * This is a workaround for dealing with daily export delta file from WorkBench.
+	 * Workbench authoring tool uses a blank value in the 7th column of the AttibuteValue Refset file
+	 * to signify component inactivation with "reason not stated" 
+	 * 
+	 * @param previousFileStream
+	 * @throws IOException
+	 */
+	void resolveEmptyValueId(InputStream previousFileStream) throws IOException;
+
+	/**
+	 * This is a workaround for Workbench. New member ids can only be generated once reconcileRefsetMemberIds has been used to identify
+	 * which members are new.
+	 * This functionality should be deleted when the Workbench authoring tool is replaced.
+	 * @param effectiveTime
+	 * @throws DatabasePopulatorException
+	 */
+	void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException;
+
 }
+

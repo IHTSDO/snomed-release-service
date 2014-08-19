@@ -4,8 +4,11 @@ import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,24 +16,31 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
-	public static final String FORMAT = "%s" + RF2Constants.COLUMN_SEPARATOR + "%s";
 	private final SchemaFactory schemaFactory;
 	private TableSchema tableSchema;
 	private DataType idType;
 	private Map<Key, String> table;
+	private Set<Key> dirtyKeys;
+	private UUIDGenerator uuidGenerator;
 
-	public RF2TableDAOTreeMapImpl() {
+	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
+	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
+	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
+
+	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator) {
+		this.uuidGenerator = uuidGenerator;
 		schemaFactory = new SchemaFactory();
 		table = new TreeMap<>();
 	}
 
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
@@ -40,7 +50,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 
 			// Insert Data
-			insertData(reader);
+			insertData(reader, tableSchema, true, workbenchDataFixesRequired);
 
 			return tableSchema;
 		}
@@ -48,10 +58,10 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
-			insertData(reader);
+			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
 		}
 	}
 
@@ -90,6 +100,51 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
+	@Override
+	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException {
+		try (BufferedReader prevSnapshotReader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			getHeader("previous to " + currentSnapshotFileName, prevSnapshotReader);
+
+			String line;
+			String[] parts;
+			while ((line = prevSnapshotReader.readLine()) != null) {
+				String compositeKey = getCompositeKey(tableSchema, line);
+				Key matcherKey = new StringKey(compositeKey);
+				String newValues = table.get(matcherKey);
+				if (newValues != null) {
+					parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					replaceDirtyKey(matcherKey, parts[0], effectiveTime);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException {
+		if (!dirtyKeys.isEmpty()) {
+			LOGGER.info("{} dirty refset ids remain. Generating UUIDs for new members.", dirtyKeys.size());
+			while (dirtyKeys.iterator().hasNext()) {
+				Key remainingDirtyKey = dirtyKeys.iterator().next();
+				String newKey = uuidGenerator.uuid();
+				replaceDirtyKey(remainingDirtyKey, newKey, effectiveTime);
+			}
+		} else {
+			LOGGER.info("No dirty refset ids remain. No new members.", dirtyKeys.size());
+		}
+	}
+
+	private void replaceDirtyKey(Key existingDirtyKey, String newKeyUUID, String effectiveTime) throws DatabasePopulatorException {
+		String existingData = table.remove(existingDirtyKey);
+		if (existingData != null) {
+			table.put(new UUIDKey(newKeyUUID, effectiveTime), existingData);
+			if (!dirtyKeys.remove(existingDirtyKey)) {
+				throw new DatabasePopulatorException("Failed to remove dirty key " + existingDirtyKey + "'");
+			}
+		} else {
+			throw new DatabasePopulatorException("No match found when replacing dirty key '" + existingDirtyKey + "'");
+		}
+	}
+
 	public Map<Key, String> getTable() {
 		return table;
 	}
@@ -100,11 +155,40 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		return headerLine;
 	}
 
-	private void insertData(BufferedReader reader) throws IOException {
+	private void insertData(BufferedReader reader, TableSchema tableSchema, boolean deltaData, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
 		String line;
+		String[] parts;
+		Key key;
+		dirtyKeys = new LinkedHashSet<>();
 		while ((line = reader.readLine()) != null) {
-			String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			table.put(getKey(parts[0], parts[1]), parts[2]);
+			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
+				// Key id = refsetId (5th field) and referencedComponentId (6th field)
+				String compositeKey = getCompositeKey(tableSchema, line);
+				key = new StringKey(compositeKey);
+				dirtyKeys.add(key);
+			} else {
+				key = getKey(parts[0], parts[1]);
+			}
+			table.put(key, parts[2]);
+		}
+	}
+
+	private String getCompositeKey(TableSchema tableSchema, String line) throws DatabasePopulatorException {
+		Pattern compKeyPattern;
+		List<Field> fields = tableSchema.getFields();
+		if (fields.size() >= 7 && ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
+			// Simple Map or Association
+			compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN;
+		} else {
+			// Simple RefSet
+			compKeyPattern = REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN;
+		}
+		Matcher matcher = compKeyPattern.matcher(line);
+		if (matcher.matches()) {
+			return matcher.group(1);
+		} else {
+			throw new DatabasePopulatorException("No composite key match in line '" + line + "'");
 		}
 	}
 
@@ -118,4 +202,37 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		return key;
 	}
 
+	@Override
+	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			String line;
+			line = reader.readLine();
+			if (line == null) {
+				throw new IOException("Privious attribute value snapshot file has no data");
+			}
+			while ((line = reader.readLine()) != null) {
+				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR);
+				Key key = getKey(parts[0], null);
+				String value = table.get(key);
+				if (value != null) {
+					boolean isPreviousActive = RF2Constants.BOOLEAN_TRUE.equals(parts[2]);
+					//check data in delta file has got empty value id and with inactive flag
+					String[] data = value.split(RF2Constants.COLUMN_SEPARATOR);
+					boolean isValueIdEmpty = RF2Constants.EMPTY_SPACE.equals(data[data.length - 1]);
+					boolean isCurrentActive = RF2Constants.BOOLEAN_TRUE.equals(data[0]);
+					if (isValueIdEmpty && !isCurrentActive) {
+						if (isPreviousActive) {
+							//add previous value id
+							StringBuilder updated = new StringBuilder(value);
+							updated.append(parts[6]);
+							table.put(key, updated.toString());
+						} else {
+							//remove line from table
+							table.remove(key);
+						}
+					}
+				}
+			}
+		}
+	}
 }

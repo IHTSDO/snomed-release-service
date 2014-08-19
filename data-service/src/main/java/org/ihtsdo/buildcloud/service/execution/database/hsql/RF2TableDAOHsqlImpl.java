@@ -34,8 +34,15 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		schemaFactory = new SchemaFactory();
 	}
 
+	// Testing Only
+	RF2TableDAOHsqlImpl() {
+		schemaFactory = null;
+		dataTypeConverter = null;
+		connection = null;
+	};
+
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 
 			// Build Schema
@@ -58,7 +65,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 
@@ -105,8 +112,20 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void discardAlreadyPublishedDeltaStates(InputStream previousFullFileStream, String currentFullFileName, String effectiveTime) {
-		throw new UnsupportedOperationException("This method is not yet written for this implementation (" + getClass().getName() + ")");
+	public void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentFullFileName, String effectiveTime) throws IOException {
+		previousSnapshotFileStream.close();
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
+	}
+
+	@Override
+	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException {
+		previousSnapshotFileStream.close();
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
+	}
+
+	@Override
+	public void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException {
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 
 	private void createTable(TableSchema tableSchema) throws SQLException {
@@ -169,7 +188,8 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		return connection.prepareStatement(builder.toString());
 	}
 
-	private void insertData(BufferedReader reader, TableSchema tableSchema, PreparedStatement insertStatement) throws IOException, SQLException, ParseException {
+	void insertData(BufferedReader reader, TableSchema tableSchema, PreparedStatement insertStatement) throws IOException, SQLException,
+			ParseException {
 		List<Field> fields = tableSchema.getFields();
 		int fieldCount = fields.size();
 
@@ -180,7 +200,8 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		int valuesCount;
 		Object value;
 		while ((line = reader.readLine()) != null) {
-			lineValues = line.split(RF2Constants.COLUMN_SEPARATOR);
+			// Negative split limit means blank values are included at end of line
+			lineValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 			valuesCount = lineValues.length;
 			if (valuesCount == fieldCount) {
 				for (int colIndex = 0; colIndex < valuesCount; colIndex++) {
@@ -210,6 +231,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 
 	protected Connection getConnection() {
 		return connection;
+	}
+
+	@Override
+	public void resolveEmptyValueId(InputStream previousFileStream) {
+		throw new UnsupportedOperationException("This method is not supported yet for current implementation (" + getClass().getName() + ")");		
 	}
 
 }

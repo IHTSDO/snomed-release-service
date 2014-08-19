@@ -38,6 +38,8 @@ public class Package implements Comparable<Package> {
 	
 	private boolean firstTimeRelease = false;
 
+	private boolean workbenchDataFixesRequired = false;
+
 	private boolean justPackage = false;
 
 	private String previousPublishedPackage;
@@ -126,6 +128,14 @@ public class Package implements Comparable<Package> {
 
 	public String getPreviousPublishedPackage() {
 		return previousPublishedPackage;
+	}
+
+	public boolean isWorkbenchDataFixesRequired() {
+		return workbenchDataFixesRequired;
+	}
+
+	public void setWorkbenchDataFixesRequired(boolean workbenchDataFixesRequired) {
+		this.workbenchDataFixesRequired = workbenchDataFixesRequired;
 	}
 
 	@Override
