@@ -11,7 +11,7 @@ import java.text.ParseException;
 
 public interface RF2TableDAO {
 
-	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean firstTimeRelease, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
+	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
 
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException;
 
@@ -49,6 +49,15 @@ public interface RF2TableDAO {
 	 * @throws IOException
 	 */
 	void resolveEmptyValueId(InputStream previousFileStream) throws IOException;
+
+	/**
+	 * This is a workaround for Workbench. New member ids can only be generated once reconcileRefsetMemberIds has been used to identify
+	 * which members are new.
+	 * This functionality should be deleted when the Workbench authoring tool is replaced.
+	 * @param effectiveTime
+	 * @throws DatabasePopulatorException
+	 */
+	void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException;
 
 }
 
