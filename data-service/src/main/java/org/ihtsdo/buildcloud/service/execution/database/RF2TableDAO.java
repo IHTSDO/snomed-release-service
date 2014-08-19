@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
@@ -38,5 +39,16 @@ public interface RF2TableDAO {
 	 * @param effectiveTime
 	 */
 	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+	 
+	/** 
+	 * This is a workaround for dealing with daily export delta file from WorkBench.
+	 * Workbench authoring tool uses a blank value in the 7th column of the AttibuteValue Refset file
+	 * to signify component inactivation with "reason not stated" 
+	 * 
+	 * @param previousFileStream
+	 * @throws IOException
+	 */
+	void resolveEmptyValueId(InputStream previousFileStream) throws IOException;
 
 }
+
