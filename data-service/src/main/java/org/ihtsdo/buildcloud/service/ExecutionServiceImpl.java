@@ -22,6 +22,7 @@ import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
@@ -87,6 +88,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private Boolean localRvf;
+
+	@Autowired
+	private UUIDGenerator uuidGenerator;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
@@ -257,7 +261,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
 
 			//Convert Delta files to Full, Snapshot and delta release files
-			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, fileProcessingFailureMaxRetry);
+			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 		}
 

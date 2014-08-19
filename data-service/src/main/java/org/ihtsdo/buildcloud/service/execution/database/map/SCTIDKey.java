@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database.map;
 
-public class SCTIDKey implements Key<SCTIDKey> {
+public class SCTIDKey implements Key {
 
 	private final Long id;
 	private final String effectiveTime;
@@ -11,7 +11,8 @@ public class SCTIDKey implements Key<SCTIDKey> {
 	}
 
 	@Override
-	public int compareTo(SCTIDKey other) {
+	public int compareTo(Key otherKey) {
+		SCTIDKey other = (SCTIDKey) otherKey;
 		int result = id.compareTo(other.id);
 		if (result == 0) {
 			result = effectiveTime.compareTo(other.effectiveTime);

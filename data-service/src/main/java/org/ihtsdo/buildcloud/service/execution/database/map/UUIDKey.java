@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service.execution.database.map;
 
 import java.util.UUID;
 
-public class UUIDKey implements Key<UUIDKey> {
+public class UUIDKey implements Key {
 
 	private UUID uuid;
 	private String date;
@@ -12,10 +12,16 @@ public class UUIDKey implements Key<UUIDKey> {
 		this.date = date;
 	}
 
-	public int compareTo(UUIDKey other) {
-		int result = uuid.compareTo(other.uuid);
-		if (result == 0) {
-			result = date.compareTo(other.date);
+	public int compareTo(Key other) {
+		int result;
+		if (other instanceof StringKey) {
+			result = 1;
+		} else {
+			UUIDKey otherUUIDKey = (UUIDKey) other;
+			result = uuid.compareTo(otherUUIDKey.uuid);
+			if (result == 0) {
+				result = date.compareTo(otherUUIDKey.date);
+			}
 		}
 		return result;
 	}

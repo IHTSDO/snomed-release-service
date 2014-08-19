@@ -10,9 +10,9 @@ import java.text.ParseException;
 
 public interface RF2TableDAO {
 
-	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
+	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean firstTimeRelease, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
 
-	void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException;
+	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException;
 
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
@@ -29,5 +29,14 @@ public interface RF2TableDAO {
 	 * @param effectiveTime
 	 */
 	void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+
+	/**
+	 * This is a workaround for Workbench. Workbench exports refset members with the wrong UUID.
+	 * This functionality should be deleted when the Workbench authoring tool is replaced.
+	 * @param previousSnapshotFileStream
+	 * @param currentSnapshotFileName
+	 * @param effectiveTime
+	 */
+	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
 
 }

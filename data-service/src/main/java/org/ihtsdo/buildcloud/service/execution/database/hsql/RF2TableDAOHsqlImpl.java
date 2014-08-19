@@ -35,7 +35,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean firstTimeRelease, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 
 			// Build Schema
@@ -58,7 +58,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream) throws IOException, SQLException, ParseException {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 
@@ -105,8 +105,15 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void discardAlreadyPublishedDeltaStates(InputStream previousFullFileStream, String currentFullFileName, String effectiveTime) {
-		throw new UnsupportedOperationException("This method is not yet written for this implementation (" + getClass().getName() + ")");
+	public void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentFullFileName, String effectiveTime) throws IOException {
+		previousSnapshotFileStream.close();
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
+	}
+
+	@Override
+	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException {
+		previousSnapshotFileStream.close();
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 
 	private void createTable(TableSchema tableSchema) throws SQLException {
