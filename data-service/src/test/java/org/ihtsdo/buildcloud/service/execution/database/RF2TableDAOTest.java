@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.database.hsql.RF2TableDAOHsqlImpl;
 import org.ihtsdo.buildcloud.service.execution.database.map.RF2TableDAOTreeMapImpl;
+import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Assert;
@@ -10,6 +12,7 @@ import org.junit.Test;
 
 public class RF2TableDAOTest {
 
+	private UUIDGenerator uuidGenerator;
 	private RF2TableDAO rf2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
@@ -20,6 +23,7 @@ public class RF2TableDAOTest {
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
 		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
 		rf2CoreFullFilename = "sct2_Description_Full-en_INT_20140131.txt";
+		uuidGenerator = new PesudoUUIDGenerator();
 	}
 
 	@Test
@@ -30,7 +34,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl();
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
 		testCreateTable();
 	}
 
@@ -42,7 +46,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testAppendDataMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl();
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
 		testAppendData();
 	}
 
@@ -54,12 +58,12 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCoreDescCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl();
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
 		testCoreDescCreateTable();
 	}
 
 	private void testCreateTable() throws Exception {
-		TableSchema table = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		TableSchema table = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), true, false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(table);
 
@@ -73,9 +77,9 @@ public class RF2TableDAOTest {
 	}
 
 	private void testAppendData() throws Exception {
-		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename));
+		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), true, false);
 
-		rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename));
+		rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename), false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(tableSchema);
 		Assert.assertEquals("a895084b-10bc-42ca-912f-d70e8f0b825e\t20130130\t1\t900000000000207008\t450990004\t293495006", results.nextLine());
@@ -90,7 +94,7 @@ public class RF2TableDAOTest {
 	}
 
 	private void testCoreDescCreateTable() throws Exception {
-		TableSchema table = rf2TableDAO.createTable(rf2CoreFullFilename, getClass().getResourceAsStream(rf2CoreFullFilename));
+		TableSchema table = rf2TableDAO.createTable(rf2CoreFullFilename, getClass().getResourceAsStream(rf2CoreFullFilename), true, false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(table);
 

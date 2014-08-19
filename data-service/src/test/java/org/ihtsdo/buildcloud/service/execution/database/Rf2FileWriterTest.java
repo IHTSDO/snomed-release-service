@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.execution.database;
 
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.database.map.RF2TableDAOTreeMapImpl;
+import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
@@ -35,7 +36,7 @@ public class Rf2FileWriterTest {
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAOTreeMapImpl();
+	    rf2TableDAO = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator());
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
@@ -48,7 +49,7 @@ public class Rf2FileWriterTest {
 	@Test
 	public void testSimpleRefsetExportFullAndSnapshot() throws Exception {
 		// Prepare test object for this test
-		tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
+		tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA), true, false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		// Run target test method
@@ -62,7 +63,7 @@ public class Rf2FileWriterTest {
 	@Test
 	public void testSimpleRefsetExportDelta() throws Exception {
 		// Prepare test object for this test
-		tableSchema = rf2TableDAO.createTable(CURRENT_SIMPLE_REFSET_DELTA, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA));
+		tableSchema = rf2TableDAO.createTable(CURRENT_SIMPLE_REFSET_DELTA, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), true, false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		// Run target test method
@@ -77,8 +78,8 @@ public class Rf2FileWriterTest {
 	 */
 	@Test
 	public void testSimpleRefsetExportWithAppendData() throws Exception {
-	    tableSchema = rf2TableDAO.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL));
-	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA));
+	    tableSchema = rf2TableDAO.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL), true, false);
+	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
@@ -93,7 +94,7 @@ public class Rf2FileWriterTest {
 	 */
 	@Test
 	public void testSimpleRefsetSnapshotExportUsingPreviousReleaseDate() throws Exception {
-	    tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA));
+	    tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA), true, false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(PREVIOUS_RELEASE_DATE), fullOutputStream, snapshotOutputStream);
@@ -103,8 +104,8 @@ public class Rf2FileWriterTest {
 
 	@Test
 	public void testExtendedMapRefsetExport() throws Exception {
-	    tableSchema = rf2TableDAO.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL));
-	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA));
+	    tableSchema = rf2TableDAO.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL), true, false);
+	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse("20140731"), fullOutputStream, snapshotOutputStream);
