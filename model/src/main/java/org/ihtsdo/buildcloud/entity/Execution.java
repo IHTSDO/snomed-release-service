@@ -5,7 +5,6 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ public class Execution {
 	ExecutionReport executionReport;
 
 	public static enum Status {
-		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, QUEUED, BUILDING, BUILT
+		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT
 	}
 
 	public Execution(String creationTime, String statusString, Build build) {
