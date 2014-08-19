@@ -197,6 +197,10 @@ public class IntegrationTestHelper {
 		setPackageProperty("{ " + jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
+	public void setWorkbenchDataFixesRequired(boolean isWorkbenchDataFixesRequired) throws Exception {
+		setPackageProperty("{ " + jsonPair(PackageService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
+	}
+
 	public void setJustPackage(boolean justPackage) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
 	}
