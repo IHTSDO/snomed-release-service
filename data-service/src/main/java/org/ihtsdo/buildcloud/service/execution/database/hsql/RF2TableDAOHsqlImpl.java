@@ -219,4 +219,9 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		return connection;
 	}
 
+	@Override
+	public void resolveEmptyValueId(InputStream previousFileStream) {
+		throw new UnsupportedOperationException("This method is not supported yet for current implementation (" + getClass().getName() + ")");		
+	}
+
 }

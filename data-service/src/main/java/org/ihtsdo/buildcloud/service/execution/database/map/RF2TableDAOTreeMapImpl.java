@@ -194,4 +194,37 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		return key;
 	}
 
+	@Override
+	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			String line;
+			line = reader.readLine();
+			if (line == null) {
+				throw new IOException("Privious attribute value snapshot file has no data");
+			}
+			while ((line = reader.readLine()) != null) {
+				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR);
+				Key key = getKey(parts[0], null);
+				String value = table.get(key);
+				if (value != null) {
+					boolean isPreviousActive = RF2Constants.BOOLEAN_TRUE.equals(parts[2]);
+					//check data in delta file has got empty value id and with inactive flag
+					String[] data = value.split(RF2Constants.COLUMN_SEPARATOR);
+					boolean isValueIdEmpty = RF2Constants.EMPTY_SPACE.equals(data[data.length - 1]);
+					boolean isCurrentActive = RF2Constants.BOOLEAN_TRUE.equals(data[0]);
+					if (isValueIdEmpty && !isCurrentActive) {
+						if (isPreviousActive) {
+							//add previous value id
+							StringBuilder updated = new StringBuilder(value);
+							updated.append(parts[6]);
+							table.put(key, updated.toString());
+						} else {
+							//remove line from table
+							table.remove(key);
+						}
+					}
+				}
+			}
+		}
+	}
 }

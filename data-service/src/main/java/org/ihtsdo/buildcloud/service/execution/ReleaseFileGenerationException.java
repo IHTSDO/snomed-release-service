@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.service.execution;
 /**
  * Exception occurred during release file generation.
  */
-public class ReleaseFileGenerationException extends RuntimeException {
+public class ReleaseFileGenerationException extends Exception {
 
 	/**
 	 * @param errorMsg error message

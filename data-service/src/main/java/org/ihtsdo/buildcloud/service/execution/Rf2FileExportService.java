@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -17,9 +18,12 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +46,7 @@ public class Rf2FileExportService {
 		this.uuidGenerator = uuidGenerator;
 	}
 
-	public final void generateReleaseFiles() {
+	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		boolean firstTimeRelease = pkg.isFirstTimeRelease();
 		String effectiveTime = pkg.getBuild().getEffectiveTimeSnomedFormat();
 		boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
@@ -82,7 +86,8 @@ public class Rf2FileExportService {
 		return isNetworkRelated;
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease, String effectiveTime, boolean workbenchDataFixesRequired) {
+	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease, String effectiveTime, boolean workbenchDataFixesRequired)
+			throws ReleaseFileGenerationException {
 	    	LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
@@ -109,6 +114,11 @@ public class Rf2FileExportService {
 					rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
 				}
 
+				//Workbench workaround for dealing Attribute Value File with empty valueId
+				//ideally we should combine all workbench workaround together so that don't read snapshot file twice
+				if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
+					rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName));
+				}
 				// Workbench workaround - use full file to discard invalid delta entries
 				// See interface javadoc for more info.
 				rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
@@ -197,8 +207,9 @@ public class Rf2FileExportService {
 
 	/**
 	 * @return the transformed delta file name exception if not found.
+	 * @throws ReleaseFileGenerationException 
 	 */
-	protected List<String> getTransformedDeltaFiles() {
+	protected List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
 		String businessKey = pkg.getBusinessKey();
 		List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
 		List<String> validFiles = new ArrayList<>();
