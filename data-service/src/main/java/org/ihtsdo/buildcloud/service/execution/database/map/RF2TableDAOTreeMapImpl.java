@@ -26,10 +26,11 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private TableSchema tableSchema;
 	private DataType idType;
 	private Map<Key, String> table;
-	private List<Key> dirtyKeys;
+	private Set<Key> dirtyKeys;
 	private UUIDGenerator uuidGenerator;
 
-	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)");
+	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
+	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
 
 	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator) {
@@ -39,7 +40,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean firstTimeRelease, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
@@ -49,7 +50,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 
 			// Insert Data
-			insertData(reader, tableSchema, true, firstTimeRelease, workbenchDataFixesRequired);
+			insertData(reader, tableSchema, true, workbenchDataFixesRequired);
 
 			return tableSchema;
 		}
@@ -60,7 +61,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
-			insertData(reader, tableSchema, false, workbenchDataFixesRequired, workbenchDataFixesRequired);
+			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
 		}
 	}
 
@@ -107,7 +108,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 			String line;
 			String[] parts;
 			while ((line = prevSnapshotReader.readLine()) != null) {
-				String compositeKey = getCompositeKey(line);
+				String compositeKey = getCompositeKey(tableSchema, line);
 				Key matcherKey = new StringKey(compositeKey);
 				String newValues = table.get(matcherKey);
 				if (newValues != null) {
@@ -116,7 +117,10 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				}
 			}
 		}
+	}
 
+	@Override
+	public void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException {
 		if (!dirtyKeys.isEmpty()) {
 			LOGGER.info("{} dirty refset ids remain. Generating UUIDs for new members.", dirtyKeys.size());
 			while (dirtyKeys.iterator().hasNext()) {
@@ -151,23 +155,18 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		return headerLine;
 	}
 
-	private void insertData(BufferedReader reader, TableSchema tableSchema, boolean deltaData, boolean firstTimeRelease, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
+	private void insertData(BufferedReader reader, TableSchema tableSchema, boolean deltaData, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
 		String line;
 		String[] parts;
 		Key key;
-		dirtyKeys = new ArrayList<>();
+		dirtyKeys = new LinkedHashSet<>();
 		while ((line = reader.readLine()) != null) {
 			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
-				if (firstTimeRelease) {
-					// Assign new uuid
-					key = getKey(uuidGenerator.uuid(), parts[1]);
-				} else {
-					// Key id = refsetId (5th field) and referencedComponentId (6th field)
-					String compositeKey = getCompositeKey(line);
-					key = new StringKey(compositeKey);
-					dirtyKeys.add(key);
-				}
+				// Key id = refsetId (5th field) and referencedComponentId (6th field)
+				String compositeKey = getCompositeKey(tableSchema, line);
+				key = new StringKey(compositeKey);
+				dirtyKeys.add(key);
 			} else {
 				key = getKey(parts[0], parts[1]);
 			}
@@ -175,8 +174,17 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
-	private String getCompositeKey(String line) throws DatabasePopulatorException {
-		Matcher matcher = REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN.matcher(line);
+	private String getCompositeKey(TableSchema tableSchema, String line) throws DatabasePopulatorException {
+		Pattern compKeyPattern;
+		List<Field> fields = tableSchema.getFields();
+		if (fields.size() >= 7 && ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
+			// Simple Map or Association
+			compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN;
+		} else {
+			// Simple RefSet
+			compKeyPattern = REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN;
+		}
+		Matcher matcher = compKeyPattern.matcher(line);
 		if (matcher.matches()) {
 			return matcher.group(1);
 		} else {

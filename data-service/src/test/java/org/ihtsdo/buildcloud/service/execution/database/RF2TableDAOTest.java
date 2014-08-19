@@ -63,7 +63,7 @@ public class RF2TableDAOTest {
 	}
 
 	private void testCreateTable() throws Exception {
-		TableSchema table = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), true, false);
+		TableSchema table = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(table);
 
@@ -77,7 +77,7 @@ public class RF2TableDAOTest {
 	}
 
 	private void testAppendData() throws Exception {
-		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), true, false);
+		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), false);
 
 		rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename), false);
 
@@ -94,7 +94,7 @@ public class RF2TableDAOTest {
 	}
 
 	private void testCoreDescCreateTable() throws Exception {
-		TableSchema table = rf2TableDAO.createTable(rf2CoreFullFilename, getClass().getResourceAsStream(rf2CoreFullFilename), true, false);
+		TableSchema table = rf2TableDAO.createTable(rf2CoreFullFilename, getClass().getResourceAsStream(rf2CoreFullFilename), false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(table);
 

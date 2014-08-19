@@ -44,4 +44,9 @@ public class StringKey implements Key {
 		}
 	}
 
+	@Override
+	public int hashCode() {
+		return compKey.hashCode();
+	}
+
 }
