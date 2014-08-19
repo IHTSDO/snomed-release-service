@@ -19,14 +19,22 @@ public class StreamTestUtils {
 		assertStreamsEqualLineByLine(null, expectedInputStream, actualInputStream, false);
 	}
 
+	public static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, BufferedReader actualReader) throws IOException {
+		assertStreamsEqualLineByLine(streamName, expectedInputStream, actualReader, false);
+	}
+
 	private static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, InputStream actualInputStream, boolean usePatterns) throws IOException {
-		String errorMessageNamePart = streamName != null ? " in stream '" + streamName + "'" : "";
+		String errorMessageNamePart = getErrorMessagePart(streamName);
+		Assert.assertNotNull("Actual InputStream should not be null" + errorMessageNamePart + ".", actualInputStream);
+		BufferedReader actualReader = new BufferedReader(new InputStreamReader(actualInputStream, RF2Constants.UTF_8));
+		assertStreamsEqualLineByLine(streamName, expectedInputStream, actualReader, usePatterns);
+	}
+
+	private static void assertStreamsEqualLineByLine(String streamName, InputStream expectedInputStream, BufferedReader actualReader, boolean usePatterns) throws IOException {
+		String errorMessageNamePart = getErrorMessagePart(streamName);
 
 		Assert.assertNotNull("Expected InputStream should not be null" + errorMessageNamePart + ".", expectedInputStream);
-		Assert.assertNotNull("Actual InputStream should not be null" + errorMessageNamePart + ".", actualInputStream);
-
 		BufferedReader expectedReader = new BufferedReader(new InputStreamReader(expectedInputStream, RF2Constants.UTF_8));
-		BufferedReader actualReader = new BufferedReader(new InputStreamReader(actualInputStream, RF2Constants.UTF_8));
 
 		int line = 1;
 		String actualLine;
@@ -49,6 +57,10 @@ public class StreamTestUtils {
 			int moreLinesCount = 1 + countRemainingLines(expectedReader);
 			Assert.fail("Line count mismatch" + errorMessageNamePart + ". Actual stream has ended but Expected stream has " + moreLinesCount + " more lines starting with line " + line + ": " + expectedLine);
 		}
+	}
+
+	private static String getErrorMessagePart(String streamName) {
+		return streamName != null ? " in stream '" + streamName + "'" : "";
 	}
 
 	private static int countRemainingLines(BufferedReader reader) throws IOException {

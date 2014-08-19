@@ -15,6 +15,7 @@ public interface PackageService extends EntityService<Package> {
 	String FIRST_TIME_RELEASE = "firstTimeRelease";
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";
+	String WORKBENCH_DATA_FIXES_REQUIRED = "workbenchDataFixesRequired";
 
 	Package find(String buildCompositeKey, String packageBusinessKey, User authenticatedUser) throws ResourceNotFoundException;
 

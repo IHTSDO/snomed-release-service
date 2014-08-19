@@ -11,7 +11,9 @@ import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.execution.database.Rf2FileWriter;
 import org.ihtsdo.buildcloud.service.execution.database.map.RF2TableDAOTreeMapImpl;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.helper.StatTimer;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,26 +30,29 @@ public class Rf2FileExportService {
 	private final Product product;
 	private final ExecutionDAO executionDao;
 	private final int maxRetries;
+	private final UUIDGenerator uuidGenerator;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Rf2FileExportService.class);
 
-	public Rf2FileExportService(final Execution execution, final Package pkg, ExecutionDAO dao, int maxRetries) {
+	public Rf2FileExportService(final Execution execution, final Package pkg, ExecutionDAO dao, UUIDGenerator uuidGenerator, int maxRetries) {
 		this.execution = execution;
 		this.pkg = pkg;
 		product = pkg.getBuild().getProduct();
 		executionDao = dao;
 		this.maxRetries = maxRetries;
+		this.uuidGenerator = uuidGenerator;
 	}
 
-	public final void generateReleaseFiles() {
+	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		boolean firstTimeRelease = pkg.isFirstTimeRelease();
 		String effectiveTime = pkg.getBuild().getEffectiveTimeSnomedFormat();
+		boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
 		List<String> transformedFiles = getTransformedDeltaFiles();
 		for (String thisFile : transformedFiles) {
 			int failureCount = 0;
 			boolean success = false;
 			do {
 				try {
-					generateReleaseFile(thisFile, firstTimeRelease, effectiveTime);
+					generateReleaseFile(thisFile, firstTimeRelease, effectiveTime, workbenchDataFixesRequired);
 					success = true;
 				} catch (ReleaseFileGenerationException e) {
 					failureCount++;
@@ -77,7 +82,8 @@ public class Rf2FileExportService {
 		return isNetworkRelated;
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease, String effectiveTime) {
+	private void generateReleaseFile(String transformedDeltaDataFile, boolean firstTimeRelease, String effectiveTime, boolean workbenchDataFixesRequired)
+			throws ReleaseFileGenerationException {
 	    	LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
@@ -88,19 +94,37 @@ public class Rf2FileExportService {
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
-			rf2TableDAO = new RF2TableDAOTreeMapImpl();
+			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
 			timer.split();
-			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream);
+			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
 			String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			String previousPublishedPackage = null;
 			if (!firstTimeRelease) {
 				// Find previous published package
 				previousPublishedPackage = pkg.getPreviousPublishedPackage();
+			}
 
-				// Workbench workaround - use full file to discard invalid delta entries
-				// See interface javadoc for more info.
-				rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+			if (workbenchDataFixesRequired) {
+				if (!firstTimeRelease) {
+					if (tableSchema.getComponentType() == ComponentType.REFSET) {
+						// Workbench workaround - correct refset member ids using previous snapshot file.
+						// See interface javadoc for more info.
+						rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+					}
+
+					//Workbench workaround for dealing Attribute Value File with empty valueId
+					//ideally we should combine all workbench workaround together so that don't read snapshot file twice
+					if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
+						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName));
+					}
+
+					// Workbench workaround - use full file to discard invalid delta entries
+					// See interface javadoc for more info.
+					rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+				}
+
+				rf2TableDAO.generateNewMemberIds(effectiveTime);
 			}
 
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
@@ -136,7 +160,7 @@ public class Rf2FileExportService {
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
 				timer.split();
-				rf2TableDAO.appendData(tableSchema, previousFullFileStream);
+				rf2TableDAO.appendData(tableSchema, previousFullFileStream, workbenchDataFixesRequired);
 				timer.logTimeTaken("Insert previous release data");
 				LOGGER.debug("Finish: Insert previous release data into table {}", tableSchema.getTableName());
 			}
@@ -186,8 +210,9 @@ public class Rf2FileExportService {
 
 	/**
 	 * @return the transformed delta file name exception if not found.
+	 * @throws ReleaseFileGenerationException 
 	 */
-	protected List<String> getTransformedDeltaFiles() {
+	protected List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
 		String businessKey = pkg.getBusinessKey();
 		List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
 		List<String> validFiles = new ArrayList<>();
