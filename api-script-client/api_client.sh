@@ -340,6 +340,13 @@ else
 		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "$updateJSON" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 	fi
 
+	# Set isWorkbenchDataFixesRequired flag
+	if [ -n "$isWorkbenchDataFixesRequired" ]
+	then
+		echo "Set workbench-data-fixes-required flag to ${isWorkbenchDataFixesRequired}"
+		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"workbenchDataFixesRequired\" : \"${isWorkbenchDataFixesRequired}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+	fi
+
 fi
 
 echo "Create Execution"
