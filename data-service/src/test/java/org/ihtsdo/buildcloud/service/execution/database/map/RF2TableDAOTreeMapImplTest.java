@@ -27,10 +27,12 @@ public class RF2TableDAOTreeMapImplTest {
 
 		String deltaInput = "rel2_Refset_SimpleDelta_INT_20140731.txt";
 		Class thisClass = getClass();
-		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), false, true);
+		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_Refset_SimpleSnapshot_INT_20140131.txt";
 		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+
+		dao.generateNewMemberIds(effectiveTime);
 
 		String expectedNewDelta = "der2_Refset_SimpleDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);

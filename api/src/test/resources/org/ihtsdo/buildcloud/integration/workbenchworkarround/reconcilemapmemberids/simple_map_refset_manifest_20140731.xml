@@ -1,0 +1,27 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_Release_INT_20140731">
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Refset">
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapFull_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Full -->
+			<folder Name="Snapshot">
+				<folder Name="Refset">
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Snapshot -->
+			<folder Name="Delta">
+				<folder Name="Refset">
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapDelta_INT_20140731.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Delta -->
+		</folder> <!-- RF2Release -->
+	</folder> <!-- SnomedCT_Release_INT_20140731 -->
+</listing>
