@@ -93,6 +93,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				if ((value = table.get(key)) != null) {
 					if (value.equals(parts[2])) {
 						// Fields after second column
+						LOGGER.debug("Removing already published Delta state in {} : {}", currentSnapshotFileName, line);
 						table.remove(key);
 					}
 				}
