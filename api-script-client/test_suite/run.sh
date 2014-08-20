@@ -41,13 +41,15 @@ then
 		echo "Running Test Tranche Beta"
 	fi
 	
-	if [[ "${testIndex}" -gt 14 && "${testIndex}" -lt 100 ]] 
+	if [[ "${testIndex}" -gt 14 && "${testIndex}" -lt 20 ]] 
 	then
 		manifestFile="manifest_20250731.xml"
 		effectiveDate="2025-07-31"		
 		previousPublishedPackageName="Test_Suite_20250131.zip"
 		echo "Running Test Tranche Gamma"
 	fi
+	
+	# Test 20 using default manifest, previous and effective date
 else
 	echo "Warn - No parameter -t <integer> to indicate test to run"
 fi
