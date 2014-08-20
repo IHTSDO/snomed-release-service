@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.integration.workbenchworkarround.discardbaddelta;
+package org.ihtsdo.buildcloud.integration.workbenchworkarround.reconcilemapmemberids;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
@@ -7,9 +7,9 @@ import org.junit.Test;
 
 import java.util.zip.ZipFile;
 
-public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
+public class ReconcileMapRefsetMemberIdsTestIntegration extends AbstractControllerTest {
 
-	private static final String INTERNATIONAL_RELEASE = "SnomedCT_Release_INTBadDelta_";
+	private static final String INTERNATIONAL_RELEASE = "SnomedCT_Release_INT_";
 
 	private IntegrationTestHelper integrationTestHelper;
 
@@ -17,7 +17,7 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc, "DiscardBadDeltaTest");
+		integrationTestHelper = new IntegrationTestHelper(mockMvc, "ReconcileMapMemberIdsTest");
 	}
 
 	@Test
@@ -55,7 +55,7 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.publishOutput(executionURL1);
 
 		// Assert first release output expectations
-		String expectedZipFilename = "SnomedCT_Release_INTBadDelta_" + releaseDate + ".zip";
+		String expectedZipFilename = "SnomedCT_Release_INT_" + releaseDate + ".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
 		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
 
@@ -63,34 +63,26 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	}
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("core_manifest_" + releaseDate + ".xml", getClass());
-		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + releaseDate + ".txt", getClass());
-		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate + ".txt", getClass());
+		integrationTestHelper.uploadManifest("simple_map_refset_manifest_" + releaseDate + ".xml", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_SimpleMapDelta_INT_" + releaseDate + ".txt", getClass());
 	}
 
 	private String createExpectedZipEntries(String effectiveTime) {
 		String expectedZipEntries =
 			INTERNATIONAL_RELEASE + effectiveTime + "/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/Readme_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Language/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_" + effectiveTime + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Map/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Map/der2_sRefset_SimpleMapFull_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Language/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT_" + effectiveTime + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_" + effectiveTime + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Map/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Map/der2_sRefset_SimpleMapSnapshot_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Language/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Language/der2_cRefset_LanguageDelta-en_INT_" + effectiveTime + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_" + effectiveTime + ".txt";
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Map/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Map/der2_sRefset_SimpleMapDelta_INT_" + effectiveTime + ".txt";
 		return expectedZipEntries;
 	}
 

@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -18,12 +17,9 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -100,28 +96,35 @@ public class Rf2FileExportService {
 
 			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
 			timer.split();
-			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, firstTimeRelease, workbenchDataFixesRequired);
+			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
 			String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			String previousPublishedPackage = null;
 			if (!firstTimeRelease) {
 				// Find previous published package
 				previousPublishedPackage = pkg.getPreviousPublishedPackage();
+			}
 
-				if (workbenchDataFixesRequired && tableSchema.getComponentType() == ComponentType.REFSET) {
-					// Workbench workaround - correct refset member ids using previous snapshot file.
+			if (workbenchDataFixesRequired) {
+				if (!firstTimeRelease) {
+					if (tableSchema.getComponentType() == ComponentType.REFSET) {
+						// Workbench workaround - correct refset member ids using previous snapshot file.
+						// See interface javadoc for more info.
+						rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+					}
+
+					//Workbench workaround for dealing Attribute Value File with empty valueId
+					//ideally we should combine all workbench workaround together so that don't read snapshot file twice
+					if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
+						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName));
+					}
+
+					// Workbench workaround - use full file to discard invalid delta entries
 					// See interface javadoc for more info.
-					rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+					rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
 				}
 
-				//Workbench workaround for dealing Attribute Value File with empty valueId
-				//ideally we should combine all workbench workaround together so that don't read snapshot file twice
-				if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
-					rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName));
-				}
-				// Workbench workaround - use full file to discard invalid delta entries
-				// See interface javadoc for more info.
-				rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
+				rf2TableDAO.generateNewMemberIds(effectiveTime);
 			}
 
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
