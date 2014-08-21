@@ -1,11 +1,10 @@
 package org.ihtsdo.buildcloud.entity;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonUnwrapped;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExecutionPackageReport {
 
@@ -17,7 +16,7 @@ public class ExecutionPackageReport {
 	private Map<String, Object> report;
 
 	ExecutionPackageReport() {
-		report = new HashMap<String, Object>();
+		report = new HashMap<>();
 	}
 
 	public void add(String executionStage, String result) {
@@ -41,7 +40,7 @@ public class ExecutionPackageReport {
 
 		// Have we heard about this file before?
 		if (!reportDetail.containsKey(fileName)) {
-			Map<String, String> fileReport = new HashMap<String, String>();
+			Map<String, String> fileReport = new HashMap<>();
 			reportDetail.put(fileName, fileReport);
 			fileReport.put(ERROR_COUNT, Integer.toString(0));
 			fileReport.put(FIRST_ERROR, problem);
@@ -49,7 +48,7 @@ public class ExecutionPackageReport {
 		}
 
 		// Increment the error count
-		Map<String, String> fileReport = (Map<String, String>) reportDetail.get(fileName);
+		Map<String, String> fileReport = reportDetail.get(fileName);
 		String currentErrorCountStr = fileReport.get(ERROR_COUNT);
 		int currentErrorCount = Integer.parseInt(currentErrorCountStr);
 		fileReport.put(ERROR_COUNT, Integer.toString(++currentErrorCount));

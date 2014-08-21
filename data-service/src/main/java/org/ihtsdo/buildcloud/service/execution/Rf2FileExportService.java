@@ -1,7 +1,10 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -18,10 +21,8 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 
 public class Rf2FileExportService {
 
@@ -116,7 +117,7 @@ public class Rf2FileExportService {
 					//Workbench workaround for dealing Attribute Value File with empty valueId
 					//ideally we should combine all workbench workaround together so that don't read snapshot file twice
 					if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
-						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName));
+						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage,currentSnapshotFileName), effectiveTime);
 					}
 
 					// Workbench workaround - use full file to discard invalid delta entries
@@ -210,7 +211,7 @@ public class Rf2FileExportService {
 
 	/**
 	 * @return the transformed delta file name exception if not found.
-	 * @throws ReleaseFileGenerationException 
+	 * @throws ReleaseFileGenerationException
 	 */
 	protected List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
 		String businessKey = pkg.getBusinessKey();
