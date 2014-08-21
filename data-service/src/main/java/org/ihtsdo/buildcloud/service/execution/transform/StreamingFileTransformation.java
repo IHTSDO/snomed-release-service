@@ -47,7 +47,7 @@ public class StreamingFileTransformation {
 					} else {
 
 						// Split column values
-						String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR);
+						String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 
 						// Pass line through all transformers
 						for (LineTransformation lineTransformation : lineTransformations) {

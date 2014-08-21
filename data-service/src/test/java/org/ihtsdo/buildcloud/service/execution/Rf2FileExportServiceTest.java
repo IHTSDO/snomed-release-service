@@ -1,197 +1,139 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import mockit.Expectations;
-import mockit.Injectable;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.integration.junit4.JMockit;
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.test.DummyFuture;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.*;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-@RunWith(JMockit.class)
+import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {"/test/testDataServiceContext.xml" })
 public class Rf2FileExportServiceTest {
 
-	private static final String DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
-	private static final String FuLL_FILE_NAME = "der2_Refset_SimpleFull_INT_20140731.txt";
-
-	@Mocked
-	private Build build;
-
-	@Mocked
-	private Product product;
+	private static final String PREVIOUS_RELEASE = "previousRelease";
+	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
+	private static final String EXECUTION_BUCKET_NAME = "local.execution.bucket";
+	private static final String RELEASE_DATE = "20140731";
+	//simple refset
+	private static final String TRANSFORMED_SIMPLE_DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140731.txt";
+	private static final String EXPECTED_SIMPLE_FULL_FILE_NAME = "der2_Refset_SimpleFull_INT_20140731.txt";
+	private static final String EXPECTED_SIMPLE_DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140731.txt";
+	private static final String EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME = "der2_Refset_SimpleSnapshot_INT_20140731.txt";
+	//attribute value file
+	private static final String TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE = "der2_cRefset_AttributeValueDelta_INT_20140731.txt";
+	private static final String PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140331.txt";
+	private static final String PREVIOUS_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140331.txt";
+	private static final String EXPECTED_ATTRIBUT_VALUE_DELTA_FILE = "der2_cRefset_AttributeValueDelta_INT_20140731.txt";
+	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
+	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
+	
+	private Rf2FileExportService rf2ExportService;
+	private Package pkg;
+	@Autowired
+	private ExecutionDAO dao;
+	@Autowired
+	private S3Client s3Client;
+	private String transformedFileFullPath;
+	private String publishedPath;
+	private final PesudoUUIDGenerator uuidGenerator = new PesudoUUIDGenerator();
+	private Execution execution;
+	
+	@Before
+	public void setUp() throws IOException {
+		//use count so that multiple tests don't use the same execution.
+		Build build = new Build(1L, "Test");
+		Product product = new Product("Test Product");
+		Extension extension = new Extension("extension");
+		ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
+		extension.setReleaseCenter(releaseCenter);
+		product.setExtension(extension);
+		build.setProduct(product);
+		Date date = new Date();
+		execution = new Execution(date, build);
+		SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
+		try {
+			build.setEffectiveTime(formater.parse(RELEASE_DATE));
+		} catch (ParseException e) {
+			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
+		}
+		transformedFileFullPath = "int/1_test/" + EntityHelper.formatAsIsoDateTime(date) + "/pk1/transformed-files/";
+		publishedPath = "int/extension/test_product/" + PREVIOUS_RELEASE + "/";
+		pkg = new Package("PK1");
+		pkg.setBuild(build);
+		rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
+	}
 
 	@Test
-	public void test() {
-		// TODO: MC to take a look at this test class. It has complex expectations and doesn't assert much.
+	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
+		pkg.setFirstTimeRelease(true);
+		pkg.setWorkbenchDataFixesRequired(false);
+		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
+		rf2ExportService.generateReleaseFiles();
+		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
+		Assert.assertEquals(3, outputFiles.size());
+		
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_DELTA_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_FULL_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_FULL_FILE_NAME));
+
 	}
 
-	public void testGenerateFirstReleaseFiles(@Injectable final Execution execution, @Injectable final ExecutionDAO dao) throws Exception {
-
-		final List<Package> packages = createPackages(true);
-		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
-		File outputDeltaFile = Files.createTempFile(getClass().getCanonicalName(), DELTA_FILE_NAME).toFile();
-		build.setProduct(new Product("Test Product"));
-
-		new NonStrictExpectations() {{
-			execution.getBuild();
-			returns(build);
-			build.getPackages();
-			returns(packages);
-			build.getProduct();
-			returns(product);
-			build.getEffectiveTime();
-			SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
-			returns(formater.parse("20130831"));
-		}};
-
-		final List<String> fileNames = mockTransformedFileNames();
-		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
-		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
-
-		final OutputStream deltaOutputStream = new FileOutputStream(outputDeltaFile);
-		final AsyncPipedStreamBean deltaAsyncPipedStreamBean = new AsyncPipedStreamBean(deltaOutputStream, new DummyFuture());
-
-		new Expectations() {{
-			dao.listTransformedFilePaths(withInstanceOf(Execution.class), anyString);
-			returns(fileNames);
-
-			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
-			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
-
-			dao.getOutputFileOutputStream(execution, anyString, "der2_Refset_SimpleDelta_INT_20140831.txt");
-			returns(deltaAsyncPipedStreamBean);
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentFullFile));
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
-		}};
-
-		int maxRetries = 0;
-		for (Package pkg : packages) {
-			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, null, maxRetries);
-			generator.generateReleaseFiles();
-		}
-
-		//get the original header line from delta file
-		String headerLine = null;
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-				new FileInputStream(deltaFile), RF2Constants.UTF_8))) {
-
-			headerLine = reader.readLine();
-		}
-
-		//check and make sure the output delta file has only header line
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputDeltaFile), RF2Constants.UTF_8))) {
-			String actualHeader = reader.readLine();
-			if ((reader.readLine()) != null) {
-				Assert.fail("It should not contain more than one line!");
-			}
-			Assert.assertEquals("Header lines should match", actualHeader, headerLine);
-		}
-
-		//add assert to check files are generated
-		File fullFile = new File(currentFullFile);
-		File snapshotFile = new File(currentSnapshotFile);
-		Assert.assertTrue("Full file should be generated", fullFile.exists());
-		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists());
+	@Test
+	public void testEmptyValueIdFix() throws Exception {
+		pkg.setFirstTimeRelease(false);
+		pkg.setPreviousPublishedPackage(PREVIOUS_RELEASE);
+		pkg.setWorkbenchDataFixesRequired(true);
+		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
+		rf2ExportService.generateReleaseFiles();
+		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
+		Assert.assertEquals(3, outputFiles.size());
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));
 	}
 
-	public void testGenerateFilesForSubsequentRelease(@Injectable final Execution execution,
-													  @Injectable final ExecutionDAO dao) throws Exception {
-		final List<Package> packages = createPackages(false);
-		new NonStrictExpectations() {{
-			execution.getBuild();
-			returns(build);
-			build.getPackages();
-			returns(packages);
-			build.getProduct();
-			returns(product);
-			build.getEffectiveTime();
-			SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
-			returns(formater.parse("20130831"));
-		}};
-
-		final List<String> fileNames = mockTransformedFileNames();
-		final String currentFullFile = getCurrentReleaseFile(RF2Constants.FULL);
-		final String currentSnapshotFile = getCurrentReleaseFile(RF2Constants.SNAPSHOT);
-
-		new Expectations() {{
-			dao.listTransformedFilePaths(withInstanceOf(Execution.class), anyString);
-			returns(fileNames);
-
-			dao.getTransformedFileAsInputStream(withInstanceOf(Execution.class), anyString, anyString);
-			returns(getFileInputStreamFromResource(DELTA_FILE_NAME));
-
-			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
-			returns(getFileInputStreamFromResource(FuLL_FILE_NAME));
-
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentFullFile));
-
-			dao.getPublishedFileArchiveEntry(product, anyString, anyString);
-			returns(getFileInputStreamFromResource(FuLL_FILE_NAME));
-
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentFullFile));
-			dao.getOutputFileOutputStream(execution, anyString, anyString);
-			returns(getDummyAsyncPipedStreamBean(currentSnapshotFile));
-		}};
-
-		int maxRetries = 0;
-		for (Package pkg : packages) {
-			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, null, maxRetries);
-			generator.generateReleaseFiles();
-		}
-
-		//add assert to check files are generated
-		File fullFile = new File(currentFullFile);
-		File snapshotFile = new File(currentSnapshotFile);
-		Assert.assertTrue("Full file should be generated", fullFile.exists());
-		Assert.assertTrue("Snapshort file should be generated", snapshotFile.exists());
-	}
-
-	private List<String> mockTransformedFileNames() {
-		final List<String> fileNames = new ArrayList<>();
-		fileNames.add(DELTA_FILE_NAME);
-		return fileNames;
-	}
-
-	private List<Package> createPackages(boolean isFirstRelease) {
-		List<Package> packages = new ArrayList<>();
-		Package pk = new Package("PK1");
-		pk.setBuild(build);
-		pk.setFirstTimeRelease(isFirstRelease);
-		packages.add(pk);
-		return packages;
-	}
-
-	private InputStream getFileInputStreamFromResource(String fileName) throws FileNotFoundException {
-		String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + fileName).getFile();
+	private InputStream getExpectedFileInputStreamFromResource(String fileName) throws FileNotFoundException {
+		String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/export/expected/" + fileName).getFile();
 		return new FileInputStream(filePath);
 	}
 
-	private AsyncPipedStreamBean getDummyAsyncPipedStreamBean(String fileName) throws FileNotFoundException {
-		final OutputStream outputStream = new FileOutputStream(fileName);
-		return new AsyncPipedStreamBean(outputStream, new DummyFuture());
-	}
+	private File getFileByName(String fileName) {
+		return new File(getClass().getResource("/org/ihtsdo/buildcloud/service/execution/export/" + fileName).getFile());
 
-	private String getCurrentReleaseFile(String fileType) {
-		String deltaFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/" + DELTA_FILE_NAME).getFile();
-		return deltaFile.replace(RF2Constants.DELTA, fileType);
 	}
-
+	
+	@After
+	public void tearDown() throws InterruptedException
+	{
+		uuidGenerator.reset();
+		//delay as it might use the same execution.
+		Thread.sleep(1000);
+	}
 }
