@@ -1,11 +1,10 @@
 package org.ihtsdo.buildcloud.entity;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonUnwrapped;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExecutionReport {
 
@@ -20,7 +19,7 @@ public class ExecutionReport {
 	public ExecutionPackageReport getExecutionPackgeReport(Package pkg) {
 		// Do we already have a map of Execution Report objects per package?
 		if (this.executionPackageReports == null) {
-			this.executionPackageReports = new HashMap<String, ExecutionPackageReport>();
+			this.executionPackageReports = new HashMap<>();
 		}
 
 		// Do we already know about this package?
