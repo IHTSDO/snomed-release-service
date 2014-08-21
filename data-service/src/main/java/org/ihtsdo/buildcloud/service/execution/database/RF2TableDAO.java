@@ -1,13 +1,12 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.text.ParseException;
+
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 public interface RF2TableDAO {
 
@@ -40,15 +39,18 @@ public interface RF2TableDAO {
 	 */
 	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
 	 
-	/** 
+	/**
 	 * This is a workaround for dealing with daily export delta file from WorkBench.
 	 * Workbench authoring tool uses a blank value in the 7th column of the AttibuteValue Refset file
-	 * to signify component inactivation with "reason not stated" 
+	 * to signify component inactivation with "reason not stated"
+	 * Note: Empty value id for if new member id which doesn't exist in previous snapshot will not be replaced or removed as it is an invalid
+	 * data issue.
 	 * 
 	 * @param previousFileStream
+	 * @param effectiveTime
 	 * @throws IOException
 	 */
-	void resolveEmptyValueId(InputStream previousFileStream) throws IOException;
+	void resolveEmptyValueId(InputStream previousFileStream, String effectiveTime) throws IOException;
 
 	/**
 	 * This is a workaround for Workbench. New member ids can only be generated once reconcileRefsetMemberIds has been used to identify
