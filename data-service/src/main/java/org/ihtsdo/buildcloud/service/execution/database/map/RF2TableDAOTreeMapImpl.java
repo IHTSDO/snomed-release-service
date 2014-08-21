@@ -1,24 +1,33 @@
 package org.ihtsdo.buildcloud.service.execution.database.map;
 
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
-import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
-import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
-import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
+import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
@@ -27,7 +36,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private DataType idType;
 	private Map<Key, String> table;
 	private Set<Key> dirtyKeys;
-	private UUIDGenerator uuidGenerator;
+	private final UUIDGenerator uuidGenerator;
 
 	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
 	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
@@ -93,6 +102,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				if ((value = table.get(key)) != null) {
 					if (value.equals(parts[2])) {
 						// Fields after second column
+						LOGGER.debug("Removing already published Delta state in {} : {}", currentSnapshotFileName, line);
 						table.remove(key);
 					}
 				}
@@ -203,7 +213,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream) throws IOException {
+	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream, String effectiveTime) throws IOException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			String line;
 			line = reader.readLine();
@@ -211,13 +221,13 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				throw new IOException("Privious attribute value snapshot file has no data");
 			}
 			while ((line = reader.readLine()) != null) {
-				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR);
-				Key key = getKey(parts[0], null);
+				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+				Key key = getKey(parts[0], effectiveTime);
 				String value = table.get(key);
 				if (value != null) {
 					boolean isPreviousActive = RF2Constants.BOOLEAN_TRUE.equals(parts[2]);
 					//check data in delta file has got empty value id and with inactive flag
-					String[] data = value.split(RF2Constants.COLUMN_SEPARATOR);
+					String[] data = value.split(RF2Constants.COLUMN_SEPARATOR, -1);
 					boolean isValueIdEmpty = RF2Constants.EMPTY_SPACE.equals(data[data.length - 1]);
 					boolean isCurrentActive = RF2Constants.BOOLEAN_TRUE.equals(data[0]);
 					if (isValueIdEmpty && !isCurrentActive) {
