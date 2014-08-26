@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +214,21 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream, String effectiveTime) throws IOException {
+	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream, final String effectiveTime) throws IOException {
+		//check whether there are any empty value id
+		List<Key> emptyValueKeys = new ArrayList<>();
+		for (Key key : table.keySet()) {
+			String value = table.get(key);
+			String[] data = value.split(RF2Constants.COLUMN_SEPARATOR, -1);
+			if (RF2Constants.EMPTY_SPACE.equals(data[data.length - 1])) {
+				emptyValueKeys.add(key);
+			}
+		}
+		LOGGER.info("Total number of rows with empty value id found:" + emptyValueKeys.size());
+		if (emptyValueKeys.size() < 1) {
+			//no empty value id is found.
+			return;
+		}
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			String line;
 			line = reader.readLine();
@@ -223,26 +238,35 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 			while ((line = reader.readLine()) != null) {
 				String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 				Key key = getKey(parts[0], effectiveTime);
-				String value = table.get(key);
-				if (value != null) {
+				if (emptyValueKeys.contains(key)) {
+					String value = table.get(key);
 					boolean isPreviousActive = RF2Constants.BOOLEAN_TRUE.equals(parts[2]);
 					//check data in delta file has got empty value id and with inactive flag
 					String[] data = value.split(RF2Constants.COLUMN_SEPARATOR, -1);
-					boolean isValueIdEmpty = RF2Constants.EMPTY_SPACE.equals(data[data.length - 1]);
 					boolean isCurrentActive = RF2Constants.BOOLEAN_TRUE.equals(data[0]);
-					if (isValueIdEmpty && !isCurrentActive) {
+					if (!isCurrentActive) {
 						if (isPreviousActive) {
 							//add previous value id
 							StringBuilder updated = new StringBuilder(value);
 							updated.append(parts[6]);
 							table.put(key, updated.toString());
 						} else {
-							//remove line from table
+							//remove line from table and dirty key set
 							table.remove(key);
+							dirtyKeys.remove(key);
 						}
 					}
+					emptyValueKeys.remove(key);
 				}
 			}
+		}
+		//remove any rows with empty value id as not existing in previous file
+		if (emptyValueKeys.size() > 0) {
+			LOGGER.info("Found total number of rows with empty value id but member id doesn't exist in previous snapshot file:" + emptyValueKeys.size());
+		}
+		for (Key k : emptyValueKeys) {
+			table.remove(k);
+			dirtyKeys.remove(k);
 		}
 	}
 }
