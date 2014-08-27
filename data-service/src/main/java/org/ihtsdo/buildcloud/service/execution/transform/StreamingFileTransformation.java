@@ -1,19 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StreamingFileTransformation {
 
@@ -39,36 +33,38 @@ public class StreamingFileTransformation {
 			int lineNumber = 0;
 			while ((line = reader.readLine()) != null) {
 				lineNumber++;
-				try {
-					if (firstLine) {
-						firstLine = false;
-						writer.write(line);
-						writer.write(RF2Constants.LINE_ENDING);
-					} else {
+				if (firstLine) {
+					firstLine = false;
+					writer.write(line);
+					writer.write(RF2Constants.LINE_ENDING);
+				} else {
 
-						// Split column values
-						String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+					// Split column values
+					String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 
-						// Pass line through all transformers
+					// Pass line through all transformers
+
+					try {
 						for (LineTransformation lineTransformation : lineTransformations) {
 							lineTransformation.transformLine(columnValues);
 						}
-
-						// Write transformed line to temp file
-						stringBuilder.setLength(0);// reuse StringBuilder
-						for (int a = 0; a < columnValues.length; a++) {
-							if (a > 0) {
-								stringBuilder.append(RF2Constants.COLUMN_SEPARATOR);
-							}
-							stringBuilder.append(columnValues[a]);
-						}
-						stringBuilder.append(RF2Constants.LINE_ENDING);
-						writer.write(stringBuilder.toString());
+					} catch (TransformationException e) {
+						LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, lineNumber,
+								e.getMessage());
+						report.add("File Transformation", fileName, e.getMessage(), lineNumber);
 					}
-				} catch (TransformationException e) {
-					LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, lineNumber,
-							e.getMessage());
-					report.add("File Transformation", fileName, e.getMessage(), lineNumber);
+
+					// Write transformed line to temp file
+					stringBuilder.setLength(0);// reuse StringBuilder
+					for (int a = 0; a < columnValues.length; a++) {
+						if (a > 0) {
+							stringBuilder.append(RF2Constants.COLUMN_SEPARATOR);
+						}
+						stringBuilder.append(columnValues[a]);
+					}
+					stringBuilder.append(RF2Constants.LINE_ENDING);
+
+					writer.write(stringBuilder.toString());
 				}
 			}
 			LOGGER.info("Finish: Transform file {}.", fileName);
