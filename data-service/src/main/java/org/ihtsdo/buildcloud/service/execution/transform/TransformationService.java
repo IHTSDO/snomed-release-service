@@ -5,8 +5,10 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
@@ -18,9 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +38,12 @@ public class TransformationService {
 
 	@Autowired
 	private UUIDGenerator uuidGenerator;
+
+	@Autowired
+	private ModuleResolverService moduleResolverService;
+
+	@Autowired
+	private ExecutionDAO executionDAO;
 
 	private ExecutorService executorService;
 
@@ -57,11 +63,51 @@ public class TransformationService {
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
 		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
 		final String packageBusinessKey = pkg.getBusinessKey();
-		LOGGER.info("Transforming files in execution {}, package {}", execution.getId(), packageBusinessKey);
+		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
+		LOGGER.info("Transforming files in execution {}, package {}{}", execution.getId(), packageBusinessKey,
+				workbenchDataFixesRequired ? ", workbench data fixes enabled" : "");
 
 		// Iterate each execution input file
 		List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
 		LOGGER.info("Found {} files to process", executionInputFileNames.size());
+
+		if (workbenchDataFixesRequired) {
+			// Phase 0
+			// Get list of conceptIds which should be in the model module.
+
+			if (!pkg.isFirstTimeRelease()) {
+				String previousPublishedPackage = pkg.getPreviousPublishedPackage();
+				try {
+					InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(pkg.getBuild().getProduct(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+					if (statedRelationshipSnapshotStream != null) {
+						Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
+
+						String inputStatedRelationshipFilename = null;
+						for (String inputFileName : executionInputFileNames) {
+							if (inputFileName.startsWith("rel2_StatedRelationship_Delta")) {
+								inputStatedRelationshipFilename = inputFileName;
+							}
+						}
+
+						if (inputStatedRelationshipFilename != null) {
+							InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, packageBusinessKey, inputStatedRelationshipFilename);
+							moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
+
+							transformationFactory.setModelConceptIds(modelConceptIds);
+
+						} else {
+							// TODO: Add to execution report?
+							LOGGER.error("No stated relationship input file found.");
+						}
+					} else {
+						LOGGER.error("No previous stated relationship file found.");
+					}
+				} catch (BadInputFileException | IOException e) {
+					// TODO: Add to execution report?
+					LOGGER.error("Exception occurred during moduleId workbench data fix.", e);
+				}
+			}
+		}
 
 		// Phase 1
 		// Process just the id column of any Concept files.

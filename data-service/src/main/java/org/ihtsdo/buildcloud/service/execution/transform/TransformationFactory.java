@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitio
 import org.ihtsdo.snomed.util.rf2.schema.*;
 
 import java.util.List;
+import java.util.Set;
 
 public class TransformationFactory {
 
@@ -17,6 +18,7 @@ public class TransformationFactory {
 	private final StreamingFileTransformation preProcessConceptFileTransformation;
 	private final StreamingFileTransformation preProcessDescriptionFileTransformation;
 	private final UUIDGenerator uuidGenerator;
+	private Set<String> modelConceptIds;
 
 	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory, UUIDGenerator uuidGeneratorX) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
@@ -198,6 +200,10 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// referencedComponentId
 				.addLineTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory));
+	}
+
+	public void setModelConceptIds(Set<String> modelConceptIds) {
+		this.modelConceptIds = modelConceptIds;
 	}
 
 }
