@@ -10,26 +10,25 @@ public class TransformationFactory {
 
 	private final String effectiveTimeInSnomedFormat;
 	private final CachedSctidFactory cachedSctidFactory;
-	private final StreamingFileTransformation conceptTransformation;
 	private final StreamingFileTransformation descriptionTransformation;
 	private final StreamingFileTransformation textDefinitionFileTransformation;
-	private final StreamingFileTransformation relationshipFileTransformation;
 	private final StreamingFileTransformation identifierFileTransformation;
 	private final StreamingFileTransformation preProcessConceptFileTransformation;
 	private final StreamingFileTransformation preProcessDescriptionFileTransformation;
 	private final UUIDGenerator uuidGenerator;
-	private Set<String> modelConceptIds;
+	private final String modelModuleSctid;
+	private Set<String> modelConceptIdsForModuleIdFix;
 
-	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory, UUIDGenerator uuidGeneratorX) {
+	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory, UUIDGenerator uuidGeneratorX,
+			String modelModuleSctid) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
+		this.modelModuleSctid = modelModuleSctid;
 
 		preProcessConceptFileTransformation = buildPreProcessConceptFileTransformation();
 		preProcessDescriptionFileTransformation = buildPreProcessDescriptionFileTransformation();
-		conceptTransformation = buildConceptFileTransformation();
 		descriptionTransformation = buildDescriptionFileTransformation();
 		textDefinitionFileTransformation = buildTextDefinitionFileTransformation();
-		relationshipFileTransformation = buildRelationshipFileTransformation();
 		identifierFileTransformation = buildIdentifierFileTransformation();
 		uuidGenerator = uuidGeneratorX;
 	}
@@ -49,7 +48,7 @@ public class TransformationFactory {
 
 		switch (tableSchema.getComponentType()) {
 			case CONCEPT:
-				transformation = conceptTransformation;
+				transformation = getConceptFileTransformation();
 				break;
 			case DESCRIPTION:
 				transformation = descriptionTransformation;
@@ -58,10 +57,10 @@ public class TransformationFactory {
 				transformation = textDefinitionFileTransformation;
 				break;
 			case STATED_RELATIONSHIP:
-				transformation = relationshipFileTransformation;
+				transformation = getRelationshipFileTransformation();
 				break;
 			case RELATIONSHIP:
-				transformation = relationshipFileTransformation;
+				transformation = getRelationshipFileTransformation();
 				break;
 			case IDENTIFIER:
 				transformation = identifierFileTransformation;
@@ -90,9 +89,9 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory));
 	}
 
-	private StreamingFileTransformation buildConceptFileTransformation() {
+	private StreamingFileTransformation getConceptFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
-		return new StreamingFileTransformation()
+		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
@@ -100,6 +99,13 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory));
+
+		if (modelConceptIdsForModuleIdFix != null) {
+			// If id is a model concept set moduleId to modelModuleSctid
+			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+		}
+
+		return streamingFileTransformation;
 	}
 
 	private StreamingFileTransformation buildDescriptionFileTransformation() {
@@ -138,26 +144,32 @@ public class TransformationFactory {
 
 	}
 
-	private StreamingFileTransformation buildRelationshipFileTransformation() {
+	private StreamingFileTransformation getRelationshipFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
-		return new StreamingFileTransformation()
+		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
-				// effectiveTime
+						// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
-				// moduleId
+						// moduleId
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
-				// sourceId
+						// sourceId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
-				// destinationId
+						// destinationId
 				.addLineTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory))
-				// typeId
+						// typeId
 				.addLineTransformation(new SCTIDTransformationFromCache(7, cachedSctidFactory))
-				// characteristicTypeId
+						// characteristicTypeId
 				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory))
-				// modifierId
-				.addLineTransformation(new SCTIDTransformationFromCache(9, cachedSctidFactory))
-				;
+						// modifierId
+				.addLineTransformation(new SCTIDTransformationFromCache(9, cachedSctidFactory));
+
+		if (modelConceptIdsForModuleIdFix != null) {
+			// If destinationId is a model concept set moduleId to modelModuleSctid
+			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+		}
+
+		return streamingFileTransformation;
 	}
 
 	private StreamingFileTransformation buildIdentifierFileTransformation() {
@@ -202,8 +214,8 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory));
 	}
 
-	public void setModelConceptIds(Set<String> modelConceptIds) {
-		this.modelConceptIds = modelConceptIds;
+	public void setModelConceptIdsForModuleIdFix(Set<String> modelConceptIdsForModuleIdFix) {
+		this.modelConceptIdsForModuleIdFix = modelConceptIdsForModuleIdFix;
 	}
 
 }

@@ -1,0 +1,24 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_Release_INT_20140731">
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Full_INT_20140731.txt"/>
+					<file Name="sct2_StatedRelationship_Full_INT_20140731.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Snapshot">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Snapshot_INT_20140731.txt"/>
+					<file Name="sct2_StatedRelationship_Snapshot_INT_20140731.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Delta">
+				<folder Name="Terminology">
+					<file Name="sct2_Concept_Delta_INT_20140731.txt"/>
+					<file Name="sct2_StatedRelationship_Delta_INT_20140731.txt"/>
+				</folder>
+			</folder>
+		</folder>
+	</folder>
+</listing>
