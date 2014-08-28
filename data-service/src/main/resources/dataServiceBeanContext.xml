@@ -126,9 +126,17 @@
 	<bean class="java.lang.String" id="publishedBucketName">
 		<constructor-arg value="${publishedBucketName}" />
 	</bean>
-	
+
 	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
+	</bean>
+
+	<bean class="java.lang.Integer" id="idGenMaxTries">
+		<constructor-arg value="${idGenerator.maxTries}"/>
+	</bean>
+
+	<bean class="java.lang.Integer" id="idGenRetryDelaySeconds">
+		<constructor-arg value="${idGenerator.retryDelaySeconds}"/>
 	</bean>
 
 	<bean class="java.lang.Boolean" id="offlineMode" >
