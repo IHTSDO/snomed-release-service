@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.rmi.RemoteException;
-
 import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
+
+import java.rmi.RemoteException;
 
 public class SCTIDTransformation implements LineTransformation {
 
@@ -31,7 +31,7 @@ public class SCTIDTransformation implements LineTransformation {
 				Long sctid = sctidFactory.getSCTID(uuidString, partitionId, moduleId);
 
 				columnValues[componentIdCol] = sctid.toString();
-			} catch (CreateSCTIDFaultException | RemoteException e) {
+			} catch (CreateSCTIDFaultException | RemoteException | InterruptedException e) {
 				throw new TransformationException("SCTID creation request failed.", e);
 			}
 		}
