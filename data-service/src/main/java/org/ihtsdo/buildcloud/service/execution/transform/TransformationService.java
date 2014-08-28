@@ -48,6 +48,12 @@ public class TransformationService {
 	@Autowired
 	private String modelModuleSctid;
 
+	@Autowired
+	private Integer idGenMaxTries;
+
+	@Autowired
+	private Integer idGenRetryDelaySeconds;
+
 	private ExecutorService executorService;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
@@ -65,7 +71,7 @@ public class TransformationService {
 		String executionId = execution.getId();
 
 		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
-				executionId, idAssignmentBI);
+				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
 
 		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, modelModuleSctid);
