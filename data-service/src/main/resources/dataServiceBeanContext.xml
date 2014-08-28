@@ -181,6 +181,10 @@
 		<constructor-arg value="${snomed.isARelationshipTypeSctid}"/>
 	</bean>
 
+	<bean class="java.lang.String" id="modelModuleSctid">
+		<constructor-arg value="${snomed.modelModuleSctid}"/>
+	</bean>
+
 	<bean factory-bean="idAssignmentBIFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
 	</bean>

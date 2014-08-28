@@ -19,7 +19,7 @@ public class ModuleResolverService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleResolverService.class);
 
-	public ModuleResolverService(String isASctid, String modelModuleSctid) {
+	public ModuleResolverService(String modelModuleSctid, String isASctid) {
 		// RF2 Relationship fields:
 		// id effectiveTime active moduleId sourceId destinationId relationshipGroup typeId characteristicTypeId modifierId
 

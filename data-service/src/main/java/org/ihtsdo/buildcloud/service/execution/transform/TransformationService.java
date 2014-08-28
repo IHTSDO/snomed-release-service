@@ -45,6 +45,9 @@ public class TransformationService {
 	@Autowired
 	private ExecutionDAO executionDAO;
 
+	@Autowired
+	private String modelModuleSctid;
+
 	private ExecutorService executorService;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
@@ -60,8 +63,13 @@ public class TransformationService {
 			throws ExecutionException {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
-		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, executionId, idAssignmentBI);
-		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory, uuidGenerator);
+
+		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
+				executionId, idAssignmentBI);
+
+		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
+				uuidGenerator, modelModuleSctid);
+
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
 		LOGGER.info("Transforming files in execution {}, package {}{}", execution.getId(), packageBusinessKey,
@@ -93,7 +101,7 @@ public class TransformationService {
 							InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, packageBusinessKey, inputStatedRelationshipFilename);
 							moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
 
-							transformationFactory.setModelConceptIds(modelConceptIds);
+							transformationFactory.setModelConceptIdsForModuleIdFix(modelConceptIds);
 
 						} else {
 							// TODO: Add to execution report?
