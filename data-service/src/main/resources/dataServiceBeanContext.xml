@@ -176,6 +176,15 @@
 
 	<bean class="org.ihtsdo.buildcloud.service.execution.transform.TransformationService"/>
 
+	<bean class="org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService">
+		<constructor-arg value="${snomed.modelModuleSctid}"/>
+		<constructor-arg value="${snomed.isARelationshipTypeSctid}"/>
+	</bean>
+
+	<bean class="java.lang.String" id="modelModuleSctid">
+		<constructor-arg value="${snomed.modelModuleSctid}"/>
+	</bean>
+
 	<bean factory-bean="idAssignmentBIFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
 	</bean>

@@ -14,7 +14,7 @@ public class TransformationFactoryTest {
 
 	@Before
 	public void setup() throws FileRecognitionException {
-		transformationFactory = new TransformationFactory("01012014", new CachedSctidFactory(null, null, null, null), new RandomUUIDGenerator());
+		transformationFactory = new TransformationFactory("01012014", new CachedSctidFactory(null, null, null, null), new RandomUUIDGenerator(), "123");
 		schemaBean = new SchemaFactory().createSchemaBean("der2_iisssccRefset_ExtendedMapDelta_INT_20140131.txt");
 		List<Field> fields = schemaBean.getFields();
 		Assert.assertEquals(13, fields.size());
@@ -35,7 +35,7 @@ public class TransformationFactoryTest {
 		assertTransform(SCTIDTransformationFromCache.class, 4, lineTransformations.get(index++));
 		assertTransform(SCTIDTransformationFromCache.class, 5, lineTransformations.get(index++));
 		assertTransform(SCTIDTransformationFromCache.class, 11, lineTransformations.get(index++));
-		assertTransform(SCTIDTransformationFromCache.class, 12, lineTransformations.get(index++));
+		assertTransform(SCTIDTransformationFromCache.class, 12, lineTransformations.get(index));
 
 	}
 
