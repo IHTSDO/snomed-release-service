@@ -87,6 +87,11 @@ public class StreamingFileTransformation {
 		return this;
 	}
 
+	public StreamingFileTransformation addLineTransformationToFrontOfList(final LineTransformation transformation) {
+		lineTransformations.add(0, transformation);
+		return this;
+	}
+
 	public List<LineTransformation> getLineTransformations() {
 		return lineTransformations;
 	}
