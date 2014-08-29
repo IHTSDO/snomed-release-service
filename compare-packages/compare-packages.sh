@@ -79,8 +79,8 @@ for file in `find target/a -type f | sed "s/target\/a\///"`; do
 		then
 			leftFileTrim="${leftFile}.no_last_col"
 			rightFileTrim="${rightFile}.no_last_col"
-			cut -f2- ${leftFile} > ${leftFileTrim}
-			cut -f2- ${rightFile} > ${rightFileTrim}
+			cut -f2- ${leftFile} | sort > ${leftFileTrim}
+			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			echo -n "Content without id column differences count (x2): "
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}.no_last_col | wc -l
 		fi
