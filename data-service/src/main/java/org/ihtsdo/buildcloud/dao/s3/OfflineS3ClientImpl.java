@@ -1,33 +1,19 @@
 package org.ihtsdo.buildcloud.dao.s3;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.s3.model.*;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.model.AccessControlList;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CopyObjectResult;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 /**
  * Offers an offline version of S3 cloud storage for demos or working without a connection.
@@ -40,12 +26,26 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	private static final boolean REPLACE_SEPARATOR = !File.pathSeparator.equals("/");
 	private static final Logger LOGGER = LoggerFactory.getLogger(OfflineS3ClientImpl.class);
 
+	public OfflineS3ClientImpl(String bucketsDirectoryPath) throws IOException {
+		File bucketsDirectory;
+		if (bucketsDirectoryPath != null && !bucketsDirectoryPath.isEmpty()) {
+			bucketsDirectory = new File(bucketsDirectoryPath);
+		} else {
+			bucketsDirectory = newTempStore();
+		}
+		this.bucketsDirectory = bucketsDirectory;
+	}
+
 	public OfflineS3ClientImpl(File bucketsDirectory) {
 		this.bucketsDirectory = bucketsDirectory;
 	}
 
 	public OfflineS3ClientImpl() throws IOException {
-		this(Files.createTempDirectory(OfflineS3ClientImpl.class.getName() + "-mock-s3").toFile());
+		this(newTempStore());
+	}
+
+	public static File newTempStore() throws IOException {
+		return Files.createTempDirectory(OfflineS3ClientImpl.class.getName() + "-mock-s3").toFile();
 	}
 
 	@Override

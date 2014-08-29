@@ -38,6 +38,8 @@
 		<property name="properties">
 			<props>
 				<prop key="localRvf">false</prop>
+				<!-- New temp directory will be used if property not set -->
+				<prop key="s3.offline.directory"></prop>
 			</props>
 		</property>
 	</bean>
@@ -113,7 +115,9 @@
 			</bean>
 		</property>
 		<property name="offlineImplementation">
-			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl"/>
+			<bean class="org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl">
+				<constructor-arg value="${s3.offline.directory}"/>
+			</bean>
 		</property>
 	</bean>
 
