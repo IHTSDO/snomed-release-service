@@ -40,6 +40,25 @@ public class RF2TableDAOTreeMapImplTest {
 				new RF2TableResultsReaderHack(results));
 	}
 
+	@Test
+	public void testReconcileRefsetMemberIds_AssociationReferenceRefset() throws Exception {
+		String effectiveTime = "20140731";
+
+		String deltaInput = "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
+		Class thisClass = getClass();
+		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
+
+		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
+		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+
+		dao.generateNewMemberIds(effectiveTime);
+
+		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
+		RF2TableResults results = dao.selectAllOrdered(tableSchema);
+		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, thisClass.getResourceAsStream(expectedNewDelta),
+				new RF2TableResultsReaderHack(results));
+	}
+
 	class RF2TableResultsReaderHack extends BufferedReader {
 
 		private final RF2TableResults results;
