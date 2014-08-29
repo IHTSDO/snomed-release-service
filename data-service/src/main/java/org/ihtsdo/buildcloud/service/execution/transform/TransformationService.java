@@ -124,7 +124,7 @@ public class TransformationService {
 		}
 
 		// Phase 1
-		// Process just the id column of any Concept files.
+		// Process just the id and moduleId columns of any Concept and Description files.
 		for (String inputFileName : executionInputFileNames) {
 			try {
 				LOGGER.info("Processing file: {}", inputFileName);
