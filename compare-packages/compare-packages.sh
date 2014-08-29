@@ -53,7 +53,10 @@ mkdir -p target/c
 echo "_File content differences_"
 echo "Line count diff is SRS minus WBRP"
 echo
-for file in `find target/a -type f | sed "s/target\/a\///"`; do
+processOrderFile="_process_order.txt"
+find target/a -type f | sed "s/target\/a\///" | grep "sct2_" | sort > ${processOrderFile}
+find target/a -type f | sed "s/target\/a\///" | grep "der2_" | sort >> ${processOrderFile}
+for file in `cat ${processOrderFile}`; do
 	leftFile="target/a/${file}"
 	rightFile="target/b/${file}"
 	if [ -f "${rightFile}" ]
