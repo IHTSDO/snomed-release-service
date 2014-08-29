@@ -10,8 +10,6 @@ public class TransformationFactory {
 
 	private final String effectiveTimeInSnomedFormat;
 	private final CachedSctidFactory cachedSctidFactory;
-	private final StreamingFileTransformation preProcessConceptFileTransformation;
-	private final StreamingFileTransformation preProcessDescriptionFileTransformation;
 	private final UUIDGenerator uuidGenerator;
 	private final String modelModuleSctid;
 	private Set<String> modelConceptIdsForModuleIdFix;
@@ -21,17 +19,14 @@ public class TransformationFactory {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
 		this.modelModuleSctid = modelModuleSctid;
-
-		preProcessConceptFileTransformation = buildPreProcessConceptFileTransformation();
-		preProcessDescriptionFileTransformation = buildPreProcessDescriptionFileTransformation();
 		this.uuidGenerator = uuidGenerator;
 	}
 
 	public StreamingFileTransformation getPreProcessFileTransformation(ComponentType componentType) {
 		if (componentType == ComponentType.CONCEPT) {
-			return preProcessConceptFileTransformation;
+			return getPreProcessConceptFileTransformation();
 		} else if (componentType == ComponentType.DESCRIPTION) {
-			return preProcessDescriptionFileTransformation;
+			return getPreProcessDescriptionFileTransformation();
 		} else {
 			return null;
 		}
@@ -69,23 +64,37 @@ public class TransformationFactory {
 		return transformation;
 	}
 
-	private StreamingFileTransformation buildPreProcessConceptFileTransformation() {
+	private StreamingFileTransformation getPreProcessConceptFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
-		return new StreamingFileTransformation()
+		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+
+		if (modelConceptIdsForModuleIdFix != null) {
+			// If id is a model concept set moduleId to modelModuleSctid
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+		}
+
+		return streamingFileTransformation;
 	}
 
-	private StreamingFileTransformation buildPreProcessDescriptionFileTransformation() {
+	private StreamingFileTransformation getPreProcessDescriptionFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
-		return new StreamingFileTransformation()
+		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
 				// id
 				.addLineTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory));
+
+		if (modelConceptIdsForModuleIdFix != null) {
+			// If conceptId is a model concept set moduleId to modelModuleSctid
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+		}
+
+		return streamingFileTransformation;
 	}
 
 	private StreamingFileTransformation getConceptFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
-		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
+		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
@@ -93,18 +102,11 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
 				.addLineTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory));
-
-		if (modelConceptIdsForModuleIdFix != null) {
-			// If id is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
-		}
-
-		return streamingFileTransformation;
 	}
 
 	private StreamingFileTransformation getDescriptionFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_des
-		StreamingFileTransformation streamingFileTransformation = new StreamingFileTransformation()
+		return new StreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
 				.addLineTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
@@ -116,13 +118,6 @@ public class TransformationFactory {
 				.addLineTransformation(new SCTIDTransformationFromCache(6, cachedSctidFactory))
 				// caseSignificanceId
 				.addLineTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory));
-
-		if (modelConceptIdsForModuleIdFix != null) {
-			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
-		}
-
-		return streamingFileTransformation;
 	}
 
 	private StreamingFileTransformation getTextDefinitionFileTransformation() {
@@ -142,7 +137,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -170,7 +165,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If destinationId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -190,7 +185,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 4, modelModuleSctid));
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 4, modelModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -226,7 +221,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addLineTransformation(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addLineTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
 		}
 
 		return streamingFileTransformation;
