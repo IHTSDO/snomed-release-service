@@ -19,7 +19,8 @@ public class ConditionalReplaceTransformation implements LineTransformation {
 
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
-		if (columnValues.length >= columnIndexToTest && columnValues.length >= columnIndexToReplace) {
+		int maxIndex = columnValues.length - 1;
+		if (columnIndexToTest <= maxIndex && columnIndexToReplace <= maxIndex) {
 			if (testValueInThisSet.contains(columnValues[columnIndexToTest])) {
 				columnValues[columnIndexToReplace] = replacementValue;
 			}
