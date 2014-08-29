@@ -75,6 +75,15 @@ for file in `find target/a -type f | sed "s/target\/a\///"`; do
 		echo -n "Content differences count (x2): "
 		diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
 
+		if [[ ${leftFile} == *Refset_* ]]
+		then
+			leftFileTrim="${leftFile}.no_last_col"
+			rightFileTrim="${rightFile}.no_last_col"
+			cut -f2- ${leftFile} > ${leftFileTrim}
+			cut -f2- ${leftFile} > ${leftFileTrim}
+			echo -n "Content without id column differences count (x2): "
+			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}.no_last_col | wc -l
+		fi
 		echo
 	else
 		echo "Skipping ${file} - no counterpart in the legacy build"
