@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
 import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
+import org.ihtsdo.idgen.ws.CreateSCTIDListFaultException;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.rmi.RemoteException;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CachedSctidFactory {
@@ -51,6 +51,43 @@ public class CachedSctidFactory {
 			uuidToSctidCache.put(componentUuid, sctid);
 		}
 		return uuidToSctidCache.get(componentUuid);
+	}
+
+	public Map<String, Long> getSCTIDs(List<String> componentUuidStrings, String partitionId, String moduleId) throws RemoteException, CreateSCTIDListFaultException, InterruptedException {
+		Map<String, Long> uuidStringToSctidMapResults = new HashMap<>();
+		Map<UUID, Long> uuidToSctidMap = null;
+
+		// Convert uuid strings to UUID objects
+		List<UUID> componentUuids = new ArrayList<>();
+		for (String componentUuidString : componentUuidStrings) {
+			componentUuids.add(UUID.fromString(componentUuidString));
+		}
+
+		// Lookup with retries
+		int attempt = 1;
+		while (uuidToSctidMap == null) {
+			try {
+				uuidToSctidMap = idAssignment.createSCTIDList(componentUuids, namespaceId, partitionId, releaseId, executionId, moduleId);
+			} catch (CreateSCTIDListFaultException | RemoteException e) {
+				if (attempt < maxTries) {
+					LOGGER.warn("Batch ID Gen lookup failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+					attempt++;
+					Thread.sleep(retryDelaySeconds * 1000);
+				} else {
+					throw e;
+				}
+			}
+		}
+
+		// Store results in cache
+		for (UUID uuid : uuidToSctidMap.keySet()) {
+			String uuidString = uuid.toString();
+			Long value = uuidToSctidMap.get(uuid);
+			uuidToSctidCache.put(uuidString, value);
+			uuidStringToSctidMapResults.put(uuidString, value);
+		}
+
+		return uuidStringToSctidMapResults;
 	}
 
 	public Long getSCTIDFromCache(String uuidString) {

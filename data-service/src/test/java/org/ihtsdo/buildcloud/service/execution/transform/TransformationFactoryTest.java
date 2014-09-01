@@ -26,7 +26,7 @@ public class TransformationFactoryTest {
 
 		StreamingFileTransformation transformation = transformationFactory.getSteamingFileTransformation(schemaBean);
 
-		List<LineTransformation> lineTransformations = transformation.getLineTransformations();
+		List<Transformation> lineTransformations = transformation.getTransformations();
 		Assert.assertEquals(7, lineTransformations.size());
 		int index = 0;
 		assertTransform(UUIDTransformation.class, 0, lineTransformations.get(index++));
@@ -39,13 +39,13 @@ public class TransformationFactoryTest {
 
 	}
 
-	private void assertTransform(Class<? extends LineTransformation> expectedTransformationClass, int expectedColumnIndex,
-			LineTransformation actualLineTransformation) {
+	private void assertTransform(Class<? extends Transformation> expectedTransformationClass, int expectedColumnIndex,
+			Transformation actualTransformation) {
 
-		Assert.assertNotNull(actualLineTransformation);
+		Assert.assertNotNull(actualTransformation);
 
-		Assert.assertEquals("Transformation class.", expectedTransformationClass, actualLineTransformation.getClass());
-		Assert.assertEquals("Column index.", expectedColumnIndex, actualLineTransformation.getColumnIndex());
+		Assert.assertEquals("Transformation class.", expectedTransformationClass, actualTransformation.getClass());
+		Assert.assertEquals("Column index.", expectedColumnIndex, ((LineTransformation)actualTransformation).getColumnIndex());
 
 	}
 }

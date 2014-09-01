@@ -233,8 +233,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
 				LOGGER.warn(msg, e);
 			}
-			report.add("status", pkgResult);
-			report.add("message", msg);
+			report.add("Progress Status", pkgResult);
+			report.add("Message", msg);
 		}
 
 		dao.updateStatus(execution, Execution.Status.BUILT);
@@ -279,11 +279,24 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
-		String rvfResult = "RVF validation did not run.";
+		String rvfResultMsg = "RVF validation configured to not run.";
+		String rvfStatus = "N/A";
 		if (!offlineMode || localRvf) {
-			rvfResult = runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+			try {
+				rvfResultMsg = runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+				if (rvfResultMsg == null) {
+					rvfStatus = "Completed without errors.";
+				} else {
+					rvfStatus = "Completed, errors detected.";
+				}
+			} catch (Exception e) {
+				LOGGER.error("Failure during RVF Post Condition Testing", e);
+				rvfStatus = "Processing Failed.";
+				rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
+			}
 		}
-		report.add("RVF Test Failures", rvfResult);
+		report.add("Post Validation Status", rvfStatus);
+		report.add("RVF Test Failures", rvfResultMsg);
 		LOGGER.info("End of executing package {}", pkg.getName());
 	}
 

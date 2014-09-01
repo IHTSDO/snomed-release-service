@@ -272,8 +272,8 @@ public class IntegrationTestHelper {
 		while (packages.hasNext()) {
 			String packageName = (String) packages.next();
 			JSONObject packageResult = packageResults.getJSONObject(packageName);
-			String status = packageResult.getString("status");
-			String message = packageResult.getString("message");
+			String status = packageResult.getString("Progress Status");
+			String message = packageResult.getString("Message");
 			Assert.assertEquals("Package " + packageName + " bad status. Message: " + message, COMPLETION_STATUS, status);
 		}
 	}

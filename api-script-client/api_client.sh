@@ -407,7 +407,7 @@ fi
 echo
 echo "Trigger Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions/${executionId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
-triggerSuccess=`cat tmp/trigger-response.txt | grep pass` || true # Do not fail on exit here, some reporting first
+triggerSuccess=`cat tmp/trigger-response.txt | grep "Process completed successfully"` || true # Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
 	echo "Failed to successfully process any packages. "
