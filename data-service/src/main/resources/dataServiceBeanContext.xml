@@ -135,6 +135,10 @@
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
 	</bean>
 
+	<bean class="java.lang.Integer" id="transformBufferSize">
+		<constructor-arg value="${transformBufferSize}"/>
+	</bean>
+
 	<bean class="java.lang.Integer" id="idGenMaxTries">
 		<constructor-arg value="${idGenerator.maxTries}"/>
 	</bean>
