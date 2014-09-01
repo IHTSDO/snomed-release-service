@@ -11,17 +11,19 @@ import java.util.List;
 
 public class StreamingFileTransformation {
 
-	private final List<LineTransformation> lineTransformations;
+	private final List<Transformation> transformations;
+	private final int batchSize;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingFileTransformation.class);
 
 	public StreamingFileTransformation() {
-		lineTransformations = new ArrayList<>();
+		transformations = new ArrayList<>();
+		batchSize = 100;
 	}
 
 	public void transformFile(InputStream inputStream, OutputStream outputStream, String fileName, ExecutionPackageReport report)
-			throws IOException,
-			TransformationException {
+			throws IOException, TransformationException {
+
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8));
 		try {
@@ -31,6 +33,7 @@ public class StreamingFileTransformation {
 			StringBuilder stringBuilder = new StringBuilder();
 			boolean firstLine = true;
 			int lineNumber = 0;
+			List<String[]> columnValuesList = new ArrayList<>();
 			while ((line = reader.readLine()) != null) {
 				lineNumber++;
 				if (firstLine) {
@@ -42,30 +45,16 @@ public class StreamingFileTransformation {
 					// Split column values
 					String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 
-					// Pass line through all transformers
+					columnValuesList.add(columnValues);
 
-					try {
-						for (LineTransformation lineTransformation : lineTransformations) {
-							lineTransformation.transformLine(columnValues);
-						}
-					} catch (TransformationException e) {
-						LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, lineNumber,
-								e.getMessage());
-						report.add("File Transformation", fileName, e.getMessage(), lineNumber);
+					if (columnValuesList.size() == batchSize) {
+						processLines(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
+						columnValuesList.clear();
 					}
-
-					// Write transformed line to temp file
-					stringBuilder.setLength(0);// reuse StringBuilder
-					for (int a = 0; a < columnValues.length; a++) {
-						if (a > 0) {
-							stringBuilder.append(RF2Constants.COLUMN_SEPARATOR);
-						}
-						stringBuilder.append(columnValues[a]);
-					}
-					stringBuilder.append(RF2Constants.LINE_ENDING);
-
-					writer.write(stringBuilder.toString());
 				}
+			}
+			if (!columnValuesList.isEmpty()) {
+				processLines(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
 			}
 			LOGGER.info("Finish: Transform file {}.", fileName);
 		} finally {
@@ -82,18 +71,61 @@ public class StreamingFileTransformation {
 		}
 	}
 
-	public StreamingFileTransformation addLineTransformation(final LineTransformation transformation) {
-		lineTransformations.add(transformation);
+	private void processLines(List<String[]> columnValuesList, BufferedWriter writer, String fileName, int lineNumberAtEndOfBatch, ExecutionPackageReport report, StringBuilder stringBuilder) throws IOException {
+		int listSize = columnValuesList.size();
+
+		for (Transformation transformation : transformations) {
+			if (transformation instanceof BatchLineTransformation) {
+				BatchLineTransformation batchLineTransform = (BatchLineTransformation) transformation;
+				try {
+					batchLineTransform.transformLines(columnValuesList);
+				} catch (TransformationException e) {
+					int batchLineStart = lineNumberAtEndOfBatch - listSize;
+					LOGGER.warn("TransformationException while processing {} batch of lines {}-{} caused by: {}", fileName, batchLineStart, lineNumberAtEndOfBatch, e.getMessage());
+					report.add("File Transformation", fileName, e.getMessage(), lineNumberAtEndOfBatch);
+				}
+			} else {
+				LineTransformation lineTransformation = (LineTransformation) transformation;
+				for (int a = 0; a < listSize; a++) {
+					String[] columnValues = columnValuesList.get(a);
+					try {
+						lineTransformation.transformLine(columnValues);
+					} catch (TransformationException e) {
+						int currentLineNumber = lineNumberAtEndOfBatch - listSize + a;
+						LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, currentLineNumber, e.getMessage());
+						report.add("File Transformation", fileName, e.getMessage(), lineNumberAtEndOfBatch);
+					}
+				}
+			}
+		}
+
+		for (String[] columnValues : columnValuesList) {
+			// Write transformed line to temp file
+			stringBuilder.setLength(0);// reuse StringBuilder
+			for (int a = 0; a < columnValues.length; a++) {
+				if (a > 0) {
+					stringBuilder.append(RF2Constants.COLUMN_SEPARATOR);
+				}
+				stringBuilder.append(columnValues[a]);
+			}
+			stringBuilder.append(RF2Constants.LINE_ENDING);
+
+			writer.write(stringBuilder.toString());
+		}
+	}
+
+	public StreamingFileTransformation addTransformation(final Transformation transformation) {
+		transformations.add(transformation);
 		return this;
 	}
 
-	public StreamingFileTransformation addLineTransformationToFrontOfList(final LineTransformation transformation) {
-		lineTransformations.add(0, transformation);
+	public StreamingFileTransformation addTransformationToFrontOfList(final Transformation transformation) {
+		transformations.add(0, transformation);
 		return this;
 	}
 
-	public List<LineTransformation> getLineTransformations() {
-		return lineTransformations;
+	public List<Transformation> getTransformations() {
+		return transformations;
 	}
 
 }
