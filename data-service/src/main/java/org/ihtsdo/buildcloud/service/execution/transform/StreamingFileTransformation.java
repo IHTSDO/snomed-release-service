@@ -12,13 +12,13 @@ import java.util.List;
 public class StreamingFileTransformation {
 
 	private final List<Transformation> transformations;
-	private final int batchSize;
+	private final int transformBufferSize;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingFileTransformation.class);
 
-	public StreamingFileTransformation() {
+	public StreamingFileTransformation(int transformBufferSize) {
+		this.transformBufferSize = transformBufferSize;
 		transformations = new ArrayList<>();
-		batchSize = 100;
 	}
 
 	public void transformFile(InputStream inputStream, OutputStream outputStream, String fileName, ExecutionPackageReport report)
@@ -47,14 +47,14 @@ public class StreamingFileTransformation {
 
 					columnValuesList.add(columnValues);
 
-					if (columnValuesList.size() == batchSize) {
-						processLines(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
+					if (columnValuesList.size() == transformBufferSize) {
+						processLinesInBuffer(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
 						columnValuesList.clear();
 					}
 				}
 			}
 			if (!columnValuesList.isEmpty()) {
-				processLines(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
+				processLinesInBuffer(columnValuesList, writer, fileName, lineNumber, report, stringBuilder);
 			}
 			LOGGER.info("Finish: Transform file {}.", fileName);
 		} finally {
@@ -71,7 +71,7 @@ public class StreamingFileTransformation {
 		}
 	}
 
-	private void processLines(List<String[]> columnValuesList, BufferedWriter writer, String fileName, int lineNumberAtEndOfBatch, ExecutionPackageReport report, StringBuilder stringBuilder) throws IOException {
+	private void processLinesInBuffer(List<String[]> columnValuesList, BufferedWriter writer, String fileName, int lineNumberAtEndOfBatch, ExecutionPackageReport report, StringBuilder stringBuilder) throws IOException {
 		int listSize = columnValuesList.size();
 
 		for (Transformation transformation : transformations) {
@@ -81,7 +81,7 @@ public class StreamingFileTransformation {
 					batchLineTransform.transformLines(columnValuesList);
 				} catch (TransformationException e) {
 					int batchLineStart = lineNumberAtEndOfBatch - listSize;
-					LOGGER.warn("TransformationException while processing {} batch of lines {}-{} caused by: {}", fileName, batchLineStart, lineNumberAtEndOfBatch, e.getMessage());
+					LOGGER.warn("TransformationException while processing {}, lines in buffer {}-{} caused by: {}", fileName, batchLineStart, lineNumberAtEndOfBatch, e.getMessage());
 					report.add("File Transformation", fileName, e.getMessage(), lineNumberAtEndOfBatch);
 				}
 			} else {
