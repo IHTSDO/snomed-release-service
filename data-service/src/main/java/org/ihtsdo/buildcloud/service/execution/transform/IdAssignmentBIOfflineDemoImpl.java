@@ -22,6 +22,19 @@ public class IdAssignmentBIOfflineDemoImpl implements IdAssignmentBI {
 
 	@Override
 	public Long createSCTID(UUID componentUuid, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws CreateSCTIDFaultException, RemoteException {
+		return createNewId(partitionId);
+	}
+
+	@Override
+	public HashMap<UUID, Long> createSCTIDList(List<UUID> componentUuidList, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateSCTIDListFaultException {
+		HashMap<UUID, Long> map = new HashMap<>();
+		for (UUID uuid : componentUuidList) {
+			map.put(uuid, createNewId(partitionId));
+		}
+		return map;
+	}
+
+	public Long createNewId(String partitionId) {
 		sctid++;
 		return Long.parseLong("" + sctid + partitionId + BOGUS_CHECK_DIGIT);
 	}
@@ -58,11 +71,6 @@ public class IdAssignmentBIOfflineDemoImpl implements IdAssignmentBI {
 
 	@Override
 	public HashMap<IDENTIFIER, String> createConceptIds(UUID componentUuid, String parentSnomedId, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateConceptIdsFaultException {
-		throw NOT_IMPLEMENTED_EXCEPTION;
-	}
-
-	@Override
-	public HashMap<UUID, Long> createSCTIDList(List<UUID> componentUuidList, Integer namespaceId, String partitionId, String releaseId, String executionId, String moduleId) throws RemoteException, CreateSCTIDListFaultException {
 		throw NOT_IMPLEMENTED_EXCEPTION;
 	}
 
