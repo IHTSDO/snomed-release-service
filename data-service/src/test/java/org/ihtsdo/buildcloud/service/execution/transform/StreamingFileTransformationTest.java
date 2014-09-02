@@ -1,4 +1,10 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
+import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,12 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 public class StreamingFileTransformationTest {
 
 	private StreamingFileTransformation fileTransformation;
@@ -24,7 +24,7 @@ public class StreamingFileTransformationTest {
 
 	@Before
 	public void setup() throws URISyntaxException, IOException {
-		fileTransformation = new StreamingFileTransformation();
+		fileTransformation = new StreamingFileTransformation(100);
 
 		File origRf2File = new File(getClass().getResource("rf2-in.txt").toURI());
 		Path tempFile = Files.createTempFile(getClass().getName(), origRf2File.getName());

@@ -7,14 +7,16 @@ public class ConditionalReplaceTransformation implements LineTransformation {
 	private final int columnIndexToTest;
 	private final Set<String> testValueInThisSet;
 	private final int columnIndexToReplace;
-	private final String replacementValue;
+	private final String trueReplacementValue;
+	private final String falseReplacementValue;
 
 	public ConditionalReplaceTransformation(int columnIndexToTest, Set<String> testValueInThisSet,
-			int columnIndexToReplace, String replacementValue) {
+			int columnIndexToReplace, String trueReplacementValue, String falseReplacementValue) {
 		this.columnIndexToTest = columnIndexToTest;
 		this.testValueInThisSet = testValueInThisSet;
 		this.columnIndexToReplace = columnIndexToReplace;
-		this.replacementValue = replacementValue;
+		this.trueReplacementValue = trueReplacementValue;
+		this.falseReplacementValue = falseReplacementValue;
 	}
 
 	@Override
@@ -22,7 +24,9 @@ public class ConditionalReplaceTransformation implements LineTransformation {
 		int maxIndex = columnValues.length - 1;
 		if (columnIndexToTest <= maxIndex && columnIndexToReplace <= maxIndex) {
 			if (testValueInThisSet.contains(columnValues[columnIndexToTest])) {
-				columnValues[columnIndexToReplace] = replacementValue;
+				columnValues[columnIndexToReplace] = trueReplacementValue;
+			} else {
+				columnValues[columnIndexToReplace] = falseReplacementValue;
 			}
 		}
 	}
