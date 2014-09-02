@@ -45,10 +45,6 @@ public class FileHelper {
 		s3Client.putObject(putRequest);
 	}
 
-	/**
-	 * This method causes a warning when using S3 because we don't know the file length up front.
-	 * TODO: Investigate multipart upload to avoid the S3 library buffering the whole file.
-	 */
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
 		LOGGER.debug("Putting file to {}/{}", bucketName, targetFilePath);
@@ -64,9 +60,10 @@ public class FileHelper {
 
 		InputStream is = new FileInputStream(file);
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, is).length(file.length()).useBucketAcl();
+		String localMd5 = null;
 		if (calcMD5) {
-			String md5 = FileUtils.calculateMD5(file);
-			putRequest.withMD5(md5);
+			localMd5 = FileUtils.calculateMD5(file);
+			putRequest.withMD5(localMd5);
 		}
 		PutObjectResult putResult = s3Client.putObject(putRequest);
 		String md5Received = (putResult == null ? null : putResult.getContentMd5());
@@ -75,7 +72,7 @@ public class FileHelper {
 		if (calcMD5) {
 			//Also upload the hex encoded (ie normal) md5 digest in a file
 			String md5TargetPath = targetFilePath + ".md5";
-			File md5File = FileUtils.createMD5File(file);
+			File md5File = FileUtils.createMD5File(file, localMd5);
 			InputStream isMD5 = new FileInputStream(md5File);
 			S3PutRequestBuilder md5PutRequest = s3ClientHelper.newPutRequest(bucketName, md5TargetPath, isMD5).length(md5File.length()).useBucketAcl();
 			s3Client.putObject(md5PutRequest);

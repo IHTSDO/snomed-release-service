@@ -99,7 +99,6 @@ public class ZipperTest {
 	}
 	
 	@Test
-	// TODO: implement or delete
 	public void testZipper() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
 
 		Zipper zipper = new Zipper(execution, pkg, executionDAO);

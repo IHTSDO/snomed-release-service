@@ -20,7 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,7 +49,13 @@ public class TransformationService {
 	private ExecutionDAO executionDAO;
 
 	@Autowired
+	private String coreModuleSctid;
+
+	@Autowired
 	private String modelModuleSctid;
+
+	@Autowired
+	private Integer transformBufferSize;
 
 	@Autowired
 	private Integer idGenMaxTries;
@@ -74,7 +83,7 @@ public class TransformationService {
 				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
 
 		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
-				uuidGenerator, modelModuleSctid);
+				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
 
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();

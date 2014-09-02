@@ -135,6 +135,10 @@
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
 	</bean>
 
+	<bean class="java.lang.Integer" id="transformBufferSize">
+		<constructor-arg value="${transformBufferSize}"/>
+	</bean>
+
 	<bean class="java.lang.Integer" id="idGenMaxTries">
 		<constructor-arg value="${idGenerator.maxTries}"/>
 	</bean>
@@ -191,6 +195,10 @@
 	<bean class="org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService">
 		<constructor-arg value="${snomed.modelModuleSctid}"/>
 		<constructor-arg value="${snomed.isARelationshipTypeSctid}"/>
+	</bean>
+
+	<bean class="java.lang.String" id="coreModuleSctid">
+		<constructor-arg value="${snomed.coreModuleSctid}"/>
 	</bean>
 
 	<bean class="java.lang.String" id="modelModuleSctid">
