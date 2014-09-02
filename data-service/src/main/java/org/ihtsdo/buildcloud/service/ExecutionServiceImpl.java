@@ -218,7 +218,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		dao.updateStatus(execution, Execution.Status.BUILDING);
 
 		//Run transformation on each of our packages in turn.
-		//TODO Multithreading opportunity here!
+		// TODO: Could multithread here, if there are enough resources (classifier and RF2 export will use a lot of memory).
 		Set<Package> packages = execution.getBuild().getPackages();
 		for (Package pkg : packages) {
 			ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);

@@ -45,10 +45,6 @@ public class FileHelper {
 		s3Client.putObject(putRequest);
 	}
 
-	/**
-	 * This method causes a warning when using S3 because we don't know the file length up front.
-	 * TODO: Investigate multipart upload to avoid the S3 library buffering the whole file.
-	 */
 	public void putFile(InputStream fileStream, String targetFilePath) {
 		S3PutRequestBuilder putRequest = s3ClientHelper.newPutRequest(bucketName, targetFilePath, fileStream).useBucketAcl();
 		LOGGER.debug("Putting file to {}/{}", bucketName, targetFilePath);
