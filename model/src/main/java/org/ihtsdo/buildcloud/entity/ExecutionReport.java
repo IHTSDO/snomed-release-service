@@ -1,8 +1,13 @@
 package org.ihtsdo.buildcloud.entity;
 
+import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ser.std.ToStringSerializer;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +33,15 @@ public class ExecutionReport {
 		}
 
 		return this.executionPackageReports.get(pkg.getName());
+	}
+
+	public String toString() {
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(executionPackageReports);
+		} catch (IOException e) {
+			return "Unable to persist Execution Report due to " + e.getLocalizedMessage();
+		}
 	}
 
 }
