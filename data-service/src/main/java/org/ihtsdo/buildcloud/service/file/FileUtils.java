@@ -1,10 +1,9 @@
 package org.ihtsdo.buildcloud.service.file;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -12,9 +11,6 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FileUtils {
 
@@ -127,8 +123,7 @@ public class FileUtils {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
 	 */
-	public static File createMD5File(final File hashMe) throws NoSuchAlgorithmException, IOException {
-		String md5String = calculateMD5(hashMe);
+	public static File createMD5File(final File hashMe, String md5String) throws NoSuchAlgorithmException, IOException {
 		String resultFilePath = hashMe.getAbsolutePath() + MD5_EXTENSION;
 
 		File resultFile = new File(resultFilePath);
