@@ -11,14 +11,16 @@ public class TransformationFactory {
 	private final String effectiveTimeInSnomedFormat;
 	private final CachedSctidFactory cachedSctidFactory;
 	private final UUIDGenerator uuidGenerator;
+	private final String coreModuleSctid;
 	private final String modelModuleSctid;
 	private final Integer transformBufferSize;
 	private Set<String> modelConceptIdsForModuleIdFix;
 
 	public TransformationFactory(String effectiveTimeInSnomedFormat, CachedSctidFactory cachedSctidFactory, UUIDGenerator uuidGenerator,
-			String modelModuleSctid, Integer transformBufferSize) {
+			String coreModuleSctid, String modelModuleSctid, Integer transformBufferSize) {
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
+		this.coreModuleSctid = coreModuleSctid;
 		this.modelModuleSctid = modelModuleSctid;
 		this.uuidGenerator = uuidGenerator;
 		this.transformBufferSize = transformBufferSize;
@@ -74,7 +76,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If id is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -88,7 +90,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -139,7 +141,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -167,7 +169,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If destinationId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -187,7 +189,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 4, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 4, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;
@@ -223,7 +225,7 @@ public class TransformationFactory {
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid));
+			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
 		}
 
 		return streamingFileTransformation;

@@ -49,6 +49,9 @@ public class TransformationService {
 	private ExecutionDAO executionDAO;
 
 	@Autowired
+	private String coreModuleSctid;
+
+	@Autowired
 	private String modelModuleSctid;
 
 	@Autowired
@@ -80,7 +83,7 @@ public class TransformationService {
 				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
 
 		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
-				uuidGenerator, modelModuleSctid, transformBufferSize);
+				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
 
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
