@@ -137,4 +137,8 @@ public class ExecutionS3PathHelper {
 		return productPath.toString();
 	}
 
+	public String getReportPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append("execution_report.json").toString();
+	}
+
 }

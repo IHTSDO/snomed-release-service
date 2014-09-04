@@ -72,4 +72,6 @@ public interface ExecutionDAO {
 
 	public InputStream getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
+	void persistReport(Execution execution);
+
 }
