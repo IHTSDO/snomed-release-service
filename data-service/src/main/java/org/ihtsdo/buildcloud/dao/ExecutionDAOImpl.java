@@ -2,7 +2,9 @@ package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
+
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
@@ -133,6 +135,20 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		if (origStatus != null && origStatus != newStatus) {
 			String origStatusFilePath = pathHelper.getStatusFilePath(execution, origStatus);
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
+		}
+	}
+	
+	@Override
+	public void persistReport(Execution execution) {
+
+		String reportPath = pathHelper.getReportPath(execution);
+		try {
+			// Get the execution report as a string we can write to disk/S3 synchronously because it's small
+			String executionReportJSON = execution.getExecutionReport().toString();
+			InputStream is = IOUtils.toInputStream(executionReportJSON, "UTF-8");
+			executionFileHelper.putFile(is, executionReportJSON.length(), reportPath);
+		} catch (IOException e) {
+			LOGGER.error("Unable to persist execution report", e);
 		}
 	}
 

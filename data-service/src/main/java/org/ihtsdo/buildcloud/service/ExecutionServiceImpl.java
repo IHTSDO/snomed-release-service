@@ -237,6 +237,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 			report.add("Message", msg);
 		}
 
+		dao.persistReport(execution);
+
 		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return execution;

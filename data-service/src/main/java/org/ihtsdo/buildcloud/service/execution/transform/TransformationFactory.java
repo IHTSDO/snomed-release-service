@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
 import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitionIdentifier;
+import org.ihtsdo.buildcloud.service.execution.transform.conditional.ConditionalTransformation;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 
 import java.util.List;
@@ -75,8 +76,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If id is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(0, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
+			// If id is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForConceptFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(0, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(2, "1")
+					.then(new ReplaceValueLineTransformation(3, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(3, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForConceptFile);
 		}
 
 		return streamingFileTransformation;
@@ -89,8 +96,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
+			// If conceptId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForDescriptionFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(4, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(2, "1")
+					.then(new ReplaceValueLineTransformation(3, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(3, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForDescriptionFile);
 		}
 
 		return streamingFileTransformation;
@@ -140,8 +153,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformationFromCache(8, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If conceptId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(4, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
+			// If conceptId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForTextDefinitionFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(4, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(2, "1")
+					.then(new ReplaceValueLineTransformation(3, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(3, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForTextDefinitionFile);
 		}
 
 		return streamingFileTransformation;
@@ -168,8 +187,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformationFromCache(9, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If destinationId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
+			// If destinationId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForRelationshipFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(5, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(2, "1")
+					.then(new ReplaceValueLineTransformation(3, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(3, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForRelationshipFile);
 		}
 
 		return streamingFileTransformation;
@@ -188,8 +213,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 4, modelModuleSctid, coreModuleSctid));
+			// If referencedComponentId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForIdentifierFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(5, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(3, "1")
+					.then(new ReplaceValueLineTransformation(4, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(4, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForIdentifierFile);
 		}
 
 		return streamingFileTransformation;
@@ -224,8 +255,14 @@ public class TransformationFactory {
 				.addTransformation(new SCTIDTransformationFromCache(5, cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
-			// If referencedComponentId is a model concept set moduleId to modelModuleSctid
-			streamingFileTransformation.addTransformationToFrontOfList(new ConditionalReplaceTransformation(5, modelConceptIdsForModuleIdFix, 3, modelModuleSctid, coreModuleSctid));
+			// If referencedComponentId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
+			ConditionalTransformation conditionalTransformationForRefsetFile = new ConditionalTransformation()
+					.addIf().columnValueInCollection(5, modelConceptIdsForModuleIdFix)
+					.and().columnValueEquals(2, "1")
+					.then(new ReplaceValueLineTransformation(3, modelModuleSctid))
+					.otherwise(new ReplaceValueLineTransformation(3, coreModuleSctid));
+
+			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForRefsetFile);
 		}
 
 		return streamingFileTransformation;
