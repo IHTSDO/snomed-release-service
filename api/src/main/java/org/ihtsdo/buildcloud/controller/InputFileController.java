@@ -50,7 +50,7 @@ public class InputFileController {
 											 final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity<Void>(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/manifest")
@@ -90,7 +90,7 @@ public class InputFileController {
 											 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 
 		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity<Void>(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/inputfiles")

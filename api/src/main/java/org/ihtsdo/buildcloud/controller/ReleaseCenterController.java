@@ -53,7 +53,7 @@ public class ReleaseCenterController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 
-		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)

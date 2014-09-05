@@ -73,7 +73,7 @@ public class ExtensionController {
 		
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
-		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
 	
 	@RequestMapping("/{extensionBusinessKey}/builds")
