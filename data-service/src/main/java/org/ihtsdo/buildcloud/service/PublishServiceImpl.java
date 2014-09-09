@@ -1,28 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
+import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -34,6 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
@@ -63,35 +55,40 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
-		String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
-		List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
-		String releaseFileName = null;
-		String md5FileName = null;
-		for (String fileName : filesFound) {
-			if (releaseFileName == null && FileUtils.isZip(fileName)) {
-				releaseFileName = fileName;
-				//only one zip file per package
+		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
+		try {
+			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
+			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
+			String releaseFileName = null;
+			String md5FileName = null;
+			for (String fileName : filesFound) {
+				if (releaseFileName == null && FileUtils.isZip(fileName)) {
+					releaseFileName = fileName;
+					//only one zip file per package
+				}
+				if (md5FileName == null && FileUtils.isMD5(fileName)) {
+					//expected to be only one MD5 file.
+					md5FileName = fileName;
+				}
 			}
-			if (md5FileName == null && FileUtils.isMD5(fileName)) {
-			  //expected to be only one MD5 file.
-			    md5FileName = fileName;
+			if (releaseFileName == null) {
+				LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
+			} else {
+				String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
+				String publishedFilePath = getPublishFilePath(execution, releaseFileName);
+				executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+				LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+				publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
 			}
-		}
-		if (releaseFileName == null) {
-		    LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
-		} else {
-		    String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
-		    String publishedFilePath = getPublishFilePath(execution, releaseFileName);
-		    executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-		    LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-		    publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-		}
-		//copy MD5 file if available
-		if (md5FileName != null) {
-		    String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
-		    String target = getPublishFilePath(execution, md5FileName);
-		    executionFileHelper.copyFile(source, publishedBucketName, target);
-		    LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+			//copy MD5 file if available
+			if (md5FileName != null) {
+				String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
+				String target = getPublishFilePath(execution, md5FileName);
+				executionFileHelper.copyFile(source, publishedBucketName, target);
+				LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+			}
+		} finally {
+			MDC.remove(ExecutionService.MDC_EXECUTION_KEY);
 		}
 	}
 
