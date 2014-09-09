@@ -11,9 +11,10 @@ import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public interface ExecutionService {
+
+	String MDC_EXECUTION_KEY = "execution";
 
 	/**
 	 * Create snapshot of build files and configuration for review and possibly using to run a build.
