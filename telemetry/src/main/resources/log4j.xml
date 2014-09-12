@@ -7,12 +7,12 @@
 			<param name="ConversionPattern" value="%d{yyyyMMdd_HH:mm:ss} %-5p %X{execution} %c{1} - %m%n"/>
 		</layout>
 	</appender>
-	<appender name="telemetry" class="org.ihtsdo.telemetry.TelemetryEventAppender"/>
+	<appender name="telemetry" class="org.ihtsdo.telemetry.client.TelemetryEventAppender"/>
 	<logger name="org.ihtsdo" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="telemetry"/>
 	</logger>
-	<logger name="org.apache.activemq" additivity="false">
+	<logger name="org.ihtsdo.telemetry.server" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="console"/>
 	</logger>
