@@ -1,6 +1,14 @@
 package org.ihtsdo.telemetry.server;
 
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.transfer.model.UploadResult;
 import org.apache.log4j.helpers.LogLog;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.easymock.IAnswer;
+import org.easymock.MockType;
+import org.easymock.internal.MocksControl;
 import org.ihtsdo.telemetry.TestService;
 import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.ihtsdo.telemetry.core.Constants;
@@ -12,15 +20,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
 public class TelemetryProcessorTest {
 
-	private static final String FILE_TMP_STREAM_TXT = "file:///tmp/test_telemetry_stream.txt";
+	private static final String STREAM_FILE_DESTINATION = "file:///tmp/test_telemetry_stream.txt";
+	private static final String STREAM_S3_DESTINATION = "s3://local.execution.bucket/test_telemetry_stream.txt";
 
 	private TestBroker testBroker;
 	private TelemetryProcessor telemetryProcessor;
+	private MocksControl mocksControl;
+	private StreamFactory streamFactory;
+	private TransferManager mockTransferManager;
+	private Upload mockUpload;
 
 	@Before
 	public void setUp() throws Exception {
@@ -28,31 +42,73 @@ public class TelemetryProcessorTest {
 		LogLog.setQuietMode(false);
 		testBroker = new TestBroker();
 
+		mocksControl = new MocksControl(MockType.DEFAULT);
+		mockTransferManager = mocksControl.createMock(TransferManager.class);
+		mockUpload = mocksControl.createMock(Upload.class);
+
 		// Set system property to override log4j appender default broker url
 		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
-		telemetryProcessor = new TelemetryProcessor();
+
+		streamFactory = new StreamFactory(mockTransferManager);
+		telemetryProcessor = new TelemetryProcessor(streamFactory);
 	}
 
 	@Test
-	public void testAggregateEvents() throws IOException, InterruptedException {
-
-		doProcessing();
+	public void testAggregateEventsToFile() throws IOException, InterruptedException {
+		doProcessing(STREAM_FILE_DESTINATION);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
-		String capturedEventStream = FileCopyUtils.copyToString(new FileReader("/tmp/test_telemetry_stream.txt"));
+		String capturedEventStream = fileToString(new File("/tmp/test_telemetry_stream.txt"));
 		Assert.assertNotNull(capturedEventStream);
 		Assert.assertEquals("Start of event stream\n" +
 				"Processing...\n" +
 				"End of event stream\n", capturedEventStream);
 	}
 
-	public void doProcessing() {
+	public String fileToString(File file) throws IOException {
+		return FileCopyUtils.copyToString(new FileReader(file));
+	}
+
+//	@Test TODO: FIX THIS - new ActiveMQ broker doesn't come up in time.
+	public void testAggregateEventsToS3() throws IOException, InterruptedException {
+		// Set up mock expectations
+		final Capture<File> fileCapture = new Capture<>();
+		final BooleanHolder fileAssertionsRan = new BooleanHolder();
+		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.execution.bucket"), EasyMock.eq("test_telemetry_stream.txt"), EasyMock.capture(fileCapture))).andReturn(mockUpload);
+		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(new IAnswer<UploadResult>() {
+			@Override
+			public UploadResult answer() throws Throwable {
+				// Run temp file assertions before it's deleted
+				File capturedFile = fileCapture.getValue();
+				Assert.assertNotNull(capturedFile);
+				String capturedEventStream = fileToString(capturedFile);
+				Assert.assertNotNull(capturedEventStream);
+				Assert.assertEquals("Start of event stream\n" +
+						"Processing...\n" +
+						"End of event stream\n", capturedEventStream);
+				fileAssertionsRan.b = true;
+				return null;
+			}
+		});
+		mocksControl.replay();
+
+		// Perform test scenario
+		doProcessing(STREAM_S3_DESTINATION);
+		// Wait for the aggregator to finish.
+		Thread.sleep(1000);
+
+		// Assert mock expectations
+		mocksControl.verify();
+		Assert.assertTrue(fileAssertionsRan.b);
+	}
+
+	public void doProcessing(String streamDestination) {
 		Logger logger = LoggerFactory.getLogger(TestService.class);
 
 		logger.info("Before stream started");
 
-		TelemetryStream.start(logger, FILE_TMP_STREAM_TXT);
+		TelemetryStream.start(logger, streamDestination);
 		logger.info("Start of event stream");
 
 		logger.info("Processing...");
@@ -63,9 +119,12 @@ public class TelemetryProcessorTest {
 		logger.info("After stream ended");
 	}
 
-
 	@After
 	public void tearDown() throws Exception {
 		testBroker.close();
+	}
+
+	private static final class BooleanHolder {
+		boolean b = false;
 	}
 }

@@ -3,6 +3,7 @@ package org.ihtsdo.telemetry.server;
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -15,14 +16,15 @@ import java.util.Map;
 
 public class TelemetryProcessor {
 
+	private final Session jmsSession;
 	private final Map<String, BufferedWriter> streamWriters;
-	private final Session session;
 
-	public TelemetryProcessor() throws JMSException {
+	@Autowired
+	public TelemetryProcessor(final StreamFactory streamFactory) throws JMSException {
 		streamWriters = new HashMap<>();
-		session = new JmsFactory().createSession();
+		jmsSession = new JmsFactory().createSession();
 
-		final MessageConsumer consumer = session.createConsumer(session.createQueue(Constants.QUEUE_RELEASE_EVENTS));
+		final MessageConsumer consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 
 		Thread messageConsumerThread = new Thread(new Runnable() {
 			@Override
@@ -40,7 +42,7 @@ public class TelemetryProcessor {
 							if (Constants.START_STREAM.equals(text)) {
 								// Start new stream
 								String streamUri = message.getStringProperty(Constants.STREAM_URI);
-								BufferedWriter streamWriter = new StreamFactory().createStreamWriter(streamUri);
+								BufferedWriter streamWriter = streamFactory.createStreamWriter(correlationID, streamUri);
 								streamWriters.put(correlationID, streamWriter);
 							} else if (Constants.FINISH_STREAM.equals(text)) {
 								BufferedWriter writer = streamWriters.get(correlationID);
