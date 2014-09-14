@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 
 public class TelemetryStream {
 
-	public static void start(Logger logger, String uri) {
-		MDC.put(Constants.START_STREAM, uri);
+	public static void start(Logger logger, String streamDestinationUri) {
+		MDC.put(Constants.START_STREAM, streamDestinationUri);
 		logger.info(Constants.START_STREAM);
 	}
 

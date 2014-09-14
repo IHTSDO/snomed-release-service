@@ -1,0 +1,16 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+	<bean class="com.amazonaws.auth.BasicAWSCredentials" id="awsCredentials">
+		<constructor-arg value=""/>
+		<constructor-arg value=""/>
+	</bean>
+
+	<bean class="com.amazonaws.services.s3.transfer.TransferManager">
+		<constructor-arg ref="awsCredentials"/>
+	</bean>
+
+	<bean class="org.ihtsdo.telemetry.server.StreamFactory"/>
+
+</beans>
