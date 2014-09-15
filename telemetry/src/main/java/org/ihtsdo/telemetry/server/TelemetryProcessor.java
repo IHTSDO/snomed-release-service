@@ -57,7 +57,7 @@ public class TelemetryProcessor {
 									writer.close();
 									streamWriters.remove(correlationID);
 								} else {
-									// TODO: log error
+									logger.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
 								}
 							} else {
 								BufferedWriter writer = streamWriters.get(correlationID);
@@ -65,20 +65,20 @@ public class TelemetryProcessor {
 									writer.write(text);
 									writer.newLine();
 								} else {
-									// TODO: log error
+									logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
 								}
 							}
 						}
 					} catch (JMSException e) {
-						// TODO: log error
 						Exception linkedException = e.getLinkedException();
 						if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {
+							logger.info("Transport disposed. Shutting down telemetry consumer.");
 							shutdown = true;
+						} else {
+							logger.error("JMSException", e);
 						}
-						e.printStackTrace();
 					} catch (IOException e) {
-						// TODO: log error
-						e.printStackTrace();
+						logger.error("Problem with output writer.", e);
 					}
 				}
 			}
