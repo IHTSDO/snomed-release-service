@@ -3,6 +3,8 @@ package org.ihtsdo.telemetry.server;
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.jms.JMSException;
@@ -16,27 +18,32 @@ import java.util.Map;
 
 public class TelemetryProcessor {
 
+	private static final int ONE_SECOND = 1000;
+
 	private final Session jmsSession;
 	private final Map<String, BufferedWriter> streamWriters;
+	private Boolean shutdown;
+	private final MessageConsumer consumer;
+	private Logger logger = LoggerFactory.getLogger(TelemetryProcessor.class);
 
 	@Autowired
 	public TelemetryProcessor(final StreamFactory streamFactory) throws JMSException {
+		shutdown = false;
 		streamWriters = new HashMap<>();
 		jmsSession = new JmsFactory().createSession();
 
-		final MessageConsumer consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
+		consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 
 		Thread messageConsumerThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				boolean connectionOpen = true;
-				while (connectionOpen) {
+				while (!shutdown) {
 					try {
-						System.out.println("Waiting for message");
-						TextMessage message = (TextMessage) consumer.receive();
+						logger.debug("Waiting for message");
+						TextMessage message = (TextMessage) consumer.receive(ONE_SECOND);
 
-						System.out.println("Got message " + message);
 						if (message != null) {
+							logger.debug("Got message '{}', correlationID {}", message.getText(), message.getJMSCorrelationID());
 							String text = message.getText();
 							String correlationID = message.getJMSCorrelationID();
 							if (Constants.START_STREAM.equals(text)) {
@@ -66,7 +73,7 @@ public class TelemetryProcessor {
 						// TODO: log error
 						Exception linkedException = e.getLinkedException();
 						if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {
-							connectionOpen = false;
+							shutdown = true;
 						}
 						e.printStackTrace();
 					} catch (IOException e) {
@@ -79,6 +86,8 @@ public class TelemetryProcessor {
 		messageConsumerThread.start();
 	}
 
-
-
+	public void shutdown() throws InterruptedException, JMSException {
+		this.shutdown = true;
+		consumer.close();
+	}
 }

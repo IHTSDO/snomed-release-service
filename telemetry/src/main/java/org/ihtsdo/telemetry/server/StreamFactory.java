@@ -1,6 +1,5 @@
 package org.ihtsdo.telemetry.server;
 
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.lang3.NotImplementedException;
@@ -16,7 +15,6 @@ public class StreamFactory {
 	public static final String s3 = "s3";
 
 	private String tempDirectoryPath = "/tmp/telemetry-tmp";
-	private AmazonS3Client s3Client;
 	private final TransferManager transferManager;
 
 	@Autowired

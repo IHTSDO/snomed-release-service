@@ -66,11 +66,7 @@ public class TelemetryProcessorTest {
 				"End of event stream\n", capturedEventStream);
 	}
 
-	public String fileToString(File file) throws IOException {
-		return FileCopyUtils.copyToString(new FileReader(file));
-	}
-
-//	@Test TODO: FIX THIS - new ActiveMQ broker doesn't come up in time.
+	@Test
 	public void testAggregateEventsToS3() throws IOException, InterruptedException {
 		// Set up mock expectations
 		final Capture<File> fileCapture = new Capture<>();
@@ -119,8 +115,13 @@ public class TelemetryProcessorTest {
 		logger.info("After stream ended");
 	}
 
+	private String fileToString(File file) throws IOException {
+		return FileCopyUtils.copyToString(new FileReader(file));
+	}
+
 	@After
 	public void tearDown() throws Exception {
+		telemetryProcessor.shutdown();
 		testBroker.close();
 	}
 
