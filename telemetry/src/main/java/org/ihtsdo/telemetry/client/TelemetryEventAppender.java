@@ -5,6 +5,8 @@ import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.LoggingEvent;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.util.Hashtable;
@@ -14,6 +16,7 @@ public class TelemetryEventAppender extends WriterAppender {
 
 	private MessageProducer producer;
 	private Session session;
+	private Logger logger = LoggerFactory.getLogger(TelemetryEventAppender.class);
 
 	@Override
 	public void append(LoggingEvent event) {
@@ -29,7 +32,7 @@ public class TelemetryEventAppender extends WriterAppender {
 			} else {
 				message = createEventMessage(event);
 			}
-			System.out.println("Sending message" + message.toString());
+			logger.debug("Sending message '{}'", message.getText());
 			producer.send(message);
 		} catch (JMSException e) {
 			throw new RuntimeException("Failed to create event message.", e);
