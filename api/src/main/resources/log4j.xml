@@ -8,7 +8,7 @@
 		</layout>
 	</appender>
 	<logger name="org.ihtsdo" additivity="false">
-		<level value="debug"/>
+		<level value="info"/>
 		<appender-ref ref="console"/>
 	</logger>
 	<root>
