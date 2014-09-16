@@ -3,6 +3,7 @@ package org.ihtsdo.telemetry.server;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import org.apache.commons.lang3.NotImplementedException;
+import org.ihtsdo.telemetry.core.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.*;
 
 public class StreamFactory {
-
-	public static final String FILE = "file";
-	public static final String s3 = "s3";
 
 	private String tempDirectoryPath = "/tmp/telemetry-tmp";
 	private final TransferManager transferManager;
@@ -27,9 +25,9 @@ public class StreamFactory {
 		String[] split = streamUri.split("://", 2);
 		String protocol = split[0];
 		String path = split[1];
-		if (FILE.equals(protocol)) {
+		if (Constants.FILE.equals(protocol)) {
 			return new BufferedWriter(new FileWriter(path));
-		} else if (s3.equals(protocol)) {
+		} else if (Constants.s3.equals(protocol)) {
 
 			String[] split1 = path.split("/", 2);
 			final String bucketName = split1[0];
@@ -66,6 +64,7 @@ public class StreamFactory {
 		public void close() throws IOException {
 			super.close();
 			try {
+				LOGGER.debug("Running task after event stream captured.");
 				task.run();
 			} catch (Exception e) {
 				LOGGER.error("Failed to run task after event stream captured.", e);

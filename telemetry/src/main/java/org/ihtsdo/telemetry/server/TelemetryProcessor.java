@@ -37,35 +37,41 @@ public class TelemetryProcessor {
 		Thread messageConsumerThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				boolean printedWaiting = false;
 				while (!shutdown) {
 					try {
-						logger.debug("Waiting for message");
+						if (!printedWaiting) {
+							logger.debug("Waiting for message");
+							printedWaiting = true;
+						}
 						TextMessage message = (TextMessage) consumer.receive(ONE_SECOND);
 
 						if (message != null) {
+							printedWaiting = false;
 							logger.debug("Got message '{}', correlationID {}", message.getText(), message.getJMSCorrelationID());
 							String text = message.getText();
 							String correlationID = message.getJMSCorrelationID();
-							if (Constants.START_STREAM.equals(text)) {
-								// Start new stream
-								String streamUri = message.getStringProperty(Constants.STREAM_URI);
-								BufferedWriter streamWriter = streamFactory.createStreamWriter(correlationID, streamUri);
-								streamWriters.put(correlationID, streamWriter);
-							} else if (Constants.FINISH_STREAM.equals(text)) {
-								BufferedWriter writer = streamWriters.get(correlationID);
-								if (writer != null) {
-									writer.close();
-									streamWriters.remove(correlationID);
+							if (correlationID != null) {
+								if (Constants.START_STREAM.equals(text)) {
+									// Start new stream
+									String streamUri = message.getStringProperty(Constants.STREAM_URI);
+									BufferedWriter streamWriter = streamFactory.createStreamWriter(correlationID, streamUri);
+									streamWriters.put(correlationID, streamWriter);
+								} else if (Constants.FINISH_STREAM.equals(text)) {
+									BufferedWriter writer = streamWriters.get(correlationID);
+									if (writer != null) {
+										writer.close();
+										streamWriters.remove(correlationID);
+									} else {
+										logger.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
+									}
 								} else {
-									logger.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
-								}
-							} else {
-								BufferedWriter writer = streamWriters.get(correlationID);
-								if (writer != null) {
-									writer.write(text);
-									writer.newLine();
-								} else {
-									logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
+									BufferedWriter writer = streamWriters.get(correlationID);
+									if (writer != null) {
+										writer.write(text);
+									} else {
+										logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
+									}
 								}
 							}
 						}

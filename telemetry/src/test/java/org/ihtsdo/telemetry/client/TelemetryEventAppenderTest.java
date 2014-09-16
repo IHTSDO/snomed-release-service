@@ -41,9 +41,8 @@ public class TelemetryEventAppenderTest {
 		// Assert message received
 		List<Message> messages = testBroker.getMessages();
 		Assert.assertEquals(1, messages.size());
-		System.out.println(messages.get(0).getClass());
 		TextMessage actual = (TextMessage) messages.get(0);
-		Assert.assertEquals("test event", actual.getText());
+		Assert.assertTrue(actual.getText().matches("[^ ]+ INFO  org.ihtsdo.telemetry.client.TelemetryEventAppenderTest.testLogInfoEvent - test event\n"));
 		Assert.assertEquals("INFO", actual.getStringProperty("level"));
 	}
 

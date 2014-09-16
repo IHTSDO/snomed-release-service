@@ -20,6 +20,9 @@ public class TestBroker {
 		connection.start();
 
 		messages = new ArrayList<>();
+
+		// Set the test broker url as the default for other components within this JVM.
+		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
 	}
 
 	public void consumeMessages() throws JMSException {

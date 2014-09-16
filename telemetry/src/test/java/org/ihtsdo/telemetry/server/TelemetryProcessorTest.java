@@ -61,9 +61,10 @@ public class TelemetryProcessorTest {
 
 		String capturedEventStream = fileToString(new File("/tmp/test_telemetry_stream.txt"));
 		Assert.assertNotNull(capturedEventStream);
-		Assert.assertEquals("Start of event stream\n" +
-				"Processing...\n" +
-				"End of event stream\n", capturedEventStream);
+		Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
+		Assert.assertTrue(capturedEventStream.matches("[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Start of event stream\n" +
+				"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Processing...\n" +
+				"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - End of event stream\n"));
 	}
 
 	@Test
@@ -80,9 +81,10 @@ public class TelemetryProcessorTest {
 				Assert.assertNotNull(capturedFile);
 				String capturedEventStream = fileToString(capturedFile);
 				Assert.assertNotNull(capturedEventStream);
-				Assert.assertEquals("Start of event stream\n" +
-						"Processing...\n" +
-						"End of event stream\n", capturedEventStream);
+				Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
+				Assert.assertTrue(capturedEventStream.matches("[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Start of event stream\n" +
+						"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Processing...\n" +
+						"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - End of event stream\n"));
 				fileAssertionsRan.b = true;
 				return null;
 			}
