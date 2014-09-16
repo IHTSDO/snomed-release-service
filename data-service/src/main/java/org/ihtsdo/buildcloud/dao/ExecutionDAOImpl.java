@@ -21,6 +21,7 @@ import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
+import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -357,6 +358,12 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	public InputStream getLogFileStream(Execution execution, String packageId, String logFileName) {
 		String logFilePath = pathHelper.getExecutionLogFilePath(execution, packageId, logFileName);
 		return executionFileHelper.getFileStream(logFilePath);
+	}
+
+	@Override
+	public String getTelemetryExecutionLogFilePath(Execution execution) {
+		String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution);
+		return TelemetryStreamPathBuilder.getS3StreamDestinationPath(executionBucketName, executionLogFilePath);
 	}
 
 	@Override
