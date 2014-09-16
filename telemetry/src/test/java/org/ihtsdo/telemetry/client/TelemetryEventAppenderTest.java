@@ -1,5 +1,6 @@
 package org.ihtsdo.telemetry.client;
 
+import org.ihtsdo.telemetry.TestService;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.server.TestBroker;
 import org.junit.After;
@@ -28,8 +29,8 @@ public class TelemetryEventAppenderTest {
 
 	@Test
 	public void testLogInfoEvent() throws JMSException, InterruptedException {
-		// Creaate logger
-		Logger logger = LoggerFactory.getLogger(getClass());
+		// Create logger
+		Logger logger = LoggerFactory.getLogger(TestService.class);
 
 		testBroker.consumeMessages();
 
