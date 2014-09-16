@@ -20,6 +20,7 @@
 	</properties>
 
 	<modules>
+		<module>telemetry</module>
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
