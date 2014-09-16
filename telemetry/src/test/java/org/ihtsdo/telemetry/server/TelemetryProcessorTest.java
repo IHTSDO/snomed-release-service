@@ -49,7 +49,7 @@ public class TelemetryProcessorTest {
 		// Set system property to override log4j appender default broker url
 		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
 
-		streamFactory = new StreamFactory(mockTransferManager);
+		streamFactory = new StreamFactory(mockTransferManager, false);
 		telemetryProcessor = new TelemetryProcessor(streamFactory);
 	}
 
