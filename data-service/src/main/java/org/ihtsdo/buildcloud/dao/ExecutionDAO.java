@@ -58,7 +58,11 @@ public interface ExecutionDAO {
 
 	List<String> listLogFilePaths(Execution execution, String packageId);
 
+	List<String> listExecutionLogFilePaths(Execution execution);
+
 	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
+
+	InputStream getExecutionLogFileStream(Execution execution, String logFileName);
 
 	String getTelemetryExecutionLogFilePath(Execution execution);
 

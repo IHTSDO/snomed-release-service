@@ -50,7 +50,7 @@ public class ExecutionController {
 	@Autowired
 	private PackageService packageService;
 
-	private static final String[] EXECUTION_LINKS = {"configuration", "packages"};
+	private static final String[] EXECUTION_LINKS = {"configuration", "packages", "logs"};
 	private static final String[] PACKAGE_LINKS = {"outputfiles", "logs"};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
@@ -81,12 +81,9 @@ public class ExecutionController {
 									HttpServletRequest request) throws ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
-		
-		if (execution == null) {
-			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
-			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
-		}
-		
+
+		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
+
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
 	}
@@ -183,10 +180,7 @@ public class ExecutionController {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
 
-		if (execution == null) {
-			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
-			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
-		}
+		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
 
 		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
 		String lastPackage = "No Package";
@@ -198,6 +192,32 @@ public class ExecutionController {
 				LOGGER.error("Failed to publish package {}", lastPackage, e);
 				throw new InternalError("Failed to publish package " + lastPackage);
 			}
+		}
+	}
+
+	public void ifExecutionIsNullThrow(String buildCompositeKey, String executionId, Execution execution) throws ResourceNotFoundException {
+		if (execution == null) {
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
+			throw new ResourceNotFoundException ("Unable to find execution: " +  item);
+		}
+	}
+
+	@RequestMapping(value = "/{executionId}/logs")
+	@ResponseBody
+	public List<Map<String, Object>> listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+			HttpServletRequest request) throws ResourceNotFoundException {
+
+		User authenticatedUser = SecurityHelper.getSubject();
+		return convertFileListToEntities(request, executionService.getExecutionLogFilePaths(buildCompositeKey, executionId, authenticatedUser));
+	}
+
+	@RequestMapping(value = "/{executionId}/logs/{logFileName:.*}")
+	public void listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
+
+		User authenticatedUser = SecurityHelper.getSubject();
+		try (InputStream outputFileStream = executionService.getExecutionLogFile(buildCompositeKey, executionId, logFileName, authenticatedUser)) {
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
 

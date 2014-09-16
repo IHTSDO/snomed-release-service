@@ -368,8 +368,20 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public List<String> listLogFilePaths(Execution execution, String packageId) {
-		String logFilesPath = pathHelper.getExecutionLogFilesPath(execution, packageId).toString();
+		String logFilesPath = pathHelper.getExecutionPackageLogFilesPath(execution, packageId).toString();
 		return executionFileHelper.listFiles(logFilesPath);
+	}
+
+	@Override
+	public List<String> listExecutionLogFilePaths(Execution execution) {
+		String logFilesPath = pathHelper.getExecutionLogFilesPath(execution).toString();
+		return executionFileHelper.listFiles(logFilesPath);
+	}
+
+	@Override
+	public InputStream getExecutionLogFileStream(Execution execution, String logFileName) {
+		String logFilePath = pathHelper.getExecutionLogFilePath(execution, logFileName);
+		return executionFileHelper.getFileStream(logFilePath);
 	}
 
 	@Required

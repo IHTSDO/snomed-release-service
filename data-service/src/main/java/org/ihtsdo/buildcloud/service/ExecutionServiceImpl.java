@@ -372,6 +372,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return dao.listLogFilePaths(execution, packageId);
 	}
 
+	@Override
+	public List<String> getExecutionLogFilePaths(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
+		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listExecutionLogFilePaths(execution);
+	}
+
+	@Override
+	public InputStream getExecutionLogFile(String buildCompositeKey, String executionId, String logFileName, User authenticatedUser) throws ResourceNotFoundException {
+		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getExecutionLogFileStream(execution, logFileName);
+	}
+
 	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
 		Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
 		if (execution == null) {
