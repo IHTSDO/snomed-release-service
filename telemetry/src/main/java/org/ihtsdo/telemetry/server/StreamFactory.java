@@ -13,12 +13,18 @@ import java.io.*;
 public class StreamFactory {
 
 	private String tempDirectoryPath = "/tmp/telemetry-tmp";
+	private final Boolean offlineMode;
 	private final TransferManager transferManager;
+	private final Logger logger = LoggerFactory.getLogger(StreamFactory.class);
 
 	@Autowired
-	public StreamFactory(TransferManager transferManager) {
+	public StreamFactory(TransferManager transferManager, Boolean offlineMode) {
 		this.transferManager = transferManager;
+		this.offlineMode = offlineMode;
 		new File(tempDirectoryPath).mkdirs();
+		if (offlineMode) {
+			logger.info("Offline mode - Streams destined for S3 will not be uploaded but left in temp directory {}", tempDirectoryPath);
+		}
 	}
 
 	public BufferedWriter createStreamWriter(String correlationID, String streamUri) throws IOException {
@@ -39,9 +45,11 @@ public class StreamFactory {
 			return new BufferedWriterTaskOnClose(new FileWriter(tempFile), new Task() {
 				@Override
 				public void run() throws InterruptedException {
-					Upload upload = transferManager.upload(bucketName, objectKey, tempFile);
-					upload.waitForUploadResult();
-					tempFile.delete();
+					if (!offlineMode) {
+						Upload upload = transferManager.upload(bucketName, objectKey, tempFile);
+						upload.waitForUploadResult();
+						tempFile.delete();
+					}
 				}
 			});
 		} else {
