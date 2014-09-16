@@ -9,4 +9,7 @@ public class Constants {
 	public static final String LEVEL = "level";
 	public static final String START_STREAM = "StartTelemetryStream";
 	public static final String FINISH_STREAM = "FinishTelemetryStream";
+	public static final String FILE = "file";
+	public static final String s3 = "s3";
+	public static final String PROTOCOL_SEPARATOR = "://";
 }
