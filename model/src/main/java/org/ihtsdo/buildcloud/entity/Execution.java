@@ -62,6 +62,10 @@ public class Execution {
 		return build;
 	}
 
+	public String getUniqueId() {
+		return getBuild().getCompositeKey() + "|" + getId();
+	}
+
 	public void setPreConditionCheckReports(Map<String, List<PreConditionCheckReport>> preConditionReports) {
 		this.preConditionCheckReports = preConditionReports;
 	}

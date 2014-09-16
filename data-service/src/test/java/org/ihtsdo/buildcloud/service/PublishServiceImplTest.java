@@ -60,6 +60,9 @@ public class PublishServiceImplTest {
 		final Build build = createDummyBuild();
 		new Expectations() {
 			{
+				execution.getUniqueId();
+				returns("123");
+
 				s3PathHelper.getExecutionOutputFilesPath(execution, anyString);
 				returns(new StringBuffer(EXECUTION_OUTPUT));
 
