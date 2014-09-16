@@ -8,13 +8,9 @@
 		</layout>
 	</appender>
 	<appender name="telemetry" class="org.ihtsdo.telemetry.client.TelemetryEventAppender"/>
-	<logger name="org.ihtsdo" additivity="false">
+	<logger name="org.ihtsdo.telemetry.TestService" additivity="false">
 		<level value="info"/>
 		<appender-ref ref="telemetry"/>
-	</logger>
-	<logger name="org.ihtsdo.telemetry.server" additivity="false">
-		<level value="info"/>
-		<appender-ref ref="console"/>
 	</logger>
 	<root>
 		<level value="info"/>

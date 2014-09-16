@@ -35,6 +35,7 @@ public class TelemetryProcessorTest {
 	private StreamFactory streamFactory;
 	private TransferManager mockTransferManager;
 	private Upload mockUpload;
+	private File testStreamFile;
 
 	@Before
 	public void setUp() throws Exception {
@@ -51,6 +52,8 @@ public class TelemetryProcessorTest {
 
 		streamFactory = new StreamFactory(mockTransferManager, false);
 		telemetryProcessor = new TelemetryProcessor(streamFactory);
+		testStreamFile = new File("/tmp/test_telemetry_stream.txt");
+		testStreamFile.delete();
 	}
 
 	@Test
@@ -59,7 +62,7 @@ public class TelemetryProcessorTest {
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
-		String capturedEventStream = fileToString(new File("/tmp/test_telemetry_stream.txt"));
+		String capturedEventStream = fileToString(testStreamFile);
 		Assert.assertNotNull(capturedEventStream);
 		Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
 		Assert.assertTrue(capturedEventStream.matches("[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Start of event stream\n" +
@@ -123,6 +126,7 @@ public class TelemetryProcessorTest {
 
 	@After
 	public void tearDown() throws Exception {
+		testStreamFile.delete();
 		telemetryProcessor.shutdown();
 		testBroker.close();
 	}
