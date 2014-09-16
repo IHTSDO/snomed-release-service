@@ -28,6 +28,7 @@ import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -210,7 +211,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Execution triggerBuild(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws Exception {
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		MDC.put(MDC_EXECUTION_KEY, execution.getUniqueId());
+		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
 		try {
 			LOGGER.info("Trigger build", buildCompositeKey, executionId);
 
@@ -243,7 +244,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 			dao.updateStatus(execution, Execution.Status.BUILT);
 		} finally {
-			MDC.remove(MDC_EXECUTION_KEY);
+			TelemetryStream.finish(LOGGER);
 		}
 
 		return execution;

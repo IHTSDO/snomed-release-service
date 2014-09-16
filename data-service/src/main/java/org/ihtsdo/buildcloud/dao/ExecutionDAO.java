@@ -60,6 +60,8 @@ public interface ExecutionDAO {
 
 	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
 
+	String getTelemetryExecutionLogFilePath(Execution execution);
+
 	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 
 	OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
