@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.1.23</version>
+	<version>0.1.24-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -20,6 +20,7 @@
 	</properties>
 
 	<modules>
+		<module>telemetry</module>
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>

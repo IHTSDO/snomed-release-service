@@ -71,7 +71,7 @@ public class ProductBuildController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS);
 
-		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}		
 
 }
