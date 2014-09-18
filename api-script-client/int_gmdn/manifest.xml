@@ -12,7 +12,7 @@
       <folder Name="Full">
         <folder Name="Refset">
           <folder Name="Content">
-            <file Name="der2_cRefset_MedicalDevicesAssociationReferenceFull_INT_20140731" />
+            <file Name="der2_cRefset_MedicalDevicesAssociationReferenceFull_INT_20140731.txt" />
             <file Name="der2_cRefset_MedicalDevicesAttributeValueFull_INT_20140731.txt" />
             <file Name="der2_Refset_MedicalDevicesSimpleFull_INT_20140731.txt" />
           </folder>
