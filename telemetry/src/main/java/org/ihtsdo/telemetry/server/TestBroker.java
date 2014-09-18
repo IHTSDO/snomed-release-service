@@ -2,6 +2,8 @@ package org.ihtsdo.telemetry.server;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.ihtsdo.telemetry.core.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ public class TestBroker {
 	private final Connection connection;
 	private final List<Message> messages;
 	private final Session session;
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	public TestBroker() throws JMSException {
 		ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
@@ -37,7 +40,7 @@ public class TestBroker {
 						messages.add(receive);
 					}
 				} catch (JMSException e) {
-					e.printStackTrace();
+					logger.error("JMSException", e);
 				}
 			}
 		}).start();
