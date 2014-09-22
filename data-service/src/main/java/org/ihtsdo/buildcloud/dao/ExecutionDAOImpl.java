@@ -275,7 +275,11 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public InputStream getOutputFileInputStream(Execution execution, Package pkg, String name) {
-		String path = pathHelper.getExecutionOutputFilePath(execution, pkg.getBusinessKey(), name);
+		return getOutputFileInputStream(execution, pkg.getBusinessKey(), name);
+	}
+
+	public InputStream getOutputFileInputStream(Execution execution, String packageBusinessKey, String name) {
+		String path = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, name);
 		return executionFileHelper.getFileStream(path);
 	}
 

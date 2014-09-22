@@ -45,6 +45,8 @@ public interface ExecutionDAO {
 
 	void copyAll(Build buildSource, Execution execution);
 
+	InputStream getOutputFileInputStream(Execution execution, String packageBusinessKey, String name);
+
 	InputStream getOutputFileInputStream(Execution execution, Package pkg, String name);
 
 	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5)
