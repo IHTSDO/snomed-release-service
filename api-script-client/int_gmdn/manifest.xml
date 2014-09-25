@@ -29,12 +29,12 @@
           </folder>
         </folder>
         <folder Name="Terminology">
-          <file Name="sct2_ConceptMedicalDevices_Full_INT_20140731.txt" />
-          <file Name="sct2_DescriptionMedicalDevices_Full-en_INT_20140731.txt" />
-          <file Name="sct2_IdentifierMedicalDevices_Full_INT_20140731.txt" />
-          <file Name="sct2_RelationshipMedicalDevices_Full_INT_20140731.txt" />
-          <file Name="sct2_StatedRelationshipMedicalDevices_Full_INT_20140731.txt" />
-          <file Name="sct2_TextDefinitionMedicalDevices_Full-en_INT_20140731.txt" />
+          <file Name="sct2_Concept_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_Description_MedicalDevicesFull-en_INT_20140731.txt" />
+          <file Name="sct2_Identifier_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_Relationship_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_StatedRelationship_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_TextDefinition_MedicalDevicesFull-en_INT_20140731.txt" />
         </folder>
       </folder>
       <folder Name="Snapshot">
@@ -57,12 +57,12 @@
           </folder>
         </folder>
         <folder Name="Terminology">
-          <file Name="sct2_ConceptMedicalDevices_Snapshot_INT_20140731.txt" />
-          <file Name="sct2_DescriptionMedicalDevices_Snapshot-en_INT_20140731.txt" />
-          <file Name="sct2_IdentifierMedicalDevices_Snapshot_INT_20140731.txt" />
-          <file Name="sct2_RelationshipMedicalDevices_Snapshot_INT_20140731.txt" />
-          <file Name="sct2_StatedRelationshipMedicalDevices_Snapshot_INT_20140731.txt" />
-          <file Name="sct2_TextDefinitionMedicalDevices_Snapshot-en_INT_20140731.txt" />
+          <file Name="sct2_Concept_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_Description_MedicalDevicesSnapshot-en_INT_20140731.txt" />
+          <file Name="sct2_Identifier_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_Relationship_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_StatedRelationship_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_TextDefinition_MedicalDevicesSnapshot-en_INT_20140731.txt" />
         </folder>
       </folder>
     </folder>
