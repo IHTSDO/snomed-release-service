@@ -236,7 +236,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 					//Each package could fail independently, record telemetry and move on to next package
 					pkgResult = "fail";
 					msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
-							+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 					LOGGER.warn(msg, e);
 				}
 				report.add("Progress Status", pkgResult);
@@ -276,14 +276,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			generator.generateReleaseFiles();
 
 			// Run classifier to produce inferred relationships from stated relationships
-			LOGGER.info("Performing stated relationship cycle check...");
-			boolean noStatedRelationshipCycles = classifierService.checkNoStatedRelationshipCycles(execution, pkg, inputFileSchemaMap);
-			if (noStatedRelationshipCycles) {
-				LOGGER.info("No stated relationship cycles.");
-			} else {
-				LOGGER.info(RF2Constants.DATA_PROBLEM + "Stated relationship cycles detected. " +
-						"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in execution package logs.");
-			}
+			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap);
 		}
 
 		// Generate readme file
