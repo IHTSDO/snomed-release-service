@@ -11,9 +11,10 @@ import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public interface ExecutionService {
+
+	String MDC_EXECUTION_KEY = "execution";
 
 	/**
 	 * Create snapshot of build files and configuration for review and possibly using to run a build.
@@ -49,4 +50,8 @@ public interface ExecutionService {
 	InputStream getLogFile(String buildCompositeKey, String executionId, String packageId, String logFileName, User authenticatedUser) throws ResourceNotFoundException;
 
 	List<String> getExecutionPackageLogFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
+
+	List<String> getExecutionLogFilePaths(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException;
+
+	InputStream getExecutionLogFile(String buildCompositeKey, String executionId, String logFileName, User authenticatedUser) throws ResourceNotFoundException;
 }

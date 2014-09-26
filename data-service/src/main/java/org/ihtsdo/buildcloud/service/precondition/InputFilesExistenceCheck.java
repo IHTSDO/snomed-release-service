@@ -1,22 +1,5 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.DELTA;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.DER2;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.FILE_NAME_SEPARATOR;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.FULL;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.INPUT_FILE_PREFIX;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_PREFIX;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SCT2;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SNAPSHOT;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.xml.bind.JAXBException;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
@@ -24,6 +7,15 @@ import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.xml.bind.JAXBException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
 
 /**
  * To check all files specified in the manifest file can be derived from the input files.
@@ -71,6 +63,9 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 						temp = fileName.replace(FULL, DELTA);
 					} else if (token3.contains(SNAPSHOT)) {
 						temp = fileName.replace(SNAPSHOT, DELTA);
+					}
+					if (temp.contains(SCT2 + "_Relationship_")) {
+						temp = temp.replace(SCT2 + "_Relationship_", SCT2 + "_StatedRelationship_");
 					}
 					filesExpected.add(temp.replace(fileNamePrefix, INPUT_FILE_PREFIX));
 				} else if (!isFirstReadmeFound && README_FILENAME_PREFIX.equals(fileNamePrefix)) {

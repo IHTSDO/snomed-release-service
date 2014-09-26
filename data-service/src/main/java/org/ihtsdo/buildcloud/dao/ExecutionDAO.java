@@ -45,6 +45,8 @@ public interface ExecutionDAO {
 
 	void copyAll(Build buildSource, Execution execution);
 
+	InputStream getOutputFileInputStream(Execution execution, String packageBusinessKey, String name);
+
 	InputStream getOutputFileInputStream(Execution execution, Package pkg, String name);
 
 	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5)
@@ -58,7 +60,13 @@ public interface ExecutionDAO {
 
 	List<String> listLogFilePaths(Execution execution, String packageId);
 
+	List<String> listExecutionLogFilePaths(Execution execution);
+
 	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
+
+	InputStream getExecutionLogFileStream(Execution execution, String logFileName);
+
+	String getTelemetryExecutionLogFilePath(Execution execution);
 
 	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
 

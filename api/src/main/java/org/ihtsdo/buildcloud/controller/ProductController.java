@@ -62,7 +62,7 @@ public class ProductController {
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
 
-		return new ResponseEntity<Map<String, Object>>(entityHypermedia, HttpStatus.CREATED);
+		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{productBusinessKey}")
@@ -108,7 +108,7 @@ public class ProductController {
 											 @RequestParam(value = "file") MultipartFile file) throws IOException, ResourceNotFoundException, BadRequestException {
 
 		publishService.publishPackage(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
 

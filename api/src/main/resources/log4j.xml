@@ -7,8 +7,15 @@
 			<param name="ConversionPattern" value="%d{yyyyMMdd_HH:mm:ss} %-5p %c{1} - %m%n"/>
 		</layout>
 	</appender>
+	<appender name="telemetry" class="org.ihtsdo.telemetry.client.TelemetryEventAppender"/>
 	<logger name="org.ihtsdo" additivity="false">
-		<level value="debug"/>
+		<level value="info"/>
+		<appender-ref ref="console"/>
+		<appender-ref ref="telemetry"/>
+	</logger>
+	<!-- Telemetry classes should only use local appenders -->
+	<logger name="org.ihtsdo.telemetry" additivity="false">
+		<level value="info"/>
 		<appender-ref ref="console"/>
 	</logger>
 	<root>
