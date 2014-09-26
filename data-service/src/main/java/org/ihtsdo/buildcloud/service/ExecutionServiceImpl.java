@@ -89,6 +89,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Autowired
 	private UUIDGenerator uuidGenerator;
 
+	@Autowired
+	private RF2ClassifierService classifierService;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -233,7 +236,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 					//Each package could fail independently, record telemetry and move on to next package
 					pkgResult = "fail";
 					msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
-							+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 					LOGGER.warn(msg, e);
 				}
 				report.add("Progress Status", pkgResult);
@@ -271,6 +274,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 			//Convert Delta files to Full, Snapshot and delta release files
 			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
+
+			// Run classifier to produce inferred relationships from stated relationships
+			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap);
 		}
 
 		// Generate readme file
