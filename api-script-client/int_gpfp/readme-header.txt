@@ -1,8 +1,8 @@
-The SNOMED CT GPFP Release is provided in UTF-8 encoded tab-delimited flat files which can be imported into any database or other software application.  SNOMED CT is not software.
+The SNOMED CT GPFP Technology Preview is provided in UTF-8 encoded tab-delimited flat files which can be imported into any database or other software application.  SNOMED CT is not software.
 
 The SNOMED CT files are designed as relational tables with each line in the file representing a row in the table. The first row of each table contains column headings. All other rows contain data.
 
-The SNOMED CT GPFP Release is delivered to IHTSDO Member National Centers and authorized Affiliate Licensees via Internet download.
+The SNOMED CT GPFP Technology Preview is delivered to IHTSDO Member National Centers and authorized Affiliate Licensees via Internet download.
 
 © 2002-{readmeEndDate} The International Health Terminology Standards Development Organisation (IHTSDO).  All Rights Reserved.  SNOMED CT® was originally created by The College of American Pathologists.  "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
 
