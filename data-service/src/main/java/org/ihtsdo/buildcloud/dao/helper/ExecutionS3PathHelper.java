@@ -16,6 +16,7 @@ public class ExecutionS3PathHelper {
 	private static final String MANIFEST = "manifest";
 	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
+	public static final String EXECUTION_LOG_TXT = "execution_log.txt";
 
 	public StringBuffer getBuildPath(Build build) {
 		String releaseCenterBusinessKey = build.getProduct().getExtension().getReleaseCenter().getBusinessKey();
@@ -85,12 +86,24 @@ public class ExecutionS3PathHelper {
 		return getExecutionOutputFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
 	}
 
-	public StringBuffer getExecutionLogFilesPath(Execution execution, String packageBusinessKey) {
+	public StringBuffer getExecutionPackageLogFilesPath(Execution execution, String packageBusinessKey) {
 		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(LOG).append(SEPARATOR);
 	}
 
 	public String getExecutionLogFilePath(Execution execution, String packageBusinessKey, String relativeFilePath) {
-		return getExecutionLogFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+		return getExecutionPackageLogFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+	}
+
+	public String getExecutionLogFilePath(Execution execution, String relativeFilePath) {
+		return getExecutionLogFilesPath(execution).append(relativeFilePath).toString();
+	}
+
+	public StringBuffer getExecutionLogFilesPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(LOG).append(SEPARATOR);
+	}
+
+	public String getExecutionLogFilePath(Execution execution) {
+		return getExecutionLogFilesPath(execution).append(EXECUTION_LOG_TXT).toString();
 	}
 
 	public StringBuffer getExecutionPath(Build build, String executionId) {

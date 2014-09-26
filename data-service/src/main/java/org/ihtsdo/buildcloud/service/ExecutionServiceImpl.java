@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -12,11 +13,7 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
-import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
-import org.ihtsdo.buildcloud.service.exception.PostConditionException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
@@ -31,6 +28,7 @@ import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +39,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,6 +89,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Autowired
 	private UUIDGenerator uuidGenerator;
 
+	@Autowired
+	private RF2ClassifierService classifierService;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
@@ -104,33 +104,38 @@ public class ExecutionServiceImpl implements ExecutionService {
 			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
 		}
 		Execution execution = null;
-		synchronized (buildCompositeKey) {
-			//Do we already have an execution for that date?
-			Execution existingExecution = getExecution(build, creationDate);
-			if (existingExecution != null) {
-				throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists with execution id " + existingExecution.getId());
+		try {
+			synchronized (buildCompositeKey) {
+				//Do we already have an execution for that date?
+				Execution existingExecution = getExecution(build, creationDate);
+				if (existingExecution != null) {
+					throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists with execution id " + existingExecution.getId());
+				}
+				execution = new Execution(creationDate, build);
+				// Create Build config export
+				String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
+				// save execution with config
+				dao.save(execution, jsonConfig);
+				MDC.put(MDC_EXECUTION_KEY, execution.getUniqueId());
+				LOGGER.info("Created execution.", buildCompositeKey, execution.getId());
+				// Copy all files from Build input and manifest directory to Execution input and manifest directory
+				dao.copyAll(build, execution);
 			}
-			execution = new Execution(creationDate, build);
-			// Create Build config export
-			String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
-			// save execution with config
-			dao.save(execution, jsonConfig);
-			LOGGER.info("Created execution for build: {} with execution id: {}", buildCompositeKey, execution.getId());
-			// Copy all files from Build input and manifest directory to Execution input and manifest directory
-			dao.copyAll(build, execution);
-		}
-		//Perform Pre-condition testing (loops through each package)
-		Status preStatus = execution.getStatus();
-		runPreconditionChecks(execution);
-		Status newStatus = execution.getStatus();
-		if (newStatus != preStatus) {
-			dao.updateStatus(execution, newStatus);
+			//Perform Pre-condition testing (loops through each package)
+			Status preStatus = execution.getStatus();
+			runPreconditionChecks(execution);
+			Status newStatus = execution.getStatus();
+			if (newStatus != preStatus) {
+				dao.updateStatus(execution, newStatus);
+			}
+		} finally {
+			MDC.remove(MDC_EXECUTION_KEY);
 		}
 		return execution;
 	}
 
 	private void runPreconditionChecks(final Execution execution) {
-	    	LOGGER.info("Start of Pre-condition checks");
+	    LOGGER.info("Start of Pre-condition checks");
 		Map<String, List<PreConditionCheckReport>> preConditionReports = preconditionManager.runPreconditionChecks(execution);
 		execution.setPreConditionCheckReports(preConditionReports);
 		//analyze report to check whether there is fatal error for all packages
@@ -208,38 +213,42 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Override
 	public Execution triggerBuild(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws Exception {
-
-		LOGGER.info("Trigger build for buildCompositeKey:{}, executionId:{}", buildCompositeKey, executionId);
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
+		try {
+			LOGGER.info("Trigger build", buildCompositeKey, executionId);
 
-		//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
-		dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
+			//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
+			dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
 
-		dao.updateStatus(execution, Execution.Status.BUILDING);
+			dao.updateStatus(execution, Execution.Status.BUILDING);
 
-		//Run transformation on each of our packages in turn.
-		// TODO: Could multithread here, if there are enough resources (classifier and RF2 export will use a lot of memory).
-		Set<Package> packages = execution.getBuild().getPackages();
-		for (Package pkg : packages) {
-			ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
-			String pkgResult = "completed";
-			String msg = "Process completed successfully";
-			try {
-				executePackage(execution, pkg); // This could add entries to the execution report also
-			} catch (Exception e) {
-				//Each package could fail independently, record telemetry and move on to next package
-				pkgResult = "fail";
-				msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
-						+ (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
-				LOGGER.warn(msg, e);
+			//Run transformation on each of our packages in turn.
+			// TODO: Could multithread here, if there are enough resources (classifier and RF2 export will use a lot of memory).
+			Set<Package> packages = execution.getBuild().getPackages();
+			for (Package pkg : packages) {
+				ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+				String pkgResult = "completed";
+				String msg = "Process completed successfully";
+				try {
+					executePackage(execution, pkg); // This could add entries to the execution report also
+				} catch (Exception e) {
+					//Each package could fail independently, record telemetry and move on to next package
+					pkgResult = "fail";
+					msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+					LOGGER.warn(msg, e);
+				}
+				report.add("Progress Status", pkgResult);
+				report.add("Message", msg);
 			}
-			report.add("Progress Status", pkgResult);
-			report.add("Message", msg);
+
+			dao.persistReport(execution);
+
+			dao.updateStatus(execution, Execution.Status.BUILT);
+		} finally {
+			TelemetryStream.finish(LOGGER);
 		}
-
-		dao.persistReport(execution);
-
-		dao.updateStatus(execution, Execution.Status.BUILT);
 
 		return execution;
 	}
@@ -265,6 +274,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 			//Convert Delta files to Full, Snapshot and delta release files
 			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
+
+			// Run classifier to produce inferred relationships from stated relationships
+			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap);
 		}
 
 		// Generate readme file
@@ -364,6 +376,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
 		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
 		return dao.listLogFilePaths(execution, packageId);
+	}
+
+	@Override
+	public List<String> getExecutionLogFilePaths(String buildCompositeKey, String executionId, User authenticatedUser) throws ResourceNotFoundException {
+		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listExecutionLogFilePaths(execution);
+	}
+
+	@Override
+	public InputStream getExecutionLogFile(String buildCompositeKey, String executionId, String logFileName, User authenticatedUser) throws ResourceNotFoundException {
+		Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getExecutionLogFileStream(execution, logFileName);
 	}
 
 	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {

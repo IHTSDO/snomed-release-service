@@ -167,7 +167,11 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				// Key id = refsetId (5th field) and referencedComponentId (6th field)
 				String compositeKey = getCompositeKey(tableSchema, line);
 				key = new StringKey(compositeKey);
-				dirtyKeys.add(key);
+				if (!dirtyKeys.contains(key)) {
+					dirtyKeys.add(key);
+				} else {
+					LOGGER.info(RF2Constants.DATA_PROBLEM + "Duplicate refset member found. Rows are logically equivalent, the first will be discarded: [{}], [{}].", table.get(key), parts[2]);
+				}
 			} else {
 				key = getKey(parts[0], parts[1]);
 			}

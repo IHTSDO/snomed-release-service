@@ -27,5 +27,8 @@ public class RF2Constants {
 	public static final String BOOLEAN_FALSE = "0";
 	public static final CharSequence ATTRIBUTE_VALUE_FILE_IDENTIFIER = "AttributeValue";
 	public static final String EMPTY_SPACE = "";
-
+	public static final String DATA_PROBLEM = "Data Problem:";
+	public static final String INFERRED_RELATIONSHIPS_TXT = "inferred_relationships.txt";
+	public static final String EQUIVALENCY_REPORT_TXT = "equivalency_report.txt";
+	public static final String CONCEPTS_WITH_CYCLES_TXT = "concepts_with_cycles.txt";
 }
