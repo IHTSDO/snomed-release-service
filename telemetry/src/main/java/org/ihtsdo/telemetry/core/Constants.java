@@ -7,6 +7,7 @@ public class Constants {
 	public static final String STREAM_ID = "streamId";
 	public static final String TIME_STAMP = "timeStamp";
 	public static final String LEVEL = "level";
+	public static final String EXCEPTION = "exception";
 	public static final String START_STREAM = "StartTelemetryStream";
 	public static final String FINISH_STREAM = "FinishTelemetryStream";
 	public static final String FILE = "file";

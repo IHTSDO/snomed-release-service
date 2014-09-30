@@ -1,14 +1,23 @@
 package org.ihtsdo.telemetry.server;
 
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
+
+import mockit.Expectations;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.integration.junit4.JMockit;
+
 import org.apache.log4j.helpers.LogLog;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
+import org.ihtsdo.commons.email.EmailRequest;
+import org.ihtsdo.commons.email.EmailSender;
 import org.ihtsdo.telemetry.TestService;
 import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.ihtsdo.telemetry.core.Constants;
@@ -16,6 +25,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -24,6 +34,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+@RunWith(JMockit.class)
 public class TelemetryProcessorTest {
 
 	private static final String STREAM_FILE_DESTINATION = "file:///tmp/test_telemetry_stream.txt";
@@ -36,6 +47,8 @@ public class TelemetryProcessorTest {
 	private TransferManager mockTransferManager;
 	private Upload mockUpload;
 	private File testStreamFile;
+	@Mocked
+	EmailSender emailSender;
 
 	@Before
 	public void setUp() throws Exception {
@@ -51,9 +64,33 @@ public class TelemetryProcessorTest {
 		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
 
 		streamFactory = new StreamFactory(mockTransferManager, false);
-		telemetryProcessor = new TelemetryProcessor(streamFactory);
+
+		new NonStrictExpectations() {
+			{
+				emailSender.send((EmailRequest) any);
+			}
+		};
+
+		telemetryProcessor = new TelemetryProcessor(streamFactory, "foo@bar.com", null, emailSender);
+		telemetryProcessor.startup();
 		testStreamFile = new File("/tmp/test_telemetry_stream.txt");
 		testStreamFile.delete();
+	}
+
+	@Test
+	public void testErrorDetection() throws IOException, InterruptedException {
+
+		// Make sure previous test has had time to finish
+		// Thread.sleep(1000);
+
+		Logger logger = LoggerFactory.getLogger(TestService.class);
+
+		try {
+			throw new Exception("Simulating thrown Exception");
+		} catch (Exception e) {
+			logger.error("Correctly detected thrown exception.", e);
+		}
+		// Thread.sleep(100000); // Needed if you're going to breakpoint in the server code.
 	}
 
 	@Test
