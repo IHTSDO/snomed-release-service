@@ -1,5 +1,6 @@
 package org.ihtsdo.telemetry.client;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Layout;
 import org.apache.log4j.MDC;
 import org.apache.log4j.PatternLayout;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
+
 import java.util.Hashtable;
 import java.util.UUID;
 
@@ -75,6 +77,7 @@ public class TelemetryEventAppender extends WriterAppender {
 		TextMessage message = createMessage(this.layout.format(event));
 		message.setStringProperty(Constants.LEVEL, event.getLevel().toString());
 		message.setLongProperty(Constants.TIME_STAMP, event.getTimeStamp());
+		message.setStringProperty(Constants.EXCEPTION, StringUtils.join(event.getThrowableStrRep(), "\n"));
 		Hashtable<String, Object> context = MDC.getContext();
 		if (context != null) {
 			for (String key : context.keySet()) {
