@@ -218,9 +218,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 		try {
 			LOGGER.info("Trigger build", buildCompositeKey, executionId);
 
-			if (true)
-				throw new Exception("Testing Telemetry on Exception");
-
 			//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
 			dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
 
