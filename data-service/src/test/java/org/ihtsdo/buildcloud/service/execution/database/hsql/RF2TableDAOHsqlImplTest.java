@@ -1,12 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
-import static org.junit.Assert.*;
 import mockit.Expectations;
 import mockit.Mocked;
-
-import org.ihtsdo.snomed.util.rf2.schema.*;
-
+import mockit.integration.junit4.JMockit;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 
+@RunWith(JMockit.class)
 public class RF2TableDAOHsqlImplTest {
 
 	@Mocked
