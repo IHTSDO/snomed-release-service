@@ -22,6 +22,8 @@ public class TelemetryEventAppender extends WriterAppender {
 	private MessageProducer producer;
 	private Session session;
 	private Logger logger = LoggerFactory.getLogger(TelemetryEventAppender.class);
+	private String service;
+	private String environment = "LocalHost";
 
 	public TelemetryEventAppender() {
 		// Hardcoding pattern because should not be under host application control
@@ -41,7 +43,7 @@ public class TelemetryEventAppender extends WriterAppender {
 				} else if (MDC.get(Constants.FINISH_STREAM) != null) {
 					message = createFinishStreamMessage();
 				} else {
-					message = createEventMessage(event);
+					message = createEventMessage(event, this.service, this.environment);
 				}
 				logger.debug("Sending message '{}'", message.getText());
 				producer.send(message);
@@ -73,11 +75,13 @@ public class TelemetryEventAppender extends WriterAppender {
 		return message;
 	}
 
-	private TextMessage createEventMessage(LoggingEvent event) throws JMSException {
+	private TextMessage createEventMessage(LoggingEvent event, String service, String environment) throws JMSException {
 		TextMessage message = createMessage(this.layout.format(event));
 		message.setStringProperty(Constants.LEVEL, event.getLevel().toString());
 		message.setLongProperty(Constants.TIME_STAMP, event.getTimeStamp());
 		message.setStringProperty(Constants.EXCEPTION, StringUtils.join(event.getThrowableStrRep(), "\n"));
+		message.setStringProperty(Constants.SERVICE, service);
+		message.setStringProperty(Constants.ENVIRONMENT, environment);
 		Hashtable<String, Object> context = MDC.getContext();
 		if (context != null) {
 			for (String key : context.keySet()) {
@@ -104,6 +108,24 @@ public class TelemetryEventAppender extends WriterAppender {
 		} catch (JMSException e) {
 			logger.warn("Can't connect to message broker.");
 			return null;
+		}
+	}
+
+	public String getService() {
+		return service;
+	}
+
+	public String getEnvironment() {
+		return environment;
+	}
+
+	public void setService(String service) {
+		this.service = service;
+	}
+
+	public void setEnvironment(String environment) {
+		if (environment != null && !environment.isEmpty()) {
+			this.environment = environment;
 		}
 	}
 
