@@ -28,7 +28,7 @@
 	</bean>
 
 	<bean class="org.ihtsdo.telemetry.server.TelemetryProcessor" init-method="startup">
-			<constructor-arg value="${telemetry.email.address.to}" />
+			<constructor-arg value="${telemetry.email.address.to.default}" />
 			<constructor-arg value="${telemetry.email.address.from}" />
 			<constructor-arg value="${telemetry.smtp.username}" />
 			<constructor-arg value="${telemetry.smtp.password}" />
