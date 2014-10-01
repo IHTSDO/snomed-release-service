@@ -18,7 +18,10 @@ read apiPort
 propertiesFile="`pwd`/data-service/target/classes/${filename}"
 if [ -f "$propertiesFile" ]; then
 
-	# TODO Check if tunnel is already established before running
+	# Check if tunnel is already established before running
+	echo "Checking for existing tunnel and killing if found"
+	ps -ef | grep ssh | grep $(getProperty target_hostname) | awk '{print $2}' | xargs kill
+	
 	command="ssh -L $(getProperty local_port):$(getProperty target_hostname):$(getProperty target_port) $(getProperty tunnel_proxy) -l ${tunnelUserName}"
 	echo "Running tunnelling command: ${command}"
 	${command} &
@@ -34,7 +37,7 @@ if [ -f "$propertiesFile" ]; then
 	echo "Starting API webapp using $environmentName environment."
 	echo
 	sleep 1
-	java -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 -jar api/target/exec-api.jar -DdataServicePropertiesPath="file://${propertiesFile}"  -httpPort=${apiPort}
+	java -Xdebug -Xnoagent -Xmx4g -DENV_NAME=PGW -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 -jar api/target/exec-api.jar -DdataServicePropertiesPath="file://${propertiesFile}"  -httpPort=${apiPort}
 else
 	echo "You don't have access to the $environmentName environment."
 	echo

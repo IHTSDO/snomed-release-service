@@ -149,9 +149,9 @@ public class TelemetryProcessor {
 				emailRequest.setToEmail(TelemetryProcessor.defaultEmailToAddr);
 				emailRequest.setFromEmail(TelemetryProcessor.emailFromAddr);
 				// TODO Add this string via config.
-				// TODO Add environment idenfifier
-				// TODO Parse out service name
-				emailRequest.setSubject("IHTSDO Telemetry - monitored service error detected.");
+				String subject = String.format("IHTSDO Telemetry - %s service error detected in %s.",
+						message.getStringProperty(Constants.SERVICE), message.getStringProperty(Constants.ENVIRONMENT));
+				emailRequest.setSubject(subject);
 				String msg = message.getText();
 				if (message.propertyExists(Constants.EXCEPTION)) {
 					msg += "\n" + message.getStringProperty(Constants.EXCEPTION);
