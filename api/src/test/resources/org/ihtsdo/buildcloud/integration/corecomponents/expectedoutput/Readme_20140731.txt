@@ -20,6 +20,7 @@ Table of contents:
                     sct2_Concept_Snapshot_INT_20140731.txt
                     sct2_Description_Snapshot-en_INT_20140731.txt
                     sct2_TextDefinition_Snapshot-en_INT_20140731.txt
+                    sct2_Relationship_Snapshot_INT_20140731.txt
                     sct2_StatedRelationship_Snapshot_INT_20140731.txt
             Delta
                 Refset

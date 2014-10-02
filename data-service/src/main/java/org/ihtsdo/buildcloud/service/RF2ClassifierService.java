@@ -35,11 +35,6 @@ public class RF2ClassifierService {
 
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
-	 *
-	 * @param execution
-	 * @param pkg
-	 * @param inputFileSchemaMap
-	 * @throws ProcessingException
 	 */
 	public void generateInferredRelationships(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException, IOException, ClassificationException {
 		String packageBusinessKey = pkg.getBusinessKey();
@@ -48,9 +43,9 @@ public class RF2ClassifierService {
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
 			TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
-			if (inputFileSchema.getComponentType().equals(ComponentType.CONCEPT)) {
+			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
 				classifierFiles.getConceptSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT));
-			} else if (inputFileSchema.getComponentType().equals(ComponentType.STATED_RELATIONSHIP)) {
+			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
 				classifierFiles.getStatedRelationshipSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT));
 			}
 		}
@@ -70,7 +65,12 @@ public class RF2ClassifierService {
 				String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
 				ArrayList<String> previousInferredRelationshipFilePaths = new ArrayList<>(); // TODO: make this available where relevant
 
-				File inferredRelationshipsOutputFile = new File(tempDir, RF2Constants.INFERRED_RELATIONSHIPS_TXT);
+				String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
+				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/"))
+						.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
+						.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+
+				File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
 				File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
 				ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
@@ -82,7 +82,10 @@ public class RF2ClassifierService {
 
 				uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
-				// TODO: Upload inferred relationships file and produce delta and full.
+				// Upload inferred relationships file
+				executionDAO.putOutputFile(execution, pkg, inferredRelationshipsOutputFile);
+
+				// TODO: Produce delta and full.
 
 			} else {
 				logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +

@@ -210,9 +210,18 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws IOException {
 		String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
-		return executionFileHelper.putFile(file, outputFilePath, calcMD5);
+		try {
+			return executionFileHelper.putFile(file, outputFilePath, calcMD5);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading " + targetRelativePath, e);
+		}
+	}
+
+	@Override
+	public String putOutputFile(Execution execution, Package aPackage, File file) throws IOException {
+		return putOutputFile(execution, aPackage, file, "/", false);
 	}
 
 	@Override

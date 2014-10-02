@@ -276,7 +276,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 			generator.generateReleaseFiles();
 
 			// Run classifier to produce inferred relationships from stated relationships
-//			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap); // TODO: Enable this.
+			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap);
 		}
 
 		// Generate readme file
