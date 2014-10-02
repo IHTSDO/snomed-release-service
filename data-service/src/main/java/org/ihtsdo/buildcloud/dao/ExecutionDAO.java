@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -8,7 +7,6 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 
 import java.io.*;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +48,10 @@ public interface ExecutionDAO {
 	InputStream getOutputFileInputStream(Execution execution, Package pkg, String name);
 
 	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5)
-			throws NoSuchAlgorithmException, IOException, DecoderException;
+			throws IOException;
+
+	String putOutputFile(Execution execution, Package aPackage, File file)
+			throws IOException;
 
 	InputStream getManifestStream(Execution execution, Package pkg);
 
