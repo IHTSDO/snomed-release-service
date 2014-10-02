@@ -80,12 +80,12 @@ for file in `cat ${processOrderFile}`; do
 
 		if [[ ${leftFile} == *Refset_* ]]
 		then
-			leftFileTrim="${leftFile}.no_last_col"
-			rightFileTrim="${rightFile}.no_last_col"
+			leftFileTrim="${leftFile}_no_first_col.txt"
+			rightFileTrim="${rightFile}_no_first_col.txt"
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			echo -n "Content without id column differences count (x2): "
-			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}.no_last_col | wc -l
+			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
 		fi
 		echo
 	else
