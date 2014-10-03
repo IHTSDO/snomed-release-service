@@ -63,7 +63,15 @@ public class RF2ClassifierService {
 				logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
 				String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
-				ArrayList<String> previousInferredRelationshipFilePaths = new ArrayList<>(); // TODO: make this available where relevant
+				List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
+				if (!pkg.isFirstTimeRelease()) {
+					String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, pkg, classifierFiles, tempDir);
+					if (previousInferredRelationshipFilePath != null) {
+						previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
+					} else {
+						logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+					}
+				}
 
 				String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
 				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/"))
@@ -123,6 +131,23 @@ public class RF2ClassifierService {
 		} catch (IOException e) {
 			throw new ProcessingException("Failed to upload file " + targetFilename + ".", e);
 		}
+	}
+
+	private String getPreviousInferredRelationshipFilePath(Execution execution, Package pkg, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
+		String previousPublishedPackage = pkg.getPreviousPublishedPackage();
+		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
+		String previousInferredRelationshipFilename = inferredRelationshipFilename + ".previous_published";
+
+		File localFile = new File(tempDir, previousInferredRelationshipFilename);
+		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getBuild().getProduct(), inferredRelationshipFilename, previousPublishedPackage);
+			 FileOutputStream out = new FileOutputStream(localFile)) {
+			if (publishedFileArchiveEntry != null) {
+				StreamUtils.copy(publishedFileArchiveEntry, out);
+				return localFile.getAbsolutePath();
+			}
+		}
+
+		return null;
 	}
 
 	private List<String> downloadFiles(Execution execution, String packageBusinessKey, File tempDir, List<String> filenameLists) throws ProcessingException {

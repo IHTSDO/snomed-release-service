@@ -1,12 +1,11 @@
 package org.ihtsdo.buildcloud.integration.corecomponents;
 
-import java.io.IOException;
-import java.util.zip.ZipFile;
-
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.zip.ZipFile;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
@@ -49,7 +48,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	}
 
-	private void executeAndVerfiyResults(final String releaseDate) throws Exception, IOException {
+	private void executeAndVerfiyResults(final String releaseDate) throws Exception {
 		final String executionURL1 = integrationTestHelper.createExecution();
 		integrationTestHelper.triggerExecution(executionURL1);
 		integrationTestHelper.publishOutput(executionURL1);
