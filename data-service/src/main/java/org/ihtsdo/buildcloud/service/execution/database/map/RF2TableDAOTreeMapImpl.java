@@ -241,9 +241,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 					if (!isCurrentActive) {
 						if (isPreviousActive) {
 							//add previous value id
-							StringBuilder updated = new StringBuilder(value);
-							updated.append(parts[6]);
-							table.put(key, updated.toString());
+							table.put(key, value + parts[6]);
 						} else {
 							//remove line from table and dirty key set
 							table.remove(key);
