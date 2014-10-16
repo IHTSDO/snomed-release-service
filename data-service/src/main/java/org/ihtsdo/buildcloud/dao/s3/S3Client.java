@@ -29,4 +29,6 @@ public interface S3Client {
 
 	ObjectMetadata getObjectMetadata(String bucketName, String key) throws AmazonClientException;
 
+	ObjectListing listNextBatchOfObjects(ObjectListing objectListing);
+
 }
