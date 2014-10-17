@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +43,9 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
-		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
+		String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
+		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
+		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		loadDeltaFilesToInputDirectory("20140731");
 		executeAndVerfiyResults("20140731");
 
@@ -83,6 +86,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_TextDefinition_Full-en_INT_"+effectiveTime+".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Relationship_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/\n" +
@@ -101,6 +105,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_TextDefinition_Delta-en_INT_"+ effectiveTime +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Relationship_Delta_INT_"+ effectiveTime +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime +".txt";
 		return expectedZipEntries;
 	}

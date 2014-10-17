@@ -285,12 +285,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
 			transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
 
-			//Convert Delta files to Full, Snapshot and delta release files
-			final Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			// Convert Delta input files to Full, Snapshot and Delta release files
+			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
-			// Run classifier to produce inferred relationships from stated relationships
-//			classifierService.generateInferredRelationships(execution, pkg, inputFileSchemaMap);
+			// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
+			String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, pkg, inputFileSchemaMap);
+			if (relationshipSnapshotOutputFilename != null) {
+				generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
+			}
 		}
 
 		// Generate readme file

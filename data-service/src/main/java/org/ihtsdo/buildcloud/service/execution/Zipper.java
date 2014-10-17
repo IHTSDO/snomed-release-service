@@ -1,16 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import javax.xml.bind.JAXBException;
-
+import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -23,7 +13,10 @@ import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.io.Files;
+import javax.xml.bind.JAXBException;
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 public class Zipper {
@@ -104,10 +97,9 @@ public class Zipper {
 
 		//Pull down and compress any child files
 		for (FileType file : f.getFile()) {
-			try {
-				InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName());
-				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
+			try (InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName())) {
 				if (is != null) {
+				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
 					try {
 
 						zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
@@ -116,10 +108,9 @@ public class Zipper {
 						zos.closeEntry();
 						is.close();
 					}
+				} else {
+					LOGGER.info(RF2Constants.DATA_PROBLEM + "Failed to find output file listed in manifest: " + file.getName());
 				}
-			} catch (Exception e) {
-				//TODO We'll want to report missing files in the telemetry
-				LOGGER.warn("Manifest failed to find expected output file: " + file.getName());
 			}
 		}
 

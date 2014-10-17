@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Rf2FileWriter {
 
-	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws IOException, SQLException {
+	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws SQLException, IOException {
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream, RF2Constants.UTF_8))) {
 			List<Field> fields = tableSchema.getFields();
 
@@ -40,8 +40,6 @@ public class Rf2FileWriter {
 			// Declare a few objects to reuse over and over.
 			final StringBuilder builder = new StringBuilder();
 			final List<Field> fields = schema.getFields();
-			int fieldIndex;
-			String value;
 
 			// Build header
 			String header = buildHeader(fields);
@@ -102,6 +100,20 @@ public class Rf2FileWriter {
 
 	}
 
+	public void exportFull(RF2TableResults results, TableSchema tableSchema, OutputStream fullOutputStream) throws IOException, SQLException {
+		try (BufferedWriter fullWriter = new BufferedWriter(new OutputStreamWriter(fullOutputStream, RF2Constants.UTF_8))) {
+			String header = buildHeader(tableSchema.getFields());
+			fullWriter.append(header);
+			fullWriter.append(RF2Constants.LINE_ENDING);
+
+			String line;
+			while ((line = results.nextLine()) != null) {
+				fullWriter.append(line);
+				fullWriter.append(RF2Constants.LINE_ENDING);
+			}
+		}
+	}
+
 	private String buildHeader(List<Field> fields) {
 		StringBuilder builder = new StringBuilder();
 		boolean firstField = true;
@@ -115,5 +127,4 @@ public class Rf2FileWriter {
 		}
 		return builder.toString();
 	}
-
 }

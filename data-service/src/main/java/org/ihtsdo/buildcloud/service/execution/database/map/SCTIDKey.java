@@ -5,7 +5,7 @@ public class SCTIDKey implements Key {
 	private final Long id;
 	private final String effectiveTime;
 
-	public SCTIDKey(String id, String effectiveTime) {
+	public SCTIDKey(String id, String effectiveTime) throws NumberFormatException {
 		this.id = Long.parseLong(id);
 		this.effectiveTime = effectiveTime;
 	}
