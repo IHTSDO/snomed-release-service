@@ -96,6 +96,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_TextDefinition_Snapshot-en_INT_"+effectiveTime+".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_"+ effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/\n" +
