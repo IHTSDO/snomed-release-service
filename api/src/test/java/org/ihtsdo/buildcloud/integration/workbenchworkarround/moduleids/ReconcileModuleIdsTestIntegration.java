@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.integration.workbenchworkarround.moduleids;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +44,9 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
-		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
+		String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
+		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
+		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		loadDeltaFilesToInputDirectory("20140731");
 		executeAndVerfiyResults("20140731");
 	}
@@ -78,6 +81,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+effectiveTime+".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_Relationship_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/\n" +
@@ -85,6 +89,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+effectiveTime+".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_"+ effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime+".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/\n" +
@@ -92,6 +97,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Refset/Language/der2_cRefset_LanguageDelta-en_INT_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_Relationship_Delta_INT_"+ effectiveTime +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime +".txt";
 		return expectedZipEntries;
 	}

@@ -7,6 +7,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class SCTIDTransformation implements BatchLineTransformation {
 
@@ -24,11 +25,13 @@ public class SCTIDTransformation implements BatchLineTransformation {
 	}
 
 	public void transformLine(String[] columnValues) throws TransformationException {
-		if (columnValues != null && columnValues.length > componentIdCol && columnValues[componentIdCol].contains("-")) {
-			// Value is temp UUID from authoring tool.
+		if (columnValues != null && columnValues.length > componentIdCol &&
+				(columnValues[componentIdCol].contains("-") || columnValues[componentIdCol].equals("null"))) {
+
+			String uuidString;
+			uuidString = getUuidString(columnValues[componentIdCol]);
 			// Replace with SCTID.
 			try {
-				String uuidString = columnValues[componentIdCol];
 				String moduleId = columnValues[moduleIdCol];
 
 				Long sctid = sctidFactory.getSCTID(uuidString, partitionId, moduleId);
@@ -44,11 +47,13 @@ public class SCTIDTransformation implements BatchLineTransformation {
 	public void transformLines(List<String[]> columnValuesList) throws TransformationException {
 		// Collect uuid strings grouped by moduleId
 		List<String> uuidStrings = new ArrayList<>();
-		String idString, moduleId, groupModuleId = null;
+		String idString, uuidString, moduleId, groupModuleId = null;
 		int runStart = 0, runEnd = 0;
 		for (String[] columnValues : columnValuesList) {
 			idString = columnValues[componentIdCol];
-			if (idString.contains("-")) {
+			if (idString.contains("-") || idString.equals("null")) {
+				uuidString = getUuidString(idString);
+				columnValues[componentIdCol] = uuidString;
 				moduleId = columnValues[moduleIdCol];
 				if (!moduleId.equals(groupModuleId)) {
 					if (groupModuleId != null) {
@@ -60,7 +65,7 @@ public class SCTIDTransformation implements BatchLineTransformation {
 					groupModuleId = moduleId;
 					runStart = runEnd;
 				}
-				uuidStrings.add(idString);
+				uuidStrings.add(uuidString);
 			}
 			runEnd++;
 		}
@@ -69,6 +74,18 @@ public class SCTIDTransformation implements BatchLineTransformation {
 			transformLineGroup(columnValuesList, uuidStrings, groupModuleId, runStart, runEnd);
 		}
 
+	}
+
+	private String getUuidString(String idString) {
+		String uuidString;
+		if (!idString.equals("null")) {
+			// Value is temp UUID from authoring tool.
+			uuidString = idString;
+		} else {
+			// Value is "null" from classifier, generate one
+			uuidString = UUID.randomUUID().toString();
+		}
+		return uuidString;
 	}
 
 	public void transformLineGroup(List<String[]> columnValuesList, List<String> uuidStrings, String groupModuleId,

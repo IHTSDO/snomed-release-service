@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.ProcessingException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
 import org.ihtsdo.classifier.CycleCheck;
@@ -31,12 +32,15 @@ public class RF2ClassifierService {
 	@Autowired
 	private String coreModuleSctid;
 
+	@Autowired
+	private TransformationService transformationService;
+
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 */
-	public void generateInferredRelationships(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException, IOException, ClassificationException {
+	public String generateInferredRelationshipSnapshot(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException, IOException, ClassificationException {
 		String packageBusinessKey = pkg.getBusinessKey();
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
 
@@ -74,7 +78,7 @@ public class RF2ClassifierService {
 				}
 
 				String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
-				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/"))
+				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
 						.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
 						.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 
@@ -90,11 +94,13 @@ public class RF2ClassifierService {
 
 				uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
-				// Upload inferred relationships file
-				executionDAO.putOutputFile(execution, pkg, inferredRelationshipsOutputFile);
+				// Upload inferred relationships file with null ids
+				executionDAO.putTransformedFile(execution, pkg, inferredRelationshipsOutputFile);
 
-				// TODO: Produce delta and full.
+				// Generate inferred relationship ids using transform
+				transformationService.transformInferredRelationshipFile(execution, pkg, inferredRelationshipSnapshotFilename);
 
+				return inferredRelationshipSnapshotFilename;
 			} else {
 				logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
 						"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in execution package logs for more details.");
@@ -102,6 +108,7 @@ public class RF2ClassifierService {
 		} else {
 			logger.info("Stated relationship and concept files not present. Skipping classification.");
 		}
+		return null;
 	}
 
 	public boolean checkNoStatedRelationshipCycles(Execution execution, String packageBusinessKey, List<String> localConceptFilePaths,

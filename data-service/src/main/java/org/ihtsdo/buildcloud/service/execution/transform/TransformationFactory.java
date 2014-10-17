@@ -51,7 +51,7 @@ public class TransformationFactory {
 				transformation = getTextDefinitionFileTransformation();
 				break;
 			case STATED_RELATIONSHIP:
-				transformation = getRelationshipFileTransformation();
+				transformation = getStatedRelationshipFileTransformation();
 				break;
 			case RELATIONSHIP:
 				transformation = getRelationshipFileTransformation();
@@ -166,7 +166,7 @@ public class TransformationFactory {
 		return streamingFileTransformation;
 	}
 
-	private StreamingFileTransformation getRelationshipFileTransformation() {
+	private StreamingFileTransformation getStatedRelationshipFileTransformation() {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
@@ -196,6 +196,15 @@ public class TransformationFactory {
 
 			streamingFileTransformation.addTransformationToFrontOfList(conditionalTransformationForRelationshipFile);
 		}
+
+		return streamingFileTransformation;
+	}
+
+	private StreamingFileTransformation getRelationshipFileTransformation() {
+		// TIG - www.snomed.org/tig?t=trg2main_format_rel
+		StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
+				// id
+				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
 
 		return streamingFileTransformation;
 	}

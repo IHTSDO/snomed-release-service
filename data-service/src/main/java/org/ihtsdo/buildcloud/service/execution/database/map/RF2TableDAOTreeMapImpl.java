@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,7 +39,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, FileRecognitionException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
@@ -58,7 +57,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
@@ -66,8 +65,13 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException {
+	public RF2TableResults selectAllOrdered(TableSchema tableSchema) {
 		return new RF2TableResultsMapImpl(table);
+	}
+
+	@Override
+	public RF2TableResults selectWithEffectiveDateOrdered(TableSchema tableSchema, String effectiveDate) {
+		return new RF2TableResultsMapImpl(table, effectiveDate);
 	}
 
 	@Override

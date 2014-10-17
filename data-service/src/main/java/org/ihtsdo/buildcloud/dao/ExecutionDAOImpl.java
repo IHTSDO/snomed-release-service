@@ -238,6 +238,17 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
+	public void putTransformedFile(Execution execution, Package pkg, File file) throws IOException {
+		String name = file.getName();
+		String outputPath = pathHelper.getExecutionTransformedFilesPath(execution, pkg.getBusinessKey()).append(name).toString();
+		try {
+			executionFileHelper.putFile(file, outputPath);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
+		}
+	}
+
+	@Override
 	public void copyAll(Build buildSource, Execution execution) {
 		for (Package buildPackage : buildSource.getPackages()) {
 			// Copy input files

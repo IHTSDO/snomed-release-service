@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database.map;
 
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
@@ -14,7 +15,7 @@ import java.sql.SQLException;
 
 public class RF2TableDAOTreeMapImplTest {
 
-	private RF2TableDAOTreeMapImpl dao;
+	private RF2TableDAO dao;
 
 	@Before
 	public void setUp() throws Exception {
@@ -56,6 +57,18 @@ public class RF2TableDAOTreeMapImplTest {
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
 		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, thisClass.getResourceAsStream(expectedNewDelta),
+				new RF2TableResultsReaderHack(results));
+	}
+
+	@Test
+	public void testSelectDeltaFromSnapshot() throws Exception {
+		String newSnapshot = "der2_cRefset_AssociationReferenceSnapshot_D_20140731.txt.txt";
+
+		TableSchema table = dao.createTable(newSnapshot, getClass().getResourceAsStream(newSnapshot), false);
+
+		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_D_20140731.txt";
+		RF2TableResults results = dao.selectWithEffectiveDateOrdered(table, "20140731");
+		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, getClass().getResourceAsStream(expectedNewDelta),
 				new RF2TableResultsReaderHack(results));
 	}
 

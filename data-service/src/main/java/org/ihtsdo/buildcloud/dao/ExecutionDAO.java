@@ -53,6 +53,8 @@ public interface ExecutionDAO {
 	String putOutputFile(Execution execution, Package aPackage, File file)
 			throws IOException;
 
+	void putTransformedFile(Execution execution, Package pkg, File file) throws IOException;
+
 	InputStream getManifestStream(Execution execution, Package pkg);
 
 	List<String> listTransformedFilePaths(Execution execution, String packageId);
