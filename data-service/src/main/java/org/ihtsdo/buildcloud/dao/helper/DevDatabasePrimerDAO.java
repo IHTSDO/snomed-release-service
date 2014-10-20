@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -26,17 +27,39 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator {
 
 		Long count = (Long) session.createQuery("select count(*) from ReleaseCenter").list().iterator().next();
 		if (count == 0) {
-			ReleaseCenter internationalReleaseCenter = createTestReleaseCenter();
+
+			// Create Anonymous user. This user is used by everyone before login.
+			User anonymousUser = createUser(User.ANONYMOUS_USER, "");
+
+			// Create international release center
+			ReleaseCenter internationalReleaseCenter = createTestReleaseCenterWithExtensions("International Release Center", "International");
 			save(internationalReleaseCenter);
 
-			User anonymousUser = userService.createUser(User.ANONYMOUS_USER, "");
-			session.save(anonymousUser);
-			session.save(new ReleaseCenterMembership(internationalReleaseCenter, anonymousUser));
+			// Grant anonymous access
+			grantUserAccess(anonymousUser, internationalReleaseCenter);
 
-			User managerUser = userService.createUser("manager", "test123");
-			session.save(managerUser);
-			session.save(new ReleaseCenterMembership(internationalReleaseCenter, managerUser));
+			// Create international manager user and grant access to international center
+			User managerUser = createUser("manager", "test123");
+			grantUserAccess(managerUser, internationalReleaseCenter);
+
+			// Create UK Release Center
+			ReleaseCenter ukReleaseCenter = createTestReleaseCenter("UK Release Centre", "UK");
+			save(ukReleaseCenter);
+
+			// Create UK manager user and grant access to uk center
+			User ukManager = createUser("manager.ukrc", "ukpass");
+			grantUserAccess(ukManager, ukReleaseCenter);
 		}
+	}
+
+	public User createUser(String username, String rawPassword) {
+		User anonymousUser = userService.createUser(username, rawPassword);
+		getSession().save(anonymousUser);
+		return anonymousUser;
+	}
+
+	public Serializable grantUserAccess(User anonymousUser, ReleaseCenter internationalReleaseCenter) {
+		return getSession().save(new ReleaseCenterMembership(internationalReleaseCenter, anonymousUser));
 	}
 
 	private void save(ReleaseCenter releaseCenter) {
