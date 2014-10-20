@@ -1,47 +1,19 @@
 package org.ihtsdo.buildcloud.service;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_EXTENSION;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_PREFIX;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
-import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
-import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
-import org.ihtsdo.buildcloud.service.exception.PostConditionException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
@@ -62,6 +34,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_EXTENSION;
+import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_PREFIX;
 
 @Service
 @Transactional
@@ -381,6 +367,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
 		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
 		return dao.listOutputFilePaths(execution, packageId);
+	}
+
+	@Override
+	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getInputFileStream(execution, packageId, inputFilePath);
+	}
+
+	@Override
+	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listInputFileNames(execution, packageId);
 	}
 
 	@Override
