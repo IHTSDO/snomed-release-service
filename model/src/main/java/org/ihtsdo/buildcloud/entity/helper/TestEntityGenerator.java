@@ -63,12 +63,16 @@ public class TestEntityGenerator {
 															"RF1 Compatibility Package (es-ar)",
 															"RF2 to RF1 Conversion (es-ar)" }}};
 
-	protected ReleaseCenter createTestReleaseCenter() {
-		ReleaseCenter internationalReleaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
-		addExtensionsToReleaseCenter(internationalReleaseCenter);
-		return internationalReleaseCenter;
-	}	
-	
+	protected ReleaseCenter createTestReleaseCenter(String fullName, String shortName) {
+		ReleaseCenter releaseCenter = new ReleaseCenter(fullName, shortName);
+		return releaseCenter;
+	}
+
+	protected ReleaseCenter createTestReleaseCenterWithExtensions(String fullName, String shortName) {
+		ReleaseCenter releaseCenter = createTestReleaseCenter(fullName, shortName);
+		addExtensionsToReleaseCenter(releaseCenter);
+		return releaseCenter;
+	}
 
 	protected void addExtensionsToReleaseCenter (ReleaseCenter releaseCenter) {
 		for (int iEx=0; iEx < extensionNames.length; iEx++){
