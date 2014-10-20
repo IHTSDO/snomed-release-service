@@ -47,6 +47,10 @@ public interface ExecutionService {
 
 	List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
 
+	InputStream getInputFile(String buildCompositeKey, String executionId, String packageId, String inputFileName, User authenticatedUser) throws ResourceNotFoundException;
+
+	List<String> getExecutionPackageInputFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
+
 	InputStream getLogFile(String buildCompositeKey, String executionId, String packageId, String logFileName, User authenticatedUser) throws ResourceNotFoundException;
 
 	List<String> getExecutionPackageLogFilePaths(String buildCompositeKey, String executionId, String packageId, User authenticatedUser) throws IOException, ResourceNotFoundException;
