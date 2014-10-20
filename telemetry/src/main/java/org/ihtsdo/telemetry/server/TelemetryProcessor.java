@@ -142,7 +142,8 @@ public class TelemetryProcessor {
 
 			private void sendEmailAlert(TextMessage message) throws MalformedURLException, EmailException, JMSException {
 				// Do we have an EmailSender configured?
-				if (TelemetryProcessor.emailSender == null && TelemetryProcessor.defaultEmailToAddr != null) {
+				if (TelemetryProcessor.emailSender == null || TelemetryProcessor.defaultEmailToAddr == null
+						|| TelemetryProcessor.defaultEmailToAddr.isEmpty()) {
 					logger.info("EmailSender not configured.  Unable to report error message: " + message.getText());
 					return;
 				}
