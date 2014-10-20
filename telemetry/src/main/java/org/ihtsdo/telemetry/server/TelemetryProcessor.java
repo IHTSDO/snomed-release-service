@@ -2,6 +2,7 @@ package org.ihtsdo.telemetry.server;
 
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.apache.commons.mail.EmailException;
+import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class TelemetryProcessor {
 			final String smtpPassword, final String smtpHost, final Integer smtpPort, final Boolean smtpSsl) throws JMSException {
 
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
-		if (smtpHost != null && smtpUsername != null) {
+		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
 			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
 					smtpSsl.booleanValue());
 		} else {
@@ -141,7 +142,7 @@ public class TelemetryProcessor {
 
 			private void sendEmailAlert(TextMessage message) throws MalformedURLException, EmailException, JMSException {
 				// Do we have an EmailSender configured?
-				if (TelemetryProcessor.emailSender == null) {
+				if (TelemetryProcessor.emailSender == null && TelemetryProcessor.defaultEmailToAddr != null) {
 					logger.info("EmailSender not configured.  Unable to report error message: " + message.getText());
 					return;
 				}
