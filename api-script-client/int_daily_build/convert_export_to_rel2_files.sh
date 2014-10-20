@@ -18,7 +18,7 @@ for file in `ls *Language*`; do
 done
 
 echo "Removing inferred relationship files"
-rm "rel2_Relationship_*"
+rm rel2_Relationship_*
 
 echo -n "Process Complete. Returning to "
 cd -
