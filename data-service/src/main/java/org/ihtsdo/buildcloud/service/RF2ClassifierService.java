@@ -47,6 +47,12 @@ public class RF2ClassifierService {
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
 			TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
+
+			if (inputFileSchema == null) {
+				logger.warn("Failed to recover schema mapped to {}.", inputFilename);
+				continue;
+			}
+
 			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
 				classifierFiles.getConceptSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT));
 			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
