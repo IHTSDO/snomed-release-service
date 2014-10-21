@@ -76,23 +76,6 @@
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
 	</bean>
 
-	
-	<!-- <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://localhost:3306/srs" />
-		<property name="username" value="srs_user" />
-		<property name="password" value="" />
-	</bean> -->
-	
-
-	<!-- <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
-		<property name="driverClassName" value="org.h2.Driver" />
-		<property name="url" value="jdbc:h2:/tmp/srs" /> 
-		<property name="url" value="jdbc:h2:mem:srs;DB_CLOSE_DELAY=-1"/>
-		<property name="username" value="sa" />
-		<property name="password" value="" />
-	</bean>-->
-	
 	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="${srs.jdbc.driverClassName}" />
 		<property name="url" value="${srs.jdbc.url}"/>
@@ -110,8 +93,7 @@
 
 		<property name="hibernateProperties">
 			<props>
-				<!--  <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop> -->
-				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
+				<prop key="hibernate.dialect">${srs.hibernate.dialect}</prop>
 				<prop key="hibernate.show_sql">false</prop>
 				<prop key="hibernate.hbm2ddl.auto">create</prop>
 			</props>
