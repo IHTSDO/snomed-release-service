@@ -30,6 +30,14 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
 	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*\t[^\t]*)(\t.*)?");
+	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_MAP_PRIORITY_AND_TARGET_ID_PATTERN = Pattern
+			.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t" + /* ignore columns 1 - 4 */
+			"([^\t]*\t[^\t]*\t)" + /* select 5 + 6 */
+			"[^\t]*\t" + /* ignore 7 - mapGroup */
+			"([^\t]*\t)" + /* select 8 - mapPriority */
+			"[^\t]*\t[^\t]*\t" + /* ignore 9 + 10 */
+			"([^\t]*\t)" + /* select 11 - mapTarget */
+			"(\t.*)?"); /* ignore 12 + 13 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
 
 	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator) {
@@ -186,7 +194,21 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private String getCompositeKey(TableSchema tableSchema, String line) throws DatabasePopulatorException {
 		Pattern compKeyPattern;
 		List<Field> fields = tableSchema.getFields();
-		if (fields.size() >= 7 && ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
+
+		// TODO identify these patterns at the table level (or on first line request) and pass in rather than selecting
+		// on a per row basis.
+		if (fields.size() == 13 && "mapPriority".equals(fields.get(7).getName())) {
+			// Extended Map
+			// compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_MAP_PRIORITY_AND_TARGET_ID_PATTERN;
+			// TODO I could NOT get that puppy to match. Using more basic solution just to get moving
+			String[] values = line.split("\t");
+			return values[4] + "\t" + values[5] + "\t" + values[7] + "\t" + values[10];
+		} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
+			// Map Descriptor - need the attributeOrder to make the row unique
+			String[] values = line.split("\t");
+			return values[4] + "\t" + values[5] + "\t" + values[8];
+		} else if (fields.size() >= 7
+				&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
 			// Simple Map or Association
 			compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN;
 		} else {
