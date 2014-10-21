@@ -1,0 +1,79 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+  <folder Name="SnomedCT_LOINC_TechnologyPreview_INT_20140926">
+    <file Name="Readme_en_20140926.txt"/>
+  	
+  	
+    <folder Name="Documentation">
+      <folder Name="Current">
+        <file Name="AnnouncementLOINC-SNOMEDTechnologyPreview.pdf"/>
+        <file Name="Documentation.pdf"/>
+        <file Name="LOINC - SNOMED Technology Preview Feedback form.docx"/>
+      </folder>
+    </folder>
+
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Terminology">
+					<file Name="xsct2_Concept_LoincFull_INT_20140926.txt"/>
+					<file Name="xsct2_Description_LoincFull-en_INT_20140926.txt"/>
+					<file Name="xsct2_Relationship_LoincFull_INT_20140926.txt"/>
+					<file Name="xsct2_TextDefinition_LoincFull-en_INT_20140926.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="xder2_scccRefset_MapCorrelationOrigin_Full_INT_20140926.txt"/>
+						<file Name="xder2_sscccRefset_ExpressionAssociation_Full_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="xder2_cRefset_LanguageLoincFull-en_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Metadata">
+						<file Name="xder2_cciRefset_RefsetDescriptorLoincFull_INT_20140926.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Full -->
+
+			<folder Name="Snapshot">
+				<folder Name="Terminology">
+					<file Name="xsct2_Concept_LoincSnapshot_INT_20140926.txt"/>
+					<file Name="xsct2_Description_LoincSnapshot-en_INT_20140926.txt"/>
+					<file Name="xsct2_Relationship_LoincSnapshot_INT_20140926.txt"/>
+					<file Name="xsct2_TextDefinition_LoincSnapshot-en_INT_20140926.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="xder2_scccRefset_MapCorrelationOrigin_Snapshot_INT_20140926.txt"/>
+						<file Name="xder2_sscccRefset_ExpressionAssociation_Snapshot_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="xder2_cRefset_LanguageLoincSnapshot-en_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Metadata">
+						<file Name="xder2_cciRefset_RefsetDescriptorLoincSnapshot_INT_20140926.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Snapshot -->
+
+			<folder Name="Delta">
+				<folder Name="Terminology">
+					<file Name="xsct2_Concept_LoincDelta_INT_20140926.txt"/>
+					<file Name="xsct2_Description_LoincDelta-en_INT_20140926.txt"/>
+					<file Name="xsct2_Relationship_LoincDelta_INT_20140926.txt"/>
+					<file Name="xsct2_TextDefinition_LoincDelta-en_INT_20140926.txt"/>
+				</folder>
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="xder2_scccRefset_MapCorrelationOrigin_Delta_INT_20140926.txt"/>
+						<file Name="xder2_sscccRefset_ExpressionAssociation_Delta_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Language">
+						<file Name="xder2_cRefset_LanguageLoincDelta-en_INT_20140926.txt"/>
+					</folder>
+					<folder Name="Metadata">
+						<file Name="xder2_cciRefset_RefsetDescriptorLoincDelta_INT_20140926.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Delta -->
+		</folder> <!-- RF2Release -->
+  </folder>
+</listing>
