@@ -32,6 +32,7 @@ public class Package implements Comparable<Package> {
 	@JsonIgnore
 	private List<String> inputFiles;
 
+	@Column(columnDefinition = "TEXT")
 	private String readmeHeader;
 
 	private String readmeEndDate;
