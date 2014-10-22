@@ -5,72 +5,70 @@
   	
     <folder Name="Documentation">
       <folder Name="Current">
-        <file Name="AnnouncementLOINC-SNOMEDTechnologyPreview.pdf"/>
-        <file Name="Documentation.pdf"/>
-        <file Name="LOINC - SNOMED Technology Preview Feedback form.docx"/>
+        <file Name="doc_SctLoincTechnologyPreviewReleaseNotes_Current-en-US_INT_20140926.pdf"/>
       </folder>
     </folder>
 
 		<folder Name="RF2Release">
 			<folder Name="Full">
 				<folder Name="Terminology">
-					<file Name="xsct2_Concept_LoincFull_INT_20140926.txt"/>
-					<file Name="xsct2_Description_LoincFull-en_INT_20140926.txt"/>
-					<file Name="xsct2_Relationship_LoincFull_INT_20140926.txt"/>
-					<file Name="xsct2_TextDefinition_LoincFull-en_INT_20140926.txt"/>
+					<file Name="sct2_Concept_SctLoincTechnologyPreviewFull_INT_20140926.txt"/>
+					<file Name="sct2_Description_SctLoincTechnologyPreviewFull-en_INT_20140926.txt"/>
+					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewFull_INT_20140926.txt"/>
+					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewFull-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="xder2_scccRefset_MapCorrelationOrigin_Full_INT_20140926.txt"/>
-						<file Name="xder2_sscccRefset_ExpressionAssociation_Full_INT_20140926.txt"/>
+						<file Name="der2_scccRefset_MapCorrelationOriginFull_INT_20140926.txt"/>
+						<file Name="der2_sscccRefset_ExpressionAssociationFull_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Language">
-						<file Name="xder2_cRefset_LanguageLoincFull-en_INT_20140926.txt"/>
+						<file Name="der2_cRefset_LanguageSctLoincTechnologyPreviewFull-en_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Metadata">
-						<file Name="xder2_cciRefset_RefsetDescriptorLoincFull_INT_20140926.txt"/>
+						<file Name="der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewFull_INT_20140926.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Full -->
 
 			<folder Name="Snapshot">
 				<folder Name="Terminology">
-					<file Name="xsct2_Concept_LoincSnapshot_INT_20140926.txt"/>
-					<file Name="xsct2_Description_LoincSnapshot-en_INT_20140926.txt"/>
-					<file Name="xsct2_Relationship_LoincSnapshot_INT_20140926.txt"/>
-					<file Name="xsct2_TextDefinition_LoincSnapshot-en_INT_20140926.txt"/>
+					<file Name="sct2_Concept_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
+					<file Name="sct2_Description_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt"/>
+					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
+					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="xder2_scccRefset_MapCorrelationOrigin_Snapshot_INT_20140926.txt"/>
-						<file Name="xder2_sscccRefset_ExpressionAssociation_Snapshot_INT_20140926.txt"/>
+						<file Name="der2_scccRefset_MapCorrelationOriginSnapshot_INT_20140926.txt"/>
+						<file Name="der2_sscccRefset_ExpressionAssociationSnapshot_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Language">
-						<file Name="xder2_cRefset_LanguageLoincSnapshot-en_INT_20140926.txt"/>
+						<file Name="der2_cRefset_LanguageSctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Metadata">
-						<file Name="xder2_cciRefset_RefsetDescriptorLoincSnapshot_INT_20140926.txt"/>
+						<file Name="der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Snapshot -->
 
 			<folder Name="Delta">
 				<folder Name="Terminology">
-					<file Name="xsct2_Concept_LoincDelta_INT_20140926.txt"/>
-					<file Name="xsct2_Description_LoincDelta-en_INT_20140926.txt"/>
-					<file Name="xsct2_Relationship_LoincDelta_INT_20140926.txt"/>
-					<file Name="xsct2_TextDefinition_LoincDelta-en_INT_20140926.txt"/>
+					<file Name="sct2_Concept_SctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
+					<file Name="sct2_Description_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt"/>
+					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
+					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">
 					<folder Name="Content">
-						<file Name="xder2_scccRefset_MapCorrelationOrigin_Delta_INT_20140926.txt"/>
-						<file Name="xder2_sscccRefset_ExpressionAssociation_Delta_INT_20140926.txt"/>
+						<file Name="der2_scccRefset_MapCorrelationOriginDelta_INT_20140926.txt"/>
+						<file Name="der2_sscccRefset_ExpressionAssociationDelta_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Language">
-						<file Name="xder2_cRefset_LanguageLoincDelta-en_INT_20140926.txt"/>
+						<file Name="der2_cRefset_LanguageSctLoincTechnologyPreviewDelta-en_INT_20140926.txt"/>
 					</folder>
 					<folder Name="Metadata">
-						<file Name="xder2_cciRefset_RefsetDescriptorLoincDelta_INT_20140926.txt"/>
+						<file Name="der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
 					</folder>
 				</folder>
 			</folder> <!-- Delta -->
