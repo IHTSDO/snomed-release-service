@@ -16,6 +16,3 @@ id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignific
 3012975018	20140926	1	705115006	370130000	en	900000000000550004	This attribute specifies the kind of property being measured	900000000000017005
 3012980010	20140926	1	705115006	246514001	en	900000000000550004	This attribute represents the units used in assigning a value to an observation.	900000000000017005
 3012970011	20140926	1	705115006	246501002	en	900000000000550004	This attribute is used to specify the systematic method of a procedure used to accomplish a specific activity.	900000000000017005
-
-
-
