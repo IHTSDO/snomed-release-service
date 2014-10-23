@@ -15,6 +15,7 @@
 					<file Name="sct2_Concept_SctLoincTechnologyPreviewFull_INT_20140926.txt"/>
 					<file Name="sct2_Description_SctLoincTechnologyPreviewFull-en_INT_20140926.txt"/>
 					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewFull_INT_20140926.txt"/>
+					<file Name="sct2_Relationship_SctLoincTechnologyPreviewFull_INT_20140926.txt"/>
 					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewFull-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">
@@ -36,6 +37,7 @@
 					<file Name="sct2_Concept_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
 					<file Name="sct2_Description_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt"/>
 					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
+					<file Name="sct2_Relationship_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt"/>
 					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">
@@ -57,6 +59,7 @@
 					<file Name="sct2_Concept_SctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
 					<file Name="sct2_Description_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt"/>
 					<file Name="sct2_StatedRelationship_SctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
+					<file Name="sct2_Relationship_SctLoincTechnologyPreviewDelta_INT_20140926.txt"/>
 					<file Name="sct2_TextDefinition_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt"/>
 				</folder>
 				<folder Name="Refset">

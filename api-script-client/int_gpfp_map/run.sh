@@ -5,7 +5,7 @@ set -e; # Stop on error
 effectiveDate="2014-07-31"
 readmeEndDate="2014"
 isFirstTime=true
-isWorkbenchDataFixesRequired=true
+isWorkbenchDataFixesRequired=false
 headless=true
 extensionName="SNOMED CT International Edition"
 productName="SNOMED CT Release"
