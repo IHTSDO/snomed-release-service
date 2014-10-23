@@ -5,6 +5,5 @@ target
 *.classpath
 *data-service.properties
 *telemetry-server.properties
-*.sh
 rebel.xml
 tmp
