@@ -1,12 +1,12 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.text.ParseException;
-
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 public interface RF2TableDAO {
 
@@ -15,6 +15,8 @@ public interface RF2TableDAO {
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException;
 
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
+
+	RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException;
 
 	RF2TableResults selectNone(TableSchema tableSchema) throws SQLException;
 
@@ -38,14 +40,14 @@ public interface RF2TableDAO {
 	 * @param effectiveTime
 	 */
 	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
-	 
+
 	/**
 	 * This is a workaround for dealing with daily export delta file from WorkBench.
 	 * Workbench authoring tool uses a blank value in the 7th column of the AttibuteValue Refset file
 	 * to signify component inactivation with "reason not stated"
 	 * Note: Empty value id for if new member id which doesn't exist in previous snapshot will not be replaced or removed as it is an invalid
 	 * data issue.
-	 * 
+	 *
 	 * @param previousFileStream
 	 * @param effectiveTime
 	 * @throws IOException

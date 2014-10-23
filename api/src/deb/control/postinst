@@ -6,5 +6,14 @@ echo $*
 
 APP_NAME=[[packageName]]
 
+# Record package version number
+echo [[version]] > /var/opt/snomed-release-service-api/version.txt
+
 supervisorctl update $APP_NAME || true
 supervisorctl start $APP_NAME || true
+
+# Database command safe to run both on install and upgrade
+echo "Creating RVF mysql database and user"
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS srs; GRANT ALL PRIVILEGES  ON srs.* TO 'srs_user'@'localhost' ;"
+
+

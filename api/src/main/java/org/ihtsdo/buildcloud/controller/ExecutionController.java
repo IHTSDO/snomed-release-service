@@ -51,7 +51,7 @@ public class ExecutionController {
 	private PackageService packageService;
 
 	private static final String[] EXECUTION_LINKS = {"configuration", "packages", "logs"};
-	private static final String[] PACKAGE_LINKS = {"outputfiles", "logs"};
+	private static final String[] PACKAGE_LINKS = {"inputfiles", "outputfiles", "logs"};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
 
@@ -117,11 +117,31 @@ public class ExecutionController {
 		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
 	}
 
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles")
+	@ResponseBody
+	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+			@PathVariable String packageId,
+			HttpServletRequest request) throws IOException, ResourceNotFoundException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		List<String> relativeFilePaths = executionService.getExecutionPackageInputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		return convertFileListToEntities(request, relativeFilePaths);
+	}
+
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles/{outputFileName:.*}")
+	public void getPackageInputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+			@PathVariable String packageId, @PathVariable String outputFileName,
+			HttpServletResponse response) throws IOException, ResourceNotFoundException {
+		User authenticatedUser = SecurityHelper.getSubject();
+		try (InputStream outputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
+		}
+	}
+
 	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles")
 	@ResponseBody
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-															@PathVariable String packageId,
-															HttpServletRequest request) throws IOException, ResourceNotFoundException {
+			@PathVariable String packageId,
+			HttpServletRequest request) throws IOException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return convertFileListToEntities(request, relativeFilePaths);
@@ -129,8 +149,8 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles/{outputFileName:.*}")
 	public void getPackageOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-											@PathVariable String packageId, @PathVariable String outputFileName,
-											HttpServletResponse response) throws IOException, ResourceNotFoundException {
+			@PathVariable String packageId, @PathVariable String outputFileName,
+			HttpServletResponse response) throws IOException, ResourceNotFoundException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());

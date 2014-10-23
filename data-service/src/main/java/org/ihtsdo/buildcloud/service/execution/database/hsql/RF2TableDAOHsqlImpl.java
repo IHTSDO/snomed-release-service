@@ -1,5 +1,14 @@
 package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,19 +19,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
-
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
-import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
-import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 
@@ -108,6 +104,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 		// preparedStatement.setFetchSize(Integer.MIN_VALUE); // Apparently stops the db driver caching the results
 		// see http://stackoverflow.com/questions/14010595/resultset-type-forward-only-in-java#comment38287217_14010595
 		return new RF2TableResultsHsqlImpl(preparedStatement.executeQuery(), tableSchema);
+	}
+
+	@Override
+	public RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException {
+		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 
 	@Override

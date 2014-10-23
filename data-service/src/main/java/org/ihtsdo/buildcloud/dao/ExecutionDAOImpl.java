@@ -185,14 +185,30 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private ArrayList<Execution> findExecutionsDesc(String buildDirectoryPath, Build build) {
 		ArrayList<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
-		// This code would allow us to only return status objects, so as to ameliorate the 1000 object limit issue.
-		// But since we need to know the actual status (after the colon) we might be better moving to a paging solution
-		// using 'marker'. In the meantime, I'll bump the limit up 10 fold.
-		// final String DELIMITER = "/status:";
+
+		// Not easy to make this efficient because our timestamp immediately under the build name means that we can only prefix
+		// with the build name. The S3 API doesn't allow us to pattern match just the status files.
+		// I think an "index" directory might be the solution
+
 		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-		List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
 
+		boolean firstPass = true;
+		while (firstPass || objectListing.isTruncated()) {
+			if (!firstPass) {
+				objectListing = s3Client.listNextBatchOfObjects(objectListing);
+			}
+			List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+			findExecutions(build, objectSummaries, executions);
+			firstPass = false;
+		}
+
+		LOGGER.debug("Found {} Executions", executions.size());
+		Collections.reverse(executions);
+		return executions;
+	}
+
+	private void findExecutions(Build build, List<S3ObjectSummary> objectSummaries, ArrayList<Execution> executions) {
 		for (S3ObjectSummary objectSummary : objectSummaries) {
 			String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
@@ -204,15 +220,32 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 				executions.add(execution);
 			}
 		}
-		LOGGER.debug("Found {} Executions", executions.size());
-		Collections.reverse(executions);
-		return executions;
 	}
 
 	@Override
-	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws NoSuchAlgorithmException, IOException, DecoderException {
+	public String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5) throws IOException {
 		String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
-		return executionFileHelper.putFile(file, outputFilePath, calcMD5);
+		try {
+			return executionFileHelper.putFile(file, outputFilePath, calcMD5);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading " + targetRelativePath, e);
+		}
+	}
+
+	@Override
+	public String putOutputFile(Execution execution, Package aPackage, File file) throws IOException {
+		return putOutputFile(execution, aPackage, file, "/", false);
+	}
+
+	@Override
+	public void putTransformedFile(Execution execution, Package pkg, File file) throws IOException {
+		String name = file.getName();
+		String outputPath = pathHelper.getExecutionTransformedFilesPath(execution, pkg.getBusinessKey()).append(name).toString();
+		try {
+			executionFileHelper.putFile(file, outputPath);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
+		}
 	}
 
 	@Override

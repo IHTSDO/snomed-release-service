@@ -14,3 +14,10 @@
 
 #executionBucketName =
 #publishedBucketName =
+
+# These values are specific to the Telemtry Server
+telemetry.email.address.to.default =
+telemetry.email.address.from =  
+telemetry.smtp.username = 
+telemetry.smtp.password =
+telemetry.smtp.host =

@@ -79,11 +79,7 @@ public class TransformationService {
 		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		String executionId = execution.getId();
 
-		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
-				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
-
-		final TransformationFactory transformationFactory = new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
-				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
+		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
 
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
@@ -228,6 +224,30 @@ public class TransformationService {
 				}
 			}
 		}
+	}
+
+	public void transformInferredRelationshipFile(Execution execution, Package pkg, String inferredRelationshipSnapshotFilename) {
+		final TransformationFactory transformationFactory = getTransformationFactory(execution.getBuild().getEffectiveTimeSnomedFormat(), execution.getId());
+		String businessKey = pkg.getBusinessKey();
+		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, businessKey, inferredRelationshipSnapshotFilename)) {
+			StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
+			ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+			fileTransformation.transformFile(
+					dao.getTransformedFileAsInputStream(execution, businessKey, inferredRelationshipSnapshotFilename),
+					outputFileOutputStream.getOutputStream(),
+					inferredRelationshipSnapshotFilename,
+					report);
+		} catch (IOException | TransformationException | FileRecognitionException e) {
+			LOGGER.error("Failed to transform inferred relationship file.", e);
+		}
+	}
+
+	private TransformationFactory getTransformationFactory(String effectiveDateInSnomedFormat, String executionId) {
+		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
+				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
+
+		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
+				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
 	}
 
 	private boolean isPreProcessType(ComponentType componentType) {
