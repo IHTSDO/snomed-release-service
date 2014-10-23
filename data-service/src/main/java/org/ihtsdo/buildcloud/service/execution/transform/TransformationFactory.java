@@ -204,7 +204,8 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
+//				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
+				.addTransformation(new FakeSCTIDTransformation(0));
 
 		return streamingFileTransformation;
 	}
