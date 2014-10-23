@@ -17,5 +17,8 @@ for file in `ls *Language*`; do
   mv $file `echo $file | sed 's/\(Delta\)/Delta-en/'`
 done
 
+echo "Removing inferred relationship files"
+rm rel2_Relationship_*
+
 echo -n "Process Complete. Returning to "
 cd -

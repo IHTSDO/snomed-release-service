@@ -1,18 +1,24 @@
 package org.ihtsdo.telemetry.server;
 
 import org.apache.activemq.transport.TransportDisposedIOException;
+import org.apache.commons.mail.EmailException;
+import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.ihtsdo.commons.email.EmailRequest;
+import org.ihtsdo.commons.email.EmailSender;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,19 +31,54 @@ public class TelemetryProcessor {
 	private Boolean shutdown;
 	private final MessageConsumer consumer;
 	private Logger logger = LoggerFactory.getLogger(TelemetryProcessor.class);
+	private final StreamFactory streamFactory;
+	static private String defaultEmailToAddr;
+	static private String emailFromAddr;
+	static private EmailSender emailSender;
+
 
 	@Autowired
-	public TelemetryProcessor(final StreamFactory streamFactory) throws JMSException {
-		shutdown = false;
-		streamWriters = new HashMap<>();
-		jmsSession = new JmsFactory().createSession();
+	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
+			final String smtpUsername,
+			final String smtpPassword, final String smtpHost, final Integer smtpPort, final Boolean smtpSsl) throws JMSException {
 
-		consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
+		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
+			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
+					smtpSsl.booleanValue());
+		} else {
+			logger.info("Telemetry server has not been given SMTP connection details.  Email connectivity disabled.");
+			TelemetryProcessor.emailSender = null;
+		}
+
+	}
+
+	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
+			EmailSender emailSender) throws JMSException {
+		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		TelemetryProcessor.emailSender = emailSender;
+	}
+
+	// Common constructor
+	private TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr)
+			throws JMSException {
+		this.shutdown = false;
+		this.streamWriters = new HashMap<>();
+		this.streamFactory = streamFactory;
+		this.jmsSession = new JmsFactory().createSession();
+		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
+
+		TelemetryProcessor.defaultEmailToAddr = defaultEmailToAddr;
+		TelemetryProcessor.emailFromAddr = emailFromAddr;
+	}
+
+	public void startup() {
 
 		Thread messageConsumerThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				boolean printedWaiting = false;
+				logger.info("Telemetry server starting up.");
 				while (!shutdown) {
 					try {
 						if (!printedWaiting) {
@@ -74,6 +115,16 @@ public class TelemetryProcessor {
 									}
 								}
 							}
+
+							// As well as logging the message and even if we're outside of an event stream, if an exception is detected then
+							// route it to email
+							if (message.getStringProperty("level") != null && message.getStringProperty("level").equals("ERROR")) {
+								try {
+									sendEmailAlert(message);
+								} catch (Exception e) {
+									logger.error("Unable to send email alert", e);
+								}
+							}
 						}
 					} catch (JMSException e) {
 						Exception linkedException = e.getLinkedException();
@@ -88,6 +139,29 @@ public class TelemetryProcessor {
 					}
 				}
 			}
+
+			private void sendEmailAlert(TextMessage message) throws MalformedURLException, EmailException, JMSException {
+				// Do we have an EmailSender configured?
+				if (TelemetryProcessor.emailSender == null || TelemetryProcessor.defaultEmailToAddr == null
+						|| TelemetryProcessor.defaultEmailToAddr.isEmpty()) {
+					logger.info("EmailSender not configured.  Unable to report error message: " + message.getText());
+					return;
+				}
+				EmailRequest emailRequest = new EmailRequest();
+				emailRequest.setToEmail(TelemetryProcessor.defaultEmailToAddr);
+				emailRequest.setFromEmail(TelemetryProcessor.emailFromAddr);
+				// TODO Add this string via config.
+				String subject = String.format("IHTSDO Telemetry - %s service error detected in %s.",
+						message.getStringProperty(Constants.SERVICE), message.getStringProperty(Constants.ENVIRONMENT));
+				emailRequest.setSubject(subject);
+				String msg = message.getText();
+				if (message.propertyExists(Constants.EXCEPTION)) {
+					msg += "\n" + message.getStringProperty(Constants.EXCEPTION);
+				}
+				emailRequest.setTextBody("IHTSO Telemetry Server has received the following error message: " + msg);
+				// TODO Check this for thread safety since we're using a class variable here.
+				TelemetryProcessor.emailSender.send(emailRequest);
+			}
 		});
 		messageConsumerThread.start();
 	}
@@ -95,5 +169,6 @@ public class TelemetryProcessor {
 	public void shutdown() throws InterruptedException, JMSException {
 		this.shutdown = true;
 		consumer.close();
+		this.jmsSession.close();
 	}
 }

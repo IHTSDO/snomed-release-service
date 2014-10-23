@@ -24,12 +24,16 @@ body {
     text-align: center;
     text-decoration: none;
 }
-.navbar-brand {
-	background: url("../images/ihtsdo-logo-small.png") no-repeat 15px 0px;
-	padding-left: 75px;
-}
 .navbar-form.navbar-right.navbar-form {
     margin-right: 0px;
+}
+.logo a {
+    display: block;
+    height: 50px;
+    background: url('../images/ihtsdo_snomed_combined_b_CMYK.png') no-repeat;
+    background-size: 100%;
+    width: 136px;
+    text-indent: -9999px;
 }
 li {
     margin-bottom: 5px;
@@ -52,6 +56,9 @@ li {
 }
 .navbar .username {
     font-weight: bold;
+}
+.navbar li {
+    margin-bottom: 0;
 }
 .jumbotron {
     margin-bottom: 10px;

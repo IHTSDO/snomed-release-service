@@ -28,12 +28,16 @@ public class Execution {
 	ExecutionReport executionReport;
 
 	public static enum Status {
-		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT
+		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN
 	}
 
 	public Execution(String creationTime, String statusString, Build build) {
 		this.creationTime = creationTime;
-		this.status = Status.valueOf(statusString);
+		try {
+			this.status = Status.valueOf(statusString);
+		} catch (IllegalArgumentException e) {
+			this.status = Status.UNKNOWN;
+		}
 		this.build = build;
 	}
 

@@ -1,23 +1,9 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
@@ -30,6 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/test/testDataServiceContext.xml" })
@@ -52,7 +43,6 @@ public class Rf2FileExportServiceTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
 	
-	private Rf2FileExportService rf2ExportService;
 	private Package pkg;
 	@Autowired
 	private ExecutionDAO dao;
@@ -85,7 +75,6 @@ public class Rf2FileExportServiceTest {
 		publishedPath = "int/extension/test_product/" + PREVIOUS_RELEASE + "/";
 		pkg = new Package("PK1");
 		pkg.setBuild(build);
-		rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
 	}
 
 	@Test
@@ -93,7 +82,10 @@ public class Rf2FileExportServiceTest {
 		pkg.setFirstTimeRelease(true);
 		pkg.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
+
+		Rf2FileExportService rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
+
 		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
 		Assert.assertEquals(3, outputFiles.size());
 		
@@ -111,12 +103,20 @@ public class Rf2FileExportServiceTest {
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
+
+		Rf2FileExportService rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
+
 		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
 		Assert.assertEquals(3, outputFiles.size());
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));
+	}
+
+	@Test
+	public void testExportFullAndDeltaFromSnapshotAndPrevFull() {
+
 	}
 
 	private InputStream getExpectedFileInputStreamFromResource(String fileName) throws FileNotFoundException {
