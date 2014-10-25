@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime
+df3255c1-b979-4984-9df9-e4422992ecab	20141031	1	450829007	900000000000534007	900000000000207008	20141031	20140731

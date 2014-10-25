@@ -1,0 +1,53 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+  <folder Name="SnomedCT_KPDonation_TechnologyPreviewICPCMap_INT_20141031">
+    <file Name="Readme_en_20141031.txt"/>
+  	
+  	
+    <folder Name="Documentation">
+      <folder Name="Current">
+      	<file Name="doc_KpStarterRefsetsTechnologyPreviewReleaseNotes_Current-en-US_INT_20140731.pdf"/>
+      </folder>
+    </folder>
+
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_Refset_CardiologySimpleFull_INT_20141031.txt"/>	
+						<file Name="der2_Refset_InjuriesSimpleFull_INT_20141031.txt"/>
+						<file Name="der2_Refset_MusculoskeletalSimpleFull_INT_20141031.txt"/>
+						<file Name="der2_Refset_OpthalmologySimpleFull_INT_20141031.txt"/>
+						<file Name="der2_Refset_OrthopedicSimpleFull_INT_20141031.txt"/>
+						<file Name="der2_Refset_PediatricsSimpleFull_INT_20141031.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Full -->
+
+			<folder Name="Snapshot">
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_Refset_CardiologySimpleSnapshot_INT_20141031.txt"/>	
+						<file Name="der2_Refset_InjuriesSimpleSnapshot_INT_20141031.txt"/>
+						<file Name="der2_Refset_MusculoskeletalSimpleSnapshot_INT_20141031.txt"/>
+						<file Name="der2_Refset_OpthalmologySimpleSnapshot_INT_20141031.txt"/>
+						<file Name="der2_Refset_OrthopedicSimpleSnapshot_INT_20141031.txt"/>
+						<file Name="der2_Refset_PediatricsSimpleSnapshot_INT_20141031.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Snapshot -->
+
+			<folder Name="Delta">
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_Refset_CardiologySimpleDelta_INT_20141031.txt"/>	
+						<file Name="der2_Refset_InjuriesSimpleDelta_INT_20141031.txt"/>
+						<file Name="der2_Refset_MusculoskeletalSimpleDelta_INT_20141031.txt"/>
+						<file Name="der2_Refset_OpthalmologySimpleDelta_INT_20141031.txt"/>
+						<file Name="der2_Refset_OrthopedicSimpleDelta_INT_20141031.txt"/>
+						<file Name="der2_Refset_PediatricsSimpleDelta_INT_20141031.txt"/>
+					</folder>
+				</folder>
+			</folder> <!-- Delta -->
+		</folder> <!-- RF2Release -->
+  </folder>
+</listing>
