@@ -96,6 +96,10 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			aPackage.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
 
+		if (newPropertyValues.containsKey(PackageService.CREATE_INFERRED_RELATIONSHIPS)) {
+			aPackage.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(CREATE_INFERRED_RELATIONSHIPS)));
+		}
+
 		if (newPropertyValues.containsKey(PackageService.WORKBENCH_DATA_FIXES_REQUIRED)) {
 			aPackage.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
 		}

@@ -349,6 +349,15 @@ else
 
 fi
 
+if [ "${createInferredRelationships}" = "true" ]
+then
+	echo "Set createInferredRelastionships flag to true"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"true\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+else
+	echo "Set createInferredRelastionships flag to false"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"false\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+fi
+
 echo "Create Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execution-response.txt | grep HTTP | ensureCorrectResponse
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
