@@ -44,6 +44,7 @@ public class Package implements Comparable<Package> {
 	private boolean justPackage = false;
 
 	private String previousPublishedPackage;
+	private boolean createInferredRelationships;
 
 	public Package() {
 		inputFiles = new ArrayList<>();
@@ -137,6 +138,14 @@ public class Package implements Comparable<Package> {
 
 	public void setWorkbenchDataFixesRequired(boolean workbenchDataFixesRequired) {
 		this.workbenchDataFixesRequired = workbenchDataFixesRequired;
+	}
+
+	public void setCreateInferredRelationships(boolean createInferredRelationships) {
+		this.createInferredRelationships = createInferredRelationships;
+	}
+
+	public boolean isCreateInferredRelationships() {
+		return createInferredRelationships;
 	}
 
 	@Override

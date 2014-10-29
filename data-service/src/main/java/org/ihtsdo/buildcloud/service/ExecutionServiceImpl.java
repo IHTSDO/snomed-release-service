@@ -275,10 +275,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
-			// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-			String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, pkg, inputFileSchemaMap);
-			if (relationshipSnapshotOutputFilename != null) {
-				generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
+			if (pkg.isCreateInferredRelationships()) {
+				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
+				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, pkg, inputFileSchemaMap);
+				if (relationshipSnapshotOutputFilename != null) {
+					generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
+				}
+			} else {
+				LOGGER.info("Skipping inferred relationship creation due to build configuration.");
 			}
 		}
 
