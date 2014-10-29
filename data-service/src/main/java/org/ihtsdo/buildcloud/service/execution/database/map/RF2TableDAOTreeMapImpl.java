@@ -211,10 +211,16 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
 			// Simple Map or Association
 			compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN;
+		} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
+			// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
+			compKeyPattern = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*\t[^\t]*)\t[^\t]*");
 		} else {
 			// Simple RefSet
 			compKeyPattern = REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN;
 		}
+
+		LOGGER.info("{} composite key pattern {}", tableSchema.getFilename(), compKeyPattern);
+
 		Matcher matcher = compKeyPattern.matcher(line);
 		if (matcher.matches()) {
 			return matcher.group(1);
