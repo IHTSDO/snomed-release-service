@@ -11,8 +11,8 @@ set -e;
 # Declare common parameters
 #api=http://localhost:8080/api/v1
 #api="http://local.ihtsdotools.org/api/v1"
-#api="https://uat-release.ihtsdotools.org/api/v1"
-api="https://release.ihtsdotools.org/api/v1"
+api="https://uat-release.ihtsdotools.org/api/v1"
+#api="https://release.ihtsdotools.org/api/v1"
 
 # Should come from caller script:
 # 	extensionName
@@ -347,6 +347,15 @@ else
 		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"workbenchDataFixesRequired\" : \"${isWorkbenchDataFixesRequired}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 	fi
 
+fi
+
+if [ "${createInferredRelationships}" = "true" ]
+then
+	echo "Set createInferredRelastionships flag to true"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"true\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+else
+	echo "Set createInferredRelastionships flag to false"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"false\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
 
 echo "Create Execution"

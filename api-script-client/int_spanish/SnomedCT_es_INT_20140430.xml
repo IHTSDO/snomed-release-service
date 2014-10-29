@@ -1,0 +1,98 @@
+<listing>
+  <folder Name="SnomedCT_Release-es_INT_20140430">
+  	
+  	
+  	
+    <folder Name="Documentation">
+      <folder Name="Current">
+        <file Name="doc_SnomedCTReleaseNotes_Current-es_20140430.pdf"/>
+      </folder>
+    </folder>
+    <folder Name="RF1Release">
+      <folder Name="Subsets">
+        <folder Name="Language-es">
+          <file Name="der1_SubsetMembers_es_INT_20140430.txt" />
+          <file Name="der1_Subsets_es_INT_20140430.txt" />
+        </folder>
+      </folder>
+      <folder Name="Terminology">
+        <folder Name="Content">
+          <file Name="sct1_Concepts_Core_INT_20140131.txt" />
+          <file Name="sct1_Descriptions_es_INT_20140430.txt" />
+          <file Name="sct1_Relationships_Core_INT_20140131.txt" />
+        </folder>
+      </folder>
+    </folder>
+    <folder Name="RF2Release">
+      <folder Name="Full">
+        <folder Name="Refset">
+          <folder Name="Content">
+            <file Name="der2_cRefset_AssociationReferenceSpanishExtensionFull_INT_20140430.txt" />
+            <file Name="der2_cRefset_AttributeValueSpanishExtensionFull_INT_20140430.txt" />
+          </folder>
+          <folder Name="Language">
+            <file Name="der2_cRefset_LanguageSpanishExtensionFull-es_INT_20140430.txt" />
+          </folder>
+          <folder Name="Metadata">
+            <file Name="der2_cciRefset_RefsetDescriptorSpanishExtensionFull_INT_20140430.txt" />
+            <file Name="der2_ssRefset_ModuleDependencySpanishExtensionFull_INT_20140430.txt" />
+          </folder>
+        </folder>
+        <folder Name="Terminology">
+          <file Name="sct2_Concept_SpanishExtensionFull_INT_20140430.txt" />
+          <file Name="sct2_Description_SpanishExtensionFull-es_INT_20140430.txt" />
+          <file Name="sct2_Relationship_SpanishExtensionFull_INT_20140430.txt" />
+          <file Name="sct2_StatedRelationship_SpanishExtensionFull_INT_20140430.txt" />
+          <file Name="sct2_TextDefinition_SpanishExtensionFull-es_INT_20140430.txt" />
+          <file Name="sct2_Identifier_SpanishExtensionFull-es_INT_20140430.txt" />
+        </folder>
+      </folder>
+      <folder Name="Snapshot">
+        <folder Name="Refset">
+          <folder Name="Content">
+            <file Name="der2_cRefset_AssociationReferenceSpanishExtensionSnapshot_INT_20140430.txt" />
+            <file Name="der2_cRefset_AttributeValueSpanishExtensionSnapshot_INT_20140430.txt" />
+          </folder>
+          <folder Name="Language">
+            <file Name="der2_cRefset_LanguageSpanishExtensionSnapshot-es_INT_20140430.txt" />
+          </folder>
+          <folder Name="Metadata">
+            <file Name="der2_cciRefset_RefsetDescriptorSpanishExtensionSnapshot_INT_20140430.txt" />
+            <file Name="der2_ssRefset_ModuleDependencySpanishExtensionSnapshot_INT_20140430.txt" />
+          </folder>
+        </folder>
+        <folder Name="Terminology">
+          <file Name="sct2_Concept_SpanishExtensionSnapshot_INT_20140430.txt" />
+          <file Name="sct2_Description_SpanishExtensionSnapshot-es_INT_20140430.txt" />
+          <file Name="sct2_Relationship_SpanishExtensionSnapshot_INT_20140430.txt" />
+          <file Name="sct2_StatedRelationship_SpanishExtensionSnapshot_INT_20140430.txt" />
+          <file Name="sct2_TextDefinition_SpanishExtensionSnapshot-es_INT_20140430.txt" />
+          <file Name="sct2_Identifier_SpanishExtensionSnapshot-es_INT_20140430.txt" />
+        </folder>
+      </folder>
+      <folder Name="Delta">
+        <folder Name="Refset">
+          <folder Name="Content">
+            <file Name="der2_cRefset_AssociationReferenceSpanishExtensionDelta_INT_20140430.txt" />
+            <file Name="der2_cRefset_AttributeValueSpanishExtensionDelta_INT_20140430.txt" />
+          </folder>
+          <folder Name="Language">
+            <file Name="der2_cRefset_LanguageSpanishExtensionDelta-es_INT_20140430.txt" />
+          </folder>
+          <folder Name="Metadata">
+            <file Name="der2_cciRefset_RefsetDescriptorSpanishExtensionDelta_INT_20140430.txt" />
+            <file Name="der2_ssRefset_ModuleDependencySpanishExtensionDelta_INT_20140430.txt" />
+          </folder>
+        </folder>
+        <folder Name="Terminology">
+          <file Name="sct2_Concept_SpanishExtensionDelta_INT_20140430.txt" />
+          <file Name="sct2_Description_SpanishExtensionDelta-es_INT_20140430.txt" />
+          <file Name="sct2_Relationship_SpanishExtensionDelta_INT_20140430.txt" />
+          <file Name="sct2_StatedRelationship_SpanishExtensionDelta_INT_20140430.txt" />
+          <file Name="sct2_TextDefinition_SpanishExtensionDelta-es_INT_20140430.txt" />
+          <file Name="sct2_Identifier_SpanishExtensionDelta-es_INT_20140430.txt" />
+        </folder>
+      </folder>
+    </folder>
+  </folder>
+</listing>
