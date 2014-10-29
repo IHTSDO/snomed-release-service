@@ -197,6 +197,10 @@ public class IntegrationTestHelper {
 		setPackageProperty("{ " + jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
+	public void setCreateInferredRelationships(boolean isCreateInferredRelationships) throws Exception {
+		setPackageProperty("{ " + jsonPair(PackageService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships)) + " }");
+	}
+
 	public void setWorkbenchDataFixesRequired(boolean isWorkbenchDataFixesRequired) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
 	}
