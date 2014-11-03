@@ -28,16 +28,6 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private Set<Key> dirtyKeys;
 	private final UUIDGenerator uuidGenerator;
 
-	private static final Pattern REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*)(\t.*)?");
-	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*\t[^\t]*)(\t.*)?");
-	private static final Pattern REFSET_ID_REFERENCED_COMPONENT_ID_AND_MAP_PRIORITY_AND_TARGET_ID_PATTERN = Pattern
-			.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t" + /* ignore columns 1 - 4 */
-			"([^\t]*\t[^\t]*\t)" + /* select 5 + 6 */
-			"[^\t]*\t" + /* ignore 7 - mapGroup */
-			"([^\t]*\t)" + /* select 8 - mapPriority */
-			"[^\t]*\t[^\t]*\t" + /* ignore 9 + 10 */
-			"([^\t]*\t)" + /* select 11 - mapTarget */
-			"(\t.*)?"); /* ignore 12 + 13 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
 
 	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator) {
@@ -120,8 +110,9 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 			String line;
 			String[] parts;
+			Pattern compositeKeyPattern = getCompositeKeyPattern(tableSchema);
 			while ((line = prevSnapshotReader.readLine()) != null) {
-				String compositeKey = getCompositeKey(tableSchema, line);
+				String compositeKey = getCompositeKey(compositeKeyPattern, line);
 				Key matcherKey = new StringKey(compositeKey);
 				String newValues = table.get(matcherKey);
 				if (newValues != null) {
@@ -173,11 +164,12 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		String[] parts;
 		Key key;
 		dirtyKeys = new LinkedHashSet<>();
+		Pattern keyPattern = getCompositeKeyPattern(tableSchema);
 		while ((line = reader.readLine()) != null) {
 			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
 				// Key id = refsetId (5th field) and referencedComponentId (6th field)
-				String compositeKey = getCompositeKey(tableSchema, line);
+				String compositeKey = getCompositeKey(keyPattern, line);
 				key = new StringKey(compositeKey);
 				if (!dirtyKeys.contains(key)) {
 					dirtyKeys.add(key);
@@ -191,39 +183,70 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
-	private String getCompositeKey(TableSchema tableSchema, String line) throws DatabasePopulatorException {
-		Pattern compKeyPattern;
-		List<Field> fields = tableSchema.getFields();
+	private Pattern getCompositeKeyPattern(TableSchema tableSchema) throws DatabasePopulatorException {
+		Set<Integer> fieldIndexes = new TreeSet<>();
 
-		// TODO identify these patterns at the table level (or on first line request) and pass in rather than selecting
-		// on a per row basis.
+		List<Field> fields = tableSchema.getFields();
 		if (fields.size() == 13 && "mapPriority".equals(fields.get(7).getName())) {
 			// Extended Map
-			// compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_MAP_PRIORITY_AND_TARGET_ID_PATTERN;
-			// TODO I could NOT get that puppy to match. Using more basic solution just to get moving
-			String[] values = line.split("\t");
-			return values[4] + "\t" + values[5] + "\t" + values[7] + "\t" + values[10];
+			fieldIndexes.add(4);
+			fieldIndexes.add(5);
+			fieldIndexes.add(7);
+			fieldIndexes.add(10);
 		} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
 			// Map Descriptor - need the attributeOrder to make the row unique
-			String[] values = line.split("\t");
-			return values[4] + "\t" + values[5] + "\t" + values[8];
+			fieldIndexes.add(4);
+			fieldIndexes.add(5);
+			fieldIndexes.add(8);
 		} else if (fields.size() >= 7
 				&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
 			// Simple Map or Association
-			compKeyPattern = REFSET_ID_REFERENCED_COMPONENT_ID_AND_TARGET_ID_PATTERN;
+			fieldIndexes.add(4);
+			fieldIndexes.add(5);
+			fieldIndexes.add(6);
 		} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
 			// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
-			compKeyPattern = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*\t[^\t]*\t[^\t]*)\t[^\t]*");
+			fieldIndexes.add(4);
+			fieldIndexes.add(5);
+			fieldIndexes.add(6);
+			fieldIndexes.add(7);
 		} else {
 			// Simple RefSet
-			compKeyPattern = REFSET_ID_AND_REFERENCED_COMPONENT_ID_PATTERN;
+			fieldIndexes.add(4);
+			fieldIndexes.add(5);
 		}
 
-		LOGGER.info("{} composite key pattern {}", tableSchema.getFilename(), compKeyPattern);
+		String patternString = "";
+		boolean alreadyMatchingTab = false;
+		for (int a = 0; !fieldIndexes.isEmpty(); a++) {
+			if (a > 0) {
+				if (alreadyMatchingTab) {
+					alreadyMatchingTab = false;
+				} else {
+					patternString += "\t";
+				}
+			}
+ 			if (!fieldIndexes.contains(a)) {
+				patternString += "[^\t]*";
+			} else {
+				fieldIndexes.remove(a);
+				patternString += "([^\t]*\t?)";
+				alreadyMatchingTab = true;
+			}
+		}
+		patternString += ".*";
+		LOGGER.info("{} composite key pattern {}", tableSchema.getFilename(), patternString);
+		return Pattern.compile(patternString);
+	}
 
-		Matcher matcher = compKeyPattern.matcher(line);
+	private String getCompositeKey(Pattern keyPattern, String line) throws DatabasePopulatorException {
+		Matcher matcher = keyPattern.matcher(line);
 		if (matcher.matches()) {
-			return matcher.group(1);
+			String key = "";
+			for (int a = 0; a < matcher.groupCount(); a++) {
+				key += matcher.group(a + 1);
+			}
+			return key;
 		} else {
 			throw new DatabasePopulatorException("No composite key match in line '" + line + "'");
 		}
