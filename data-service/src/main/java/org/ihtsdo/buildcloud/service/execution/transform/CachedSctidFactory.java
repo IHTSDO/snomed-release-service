@@ -67,6 +67,7 @@ public class CachedSctidFactory {
 		int attempt = 1;
 		while (uuidToSctidMap == null) {
 			try {
+				LOGGER.info("Batch ID Gen lookup, batch size {}.", componentUuids.size());
 				uuidToSctidMap = idAssignment.createSCTIDList(componentUuids, namespaceId, partitionId, releaseId, executionId, moduleId);
 			} catch (CreateSCTIDListFaultException | RemoteException e) {
 				if (attempt < maxTries) {
