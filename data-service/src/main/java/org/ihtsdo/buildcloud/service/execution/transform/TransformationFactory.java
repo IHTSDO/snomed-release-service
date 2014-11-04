@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.service.execution.database.ShortFormatSCTIDPartitio
 import org.ihtsdo.buildcloud.service.execution.transform.conditional.ConditionalTransformation;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 
@@ -37,7 +38,7 @@ public class TransformationFactory {
 		}
 	}
 
-	public StreamingFileTransformation getSteamingFileTransformation(TableSchema tableSchema) throws FileRecognitionException {
+	public StreamingFileTransformation getSteamingFileTransformation(TableSchema tableSchema) throws FileRecognitionException, NoSuchAlgorithmException {
 		StreamingFileTransformation transformation;
 
 		switch (tableSchema.getComponentType()) {
@@ -200,10 +201,11 @@ public class TransformationFactory {
 		return streamingFileTransformation;
 	}
 
-	private StreamingFileTransformation getRelationshipFileTransformation() {
+	private StreamingFileTransformation getRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
+				.addTransformation(new RepeatableRelationshipUUIDTransform())
 				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
 
 		return streamingFileTransformation;
