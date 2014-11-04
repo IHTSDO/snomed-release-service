@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -200,7 +201,7 @@ public class TransformationService {
 
 						} catch (FileRecognitionException e) {
 							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
-						} catch (TransformationException | IOException e) {
+						} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
 							// Catch blocks just log and let the next file get processed.
 							LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
 						} catch (ExecutionException | InterruptedException e) {
@@ -237,7 +238,7 @@ public class TransformationService {
 					outputFileOutputStream.getOutputStream(),
 					inferredRelationshipSnapshotFilename,
 					report);
-		} catch (IOException | TransformationException | FileRecognitionException e) {
+		} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
 			LOGGER.error("Failed to transform inferred relationship file.", e);
 		}
 	}
