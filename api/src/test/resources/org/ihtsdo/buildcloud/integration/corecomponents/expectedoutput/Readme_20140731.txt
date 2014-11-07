@@ -7,6 +7,8 @@ Table of contents:
                 Refset
                     Language
                         der2_cRefset_LanguageFull-en_INT_20140731.txt
+                    Map
+                        der2_sRefset_SimpleMapFull_INT_20140731.txt
                 Terminology
                     sct2_Concept_Full_INT_20140731.txt
                     sct2_Description_Full-en_INT_20140731.txt
@@ -17,6 +19,8 @@ Table of contents:
                 Refset
                     Language
                         der2_cRefset_LanguageSnapshot-en_INT_20140731.txt
+                    Map
+                        der2_sRefset_SimpleMapSnapshot_INT_20140731.txt
                 Terminology
                     sct2_Concept_Snapshot_INT_20140731.txt
                     sct2_Description_Snapshot-en_INT_20140731.txt
@@ -27,6 +31,8 @@ Table of contents:
                 Refset
                     Language
                         der2_cRefset_LanguageDelta-en_INT_20140731.txt
+                    Map
+                        der2_sRefset_SimpleMapDelta_INT_20140731.txt
                 Terminology
                     sct2_Concept_Delta_INT_20140731.txt
                     sct2_Description_Delta-en_INT_20140731.txt
