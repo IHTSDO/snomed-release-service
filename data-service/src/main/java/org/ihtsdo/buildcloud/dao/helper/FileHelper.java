@@ -104,7 +104,7 @@ public class FileHelper {
 			}
 		} catch (AmazonServiceException e) {
 			//Trying to list files in a directory that doesn't exist isn't a problem, we'll just return an empty array
-			LOGGER.debug("Probable attempt to get listing on non-existent directory: {} error {}", directoryPath, e.getLocalizedMessage());
+			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", directoryPath, e.getLocalizedMessage());
 		}
 		return files;
 	}
