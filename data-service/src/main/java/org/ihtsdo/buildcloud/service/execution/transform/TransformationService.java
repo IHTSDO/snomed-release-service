@@ -1,5 +1,23 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -16,19 +34,6 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class TransformationService {
 
@@ -64,31 +69,36 @@ public class TransformationService {
 	@Autowired
 	private Integer idGenRetryDelaySeconds;
 
-	private ExecutorService executorService;
+	private final ExecutorService executorService;
+	@Autowired
+	private LegacyIdTransformationService legacyIdTransformation;
+
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
 	public TransformationService() {
 		executorService = Executors.newCachedThreadPool();
+		
 	}
 
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
+	 * @throws FileNotFoundException 
+	 * @throws TransformationException 
 	 */
-	public void transformFiles(final Execution execution, final Package pkg, Map<String, TableSchema> inputFileSchemaMap)
-			throws ExecutionException {
-		String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
-		String executionId = execution.getId();
-
+	public void transformFiles(final Execution execution, final Package pkg, final Map<String, TableSchema> inputFileSchemaMap)
+			throws ExecutionException, FileNotFoundException, TransformationException {
+		final String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
+		final String executionId = execution.getId();
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
-
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
+		
 		LOGGER.info("Transforming files in execution {}, package {}{}", execution.getId(), packageBusinessKey,
 				workbenchDataFixesRequired ? ", workbench data fixes enabled" : "");
 
 		// Iterate each execution input file
-		List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
+		final List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
 		LOGGER.info("Found {} files to process", executionInputFileNames.size());
 
 		if (workbenchDataFixesRequired) {
@@ -96,21 +106,20 @@ public class TransformationService {
 			// Get list of conceptIds which should be in the model module.
 
 			if (!pkg.isFirstTimeRelease()) {
-				String previousPublishedPackage = pkg.getPreviousPublishedPackage();
+				final String previousPublishedPackage = pkg.getPreviousPublishedPackage();
 				try {
-					InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(pkg.getBuild().getProduct(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+					final InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(pkg.getBuild().getProduct(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 					if (statedRelationshipSnapshotStream != null) {
-						Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
+						final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
 						String inputStatedRelationshipFilename = null;
-						for (String inputFileName : executionInputFileNames) {
+						for (final String inputFileName : executionInputFileNames) {
 							if (inputFileName.startsWith("rel2_StatedRelationship_Delta")) {
 								inputStatedRelationshipFilename = inputFileName;
 							}
 						}
-
 						if (inputStatedRelationshipFilename != null) {
-							InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, packageBusinessKey, inputStatedRelationshipFilename);
+							final InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, packageBusinessKey, inputStatedRelationshipFilename);
 							moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
 
 							transformationFactory.setModelConceptIdsForModuleIdFix(modelConceptIds);
@@ -131,10 +140,11 @@ public class TransformationService {
 
 		// Phase 1
 		// Process just the id and moduleId columns of any Concept and Description files.
-		for (String inputFileName : executionInputFileNames) {
+		Map<String, List<UUID>> moduleIdAndNewConceptUUids = null;
+		for (final String inputFileName : executionInputFileNames) {
 			try {
 				LOGGER.info("Processing file: {}", inputFileName);
-				TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
+				final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
 
 				if (tableSchema == null) {
 					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
@@ -142,18 +152,20 @@ public class TransformationService {
 
 					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
-					ComponentType componentType = tableSchema.getComponentType();
+					final ComponentType componentType = tableSchema.getComponentType();
+					final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 					if (isPreProcessType(componentType)) {
 
-						InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
-						OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
+						final InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+						final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
 
-						StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
+						final StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 
 						// Apply transformations
-						ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
-						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName,
-								report);
+						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName, report);
+						if (componentType == ComponentType.CONCEPT) {
+							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, packageBusinessKey, inputFileName);
+						}
 					}
 				}
 			} catch (TransformationException | IOException e) {
@@ -164,7 +176,7 @@ public class TransformationService {
 
 		// Phase 2
 		// Process all files
-		List<Future> concurrentTasks = new ArrayList<>();
+		final List<Future> concurrentTasks = new ArrayList<>();
 		for (final String inputFileName : executionInputFileNames) {
 			// Transform all txt files
 			final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
@@ -173,7 +185,7 @@ public class TransformationService {
 
 				checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
-				Future<?> future = executorService.submit(new Runnable() {
+				final Future<?> future = executorService.submit(new Runnable() {
 					@Override
 					public void run() {
 						try {
@@ -184,14 +196,14 @@ public class TransformationService {
 								executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
 							}
 
-							AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
-							OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
+							final OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 
 							// Get appropriate transformations for this file.
-							StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
+							final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
 							// Get the report to output to
-							ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+							final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 							// Apply transformations
 							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream,
 									tableSchema.getFilename(), report);
@@ -199,7 +211,7 @@ public class TransformationService {
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
 
-						} catch (FileRecognitionException e) {
+						} catch (final FileRecognitionException e) {
 							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
 						} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
 							// Catch blocks just log and let the next file get processed.
@@ -217,22 +229,55 @@ public class TransformationService {
 			}
 
 			// Wait for all concurrent tasks to finish
-			for (Future concurrentTask : concurrentTasks) {
+			for (final Future concurrentTask : concurrentTasks) {
 				try {
 					concurrentTask.get();
-				} catch (InterruptedException e) {
+				} catch (final InterruptedException e) {
 					LOGGER.error("Thread interrupted while waiting for future result.", e);
 				}
 			}
 		}
+		if (moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution);
+		}
+	}
+	
+	private Map<String,List<UUID>> getNewConceptUUIDs(final Execution execution, final String packageBusinessKey, final String inputFileName) throws IOException {
+		final InputStream inputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+		
+		final Map<String,List<UUID>> moduleIdAndUuidMap = new HashMap<>();
+		try (BufferedReader conceptDeltaFileReader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
+			String line = null;
+			boolean firstLine = true;
+			
+			while ((line = conceptDeltaFileReader.readLine()) != null) {
+				if (firstLine) {
+					firstLine = false;
+				} else {
+					// Split column values
+					final String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+					if (columnValues[0].contains("-")) {
+						final String uuidStr = columnValues[0];
+						final String moduleId = columnValues[3];
+						List<UUID> uuids = moduleIdAndUuidMap.get(moduleId);
+						if (uuids == null) {
+							uuids = new ArrayList<>();
+							moduleIdAndUuidMap.put(moduleId, uuids);
+						}
+						uuids.add(UUID.fromString(uuidStr));
+					}
+				}
+			}
+		}
+		return moduleIdAndUuidMap;
 	}
 
-	public void transformInferredRelationshipFile(Execution execution, Package pkg, String inferredRelationshipSnapshotFilename) {
+	public void transformInferredRelationshipFile(final Execution execution, final Package pkg, final String inferredRelationshipSnapshotFilename) {
 		final TransformationFactory transformationFactory = getTransformationFactory(execution.getBuild().getEffectiveTimeSnomedFormat(), execution.getId());
-		String businessKey = pkg.getBusinessKey();
+		final String businessKey = pkg.getBusinessKey();
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, businessKey, inferredRelationshipSnapshotFilename)) {
-			StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
-			ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
+			final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
 			fileTransformation.transformFile(
 					dao.getTransformedFileAsInputStream(execution, businessKey, inferredRelationshipSnapshotFilename),
 					outputFileOutputStream.getOutputStream(),
@@ -243,15 +288,15 @@ public class TransformationService {
 		}
 	}
 
-	private TransformationFactory getTransformationFactory(String effectiveDateInSnomedFormat, String executionId) {
-		CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
+	private TransformationFactory getTransformationFactory(final String effectiveDateInSnomedFormat, final String executionId) {
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
 				executionId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
 
 		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
 	}
-
-	private boolean isPreProcessType(ComponentType componentType) {
+	
+	private boolean isPreProcessType(final ComponentType componentType) {
 		return componentType == ComponentType.CONCEPT || componentType == ComponentType.DESCRIPTION;
 	}
 
@@ -259,10 +304,10 @@ public class TransformationService {
 	 * @param fileName      input text file name.
 	 * @param effectiveDate date in format of "yyyyMMdd"
 	 */
-	private void checkFileHasGotMatchingEffectiveDate(String fileName, String effectiveDate) {
-		String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+	private void checkFileHasGotMatchingEffectiveDate(final String fileName, final String effectiveDate) {
+		final String[] segments = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 		//last segment will be like 20140131.txt
-		String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
+		final String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
 		if (!dateFromFile.equals(effectiveDate)) {
 			throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
 		}

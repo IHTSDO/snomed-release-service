@@ -7,6 +7,9 @@
 					<folder Name="Language">
 						<file Name="der2_cRefset_LanguageFull-en_INT_20140731.txt"/>
 					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapFull_INT_20140731.txt"/>
+					</folder>
 				</folder>
 				<folder Name="Terminology">
 					<file Name="sct2_Concept_Full_INT_20140731.txt"/>
@@ -21,6 +24,9 @@
 					<folder Name="Language">
 						<file Name="der2_cRefset_LanguageSnapshot-en_INT_20140731.txt"/>
 					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20140731.txt"/>
+					</folder>
 				</folder>
 				<folder Name="Terminology">
 					<file Name="sct2_Concept_Snapshot_INT_20140731.txt"/>
@@ -34,6 +40,9 @@
 				<folder Name="Refset">
 					<folder Name="Language">
 						<file Name="der2_cRefset_LanguageDelta-en_INT_20140731.txt"/>
+					</folder>
+					<folder Name="Map">
+						<file Name="der2_sRefset_SimpleMapDelta_INT_20140731.txt"/>
 					</folder>
 				</folder>
 				<folder Name="Terminology">
