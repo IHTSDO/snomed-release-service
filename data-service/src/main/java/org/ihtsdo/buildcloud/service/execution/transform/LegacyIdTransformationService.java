@@ -41,7 +41,7 @@ public class LegacyIdTransformationService {
 		for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
 		}
-		LOGGER.debug("Total new concepts:" + newConceptUuids.size());
+		LOGGER.info("Total new concepts:" + newConceptUuids.size());
 		final List<Long> sctIds = new ArrayList<>();
 		for (final UUID uuid : newConceptUuids) {
 			final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
@@ -96,13 +96,16 @@ public class LegacyIdTransformationService {
 				if (!sctIdAndParentMap.isEmpty()) {
 					sctIdAndSnomedIdMap = idGenerator.generateSnomedIds(sctIdAndParentMap);
 				}
-				LOGGER.info("Generated SnomedIds:" + sctIdAndParentMap.keySet().size());
+				LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 				for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 					String moduleIdSctId = moduleId;
 					if (moduleId.contains("-")) {
 					final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
-					moduleIdSctId = mSctId != null ? mSctId.toString() : null;
-					LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
+					if (mSctId == null) {
+						LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
+					} else {
+						moduleIdSctId =  mSctId.toString();
+					}
 					}
 					for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
 						final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
