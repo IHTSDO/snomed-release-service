@@ -76,6 +76,8 @@ public class TransformationService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
+	private static final String SIMPLE_REFSET_MAP_DELTA = "sRefset_SimpleMapDelta_INT";
+
 	public TransformationService() {
 		executorService = Executors.newCachedThreadPool();
 		
@@ -100,7 +102,6 @@ public class TransformationService {
 		// Iterate each execution input file
 		final List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
 		LOGGER.info("Found {} files to process", executionInputFileNames.size());
-
 		if (workbenchDataFixesRequired) {
 			// Phase 0
 			// Get list of conceptIds which should be in the model module.
@@ -141,6 +142,13 @@ public class TransformationService {
 		// Phase 1
 		// Process just the id and moduleId columns of any Concept and Description files.
 		Map<String, List<UUID>> moduleIdAndNewConceptUUids = null;
+		boolean isSimpeRefsetMapDeltaPresent = false;
+		for (final String filename : executionInputFileNames) {
+			if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
+				isSimpeRefsetMapDeltaPresent = true;
+				break;
+			}
+		}
 		for (final String inputFileName : executionInputFileNames) {
 			try {
 				LOGGER.info("Processing file: {}", inputFileName);
@@ -163,7 +171,7 @@ public class TransformationService {
 
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName, report);
-						if (componentType == ComponentType.CONCEPT) {
+						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent) {
 							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, packageBusinessKey, inputFileName);
 						}
 					}
@@ -210,8 +218,6 @@ public class TransformationService {
 
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
-							asyncPipedStreamBean.close();
-
 						} catch (final FileRecognitionException e) {
 							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
 						} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
@@ -238,7 +244,7 @@ public class TransformationService {
 				}
 			}
 		}
-		if (moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+		if (isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
 			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution);
 		}
 	}
