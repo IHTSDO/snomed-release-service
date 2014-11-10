@@ -222,6 +222,10 @@ public class IntegrationTestHelper {
 		setPackageProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
 	}
 
+	public void setCustomRefsetCompositeKeys(String customRefsetCompositeKeys) throws Exception {
+		setPackageProperty("{ \"" + PackageService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
+	}
+
 	/*
 		 * @return a string formatted for use as a JSON key/value pair eg 	"\"effectiveTime\" : \""+ effectiveDate + "\","
 		 * with a trailing comma just in case you want more than one and json is OK with that if there's only one
