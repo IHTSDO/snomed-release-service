@@ -43,15 +43,6 @@ public class LegacyIdTransformationService {
 		}
 		LOGGER.info("Total new concepts:" + newConceptUuids.size());
 		
-		final String packageBusinessKey = execution.getBuild().getBusinessKey();
-		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
-		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
-		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
-		if (inputStream == null) {
-			LOGGER.info("No transformed file found for " + simpleRefsetMapDelta);
-			return;
-			//no need to generate legacy id mapping as maybe simple Refset map is not in the manifest file.
-		}
 		final List<Long> sctIds = new ArrayList<>();
 		for (final UUID uuid : newConceptUuids) {
 			final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
@@ -62,18 +53,41 @@ public class LegacyIdTransformationService {
 				LOGGER.error("Failed to find sctId from cache for UUID:" +  uuid.toString());
 			}
 		}
-
-		//can't append to existing file so need to read them into memory and write again along with additional data.
-		final List<String> existingLines = new ArrayList<>();
-		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-			String line = null;
-			while ((line = reader.readLine()) != null) {
-				existingLines.add(line);
-			}
-		} catch (final IOException e) {
-			throw new TransformationException("Error occurred when reading simple refset map delta transformed file:" + simpleRefsetMapDelta, e);
+		//Generate CTV3 ID
+		LOGGER.info("Start CTV3ID generation");
+		final LegacyIdGenerator idGenerator = new LegacyIdGenerator(idAssignmentBI);
+		final Map<UUID, String> uuidCtv3IdMap = idGenerator.generateCTV3IDs(newConceptUuids);
+		LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
+		//generate snomed id
+		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution);
+		for (final Long sctId : sctIdAndParentMap.keySet()) {
+			LOGGER.debug("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
 		}
+		LOGGER.info("Start SNOMED ID generation");
+		Map<Long,String> sctIdAndSnomedIdMap = new HashMap<>();
+		if (!sctIdAndParentMap.isEmpty()) {
+			sctIdAndSnomedIdMap = idGenerator.generateSnomedIds(sctIdAndParentMap);
+		}
+		LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 		
+		final String packageBusinessKey = execution.getBuild().getBusinessKey();
+		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
+		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
+		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
+		final List<String> existingLines = new ArrayList<>();
+		if (inputStream == null) {
+			LOGGER.warn("No existing transformed file found for " + simpleRefsetMapDelta);
+		} else {
+			//can't append to existing file so need to read them into memory and write again along with additional data.
+			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					existingLines.add(line);
+				}
+			} catch (final IOException e) {
+				throw new TransformationException("Error occurred when reading simple refset map delta transformed file:" + simpleRefsetMapDelta, e);
+			}
+		}
 		try (
 			final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta).getOutputStream();
 			final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
@@ -82,31 +96,16 @@ public class LegacyIdTransformationService {
 					writer.write(existingLine);
 					writer.write(RF2Constants.LINE_ENDING);
 				}
-				//Generate CTV3 ID
-				LOGGER.info("Start CTV3ID generation");
-				final LegacyIdGenerator idGenerator = new LegacyIdGenerator(idAssignmentBI);
-				final Map<UUID, String> uuidCtv3IdMap = idGenerator.generateCTV3IDs(newConceptUuids);
-				LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
-				//generate snomed id
-				final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution);
-				for (final Long sctId : sctIdAndParentMap.keySet()) {
-					LOGGER.debug("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
-				}
-				LOGGER.info("Start SNOMED ID generation");
-				Map<Long,String> sctIdAndSnomedIdMap = new HashMap<>();
-				if (!sctIdAndParentMap.isEmpty()) {
-					sctIdAndSnomedIdMap = idGenerator.generateSnomedIds(sctIdAndParentMap);
-				}
-				LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
+				//TODO existing file should exist if not we need to add writing headlines
 				for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 					String moduleIdSctId = moduleId;
 					if (moduleId.contains("-")) {
-					final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
-					if (mSctId == null) {
-						LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
-					} else {
-						moduleIdSctId =  mSctId.toString();
-					}
+						final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
+						if (mSctId == null) {
+							LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
+						} else {
+							moduleIdSctId =  mSctId.toString();
+						}
 					}
 					for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
 						final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());

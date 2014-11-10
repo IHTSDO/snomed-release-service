@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import org.apache.commons.lang3.time.FastDateFormat;
-
 import java.nio.charset.Charset;
+
+import org.apache.commons.lang3.time.FastDateFormat;
 
 public class RF2Constants {
 
