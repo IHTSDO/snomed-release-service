@@ -239,7 +239,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				fieldIndexes.add(7);
 				fieldIndexes.add(10);
 			} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
-				// Map Descriptor - need the attributeOrder to make the row unique
+				// Reference Set Descriptor - need the attributeOrder to make the row unique
 				fieldIndexes.add(5);
 				fieldIndexes.add(8);
 			} else if (fields.size() >= 7
@@ -248,6 +248,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				fieldIndexes.add(5);
 				fieldIndexes.add(6);
 			} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
+				// Module Dependency
 				// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
 				fieldIndexes.add(5);
 				fieldIndexes.add(6);
