@@ -5,10 +5,8 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
+import java.util.*;
 import javax.persistence.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
@@ -45,6 +43,9 @@ public class Package implements Comparable<Package> {
 
 	private String previousPublishedPackage;
 	private boolean createInferredRelationships;
+
+	@ElementCollection(fetch = FetchType.EAGER)
+	private Set<RefsetCompositeKey> refsetCompositeKeys;
 
 	public Package() {
 		inputFiles = new ArrayList<>();
@@ -148,6 +149,33 @@ public class Package implements Comparable<Package> {
 		return createInferredRelationships;
 	}
 
+	public void setCustomRefsetCompositeKeys(Map<String, List<Integer>> customRefsetCompositeKeys) {
+		this.refsetCompositeKeys = toRefsetCompositeKeys(customRefsetCompositeKeys);
+	}
+
+	private Set<RefsetCompositeKey> toRefsetCompositeKeys(Map<String, List<Integer>> customRefsetCompositeKeys) {
+		HashSet<RefsetCompositeKey> keys = new HashSet<>();
+		for (String key : customRefsetCompositeKeys.keySet()) {
+			keys.add(new RefsetCompositeKey(key, customRefsetCompositeKeys.get(key).toString().replaceAll("[\\[\\]]", "")));
+		}
+		return keys;
+	}
+
+	public Map<String, List<Integer>> getCustomRefsetCompositeKeys() {
+		HashMap<String, List<Integer>> map = new HashMap<>();
+		if (refsetCompositeKeys != null) {
+			for (RefsetCompositeKey refsetCompositeKey : refsetCompositeKeys) {
+				String[] split = refsetCompositeKey.getFieldIndexes().split(",");
+				List<Integer> indexes = new ArrayList<>();
+				for (String s : split) {
+					indexes.add(Integer.parseInt(s.trim()));
+				}
+				map.put(refsetCompositeKey.getRefsetId(), indexes);
+			}
+		}
+		return map;
+	}
+
 	@Override
 	public int compareTo(Package aPackage) {
 		return this.getBusinessKey().compareTo(aPackage.getBusinessKey());
@@ -171,6 +199,39 @@ public class Package implements Comparable<Package> {
 		int result = businessKey.hashCode();
 		result = 31 * result + build.hashCode();
 		return result;
+	}
+
+	@Embeddable
+	private static class RefsetCompositeKey {
+
+		private String refsetId;
+
+		private String fieldIndexes;
+
+		private RefsetCompositeKey() {
+		}
+
+		public RefsetCompositeKey(String refsetId, String fieldIndexes) {
+			this.refsetId = refsetId;
+			this.fieldIndexes = fieldIndexes;
+		}
+
+		public String getRefsetId() {
+			return refsetId;
+		}
+
+		public void setRefsetId(String refsetId) {
+			this.refsetId = refsetId;
+		}
+
+		public String getFieldIndexes() {
+			return fieldIndexes;
+		}
+
+		public void setFieldIndexes(String fieldIndexes) {
+			this.fieldIndexes = fieldIndexes;
+		}
+
 	}
 
 }

@@ -34,7 +34,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, null);
 		testCreateTable();
 	}
 
@@ -46,7 +46,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testAppendDataMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, null);
 		testAppendData();
 	}
 
@@ -58,7 +58,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCoreDescCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
+		rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, null);
 		testCoreDescCreateTable();
 	}
 
