@@ -42,6 +42,16 @@ public class LegacyIdTransformationService {
 			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
 		}
 		LOGGER.info("Total new concepts:" + newConceptUuids.size());
+		
+		final String packageBusinessKey = execution.getBuild().getBusinessKey();
+		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
+		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
+		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
+		if (inputStream == null) {
+			LOGGER.info("No transformed file found for " + simpleRefsetMapDelta);
+			return;
+			//no need to generate legacy id mapping as maybe simple Refset map is not in the manifest file.
+		}
 		final List<Long> sctIds = new ArrayList<>();
 		for (final UUID uuid : newConceptUuids) {
 			final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
@@ -52,16 +62,7 @@ public class LegacyIdTransformationService {
 				LOGGER.error("Failed to find sctId from cache for UUID:" +  uuid.toString());
 			}
 		}
-		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
-		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
-		final String packageBusinessKey = execution.getBuild().getBusinessKey();
-		
-		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
-		if (inputStream == null) {
-			LOGGER.info("No transformed file found for " + simpleRefsetMapDelta);
-			//no need to generate legacy id mapping as maybe simple Refset map is not in the manifest file.
-			return;
-		}
+
 		//can't append to existing file so need to read them into memory and write again along with additional data.
 		final List<String> existingLines = new ArrayList<>();
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -121,31 +122,30 @@ public class LegacyIdTransformationService {
 		} 
 	}
 
+	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
+		final ParentSctIdFinder finder = new ParentSctIdFinder();
+		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
+		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, execution.getBuild().getBusinessKey(), statedRelationsipDelta);
+		final Map<Long, Long> result = finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
+		return result;
+	}
 
-private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
-	final ParentSctIdFinder finder = new ParentSctIdFinder();
-	final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
-	final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, execution.getBuild().getBusinessKey(), statedRelationsipDelta);
-	final Map<Long, Long> result = finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
-	return result;
-}
-
-private String buildSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
-	final StringBuilder builder = new StringBuilder();
-	builder.append(componentId);
-	builder.append(TAB);
-	builder.append(effectiveDate);
-	builder.append(TAB);
-	builder.append("1");
-	builder.append(TAB);
-	builder.append(moduleId);
-	builder.append(TAB);
-	builder.append(refsetId);
-	builder.append(TAB);
-	builder.append(sctId != null ? sctId.toString() : "null");
-	builder.append(TAB);
-	builder.append(mapTarget);
-	builder.append(TAB);
-	return builder.toString();
-}
+	private String buildSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
+		final StringBuilder builder = new StringBuilder();
+		builder.append(componentId);
+		builder.append(TAB);
+		builder.append(effectiveDate);
+		builder.append(TAB);
+		builder.append("1");
+		builder.append(TAB);
+		builder.append(moduleId);
+		builder.append(TAB);
+		builder.append(refsetId);
+		builder.append(TAB);
+		builder.append(sctId != null ? sctId.toString() : "null");
+		builder.append(TAB);
+		builder.append(mapTarget);
+		builder.append(TAB);
+		return builder.toString();
+	}
 }

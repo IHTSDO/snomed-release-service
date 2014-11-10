@@ -210,6 +210,7 @@ public class TransformationService {
 
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
+							asyncPipedStreamBean.close();
 
 						} catch (final FileRecognitionException e) {
 							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
