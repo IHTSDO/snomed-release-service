@@ -12,8 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
@@ -89,8 +91,10 @@ public class LegacyIdTransformationService {
 				throw new TransformationException("Error occurred when reading simple refset map delta transformed file:" + simpleRefsetMapDelta, e);
 			}
 		}
+		
 		try (
-			final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta).getOutputStream();
+			AsyncPipedStreamBean pipedOutputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
+			final OutputStream outputStream = pipedOutputStream.getOutputStream();
 			final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
 			if (!moduleIdAndUuidMap.isEmpty()) {
 				for (final String existingLine : existingLines) {
@@ -117,7 +121,8 @@ public class LegacyIdTransformationService {
 					}
 				}
 			}
-		} catch (final IOException e) {
+			pipedOutputStream.waitForFinish();
+		} catch (final IOException | ExecutionException | InterruptedException e) {
 			throw new TransformationException("Error occurred when transforming " + simpleRefsetMapDelta, e);
 		} 
 	}
