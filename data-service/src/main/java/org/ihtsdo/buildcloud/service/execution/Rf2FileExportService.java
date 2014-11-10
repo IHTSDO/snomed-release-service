@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
@@ -25,6 +26,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Rf2FileExportService {
 
@@ -67,7 +69,7 @@ public class Rf2FileExportService {
 			boolean success = false;
 			while (!success) {
 				try {
-					generateReleaseFile(thisFile);
+					generateReleaseFile(thisFile, pkg.getCustomRefsetCompositeKeys());
 					success = true;
 				} catch (ReleaseFileGenerationException e) {
 					failureCount = handleException(e, thisFile, failureCount);
@@ -89,19 +91,19 @@ public class Rf2FileExportService {
 		}
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile)
-			throws ReleaseFileGenerationException {
+	private void generateReleaseFile(String transformedDeltaDataFile, Map<String, List<Integer>> customRefsetCompositeKeys) throws ReleaseFileGenerationException {
 	    LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
+
 		try {
 			// Create table containing transformed input delta
 			LOGGER.debug("Creating table for {}", transformedDeltaDataFile);
 			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
-			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator);
+			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, customRefsetCompositeKeys);
 			timer.split();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
@@ -206,11 +208,11 @@ public class Rf2FileExportService {
 
 		// Import snapshot
 		InputStream snapshotInputStream = executionDao.getOutputFileInputStream(execution, pkg, snapshotOutputFilename);
-		RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
+		RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null, null);
 		TableSchema tableSchema;
 		try {
 			tableSchema = rf2TableDAO.createTable(snapshotOutputFilename, snapshotInputStream, false);
-		} catch (IOException | FileRecognitionException | DatabasePopulatorException | NumberFormatException e) {
+		} catch (IOException | FileRecognitionException | DatabasePopulatorException | NumberFormatException | BadConfigurationException e) {
 			throw new ReleaseFileGenerationException("Failed to create table from " + snapshotOutputFilename, e);
 		}
 
@@ -228,7 +230,7 @@ public class Rf2FileExportService {
 			try {
 				InputStream previousFullStream = getPreviousFileStream(previousPublishedPackage, fullFilename);
 				rf2TableDAO.appendData(tableSchema, previousFullStream, false);
-			} catch(IOException | DatabasePopulatorException e) {
+			} catch(IOException | DatabasePopulatorException | BadConfigurationException e) {
 				throw new ReleaseFileGenerationException("Failed to import previous full " + fullFilename, e);
 			}
 		}

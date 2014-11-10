@@ -357,6 +357,11 @@ else
 fi
 echo "Set createInferredRelastionships flag to ${createInferredRelationshipsFlag}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"${createInferredRelationshipsFlag}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+
+if [ "${customRefsetCompositeKeys}" ]
+then
+	echo "Set customRefsetCompositeKeys to ${customRefsetCompositeKeys}"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"customRefsetCompositeKeys\" : \"${customRefsetCompositeKeys}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
 
 echo "Create Execution"

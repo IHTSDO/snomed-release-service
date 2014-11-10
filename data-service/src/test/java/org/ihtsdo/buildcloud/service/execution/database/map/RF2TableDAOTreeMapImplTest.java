@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database.map;
 
+import com.google.common.collect.Lists;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
@@ -12,14 +13,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RF2TableDAOTreeMapImplTest {
 
 	private RF2TableDAO dao;
+	private Map<String, List<Integer>> customRefsetCompositeKeys;
 
 	@Before
 	public void setUp() throws Exception {
-		dao = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator());
+		customRefsetCompositeKeys = new HashMap<>();
+		dao = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator(), customRefsetCompositeKeys);
 	}
 
 	@Test
@@ -55,6 +61,26 @@ public class RF2TableDAOTreeMapImplTest {
 		dao.generateNewMemberIds(effectiveTime);
 
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
+		RF2TableResults results = dao.selectAllOrdered(tableSchema);
+		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, thisClass.getResourceAsStream(expectedNewDelta),
+				new RF2TableResultsReaderHack(results));
+	}
+
+	@Test
+	public void testReconcileRefsetMemberIds_AssociationReferenceRefsetCustomKey() throws Exception {
+		customRefsetCompositeKeys.put("450990004", Lists.newArrayList(3, 4));
+		String effectiveTime = "20140731";
+
+		String deltaInput = "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
+		Class thisClass = getClass();
+		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
+
+		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
+		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+
+		dao.generateNewMemberIds(effectiveTime);
+
+		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731_custom_key.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
 		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, thisClass.getResourceAsStream(expectedNewDelta),
 				new RF2TableResultsReaderHack(results));

@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database.map;
 
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
@@ -19,28 +20,36 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// TODO: This class wants renaming to RF2TableExport .. we should probably remove the Hsql implementation as it's not used and out of date.
 public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private final SchemaFactory schemaFactory;
+	private final Map<String, List<Integer>> customRefsetCompositeKeys;
 	private TableSchema tableSchema;
 	private DataType idType;
 	private Map<Key, String> table;
 	private Set<Key> dirtyKeys;
 	private final UUIDGenerator uuidGenerator;
+	private final Map<String, Pattern> refsetCompositeKeyPatternCache;
 
+
+	public static final Pattern REFSET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*).*");
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
 
-	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator) {
+	public RF2TableDAOTreeMapImpl(UUIDGenerator uuidGenerator, Map<String, List<Integer>> customRefsetCompositeKeys) {
 		this.uuidGenerator = uuidGenerator;
 		schemaFactory = new SchemaFactory();
 		table = new TreeMap<>();
+		this.customRefsetCompositeKeys = customRefsetCompositeKeys;
+		refsetCompositeKeyPatternCache = new HashMap<>();
 	}
 
 	@Override
-	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, FileRecognitionException, DatabasePopulatorException {
+	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, FileRecognitionException, DatabasePopulatorException, BadConfigurationException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
+			LOGGER.info("Creating table from {}", rf2Filename);
 			String headerLine = getHeader(rf2FilePath, reader);
 			tableSchema = schemaFactory.createSchemaBean(rf2Filename);
 			idType = tableSchema.getFields().get(0).getType();
@@ -51,11 +60,10 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 			return tableSchema;
 		}
-
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
@@ -104,20 +112,31 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	@Override
-	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException {
+	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		LOGGER.info("Reconciling reference set member ids with previous published version of {}", currentSnapshotFileName);
 		try (BufferedReader prevSnapshotReader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			getHeader("previous to " + currentSnapshotFileName, prevSnapshotReader);
 
-			String line;
+			String line, refsetId, compositeKey, newValues;
 			String[] parts;
-			Pattern compositeKeyPattern = getCompositeKeyPattern(tableSchema);
+			Key matcherKey;
+			Matcher refsetIdMatcher;
+			Pattern keyPattern;
 			while ((line = prevSnapshotReader.readLine()) != null) {
-				String compositeKey = getCompositeKey(compositeKeyPattern, line);
-				Key matcherKey = new StringKey(compositeKey);
-				String newValues = table.get(matcherKey);
-				if (newValues != null) {
-					parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-					replaceDirtyKey(matcherKey, parts[0], effectiveTime);
+				// Get refset id
+				refsetIdMatcher = REFSET_ID_PATTERN.matcher(line);
+				if (refsetIdMatcher.matches()) {
+					refsetId = refsetIdMatcher.group(1);
+					keyPattern = getRefsetCompositeKeyPattern(tableSchema, refsetId);
+					compositeKey = getCompositeKey(keyPattern, line);
+					matcherKey = new StringKey(compositeKey);
+					newValues = table.get(matcherKey);
+					if (newValues != null) {
+						parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+						replaceDirtyKey(matcherKey, parts[0], effectiveTime);
+					}
+				} else {
+					throw new DatabasePopulatorException("Can't find refsetId id column");
 				}
 			}
 		}
@@ -159,22 +178,31 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		return headerLine;
 	}
 
-	private void insertData(BufferedReader reader, TableSchema tableSchema, boolean deltaData, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException {
-		String line;
+	private void insertData(BufferedReader reader, TableSchema tableSchema, boolean deltaData, boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		dirtyKeys = new LinkedHashSet<>();
+		// Declare variables at top to prevent constant memory reallocation during recursion
+		String line, refsetId, compositeKey;
 		String[] parts;
 		Key key;
-		dirtyKeys = new LinkedHashSet<>();
-		Pattern keyPattern = getCompositeKeyPattern(tableSchema);
+		Matcher refsetIdMatcher;
+		Pattern keyPattern;
 		while ((line = reader.readLine()) != null) {
 			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
-				// Key id = refsetId (5th field) and referencedComponentId (6th field)
-				String compositeKey = getCompositeKey(keyPattern, line);
-				key = new StringKey(compositeKey);
-				if (!dirtyKeys.contains(key)) {
-					dirtyKeys.add(key);
+				// Get refset id
+				refsetIdMatcher = REFSET_ID_PATTERN.matcher(line);
+				if (refsetIdMatcher.matches()) {
+					refsetId = refsetIdMatcher.group(1);
+					keyPattern = getRefsetCompositeKeyPattern(tableSchema, refsetId);
+					compositeKey = getCompositeKey(keyPattern, line);
+					key = new StringKey(compositeKey);
+					if (!dirtyKeys.contains(key)) {
+						dirtyKeys.add(key);
+					} else {
+						LOGGER.info(RF2Constants.DATA_PROBLEM + "Duplicate refset member found. Rows are logically equivalent, the first will be discarded: [{}], [{}].", table.get(key), parts[2]);
+					}
 				} else {
-					LOGGER.info(RF2Constants.DATA_PROBLEM + "Duplicate refset member found. Rows are logically equivalent, the first will be discarded: [{}], [{}].", table.get(key), parts[2]);
+					throw new DatabasePopulatorException("Can't find refsetId id column");
 				}
 			} else {
 				key = getKey(parts[0], parts[1]);
@@ -183,39 +211,60 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
-	private Pattern getCompositeKeyPattern(TableSchema tableSchema) throws DatabasePopulatorException {
+	private Pattern getRefsetCompositeKeyPattern(TableSchema tableSchema, String refsetId) throws DatabasePopulatorException, BadConfigurationException {
+		if (tableSchema.getComponentType() == ComponentType.REFSET) {
+			if (!refsetCompositeKeyPatternCache.containsKey(refsetId)) {
+				refsetCompositeKeyPatternCache.put(refsetId, buildRefsetCompositeKeyPattern(tableSchema, refsetId));
+			}
+			return refsetCompositeKeyPatternCache.get(refsetId);
+		} else {
+			return null;
+		}
+	}
+
+	private Pattern buildRefsetCompositeKeyPattern(TableSchema tableSchema, String refsetId) throws BadConfigurationException {
 		Set<Integer> fieldIndexes = new TreeSet<>();
 
 		List<Field> fields = tableSchema.getFields();
-		if (fields.size() == 13 && "mapPriority".equals(fields.get(7).getName())) {
-			// Extended Map
-			fieldIndexes.add(4);
-			fieldIndexes.add(5);
-			fieldIndexes.add(7);
-			fieldIndexes.add(10);
-		} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
-			// Map Descriptor - need the attributeOrder to make the row unique
-			fieldIndexes.add(4);
-			fieldIndexes.add(5);
-			fieldIndexes.add(8);
-		} else if (fields.size() >= 7
-				&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
-			// Simple Map or Association
-			fieldIndexes.add(4);
-			fieldIndexes.add(5);
-			fieldIndexes.add(6);
-		} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
-			// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
-			fieldIndexes.add(4);
-			fieldIndexes.add(5);
-			fieldIndexes.add(6);
-			fieldIndexes.add(7);
+		fieldIndexes.add(4); // refsetId is a must
+
+		boolean customCompositeKey = false;
+		if (customRefsetCompositeKeys.containsKey(refsetId)) {
+			customCompositeKey = true;
+			fieldIndexes.addAll(customRefsetCompositeKeys.get(refsetId));
 		} else {
-			// Simple RefSet
-			fieldIndexes.add(4);
-			fieldIndexes.add(5);
+			if (fields.size() == 13 && "mapPriority".equals(fields.get(7).getName())) {
+				// Extended Map
+				fieldIndexes.add(5);
+				fieldIndexes.add(7);
+				fieldIndexes.add(10);
+			} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
+				// Map Descriptor - need the attributeOrder to make the row unique
+				fieldIndexes.add(5);
+				fieldIndexes.add(8);
+			} else if (fields.size() >= 7
+					&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
+				// Simple Map or Association
+				fieldIndexes.add(5);
+				fieldIndexes.add(6);
+			} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
+				// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
+				fieldIndexes.add(5);
+				fieldIndexes.add(6);
+				fieldIndexes.add(7);
+			} else {
+				// Simple RefSet
+				fieldIndexes.add(5);
+			}
 		}
 
+		int maxFieldIndex = fields.size() - 1;
+		Integer maxConfiguredFieldIndex = Collections.max(fieldIndexes);
+		if (maxConfiguredFieldIndex > maxFieldIndex) {
+			throw new BadConfigurationException("Reference set composite key index " + maxConfiguredFieldIndex + " is out of bounds for file " + tableSchema.getFilename() + ".");
+		}
+
+		List<String> fieldNames = new ArrayList<>();
 		String patternString = "";
 		boolean alreadyMatchingTab = false;
 		for (int a = 0; !fieldIndexes.isEmpty(); a++) {
@@ -230,12 +279,14 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 				patternString += "[^\t]*";
 			} else {
 				fieldIndexes.remove(a);
+				fieldNames.add(a + " (" + fields.get(a).getName() + ")");
 				patternString += "([^\t]*\t?)";
 				alreadyMatchingTab = true;
 			}
 		}
 		patternString += ".*";
-		LOGGER.info("{} composite key pattern {}", tableSchema.getFilename(), patternString);
+
+		LOGGER.info("Reference Set {} in {} using {} composite key with fields {}, pattern {}", refsetId, tableSchema.getFilename(), customCompositeKey ? "custom" : "standard", fieldNames, patternString);
 		return Pattern.compile(patternString);
 	}
 

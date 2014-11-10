@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -13,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Transactional
@@ -76,7 +75,7 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 
 	@Override
 	public final Package update(final String buildCompositeKey, final String packageBusinessKey,
-			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException {
+			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException, BadConfigurationException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
@@ -120,6 +119,32 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			} else {
 				throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
 			}
+		}
+
+		if (newPropertyValues.containsKey(PackageService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
+			Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
+			try {
+				String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
+				String[] split = refsetCompositeKeyIndexes.split("\\|");
+				for (String refsetKeyAndIndexes : split) {
+					refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
+					if (!refsetKeyAndIndexes.isEmpty()) {
+						String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
+						String refsetKey = keyAndIndexes[0].trim();
+						List<Integer> indexes = new ArrayList<>();
+						String value = keyAndIndexes[1];
+						String[] indexStrings = value.split(",");
+						for (String indexString : indexStrings) {
+							String trim = indexString.trim();
+							indexes.add(Integer.parseInt(trim));
+						}
+						refsetCompositeKeyMap.put(refsetKey, indexes);
+					}
+				}
+			} catch (NumberFormatException e) {
+				throw new BadConfigurationException("Failed to parse " + CUSTOM_REFSET_COMPOSITE_KEYS);
+			}
+			aPackage.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
 		}
 
 		if (newPropertyValues.containsKey(PackageService.README_HEADER)) {
