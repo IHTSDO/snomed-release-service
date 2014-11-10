@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	definitionStatusId
+f5ee1fa0-3ba0-44d8-aba8-097e25095b83	20140131	1	900000000000207008	900000000000074008
