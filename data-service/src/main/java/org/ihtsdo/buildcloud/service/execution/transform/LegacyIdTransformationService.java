@@ -61,14 +61,15 @@ public class LegacyIdTransformationService {
 		//generate snomed id
 		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution);
 		for (final Long sctId : sctIdAndParentMap.keySet()) {
-			LOGGER.debug("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
+			LOGGER.info("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
 		}
-		LOGGER.info("Start SNOMED ID generation");
 		Map<Long,String> sctIdAndSnomedIdMap = new HashMap<>();
 		if (!sctIdAndParentMap.isEmpty()) {
+			LOGGER.info("Start SNOMED ID generation");
 			sctIdAndSnomedIdMap = idGenerator.generateSnomedIds(sctIdAndParentMap);
+			LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 		}
-		LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
+		
 		
 		final String packageBusinessKey = execution.getBuild().getBusinessKey();
 		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
@@ -125,6 +126,9 @@ public class LegacyIdTransformationService {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
 		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, execution.getBuild().getBusinessKey(), statedRelationsipDelta);
+		if ( transformedDeltaInput == null) {
+			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
+		}
 		final Map<Long, Long> result = finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
 		return result;
 	}

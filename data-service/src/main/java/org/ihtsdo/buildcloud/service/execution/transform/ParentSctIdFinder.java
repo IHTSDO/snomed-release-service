@@ -19,7 +19,7 @@ public class ParentSctIdFinder {
 		
 	}
 	
-	public Map<Long, Long> getParentSctIdFromStatedRelationship( final InputStream input, final List<Long> sourceIds) throws TransformationException {
+	public Map<Long, Long> getParentSctIdFromStatedRelationship(final InputStream input, final List<Long> sourceIds) throws TransformationException {
 		final Pattern isARelationshipPattern = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*)\t([^\t]*)\t[^\t]*\t" + IS_A_RELATIONSHIP_ID + "\t.*");
 		final Map<Long, Long> result = new HashMap<>();
 		final List<Long> sourceIdsToFind = new ArrayList<>(sourceIds);
