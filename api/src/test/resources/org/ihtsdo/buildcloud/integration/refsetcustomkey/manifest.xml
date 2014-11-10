@@ -1,0 +1,15 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_Release_INT_20140131">
+		<folder Name="RF2Release">
+			<folder Name="Full">
+				<folder Name="Refset">
+					<folder Name="Content">
+						<file Name="der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt"/>
+						<file Name="der2_iisssccsiRefset_UnknownFormatFull_INT_20140131.txt"/>
+						<file Name="der2_Refset_SimpleFull_INT_20140131.txt"/>
+					</folder>
+				</folder>
+			</folder>
+		</folder>
+	</folder>
+</listing>
