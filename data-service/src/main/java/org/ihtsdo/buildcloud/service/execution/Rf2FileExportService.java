@@ -1,7 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -21,13 +27,8 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 
 public class Rf2FileExportService {
 
@@ -43,7 +44,7 @@ public class Rf2FileExportService {
 	private final boolean workbenchDataFixesRequired;
 	private final String previousPublishedPackage;
 
-	public Rf2FileExportService(final Execution execution, final Package pkg, ExecutionDAO dao, UUIDGenerator uuidGenerator, int maxRetries) {
+	public Rf2FileExportService(final Execution execution, final Package pkg, final ExecutionDAO dao, final UUIDGenerator uuidGenerator, final int maxRetries) {
 		this.execution = execution;
 		this.pkg = pkg;
 		product = pkg.getBuild().getProduct();
@@ -64,54 +65,57 @@ public class Rf2FileExportService {
 	}
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
-		List<String> transformedFiles = getTransformedDeltaFiles();
-		Set<String> newRF2InputFiles = pkg.getNewRF2InputFileSet();
-		for (String thisFile : transformedFiles) {
+		final List<String> transformedFiles = getTransformedDeltaFiles();
+		final Set<String> newRF2InputFiles = pkg.getNewRF2InputFileSet();
+		for (final String thisFile : transformedFiles) {
+			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+				continue;
+			}
 			int failureCount = 0;
 			boolean success = false;
 			while (!success) {
 				try {
-					boolean newFile = newRF2InputFiles.contains(thisFile.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
-					boolean fileFirstTimeRelease = newFile || firstTimeRelease;
+					final boolean newFile = newRF2InputFiles.contains(thisFile.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					final boolean fileFirstTimeRelease = newFile || firstTimeRelease;
 					generateReleaseFile(thisFile, pkg.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
 					success = true;
-				} catch (ReleaseFileGenerationException e) {
+				} catch (final ReleaseFileGenerationException e) {
 					failureCount = handleException(e, thisFile, failureCount);
 				}
 			}
 		}
 	}
 
-	public void generateDeltaAndFullFromSnapshot(String snapshotOutputFilename) throws ReleaseFileGenerationException {
+	public void generateDeltaAndFullFromSnapshot(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
 		boolean success = false;
 		int failureCount = 0;
 		while (!success) {
 			try {
 				generateDeltaAndFull(snapshotOutputFilename);
 				success = true;
-			} catch (ReleaseFileGenerationException e) {
+			} catch (final ReleaseFileGenerationException e) {
 				failureCount = handleException(e, snapshotOutputFilename, failureCount);
 			}
 		}
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile, Map<String, List<Integer>> customRefsetCompositeKeys, final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
+	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys, final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
 	    LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, fileFirstTimeRelease);
-		StatTimer timer = new StatTimer(getClass());
+		final StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
 
 		try {
 			// Create table containing transformed input delta
 			LOGGER.debug("Creating table for {}", transformedDeltaDataFile);
-			InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
+			final InputStream transformedDeltaInputStream = executionDao.getTransformedFileAsInputStream(execution,
 					pkg.getBusinessKey(), transformedDeltaDataFile);
 
 			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, customRefsetCompositeKeys);
 			timer.split();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
-			String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			final String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 
 			if (workbenchDataFixesRequired) {
 				if (!fileFirstTimeRelease) {
@@ -140,8 +144,8 @@ public class Rf2FileExportService {
 			timer.logTimeTaken("Create table");
 
 			// Export ordered Delta file
-			Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
-			AsyncPipedStreamBean deltaFileAsyncPipe = executionDao
+			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
+			final AsyncPipedStreamBean deltaFileAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), transformedDeltaDataFile);
 
 			RF2TableResults deltaResultSet;
@@ -161,9 +165,9 @@ public class Rf2FileExportService {
 			deltaFileAsyncPipe.waitForFinish();
 			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
-			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			final String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 			if (!fileFirstTimeRelease) {
-				InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, currentFullFileName);
+				final InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, currentFullFileName);
 
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
@@ -174,14 +178,14 @@ public class Rf2FileExportService {
 			}
 
 			// Export Full and Snapshot files
-			AsyncPipedStreamBean fullFileAsyncPipe = executionDao
+			final AsyncPipedStreamBean fullFileAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), currentFullFileName);
-			String snapshotOutputFilePath = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-			AsyncPipedStreamBean snapshotAsyncPipe = executionDao
+			final String snapshotOutputFilePath = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			final AsyncPipedStreamBean snapshotAsyncPipe = executionDao
 					.getOutputFileOutputStream(execution, pkg.getBusinessKey(), snapshotOutputFilePath);
 
 			timer.split();
-			RF2TableResults fullResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+			final RF2TableResults fullResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
 			timer.logTimeTaken("selectAllOrdered");
 
 			rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
@@ -190,15 +194,15 @@ public class Rf2FileExportService {
 			LOGGER.debug("Completed processing full and snapshot files for {}, waiting for network.", tableSchema.getTableName());
 			fullFileAsyncPipe.waitForFinish();
 			snapshotAsyncPipe.waitForFinish();
-		} catch (Exception e) {
-			String errorMsg = "Failed to generate subsequent full and snapshort release files due to: " + e.getMessage();
+		} catch (final Exception e) {
+			final String errorMsg = "Failed to generate subsequent full and snapshort release files due to: " + e.getMessage();
 			throw new ReleaseFileGenerationException(errorMsg, e);
 		} finally {
 			// Clean up time
 			if (rf2TableDAO != null) {
 				try {
 					rf2TableDAO.closeConnection();
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					LOGGER.error("Failure while trying to clean up after {}",
 							tableSchema != null ? tableSchema.getTableName() : "No table yet.", e);
 				}
@@ -206,13 +210,13 @@ public class Rf2FileExportService {
 		}
 	}
 
-	private void generateDeltaAndFull(String snapshotOutputFilename) throws ReleaseFileGenerationException {
-		String deltaFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA);
-		String fullFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.FULL);
+	private void generateDeltaAndFull(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
+		final String deltaFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA);
+		final String fullFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.FULL);
 
 		// Import snapshot
-		InputStream snapshotInputStream = executionDao.getOutputFileInputStream(execution, pkg, snapshotOutputFilename);
-		RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null, null);
+		final InputStream snapshotInputStream = executionDao.getOutputFileInputStream(execution, pkg, snapshotOutputFilename);
+		final RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null, null);
 		TableSchema tableSchema;
 		try {
 			tableSchema = rf2TableDAO.createTable(snapshotOutputFilename, snapshotInputStream, false);
@@ -221,7 +225,7 @@ public class Rf2FileExportService {
 		}
 
 		// Export delta
-		Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
+		final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
 		RF2TableResults results = rf2TableDAO.selectWithEffectiveDateOrdered(tableSchema, effectiveTime);
 		try (AsyncPipedStreamBean deltaOutputStream = executionDao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), deltaFilename)) {
 			rf2FileWriter.exportDelta(results, tableSchema, deltaOutputStream.getOutputStream());
@@ -232,7 +236,7 @@ public class Rf2FileExportService {
 		// Import any previous full
 		if (!firstTimeRelease) {
 			try {
-				InputStream previousFullStream = getPreviousFileStream(previousPublishedPackage, fullFilename);
+				final InputStream previousFullStream = getPreviousFileStream(previousPublishedPackage, fullFilename);
 				rf2TableDAO.appendData(tableSchema, previousFullStream, false);
 			} catch(IOException | DatabasePopulatorException | BadConfigurationException e) {
 				throw new ReleaseFileGenerationException("Failed to import previous full " + fullFilename, e);
@@ -248,8 +252,8 @@ public class Rf2FileExportService {
 		}
 	}
 
-	private InputStream getPreviousFileStream(String previousPublishedPackage, String currentFileName) throws IOException {
-		InputStream previousFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFileName, previousPublishedPackage);
+	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
+		final InputStream previousFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFileName, previousPublishedPackage);
 		if (previousFileStream == null) {
 			throw new RuntimeException("No equivalent of:  "
 					+ currentFileName
@@ -258,10 +262,10 @@ public class Rf2FileExportService {
 		return previousFileStream;
 	}
 
-	private int handleException(ReleaseFileGenerationException e, String thisFile, int failureCount) throws ReleaseFileGenerationException {
+	private int handleException(final ReleaseFileGenerationException e, final String thisFile, int failureCount) throws ReleaseFileGenerationException {
 		failureCount++;
 		// Is this an error that it's worth retrying eg root cause IOException or AWS Related?
-		Throwable cause = e.getCause();
+		final Throwable cause = e.getCause();
 		if (failureCount > maxRetries) {
 			throw new ReleaseFileGenerationException("Maximum failure recount of " + maxRetries + " exceeeded. Last error: "
 					+ e.getMessage(), e);
@@ -275,7 +279,7 @@ public class Rf2FileExportService {
 		return failureCount;
 	}
 
-	private boolean isNetworkRelated(Throwable cause) {
+	private boolean isNetworkRelated(final Throwable cause) {
 		boolean isNetworkRelated = false;
 		if (cause != null &&
 				(cause instanceof IOException || cause instanceof AmazonServiceException || cause instanceof AmazonClientException)) {
@@ -289,15 +293,15 @@ public class Rf2FileExportService {
 	 * @throws ReleaseFileGenerationException
 	 */
 	protected List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
-		String businessKey = pkg.getBusinessKey();
-		List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
-		List<String> validFiles = new ArrayList<>();
+		final String businessKey = pkg.getBusinessKey();
+		final List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
+		final List<String> validFiles = new ArrayList<>();
 		if (transformedFilePaths.size() < 1) {
 			throw new RuntimeException(
 					"Failed to find any transformed files to convert to output delta files.");
 		}
 
-		for (String fileName : transformedFilePaths) {
+		for (final String fileName : transformedFilePaths) {
 			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
 					&& fileName.contains(RF2Constants.DELTA)) {
 				validFiles.add(fileName);
