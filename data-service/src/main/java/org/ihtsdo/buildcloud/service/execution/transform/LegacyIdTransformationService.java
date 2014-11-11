@@ -60,10 +60,14 @@ public class LegacyIdTransformationService {
 		final Map<UUID, String> uuidCtv3IdMap = idGenerator.generateCTV3IDs(newConceptUuids);
 		LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
 		//generate snomed id
+		LOGGER.info("Total new SctIds need to generate SnomedIds:" + sctIds.size());
 		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution, packageBusinessKey);
-		for (final Long sctId : sctIdAndParentMap.keySet()) {
-			LOGGER.info("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
+		if (LOGGER.isDebugEnabled()) {
+			for (final Long sctId : sctIdAndParentMap.keySet()) {
+				LOGGER.debug("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
+			}
 		}
+		LOGGER.info("Found parent SctIds in total:" + sctIdAndParentMap.size());
 		Map<Long,String> sctIdAndSnomedIdMap = new HashMap<>();
 		if (!sctIdAndParentMap.isEmpty()) {
 			LOGGER.info("Start SNOMED ID generation");
@@ -109,8 +113,14 @@ public class LegacyIdTransformationService {
 							final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
 							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
-							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, sctIdAndSnomedIdMap.get(sctId)));
-							writer.write(RF2Constants.LINE_ENDING);
+							final String snomedId = sctIdAndSnomedIdMap.get(sctId);
+							if (snomedId!= null && !snomedId.equals("")) {
+								writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, snomedId));
+								writer.write(RF2Constants.LINE_ENDING);
+							}
+							else {
+								LOGGER.warn("No SnomedID was generated for SctId:" + sctId + " maybe due to no snomed id found for parent SctId:" + sctIdAndParentMap.get(sctId));
+							}
 						}
 					}
 				}
