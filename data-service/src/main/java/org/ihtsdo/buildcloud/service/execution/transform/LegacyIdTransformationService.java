@@ -12,10 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
@@ -91,47 +89,44 @@ public class LegacyIdTransformationService {
 				throw new TransformationException("Error occurred when reading simple refset map delta transformed file:" + simpleRefsetMapDelta, e);
 			}
 		}
-		
 		try (
-			AsyncPipedStreamBean pipedOutputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
-			final OutputStream outputStream = pipedOutputStream.getOutputStream();
-			final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
-			if (!moduleIdAndUuidMap.isEmpty()) {
-				for (final String existingLine : existingLines) {
-					writer.write(existingLine);
-					writer.write(RF2Constants.LINE_ENDING);
-				}
-				//TODO existing file should exist if not we need to add writing headlines
-				for (final String moduleId : moduleIdAndUuidMap.keySet()) {
-					String moduleIdSctId = moduleId;
-					if (moduleId.contains("-")) {
-						final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
-						if (mSctId == null) {
-							LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
-						} else {
-							moduleIdSctId =  mSctId.toString();
+				final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta).getOutputStream();
+				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
+				if (!moduleIdAndUuidMap.isEmpty()) {
+					for (final String existingLine : existingLines) {
+						writer.write(existingLine);
+						writer.write(RF2Constants.LINE_ENDING);
+					}
+					//TODO existing file should exist if not we need to add writing headlines
+					for (final String moduleId : moduleIdAndUuidMap.keySet()) {
+						String moduleIdSctId = moduleId;
+						if (moduleId.contains("-")) {
+							final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
+							if (mSctId == null) {
+								LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
+							} else {
+								moduleIdSctId =  mSctId.toString();
+							}
+						}
+						for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
+							final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
+							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
+							writer.write(RF2Constants.LINE_ENDING);
+							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, sctIdAndSnomedIdMap.get(sctId)));
+							writer.write(RF2Constants.LINE_ENDING);
 						}
 					}
-					for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
-						final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
-						writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
-						writer.write(RF2Constants.LINE_ENDING);
-						writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, sctIdAndSnomedIdMap.get(sctId)));
-						writer.write(RF2Constants.LINE_ENDING);
-					}
 				}
-			}
-			pipedOutputStream.waitForFinish();
-		} catch (final IOException | ExecutionException | InterruptedException e) {
+		} catch (final IOException e) {
 			throw new TransformationException("Error occurred when transforming " + simpleRefsetMapDelta, e);
-		} 
+		}
 	}
 
 	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
 		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, execution.getBuild().getBusinessKey(), statedRelationsipDelta);
-		if ( transformedDeltaInput == null) {
+		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
 		}
 		final Map<Long, Long> result = finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
