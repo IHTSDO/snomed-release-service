@@ -1,6 +1,27 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
-import com.jayway.jsonpath.JsonPath;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
@@ -18,23 +39,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.jayway.jsonpath.JsonPath;
 
 public class IntegrationTestHelper {
 
@@ -43,22 +48,22 @@ public class IntegrationTestHelper {
 	private final MockMvc mockMvc;
 	private String basicDigestHeaderValue;
 	private String buildId;
-	private String buildBusinessKey;
-	private String packageBusinessKey;
+	private final String buildBusinessKey;
+	private final String packageBusinessKey;
 
 	public static final String COMPLETION_STATUS = "completed";
 
-	public IntegrationTestHelper(MockMvc mockMvc, String testName) {
+	public IntegrationTestHelper(final MockMvc mockMvc, final String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
 		
 		//We'll work with a build and package that are specific to this test
-		this.buildBusinessKey = EntityHelper.formatAsBusinessKey(testName);
-		this.packageBusinessKey = EntityHelper.formatAsBusinessKey(testName);
+		this.buildBusinessKey = EntityHelper.formatAsBusinessKey(testName + "_Build");
+		this.packageBusinessKey = EntityHelper.formatAsBusinessKey(testName + "_PKG");
 	}
 
 	public void loginAsManager() throws Exception {
-		MvcResult loginResult = mockMvc.perform(
+		final MvcResult loginResult = mockMvc.perform(
 				post("/login")
 						.param("username", "manager")
 						.param("password", "test123")
@@ -69,7 +74,7 @@ public class IntegrationTestHelper {
 				.andExpect(jsonPath("$.authenticationToken", notNullValue()))
 				.andReturn();
 
-		String authenticationToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.authenticationToken");
+		final String authenticationToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.authenticationToken");
 		basicDigestHeaderValue = "Basic " + new String(Base64.encodeBase64((authenticationToken + ":").getBytes()));
 	}
 
@@ -103,15 +108,15 @@ public class IntegrationTestHelper {
 					.andReturn();
 		}
 
-		String createBuildResponseString = buildResult.getResponse().getContentAsString();
-		int idStartIndex = createBuildResponseString.indexOf("\"id\" :") + 8;
-		int idEndIndex = createBuildResponseString.indexOf("\"", idStartIndex);
+		final String createBuildResponseString = buildResult.getResponse().getContentAsString();
+		final int idStartIndex = createBuildResponseString.indexOf("\"id\" :") + 8;
+		final int idEndIndex = createBuildResponseString.indexOf("\"", idStartIndex);
 		return createBuildResponseString.substring(idStartIndex, idEndIndex);
 	}
 	
 	private void findOrCreatePackage() throws Exception {
 		//Does the product already exist or do we need to create it?
-		MvcResult packageResult = mockMvc.perform(
+		final MvcResult packageResult = mockMvc.perform(
 				get(PRODUCT_URL + "/builds/" + this.buildId + "/packages/"  + this.packageBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -132,10 +137,10 @@ public class IntegrationTestHelper {
 		}
 	}
 
-	public void uploadDeltaInputFile(String deltaFileName, Class classpathResourceOwner) throws Exception {
-		InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
+	public void uploadDeltaInputFile(final String deltaFileName, final Class classpathResourceOwner) throws Exception {
+		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
 		Assert.assertNotNull(deltaFileName + " stream is null.", resourceAsStream);
-		MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
+		final MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
 				fileUpload(getPackageUrl() + "/inputfiles")
 						.file(deltaFile)
@@ -145,8 +150,8 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk());
 	}
 	
-	public void publishFile(String publishFileName, Class classpathResourceOwner, HttpStatus expectedStatus) throws Exception {
-		MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
+	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
+		final MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
 		mockMvc.perform(
 				fileUpload(PRODUCT_URL + "/published")
 						.file(publishFile)
@@ -165,8 +170,8 @@ public class IntegrationTestHelper {
 				.andExpect(status().isNoContent());
 	}
 
-	public void uploadManifest(String manifestFileName, Class classpathResourceOwner) throws Exception {
-		MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
+	public void uploadManifest(final String manifestFileName, final Class classpathResourceOwner) throws Exception {
+		final MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
 		mockMvc.perform(
 				fileUpload(getPackageUrl() + "/manifest")
 						.file(manifestFile)
@@ -176,8 +181,8 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk());
 	}
 
-	public void setEffectiveTime(String effectiveDate) throws Exception {
-		String jsonContent = "{ " + jsonPair(BuildService.EFFECTIVE_TIME, getEffectiveDateWithSeparators(effectiveDate)) + " }";
+	public void setEffectiveTime(final String effectiveDate) throws Exception {
+		final String jsonContent = "{ " + jsonPair(BuildService.EFFECTIVE_TIME, getEffectiveDateWithSeparators(effectiveDate)) + " }";
 		mockMvc.perform(
 				request(HttpMethod.PATCH, "/builds/" + buildId)
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -189,43 +194,43 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
-	private String getEffectiveDateWithSeparators(String effectiveDate) {
+	private String getEffectiveDateWithSeparators(final String effectiveDate) {
 		return effectiveDate.substring(0, 4) + "-" + effectiveDate.substring(4, 6) + "-" + effectiveDate.substring(6, 8);
 	}
 
-	public void setFirstTimeRelease(boolean isFirstTime) throws Exception {
+	public void setFirstTimeRelease(final boolean isFirstTime) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
-	public void setCreateInferredRelationships(boolean isCreateInferredRelationships) throws Exception {
+	public void setCreateInferredRelationships(final boolean isCreateInferredRelationships) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships)) + " }");
 	}
 
-	public void setWorkbenchDataFixesRequired(boolean isWorkbenchDataFixesRequired) throws Exception {
+	public void setWorkbenchDataFixesRequired(final boolean isWorkbenchDataFixesRequired) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
 	}
 
-	public void setJustPackage(boolean justPackage) throws Exception {
+	public void setJustPackage(final boolean justPackage) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
 	}
 
-	public void setPreviousPublishedPackage(String previousPublishedFile) throws Exception {
+	public void setPreviousPublishedPackage(final String previousPublishedFile) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
 	}
 
-	public void setReadmeHeader(String readmeHeader) throws Exception {
+	public void setReadmeHeader(final String readmeHeader) throws Exception {
 		setPackageProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
 	}
 
-	public void setReadmeEndDate(String readmeEndDate) throws Exception {
+	public void setReadmeEndDate(final String readmeEndDate) throws Exception {
 		setPackageProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
 	}
 
-	public void setCustomRefsetCompositeKeys(String customRefsetCompositeKeys) throws Exception {
+	public void setCustomRefsetCompositeKeys(final String customRefsetCompositeKeys) throws Exception {
 		setPackageProperty("{ \"" + PackageService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
 	}
 
-	public void setNewRF2InputFiles(String newRF2InputFiles) throws Exception {
+	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {
 		setPackageProperty("{ \"" + PackageService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
 
@@ -233,11 +238,11 @@ public class IntegrationTestHelper {
 		 * @return a string formatted for use as a JSON key/value pair eg 	"\"effectiveTime\" : \""+ effectiveDate + "\","
 		 * with a trailing comma just in case you want more than one and json is OK with that if there's only one
 		 */
-	private String jsonPair(String key, String value) {
+	private String jsonPair(final String key, final String value) {
 		return "  \"" + key + "\" : \"" + value + "\" ";
 	}
 
-	private void setPackageProperty(String jsonContent) throws Exception {
+	private void setPackageProperty(final String jsonContent) throws Exception {
 		mockMvc.perform(
 				request(HttpMethod.PATCH, getPackageUrl())
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -250,7 +255,7 @@ public class IntegrationTestHelper {
 	}
 
 	public String createExecution() throws Exception {
-		MvcResult createExecutionResult = mockMvc.perform(
+		final MvcResult createExecutionResult = mockMvc.perform(
 				post("/builds/" + buildId + "/executions")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -260,12 +265,12 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
 
-		String executionId = JsonPath.read(createExecutionResult.getResponse().getContentAsString(), "$.id");
+		final String executionId = JsonPath.read(createExecutionResult.getResponse().getContentAsString(), "$.id");
 		return "/builds/" + buildId + "/executions/" + executionId;
 	}
 
-	public void triggerExecution(String executionURL) throws Exception {
-		MvcResult triggerResult = mockMvc.perform(
+	public void triggerExecution(final String executionURL) throws Exception {
+		final MvcResult triggerResult = mockMvc.perform(
 				post(executionURL + "/trigger")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -275,21 +280,21 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
 
-		String outputFileListJson = triggerResult.getResponse().getContentAsString();
-		JSONObject jsonObject = new JSONObject(outputFileListJson);
-		JSONObject packageResults = jsonObject.getJSONObject("executionReport");
-		Iterator packages = packageResults.keys();
+		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
+		final JSONObject jsonObject = new JSONObject(outputFileListJson);
+		final JSONObject packageResults = jsonObject.getJSONObject("executionReport");
+		final Iterator packages = packageResults.keys();
 
 		while (packages.hasNext()) {
-			String packageName = (String) packages.next();
-			JSONObject packageResult = packageResults.getJSONObject(packageName);
-			String status = packageResult.getString("Progress Status");
-			String message = packageResult.getString("Message");
+			final String packageName = (String) packages.next();
+			final JSONObject packageResult = packageResults.getJSONObject(packageName);
+			final String status = packageResult.getString("Progress Status");
+			final String message = packageResult.getString("Message");
 			Assert.assertEquals("Package " + packageName + " bad status. Message: " + message, COMPLETION_STATUS, status);
 		}
 	}
 
-	public void publishOutput(String executionURL) throws Exception {
+	public void publishOutput(final String executionURL) throws Exception {
 		mockMvc.perform(
 				post(executionURL + "/output/publish")
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -299,9 +304,9 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk());
 	}
 
-	public List<String> getZipEntryPaths(ZipFile zipFile) {
-		List<String> entryPaths = new ArrayList<>();
-		Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+	public List<String> getZipEntryPaths(final ZipFile zipFile) {
+		final List<String> entryPaths = new ArrayList<>();
+		final Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
 		while (zipEntries.hasMoreElements()) {
 			entryPaths.add(zipEntries.nextElement().getName());
 		}
@@ -311,7 +316,7 @@ public class IntegrationTestHelper {
 	public String getPreviousPublishedPackage() throws Exception {
 
 		//Recover URL of published things from Product
-		MvcResult productResult = mockMvc.perform(
+		final MvcResult productResult = mockMvc.perform(
 				get(PRODUCT_URL)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -321,13 +326,13 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
 
-		String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
-		String expectedURL = "http://localhost:80/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset/published";
+		final String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
+		final String expectedURL = "http://localhost:80/centers/international/extensions/snomed_ct_international_edition/products/nlm_example_refset/published";
 
 		Assert.assertEquals(expectedURL, publishedURL);
 
 		//Recover list of published packages
-		MvcResult publishedResult = mockMvc.perform(
+		final MvcResult publishedResult = mockMvc.perform(
 				get(publishedURL)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -340,8 +345,8 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public ZipFile testZipNameAndEntryNames(String executionURL, String expectedZipFilename, String expectedZipEntries, Class classpathResourceOwner) throws Exception {
-		MvcResult outputFileListResult = mockMvc.perform(
+	public ZipFile testZipNameAndEntryNames(final String executionURL, final String expectedZipFilename, final String expectedZipEntries, final Class classpathResourceOwner) throws Exception {
+		final MvcResult outputFileListResult = mockMvc.perform(
 				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -350,13 +355,13 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk())
 				.andReturn();
 
-		String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
-		JSONArray jsonArray = new JSONArray(outputFileListJson);
+		final String outputFileListJson = outputFileListResult.getResponse().getContentAsString();
+		final JSONArray jsonArray = new JSONArray(outputFileListJson);
 
 		String zipFilePath = null;
 		for (int a = 0; a < jsonArray.length(); a++) {
-			JSONObject file = (JSONObject) jsonArray.get(a);
-			String filePath = file.getString("id");
+			final JSONObject file = (JSONObject) jsonArray.get(a);
+			final String filePath = file.getString("id");
 			if (filePath.endsWith(".zip")) {
 				zipFilePath = filePath;
 			}
@@ -364,16 +369,16 @@ public class IntegrationTestHelper {
 
 		Assert.assertEquals(expectedZipFilename, zipFilePath);
 
-		ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath, classpathResourceOwner));
-		List<String> entryPaths = getZipEntryPaths(zipFile);
+		final ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath, classpathResourceOwner));
+		final List<String> entryPaths = getZipEntryPaths(zipFile);
 		Assert.assertEquals("Zip entries expected.",
 				expectedZipEntries,
 				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""));
 		return zipFile;
 	}
 
-	private File downloadToTempFile(String executionURL, String zipFilePath, Class classpathResourceOwner) throws Exception {
-		MvcResult outputFileResult = mockMvc.perform(
+	private File downloadToTempFile(final String executionURL, final String zipFilePath, final Class classpathResourceOwner) throws Exception {
+		final MvcResult outputFileResult = mockMvc.perform(
 				get(executionURL + "/packages/" + this.packageBusinessKey + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -381,22 +386,22 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk())
 				.andReturn();
 
-		Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
+		final Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
 		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
 			 FileOutputStream tmp = new FileOutputStream("/tmp/zip.zip")) {
-			byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
+			final byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
 			fileOutputStream.write(contentAsByteArray);
 			tmp.write(contentAsByteArray);
 		}
 		return tempFile.toFile();
 	}
 
-	public void assertZipContents(String expectedOutputPackageName, ZipFile zipFile, Class classpathResourceOwner) throws IOException {
-		Enumeration<? extends ZipEntry> entries = zipFile.entries();
+	public void assertZipContents(final String expectedOutputPackageName, final ZipFile zipFile, final Class classpathResourceOwner) throws IOException {
+		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
-			ZipEntry zipEntry = entries.nextElement();
+			final ZipEntry zipEntry = entries.nextElement();
 			if (!zipEntry.isDirectory()) {
-				String zipEntryName = getFileName(zipEntry);
+				final String zipEntryName = getFileName(zipEntry);
 				StreamTestUtils.assertStreamsEqualLineByLine(
 						zipEntryName,
 						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
@@ -405,8 +410,8 @@ public class IntegrationTestHelper {
 		}
 	}
 
-	private String getFileName(ZipEntry zipEntry) {
-		String name = zipEntry.getName();
+	private String getFileName(final ZipEntry zipEntry) {
+		final String name = zipEntry.getName();
 		return name.substring(name.lastIndexOf("/") + 1);
 	}
 
