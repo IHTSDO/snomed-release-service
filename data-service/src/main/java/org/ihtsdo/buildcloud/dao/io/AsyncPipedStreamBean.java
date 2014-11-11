@@ -1,5 +1,8 @@
 package org.ihtsdo.buildcloud.dao.io;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,10 +13,13 @@ public class AsyncPipedStreamBean implements Closeable {
 
 	private OutputStream outputStream;
 	private Future future;
+	private final String outputFilePath;
+	private static final Logger LOGGER = LoggerFactory.getLogger(AsyncPipedStreamBean.class);
 
-	public AsyncPipedStreamBean(OutputStream outputStream, Future<String> future) {
+	public AsyncPipedStreamBean(OutputStream outputStream, Future<String> future, String outputFilePath) {
 		this.outputStream = outputStream;
 		this.future = future;
+		this.outputFilePath = outputFilePath;
 	}
 
 	public void waitForFinish() throws ExecutionException, InterruptedException {
@@ -29,6 +35,7 @@ public class AsyncPipedStreamBean implements Closeable {
 				throw new IOException("Error while waiting for async stream to finish.", e);
 			} finally {
 				outputStream.close();
+				LOGGER.debug("Finished writing stream {}", outputFilePath);
 			}
 		}
 	}

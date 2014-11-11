@@ -330,7 +330,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			}
 		});
 
-		return new AsyncPipedStreamBean(outputStream, future);
+		return new AsyncPipedStreamBean(outputStream, future, executionOutputFilePath);
 	}
 
 	private PutObjectResult putFile(String filePath, String contents) {
