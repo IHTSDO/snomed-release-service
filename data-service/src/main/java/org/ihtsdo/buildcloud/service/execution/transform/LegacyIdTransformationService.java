@@ -36,7 +36,8 @@ public class LegacyIdTransformationService {
 	@Autowired
 	private ExecutionDAO executionDAO;
 	
-	public void transformLegacyIds(final CachedSctidFactory cachedSctidFactory, final Map<String, List<UUID>> moduleIdAndUuidMap, final Execution execution) throws TransformationException {
+	public void transformLegacyIds(final CachedSctidFactory cachedSctidFactory, final Map<String, List<UUID>> moduleIdAndUuidMap, 
+			final Execution execution, final String packageBusinessKey) throws TransformationException {
 		final List<UUID> newConceptUuids   = new ArrayList<>();
 		for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
@@ -59,7 +60,7 @@ public class LegacyIdTransformationService {
 		final Map<UUID, String> uuidCtv3IdMap = idGenerator.generateCTV3IDs(newConceptUuids);
 		LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
 		//generate snomed id
-		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution);
+		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution, packageBusinessKey);
 		for (final Long sctId : sctIdAndParentMap.keySet()) {
 			LOGGER.info("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
 		}
@@ -71,7 +72,6 @@ public class LegacyIdTransformationService {
 		}
 		
 		
-		final String packageBusinessKey = execution.getBuild().getBusinessKey();
 		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
 		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
@@ -122,10 +122,10 @@ public class LegacyIdTransformationService {
 		}
 	}
 
-	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
+	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution, final String packageBusinessKey) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
 		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
-		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, execution.getBuild().getBusinessKey(), statedRelationsipDelta);
+		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, statedRelationsipDelta);
 		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
 		}

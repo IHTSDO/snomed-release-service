@@ -245,7 +245,7 @@ public class TransformationService {
 			}
 		}
 		if (isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
-			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution);
+			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
 		}
 	}
 	
