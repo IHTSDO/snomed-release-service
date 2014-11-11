@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Rf2FileExportService {
 
@@ -64,12 +65,15 @@ public class Rf2FileExportService {
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		List<String> transformedFiles = getTransformedDeltaFiles();
+		Set<String> newRF2InputFiles = pkg.getNewRF2InputFileSet();
 		for (String thisFile : transformedFiles) {
 			int failureCount = 0;
 			boolean success = false;
 			while (!success) {
 				try {
-					generateReleaseFile(thisFile, pkg.getCustomRefsetCompositeKeys());
+					boolean newFile = newRF2InputFiles.contains(thisFile.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					boolean fileFirstTimeRelease = newFile || firstTimeRelease;
+					generateReleaseFile(thisFile, pkg.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
 					success = true;
 				} catch (ReleaseFileGenerationException e) {
 					failureCount = handleException(e, thisFile, failureCount);
@@ -91,8 +95,8 @@ public class Rf2FileExportService {
 		}
 	}
 
-	private void generateReleaseFile(String transformedDeltaDataFile, Map<String, List<Integer>> customRefsetCompositeKeys) throws ReleaseFileGenerationException {
-	    LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, firstTimeRelease);
+	private void generateReleaseFile(String transformedDeltaDataFile, Map<String, List<Integer>> customRefsetCompositeKeys, final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
+	    LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, fileFirstTimeRelease);
 		StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
@@ -110,7 +114,7 @@ public class Rf2FileExportService {
 			String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 
 			if (workbenchDataFixesRequired) {
-				if (!firstTimeRelease) {
+				if (!fileFirstTimeRelease) {
 					if (tableSchema.getComponentType() == ComponentType.REFSET) {
 						// Workbench workaround - correct refset member ids using previous snapshot file.
 						// See interface javadoc for more info.
@@ -142,7 +146,7 @@ public class Rf2FileExportService {
 
 			RF2TableResults deltaResultSet;
 			timer.split();
-			if (firstTimeRelease) {
+			if (fileFirstTimeRelease) {
 				deltaResultSet = rf2TableDAO.selectNone(tableSchema);
 				timer.logTimeTaken("Select none");
 			} else {
@@ -158,7 +162,7 @@ public class Rf2FileExportService {
 			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
 			String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
-			if (!firstTimeRelease) {
+			if (!fileFirstTimeRelease) {
 				InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, currentFullFileName);
 
 				// Append transformed previous full file

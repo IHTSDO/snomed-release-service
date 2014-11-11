@@ -211,7 +211,6 @@ public class IntegrationTestHelper {
 
 	public void setPreviousPublishedPackage(String previousPublishedFile) throws Exception {
 		setPackageProperty("{ " + jsonPair(PackageService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
-
 	}
 
 	public void setReadmeHeader(String readmeHeader) throws Exception {
@@ -224,6 +223,10 @@ public class IntegrationTestHelper {
 
 	public void setCustomRefsetCompositeKeys(String customRefsetCompositeKeys) throws Exception {
 		setPackageProperty("{ \"" + PackageService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
+	}
+
+	public void setNewRF2InputFiles(String newRF2InputFiles) throws Exception {
+		setPackageProperty("{ \"" + PackageService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
 
 	/*

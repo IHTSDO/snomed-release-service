@@ -364,6 +364,12 @@ then
 	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"customRefsetCompositeKeys\" : \"${customRefsetCompositeKeys}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
 
+if [ -n "${newRF2InputFiles}" ]
+then
+	echo "Set newRF2InputFiles to ${newRF2InputFiles}"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"newRF2InputFiles\" : \"${newRF2InputFiles}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+fi
+
 echo "Create Execution"
 curl ${commonParams} -X POST ${api}/builds/${buildId}/executions | tee tmp/execution-response.txt | grep HTTP | ensureCorrectResponse
 executionId=`cat tmp/execution-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
