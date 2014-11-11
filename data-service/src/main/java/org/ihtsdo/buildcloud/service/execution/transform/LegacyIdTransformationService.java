@@ -71,33 +71,30 @@ public class LegacyIdTransformationService {
 			LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 		}
 		
-		
 		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
 		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
-		final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, simpleRefsetMapDelta);
-		final List<String> existingLines = new ArrayList<>();
-		if (inputStream == null) {
-			LOGGER.warn("No existing transformed file found for " + simpleRefsetMapDelta);
-		} else {
-			//can't append to existing file so need to read them into memory and write again along with additional data.
-			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-				String line = null;
-				while ((line = reader.readLine()) != null) {
-					existingLines.add(line);
-				}
-			} catch (final IOException e) {
-				throw new TransformationException("Error occurred when reading simple refset map delta transformed file:" + simpleRefsetMapDelta, e);
-			}
-		}
+		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
+		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
+		executionDAO.renameTransformedFile(execution, packageBusinessKey, simpleRefsetMapDelta, orignalTransformedDelta);
 		try (
 				final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta).getOutputStream();
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
+				final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, orignalTransformedDelta);
+				if (inputStream == null) {
+					LOGGER.warn("No existing transformed file found for " + simpleRefsetMapDelta);
+				} else {
+						try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+							String line = null;
+							while ((line = reader.readLine()) != null) {
+								writer.write(line);
+								writer.write(RF2Constants.LINE_ENDING);
+							}
+						} catch (final IOException e) {
+							throw new TransformationException("Error occurred when reading original simple refset map delta transformed file:" + orignalTransformedDelta, e);
+						}
+				}
+				//appending additional legacy data.
 				if (!moduleIdAndUuidMap.isEmpty()) {
-					for (final String existingLine : existingLines) {
-						writer.write(existingLine);
-						writer.write(RF2Constants.LINE_ENDING);
-					}
-					//TODO existing file should exist if not we need to add writing headlines
 					for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 						String moduleIdSctId = moduleId;
 						if (moduleId.contains("-")) {
