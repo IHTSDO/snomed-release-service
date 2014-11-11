@@ -157,6 +157,10 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			aPackage.setReadmeEndDate(readmeEndDate);
 		}
 
+		if (newPropertyValues.containsKey(PackageService.NEW_RF2_INPUT_FILES)) {
+			aPackage.setNewRF2InputFiles(newPropertyValues.get(PackageService.NEW_RF2_INPUT_FILES));
+		}
+
 		packageDAO.update(aPackage);
 		return aPackage;
 	}

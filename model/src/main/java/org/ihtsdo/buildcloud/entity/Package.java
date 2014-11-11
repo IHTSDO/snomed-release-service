@@ -47,6 +47,8 @@ public class Package implements Comparable<Package> {
 	@ElementCollection(fetch = FetchType.EAGER)
 	private Set<RefsetCompositeKey> refsetCompositeKeys;
 
+	private String newRF2InputFiles;
+
 	public Package() {
 		inputFiles = new ArrayList<>();
 	}
@@ -174,6 +176,18 @@ public class Package implements Comparable<Package> {
 			}
 		}
 		return map;
+	}
+
+	public void setNewRF2InputFiles(String newRF2InputFiles) {
+		this.newRF2InputFiles = newRF2InputFiles;
+	}
+
+	public Set<String> getNewRF2InputFileSet() {
+		Set<String> files = new HashSet<>();
+		if (newRF2InputFiles != null) {
+			Collections.addAll(files, newRF2InputFiles.split("\\|"));
+		}
+		return files;
 	}
 
 	@Override
