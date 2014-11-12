@@ -1,11 +1,12 @@
-The SNOMED CT Spanish Release is provided in UTF-8 encoded tab-delimited flat files which can be imported into any database or other software application.  SNOMED CT is not software.
+SNOMED CT está disponible como archivos de texto delimitados por tabulaciones que pueden ser importados en cualquier base de datos o en aplicaciones de software. SNOMED CT no es un producto de software.
 
-The SNOMED CT files are designed as relational tables with each line in the file representing a row in the table. The first row of each table contains column headings. All other rows contain data.
+Los archivos de SNOMED CT representan tablas relacionadas. Cada línea del archivo representa una fila en la tabla.  La primera fila de cada tabla contiene los nombres de cada columna de la tabla. El resto de las filas contiene datos.  
 
-The SNOMED CT Spanish Release is delivered to IHTSDO Member National Centers and authorized Affiliate Licensees via Internet download.
+La distribución internacional de SNOMED CT es por Internet a los afiliados y a los centros nacionales de los países miembros del IHTSDO.
 
-© 2002-{readmeEndDate} The International Health Terminology Standards Development Organisation (IHTSDO).  All Rights Reserved.  SNOMED CT® was originally created by The College of American Pathologists.  "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
+La Edición en Castellano de SNOMED CT publicada en octubre de 2014 incluye contenido actualizado basado en la Edición en Inglés de julio de 2014. El contenido es distribuido en el formato original (RF1) utilizado para publicar la edición castellana desde Octubre de 2003. 
 
-SNOMED CT has been created by combining SNOMED RT and a computer based nomenclature and classification known as Clinical Terms Version 3, formerly known as Read Codes Version 3, which was created on behalf of the UK Department of Health and is Crown copyright.
+©2002-2014. The International Health Terminology Standards Development Organisation (IHTSDO). Todos los derechos reservados. SNOMED CT es un trabajo creado originalmente por el College of American Pathologists. SNOMED y SNOMED CT son trabajos con propiedad intelectual registrada por la IHTSDO.
 
-Directory listing
+SNOMED CT es el producto de la fusion entre SNOMED RT y Clinical Terms Versión 3, la terminología previamente conocida como Códigos Read, creada en nombre del National Health Service (NHS) (Departamento de Salud del Reino Unido) y propiedad de la Corona Británica.
+
