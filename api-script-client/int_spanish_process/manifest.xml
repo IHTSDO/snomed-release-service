@@ -4,22 +4,8 @@
   	
   	<folder Name="Documentation">
       <folder Name="Current">
-        <file Name=""/>
-      </folder>
-    </folder>
-    <folder Name="RF1Release">
-      <folder Name="Subsets">
-        <folder Name="Language-es">
-          <file Name="der1_SubsetMembers_es_INT_20141031.txt" />
-          <file Name="der1_Subsets_es_INT_20141031.txt" />
-        </folder>
-      </folder>
-      <folder Name="Terminology">
-        <folder Name="Content">
-          <file Name="sct1_Concepts_Core_INT_20141031.txt" />
-          <file Name="sct1_descriptions_es_INT_20141031.txt" />
-          <file Name="sct1_Relationships_Core_INT_20141031.txt" />
-        </folder>
+        <file Name="doc_SnomedCTReleaseNotes_Current-es_20141031.pdf"/>
+        <file Name="doc_StarterGuide_Current-SP_20141031.pdf"/>
       </folder>
     </folder>
     <folder Name="RF2Release">
@@ -43,7 +29,6 @@
           <file Name="sct2_Relationship_SpanishExtensionFull_INT_20141031.txt" />
           <file Name="sct2_StatedRelationship_SpanishExtensionFull_INT_20141031.txt" />
           <file Name="sct2_TextDefinition_SpanishExtensionFull-es_INT_20141031.txt" />
-          <file Name="sct2_Identifier_SpanishExtensionFull-es_INT_20141031.txt" />
         </folder>
       </folder>
       <folder Name="Snapshot">
@@ -66,7 +51,6 @@
           <file Name="sct2_Relationship_SpanishExtensionSnapshot_INT_20141031.txt" />
           <file Name="sct2_StatedRelationship_SpanishExtensionSnapshot_INT_20141031.txt" />
           <file Name="sct2_TextDefinition_SpanishExtensionSnapshot-es_INT_20141031.txt" />
-          <file Name="sct2_Identifier_SpanishExtensionSnapshot-es_INT_20141031.txt" />
         </folder>
       </folder>
       <folder Name="Delta">
@@ -89,7 +73,6 @@
           <file Name="sct2_Relationship_SpanishExtensionDelta_INT_20141031.txt" />
           <file Name="sct2_StatedRelationship_SpanishExtensionDelta_INT_20141031.txt" />
           <file Name="sct2_TextDefinition_SpanishExtensionDelta-es_INT_20141031.txt" />
-          <file Name="sct2_Identifier_SpanishExtensionDelta-es_INT_20141031.txt" />
         </folder>
       </folder>
     </folder>
