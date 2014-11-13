@@ -114,7 +114,7 @@ public class LegacyIdTransformationService {
 							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
 							final String snomedId = sctIdAndSnomedIdMap.get(sctId);
-							if (snomedId!= null && !snomedId.equals("")) {
+							if (snomedId != null && !snomedId.equals("")) {
 								writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, snomedId));
 								writer.write(RF2Constants.LINE_ENDING);
 							}
