@@ -1,15 +1,11 @@
 package org.ihtsdo.buildcloud.controller;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.PackageService;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -17,11 +13,11 @@ import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/packages")
@@ -75,7 +71,7 @@ public class PackageController {
 	@RequestMapping(value = "/{packageBusinessKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
 	public Map<String, Object> updatePackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey,
-							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws ResourceNotFoundException {
+							 @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws ResourceNotFoundException, BadConfigurationException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json, authenticatedUser);
 		if (aPackage == null) {

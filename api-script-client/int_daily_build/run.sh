@@ -16,6 +16,7 @@ readmeEndDate="2014"
 isFirstTime=false
 isWorkbenchDataFixesRequired=true
 headless=true
+#createInferredRelationships=true
 extensionName="SNOMED CT International Edition"
 previousPublishedPackageName="SnomedCT_Release_INT_20140731.zip"
 productName="SNOMED CT Release"

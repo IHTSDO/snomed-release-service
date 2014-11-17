@@ -1,27 +1,31 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
 import org.ihtsdo.idgen.ws.CreateSCTIDListFaultException;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.rmi.RemoteException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class CachedSctidFactory {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(CachedSctidFactory.class);
-	private Integer namespaceId;
-	private String releaseId;
-	private String executionId;
-	private IdAssignmentBI idAssignment;
-	private Map<String, Long> uuidToSctidCache;
+	private final Integer namespaceId;
+	private final String releaseId;
+	private final String executionId;
+	private final IdAssignmentBI idAssignment;
+	private final Map<String, Long> uuidToSctidCache;
 	private final int maxTries;
 	private final int retryDelaySeconds;
 
-	public CachedSctidFactory(Integer namespaceId, String releaseId, String executionId, IdAssignmentBI idAssignment, int maxTries, int retryDelaySeconds) {
+	public CachedSctidFactory(final Integer namespaceId, final String releaseId, final String executionId, final IdAssignmentBI idAssignment, final int maxTries, final int retryDelaySeconds) {
 		this.namespaceId = namespaceId;
 		this.releaseId = releaseId;
 		this.executionId = executionId;
@@ -31,7 +35,7 @@ public class CachedSctidFactory {
 		this.retryDelaySeconds = retryDelaySeconds;
 	}
 
-	public Long getSCTID(String componentUuid, String partitionId, String moduleId) throws org.ihtsdo.idgen.ws.CreateSCTIDFaultException, java.rmi.RemoteException, InterruptedException {
+	public Long getSCTID(final String componentUuid, final String partitionId, final String moduleId) throws CreateSCTIDFaultException, RemoteException, InterruptedException{
 		if (!uuidToSctidCache.containsKey(componentUuid)) {
 			Long sctid = null;
 			int attempt = 1;
@@ -53,13 +57,13 @@ public class CachedSctidFactory {
 		return uuidToSctidCache.get(componentUuid);
 	}
 
-	public Map<String, Long> getSCTIDs(List<String> componentUuidStrings, String partitionId, String moduleId) throws RemoteException, CreateSCTIDListFaultException, InterruptedException {
-		Map<String, Long> uuidStringToSctidMapResults = new HashMap<>();
+	public Map<String, Long> getSCTIDs(final List<String> componentUuidStrings, final String partitionId, final String moduleId) throws CreateSCTIDListFaultException, RemoteException, InterruptedException {
+		final Map<String, Long> uuidStringToSctidMapResults = new HashMap<>();
 		Map<UUID, Long> uuidToSctidMap = null;
 
 		// Convert uuid strings to UUID objects
-		List<UUID> componentUuids = new ArrayList<>();
-		for (String componentUuidString : componentUuidStrings) {
+		final List<UUID> componentUuids = new ArrayList<>();
+		for (final String componentUuidString : componentUuidStrings) {
 			componentUuids.add(UUID.fromString(componentUuidString));
 		}
 
@@ -67,6 +71,7 @@ public class CachedSctidFactory {
 		int attempt = 1;
 		while (uuidToSctidMap == null) {
 			try {
+				LOGGER.info("Batch ID Gen lookup, batch size {}.", componentUuids.size());
 				uuidToSctidMap = idAssignment.createSCTIDList(componentUuids, namespaceId, partitionId, releaseId, executionId, moduleId);
 			} catch (CreateSCTIDListFaultException | RemoteException e) {
 				if (attempt < maxTries) {
@@ -80,9 +85,9 @@ public class CachedSctidFactory {
 		}
 
 		// Store results in cache
-		for (UUID uuid : uuidToSctidMap.keySet()) {
-			String uuidString = uuid.toString();
-			Long value = uuidToSctidMap.get(uuid);
+		for (final UUID uuid : uuidToSctidMap.keySet()) {
+			final String uuidString = uuid.toString();
+			final Long value = uuidToSctidMap.get(uuid);
 			uuidToSctidCache.put(uuidString, value);
 			uuidStringToSctidMapResults.put(uuidString, value);
 		}
@@ -90,7 +95,7 @@ public class CachedSctidFactory {
 		return uuidStringToSctidMapResults;
 	}
 
-	public Long getSCTIDFromCache(String uuidString) {
+	public Long getSCTIDFromCache(final String uuidString) {
 		return uuidToSctidCache.get(uuidString);
 	}
 

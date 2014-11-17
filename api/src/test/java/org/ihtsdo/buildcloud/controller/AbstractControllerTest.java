@@ -1,5 +1,9 @@
 package org.ihtsdo.buildcloud.controller;
 
+import java.nio.charset.Charset;
+
+import javax.servlet.ServletException;
+
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl;
@@ -18,9 +22,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import javax.servlet.ServletException;
-import java.nio.charset.Charset;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/testDispatcherServletContext.xml"})
@@ -58,18 +59,30 @@ public abstract class AbstractControllerTest {
 	public void setup() throws ServletException, Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
-		((PesudoUUIDGenerator)uuidGenerator).reset();
-		((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
-
-		TestS3Client testS3Client = (TestS3Client) s3Client;
-		testS3Client.freshBucketStore();
-		testS3Client.createBucket(executionBucketName);
-		testS3Client.createBucket(publishedBucketName);
+		if (uuidGenerator instanceof PesudoUUIDGenerator) {
+			((PesudoUUIDGenerator)uuidGenerator).reset();
+		}
+		if ( idAssignmentBI instanceof IdAssignmentBIOfflineDemoImpl) {
+			((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
+		}
+		if (s3Client instanceof TestS3Client) {
+			final TestS3Client testS3Client = (TestS3Client) s3Client;
+			testS3Client.freshBucketStore();
+			testS3Client.createBucket(executionBucketName);
+			testS3Client.createBucket(publishedBucketName);
+		}
+		
 	}
 
 	@After
 	public void tearDown() {
-		((PesudoUUIDGenerator)uuidGenerator).reset();
+		
+		if (uuidGenerator instanceof PesudoUUIDGenerator) {
+			((PesudoUUIDGenerator)uuidGenerator).reset();
+		}
+		if ( idAssignmentBI instanceof IdAssignmentBIOfflineDemoImpl) {
+			((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
+		}
 	}
 
 }

@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.database;
 
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
@@ -10,9 +11,9 @@ import java.text.ParseException;
 
 public interface RF2TableDAO {
 
-	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException;
+	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
-	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException;
+	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
@@ -39,7 +40,7 @@ public interface RF2TableDAO {
 	 * @param currentSnapshotFileName
 	 * @param effectiveTime
 	 */
-	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException;
 
 	/**
 	 * This is a workaround for dealing with daily export delta file from WorkBench.
