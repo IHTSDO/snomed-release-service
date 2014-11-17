@@ -33,12 +33,10 @@ import org.springframework.util.FileCopyUtils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.UUID;
 
 @RunWith(JMockit.class)
 public class TelemetryProcessorTest {
-
-	private static final String STREAM_FILE_DESTINATION = "file:///tmp/test_telemetry_stream.txt";
-	private static final String STREAM_S3_DESTINATION = "s3://local.execution.bucket/test_telemetry_stream.txt";
 
 	private TestBroker testBroker;
 	private TelemetryProcessor telemetryProcessor;
@@ -47,6 +45,11 @@ public class TelemetryProcessorTest {
 	private TransferManager mockTransferManager;
 	private Upload mockUpload;
 	private File testStreamFile;
+
+	private static String streamFileName;
+	private static String streamFileDestination;
+	private static String streamS3Destination;
+
 	@Mocked
 	EmailSender emailSender;
 
@@ -54,6 +57,12 @@ public class TelemetryProcessorTest {
 	public void setUp() throws Exception {
 		LogLog.setInternalDebugging(true);
 		LogLog.setQuietMode(false);
+
+		UUID uniqueSuffix = UUID.randomUUID();
+		streamFileName = "test_telemetry_stream_" + uniqueSuffix + ".txt";
+		streamFileDestination = "file:///tmp/" + streamFileName;
+		streamS3Destination = "s3://local.execution.bucket/test_telemetry_stream_" + uniqueSuffix + ".txt";
+
 		testBroker = new TestBroker();
 
 		mocksControl = new MocksControl(MockType.DEFAULT);
@@ -73,7 +82,7 @@ public class TelemetryProcessorTest {
 
 		telemetryProcessor = new TelemetryProcessor(streamFactory, "foo@bar.com", null, emailSender);
 		telemetryProcessor.startup();
-		testStreamFile = new File("/tmp/test_telemetry_stream.txt");
+		testStreamFile = new File("/tmp/" + streamFileName);
 		testStreamFile.delete();
 	}
 
@@ -95,7 +104,7 @@ public class TelemetryProcessorTest {
 
 	@Test
 	public void testAggregateEventsToFile() throws IOException, InterruptedException {
-		doProcessing(STREAM_FILE_DESTINATION);
+		doProcessing(TelemetryProcessorTest.streamFileDestination);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
@@ -112,7 +121,7 @@ public class TelemetryProcessorTest {
 		// Set up mock expectations
 		final Capture<File> fileCapture = new Capture<>();
 		final BooleanHolder fileAssertionsRan = new BooleanHolder();
-		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.execution.bucket"), EasyMock.eq("test_telemetry_stream.txt"), EasyMock.capture(fileCapture))).andReturn(mockUpload);
+		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.execution.bucket"), EasyMock.eq(streamFileName), EasyMock.capture(fileCapture))).andReturn(mockUpload);
 		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(new IAnswer<UploadResult>() {
 			@Override
 			public UploadResult answer() throws Throwable {
@@ -132,7 +141,7 @@ public class TelemetryProcessorTest {
 		mocksControl.replay();
 
 		// Perform test scenario
-		doProcessing(STREAM_S3_DESTINATION);
+		doProcessing(TelemetryProcessorTest.streamS3Destination);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
