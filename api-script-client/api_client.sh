@@ -351,11 +351,23 @@ fi
 
 if [ "${createInferredRelationships}" = "true" ]
 then
-	echo "Set createInferredRelastionships flag to true"
-	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"true\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+	createInferredRelationshipsFlag="true"
 else
-	echo "Set createInferredRelastionships flag to false"
-	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"false\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+	createInferredRelationshipsFlag="false"
+fi
+echo "Set createInferredRelastionships flag to ${createInferredRelationshipsFlag}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"${createInferredRelationshipsFlag}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+
+if [ "${customRefsetCompositeKeys}" ]
+then
+	echo "Set customRefsetCompositeKeys to ${customRefsetCompositeKeys}"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"customRefsetCompositeKeys\" : \"${customRefsetCompositeKeys}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+fi
+
+if [ -n "${newRF2InputFiles}" ]
+then
+	echo "Set newRF2InputFiles to ${newRF2InputFiles}"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"newRF2InputFiles\" : \"${newRF2InputFiles}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 fi
 
 echo "Create Execution"

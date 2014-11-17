@@ -1,15 +1,19 @@
 package org.ihtsdo.buildcloud.dao;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public interface ExecutionDAO {
 
@@ -84,5 +88,7 @@ public interface ExecutionDAO {
 	public InputStream getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Execution execution);
+	
+	void renameTransformedFile(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName);
 
 }

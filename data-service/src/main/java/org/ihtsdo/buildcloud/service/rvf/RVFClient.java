@@ -62,6 +62,7 @@ public class RVFClient implements Closeable {
 		post.setEntity(MultipartEntityBuilder.create().addPart("file", new InputStreamBody(inputFileStream, inputFileName)).build());
 
 		LOGGER.info("Posting input file {} to RVF for {} check.", inputFileName, checkType);
+		LOGGER.debug("Using {}.", targetUrl);
 
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			int statusCode = response.getStatusLine().getStatusCode();

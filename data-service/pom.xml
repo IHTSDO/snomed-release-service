@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.30</version>
+		<version>0.1.31</version>
 	</parent>
 
 	<artifactId>data-service</artifactId>
@@ -28,9 +28,9 @@
 			<version>1.0.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.ihtsdo.snomed.release.idgen</groupId>
+			<groupId>org.ihtsdo.idgen</groupId>
 			<artifactId>id-generation-api</artifactId>
-			<version>1.1.2</version>
+			<version>2.0.0</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>

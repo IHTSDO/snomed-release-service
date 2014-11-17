@@ -36,7 +36,7 @@ public class Rf2FileWriterTest {
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator());
+	    rf2TableDAO = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator(), null);
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();
