@@ -5,8 +5,8 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
-import java.util.*;
 import javax.persistence.*;
+import java.util.*;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
@@ -156,7 +156,7 @@ public class Package implements Comparable<Package> {
 	}
 
 	private Set<RefsetCompositeKey> toRefsetCompositeKeys(Map<String, List<Integer>> customRefsetCompositeKeys) {
-		HashSet<RefsetCompositeKey> keys = new HashSet<>();
+		Set<RefsetCompositeKey> keys = new HashSet<>();
 		for (String key : customRefsetCompositeKeys.keySet()) {
 			keys.add(new RefsetCompositeKey(key, customRefsetCompositeKeys.get(key).toString().replaceAll("[\\[\\]]", "")));
 		}
@@ -164,7 +164,7 @@ public class Package implements Comparable<Package> {
 	}
 
 	public Map<String, List<Integer>> getCustomRefsetCompositeKeys() {
-		HashMap<String, List<Integer>> map = new HashMap<>();
+		Map<String, List<Integer>> map = new HashMap<>();
 		if (refsetCompositeKeys != null) {
 			for (RefsetCompositeKey refsetCompositeKey : refsetCompositeKeys) {
 				String[] split = refsetCompositeKey.getFieldIndexes().split(",");

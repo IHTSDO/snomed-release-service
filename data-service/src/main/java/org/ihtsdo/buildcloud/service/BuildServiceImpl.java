@@ -1,11 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.text.ParseException;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.Hibernate;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -25,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.ParseException;
+import java.util.*;
+
 @Service
 @Transactional
 public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildService {
@@ -43,7 +40,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findAll(EnumSet<FilterOption> filterOptions, User authenticatedUser) {
+	public List<Build> findAll(Set<FilterOption> filterOptions, User authenticatedUser) {
 		return buildDAO.findAll(filterOptions, authenticatedUser);
 	}
 
@@ -68,7 +65,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser) {
+	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User authenticatedUser) {
 		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
 		Hibernate.initialize(builds);
 		return builds;

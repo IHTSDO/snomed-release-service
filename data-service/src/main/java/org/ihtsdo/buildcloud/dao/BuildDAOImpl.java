@@ -2,13 +2,13 @@ package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.stereotype.Repository;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
@@ -18,12 +18,12 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	}
 
 	@Override
-	public List<Build> findAll(EnumSet<FilterOption> filterOptions, User user) {
+	public List<Build> findAll(Set<FilterOption> filterOptions, User user) {
 		return findAll(null, null, filterOptions, user);
 	}
 
 	@Override
-	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User user) {
+	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User user) {
 
 		String filter = "";
 		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {

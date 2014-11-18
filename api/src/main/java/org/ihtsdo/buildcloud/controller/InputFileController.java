@@ -1,15 +1,5 @@
 package org.ihtsdo.buildcloud.controller;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
@@ -22,12 +12,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/builds/{buildCompositeKey}/packages/{packageBusinessKey}")
@@ -46,8 +41,7 @@ public class InputFileController {
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
-											 @RequestParam(value = "file") final MultipartFile file,
-											 final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+											 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 
 		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -100,7 +94,7 @@ public class InputFileController {
 		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
-			HashMap<String, String> file = new HashMap<>();
+			Map<String, String> file = new HashMap<>();
 			file.put(ControllerConstants.ID, filePath);
 			files.add(file);
 		}

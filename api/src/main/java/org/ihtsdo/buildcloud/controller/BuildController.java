@@ -14,10 +14,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/builds")
@@ -37,7 +37,7 @@ public class BuildController {
 												@RequestParam(value="starred", required=false) String starredStr,
 												HttpServletRequest request) {
 		
-		EnumSet <FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
+		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
 		if (Boolean.parseBoolean(includeRemovedStr)) filterOptions.add(FilterOption.INCLUDE_REMOVED);
 		if (Boolean.parseBoolean(starredStr)) filterOptions.add(FilterOption.STARRED_ONLY);
 		

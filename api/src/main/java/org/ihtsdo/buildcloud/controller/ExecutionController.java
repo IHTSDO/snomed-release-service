@@ -244,7 +244,7 @@ public class ExecutionController {
 	private List<Map<String, Object>> convertFileListToEntities(HttpServletRequest request, List<String> relativeFilePaths) {
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String relativeFilePath : relativeFilePaths) {
-			HashMap<String, String> file = new HashMap<>();
+			Map<String, String> file = new HashMap<>();
 			file.put(ControllerConstants.ID, relativeFilePath);
 			files.add(file);
 		}

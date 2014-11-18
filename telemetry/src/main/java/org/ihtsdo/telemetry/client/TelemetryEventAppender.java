@@ -11,9 +11,11 @@ import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
-
-import java.util.Hashtable;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.util.Map;
 import java.util.UUID;
 
 public class TelemetryEventAppender extends WriterAppender {
@@ -82,7 +84,7 @@ public class TelemetryEventAppender extends WriterAppender {
 		message.setStringProperty(Constants.EXCEPTION, StringUtils.join(event.getThrowableStrRep(), "\n"));
 		message.setStringProperty(Constants.SERVICE, service);
 		message.setStringProperty(Constants.ENVIRONMENT, environment);
-		Hashtable<String, Object> context = MDC.getContext();
+		Map<String, Object> context = MDC.getContext();
 		if (context != null) {
 			for (String key : context.keySet()) {
 				message.setStringProperty("context." + key, MDC.get(key).toString());

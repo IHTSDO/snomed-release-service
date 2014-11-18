@@ -4,14 +4,14 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 
-import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public interface BuildDAO extends EntityDAO<Build> {
 
-	List<Build> findAll(EnumSet<FilterOption> filterOptions, User user);
+	List<Build> findAll(Set<FilterOption> filterOptions, User user);
 
-	List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User user);
+	List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User user);
 
 	Build find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, User user);
 

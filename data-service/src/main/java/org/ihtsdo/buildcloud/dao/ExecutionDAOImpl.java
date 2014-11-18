@@ -90,7 +90,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public ArrayList<Execution> findAllDesc(final Build build) {
+	public List<Execution> findAllDesc(final Build build) {
 		final String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
 		return findExecutionsDesc(buildDirectoryPath, build);
 	}
@@ -98,7 +98,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	@Override
 	public Execution find(final Build build, final String executionId) {
 		final String executionDirectoryPath = pathHelper.getExecutionPath(build, executionId).toString();
-		final ArrayList<Execution> executions = findExecutionsDesc(executionDirectoryPath, build);
+		final List<Execution> executions = findExecutionsDesc(executionDirectoryPath, build);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
 		} else {
@@ -383,8 +383,8 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		executionFileHelper.copyFile(soureFilePath, targetFilePath);
 	}
 
-	private ArrayList<Execution> findExecutionsDesc(final String buildDirectoryPath, final Build build) {
-		final ArrayList<Execution> executions = new ArrayList<>();
+	private List<Execution> findExecutionsDesc(final String buildDirectoryPath, final Build build) {
+		final List<Execution> executions = new ArrayList<>();
 		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
 
 		// Not easy to make this efficient because our timestamp immediately under the build name means that we can only prefix
@@ -409,7 +409,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return executions;
 	}
 
-	private void findExecutions(final Build build, final List<S3ObjectSummary> objectSummaries, final ArrayList<Execution> executions) {
+	private void findExecutions(final Build build, final List<S3ObjectSummary> objectSummaries, final List<Execution> executions) {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
