@@ -5,8 +5,9 @@ package org.ihtsdo.buildcloud.service.execution.transform;
  */
 public class UUIDTransformation implements LineTransformation {
 
-	public int column;
 	private final UUIDGenerator uuidGenerator;
+
+	public int column;
 
 	public UUIDTransformation(int column, UUIDGenerator uuidGenerator) {
 		this.column = column;

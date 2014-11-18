@@ -9,6 +9,9 @@ import java.io.OutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+/**
+ * Facilitates the streaming upload of a file which is still being written.
+ */
 public class AsyncPipedStreamBean implements Closeable {
 
 	private OutputStream outputStream;

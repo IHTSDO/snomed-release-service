@@ -21,14 +21,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
 public class LegacyIdTransformationService {
+
 	private static final String STATED_RELATIONSHIP_DELTA_FILE_PREFIX = "sct2_StatedRelationship_Delta_INT_";
 	private static final String REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX = "der2_sRefset_SimpleMapDelta_INT_";
 	private static final String SNOMED_ID_REFSET_ID = "900000000000498005";
 	private static final String CTV3_ID_REFSET_ID = "900000000000497000";
 	private static final String TAB = "\t";
 	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
+
 	@Autowired
 	private IdAssignmentBI idAssignmentBI;
 	@Autowired
@@ -152,7 +153,7 @@ public class LegacyIdTransformationService {
 		builder.append(TAB);
 		builder.append(refsetId);
 		builder.append(TAB);
-		builder.append(sctId != null ? sctId.toString() : "null");
+		builder.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
 		builder.append(TAB);
 		builder.append(mapTarget);
 		builder.append(TAB);

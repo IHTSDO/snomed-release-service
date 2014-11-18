@@ -14,23 +14,16 @@ import java.util.List;
 
 public class InputFileDAOImpl implements InputFileDAO {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
+
 	private FileHelper fileHelper;
 
 	@Autowired
 	private ExecutionS3PathHelper s3PathHelper;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
-
-	public static final String SEPARATOR = "/";
-
 	@Autowired
 	public InputFileDAOImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
-	}
-
-	public List<String> listInputFilePaths(Package aPackage) {
-		String directoryPath = s3PathHelper.getPackageInputFilesPath(aPackage);
-		return fileHelper.listFiles(directoryPath);
 	}
 
 	@Override
@@ -41,6 +34,12 @@ public class InputFileDAOImpl implements InputFileDAO {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public List<String> listInputFilePaths(Package aPackage) {
+		String directoryPath = s3PathHelper.getPackageInputFilesPath(aPackage);
+		return fileHelper.listFiles(directoryPath);
 	}
 
 	@Override
@@ -55,12 +54,6 @@ public class InputFileDAOImpl implements InputFileDAO {
 		} else {
 			return null;
 		}
-	}
-
-	@Override
-	//Version called when we have a manifest file and we want a path to upload it to
-	public String getManifestPath(Package pkg, String filename) {
-		return s3PathHelper.getPackageManifestDirectoryPath(pkg).append(filename).toString();
 	}
 
 	@Override
@@ -83,6 +76,12 @@ public class InputFileDAOImpl implements InputFileDAO {
 			fileHelper.deleteFile(directoryPath + file);
 		}
 
+	}
+
+	@Override
+	//Version called when we have a manifest file and we want a path to upload it to
+	public String getManifestPath(Package pkg, String filename) {
+		return s3PathHelper.getPackageManifestDirectoryPath(pkg).append(filename).toString();
 	}
 
 }

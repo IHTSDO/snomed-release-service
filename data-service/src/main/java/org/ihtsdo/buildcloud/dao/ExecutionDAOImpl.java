@@ -1,27 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
+import com.amazonaws.services.s3.model.*;
+import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -47,30 +27,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.FileCopyUtils;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.io.Files;
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ExecutionDAOImpl implements ExecutionDAO {
 
-	private S3Client s3Client;
+	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {
+	};
+
+	private static final String BLANK = "";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
+
 	private final ExecutorService executorService;
 
-	@Autowired
-	private ExecutionS3PathHelper pathHelper;
-
-	@Autowired
-	private String executionBucketName;
-
 	private final FileHelper executionFileHelper;
-
-	@Autowired
-	private InputFileDAO inputFileDAO;
 
 	private final ObjectMapper objectMapper;
 
@@ -80,10 +56,16 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	private final Rf2FileNameTransformation rf2FileNameTransformation;
 
-	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {
-	};
-	private static final String BLANK = "";
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionDAOImpl.class);
+	private S3Client s3Client;
+
+	@Autowired
+	private ExecutionS3PathHelper pathHelper;
+
+	@Autowired
+	private String executionBucketName;
+
+	@Autowired
+	private InputFileDAO inputFileDAO;
 
 	@Autowired
 	public ExecutionDAOImpl(final String executionBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -158,20 +140,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 			s3Client.deleteObject(executionBucketName, origStatusFilePath);
 		}
 	}
-	
-	@Override
-	public void persistReport(final Execution execution) {
-
-		final String reportPath = pathHelper.getReportPath(execution);
-		try {
-			// Get the execution report as a string we can write to disk/S3 synchronously because it's small
-			final String executionReportJSON = execution.getExecutionReport().toString();
-			final InputStream is = IOUtils.toInputStream(executionReportJSON, "UTF-8");
-			executionFileHelper.putFile(is, executionReportJSON.length(), reportPath);
-		} catch (final IOException e) {
-			LOGGER.error("Unable to persist execution report", e);
-		}
-	}
 
 	@Override
 	public void assertStatus(final Execution execution, final Execution.Status ensureStatus) throws BadConfigurationException {
@@ -188,6 +156,101 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
+	public List<String> listInputFileNames(final Execution execution, final String packageId) {
+		final String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
+		return executionFileHelper.listFiles(executionInputFilesPath);
+	}
+
+	@Override
+	public InputStream getInputFileStream(final Execution execution, final String packageBusinessKey, final String inputFile) {
+		final String path = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, inputFile);
+		return executionFileHelper.getFileStream(path);
+	}
+
+	@Override
+	public InputStream getLocalInputFileStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws FileNotFoundException {
+		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		final File localFile = getLocalFile(transformedFilePath);
+		return new FileInputStream(localFile);
+	}
+
+	@Override
+	public AsyncPipedStreamBean getOutputFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
+		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getFileAsOutputStream(executionOutputFilePath);
+	}
+
+	@Override
+	public AsyncPipedStreamBean getLogFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
+		final String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getFileAsOutputStream(executionLogFilePath);
+	}
+
+	@Override
+	public void copyInputFileToOutputFile(final Execution execution, final String packageBusinessKey, final String relativeFilePath) {
+		final String executionInputFilePath = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, relativeFilePath);
+		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
+		executionFileHelper.copyFile(executionInputFilePath, executionOutputFilePath);
+	}
+
+	@Override
+	public void copyAll(final Build buildSource, final Execution execution) {
+		for (final Package buildPackage : buildSource.getPackages()) {
+			// Copy input files
+			final String buildPackageInputFilesPath = pathHelper.getPackageInputFilesPath(buildPackage);
+			final String executionPackageInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, buildPackage).toString();
+			final List<String> filePaths = inputFileDAO.listInputFilePaths(buildPackage);
+			for (final String filePath : filePaths) {
+				executionFileHelper.copyFile(buildPackageInputFilesPath + filePath, executionPackageInputFilesPath + filePath);
+			}
+
+			// Copy manifest file
+			final String manifestPath = inputFileDAO.getManifestPath(buildPackage);
+			if (manifestPath != null) { // Let the packages with manifests build
+				final String executionPackageManifestDirectoryPath = pathHelper.getExecutionManifestDirectoryPath(execution, buildPackage).toString();
+				executionFileHelper.copyFile(manifestPath, executionPackageManifestDirectoryPath + "manifest.xml");
+			}
+		}
+	}
+
+	@Override
+	public InputStream getOutputFileInputStream(final Execution execution, final String packageBusinessKey, final String name) {
+		final String path = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, name);
+		return executionFileHelper.getFileStream(path);
+	}
+
+	@Override
+	public InputStream getOutputFileInputStream(final Execution execution, final Package pkg, final String name) {
+		return getOutputFileInputStream(execution, pkg.getBusinessKey(), name);
+	}
+
+	@Override
+	public String putOutputFile(final Execution execution, final Package aPackage, final File file, final String targetRelativePath, final boolean calcMD5) throws IOException {
+		final String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
+		try {
+			return executionFileHelper.putFile(file, outputFilePath, calcMD5);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading " + targetRelativePath, e);
+		}
+	}
+
+	@Override
+	public String putOutputFile(final Execution execution, final Package aPackage, final File file) throws IOException {
+		return putOutputFile(execution, aPackage, file, "/", false);
+	}
+
+	@Override
+	public void putTransformedFile(final Execution execution, final Package pkg, final File file) throws IOException {
+		final String name = file.getName();
+		final String outputPath = pathHelper.getExecutionTransformedFilesPath(execution, pkg.getBusinessKey()).append(name).toString();
+		try {
+			executionFileHelper.putFile(file, outputPath);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
+		}
+	}
+
+	@Override
 	public InputStream getManifestStream(final Execution execution, final Package pkg) {
 		final StringBuffer manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
 
@@ -200,6 +263,124 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public List<String> listTransformedFilePaths(final Execution execution,
+			final String packageId) {
+
+		final String transformedFilesPath = pathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
+		return executionFileHelper.listFiles(transformedFilesPath);
+	}
+
+	@Override
+	public List<String> listOutputFilePaths(final Execution execution,
+			final String packageId) {
+		final String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
+		return executionFileHelper.listFiles(outputFilesPath);
+	}
+
+	@Override
+	public List<String> listLogFilePaths(final Execution execution, final String packageId) {
+		final String logFilesPath = pathHelper.getExecutionPackageLogFilesPath(execution, packageId).toString();
+		return executionFileHelper.listFiles(logFilesPath);
+	}
+
+	@Override
+	public List<String> listExecutionLogFilePaths(final Execution execution) {
+		final String logFilesPath = pathHelper.getExecutionLogFilesPath(execution).toString();
+		return executionFileHelper.listFiles(logFilesPath);
+	}
+
+	@Override
+	public InputStream getLogFileStream(final Execution execution, final String packageId, final String logFileName) {
+		final String logFilePath = pathHelper.getExecutionLogFilePath(execution, packageId, logFileName);
+		return executionFileHelper.getFileStream(logFilePath);
+	}
+
+	@Override
+	public InputStream getExecutionLogFileStream(final Execution execution, final String logFileName) {
+		final String logFilePath = pathHelper.getExecutionLogFilePath(execution, logFileName);
+		return executionFileHelper.getFileStream(logFilePath);
+	}
+
+	@Override
+	public String getTelemetryExecutionLogFilePath(final Execution execution) {
+		final String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution);
+		return TelemetryStreamPathBuilder.getS3StreamDestinationPath(executionBucketName, executionLogFilePath);
+	}
+
+	@Override
+	public AsyncPipedStreamBean getTransformedFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
+		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		return getFileAsOutputStream(transformedFilePath);
+	}
+
+	@Override
+	public OutputStream getLocalTransformedFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws FileNotFoundException {
+		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
+		final File localFile = getLocalFile(transformedFilePath);
+		localFile.getParentFile().mkdirs();
+		return new FileOutputStream(localFile);
+	}
+
+	@Override
+	public void copyTransformedFileToOutput(final Execution execution,
+			final String packageBusinessKey, final String sourceFileName,
+			final String targetFileName) {
+		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
+		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
+		executionFileHelper.copyFile(transformedFilePath, executionOutputFilePath);
+
+	}
+
+	@Override
+	public void copyTransformedFileToOutput(final Execution execution,
+			final String packageBusinessKey, final String relativeFilePath) {
+		copyTransformedFileToOutput(execution, packageBusinessKey, relativeFilePath, relativeFilePath);
+	}
+
+	@Override
+	public InputStream getTransformedFileAsInputStream(final Execution execution,
+			final String businessKey, final String relativeFilePath) {
+		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, businessKey, relativeFilePath);
+		return executionFileHelper.getFileStream(transformedFilePath);
+	}
+
+	@Override
+	public InputStream getPublishedFileArchiveEntry(final Product product, final String targetFileName, final String previousPublishedPackage) throws IOException {
+		final String publishedZipPath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
+		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
+		final String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
+		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
+		for (final String filePath : filePaths) {
+			final String filename = FileUtils.getFilenameFromPath(filePath);
+			if (filename.startsWith(targetFileNameStripped)) {
+				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void persistReport(final Execution execution) {
+
+		final String reportPath = pathHelper.getReportPath(execution);
+		try {
+			// Get the execution report as a string we can write to disk/S3 synchronously because it's small
+			final String executionReportJSON = execution.getExecutionReport().toString();
+			final InputStream is = IOUtils.toInputStream(executionReportJSON, "UTF-8");
+			executionFileHelper.putFile(is, executionReportJSON.length(), reportPath);
+		} catch (final IOException e) {
+			LOGGER.error("Unable to persist execution report", e);
+		}
+	}
+
+	@Override
+	public void renameTransformedFile(final Execution execution, final String packageBusinessKey, final String sourceFileName, final String targetFileName) {
+		final String soureFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
+		final String targetFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, targetFileName);
+		executionFileHelper.copyFile(soureFilePath, targetFilePath);
 	}
 
 	private ArrayList<Execution> findExecutionsDesc(final String buildDirectoryPath, final Build build) {
@@ -242,101 +423,6 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		}
 	}
 
-	@Override
-	public String putOutputFile(final Execution execution, final Package aPackage, final File file, final String targetRelativePath, final boolean calcMD5) throws IOException {
-		final String outputFilePath = pathHelper.getExecutionOutputFilePath(execution, aPackage.getBusinessKey(), targetRelativePath + file.getName());
-		try {
-			return executionFileHelper.putFile(file, outputFilePath, calcMD5);
-		} catch (NoSuchAlgorithmException | DecoderException e) {
-			throw new IOException("Problem creating checksum while uploading " + targetRelativePath, e);
-		}
-	}
-
-	@Override
-	public String putOutputFile(final Execution execution, final Package aPackage, final File file) throws IOException {
-		return putOutputFile(execution, aPackage, file, "/", false);
-	}
-
-	@Override
-	public void putTransformedFile(final Execution execution, final Package pkg, final File file) throws IOException {
-		final String name = file.getName();
-		final String outputPath = pathHelper.getExecutionTransformedFilesPath(execution, pkg.getBusinessKey()).append(name).toString();
-		try {
-			executionFileHelper.putFile(file, outputPath);
-		} catch (NoSuchAlgorithmException | DecoderException e) {
-			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
-		}
-	}
-
-	@Override
-	public void copyAll(final Build buildSource, final Execution execution) {
-		for (final Package buildPackage : buildSource.getPackages()) {
-			// Copy input files
-			final String buildPackageInputFilesPath = pathHelper.getPackageInputFilesPath(buildPackage);
-			final String executionPackageInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, buildPackage).toString();
-			final List<String> filePaths = inputFileDAO.listInputFilePaths(buildPackage);
-			for (final String filePath : filePaths) {
-				executionFileHelper.copyFile(buildPackageInputFilesPath + filePath, executionPackageInputFilesPath + filePath);
-			}
-
-			// Copy manifest file
-			final String manifestPath = inputFileDAO.getManifestPath(buildPackage);
-			if (manifestPath != null) { // Let the packages with manifests build
-				final String executionPackageManifestDirectoryPath = pathHelper.getExecutionManifestDirectoryPath(execution, buildPackage).toString();
-				executionFileHelper.copyFile(manifestPath, executionPackageManifestDirectoryPath + "manifest.xml");
-			}
-		}
-	}
-
-	@Override
-	public List<String> listInputFileNames(final Execution execution, final String packageId) {
-		final String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution, packageId).toString();
-		return executionFileHelper.listFiles(executionInputFilesPath);
-	}
-
-	@Override
-	public InputStream getInputFileStream(final Execution execution, final String packageBusinessKey, final String inputFile) {
-		final String path = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, inputFile);
-		return executionFileHelper.getFileStream(path);
-	}
-
-	@Override
-	public InputStream getLocalInputFileStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws FileNotFoundException {
-		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
-		final File localFile = getLocalFile(transformedFilePath);
-		return new FileInputStream(localFile);
-	}
-
-	@Override
-	public AsyncPipedStreamBean getOutputFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
-		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getFileAsOutputStream(executionOutputFilePath);
-	}
-
-	@Override
-	public AsyncPipedStreamBean getLogFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
-		final String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getFileAsOutputStream(executionLogFilePath);
-	}
-
-	@Override
-	public void copyInputFileToOutputFile(final Execution execution, final String packageBusinessKey, final String relativeFilePath) {
-		final String executionInputFilePath = pathHelper.getExecutionInputFilePath(execution, packageBusinessKey, relativeFilePath);
-		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, relativeFilePath);
-		executionFileHelper.copyFile(executionInputFilePath, executionOutputFilePath);
-	}
-
-	@Override
-	public InputStream getOutputFileInputStream(final Execution execution, final Package pkg, final String name) {
-		return getOutputFileInputStream(execution, pkg.getBusinessKey(), name);
-	}
-
-	@Override
-	public InputStream getOutputFileInputStream(final Execution execution, final String packageBusinessKey, final String name) {
-		final String path = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, name);
-		return executionFileHelper.getFileStream(path);
-	}
-
 	private AsyncPipedStreamBean getFileAsOutputStream(final String executionOutputFilePath) throws IOException {
 		// Stream file to executionFileHelper as it's written to the OutputStream
 		final PipedInputStream pipedInputStream = new PipedInputStream();
@@ -359,107 +445,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
 	}
 
-	@Override
-	public void copyTransformedFileToOutput(final Execution execution,
-			final String packageBusinessKey, final String relativeFilePath) {
-		copyTransformedFileToOutput(execution, packageBusinessKey, relativeFilePath, relativeFilePath);
-	}
-
-
-	@Override
-	public void copyTransformedFileToOutput(final Execution execution,
-			final String packageBusinessKey, final String sourceFileName,
-			final String targetFileName) {
-		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
-		final String executionOutputFilePath = pathHelper.getExecutionOutputFilePath(execution, packageBusinessKey, targetFileName);
-		executionFileHelper.copyFile(transformedFilePath, executionOutputFilePath);
-
-	}
-
-	@Override
-	public InputStream getTransformedFileAsInputStream(final Execution execution,
-			final String businessKey, final String relativeFilePath) {
-		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, businessKey, relativeFilePath);
-		return executionFileHelper.getFileStream(transformedFilePath);
-	}
-
-	@Override
-	public AsyncPipedStreamBean getTransformedFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws IOException {
-		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
-		return getFileAsOutputStream(transformedFilePath);
-	}
-
-	@Override
-	public OutputStream getLocalTransformedFileOutputStream(final Execution execution, final String packageBusinessKey, final String relativeFilePath) throws FileNotFoundException {
-		final String transformedFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, relativeFilePath);
-		final File localFile = getLocalFile(transformedFilePath);
-		localFile.getParentFile().mkdirs();
-		return new FileOutputStream(localFile);
-	}
-
-	@Override
-	public List<String> listTransformedFilePaths(final Execution execution,
-			final String packageId) {
-
-		final String transformedFilesPath = pathHelper.getExecutionTransformedFilesPath(execution, packageId).toString();
-		return executionFileHelper.listFiles(transformedFilesPath);
-	}
-
-	@Override
-	public List<String> listOutputFilePaths(final Execution execution,
-			final String packageId) {
-		final String outputFilesPath = pathHelper.getOutputFilesPath(execution, packageId);
-		return executionFileHelper.listFiles(outputFilesPath);
-	}
-
-	@Override
-	public InputStream getLogFileStream(final Execution execution, final String packageId, final String logFileName) {
-		final String logFilePath = pathHelper.getExecutionLogFilePath(execution, packageId, logFileName);
-		return executionFileHelper.getFileStream(logFilePath);
-	}
-
-	@Override
-	public String getTelemetryExecutionLogFilePath(final Execution execution) {
-		final String executionLogFilePath = pathHelper.getExecutionLogFilePath(execution);
-		return TelemetryStreamPathBuilder.getS3StreamDestinationPath(executionBucketName, executionLogFilePath);
-	}
-
-	@Override
-	public List<String> listLogFilePaths(final Execution execution, final String packageId) {
-		final String logFilesPath = pathHelper.getExecutionPackageLogFilesPath(execution, packageId).toString();
-		return executionFileHelper.listFiles(logFilesPath);
-	}
-
-	@Override
-	public List<String> listExecutionLogFilePaths(final Execution execution) {
-		final String logFilesPath = pathHelper.getExecutionLogFilesPath(execution).toString();
-		return executionFileHelper.listFiles(logFilesPath);
-	}
-
-	@Override
-	public InputStream getExecutionLogFileStream(final Execution execution, final String logFileName) {
-		final String logFilePath = pathHelper.getExecutionLogFilePath(execution, logFileName);
-		return executionFileHelper.getFileStream(logFilePath);
-	}
-
 	@Required
 	public void setExecutionBucketName(final String executionBucketName) {
 		this.executionBucketName = executionBucketName;
-	}
-
-	@Override
-	public InputStream getPublishedFileArchiveEntry(final Product product, final String targetFileName, final String previousPublishedPackage) throws IOException {
-		final String publishedZipPath = pathHelper.getPublishedFilePath(product, previousPublishedPackage);
-		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
-		final String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
-		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
-		for (final String filePath : filePaths) {
-			final String filename = FileUtils.getFilenameFromPath(filePath);
-			if (filename.startsWith(targetFileNameStripped)) {
-				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
-			}
-		}
-		return null;
 	}
 
 	private File getLocalFile(final String transformedFilePath) throws FileNotFoundException {
@@ -467,15 +455,9 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	// Just for testing
-	public void setS3Client(final S3Client s3Client) {
+	protected void setS3Client(final S3Client s3Client) {
 		this.s3Client = s3Client;
 		this.executionFileHelper.setS3Client(s3Client);
 	}
 
-	@Override
-	public void renameTransformedFile(final Execution execution, final String packageBusinessKey, final String sourceFileName, final String targetFileName) {
-		final String soureFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, sourceFileName);
-		final String targetFilePath = pathHelper.getTransformedFilePath(execution, packageBusinessKey, targetFileName);
-		executionFileHelper.copyFile(soureFilePath, targetFilePath);
-	}
 }

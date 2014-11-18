@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Offers an offline version of S3 cloud storage for demos or working without a connection.
+ * Offers an offline version of S3 cloud storage for testing or working offline.
  * N.B. Metadata and ACL security are not implemented.
  */
 public class OfflineS3ClientImpl implements S3Client, TestS3Client {

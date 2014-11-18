@@ -15,12 +15,13 @@ public class ParentSctIdFinder {
 	
 	private static final String IS_A_RELATIONSHIP_ID = "116680003";
 
+	public static final Pattern IS_A_RELATIONSHIP_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*)\t([^\t]*)\t[^\t]*\t" + IS_A_RELATIONSHIP_ID + "\t.*");
+
 	public ParentSctIdFinder() {
 		
 	}
 	
 	public Map<Long, Long> getParentSctIdFromStatedRelationship(final InputStream input, final List<Long> sourceIds) throws TransformationException {
-		final Pattern isARelationshipPattern = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*)\t([^\t]*)\t[^\t]*\t" + IS_A_RELATIONSHIP_ID + "\t.*");
 		final Map<Long, Long> result = new HashMap<>();
 		final List<Long> sourceIdsToFind = new ArrayList<>(sourceIds);
 		if (input != null) {
@@ -28,7 +29,7 @@ public class ParentSctIdFinder {
 				//find the line matches isA relationship
 				String line = null;
 				while (!sourceIdsToFind.isEmpty() && (line = reader.readLine()) != null) {
-					final Matcher matcher = isARelationshipPattern.matcher(line);
+					final Matcher matcher = IS_A_RELATIONSHIP_PATTERN.matcher(line);
 					if (matcher.matches()) {
 						final String sourceId = matcher.group(1);
 						if (sourceIdsToFind.contains(new Long(sourceId))) {

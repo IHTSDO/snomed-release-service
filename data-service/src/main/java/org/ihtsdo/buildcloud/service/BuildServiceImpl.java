@@ -29,13 +29,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
+
 	@Autowired
 	private BuildDAO buildDAO;
 
 	@Autowired
 	private ProductDAO productDAO;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 
 	@Autowired
 	public BuildServiceImpl(BuildDAO dao) {
@@ -57,6 +57,24 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
+	public Build find(String releaseCenterBusinessKey,
+			String extensionBusinessKey, String productBusinessKey, String buildBusinessKey,
+			User authenticatedUser) throws ResourceNotFoundException {
+		Build build = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
+		if (build == null) {
+			throw new ResourceNotFoundException("Unable to find build: " + buildBusinessKey);
+		}
+		return build;
+	}
+
+	@Override
+	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser) {
+		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
+		Hibernate.initialize(builds);
+		return builds;
+	}
+
+	@Override
 	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
 		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 
@@ -65,13 +83,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 			throw new ResourceNotFoundException("Unable to find product: " + item);
 		}
 		List<Build> builds = product.getBuilds();
-		Hibernate.initialize(builds);
-		return builds;
-	}
-
-	@Override
-	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser) {
-		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
 		Hibernate.initialize(builds);
 		return builds;
 	}
@@ -117,17 +128,6 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 			}
 		}
 		buildDAO.update(build);
-		return build;
-	}
-
-	@Override
-	public Build find(String releaseCenterBusinessKey,
-			String extensionBusinessKey, String productBusinessKey, String buildBusinessKey,
-			User authenticatedUser) throws ResourceNotFoundException {
-		Build build = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
-		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildBusinessKey);
-		}
 		return build;
 	}
 

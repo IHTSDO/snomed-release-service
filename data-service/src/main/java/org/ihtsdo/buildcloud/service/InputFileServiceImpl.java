@@ -33,6 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class InputFileServiceImpl implements InputFileService {
 
+	public static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
+
+	private final FileHelper fileHelper;
+
 	@Autowired
 	private PackageDAO packageDAO;
 
@@ -41,10 +45,6 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Autowired
 	private ExecutionS3PathHelper s3PathHelper;
-
-	private final FileHelper fileHelper;
-
-	public static final Logger LOGGER = LoggerFactory.getLogger(InputFileServiceImpl.class);
 
 	@Autowired
 	public InputFileServiceImpl(final String executionBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -109,11 +109,6 @@ public class InputFileServiceImpl implements InputFileService {
 		return getFileInputStream(aPackage, filename);
 	}
 
-	private InputStream getFileInputStream(final Package pkg, final String filename) {
-		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
-		return fileHelper.getFileStream(filePath);
-	}
-
 	@Override
 	public List<String> listInputFilePaths(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
@@ -142,6 +137,11 @@ public class InputFileServiceImpl implements InputFileService {
 				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
 			}
 		}
+	}
+
+	private InputStream getFileInputStream(final Package pkg, final String filename) {
+		String filePath = s3PathHelper.getPackageInputFilePath(pkg, filename);
+		return fileHelper.getFileStream(filePath);
 	}
 
 	private Package getPackage(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {

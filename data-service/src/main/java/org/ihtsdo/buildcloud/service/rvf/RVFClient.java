@@ -18,12 +18,16 @@ import java.util.concurrent.ExecutionException;
 public class RVFClient implements Closeable {
 
 	public static final String TOTAL_NUMBER_OF_FAILURES = "Total number of failures: ";
-	private final String releaseValidationFrameworkUrl;
-	private final CloseableHttpClient httpClient;
+
 	private static final String ERROR_NO_LINES_RECEIVED_FROM_RVF = "Error - No lines received from RVF!";
+
 	private static final String SUCCESS = "Success";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
+
+	private final String releaseValidationFrameworkUrl;
+
+	private final CloseableHttpClient httpClient;
 
 	public RVFClient(String releaseValidationFrameworkUrl) {
 		if (releaseValidationFrameworkUrl == null) {
