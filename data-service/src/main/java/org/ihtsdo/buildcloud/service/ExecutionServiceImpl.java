@@ -15,7 +15,7 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.Rf2FileExportService;
+import org.ihtsdo.buildcloud.service.execution.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.execution.Zipper;
 import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
@@ -39,10 +39,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -95,7 +92,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private RF2ClassifierService classifierService;
 
 	@Override
-	public Execution create(final String buildCompositeKey, final User authenticatedUser) 
+	public Execution createExecutionFromBuild(final String buildCompositeKey, final User authenticatedUser)
 			throws BusinessServiceException {
 
 		final Date creationDate = new Date();
@@ -106,7 +103,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		Execution execution = null;
 		try {
 			synchronized (buildCompositeKey) {
-				//Do we already have an execution for that date?
+				// Do we already have an execution for that date?
 				final Execution existingExecution = getExecution(build, creationDate);
 				if (existingExecution != null) {
 					throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists with execution id " + existingExecution.getId());
@@ -121,7 +118,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 				// Copy all files from Build input and manifest directory to Execution input and manifest directory
 				dao.copyAll(build, execution);
 			}
-			//Perform Pre-condition testing (loops through each package)
+			// Perform Pre-condition testing (loops through each package)
 			final Status preStatus = execution.getStatus();
 			runPreconditionChecks(execution);
 			final Status newStatus = execution.getStatus();
@@ -190,39 +187,39 @@ public class ExecutionServiceImpl implements ExecutionService {
 	@Override
 	public Execution triggerBuild(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws BusinessServiceException {
 		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		final Build build = execution.getBuild();
+
+		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
+		LOGGER.info("Trigger build", buildCompositeKey, executionId);
+
 		try {
-			LOGGER.info("Trigger build", buildCompositeKey, executionId);
+			updateStatusWithChecks(execution, Status.BUILDING);
 
-			//We can only trigger a build for a build at status Execution.Status.BEFORE_TRIGGER
-			dao.assertStatus(execution, Execution.Status.BEFORE_TRIGGER);
-
-			dao.updateStatus(execution, Execution.Status.BUILDING);
-
-			//Run transformation on each of our packages in turn.
-			// TODO: Could multithread here, if there are enough resources (classifier and RF2 export will use a lot of memory).
-			final Set<Package> packages = execution.getBuild().getPackages();
-			for (final Package pkg : packages) {
-				final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
-				String pkgResult = "completed";
-				String msg = "Process completed successfully";
+			// Execute each package
+			ExecutionReport executionReport = execution.getExecutionReport();
+			for (final Package pkg : build.getPackages()) {
+				String resultStatus = "completed";
+				String resultMessage = "Process completed successfully";
 				try {
-					executePackage(execution, pkg); // This could add entries to the execution report also
+					ExecutionPackageBean executionPackageBean = new ExecutionPackageBean(execution, pkg);
+					executePackage(executionPackageBean); // This could add entries to the execution report also
 				} catch (final Exception e) {
 					//Each package could fail independently, record telemetry and move on to next package
-					pkgResult = "fail";
-					msg = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
+					resultStatus = "fail";
+					resultMessage = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
 							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-					LOGGER.warn(msg, e);
+					LOGGER.warn(resultMessage, e);
 				}
-				report.add("Progress Status", pkgResult);
-				report.add("Message", msg);
+				final ExecutionPackageReport report = executionReport.getOrCreateExecutionPackgeReport(pkg);
+				report.add("Progress Status", resultStatus);
+				report.add("Message", resultMessage);
 			}
-
 			dao.persistReport(execution);
 
-			dao.updateStatus(execution, Execution.Status.BUILT);
+			updateStatusWithChecks(execution, Status.BUILT);
 		} finally {
+			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
 		}
 
@@ -230,11 +227,24 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString, final User authenticatedUser) throws ResourceNotFoundException {
+	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString, final User authenticatedUser) throws BusinessServiceException {
 		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-
 		final Execution.Status status = Execution.Status.valueOf(statusString);
-		dao.updateStatus(execution, status);
+		updateStatusWithChecks(execution, status);
+	}
+
+	private void updateStatusWithChecks(Execution execution, Status newStatus) throws BadConfigurationException {
+		// Assert status workflow position
+		switch (newStatus) {
+			case BUILDING :
+				dao.assertStatus(execution, Status.BEFORE_TRIGGER);
+				break;
+			case BUILT :
+				dao.assertStatus(execution, Status.BUILDING);
+				break;
+		}
+
+		dao.updateStatus(execution, newStatus);
 	}
 
 	@Override
@@ -324,26 +334,22 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return executionPackageDTOs;
 	}
 
-	private void executePackage(final Execution execution, final Package pkg) throws Exception {
+	private void executePackage(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+		final Execution execution = executionPackageBean.getExecution();
+		final Package pkg = executionPackageBean.getPackage();
 
 		LOGGER.info("Start executing package {}", pkg.getName());
-		final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
-		//A sort of pre-Condition check we're going to ensure we have a manifest file before proceeding
-		final InputStream manifestStream = dao.getManifestStream(execution, pkg);
-		if (manifestStream == null) {
-			throw new BadConfigurationException("Failed to find valid manifest file.");
-		} else {
-			manifestStream.close();
-		}
+
+		checkManifestPresent(executionPackageBean);
 
 		if (pkg.isJustPackage()) {
-			copyFilesForJustPackaging(execution, pkg);
+			copyFilesForJustPackaging(executionPackageBean);
 		} else {
-			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution, pkg);
-			transformationService.transformFiles(execution, pkg, inputFileSchemaMap);
+			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(executionPackageBean);
+			transformationService.transformFiles(executionPackageBean, inputFileSchemaMap);
 
 			// Convert Delta input files to Full, Snapshot and Delta release files
-			Rf2FileExportService generator = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			Rf2FileExportRunner generator = new Rf2FileExportRunner(executionPackageBean, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
 			if (pkg.isCreateInferredRelationships()) {
@@ -358,24 +364,24 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 
 		// Generate readme file
-		generateReadmeFile(execution, pkg);
+		generateReadmeFile(executionPackageBean);
 
 		File zipPackage;
 		try {
-			final Zipper zipper = new Zipper(execution, pkg, dao);
+			final Zipper zipper = new Zipper(executionPackageBean, dao);
 			zipPackage = zipper.createZipFile();
 			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 			dao.putOutputFile(execution, pkg, zipPackage, "", true);
 			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-		} catch (final Exception e) {
-			throw new Exception("Failure in Zip creation caused by " + e.getMessage(), e);
+		} catch (JAXBException | IOException | ResourceNotFoundException e) {
+			throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 		}
 
-		String rvfResultMsg = "RVF validation configured to not run.";
 		String rvfStatus = "N/A";
+		String rvfResultMsg = "RVF validation configured to not run.";
 		if (!offlineMode || localRvf) {
 			try {
-				rvfResultMsg = runRVFPostConditionCheck(zipPackage, execution, pkg.getBusinessKey());
+				rvfResultMsg = runRVFPostConditionCheck(executionPackageBean, zipPackage);
 				if (rvfResultMsg == null) {
 					rvfStatus = "Completed without errors.";
 				} else {
@@ -387,24 +393,42 @@ public class ExecutionServiceImpl implements ExecutionService {
 				rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
 			}
 		}
+		final ExecutionPackageReport report = executionPackageBean.getExecutionPackageReport();
 		report.add("Post Validation Status", rvfStatus);
 		report.add("RVF Test Failures", rvfResultMsg);
+
 		LOGGER.info("End of executing package {}", pkg.getName());
 	}
 
-	private String runRVFPostConditionCheck(final File zipPackage, final Execution execution, final String pkgBusinessKey) throws IOException,
+	private void checkManifestPresent(ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+		try {
+			final InputStream manifestStream = dao.getManifestStream(executionPackageBean.getExecution(), executionPackageBean.getPackage());
+			if (manifestStream == null) {
+				throw new BadConfigurationException("Failed to find valid manifest file.");
+			} else {
+				manifestStream.close();
+			}
+		} catch (IOException e) {
+			throw new BusinessServiceException("Failed to close manifest file.", e);
+		}
+	}
+
+	private String runRVFPostConditionCheck(final ExecutionPackageBean executionPackageBean, final File zipPackage) throws IOException,
 			PostConditionException {
 	    	LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
+		String logFilename = "postcheck-rvf-" + zipPackage.getName() + ".log";
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-				AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, pkgBusinessKey, "postcheck-rvf-"
-						+ zipPackage.getName() + ".log")) {
+			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(
+					 executionPackageBean.getExecution(),
+					 executionPackageBean.getPackage().getBusinessKey(),
+					 logFilename)) {
 			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
 		}
 	}
 
-	private void copyFilesForJustPackaging(final Execution execution, final Package pkg) {
-
-		final String packageBusinessKey = pkg.getBusinessKey();
+	private void copyFilesForJustPackaging(final ExecutionPackageBean executionPackageBean) {
+		final String packageBusinessKey = executionPackageBean.getPackage().getBusinessKey();
+		final Execution execution = executionPackageBean.getExecution();
 		LOGGER.info("Just copying files in execution {}, package {} for packaging", execution.getId(), packageBusinessKey);
 
 		// Iterate each execution input file
@@ -414,11 +438,16 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 	}
 
-	private Map<String, TableSchema> getInputFileSchemaMap(final Execution execution, final Package pkg) throws FileRecognitionException {
-		final List<String> executionInputFilePaths = dao.listInputFileNames(execution, pkg.getBusinessKey());
+	private Map<String, TableSchema> getInputFileSchemaMap(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+		final List<String> executionInputFilePaths = dao.listInputFileNames(executionPackageBean.getExecution(), executionPackageBean.getPackage().getBusinessKey());
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String executionInputFilePath : executionInputFilePaths) {
-			final TableSchema schemaBean = schemaFactory.createSchemaBean(FileUtils.getFilenameFromPath(executionInputFilePath));
+			final TableSchema schemaBean;
+			try {
+				schemaBean = schemaFactory.createSchemaBean(FileUtils.getFilenameFromPath(executionInputFilePath));
+			} catch (FileRecognitionException e) {
+				throw new BusinessServiceException("Did not recognise input file '" + executionInputFilePath + "'", e);
+			}
 			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
 		}
 		return inputFileSchemaMap;
@@ -454,38 +483,43 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return buildDAO.find(buildId, authenticatedUser);
 	}
 
-	private void generateReadmeFile(final Execution execution, final Package pkg) throws BadConfigurationException, JAXBException, IOException,
-			ExecutionException, InterruptedException {
-	    	LOGGER.info("Generating readMe file for package {}", pkg.getName());
-		final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
-		final InputStream manifestStream = dao.getManifestStream(execution, pkg);
-		final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+	private void generateReadmeFile(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+		try {
+			final Execution execution = executionPackageBean.getExecution();
+			final Package pkg = executionPackageBean.getPackage();
+			LOGGER.info("Generating readMe file for package {}", pkg.getName());
+			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
+			final InputStream manifestStream = dao.getManifestStream(execution, pkg);
+			final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
 
-		String readmeFilename = null;
-		if (manifestListing != null) {
-			final FolderType rootFolder = manifestListing.getFolder();
-			if (rootFolder != null) {
-				final List<FileType> files = rootFolder.getFile();
-				for (final FileType file : files) {
-					final String filename = file.getName();
-					if (file.getName().startsWith(README_FILENAME_PREFIX) && filename.endsWith(README_FILENAME_EXTENSION)) {
-						readmeFilename = filename;
-						break;
+			String readmeFilename = null;
+			if (manifestListing != null) {
+				final FolderType rootFolder = manifestListing.getFolder();
+				if (rootFolder != null) {
+					final List<FileType> files = rootFolder.getFile();
+					for (final FileType file : files) {
+						final String filename = file.getName();
+						if (file.getName().startsWith(README_FILENAME_PREFIX) && filename.endsWith(README_FILENAME_EXTENSION)) {
+							readmeFilename = filename;
+							break;
+						}
 					}
 				}
+			} else {
+				LOGGER.warn("Can not generate readme, manifest listing is null.");
 			}
-		} else {
-			LOGGER.warn("Can not generate readme, manifest listing is null.");
-		}
-		if (readmeFilename != null) {
-			final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
-			try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-				readmeGenerator.generate(pkg.getReadmeHeader(), pkg.getReadmeEndDate(), manifestListing, readmeOutputStream);
-				asyncPipedStreamBean.waitForFinish();
+			if (readmeFilename != null) {
+				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
+				try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
+					readmeGenerator.generate(pkg.getReadmeHeader(), pkg.getReadmeEndDate(), manifestListing, readmeOutputStream);
+					asyncPipedStreamBean.waitForFinish();
+				}
+			} else {
+				LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
+						README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
 			}
-		} else {
-			LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
-					README_FILENAME_PREFIX, README_FILENAME_EXTENSION);
+		} catch (IOException | InterruptedException | ExecutionException | JAXBException e) {
+			throw new BusinessServiceException("Failed to generate readme file.", e);
 		}
 	}
 

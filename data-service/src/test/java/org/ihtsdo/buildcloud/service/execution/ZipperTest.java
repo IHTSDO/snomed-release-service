@@ -8,12 +8,12 @@ import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.junit.Assert;
@@ -28,13 +28,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -101,7 +98,7 @@ public class ZipperTest {
 	@Test
 	public void testZipper() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
 
-		Zipper zipper = new Zipper(execution, pkg, executionDAO);
+		Zipper zipper = new Zipper(new ExecutionPackageBean(execution, pkg), executionDAO);
 		File zipFile = zipper.createZipFile();
 
 		Assert.assertNotNull(zipFile);

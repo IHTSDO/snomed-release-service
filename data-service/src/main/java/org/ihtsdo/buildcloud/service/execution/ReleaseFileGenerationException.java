@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.service.execution;
 
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+
 /**
  * Exception occurred during release file generation.
  */
-public class ReleaseFileGenerationException extends Exception {
+public class ReleaseFileGenerationException extends BusinessServiceException {
 
 	/**
 	 * @param errorMsg error message

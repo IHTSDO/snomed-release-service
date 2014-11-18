@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.junit.After;
@@ -24,7 +25,7 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/test/testDataServiceContext.xml" })
-public class Rf2FileExportServiceTest {
+public class Rf2FileExportRunnerTest {
 
 	private static final String PREVIOUS_RELEASE = "previousRelease";
 	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
@@ -83,7 +84,7 @@ public class Rf2FileExportServiceTest {
 		pkg.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
-		Rf2FileExportService rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
+		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(new ExecutionPackageBean(execution, pkg), dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
@@ -104,7 +105,7 @@ public class Rf2FileExportServiceTest {
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
-		Rf2FileExportService rf2ExportService = new Rf2FileExportService(execution, pkg, dao, uuidGenerator, 1);
+		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(new ExecutionPackageBean(execution, pkg), dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());

@@ -1,29 +1,13 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
@@ -34,6 +18,14 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TransformationService {
 
@@ -85,11 +77,13 @@ public class TransformationService {
 
 	/**
 	 * A streaming transformation of execution input files, creating execution output files.
-	 * @throws FileNotFoundException 
-	 * @throws TransformationException 
+	 * @throws ExecutionException
 	 */
-	public void transformFiles(final Execution execution, final Package pkg, final Map<String, TableSchema> inputFileSchemaMap)
-			throws ExecutionException, FileNotFoundException, TransformationException {
+	public void transformFiles(final ExecutionPackageBean executionPackageBean, final Map<String, TableSchema> inputFileSchemaMap)
+			throws BusinessServiceException {
+
+		final Execution execution = executionPackageBean.getExecution();
+		final Package pkg = executionPackageBean.getPackage();
 		final String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
 		final String executionId = execution.getId();
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
@@ -161,7 +155,7 @@ public class TransformationService {
 					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
 					final ComponentType componentType = tableSchema.getComponentType();
-					final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+					final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
 					if (isPreProcessType(componentType)) {
 
 						final InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
@@ -211,7 +205,7 @@ public class TransformationService {
 							final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
 							// Get the report to output to
-							final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+							final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
 							// Apply transformations
 							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream,
 									tableSchema.getFilename(), report);
@@ -239,13 +233,18 @@ public class TransformationService {
 			for (final Future concurrentTask : concurrentTasks) {
 				try {
 					concurrentTask.get();
-				} catch (final InterruptedException e) {
+				} catch (ExecutionException | InterruptedException e) {
 					LOGGER.error("Thread interrupted while waiting for future result.", e);
 				}
 			}
 		}
+
 		if (isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
-			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
+			try {
+				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
+			} catch (TransformationException e) {
+				throw new BusinessServiceException("Failed to create legacy identifiers.", e);
+			}
 		}
 	}
 	
@@ -284,7 +283,7 @@ public class TransformationService {
 		final String businessKey = pkg.getBusinessKey();
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, businessKey, inferredRelationshipSnapshotFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
-			final ExecutionPackageReport report = execution.getExecutionReport().getExecutionPackgeReport(pkg);
+			final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
 			fileTransformation.transformFile(
 					dao.getTransformedFileAsInputStream(execution, businessKey, inferredRelationshipSnapshotFilename),
 					outputFileOutputStream.getOutputStream(),

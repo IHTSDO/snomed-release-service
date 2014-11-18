@@ -57,7 +57,7 @@ public class ExecutionController {
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
 											   HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
-		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
+		Execution execution = executionService.createExecutionFromBuild(buildCompositeKey, authenticatedUser);
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
@@ -184,7 +184,7 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
 	@ResponseBody
-	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) throws ResourceNotFoundException {
+	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedUser);
 	}
