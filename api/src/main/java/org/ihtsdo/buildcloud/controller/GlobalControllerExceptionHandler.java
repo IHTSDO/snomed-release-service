@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalControllerExceptionHandler {
@@ -25,7 +25,7 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(BadRequestException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
-	public HashMap<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.BAD_REQUEST);
 	}
@@ -33,7 +33,7 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(ResourceNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ResponseBody
-	public HashMap<String, String> handleResourceNotFoundError(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleResourceNotFoundError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.NOT_FOUND);
 	}
@@ -41,7 +41,7 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(MissingServletRequestParameterException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
-	public HashMap<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.BAD_REQUEST);
 	}
@@ -49,7 +49,7 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(BadConfigurationException.class)
 	@ResponseStatus(HttpStatus.PRECONDITION_FAILED)
 	@ResponseBody
-	public HashMap<String, String> handleBadConfigurationException(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleBadConfigurationException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.PRECONDITION_FAILED);
 	}
@@ -57,7 +57,7 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(EntityAlreadyExistsException.class)
 	@ResponseStatus(HttpStatus.CONFLICT)
 	@ResponseBody
-	public HashMap<String, String> handleEntityAlreadyExistsException(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleEntityAlreadyExistsException(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.CONFLICT);
 	}
@@ -65,13 +65,13 @@ public class GlobalControllerExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ResponseBody
-	public HashMap<String, String> handleError(Exception exception, HttpServletRequest request) {
+	public Map<String, String> handleError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorMap(exception, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	private HashMap<String, String> getErrorMap(Exception exception, HttpStatus httpStatus) {
-		HashMap<String, String> errorObject = new HashMap<>();
+	private Map<String, String> getErrorMap(Exception exception, HttpStatus httpStatus) {
+		Map<String, String> errorObject = new HashMap<>();
 		errorObject.put(ControllerConstants.ERROR_MESSAGE, exception.getLocalizedMessage());
 		errorObject.put(ControllerConstants.HTTP_STATUS, httpStatus.toString());
 		return errorObject;

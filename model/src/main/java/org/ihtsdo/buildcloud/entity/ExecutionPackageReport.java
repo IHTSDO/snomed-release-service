@@ -23,7 +23,7 @@ public class ExecutionPackageReport {
 		report.put(executionStage, result);
 	}
 
-	private HashMap<String, Map<String, String>> getDetails(String executionStage) {
+	private Map<String, Map<String, String>> getDetails(String executionStage) {
 		
 		//TODO If we already had a straight string here, we could move it into the detail map...
 		// Do we have a detail set for this execution stage?
@@ -36,7 +36,7 @@ public class ExecutionPackageReport {
 
 	public void add(String executionStage, String fileName, String problem, int lineNumber) {
 
-		HashMap<String, Map<String, String>> reportDetail = getDetails(executionStage);
+		Map<String, Map<String, String>> reportDetail = getDetails(executionStage);
 
 		// Have we heard about this file before?
 		if (!reportDetail.containsKey(fileName)) {

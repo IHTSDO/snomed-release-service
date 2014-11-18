@@ -24,13 +24,13 @@ public class UserController {
 	@ResponseBody
 	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getSubject();
-		HashMap<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
+		Map<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
 		boolean currentResource = false;
 		return hypermediaGenerator.getEntityHypermedia(userRepresentation, currentResource, request);
 	}
 
-	private HashMap<String, Object> getUserRepresentation(User user) {
-		HashMap<String, Object> representation = new HashMap<>();
+	private Map<String, Object> getUserRepresentation(User user) {
+		Map<String, Object> representation = new HashMap<>();
 		String username = user.getUsername();
 		representation.put("username", username);
 		boolean authenticated = !username.equals(User.ANONYMOUS_USER);

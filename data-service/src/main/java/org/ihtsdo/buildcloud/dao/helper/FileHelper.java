@@ -96,7 +96,7 @@ public class FileHelper {
 	}
 
 	public List<String> listFiles(String directoryPath) {
-		ArrayList<String> files = new ArrayList<>();
+		List<String> files = new ArrayList<>();
 		try {
 			ObjectListing objectListing = s3Client.listObjects(bucketName, directoryPath);
 			for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {

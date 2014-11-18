@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.security;
 import org.ihtsdo.buildcloud.entity.User;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Binds the authenticated user id to the current thread.
@@ -10,7 +11,7 @@ import java.util.HashMap;
  */
 public class SecurityHelper {
 
-	private static final HashMap<Thread, User> threadSubjects = new HashMap<>();
+	private static final Map<Thread, User> threadSubjects = new HashMap<>();
 
 	public static void clearSubject() {
 		synchronized (threadSubjects) {

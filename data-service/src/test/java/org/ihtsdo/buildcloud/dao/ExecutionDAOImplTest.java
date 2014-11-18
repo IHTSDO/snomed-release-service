@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
 import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -28,9 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
@@ -100,7 +99,7 @@ public class ExecutionDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
-		ArrayList<Execution> all = executionDAO.findAllDesc(build);
+		List<Execution> all = executionDAO.findAllDesc(build);
 		mocksControl.verify();
 
 		Assert.assertEquals(2, all.size());

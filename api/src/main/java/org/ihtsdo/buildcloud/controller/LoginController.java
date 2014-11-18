@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/login")
@@ -21,9 +22,9 @@ public class LoginController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<HashMap<String,String>> login(@RequestParam String username, @RequestParam String password) {
+	public ResponseEntity<Map<String,String>> login(@RequestParam String username, @RequestParam String password) {
 		String authenticationToken = authenticationService.authenticate(username, password);
-		HashMap<String, String> response = new HashMap<>();
+		Map<String, String> response = new HashMap<>();
 		if (authenticationToken != null) {
 			response.put("authenticationToken", authenticationToken);
 			return new ResponseEntity<>(response, HttpStatus.OK);
