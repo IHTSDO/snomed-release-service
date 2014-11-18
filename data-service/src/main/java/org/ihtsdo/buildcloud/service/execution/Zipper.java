@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.slf4j.Logger;
@@ -39,9 +40,9 @@ public class Zipper {
 
 	private FolderType rootFolder;
 
-	public Zipper(Execution execution, Package pkg, ExecutionDAO executionDAO) {
-		this.execution = execution;
-		this.pkg = pkg;
+	public Zipper(ExecutionPackageBean executionPackageBean, ExecutionDAO executionDAO) {
+		this.execution = executionPackageBean.getExecution();
+		this.pkg = executionPackageBean.getPackage();
 		this.executionDAO = executionDAO;
 	}
 

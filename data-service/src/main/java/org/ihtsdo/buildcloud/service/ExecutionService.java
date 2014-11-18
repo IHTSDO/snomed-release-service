@@ -3,9 +3,9 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.service.exception.*;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -13,18 +13,7 @@ public interface ExecutionService {
 
 	String MDC_EXECUTION_KEY = "execution";
 
-	/**
-	 * Create snapshot of build files and configuration for review and possibly using to run a build.
-	 *
-	 * @param buildCompositeKey
-	 * @param authenticatedUser
-	 * @return
-	 * @throws IOException
-	 * @throws NamingConflictException
-	 * @throws ResourceNotFoundException
-	 * @throws EntityAlreadyExistsException 
-	 */
-	Execution create(String buildCompositeKey, User authenticatedUser) throws BusinessServiceException;
+	Execution createExecutionFromBuild(String buildCompositeKey, User authenticatedUser) throws BusinessServiceException;
 
 	List<Execution> findAllDesc(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
 
@@ -38,7 +27,7 @@ public interface ExecutionService {
 
 	Execution triggerBuild(String buildCompositeKey, String executionId, User authenticatedUser) throws BusinessServiceException;
 
-	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser) throws ResourceNotFoundException;
+	void updateStatus(String buildCompositeKey, String executionId, String status, User authenticatedUser) throws BusinessServiceException;
 
 	InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath, User authenticatedUser) throws ResourceNotFoundException;
 

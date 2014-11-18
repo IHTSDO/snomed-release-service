@@ -1,11 +1,8 @@
 package org.ihtsdo.buildcloud.entity;
 
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ser.std.ToStringSerializer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -21,7 +18,7 @@ public class ExecutionReport {
 		return executionPackageReports;
 	}
 
-	public ExecutionPackageReport getExecutionPackgeReport(Package pkg) {
+	public ExecutionPackageReport getOrCreateExecutionPackgeReport(Package pkg) {
 		// Do we already have a map of Execution Report objects per package?
 		if (this.executionPackageReports == null) {
 			this.executionPackageReports = new HashMap<>();

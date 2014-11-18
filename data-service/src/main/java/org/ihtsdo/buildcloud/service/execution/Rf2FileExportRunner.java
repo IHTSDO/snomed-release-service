@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.execution.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.execution.database.RF2TableDAO;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Rf2FileExportService {
+public class Rf2FileExportRunner {
 
 	private final Execution execution;
 	private final Package pkg;
@@ -38,15 +39,15 @@ public class Rf2FileExportService {
 	private final ExecutionDAO executionDao;
 	private final int maxRetries;
 	private final UUIDGenerator uuidGenerator;
-	private static final Logger LOGGER = LoggerFactory.getLogger(Rf2FileExportService.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Rf2FileExportRunner.class);
 	private final boolean firstTimeRelease;
 	private final String effectiveTime;
 	private final boolean workbenchDataFixesRequired;
 	private final String previousPublishedPackage;
 
-	public Rf2FileExportService(final Execution execution, final Package pkg, final ExecutionDAO dao, final UUIDGenerator uuidGenerator, final int maxRetries) {
-		this.execution = execution;
-		this.pkg = pkg;
+	public Rf2FileExportRunner(final ExecutionPackageBean executionPackageBean, final ExecutionDAO dao, final UUIDGenerator uuidGenerator, final int maxRetries) {
+		this.execution = executionPackageBean.getExecution();
+		this.pkg = executionPackageBean.getPackage();
 		product = pkg.getBuild().getProduct();
 		executionDao = dao;
 		this.maxRetries = maxRetries;
@@ -99,7 +100,9 @@ public class Rf2FileExportService {
 		}
 	}
 
-	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys, final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
+	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys,
+			final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
+
 	    LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, fileFirstTimeRelease);
 		final StatTimer timer = new StatTimer(getClass());
 		RF2TableDAO rf2TableDAO = null;

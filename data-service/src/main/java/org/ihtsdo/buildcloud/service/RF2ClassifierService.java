@@ -40,7 +40,7 @@ public class RF2ClassifierService {
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 */
-	public String generateInferredRelationshipSnapshot(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException, IOException, ClassificationException {
+	public String generateInferredRelationshipSnapshot(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
 		String packageBusinessKey = pkg.getBusinessKey();
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
 
@@ -61,55 +61,59 @@ public class RF2ClassifierService {
 		}
 
 		if (classifierFiles.isSufficientToClassify()) {
-			// Download snapshot files
-			logger.info("Sufficient files for relationship classification. Downloading local copy...");
-			File tempDir = Files.createTempDir();
-			List<String> localConceptFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getConceptSnapshotFilenames());
-			List<String> localStatedRelationshipFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
-			File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
-			if (checkNoStatedRelationshipCycles(execution, packageBusinessKey, localConceptFilePaths, localStatedRelationshipFilePaths,
-					cycleFile)) {
+			try {
+				// Download snapshot files
+				logger.info("Sufficient files for relationship classification. Downloading local copy...");
+				File tempDir = Files.createTempDir();
+				List<String> localConceptFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getConceptSnapshotFilenames());
+				List<String> localStatedRelationshipFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
+				File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
+				if (checkNoStatedRelationshipCycles(execution, packageBusinessKey, localConceptFilePaths, localStatedRelationshipFilePaths,
+						cycleFile)) {
 
-				logger.info("No cycles in stated relationship snapshot. Performing classification...");
+					logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
-				String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
-				List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-				if (!pkg.isFirstTimeRelease()) {
-					String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, pkg, classifierFiles, tempDir);
-					if (previousInferredRelationshipFilePath != null) {
-						previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
-					} else {
-						logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+					String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
+					List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
+					if (!pkg.isFirstTimeRelease()) {
+						String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, pkg, classifierFiles, tempDir);
+						if (previousInferredRelationshipFilePath != null) {
+							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
+						} else {
+							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+						}
 					}
+
+					String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
+					String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
+							.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
+							.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+
+					File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
+					File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
+
+					ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
+							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
+							inferredRelationshipsOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
+					classificationRunner.execute();
+
+					logger.info("Classification finished.");
+
+					uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
+
+					// Upload inferred relationships file with null ids
+					executionDAO.putTransformedFile(execution, pkg, inferredRelationshipsOutputFile);
+
+					// Generate inferred relationship ids using transform
+					transformationService.transformInferredRelationshipFile(execution, pkg, inferredRelationshipSnapshotFilename);
+
+					return inferredRelationshipSnapshotFilename;
+				} else {
+					logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
+							"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in execution package logs for more details.");
 				}
-
-				String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
-				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
-						.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
-						.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-
-				File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
-				File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
-
-				ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
-						localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
-						inferredRelationshipsOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
-				classificationRunner.execute();
-
-				logger.info("Classification finished.");
-
-				uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
-
-				// Upload inferred relationships file with null ids
-				executionDAO.putTransformedFile(execution, pkg, inferredRelationshipsOutputFile);
-
-				// Generate inferred relationship ids using transform
-				transformationService.transformInferredRelationshipFile(execution, pkg, inferredRelationshipSnapshotFilename);
-
-				return inferredRelationshipSnapshotFilename;
-			} else {
-				logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
-						"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in execution package logs for more details.");
+			} catch (ClassificationException | IOException e) {
+				throw new ProcessingException("Failed to generate inferred relationship snapshot.");
 			}
 		} else {
 			logger.info("Stated relationship and concept files not present. Skipping classification.");
