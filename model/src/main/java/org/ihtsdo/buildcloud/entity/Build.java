@@ -141,13 +141,21 @@ public class Build {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof Build)) return false;
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof Build)) {
+			return false;
+		}
 
 		Build build = (Build) o;
 
-		if (!businessKey.equals(build.businessKey)) return false;
-		if (!product.equals(build.product)) return false;
+		if (!businessKey.equals(build.businessKey)) {
+			return false;
+		}
+		if (!product.equals(build.product)) {
+			return false;
+		}
 
 		return true;
 	}

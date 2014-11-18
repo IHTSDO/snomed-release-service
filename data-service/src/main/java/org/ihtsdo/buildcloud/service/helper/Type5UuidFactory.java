@@ -47,10 +47,12 @@ public class Type5UuidFactory {
 
 		long msb = 0;
 		long lsb = 0;
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++) {
 			msb = (msb << 8) | (sha1digest[i] & 0xff);
-		for (int i = 8; i < 16; i++)
+		}
+		for (int i = 8; i < 16; i++) {
 			lsb = (lsb << 8) | (sha1digest[i] & 0xff);
+		}
 
 		return new UUID(msb, lsb);
 	}

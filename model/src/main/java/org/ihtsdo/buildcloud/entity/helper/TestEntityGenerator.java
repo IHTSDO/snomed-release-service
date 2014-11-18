@@ -90,8 +90,9 @@ public class TestEntityGenerator {
 						int packageNamesAvailable = packageNames[iEx][iPrd].length;
 
 						// Daily Build to only have one package
-						if (iEx == 0 && iPrd == 0 && iBld == 4)
+						if (iEx == 0 && iPrd == 0 && iBld == 4) {
 							packageNamesAvailable = 1;
+						}
 
 						for (int pkgIdx = 0; pkgIdx < packageNamesAvailable; pkgIdx++) {
 							Package pkg = new Package(packageNames[iEx][iPrd][pkgIdx]);

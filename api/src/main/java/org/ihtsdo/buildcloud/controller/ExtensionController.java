@@ -85,8 +85,12 @@ public class ExtensionController {
 												HttpServletRequest request) {
 		
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
-		if (Boolean.parseBoolean(includeRemovedStr)) filterOptions.add(FilterOption.INCLUDE_REMOVED);
-		if (Boolean.parseBoolean(starredStr)) filterOptions.add(FilterOption.STARRED_ONLY);
+		if (Boolean.parseBoolean(includeRemovedStr)) {
+			filterOptions.add(FilterOption.INCLUDE_REMOVED);
+		}
+		if (Boolean.parseBoolean(starredStr)) {
+			filterOptions.add(FilterOption.STARRED_ONLY);
+		}
 		
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<Build> builds = buildService.findForExtension(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);

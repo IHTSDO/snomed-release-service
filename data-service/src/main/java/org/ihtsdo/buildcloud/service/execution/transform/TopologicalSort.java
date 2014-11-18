@@ -22,8 +22,9 @@ public class TopologicalSort {
 		final Set<T> expanded = new HashSet<T>();
 
 		// Fire off a Depth-First Search from each node in the graph
-		for (final T node : reversedGraph)
+		for (final T node : reversedGraph) {
 			explore(node, reversedGraph, result, visited, expanded);
+		}
 
 		return result;
 	}
@@ -43,7 +44,9 @@ public class TopologicalSort {
 		if (visited.contains(node)) {
 			// if this node has already been expanded, then it's already been assigned a
 			// position in the final topological sort and we don't need to explore it again.
-			if (expanded.contains(node)) return;
+			if (expanded.contains(node)) {
+				return;
+			}
 
 			// if it hasn't been expanded, it means that we've just found a node that is currently being explored,
 			// and therefore is part of a cycle.  In that case, we should report an error.
@@ -53,8 +56,9 @@ public class TopologicalSort {
 		visited.add(node);
 
 		// recursively explore all predecessors of this node
-		for (final T predecessor : graph.edgesFrom(node))
+		for (final T predecessor : graph.edgesFrom(node)) {
 			explore(predecessor, graph, result, visited, expanded);
+		}
 
 		result.add(node);
 		expanded.add(node);
@@ -121,8 +125,9 @@ public class TopologicalSort {
 		public Set<T> edgesFrom(final T node) {
 			// Check that the node exists.
 			final Set<T> edges = graph.get(node);
-			if (edges == null)
+			if (edges == null) {
 				throw new NoSuchElementException("Source node does not exist.");
+			}
 
 			return Collections.unmodifiableSet(edges);
 		}
@@ -142,8 +147,9 @@ public class TopologicalSort {
 
 		private void validateSourceAndDestinationNodes(final T src, final T dest) {
 			// Confirm both endpoints exist
-			if (!graph.containsKey(src) || !graph.containsKey(dest))
+			if (!graph.containsKey(src) || !graph.containsKey(dest)) {
 				throw new NoSuchElementException("Both nodes must be in the graph.");
+			}
 		}
 	}
 }
