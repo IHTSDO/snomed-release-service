@@ -8,6 +8,7 @@ import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.LoggingEvent;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
+import org.ihtsdo.telemetry.core.TelemetryRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public class TelemetryEventAppender extends WriterAppender {
 				logger.debug("Sending message '{}'", message.getText());
 				producer.send(message);
 			} catch (JMSException e) {
-				throw new RuntimeException("Failed to create event message.", e);
+				throw new TelemetryRuntimeException("Failed to create event message.", e);
 			}
 		}
 	}

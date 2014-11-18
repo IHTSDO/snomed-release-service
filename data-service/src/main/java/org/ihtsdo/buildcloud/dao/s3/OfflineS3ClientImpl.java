@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
+import org.apache.commons.lang.NotImplementedException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -283,7 +283,8 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	@Override
 	public ObjectListing listNextBatchOfObjects(ObjectListing objectListing) {
-		throw new RuntimeException("Offline S3 Client does not suffer from an item count limit");
+		// This could be implemented for consistency with the online version.
+		throw new NotImplementedException("Offline S3 Client does not need batching.");
 	}
 
 }

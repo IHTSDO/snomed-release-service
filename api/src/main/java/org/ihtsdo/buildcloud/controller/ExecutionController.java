@@ -9,10 +9,7 @@ import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
-import org.ihtsdo.buildcloud.service.exception.NamingConflictException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +55,7 @@ public class ExecutionController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
-											   HttpServletRequest request) throws IOException, BadConfigurationException, NamingConflictException, ResourceNotFoundException,
-											   EntityAlreadyExistsException {
+											   HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.create(buildCompositeKey, authenticatedUser);
 
@@ -91,7 +87,7 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/configuration", produces="application/json")
 	@ResponseBody
 	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-								 HttpServletResponse response) throws IOException, ResourceNotFoundException {
+								 HttpServletResponse response) throws IOException, BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedUser);
 		response.setContentType("application/json");
@@ -101,7 +97,7 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/packages")
 	@ResponseBody
 	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-												 HttpServletRequest request) throws IOException, ResourceNotFoundException {
+												 HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<ExecutionPackageDTO> executionPackages = executionService.getExecutionPackages(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executionPackages, request, PACKAGE_LINKS);
@@ -111,7 +107,7 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 										  @PathVariable String packageId,
-										  HttpServletRequest request) throws IOException, ResourceNotFoundException {
+										  HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
@@ -141,7 +137,7 @@ public class ExecutionController {
 	@ResponseBody
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String packageId,
-			HttpServletRequest request) throws IOException, ResourceNotFoundException {
+			HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return convertFileListToEntities(request, relativeFilePaths);
@@ -180,7 +176,7 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-											HttpServletRequest request) throws Exception {
+											HttpServletRequest request) throws BusinessServiceException {
 		User authenticatedUser = SecurityHelper.getSubject();
 		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);

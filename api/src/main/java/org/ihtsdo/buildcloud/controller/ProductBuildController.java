@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -58,9 +59,9 @@ public class ProductBuildController {
 											 @PathVariable String extensionBusinessKey,
 											 @PathVariable String productBusinessKey,											 
 											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws Exception {
+												   HttpServletRequest request) throws BusinessServiceException {
 		if (json == null) {
-			throw new BadRequestException ("No JSON payload detected in request.");
+			throw new BadRequestException("No JSON payload detected in request.");
 		}
 		String name = json.get(NAME);
 		User authenticatedUser = SecurityHelper.getSubject();

@@ -1,11 +1,8 @@
 package org.ihtsdo.buildcloud.service.exception;
 
-public class ResourceNotFoundException extends Exception {
+public class ResourceNotFoundException extends BusinessServiceException {
 
 	private static final long serialVersionUID = -4281549626769059242L;
-
-	public ResourceNotFoundException() {
-	}
 
 	public ResourceNotFoundException(String message) {
 		super(message);
@@ -17,11 +14,6 @@ public class ResourceNotFoundException extends Exception {
 
 	public ResourceNotFoundException(String message, Throwable cause) {
 		super(message, cause);
-	}
-
-	public ResourceNotFoundException(String message, Throwable cause,
-			boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
 	}
 
 }

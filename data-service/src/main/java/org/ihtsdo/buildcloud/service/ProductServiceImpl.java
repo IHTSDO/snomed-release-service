@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Extension;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -32,7 +33,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws Exception {
+	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
 		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 
 		if (extension == null) {
@@ -50,7 +51,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
+	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, User authenticatedUser) throws BusinessServiceException {
 		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey);

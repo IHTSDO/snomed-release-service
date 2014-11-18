@@ -2,13 +2,15 @@ package org.ihtsdo.buildcloud.service.execution.database.hsql;
 
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
 
+import java.sql.SQLException;
+
 public class H2DataTypeConverter {
 
 	/**
 	 * @param type
 	 * @return a <code>String</code> containing the H2 data type.
 	 */
-	public String convert(DataType type) {
+	public String convert(DataType type) throws SQLException {
 		String h2Type;
 		switch (type) {
 			case SCTID:
@@ -30,7 +32,7 @@ public class H2DataTypeConverter {
 				h2Type = "VARCHAR";
 				break;
 			default:
-				throw new RuntimeException("DataType missing from " + getClass() + " : " + type);
+				throw new SQLException("DataType missing from " + getClass() + " : " + type);
 		}
 		return h2Type;
 	}

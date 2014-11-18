@@ -7,6 +7,7 @@ import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.service.exception.ApplicationWiringException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +22,6 @@ public class RVFClient implements Closeable {
 
 	private static final String ERROR_NO_LINES_RECEIVED_FROM_RVF = "Error - No lines received from RVF!";
 
-	private static final String SUCCESS = "Success";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
 
 	private final String releaseValidationFrameworkUrl;
@@ -31,7 +30,7 @@ public class RVFClient implements Closeable {
 
 	public RVFClient(String releaseValidationFrameworkUrl) {
 		if (releaseValidationFrameworkUrl == null) {
-			throw new RuntimeException("Null RVF host URL.");
+			throw new ApplicationWiringException("Null RVF host URL.");
 		}
 		this.releaseValidationFrameworkUrl = releaseValidationFrameworkUrl;
 		httpClient = HttpClients.createDefault();

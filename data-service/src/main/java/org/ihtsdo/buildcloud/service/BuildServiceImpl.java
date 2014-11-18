@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
@@ -85,7 +86,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws BusinessServiceException {
 	    LOGGER.info("create build, releaseCenterBusinessKey: {}, extensionBusinessKey: {}", releaseCenterBusinessKey, extensionBusinessKey);
 	    Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
 
@@ -109,7 +110,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException, ResourceNotFoundException {
+	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BusinessServiceException {
 		LOGGER.info("update build, newPropertyValues: {}", newPropertyValues);
 		Build build = find(buildCompositeKey, authenticatedUser);
 
