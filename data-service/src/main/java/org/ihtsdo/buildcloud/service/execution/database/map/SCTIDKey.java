@@ -22,13 +22,21 @@ public class SCTIDKey implements Key {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
 		SCTIDKey sctidKey = (SCTIDKey) o;
 
-		if (effectiveTime != null ? !effectiveTime.equals(sctidKey.effectiveTime) : sctidKey.effectiveTime != null) return false;
-		if (id != null ? !id.equals(sctidKey.id) : sctidKey.id != null) return false;
+		if (effectiveTime != null ? !effectiveTime.equals(sctidKey.effectiveTime) : sctidKey.effectiveTime != null) {
+			return false;
+		}
+		if (id != null ? !id.equals(sctidKey.id) : sctidKey.id != null) {
+			return false;
+		}
 
 		return true;
 	}

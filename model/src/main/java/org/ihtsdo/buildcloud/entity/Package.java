@@ -197,13 +197,21 @@ public class Package implements Comparable<Package> {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof Package)) return false;
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof Package)) {
+			return false;
+		}
 
 		Package aPackage = (Package) o;
 
-		if (!build.equals(aPackage.build)) return false;
-		if (!businessKey.equals(aPackage.businessKey)) return false;
+		if (!build.equals(aPackage.build)) {
+			return false;
+		}
+		if (!businessKey.equals(aPackage.businessKey)) {
+			return false;
+		}
 
 		return true;
 	}

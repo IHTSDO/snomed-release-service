@@ -48,7 +48,9 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 			// Build Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
 			String headerLine = reader.readLine();
-			if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+			if (headerLine == null) {
+				throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+			}
 			TableSchema tableSchema = schemaFactory.createSchemaBean(rf2Filename);
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 

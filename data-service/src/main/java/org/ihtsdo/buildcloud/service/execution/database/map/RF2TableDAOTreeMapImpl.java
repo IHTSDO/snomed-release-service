@@ -236,7 +236,9 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private String getHeader(String rf2FilePath, BufferedReader reader) throws IOException, DatabasePopulatorException {
 		String headerLine = reader.readLine();
-		if (headerLine == null) throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+		if (headerLine == null) {
+			throw new DatabasePopulatorException("RF2 file " + rf2FilePath + " is empty.");
+		}
 		return headerLine;
 	}
 
