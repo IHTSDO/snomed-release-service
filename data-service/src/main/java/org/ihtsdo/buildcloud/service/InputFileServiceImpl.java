@@ -60,7 +60,7 @@ public class InputFileServiceImpl implements InputFileService {
 	@Override
 	public String getManifestFileName(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
 		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
-		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(aPackage);
+		StringBuilder manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(aPackage);
 		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
 		if (!files.isEmpty()) {
 			return files.iterator().next();

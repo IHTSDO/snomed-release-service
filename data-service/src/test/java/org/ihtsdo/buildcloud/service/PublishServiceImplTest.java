@@ -1,34 +1,28 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import mockit.Deencapsulation;
 import mockit.Expectations;
 import mockit.Injectable;
 import mockit.Mocked;
 import mockit.integration.junit4.JMockit;
-
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Extension;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 @RunWith(JMockit.class)
 public class PublishServiceImplTest {
@@ -64,7 +58,7 @@ public class PublishServiceImplTest {
 				returns("123");
 
 				s3PathHelper.getExecutionOutputFilesPath(execution, anyString);
-				returns(new StringBuffer(EXECUTION_OUTPUT));
+				returns(new StringBuilder(EXECUTION_OUTPUT));
 
 				s3Client.listObjects(EXECUTION_BUCKET_NAME, anyString);
 				ObjectListing ol = createDummyObjectListing(EXECUTION_OUTPUT);

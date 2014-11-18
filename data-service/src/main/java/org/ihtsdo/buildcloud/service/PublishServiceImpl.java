@@ -73,7 +73,7 @@ public class PublishServiceImpl implements PublishService {
 	private String getPublishDirPath(final Product product) {
 		Extension extension = product.getExtension();
 		ReleaseCenter releaseCenter = extension.getReleaseCenter();
-		StringBuffer path = new StringBuffer();
+		StringBuilder path = new StringBuilder();
 		path.append(releaseCenter.getBusinessKey());
 		path.append(SEPARATOR);
 		path.append(extension.getBusinessKey());
@@ -109,7 +109,8 @@ public class PublishServiceImpl implements PublishService {
 	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
 		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
 		try {
-			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
+			String businessKey = pk.getBusinessKey();
+			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, businessKey).toString();
 			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 			String releaseFileName = null;
 			String md5FileName = null;

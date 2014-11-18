@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
-import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class HypermediaGenerator {
 
@@ -98,12 +98,4 @@ public class HypermediaGenerator {
 		return url.substring(0, url.indexOf(rootPath) + rootPath.length());
 	}
 	
-	public String getUrl (String... pathElements) {
-		StringBuffer sb = new StringBuffer();
-		for (String element : pathElements) {
-			sb.append(ExecutionS3PathHelper.SEPARATOR)
-			.append(element);
-		}
-		return sb.toString();
-	}
 }

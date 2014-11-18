@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.helper;
 
-import java.util.regex.Pattern;
-
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+
+import java.util.regex.Pattern;
 
 public class CompositeKeyHelper {
 
@@ -20,7 +20,7 @@ public class CompositeKeyHelper {
 	}
 
 	public static String getPath(String... pathElements) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (String element : pathElements) {
 			sb.append(ExecutionS3PathHelper.SEPARATOR)
 					.append(element);
