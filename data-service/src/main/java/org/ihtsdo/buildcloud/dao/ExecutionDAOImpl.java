@@ -252,7 +252,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 
 	@Override
 	public InputStream getManifestStream(final Execution execution, final Package pkg) {
-		final StringBuffer manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
+		final StringBuilder manifestDirectoryPathSB = pathHelper.getExecutionManifestDirectoryPath(execution, pkg);
 
 		final String directoryPath = manifestDirectoryPathSB.toString();
 		final List<String> files = executionFileHelper.listFiles(directoryPath);

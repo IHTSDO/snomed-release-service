@@ -96,7 +96,7 @@ public class FileUtils {
 	 *@author http://www.mkyong.com/java/how-to-generate-a-file-checksum-value-in-java/
 	 */
 	public static String calculateMD5(final File file) throws NoSuchAlgorithmException, IOException {
-		StringBuffer sb = new StringBuffer("");
+		StringBuilder sb = new StringBuilder("");
 		MessageDigest md = MessageDigest.getInstance("MD5");
 		FileInputStream fis = new FileInputStream(file);
 		byte[] dataBytes = new byte[1024];

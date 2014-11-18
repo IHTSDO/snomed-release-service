@@ -69,7 +69,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void deleteManifest(Package pkg) {
-		StringBuffer manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(pkg);
+		StringBuilder manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(pkg);
 		String directoryPath = manifestDirectoryPathSB.toString();
 		List<String> files = fileHelper.listFiles(directoryPath);
 		for (String file : files) {
