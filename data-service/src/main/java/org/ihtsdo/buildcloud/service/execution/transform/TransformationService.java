@@ -39,6 +39,12 @@ public class TransformationService {
 
 	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
+
+	private static final String SIMPLE_REFSET_MAP_DELTA = "sRefset_SimpleMapDelta_INT";
+
+	private final ExecutorService executorService;
+
 	@Autowired
 	private IdAssignmentBI idAssignmentBI;
 
@@ -69,14 +75,8 @@ public class TransformationService {
 	@Autowired
 	private Integer idGenRetryDelaySeconds;
 
-	private final ExecutorService executorService;
 	@Autowired
 	private LegacyIdTransformationService legacyIdTransformation;
-
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
-
-	private static final String SIMPLE_REFSET_MAP_DELTA = "sRefset_SimpleMapDelta_INT";
 
 	public TransformationService() {
 		executorService = Executors.newCachedThreadPool();

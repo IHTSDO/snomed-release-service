@@ -20,8 +20,6 @@ import java.util.List;
 @Repository
 public class FileHelper {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(FileHelper.class);
-
 	private S3Client s3Client;
 
 	public void setS3Client(S3Client s3Client) {
@@ -31,6 +29,8 @@ public class FileHelper {
 	private final S3ClientHelper s3ClientHelper;
 
 	private final String bucketName;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileHelper.class);
 
 	public FileHelper(String bucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
 		this.bucketName = bucketName;

@@ -21,6 +21,12 @@ import java.util.zip.ZipOutputStream;
 
 public class Zipper {
 
+	private static final String PATH_CHAR = "/";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
+
+	private static final int BUFFER_SIZE = 64 * 1024;
+
 	private final ExecutionDAO executionDAO;
 
 	private final Execution execution;
@@ -29,19 +35,9 @@ public class Zipper {
 
 	private ListingType manifestListing;
 
-	private static final String PATH_CHAR = "/";
-
 	private boolean isInitialised = false;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Zipper.class);
-
 	private FolderType rootFolder;
-
-	public FolderType getRootFolder() {
-		return rootFolder;
-	}
-
-	private static final int BUFFER_SIZE = 64 * 1024;
 
 	public Zipper(Execution execution, Package pkg, ExecutionDAO executionDAO) {
 		this.execution = execution;

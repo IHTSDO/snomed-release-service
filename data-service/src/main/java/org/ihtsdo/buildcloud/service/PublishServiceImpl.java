@@ -31,8 +31,15 @@ import java.util.zip.ZipInputStream;
 @Transactional
 public class PublishServiceImpl implements PublishService {
 
+	private static final String SEPARATOR = "/";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
+
 	private final FileHelper executionFileHelper;
+
 	private final FileHelper publishedFileHelper;
+
+	private final String publishedBucketName;
 
 	@Autowired
 	private ExecutionS3PathHelper executionS3PathHelper;
@@ -40,56 +47,12 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private ProductDAO productDAO;
 
-	private static final String SEPARATOR = "/";
-	private final String publishedBucketName;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
-
 	@Autowired
 	public PublishServiceImpl(final String executionBucketName, final String publishedBucketName,
 			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-	}
-
-	@Override
-	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
-		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
-		try {
-			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
-			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
-			String releaseFileName = null;
-			String md5FileName = null;
-			for (String fileName : filesFound) {
-				if (releaseFileName == null && FileUtils.isZip(fileName)) {
-					releaseFileName = fileName;
-					//only one zip file per package
-				}
-				if (md5FileName == null && FileUtils.isMD5(fileName)) {
-					//expected to be only one MD5 file.
-					md5FileName = fileName;
-				}
-			}
-			if (releaseFileName == null) {
-				LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
-			} else {
-				String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
-				String publishedFilePath = getPublishFilePath(execution, releaseFileName);
-				executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-				LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-				publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-			}
-			//copy MD5 file if available
-			if (md5FileName != null) {
-				String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
-				String target = getPublishFilePath(execution, md5FileName);
-				executionFileHelper.copyFile(source, publishedBucketName, target);
-				LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
-			}
-		} finally {
-			MDC.remove(ExecutionService.MDC_EXECUTION_KEY);
-		}
 	}
 
 	/**
@@ -143,9 +106,42 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public boolean exists(final Product product, final String targetFileName) {
-		String path = getPublishDirPath(product) + targetFileName;
-		return publishedFileHelper.exists(path);
+	public void publishExecutionPackage(final Execution execution, final Package pk) throws IOException {
+		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
+		try {
+			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution, pk.getBusinessKey()).toString();
+			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
+			String releaseFileName = null;
+			String md5FileName = null;
+			for (String fileName : filesFound) {
+				if (releaseFileName == null && FileUtils.isZip(fileName)) {
+					releaseFileName = fileName;
+					//only one zip file per package
+				}
+				if (md5FileName == null && FileUtils.isMD5(fileName)) {
+					//expected to be only one MD5 file.
+					md5FileName = fileName;
+				}
+			}
+			if (releaseFileName == null) {
+				LOGGER.error("No zip file found for package:{}", pk.getBusinessKey());
+			} else {
+				String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), releaseFileName);
+				String publishedFilePath = getPublishFilePath(execution, releaseFileName);
+				executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+				LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+				publishExtractedPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+			}
+			//copy MD5 file if available
+			if (md5FileName != null) {
+				String source = executionS3PathHelper.getExecutionOutputFilePath(execution, pk.getBusinessKey(), md5FileName);
+				String target = getPublishFilePath(execution, md5FileName);
+				executionFileHelper.copyFile(source, publishedBucketName, target);
+				LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+			}
+		} finally {
+			MDC.remove(ExecutionService.MDC_EXECUTION_KEY);
+		}
 	}
 
 	@Override
@@ -181,6 +177,12 @@ public class PublishServiceImpl implements PublishService {
 		if (!tempZipFile.delete()) {
 			LOGGER.warn("Failed to delete file {}", tempZipFile.getAbsolutePath());
 		}
+	}
+
+	@Override
+	public boolean exists(final Product product, final String targetFileName) {
+		String path = getPublishDirPath(product) + targetFileName;
+		return publishedFileHelper.exists(path);
 	}
 
 	// Publish extracted entries in a directory of the same name

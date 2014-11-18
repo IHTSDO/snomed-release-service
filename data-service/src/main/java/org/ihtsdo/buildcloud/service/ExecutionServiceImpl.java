@@ -53,6 +53,8 @@ import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENA
 @Transactional
 public class ExecutionServiceImpl implements ExecutionService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
+
 	@Autowired
 	private ExecutionDAO dao;
 
@@ -91,8 +93,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 
 	@Autowired
 	private RF2ClassifierService classifierService;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionServiceImpl.class);
 
 	@Override
 	public Execution create(final String buildCompositeKey, final User authenticatedUser) 
@@ -134,29 +134,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return execution;
 	}
 
-	private void runPreconditionChecks(final Execution execution) {
-	    LOGGER.info("Start of Pre-condition checks");
-		final Map<String, List<PreConditionCheckReport>> preConditionReports = preconditionManager.runPreconditionChecks(execution);
-		execution.setPreConditionCheckReports(preConditionReports);
-		//analyze report to check whether there is fatal error for all packages
-		int fatalCountByPkg = 0;
-		for (final String pkgName : preConditionReports.keySet()) {
-			for (final PreConditionCheckReport report : preConditionReports.get(pkgName)) {
-				if (report.getResult() == State.FATAL) {
-					fatalCountByPkg++;
-					LOGGER.warn("Fatal error occurred during pre-condition check for package {}", pkgName);
-					break;
-				}
-			}
-		}
-		//need to alert release manager as all packages have fatal pre-condition check error.
-		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
-			execution.setStatus(Status.FAILED_PRE_CONDITIONS);
-			LOGGER.warn("Fatal error occurred for all packages during pre-condition checks and execution {} will be halted.", execution.getId());
-		}
-		LOGGER.info("End of Pre-condition checks");
-	}
-
 	@Override
 	public List<Execution> findAllDesc(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
 		final Build build = getBuild(buildCompositeKey, authenticatedUser);
@@ -193,22 +170,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 	public ExecutionPackageDTO getExecutionPackage(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
 		final List<ExecutionPackageDTO> executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId, authenticatedUser);
 		return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
-	}
-
-	@SuppressWarnings("unchecked")
-	private List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
-		final List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		final Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
-		final Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
-		final List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
-		for (final Map<String, Object> aPackage : packages) {
-			final String id = (String) aPackage.get("id");
-			if (packageId == null || packageId.equals(id)) {
-				executionPackageDTOs.add(new ExecutionPackageDTO(id, (String) aPackage.get("name")));
-			}
-		}
-		return executionPackageDTOs;
 	}
 
 	@Override
@@ -251,6 +212,101 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 
 		return execution;
+	}
+
+	@Override
+	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+
+		final Execution.Status status = Execution.Status.valueOf(statusString);
+		dao.updateStatus(execution, status);
+	}
+
+	@Override
+	public InputStream getOutputFile(final String buildCompositeKey, final String executionId, final String packageId, final String outputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getOutputFileStream(execution, packageId, outputFilePath);
+	}
+
+	@Override
+	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listOutputFilePaths(execution, packageId);
+	}
+
+	@Override
+	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getInputFileStream(execution, packageId, inputFilePath);
+	}
+
+	@Override
+	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listInputFileNames(execution, packageId);
+	}
+
+	@Override
+	public InputStream getLogFile(final String buildCompositeKey, final String executionId, final String packageId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getLogFileStream(execution, packageId, logFileName);
+	}
+
+	@Override
+	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listLogFilePaths(execution, packageId);
+	}
+
+	@Override
+	public List<String> getExecutionLogFilePaths(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.listExecutionLogFilePaths(execution);
+	}
+
+	@Override
+	public InputStream getExecutionLogFile(final String buildCompositeKey, final String executionId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		return dao.getExecutionLogFileStream(execution, logFileName);
+	}
+
+	private void runPreconditionChecks(final Execution execution) {
+	    LOGGER.info("Start of Pre-condition checks");
+		final Map<String, List<PreConditionCheckReport>> preConditionReports = preconditionManager.runPreconditionChecks(execution);
+		execution.setPreConditionCheckReports(preConditionReports);
+		//analyze report to check whether there is fatal error for all packages
+		int fatalCountByPkg = 0;
+		for (final String pkgName : preConditionReports.keySet()) {
+			for (final PreConditionCheckReport report : preConditionReports.get(pkgName)) {
+				if (report.getResult() == State.FATAL) {
+					fatalCountByPkg++;
+					LOGGER.warn("Fatal error occurred during pre-condition check for package {}", pkgName);
+					break;
+				}
+			}
+		}
+		//need to alert release manager as all packages have fatal pre-condition check error.
+		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
+			execution.setStatus(Status.FAILED_PRE_CONDITIONS);
+			LOGGER.warn("Fatal error occurred for all packages during pre-condition checks and execution {} will be halted.", execution.getId());
+		}
+		LOGGER.info("End of Pre-condition checks");
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+		final List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		final Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
+		final Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
+		final List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
+		for (final Map<String, Object> aPackage : packages) {
+			final String id = (String) aPackage.get("id");
+			if (packageId == null || packageId.equals(id)) {
+				executionPackageDTOs.add(new ExecutionPackageDTO(id, (String) aPackage.get("name")));
+			}
+		}
+		return executionPackageDTOs;
 	}
 
 	private void executePackage(final Execution execution, final Package pkg) throws Exception {
@@ -351,62 +407,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 			inputFileSchemaMap.put(executionInputFilePath, schemaBean);
 		}
 		return inputFileSchemaMap;
-	}
-
-	@Override
-	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-
-		final Execution.Status status = Execution.Status.valueOf(statusString);
-		dao.updateStatus(execution, status);
-	}
-
-	@Override
-	public InputStream getOutputFile(final String buildCompositeKey, final String executionId, final String packageId, final String outputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getOutputFileStream(execution, packageId, outputFilePath);
-	}
-
-	@Override
-	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.listOutputFilePaths(execution, packageId);
-	}
-
-	@Override
-	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getInputFileStream(execution, packageId, inputFilePath);
-	}
-
-	@Override
-	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.listInputFileNames(execution, packageId);
-	}
-
-	@Override
-	public InputStream getLogFile(final String buildCompositeKey, final String executionId, final String packageId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getLogFileStream(execution, packageId, logFileName);
-	}
-
-	@Override
-	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.listLogFilePaths(execution, packageId);
-	}
-
-	@Override
-	public List<String> getExecutionLogFilePaths(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.listExecutionLogFilePaths(execution);
-	}
-
-	@Override
-	public InputStream getExecutionLogFile(final String buildCompositeKey, final String executionId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
-		return dao.getExecutionLogFileStream(execution, logFileName);
 	}
 
 	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {

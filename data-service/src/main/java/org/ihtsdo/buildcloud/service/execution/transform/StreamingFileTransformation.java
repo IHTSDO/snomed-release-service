@@ -11,10 +11,11 @@ import java.util.List;
 
 public class StreamingFileTransformation {
 
-	private final List<Transformation> transformations;
-	private final int transformBufferSize;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingFileTransformation.class);
+
+	private final List<Transformation> transformations;
+
+	private final int transformBufferSize;
 
 	public StreamingFileTransformation(int transformBufferSize) {
 		this.transformBufferSize = transformBufferSize;

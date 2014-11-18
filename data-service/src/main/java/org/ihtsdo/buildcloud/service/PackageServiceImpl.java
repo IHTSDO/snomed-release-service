@@ -23,13 +23,13 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	private static final String TRUE = "true";
 
 	@Autowired
+	PublishService publishService;
+
+	@Autowired
 	private PackageDAO packageDAO;
 
 	@Autowired
 	private BuildDAO buildDAO;
-
-	@Autowired
-	PublishService publishService;
 
 	@Autowired
 	protected PackageServiceImpl(final PackageDAO dao) {
