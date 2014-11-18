@@ -82,7 +82,7 @@ public class StreamFactory {
 
 	private static interface Task {
 
-		void run() throws Exception;
+		void run() throws InterruptedException;
 
 	}
 }

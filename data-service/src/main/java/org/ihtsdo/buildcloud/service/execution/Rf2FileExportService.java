@@ -1,13 +1,7 @@
 package org.ihtsdo.buildcloud.service.execution;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -27,8 +21,14 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Rf2FileExportService {
 
@@ -255,7 +255,7 @@ public class Rf2FileExportService {
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
 		final InputStream previousFileStream = executionDao.getPublishedFileArchiveEntry(product, currentFileName, previousPublishedPackage);
 		if (previousFileStream == null) {
-			throw new RuntimeException("No equivalent of:  "
+			throw new FileNotFoundException("No equivalent of:  "
 					+ currentFileName
 					+ " found in previous published package:" + previousPublishedPackage);
 		}
@@ -292,13 +292,12 @@ public class Rf2FileExportService {
 	 * @return the transformed delta file name exception if not found.
 	 * @throws ReleaseFileGenerationException
 	 */
-	protected List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
+	private List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
 		final String businessKey = pkg.getBusinessKey();
 		final List<String> transformedFilePaths = executionDao.listTransformedFilePaths(execution, businessKey);
 		final List<String> validFiles = new ArrayList<>();
 		if (transformedFilePaths.size() < 1) {
-			throw new RuntimeException(
-					"Failed to find any transformed files to convert to output delta files.");
+			throw new ReleaseFileGenerationException("Failed to find any transformed files to convert to output delta files.");
 		}
 
 		for (final String fileName : transformedFilePaths) {

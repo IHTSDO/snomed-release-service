@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 
 import java.io.*;
 import java.util.List;
@@ -24,7 +25,7 @@ public interface ExecutionDAO {
 
 	void updateStatus(Execution execution, Execution.Status newStatus);
 
-	void assertStatus(Execution execution, Execution.Status ensureStatus) throws Exception;
+	void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException;
 
 	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
 
