@@ -14,6 +14,8 @@ public interface ExecutionService {
 
 	Execution createExecutionFromBuild(String buildCompositeKey) throws BusinessServiceException;
 
+	Execution triggerExecution(String buildCompositeKey, String executionId) throws BusinessServiceException;
+
 	List<Execution> findAllDesc(String buildCompositeKey) throws ResourceNotFoundException;
 
 	Execution find(String buildCompositeKey, String executionId) throws ResourceNotFoundException;
@@ -23,8 +25,6 @@ public interface ExecutionService {
 	List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId) throws BusinessServiceException;
 
 	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId) throws BusinessServiceException;
-
-	Execution triggerBuild(String buildCompositeKey, String executionId) throws BusinessServiceException;
 
 	void updateStatus(String buildCompositeKey, String executionId, String status) throws BusinessServiceException;
 

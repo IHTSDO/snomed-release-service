@@ -176,7 +176,7 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			HttpServletRequest request) throws BusinessServiceException {
-		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId);
+		Execution execution = executionService.triggerExecution(buildCompositeKey, executionId);
 
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}

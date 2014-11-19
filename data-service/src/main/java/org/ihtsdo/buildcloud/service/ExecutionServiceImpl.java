@@ -135,6 +135,48 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
+	public Execution triggerExecution(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
+		final Build build = execution.getBuild();
+
+		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
+		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
+		LOGGER.info("Trigger build", buildCompositeKey, executionId);
+
+		try {
+			updateStatusWithChecks(execution, Status.BUILDING);
+
+			// Execute each package
+			ExecutionReport executionReport = execution.getExecutionReport();
+			for (final Package pkg : build.getPackages()) {
+				String resultStatus = "completed";
+				String resultMessage = "Process completed successfully";
+				try {
+					ExecutionPackageBean executionPackageBean = new ExecutionPackageBean(execution, pkg);
+					executePackage(executionPackageBean); // This could add entries to the execution report also
+				} catch (final Exception e) {
+					//Each package could fail independently, record telemetry and move on to next package
+					resultStatus = "fail";
+					resultMessage = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+					LOGGER.warn(resultMessage, e);
+				}
+				final ExecutionPackageReport report = executionReport.getOrCreateExecutionPackgeReport(pkg);
+				report.add("Progress Status", resultStatus);
+				report.add("Message", resultMessage);
+			}
+			dao.persistReport(execution);
+
+			updateStatusWithChecks(execution, Status.BUILT);
+		} finally {
+			// Finish the telemetry stream. Logging on this thread will no longer be captured.
+			TelemetryStream.finish(LOGGER);
+		}
+
+		return execution;
+	}
+
+	@Override
 	public List<Execution> findAllDesc(final String buildCompositeKey) throws ResourceNotFoundException {
 		final Build build = getBuild(buildCompositeKey);
 		if (build == null) {
@@ -183,48 +225,6 @@ public class ExecutionServiceImpl implements ExecutionService {
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to retrieve execution package.", e);
 		}
-	}
-
-	@Override
-	public Execution triggerBuild(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		final Build build = execution.getBuild();
-
-		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
-		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
-		LOGGER.info("Trigger build", buildCompositeKey, executionId);
-
-		try {
-			updateStatusWithChecks(execution, Status.BUILDING);
-
-			// Execute each package
-			ExecutionReport executionReport = execution.getExecutionReport();
-			for (final Package pkg : build.getPackages()) {
-				String resultStatus = "completed";
-				String resultMessage = "Process completed successfully";
-				try {
-					ExecutionPackageBean executionPackageBean = new ExecutionPackageBean(execution, pkg);
-					executePackage(executionPackageBean); // This could add entries to the execution report also
-				} catch (final Exception e) {
-					//Each package could fail independently, record telemetry and move on to next package
-					resultStatus = "fail";
-					resultMessage = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
-							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-					LOGGER.warn(resultMessage, e);
-				}
-				final ExecutionPackageReport report = executionReport.getOrCreateExecutionPackgeReport(pkg);
-				report.add("Progress Status", resultStatus);
-				report.add("Message", resultMessage);
-			}
-			dao.persistReport(execution);
-
-			updateStatusWithChecks(execution, Status.BUILT);
-		} finally {
-			// Finish the telemetry stream. Logging on this thread will no longer be captured.
-			TelemetryStream.finish(LOGGER);
-		}
-
-		return execution;
 	}
 
 	@Override
