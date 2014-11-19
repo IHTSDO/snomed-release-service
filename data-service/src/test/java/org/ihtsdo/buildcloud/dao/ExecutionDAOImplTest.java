@@ -14,7 +14,7 @@ import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,7 +61,7 @@ public class ExecutionDAOImplTest {
 		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		executionDAO.setS3Client(mockS3Client);
 
-		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
+		build = buildDAO.find(1L, TestUtils.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
 		execution = new Execution(creationTime, build);
 	}

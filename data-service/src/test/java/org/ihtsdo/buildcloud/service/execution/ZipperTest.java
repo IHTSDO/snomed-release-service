@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class ZipperTest {
 		String testPackageName = TestEntityGenerator.packageNames[0][1][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 		
-		pkg = packageDAO.find(6L, testPackageId, TestEntityGenerator.TEST_USER);
+		pkg = packageDAO.find(6L, testPackageId, TestUtils.TEST_USER);
 
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 01).getTime();
 		execution = new Execution(creationTime, pkg.getBuild());

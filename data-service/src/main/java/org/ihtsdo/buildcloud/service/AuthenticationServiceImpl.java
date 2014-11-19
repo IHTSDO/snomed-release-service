@@ -34,7 +34,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user != null && passwordEncoder.matches(password, user.getEncodedPassword())) {
 				authorisationKey = keyGenerator.generateKey();
 				AuthToken authToken = new AuthToken(authorisationKey, user);
-				// Token stored in database to be shared in cluster.
+				// Token stored in database, could be shared in a cluster.
 				authTokenDAO.save(authToken);
 			}
 		}

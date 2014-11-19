@@ -2,7 +2,8 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
@@ -19,7 +20,7 @@ public class BuildControllerTest extends AbstractControllerTest {
 		int random_build = 3;
 		String buildStr = TestEntityGenerator.buildNames[random_extension_index][random_product_index][random_build];
 		
-		SecurityHelper.setSubject(TestEntityGenerator.TEST_USER);
+		SecurityHelper.setUser(TestUtils.TEST_USER);
 		
 		//JSON object indexes start from 1 so add 1 to the traditional 0 based index
 		String build_id =  (random_build+1) + "_" + EntityHelper.formatAsBusinessKey(buildStr);

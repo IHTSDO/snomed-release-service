@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Extension;
-import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class ExtensionDAOImplTest {
 
 	@Test
 	public void testInitialData() {
-		Extension extension = dao.find("international", "snomed_ct_international_edition", TestEntityGenerator.TEST_USER);
+		Extension extension = dao.find("international", "snomed_ct_international_edition", TestUtils.TEST_USER);
 		Assert.assertNotNull(extension);
 		Assert.assertEquals("SNOMED CT International Edition", extension.getName());
 	}

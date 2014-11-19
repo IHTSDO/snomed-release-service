@@ -1,15 +1,14 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 /**
  * Service to publish a build release after verification tests are
@@ -22,8 +21,7 @@ public interface PublishService {
 	void publishExecutionPackage(Execution execution, Package pk) throws IOException;
 
 	void publishPackage(String buildCompositeKey, String packageBusinessKey,
-			String productBusinessKey, InputStream inputStream, String originalFilename, long size,
-			User subject) throws ResourceNotFoundException, BadRequestException, IOException;
+			String productBusinessKey, InputStream inputStream, String originalFilename, long size) throws ResourceNotFoundException, BadRequestException, IOException;
 
 	boolean exists(Product product, String previouslyPublishedPackageName);
 }

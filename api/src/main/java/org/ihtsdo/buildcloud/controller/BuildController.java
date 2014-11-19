@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -33,9 +31,9 @@ public class BuildController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds( @RequestParam(value="includeRemoved", required=false) String includeRemovedStr,
-												@RequestParam(value="starred", required=false) String starredStr,
-												HttpServletRequest request) {
+	public List<Map<String, Object>> getBuilds(@RequestParam(value="includeRemoved", required=false) String includeRemovedStr,
+			@RequestParam(value="starred", required=false) String starredStr,
+			HttpServletRequest request) {
 		
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
 		if (Boolean.parseBoolean(includeRemovedStr)) {
@@ -45,16 +43,14 @@ public class BuildController {
 			filterOptions.add(FilterOption.STARRED_ONLY);
 		}
 		
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findAll(filterOptions, authenticatedUser);
+		List<Build> builds = buildService.findAll(filterOptions);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
 	@RequestMapping("/{buildCompositeKey}")
 	@ResponseBody
-	public Map<String, Object> getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Build build = buildService.find(buildCompositeKey, authenticatedUser);
+	public Map<String, Object> getBuild(@PathVariable String buildCompositeKey, HttpServletRequest request) throws BusinessServiceException {
+		Build build = buildService.find(buildCompositeKey);
 		
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " +  buildCompositeKey);
@@ -66,9 +62,8 @@ public class BuildController {
 	@RequestMapping(value = "/{buildCompositeKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateBuild(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json,
-										   HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Build build = buildService.update(buildCompositeKey, json, authenticatedUser);
+			HttpServletRequest request) throws BusinessServiceException {
+		Build build = buildService.update(buildCompositeKey, json);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " +  buildCompositeKey);
 		}

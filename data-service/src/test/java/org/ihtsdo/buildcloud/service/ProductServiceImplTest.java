@@ -1,9 +1,9 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,11 +22,10 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 	
 	@Autowired
 	private ProductService ps;
-	private User authenticatedUser;
 
 	@Before
 	public void setup() {
-		authenticatedUser = TestEntityGenerator.TEST_USER;
+		TestUtils.setTestUser();
 	}
 
 	@Test
@@ -35,12 +34,12 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 		Assert.assertNotNull(ps);
 		String rc = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 		String ext = EntityHelper.formatAsBusinessKey(extensionNames[0]);
-		List<Product> products = ps.findAll(rc, ext, authenticatedUser);
+		List<Product> products = ps.findAll(rc, ext);
 		int before = products.size();
 		//LOGGER.warn("Found " + before + " products");
 		Assert.assertTrue(before > 0);  //Check our test authenticatedUser is in there.
-		ps.create(rc, ext, "my test product name", authenticatedUser);
-		int after = ps.findAll(rc, ext, authenticatedUser).size();
+		ps.create(rc, ext, "my test product name");
+		int after = ps.findAll(rc, ext).size();
 		Assert.assertEquals(before + 1, after);
 		
 		//TODO Could add further tests to ensure that the new item was created at the correct point in the hierarchy

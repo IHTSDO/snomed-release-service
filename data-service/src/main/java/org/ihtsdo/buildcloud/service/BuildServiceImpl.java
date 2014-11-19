@@ -8,12 +8,10 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.service.exception.BadRequestException;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
-import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -41,24 +42,23 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findAll(Set<FilterOption> filterOptions, User authenticatedUser) {
-		return buildDAO.findAll(filterOptions, authenticatedUser);
+	public List<Build> findAll(Set<FilterOption> filterOptions) throws AuthenticationException {
+		return buildDAO.findAll(filterOptions, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Build find(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException {
+	public Build find(String buildCompositeKey) throws BusinessServiceException {
 		Long id = CompositeKeyHelper.getId(buildCompositeKey);
 		if (id == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		return buildDAO.find(id, authenticatedUser);
+		return buildDAO.find(id, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Build find(String releaseCenterBusinessKey,
-			String extensionBusinessKey, String productBusinessKey, String buildBusinessKey,
-			User authenticatedUser) throws ResourceNotFoundException {
-		Build build = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
+	public Build find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey,
+			String buildBusinessKey) throws ResourceNotFoundException {
+		Build build = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, SecurityHelper.getRequiredUser());
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildBusinessKey);
 		}
@@ -66,15 +66,15 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User authenticatedUser) {
-		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
+	public List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions) throws AuthenticationException {
+		List<Build> builds = buildDAO.findAll(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, SecurityHelper.getRequiredUser());
 		Hibernate.initialize(builds);
 		return builds;
 	}
 
 	@Override
-	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
-		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+	public List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey) throws ResourceNotFoundException {
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, SecurityHelper.getRequiredUser());
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
@@ -86,9 +86,10 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws BusinessServiceException {
-	    LOGGER.info("create build, releaseCenterBusinessKey: {}, extensionBusinessKey: {}", releaseCenterBusinessKey, extensionBusinessKey);
-	    Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+	public Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name) throws BusinessServiceException {
+		User user = SecurityHelper.getRequiredUser();
+		LOGGER.info("create build, releaseCenterBusinessKey: {}, extensionBusinessKey: {}", releaseCenterBusinessKey, extensionBusinessKey);
+	    Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, user);
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
@@ -97,7 +98,7 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 
 		//Check that we don't already have one of these
 		String buildBusinessKey = EntityHelper.formatAsBusinessKey(name);
-		Build existingBuild = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
+		Build existingBuild = buildDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, user);
 		if (existingBuild != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}
@@ -110,9 +111,9 @@ public class BuildServiceImpl extends EntityServiceImpl<Build> implements BuildS
 	}
 
 	@Override
-	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BusinessServiceException {
+	public Build update(String buildCompositeKey, Map<String, String> newPropertyValues) throws BusinessServiceException {
 		LOGGER.info("update build, newPropertyValues: {}", newPropertyValues);
-		Build build = find(buildCompositeKey, authenticatedUser);
+		Build build = find(buildCompositeKey);
 
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
