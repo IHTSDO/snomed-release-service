@@ -25,7 +25,7 @@ public class UserController {
 	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
 		User authenticatedUser = SecurityHelper.getRequiredUser();
 		Map<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
-		boolean currentResource = false;
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(userRepresentation, currentResource, request);
 	}
 
