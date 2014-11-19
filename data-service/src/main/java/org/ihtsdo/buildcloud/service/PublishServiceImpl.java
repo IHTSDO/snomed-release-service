@@ -13,6 +13,7 @@ import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,8 +148,8 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public void publishPackage(final String releaseCenterBusinessKey, final String extensionBusinessKey, final String productBusinessKey,
-			final InputStream inputStream, final String originalFilename, final long size, final User subject) throws ResourceNotFoundException, BadRequestException, IOException {
-		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, subject);
+			final InputStream inputStream, final String originalFilename, final long size) throws ResourceNotFoundException, BadRequestException, IOException {
+		Product product = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, SecurityHelper.getRequiredUser());
 
 		if (product == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);

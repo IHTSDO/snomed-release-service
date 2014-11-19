@@ -5,11 +5,11 @@ import org.ihtsdo.buildcloud.dao.PackageDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,30 +37,30 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 	}
 
 	@Override
-	public final Package find(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
+	public final Package find(final String buildCompositeKey, final String packageBusinessKey) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		return packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
+		return packageDAO.find(buildId, packageBusinessKey, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public final List<Package> findAll(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
+	public final List<Package> findAll(final String buildCompositeKey) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		return new ArrayList<>(buildDAO.find(buildId, authenticatedUser).getPackages());
+		return new ArrayList<>(buildDAO.find(buildId, SecurityHelper.getRequiredUser()).getPackages());
 	}
 
 	@Override
-	public final Package create(final String buildCompositeKey, final String name, final User authenticatedUser) throws EntityAlreadyExistsException, ResourceNotFoundException {
+	public final Package create(final String buildCompositeKey, final String name) throws EntityAlreadyExistsException, ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build identifier from: " + buildCompositeKey);
 		}
-		Build build = buildDAO.find(buildId, authenticatedUser);
+		Build build = buildDAO.find(buildId, SecurityHelper.getRequiredUser());
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
@@ -75,12 +75,12 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 
 	@Override
 	public final Package update(final String buildCompositeKey, final String packageBusinessKey,
-			final Map<String, String> newPropertyValues, final User authenticatedUser) throws ResourceNotFoundException, BadConfigurationException {
+			final Map<String, String> newPropertyValues) throws ResourceNotFoundException, BadConfigurationException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		Package aPackage = packageDAO.find(buildId, packageBusinessKey, authenticatedUser);
+		Package aPackage = packageDAO.find(buildId, packageBusinessKey, SecurityHelper.getRequiredUser());
 		if (aPackage == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
 			throw new ResourceNotFoundException("Unable to find package: " + item);

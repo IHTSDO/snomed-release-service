@@ -11,6 +11,7 @@ import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +34,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
-		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+	public List<Product> findAll(String releaseCenterBusinessKey, String extensionBusinessKey) throws ResourceNotFoundException {
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, SecurityHelper.getRequiredUser());
 
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey);
@@ -46,13 +47,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) {
-		return productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+	public Product find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey) {
+		return productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name, User authenticatedUser) throws BusinessServiceException {
-		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+	public Product create(String releaseCenterBusinessKey, String extensionBusinessKey, String name) throws BusinessServiceException {
+		User user = SecurityHelper.getRequiredUser();
+		Extension extension = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, user);
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey);
 			throw new ResourceNotFoundException("Unable to find extension: " + item);
@@ -60,7 +62,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		//Check that we don't already have one of these
 		String productBusinessKey = EntityHelper.formatAsBusinessKey(name);
-		Product existingProduct = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+		Product existingProduct = productDAO.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, user);
 		if (existingProduct != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}

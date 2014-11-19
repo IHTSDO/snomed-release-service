@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +23,7 @@ public class UserController {
 	@RequestMapping
 	@ResponseBody
 	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getSubject();
+		User authenticatedUser = SecurityHelper.getRequiredUser();
 		Map<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
 		boolean currentResource = false;
 		return hypermediaGenerator.getEntityHypermedia(userRepresentation, currentResource, request);

@@ -2,11 +2,11 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,13 +29,12 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 	@Autowired
 	private PackageService packageService;
 
-	private User authenticatedUser;
 	private String buildCompKey;
 	private Build build;
 
 	@Before
 	public void setup() throws ResourceNotFoundException {
-		authenticatedUser = TestEntityGenerator.TEST_USER;
+		TestUtils.setTestUser();
 		Assert.assertNotNull(packageService);
 		String releaseCenterName  = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 		String extensionName = EntityHelper.formatAsBusinessKey(extensionNames[0]);
@@ -43,7 +42,7 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 
 		//Packages get looked up using a build composite key (ie include the unique ID)
 		//so first lets find the first build for a known product, and use that
-		List<Build> builds = buildService.findForProduct(releaseCenterName, extensionName, packageName, authenticatedUser);
+		List<Build> builds = buildService.findForProduct(releaseCenterName, extensionName, packageName);
 		build = builds.get(0);
 		buildCompKey = build.getCompositeKey();
 	}
@@ -51,13 +50,13 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 	@Test
 	public void testCreate() throws Exception {
 		// Assert pre conditions
-		Assert.assertEquals("Test data in database.", 3, packageService.findAll(buildCompKey, authenticatedUser).size());
+		Assert.assertEquals("Test data in database.", 3, packageService.findAll(buildCompKey).size());
 
 		// Run test method
-		Package aPackage = packageService.create(buildCompKey, "my test packages name", authenticatedUser);
+		Package aPackage = packageService.create(buildCompKey, "my test packages name");
 
 		// Assert post conditions
-		Assert.assertEquals("New package created.", 4, packageService.findAll(buildCompKey, authenticatedUser).size());
+		Assert.assertEquals("New package created.", 4, packageService.findAll(buildCompKey).size());
 		Assert.assertNotNull(aPackage.getId());
 		Assert.assertEquals("my test packages name", aPackage.getName());
 		Assert.assertEquals(build, aPackage.getBuild());
@@ -65,8 +64,8 @@ public class PackageServiceImplTest extends TestEntityGenerator {
 
 	@Test(expected = EntityAlreadyExistsException.class)
 	public void testCreateSamePackageTwice() throws Exception {
-		packageService.create(buildCompKey, "test-package", authenticatedUser);
-		packageService.create(buildCompKey, "test-package", authenticatedUser);
+		packageService.create(buildCompKey, "test-package");
+		packageService.create(buildCompKey, "test-package");
 	}
 
 }

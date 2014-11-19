@@ -25,6 +25,7 @@ import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -92,11 +93,11 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private RF2ClassifierService classifierService;
 
 	@Override
-	public Execution createExecutionFromBuild(final String buildCompositeKey, final User authenticatedUser)
+	public Execution createExecutionFromBuild(final String buildCompositeKey)
 			throws BusinessServiceException {
 
 		final Date creationDate = new Date();
-		final Build build = getBuild(buildCompositeKey, authenticatedUser);
+		final Build build = getBuild(buildCompositeKey);
 		if (build.getEffectiveTime() == null) {
 			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
 		}
@@ -134,8 +135,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAllDesc(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey, authenticatedUser);
+	public List<Execution> findAllDesc(final String buildCompositeKey) throws ResourceNotFoundException {
+		final Build build = getBuild(buildCompositeKey);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
@@ -144,8 +145,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution find(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey, authenticatedUser);
+	public Execution find(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
+		final Build build = getBuild(buildCompositeKey);
 
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
@@ -155,8 +156,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public String loadConfiguration(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public String loadConfiguration(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		try {
 			return dao.loadConfiguration(execution);
 		} catch (IOException e) {
@@ -165,19 +166,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws BusinessServiceException {
+	public List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
 		try {
-			return getExecutionPackages(buildCompositeKey, executionId, null, authenticatedUser);
+			return getExecutionPackages(buildCompositeKey, executionId, null);
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to retrieve execution packages.", e);
 		}
 	}
 
 	@Override
-	public ExecutionPackageDTO getExecutionPackage(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws BusinessServiceException {
+	public ExecutionPackageDTO getExecutionPackage(final String buildCompositeKey, final String executionId, final String packageId) throws BusinessServiceException {
 		final List<ExecutionPackageDTO> executionPackages;
 		try {
-			executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId, authenticatedUser);
+			executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId);
 			return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to retrieve execution package.", e);
@@ -185,8 +186,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerBuild(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public Execution triggerBuild(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		final Build build = execution.getBuild();
 
 		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
@@ -227,8 +228,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString, final User authenticatedUser) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		final Execution.Status status = Execution.Status.valueOf(statusString);
 		updateStatusWithChecks(execution, status);
 	}
@@ -248,50 +249,50 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public InputStream getOutputFile(final String buildCompositeKey, final String executionId, final String packageId, final String outputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public InputStream getOutputFile(final String buildCompositeKey, final String executionId, final String packageId, final String outputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.getOutputFileStream(execution, packageId, outputFilePath);
 	}
 
 	@Override
-	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.listOutputFilePaths(execution, packageId);
 	}
 
 	@Override
-	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.getInputFileStream(execution, packageId, inputFilePath);
 	}
 
 	@Override
-	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.listInputFileNames(execution, packageId);
 	}
 
 	@Override
-	public InputStream getLogFile(final String buildCompositeKey, final String executionId, final String packageId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public InputStream getLogFile(final String buildCompositeKey, final String executionId, final String packageId, final String logFileName) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.getLogFileStream(execution, packageId, logFileName);
 	}
 
 	@Override
-	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.listLogFilePaths(execution, packageId);
 	}
 
 	@Override
-	public List<String> getExecutionLogFilePaths(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public List<String> getExecutionLogFilePaths(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.listExecutionLogFilePaths(execution);
 	}
 
 	@Override
-	public InputStream getExecutionLogFile(final String buildCompositeKey, final String executionId, final String logFileName, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+	public InputStream getExecutionLogFile(final String buildCompositeKey, final String executionId, final String logFileName) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		return dao.getExecutionLogFileStream(execution, logFileName);
 	}
 
@@ -319,9 +320,9 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final String packageId, final User authenticatedUser) throws IOException, ResourceNotFoundException {
+	private List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final String packageId) throws IOException, ResourceNotFoundException {
 		final List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId, authenticatedUser);
+		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
 		final Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
 		final Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
 		final List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
@@ -453,8 +454,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return inputFileSchemaMap;
 	}
 
-	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Execution execution = getExecution(buildCompositeKey, executionId, authenticatedUser);
+	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecution(buildCompositeKey, executionId);
 		if (execution == null) {
 			final String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
 			throw new ResourceNotFoundException("Unable to find execution: " + item);
@@ -462,8 +463,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return execution;
 	}
 
-	private Execution getExecution(final String buildCompositeKey, final String executionId, final User authenticatedUser) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey, authenticatedUser);
+	private Execution getExecution(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
+		final Build build = getBuild(buildCompositeKey);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
@@ -475,12 +476,12 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 	
 
-	private Build getBuild(final String buildCompositeKey, final User authenticatedUser) throws ResourceNotFoundException {
+	private Build getBuild(final String buildCompositeKey) throws ResourceNotFoundException {
 		final Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		return buildDAO.find(buildId, authenticatedUser);
+		return buildDAO.find(buildId, SecurityHelper.getRequiredUser());
 	}
 
 	private void generateReadmeFile(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {

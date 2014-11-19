@@ -15,6 +15,7 @@ import org.ihtsdo.buildcloud.dao.helper.S3PutRequestBuilder;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +44,7 @@ public class PublishServiceImplTest {
 
 	@Before
 	public void setUp() {
+		TestUtils.setTestUser();
 		publishServiceImpl = new PublishServiceImpl(EXECUTION_BUCKET_NAME, PUBLISHED_BUCKET_NAME, s3Client, s3ClientHelper);
 		Deencapsulation.setField(publishServiceImpl, s3PathHelper);
 		//use Deencapsulation in JMockit or use

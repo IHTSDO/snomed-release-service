@@ -1,8 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.InputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -43,7 +41,7 @@ public class InputFileController {
 	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 											 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 
-		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		inputFileService.putManifestFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
@@ -51,7 +49,7 @@ public class InputFileController {
 	@ResponseBody
 	public Map<String, Object> getManifest(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 										   final HttpServletRequest request) throws ResourceNotFoundException {
-		String manifestFileName = inputFileService.getManifestFileName(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
+		String manifestFileName = inputFileService.getManifestFileName(buildCompositeKey, packageBusinessKey);
 		Map<String, String> objectHashMap = new HashMap<>();
 		if (manifestFileName != null) {
 			objectHashMap.put(FILENAME, manifestFileName);
@@ -65,7 +63,7 @@ public class InputFileController {
 	public void getManifestFile(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 								final HttpServletResponse response) throws ResourceNotFoundException {
 
-		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject())) {
+		try (InputStream fileStream = inputFileService.getManifestStream(buildCompositeKey, packageBusinessKey)) {
 			if (fileStream != null) {
 				response.setContentType("application/xml");
 				StreamUtils.copy(fileStream, response.getOutputStream());
@@ -83,7 +81,7 @@ public class InputFileController {
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 											 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 
-		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
+		inputFileService.putInputFile(buildCompositeKey, packageBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
@@ -91,7 +89,7 @@ public class InputFileController {
 	@ResponseBody
 	public List<Map<String, Object>> listInputFiles(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 													final HttpServletRequest request) throws ResourceNotFoundException {
-		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey, SecurityHelper.getSubject());
+		List<String> filePaths = inputFileService.listInputFilePaths(buildCompositeKey, packageBusinessKey);
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
 			Map<String, String> file = new HashMap<>();
@@ -106,7 +104,7 @@ public class InputFileController {
 								@PathVariable final String inputFileName,
 								final HttpServletResponse response) throws ResourceNotFoundException {
 
-		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName, SecurityHelper.getSubject())) {
+		try (InputStream fileStream = inputFileService.getFileInputStream(buildCompositeKey, packageBusinessKey, inputFileName)) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
@@ -123,14 +121,13 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
 	public void deleteInputFile(@PathVariable final String buildCompositeKey, @PathVariable final String packageBusinessKey,
 								@PathVariable final String inputFileNamePattern, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		
+
 		//Are we working with a file name or a pattern?
 		if (inputFileNamePattern.contains("*")) {
-			inputFileService.deleteFilesByPattern(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);						
+			inputFileService.deleteFilesByPattern(buildCompositeKey, packageBusinessKey, inputFileNamePattern);
 		} else {
 		    	try {
-		    	    inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileNamePattern, authenticatedUser);	
+		    	    inputFileService.deleteFile(buildCompositeKey, packageBusinessKey, inputFileNamePattern);
 		    	} catch (ResourceNotFoundException e) {
 		    	    LOGGER.error("Can't find file with name:{} to delete", inputFileNamePattern);
 		    	    response.setStatus(HttpServletResponse.SC_NOT_FOUND);

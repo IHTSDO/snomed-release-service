@@ -5,7 +5,7 @@ import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
@@ -56,8 +56,7 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> createExecution(@PathVariable String buildCompositeKey,
 											   HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Execution execution = executionService.createExecutionFromBuild(buildCompositeKey, authenticatedUser);
+		Execution execution = executionService.createExecutionFromBuild(buildCompositeKey);
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
@@ -66,8 +65,7 @@ public class ExecutionController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Execution> executions = executionService.findAllDesc(buildCompositeKey, authenticatedUser);
+		List<Execution> executions = executionService.findAllDesc(buildCompositeKey);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
 	}
 
@@ -75,8 +73,7 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 									HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
+		Execution execution = executionService.find(buildCompositeKey, executionId);
 
 		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
 
@@ -88,8 +85,7 @@ public class ExecutionController {
 	@ResponseBody
 	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 								 HttpServletResponse response) throws IOException, BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId, authenticatedUser);
+		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId);
 		response.setContentType("application/json");
 		response.getOutputStream().print(executionConfiguration);
 	}
@@ -98,8 +94,7 @@ public class ExecutionController {
 	@ResponseBody
 	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 												 HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<ExecutionPackageDTO> executionPackages = executionService.getExecutionPackages(buildCompositeKey, executionId, authenticatedUser);
+		List<ExecutionPackageDTO> executionPackages = executionService.getExecutionPackages(buildCompositeKey, executionId);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executionPackages, request, PACKAGE_LINKS);
 	}
 
@@ -108,8 +103,7 @@ public class ExecutionController {
 	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 										  @PathVariable String packageId,
 										  HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId, authenticatedUser);
+		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId);
 		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
 	}
 
@@ -118,8 +112,7 @@ public class ExecutionController {
 	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String packageId,
 			HttpServletRequest request) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<String> relativeFilePaths = executionService.getExecutionPackageInputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		List<String> relativeFilePaths = executionService.getExecutionPackageInputFilePaths(buildCompositeKey, executionId, packageId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
@@ -127,8 +120,7 @@ public class ExecutionController {
 	public void getPackageInputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String packageId, @PathVariable String outputFileName,
 			HttpServletResponse response) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		try (InputStream outputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
+		try (InputStream outputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, outputFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -138,8 +130,8 @@ public class ExecutionController {
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String packageId,
 			HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		User authenticatedUser = SecurityHelper.getRequiredUser();
+		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
@@ -147,8 +139,7 @@ public class ExecutionController {
 	public void getPackageOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String packageId, @PathVariable String outputFileName,
 			HttpServletResponse response) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName, authenticatedUser)) {
+		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -158,8 +149,7 @@ public class ExecutionController {
 	public List<Map<String, Object>> listPackageLogFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 														 @PathVariable String packageId,
 														 HttpServletRequest request) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<String> relativeFilePaths = executionService.getExecutionPackageLogFilePaths(buildCompositeKey, executionId, packageId, authenticatedUser);
+		List<String> relativeFilePaths = executionService.getExecutionPackageLogFilePaths(buildCompositeKey, executionId, packageId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
@@ -167,8 +157,7 @@ public class ExecutionController {
 	public void getPackageLogFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 									 @PathVariable String packageId, @PathVariable String logFileName,
 									 HttpServletResponse response) throws IOException, ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		try (InputStream outputFileStream = executionService.getLogFile(buildCompositeKey, executionId, packageId, logFileName, authenticatedUser)) {
+		try (InputStream outputFileStream = executionService.getLogFile(buildCompositeKey, executionId, packageId, logFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -177,28 +166,26 @@ public class ExecutionController {
 	@ResponseBody
 	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 											HttpServletRequest request) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId, authenticatedUser);
+		Execution execution = executionService.triggerBuild(buildCompositeKey, executionId);
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
 	@ResponseBody
 	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) throws BusinessServiceException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		executionService.updateStatus(buildCompositeKey, executionId, status, authenticatedUser);
+		executionService.updateStatus(buildCompositeKey, executionId, status);
 	}
 
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
 	public void publishReleasePackage( @PathVariable String buildCompositeKey, @PathVariable String executionId) throws ResourceNotFoundException {
 
-		User authenticatedUser = SecurityHelper.getSubject();
-		Execution execution = executionService.find(buildCompositeKey, executionId, authenticatedUser);
+		User authenticatedUser = SecurityHelper.getRequiredUser();
+		Execution execution = executionService.find(buildCompositeKey, executionId);
 
 		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
 
-		List<Package> packages = packageService.findAll(buildCompositeKey, authenticatedUser);
+		List<Package> packages = packageService.findAll(buildCompositeKey);
 		String lastPackage = "No Package";
 		for(Package pk: packages ){
 			try {
@@ -223,16 +210,14 @@ public class ExecutionController {
 	public List<Map<String, Object>> listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			HttpServletRequest request) throws ResourceNotFoundException {
 
-		User authenticatedUser = SecurityHelper.getSubject();
-		return convertFileListToEntities(request, executionService.getExecutionLogFilePaths(buildCompositeKey, executionId, authenticatedUser));
+		return convertFileListToEntities(request, executionService.getExecutionLogFilePaths(buildCompositeKey, executionId));
 	}
 
 	@RequestMapping(value = "/{executionId}/logs/{logFileName:.*}")
 	public void listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
-		User authenticatedUser = SecurityHelper.getSubject();
-		try (InputStream outputFileStream = executionService.getExecutionLogFile(buildCompositeKey, executionId, logFileName, authenticatedUser)) {
+		try (InputStream outputFileStream = executionService.getExecutionLogFile(buildCompositeKey, executionId, logFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}

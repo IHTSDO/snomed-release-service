@@ -60,7 +60,7 @@ public abstract class PreconditionCheckTest {
 
 	@Before
 	public void setup() throws Exception {
-		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
+		build = buildDAO.find(1L, TestUtils.TEST_USER);
 		if (build.getEffectiveTime() == null) {
 			build.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
 		}
@@ -128,7 +128,7 @@ public abstract class PreconditionCheckTest {
 			File tempFile = File.createTempFile("testTemp", ".txt");
 			try (InputStream inputStream = new FileInputStream(tempFile)) {
 				inputFileService.putInputFile(build.getCompositeKey(), pkg.getBusinessKey(),
-						inputStream, filename, 0L, TestEntityGenerator.TEST_USER);
+						inputStream, filename, 0L);
 			} finally {
 				tempFile.deleteOnExit();
 			}
@@ -138,7 +138,7 @@ public abstract class PreconditionCheckTest {
 	protected void deleteFilesFromInputFileByPattern(String fileExtension) throws ResourceNotFoundException {
 		for (Package pkg : build.getPackages()) {
 			inputFileService.deleteFilesByPattern(build.getCompositeKey(), pkg.getBusinessKey(),
-					fileExtension, TestEntityGenerator.TEST_USER);
+					fileExtension);
 		}
 	}
 

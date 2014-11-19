@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +26,7 @@ public class ProductDAOImplTest extends TestEntityGenerator{
 		Product product = dao.find(	EntityHelper.formatAsBusinessKey(TestEntityGenerator.releaseCenterShortNames[0]),
 									EntityHelper.formatAsBusinessKey(TestEntityGenerator.extensionNames[1].toLowerCase()), 
 									EntityHelper.formatAsBusinessKey(TestEntityGenerator.productNames[1][0].toLowerCase()),
-									TestEntityGenerator.TEST_USER);
+									TestUtils.TEST_USER);
 		Assert.assertNotNull(product);
 		Assert.assertEquals(TestEntityGenerator.productNames[1][0], product.getName());
 	}

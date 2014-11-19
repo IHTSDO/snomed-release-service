@@ -1,5 +1,23 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.ihtsdo.buildcloud.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.dao.PackageDAO;
+import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.FileHelper;
+import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
+import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,24 +28,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.ihtsdo.buildcloud.dao.InputFileDAO;
-import org.ihtsdo.buildcloud.dao.PackageDAO;
-import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -52,14 +52,14 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putManifestFile(final String buildCompositeKey, final String packageBusinessKey, final InputStream inputStream, final String originalFilename, final long fileSize, final User authenticatedUser) throws ResourceNotFoundException {
-		Package pkg = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public void putManifestFile(final String buildCompositeKey, final String packageBusinessKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException {
+		Package pkg = getPackage(buildCompositeKey, packageBusinessKey);
 		dao.putManifestFile(pkg, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
-	public String getManifestFileName(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public String getManifestFileName(final String buildCompositeKey, final String packageBusinessKey) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 		StringBuilder manifestDirectoryPathSB = s3PathHelper.getPackageManifestDirectoryPath(aPackage);
 		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
 		if (!files.isEmpty()) {
@@ -70,14 +70,14 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputStream getManifestStream(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public InputStream getManifestStream(final String buildCompositeKey, final String packageBusinessKey) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 		return dao.getManifestStream(aPackage);
 	}
 
 	@Override
-	public void putInputFile(final String buildCompositeKey, final String packageBusinessKey, final InputStream inputStream, final String filename, final long fileSize, final User authenticatedUser) throws ResourceNotFoundException, IOException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public void putInputFile(final String buildCompositeKey, final String packageBusinessKey, final InputStream inputStream, final String filename, final long fileSize) throws ResourceNotFoundException, IOException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 
 		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
 			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
@@ -104,37 +104,36 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputStream getFileInputStream(final String buildCompositeKey, final String packageBusinessKey, final String filename, final User authenticatedUser) throws ResourceNotFoundException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public InputStream getFileInputStream(final String buildCompositeKey, final String packageBusinessKey, final String filename) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 		return getFileInputStream(aPackage, filename);
 	}
 
 	@Override
-	public List<String> listInputFilePaths(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public List<String> listInputFilePaths(final String buildCompositeKey, final String packageBusinessKey) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 		return dao.listInputFilePaths(aPackage);
 	}
 
 	@Override
-	public void deleteFile(final String buildCompositeKey, final String packageBusinessKey, final String filename, final User authenticatedUser) throws ResourceNotFoundException {
-		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey, authenticatedUser);
+	public void deleteFile(final String buildCompositeKey, final String packageBusinessKey, final String filename) throws ResourceNotFoundException {
+		Package aPackage = getPackage(buildCompositeKey, packageBusinessKey);
 		String filePath = s3PathHelper.getPackageInputFilePath(aPackage, filename);
 		fileHelper.deleteFile(filePath);
 	}
 
 	@Override
 	public void deleteFilesByPattern(final String buildCompositeKey,
-			final String packageBusinessKey, final String inputFileNamePattern,
-			final User authenticatedUser) throws ResourceNotFoundException {
+			final String packageBusinessKey, final String inputFileNamePattern) throws ResourceNotFoundException {
 
-		List<String> filesFound = listInputFilePaths(buildCompositeKey, packageBusinessKey, authenticatedUser);
+		List<String> filesFound = listInputFilePaths(buildCompositeKey, packageBusinessKey);
 
 		//Need to convert a standard file wildcard to a regex pattern
 		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
 		Pattern pattern = Pattern.compile(regexPattern);
 		for (String inputFileName : filesFound) {
 			if (pattern.matcher(inputFileName).matches()) {
-				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName, authenticatedUser);
+				deleteFile(buildCompositeKey, packageBusinessKey, inputFileName);
 			}
 		}
 	}
@@ -144,12 +143,12 @@ public class InputFileServiceImpl implements InputFileService {
 		return fileHelper.getFileStream(filePath);
 	}
 
-	private Package getPackage(final String buildCompositeKey, final String packageBusinessKey, final User authenticatedUser) throws ResourceNotFoundException {
+	private Package getPackage(final String buildCompositeKey, final String packageBusinessKey) throws ResourceNotFoundException {
 		Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
 		if (buildId == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
 		}
-		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, authenticatedUser);
+		Package aPackage = packageDAO.find(CompositeKeyHelper.getId(buildCompositeKey), packageBusinessKey, SecurityHelper.getRequiredUser());
 		if (aPackage == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
 			throw new ResourceNotFoundException("Unable to find package: " + item);

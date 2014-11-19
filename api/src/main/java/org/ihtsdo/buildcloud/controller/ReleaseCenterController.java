@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -35,20 +32,17 @@ public class ReleaseCenterController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getReleaseCenters(HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<ReleaseCenter> centers = releaseCenterService.findAll(authenticatedUser);
+		List<ReleaseCenter> centers = releaseCenterService.findAll();
 		return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
+			HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
+
 		String name = json.get("name");
 		String shortName = json.get("shortName");
-
-
-		User authenticatedUser = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.create(name, shortName, authenticatedUser);
+		ReleaseCenter center = releaseCenterService.create(name, shortName);
 
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
@@ -59,11 +53,10 @@ public class ReleaseCenterController {
 	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
 	public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterBusinessKey,
-												   @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException {
+			@RequestBody(required = false) Map<String, String> json,
+			HttpServletRequest request) throws IOException {
 
-		User authenticatedUser = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
+		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey);
 		center.setName(json.get("name"));
 		center.setShortName(json.get("shortName"));
 		center.setRemoved("true".equalsIgnoreCase(json.get("removed")));
@@ -76,11 +69,10 @@ public class ReleaseCenterController {
 	@ResponseBody
 	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
-		User authenticatedUser = SecurityHelper.getSubject();
-		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey, authenticatedUser);
-		
+		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey);
+
 		if (center == null) {
-			throw new ResourceNotFoundException ("Unable to find release center: " +  releaseCenterBusinessKey);
+			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
 		}
 
 		boolean currentResource = true;

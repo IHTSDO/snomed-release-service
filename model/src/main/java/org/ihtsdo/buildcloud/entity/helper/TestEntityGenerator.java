@@ -4,8 +4,6 @@ import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Package;
 
 public class TestEntityGenerator {
-	
-	public static final User TEST_USER = new User(1L, "test");
 
 	public static final String [] releaseCenterNames = {"International Release Center"};
 

@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.List;
 import java.util.Map;
 
@@ -35,44 +32,44 @@ public class ProductBuildController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterBusinessKey,
-											   @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
-											   HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+			@PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
+			HttpServletRequest request) throws ResourceNotFoundException {
+
+		List<Build> builds = buildService.findForProduct(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS, "/builds");
 	}
-	
+
 	@RequestMapping("/{buildBusinessKey}")
 	@ResponseBody
 	public Map<String, Object> getBuild(@PathVariable String releaseCenterBusinessKey,
-											   @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
-											   @PathVariable String buildBusinessKey,
-											   HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Build build = buildService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey, authenticatedUser);
+			@PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
+			@PathVariable String buildBusinessKey,
+			HttpServletRequest request) throws ResourceNotFoundException {
+
+		Build build = buildService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, buildBusinessKey);
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS);
 	}
-	
+
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable String releaseCenterBusinessKey,
-											 @PathVariable String extensionBusinessKey,
-											 @PathVariable String productBusinessKey,											 
-											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws BusinessServiceException {
+			@PathVariable String extensionBusinessKey,
+			@PathVariable String productBusinessKey,
+			@RequestBody(required = false) Map<String, String> json,
+			HttpServletRequest request) throws BusinessServiceException {
+
 		if (json == null) {
 			throw new BadRequestException("No JSON payload detected in request.");
 		}
 		String name = json.get(NAME);
-		User authenticatedUser = SecurityHelper.getSubject();
-		
+
 		//Build service will throw ResourceNotFoundException if the parent object doesn't exist.
-		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name, authenticatedUser);
+		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name);
 
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS);
 
 		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
-	}		
+	}
 
 }

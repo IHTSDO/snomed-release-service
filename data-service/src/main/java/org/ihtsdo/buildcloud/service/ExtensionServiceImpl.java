@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,8 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 
 	@Override
-	public List<Extension> findAll(String releaseCenterBusinessKey, User authenticatedUser) throws ResourceNotFoundException {
-		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
+	public List<Extension> findAll(String releaseCenterBusinessKey) throws ResourceNotFoundException {
+		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, SecurityHelper.getRequiredUser());
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
 		}
@@ -43,20 +44,21 @@ public class ExtensionServiceImpl extends EntityServiceImpl<Extension> implement
 	}
 
 	@Override
-	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey, User authenticatedUser) {
-		return extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+	public Extension find(String releaseCenterBusinessKey, String extensionBusinessKey) {
+		return extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Extension create(String releaseCenterBusinessKey, String name, User authenticatedUser) throws ResourceNotFoundException, EntityAlreadyExistsException {
-		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, authenticatedUser);
+	public Extension create(String releaseCenterBusinessKey, String name) throws ResourceNotFoundException, EntityAlreadyExistsException {
+		User user = SecurityHelper.getRequiredUser();
+		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterBusinessKey, user);
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
 		}
 
 		//Check that we don't already have one of these
 		String extensionBusinessKey = EntityHelper.formatAsBusinessKey(name);
-		Extension existingProduct = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+		Extension existingProduct = extensionDAO.find(releaseCenterBusinessKey, extensionBusinessKey, user);
 		if (existingProduct != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}

@@ -3,8 +3,6 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Extension;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.ExtensionService;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
@@ -43,16 +41,14 @@ public class ExtensionController {
 	@RequestMapping
 	@ResponseBody
 	public List<Map<String, Object>> getExtensions(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Extension> extensions = extensionService.findAll(releaseCenterBusinessKey, authenticatedUser);
+		List<Extension> extensions = extensionService.findAll(releaseCenterBusinessKey);
 		return hypermediaGenerator.getEntityCollectionHypermedia(extensions, request, EXTENSION_LINKS);
 	}
 
 	@RequestMapping("/{extensionBusinessKey}")
 	@ResponseBody
 	public Map<String, Object> getExtension(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
-		User authenticatedUser = SecurityHelper.getSubject();
-		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+		Extension extension = extensionService.find(releaseCenterBusinessKey, extensionBusinessKey);
 		
 		if (extension == null) {
 			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey,extensionBusinessKey);
@@ -68,8 +64,7 @@ public class ExtensionController {
 											   HttpServletRequest request) throws IOException, ResourceNotFoundException, EntityAlreadyExistsException {
 
 		String name = json.get("name");
-		User authenticatedUser = SecurityHelper.getSubject();
-		Extension extension = extensionService.create(releaseCenterBusinessKey, name, authenticatedUser);
+		Extension extension = extensionService.create(releaseCenterBusinessKey, name);
 		
 		boolean currentResource = true;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
@@ -92,8 +87,7 @@ public class ExtensionController {
 			filterOptions.add(FilterOption.STARRED_ONLY);
 		}
 		
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Build> builds = buildService.findForExtension(releaseCenterBusinessKey, extensionBusinessKey, filterOptions, authenticatedUser);
+		List<Build> builds = buildService.findForExtension(releaseCenterBusinessKey, extensionBusinessKey, filterOptions);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BuildController.BUILD_LINKS);
 	}
 

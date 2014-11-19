@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +25,7 @@ public class PackageDAOImplTest {
 		String testPackageName = TestEntityGenerator.packageNames[0][0][0];
 		String testPackageId = EntityHelper.formatAsBusinessKey(testPackageName);
 		
-		Package aPackage = dao.find(1L, testPackageId, TestEntityGenerator.TEST_USER);
+		Package aPackage = dao.find(1L, testPackageId, TestUtils.TEST_USER);
 		Assert.assertNotNull(aPackage);
 		Assert.assertEquals(testPackageName, aPackage.getName());
 	}

@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.ReleaseCenterMembership;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,18 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 	}
 
 	@Override
-	public List<ReleaseCenter> findAll(User authenticatedUser) {
-		return dao.findAll(authenticatedUser);
+	public List<ReleaseCenter> findAll() {
+		return dao.findAll(SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public ReleaseCenter find(String businessKey, User authenticatedUser) {
-		return dao.find(businessKey, authenticatedUser);
+	public ReleaseCenter find(String businessKey) {
+		return dao.find(businessKey, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public ReleaseCenter create(String name, String shortName, User user) throws EntityAlreadyExistsException {
+	public ReleaseCenter create(String name, String shortName) throws EntityAlreadyExistsException {
+		User user = SecurityHelper.getRequiredUser();
 
 		//Check that we don't already have one of these
 		String releaseCenterBusinessKey = EntityHelper.formatAsBusinessKey(shortName);

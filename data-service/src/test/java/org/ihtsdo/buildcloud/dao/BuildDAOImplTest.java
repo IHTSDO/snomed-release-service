@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,14 +26,14 @@ public class BuildDAOImplTest {
 	@Test
 	public void testInitialData() {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
-		List<Build> builds = dao.findAll(filterOptions, TestEntityGenerator.TEST_USER);
+		List<Build> builds = dao.findAll(filterOptions, TestUtils.TEST_USER);
 		Assert.assertNotNull(builds);
 		Assert.assertEquals(TestEntityGenerator.totalBuildCount, builds.size());
 
-		Assert.assertNotNull(dao.find(1L, TestEntityGenerator.TEST_USER));
-		Assert.assertNotNull(dao.find(2L, TestEntityGenerator.TEST_USER));
+		Assert.assertNotNull(dao.find(1L, TestUtils.TEST_USER));
+		Assert.assertNotNull(dao.find(2L, TestUtils.TEST_USER));
 		//Attempt to recover build greater than our current amount of test data - should not be found
-		Assert.assertNull(dao.find((long)TestEntityGenerator.totalBuildCount + 1, TestEntityGenerator.TEST_USER));
+		Assert.assertNull(dao.find((long)TestEntityGenerator.totalBuildCount + 1, TestUtils.TEST_USER));
 	}
 
 }
