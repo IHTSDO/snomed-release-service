@@ -65,8 +65,8 @@ public class ExtensionController {
 
 		String name = json.get("name");
 		Extension extension = extensionService.create(releaseCenterBusinessKey, name);
-		
-		boolean currentResource = true;
+
+		boolean currentResource = false;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(extension, currentResource, request, EXTENSION_LINKS);
 		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
@@ -75,15 +75,15 @@ public class ExtensionController {
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds( @PathVariable String releaseCenterBusinessKey,
 												@PathVariable String extensionBusinessKey,
-												@RequestParam(value="includeRemoved", required=false) String includeRemovedStr,
-												@RequestParam(value="starred", required=false) String starredStr,
+												@RequestParam(required=false) boolean includeRemoved,
+												@RequestParam(required=false) boolean starred,
 												HttpServletRequest request) {
 		
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
-		if (Boolean.parseBoolean(includeRemovedStr)) {
+		if (includeRemoved) {
 			filterOptions.add(FilterOption.INCLUDE_REMOVED);
 		}
-		if (Boolean.parseBoolean(starredStr)) {
+		if (starred) {
 			filterOptions.add(FilterOption.STARRED_ONLY);
 		}
 		

@@ -55,10 +55,8 @@ public class ProductController {
 		String name = json.get("name");
 		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name);
 
-		boolean currentResource = true;
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
-
-		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
+		boolean currentResource = false;
+		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 
 	@RequestMapping("/{productBusinessKey}")

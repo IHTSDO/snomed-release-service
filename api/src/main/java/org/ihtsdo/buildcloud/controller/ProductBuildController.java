@@ -59,17 +59,14 @@ public class ProductBuildController {
 			HttpServletRequest request) throws BusinessServiceException {
 
 		if (json == null) {
-			throw new BadRequestException("No JSON payload detected in request.");
+			throw new BadRequestException("No JSON payload in request body.");
 		}
 		String name = json.get(NAME);
 
-		//Build service will throw ResourceNotFoundException if the parent object doesn't exist.
 		Build build = buildService.create(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, name);
 
-		boolean currentResource = true;
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS);
-
-		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
+		boolean currentResource = false;
+		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BuildController.BUILD_LINKS), HttpStatus.CREATED);
 	}
 
 }

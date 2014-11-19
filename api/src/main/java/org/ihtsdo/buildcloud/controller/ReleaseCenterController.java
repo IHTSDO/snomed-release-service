@@ -44,9 +44,8 @@ public class ReleaseCenterController {
 		String shortName = json.get("shortName");
 		ReleaseCenter center = releaseCenterService.create(name, shortName);
 
-		boolean currentResource = true;
+		boolean currentResource = false;
 		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
-
 		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
 

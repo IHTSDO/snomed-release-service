@@ -31,15 +31,14 @@ public class BuildController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds(@RequestParam(value="includeRemoved", required=false) String includeRemovedStr,
-			@RequestParam(value="starred", required=false) String starredStr,
-			HttpServletRequest request) {
+	public List<Map<String, Object>> getBuilds(@RequestParam(required=false) boolean includeRemoved,
+			@RequestParam(required = false) boolean starred, HttpServletRequest request) {
 		
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
-		if (Boolean.parseBoolean(includeRemovedStr)) {
+		if (includeRemoved) {
 			filterOptions.add(FilterOption.INCLUDE_REMOVED);
 		}
-		if (Boolean.parseBoolean(starredStr)) {
+		if (starred) {
 			filterOptions.add(FilterOption.STARRED_ONLY);
 		}
 		
@@ -63,6 +62,7 @@ public class BuildController {
 	@ResponseBody
 	public Map<String, Object> updateBuild(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
+
 		Build build = buildService.update(buildCompositeKey, json);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " +  buildCompositeKey);

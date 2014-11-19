@@ -9,7 +9,9 @@ import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,11 +40,11 @@ public class PackageController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException, EntityAlreadyExistsException, ResourceNotFoundException {
+	public ResponseEntity<Map<String, Object>> createPackage(@PathVariable String buildCompositeKey, @RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BadRequestException, EntityAlreadyExistsException, ResourceNotFoundException {
 		String name = json.get("name");
 		if (name != null) {
 			Package aPackage = packageService.create(buildCompositeKey, name);
-			return hypermediaGenerator.getEntityHypermedia(aPackage, false, request, PACKAGE_LINKS);
+			return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(aPackage, false, request, PACKAGE_LINKS), HttpStatus.CREATED);
 		} else {
 			throw new BadRequestException("Package name is required.");
 		}
@@ -53,10 +55,10 @@ public class PackageController {
 	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String packageBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		Package aPackage = packageService.find(buildCompositeKey, packageBusinessKey);
-		
+
 		if (aPackage == null) {
-			String item = CompositeKeyHelper.getPath(buildCompositeKey,packageBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
+			throw new ResourceNotFoundException("Unable to find package: " + item);
 		}
 
 		boolean currentResource = true;
@@ -71,8 +73,8 @@ public class PackageController {
 
 		Package aPackage = packageService.update(buildCompositeKey, packageBusinessKey, json);
 		if (aPackage == null) {
-			String item = CompositeKeyHelper.getPath(buildCompositeKey,packageBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find package: " +  item);
+			String item = CompositeKeyHelper.getPath(buildCompositeKey, packageBusinessKey);
+			throw new ResourceNotFoundException("Unable to find package: " + item);
 		}
 		return hypermediaGenerator.getEntityHypermedia(aPackage, true, request, PACKAGE_LINKS);
 	}

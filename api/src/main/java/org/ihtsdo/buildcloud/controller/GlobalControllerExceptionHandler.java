@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.service.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -43,7 +44,7 @@ public class GlobalControllerExceptionHandler {
 		return getErrorPayload(exception, HttpStatus.NOT_FOUND);
 	}
 
-	@ExceptionHandler(MissingServletRequestParameterException.class)
+	@ExceptionHandler({MissingServletRequestParameterException.class, TypeMismatchException.class})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public Map<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
