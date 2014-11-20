@@ -223,7 +223,7 @@ public class ExecutionController {
 	}
 
 	@RequestMapping(value = "/{executionId}/logs/{logFileName:.*}")
-	public void listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+	public void getExecutionLog(@PathVariable String buildCompositeKey, @PathVariable String executionId,
 			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
 		try (InputStream outputFileStream = executionService.getExecutionLogFile(buildCompositeKey, executionId, logFileName)) {
