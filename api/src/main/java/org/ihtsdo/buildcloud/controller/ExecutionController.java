@@ -122,13 +122,13 @@ public class ExecutionController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles/{outputFileName:.*}")
+	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles/{inputFileName:.*}")
 	public void getPackageInputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId, @PathVariable String outputFileName,
+			@PathVariable String packageId, @PathVariable String inputFileName,
 			HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
-		try (InputStream outputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, outputFileName)) {
-			StreamUtils.copy(outputFileStream, response.getOutputStream());
+		try (InputStream inputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, inputFileName)) {
+			StreamUtils.copy(inputFileStream, response.getOutputStream());
 		}
 	}
 
@@ -207,7 +207,7 @@ public class ExecutionController {
 		}
 	}
 
-	public void ifExecutionIsNullThrow(String buildCompositeKey, String executionId, Execution execution) throws ResourceNotFoundException {
+	private void ifExecutionIsNullThrow(String buildCompositeKey, String executionId, Execution execution) throws ResourceNotFoundException {
 		if (execution == null) {
 			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
 			throw new ResourceNotFoundException("Unable to find execution: " + item);
