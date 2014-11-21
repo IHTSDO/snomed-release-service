@@ -1,41 +1,24 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import org.ihtsdo.buildcloud.entity.*;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 import java.util.GregorianCalendar;
 
 public class TestEntityFactory extends TestEntityGenerator {
 
-	public Package createPackage(String releaseCenterName, String releaseCenterShortName, String extensionName, String productName, String buildName, String packageName) {
+	public Build createBuild(String releaseCenterName, String releaseCenterShortName, String buildName) {
 		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterName, releaseCenterShortName);
-		Extension extension = new Extension(extensionName);
-		Product product = new Product(productName);
 		Build build = new Build(1L, buildName);
-		Package aPackage = new Package(packageName);
-		build.addPackage(aPackage);
-		product.addBuild(build);
-		extension.addProduct(product);
-		releaseCenter.addExtension(extension);
-		return aPackage;
+		releaseCenter.addBuild(build);
+		return build;
 	}
 	
 	public Build createBuild(){
-		//TODO Once we have sets, we'll be able to use the test release center directly, and navigate to find a build
 		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
-		Extension extension = new Extension(extensionNames[0]);
-		Product product = new Product(productNames[0][0]);
-		Build build = new Build(1L,buildNames[0][0][1]);
-
-		for (int pkgIdx = 0; pkgIdx < packageNames[0][0].length; pkgIdx++) {
-			Package pkg = new Package(packageNames[0][0][pkgIdx]);
-			build.addPackage(pkg);
-		}
-		
-		product.addBuild(build);
-		extension.addProduct(product);
-		releaseCenter.addExtension(extension);
-		
+		Build build = new Build(1L, buildNames[0]);
+		releaseCenter.addBuild(build);
 		return build;
 	}
 

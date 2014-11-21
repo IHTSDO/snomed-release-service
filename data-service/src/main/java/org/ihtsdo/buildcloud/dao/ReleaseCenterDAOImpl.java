@@ -15,6 +15,7 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public List<ReleaseCenter> findAll(User user) {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCenter " +

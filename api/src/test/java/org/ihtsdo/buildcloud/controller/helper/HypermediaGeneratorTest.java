@@ -77,7 +77,7 @@ public class HypermediaGeneratorTest {
 
 		String linkNameAndUrl = "buildScripts|build-scripts.zip";
 		boolean currentResource = true;
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, currentResource, mockServletRequest, new String[]{"configuration", linkNameAndUrl});
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
 
 		Assert.assertNotNull(hypermedia);
 //		System.out.println(toString(hypermedia));
@@ -89,7 +89,7 @@ public class HypermediaGeneratorTest {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/builds/something/exec/something/trigger")).anyTimes();
 		mocksControl.replay();
 
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(execution, mockServletRequest, new String[]{"configuration", "buildScripts|build-scripts.zip"});
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(execution, mockServletRequest, "configuration", "buildScripts|build-scripts.zip");
 
 		Assert.assertNotNull(hypermedia);
 		System.out.println(toString(hypermedia));

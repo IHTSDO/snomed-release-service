@@ -85,6 +85,7 @@ public class TelemetryEventAppender extends WriterAppender {
 		message.setStringProperty(Constants.EXCEPTION, StringUtils.join(event.getThrowableStrRep(), "\n"));
 		message.setStringProperty(Constants.SERVICE, service);
 		message.setStringProperty(Constants.ENVIRONMENT, environment);
+		@SuppressWarnings("unchecked")
 		Map<String, Object> context = MDC.getContext();
 		if (context != null) {
 			for (String key : context.keySet()) {

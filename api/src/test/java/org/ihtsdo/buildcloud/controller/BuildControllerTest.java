@@ -14,21 +14,22 @@ public class BuildControllerTest extends AbstractControllerTest {
 	
 	@Test
 	public void returns_builds() throws Exception {
-		
-		int random_extension_index = 0;
-		int random_product_index = 0;
 		int random_build = 3;
-		String buildStr = TestEntityGenerator.buildNames[random_extension_index][random_product_index][random_build];
-		
+		String buildName = TestEntityGenerator.buildNames[random_build];
+		String businessKey = EntityHelper.formatAsBusinessKey(buildName);
+
+		String releaseCenterShortName = TestEntityGenerator.releaseCenterShortNames[0];
+		String releaseCenterKey = EntityHelper.formatAsBusinessKey(releaseCenterShortName);
+
 		SecurityHelper.setUser(TestUtils.TEST_USER);
-		
+
 		//JSON object indexes start from 1 so add 1 to the traditional 0 based index
-		String build_id =  (random_build+1) + "_" + EntityHelper.formatAsBusinessKey(buildStr);
-		mockMvc.perform(get("/builds"))
+		String buildsUrl = "/centers/" + releaseCenterKey + "/builds/";
+		mockMvc.perform(get(buildsUrl))
 				.andExpect(status().isOk())
 				//.andDo(print())
 				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
-				.andExpect(jsonPath("$[" + random_build + "].url", is(ROOT_URL + "/builds/" + build_id)));
+				.andExpect(jsonPath("$[" + random_build + "].url", is(ROOT_URL + buildsUrl + businessKey)));
 	}
 
 }

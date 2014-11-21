@@ -2,7 +2,9 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,9 +30,12 @@ public class ReleaseCenterController {
 	private ReleaseCenterService releaseCenterService;
 
 	@Autowired
+	private PublishService publishService;
+
+	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] RELEASE_CENTER_LINKS = {"extensions"};
+	private static final String[] RELEASE_CENTER_LINKS = {"builds", "published"};
 
 	@RequestMapping
 	@ResponseBody
@@ -68,14 +76,44 @@ public class ReleaseCenterController {
 	@ResponseBody
 	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
-		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey);
-
-		if (center == null) {
-			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
-		}
+		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
+	}
+
+	@RequestMapping("/{releaseCenterBusinessKey}/published")
+	@ResponseBody
+	public Map<String, Object> getReleaseCenterPublishedPackages(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
+
+		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);
+
+		List<String> publishedPackages = publishService.getPublishedPackages(center);
+		Map<String, Object> representation = new HashMap<>();
+		representation.put("publishedPackages", publishedPackages);
+		return hypermediaGenerator.getEntityHypermedia(representation, true, request, RELEASE_CENTER_LINKS);
+	}
+
+	@RequestMapping(value = "/{releaseCenterBusinessKey}/published", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterBusinessKey,
+			@RequestParam(value = "file") final MultipartFile file) throws BusinessServiceException, IOException {
+
+		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);
+
+		try (InputStream inputStream = file.getInputStream()) {
+			publishService.publishAdHocFile(center, inputStream, file.getOriginalFilename(), file.getSize());
+		}
+
+		return new ResponseEntity<>(HttpStatus.CREATED);
+	}
+
+	private ReleaseCenter getReleaseCenterRequired(String releaseCenterBusinessKey) throws ResourceNotFoundException {
+		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey);
+		if (center == null) {
+			throw new ResourceNotFoundException("Unable to find release center: " + releaseCenterBusinessKey);
+		}
+		return center;
 	}
 
 }

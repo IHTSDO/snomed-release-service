@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,6 +18,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	public void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager().preconditionChecks(inputFilesCheck);
+		TestUtils.setTestUser();
 	}
 
 	@Test

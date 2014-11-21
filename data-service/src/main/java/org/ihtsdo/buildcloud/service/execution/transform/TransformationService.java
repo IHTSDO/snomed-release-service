@@ -2,10 +2,9 @@ package org.ihtsdo.buildcloud.service.execution.transform;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
+import org.ihtsdo.buildcloud.entity.ExecutionReport;
 import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EffectiveDateNotMatchedException;
@@ -79,31 +78,30 @@ public class TransformationService {
 	 * A streaming transformation of execution input files, creating execution output files.
 	 * @throws ExecutionException
 	 */
-	public void transformFiles(final ExecutionPackageBean executionPackageBean, final Map<String, TableSchema> inputFileSchemaMap)
+	public void transformFiles(final Execution execution, final Map<String, TableSchema> inputFileSchemaMap)
 			throws BusinessServiceException {
 
-		final Execution execution = executionPackageBean.getExecution();
-		final Package pkg = executionPackageBean.getPackage();
-		final String effectiveDateInSnomedFormat = execution.getBuild().getEffectiveTimeSnomedFormat();
+		final Build build = execution.getBuild();
+		final ExecutionReport report = execution.getExecutionReport();
+
+		final String effectiveDateInSnomedFormat = build.getEffectiveTimeSnomedFormat();
 		final String executionId = execution.getId();
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
-		final String packageBusinessKey = pkg.getBusinessKey();
-		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
+		final boolean workbenchDataFixesRequired = build.isWorkbenchDataFixesRequired();
 		
-		LOGGER.info("Transforming files in execution {}, package {}{}", execution.getId(), packageBusinessKey,
-				workbenchDataFixesRequired ? ", workbench data fixes enabled" : "");
+		LOGGER.info("Transforming files in execution {}, workbench data fixes {}.", execution.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
 
 		// Iterate each execution input file
-		final List<String> executionInputFileNames = dao.listInputFileNames(execution, packageBusinessKey);
+		final List<String> executionInputFileNames = dao.listInputFileNames(execution);
 		LOGGER.info("Found {} files to process", executionInputFileNames.size());
 		if (workbenchDataFixesRequired) {
 			// Phase 0
 			// Get list of conceptIds which should be in the model module.
 
-			if (!pkg.isFirstTimeRelease()) {
-				final String previousPublishedPackage = pkg.getPreviousPublishedPackage();
+			if (!build.isFirstTimeRelease()) {
+				final String previousPublishedPackage = build.getPreviousPublishedPackage();
 				try {
-					final InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(pkg.getBuild().getProduct(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+					final InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(build.getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 					if (statedRelationshipSnapshotStream != null) {
 						final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -114,7 +112,7 @@ public class TransformationService {
 							}
 						}
 						if (inputStatedRelationshipFilename != null) {
-							final InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, packageBusinessKey, inputStatedRelationshipFilename);
+							final InputStream inputStatedRelationshipStream = dao.getInputFileStream(execution, inputStatedRelationshipFilename);
 							moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
 
 							transformationFactory.setModelConceptIdsForModuleIdFix(modelConceptIds);
@@ -155,18 +153,17 @@ public class TransformationService {
 					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 
 					final ComponentType componentType = tableSchema.getComponentType();
-					final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
 					if (isPreProcessType(componentType)) {
 
-						final InputStream executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
-						final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, packageBusinessKey, inputFileName);
+						final InputStream executionInputFileInputStream = dao.getInputFileStream(execution, inputFileName);
+						final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(execution, inputFileName);
 
 						final StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
 
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName, report);
 						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent) {
-							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, packageBusinessKey, inputFileName);
+							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, inputFileName);
 						}
 					}
 				}
@@ -193,19 +190,18 @@ public class TransformationService {
 						try {
 							InputStream executionInputFileInputStream;
 							if (isPreProcessType(tableSchema.getComponentType())) {
-								executionInputFileInputStream = dao.getLocalInputFileStream(execution, packageBusinessKey, inputFileName);
+								executionInputFileInputStream = dao.getLocalInputFileStream(execution, inputFileName);
 							} else {
-								executionInputFileInputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+								executionInputFileInputStream = dao.getInputFileStream(execution, inputFileName);
 							}
 
-							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, packageBusinessKey, tableSchema.getFilename());
+							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(execution, tableSchema.getFilename());
 							final OutputStream executionTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 
 							// Get appropriate transformations for this file.
 							final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
 							// Get the report to output to
-							final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
 							// Apply transformations
 							steamingFileTransformation.transformFile(executionInputFileInputStream, executionTransformedOutputStream,
 									tableSchema.getFilename(), report);
@@ -226,7 +222,7 @@ public class TransformationService {
 
 			} else {
 				// Not recognised as an RF2 file, copy across without transform
-				dao.copyInputFileToOutputFile(execution, packageBusinessKey, inputFileName);
+				dao.copyInputFileToOutputFile(execution, inputFileName);
 			}
 
 			// Wait for all concurrent tasks to finish
@@ -241,21 +237,21 @@ public class TransformationService {
 
 		if (isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
 			try {
-				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
+				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution);
 			} catch (TransformationException e) {
 				throw new BusinessServiceException("Failed to create legacy identifiers.", e);
 			}
 		}
 	}
 	
-	private Map<String,List<UUID>> getNewConceptUUIDs(final Execution execution, final String packageBusinessKey, final String inputFileName) throws IOException {
-		final InputStream inputStream = dao.getInputFileStream(execution, packageBusinessKey, inputFileName);
+	private Map<String,List<UUID>> getNewConceptUUIDs(final Execution execution, final String inputFileName) throws IOException {
+		final InputStream inputStream = dao.getInputFileStream(execution, inputFileName);
 		
 		final Map<String,List<UUID>> moduleIdAndUuidMap = new HashMap<>();
 		try (BufferedReader conceptDeltaFileReader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
-			String line = null;
+			String line;
 			boolean firstLine = true;
-			
+
 			while ((line = conceptDeltaFileReader.readLine()) != null) {
 				if (firstLine) {
 					firstLine = false;
@@ -278,14 +274,13 @@ public class TransformationService {
 		return moduleIdAndUuidMap;
 	}
 
-	public void transformInferredRelationshipFile(final Execution execution, final Package pkg, final String inferredRelationshipSnapshotFilename) {
+	public void transformInferredRelationshipFile(final Execution execution, final String inferredRelationshipSnapshotFilename) {
 		final TransformationFactory transformationFactory = getTransformationFactory(execution.getBuild().getEffectiveTimeSnomedFormat(), execution.getId());
-		final String businessKey = pkg.getBusinessKey();
-		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, businessKey, inferredRelationshipSnapshotFilename)) {
+		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, inferredRelationshipSnapshotFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
-			final ExecutionPackageReport report = execution.getExecutionReport().getOrCreateExecutionPackgeReport(pkg);
+			final ExecutionReport report = execution.getExecutionReport();
 			fileTransformation.transformFile(
-					dao.getTransformedFileAsInputStream(execution, businessKey, inferredRelationshipSnapshotFilename),
+					dao.getTransformedFileAsInputStream(execution, inferredRelationshipSnapshotFilename),
 					outputFileOutputStream.getOutputStream(),
 					inferredRelationshipSnapshotFilename,
 					report);

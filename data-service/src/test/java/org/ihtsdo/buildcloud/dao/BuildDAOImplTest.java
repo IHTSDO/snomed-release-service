@@ -28,12 +28,12 @@ public class BuildDAOImplTest {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
 		List<Build> builds = dao.findAll(filterOptions, TestUtils.TEST_USER);
 		Assert.assertNotNull(builds);
-		Assert.assertEquals(TestEntityGenerator.totalBuildCount, builds.size());
+		Assert.assertEquals(TestEntityGenerator.buildNames.length, builds.size());
 
 		Assert.assertNotNull(dao.find(1L, TestUtils.TEST_USER));
 		Assert.assertNotNull(dao.find(2L, TestUtils.TEST_USER));
-		//Attempt to recover build greater than our current amount of test data - should not be found
-		Assert.assertNull(dao.find((long)TestEntityGenerator.totalBuildCount + 1, TestUtils.TEST_USER));
+		// Attempt to recover build greater than our current amount of test data - should not be found
+		Assert.assertNull(dao.find((long)TestEntityGenerator.buildNames.length + 1, TestUtils.TEST_USER));
 	}
 
 }

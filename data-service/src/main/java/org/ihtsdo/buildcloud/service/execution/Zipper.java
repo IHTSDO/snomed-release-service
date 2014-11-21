@@ -4,11 +4,9 @@ import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.slf4j.Logger;
@@ -32,17 +30,14 @@ public class Zipper {
 
 	private final Execution execution;
 
-	private final Package pkg;
-
 	private ListingType manifestListing;
 
 	private boolean isInitialised = false;
 
 	private FolderType rootFolder;
 
-	public Zipper(ExecutionPackageBean executionPackageBean, ExecutionDAO executionDAO) {
-		this.execution = executionPackageBean.getExecution();
-		this.pkg = executionPackageBean.getPackage();
+	public Zipper(Execution execution, ExecutionDAO executionDAO) {
+		this.execution = execution;
 		this.executionDAO = executionDAO;
 	}
 
@@ -54,8 +49,7 @@ public class Zipper {
 
 	public void loadManifest() throws JAXBException, ResourceNotFoundException, IOException {
 	    //Get the manifest file as an input stream
-	   try (InputStream manifestInputSteam = executionDAO.getManifestStream(execution, pkg))
-	   {
+	   try (InputStream manifestInputSteam = executionDAO.getManifestStream(execution)) {
 	       ManifestXmlFileParser parser = new ManifestXmlFileParser();
 	       manifestListing = parser.parse(manifestInputSteam);
 	   }
@@ -94,7 +88,7 @@ public class Zipper {
 
 		//Pull down and compress any child files
 		for (FileType file : f.getFile()) {
-			try (InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, file.getName())) {
+			try (InputStream is = executionDAO.getOutputFileInputStream(execution, file.getName())) {
 				if (is != null) {
 				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
 					try {

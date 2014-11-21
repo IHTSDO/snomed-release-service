@@ -4,10 +4,11 @@ import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.ExecutionReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
@@ -21,7 +22,6 @@ import org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
 import org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
@@ -40,8 +40,14 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.ihtsdo.buildcloud.service.execution.RF2Constants.README_FILENAME_EXTENSION;
@@ -93,21 +99,19 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private RF2ClassifierService classifierService;
 
 	@Override
-	public Execution createExecutionFromBuild(final String buildCompositeKey)
-			throws BusinessServiceException {
-
+	public Execution createExecutionFromBuild(final String releaseCenterKey, final String buildKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
-		final Build build = getBuild(buildCompositeKey);
+		final Build build = getBuild(releaseCenterKey, buildKey);
 		if (build.getEffectiveTime() == null) {
 			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
 		}
-		Execution execution = null;
+		Execution execution;
 		try {
-			synchronized (buildCompositeKey) {
+			synchronized (buildKey) {
 				// Do we already have an execution for that date?
 				final Execution existingExecution = getExecution(build, creationDate);
 				if (existingExecution != null) {
-					throw new EntityAlreadyExistsException("An Execution for build " + buildCompositeKey + " already exists with execution id " + existingExecution.getId());
+					throw new EntityAlreadyExistsException("An Execution for build " + buildKey + " already exists with execution id " + existingExecution.getId());
 				}
 				execution = new Execution(creationDate, build);
 				// Create Build config export
@@ -115,16 +119,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 				// save execution with config
 				dao.save(execution, jsonConfig);
 				MDC.put(MDC_EXECUTION_KEY, execution.getUniqueId());
-				LOGGER.info("Created execution.", buildCompositeKey, execution.getId());
+				LOGGER.info("Created execution.", buildKey, execution.getId());
 				// Copy all files from Build input and manifest directory to Execution input and manifest directory
 				dao.copyAll(build, execution);
 			}
-			// Perform Pre-condition testing (loops through each package)
-			final Status preStatus = execution.getStatus();
-			runPreconditionChecks(execution);
-			final Status newStatus = execution.getStatus();
-			if (newStatus != preStatus) {
-				dao.updateStatus(execution, newStatus);
+			if (!build.isJustPackage()) {
+				// Perform Pre-condition testing
+				final Status preStatus = execution.getStatus();
+				runPreconditionChecks(execution);
+				final Status newStatus = execution.getStatus();
+				if (newStatus != preStatus) {
+					dao.updateStatus(execution, newStatus);
+				}
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to create execution.", e);
@@ -135,37 +141,31 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerExecution(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		final Build build = execution.getBuild();
+	public Execution triggerExecution(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
 
 		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
-		LOGGER.info("Trigger build", buildCompositeKey, executionId);
+		LOGGER.info("Trigger build", buildKey, executionId);
 
 		try {
 			updateStatusWithChecks(execution, Status.BUILDING);
 
-			// Execute each package
-			ExecutionReport executionReport = execution.getExecutionReport();
-			for (final Package pkg : build.getPackages()) {
-				String resultStatus = "completed";
-				String resultMessage = "Process completed successfully";
-				try {
-					ExecutionPackageBean executionPackageBean = new ExecutionPackageBean(execution, pkg);
-					executePackage(executionPackageBean); // This could add entries to the execution report also
-				} catch (final Exception e) {
-					//Each package could fail independently, record telemetry and move on to next package
-					resultStatus = "fail";
-					resultMessage = "Failure while processing package " + pkg.getBusinessKey() + " due to: "
-							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-					LOGGER.warn(resultMessage, e);
-				}
-				final ExecutionPackageReport report = executionReport.getOrCreateExecutionPackgeReport(pkg);
-				report.add("Progress Status", resultStatus);
-				report.add("Message", resultMessage);
+			// Run build
+			ExecutionReport report = execution.getExecutionReport();
+			String resultStatus = "completed";
+			String resultMessage = "Process completed successfully";
+			try {
+				executeBuild(execution);
+			} catch (final BusinessServiceException e) {
+				resultStatus = "fail";
+				resultMessage = "Failure while processing execution " + execution.getUniqueId() + " due to: "
+						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+				LOGGER.warn(resultMessage, e);
 			}
-			dao.persistReport(execution);
+			report.add("Progress Status", resultStatus);
+			report.add("Message", resultMessage);
+			dao.persistReport(execution); // TODO: Does this work?
 
 			updateStatusWithChecks(execution, Status.BUILT);
 		} finally {
@@ -177,61 +177,34 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAllDesc(final String buildCompositeKey) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey);
+	public List<Execution> findAllDesc(String releaseCenterKey, final String buildKey) throws ResourceNotFoundException {
+		final Build build = getBuild(releaseCenterKey, buildKey);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
 		}
 
 		return dao.findAllDesc(build);
 	}
 
 	@Override
-	public Execution find(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey);
+	public Execution find(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
+		final Build build = getBuild(releaseCenterKey, buildKey);
 
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
 		}
 
 		return dao.find(build, executionId);
 	}
 
 	@Override
-	public String loadConfiguration(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
+	public String loadConfiguration(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
 		try {
 			return dao.loadConfiguration(execution);
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to load configuration.", e);
 		}
-	}
-
-	@Override
-	public List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId) throws BusinessServiceException {
-		try {
-			return getExecutionPackages(buildCompositeKey, executionId, null);
-		} catch (IOException e) {
-			throw new BusinessServiceException("Failed to retrieve execution packages.", e);
-		}
-	}
-
-	@Override
-	public ExecutionPackageDTO getExecutionPackage(final String buildCompositeKey, final String executionId, final String packageId) throws BusinessServiceException {
-		final List<ExecutionPackageDTO> executionPackages;
-		try {
-			executionPackages = getExecutionPackages(buildCompositeKey, executionId, packageId);
-			return !executionPackages.isEmpty() ? executionPackages.iterator().next() : null;
-		} catch (IOException e) {
-			throw new BusinessServiceException("Failed to retrieve execution package.", e);
-		}
-	}
-
-	@Override
-	public void updateStatus(final String buildCompositeKey, final String executionId, final String statusString) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		final Execution.Status status = Execution.Status.valueOf(statusString);
-		updateStatusWithChecks(execution, status);
 	}
 
 	private void updateStatusWithChecks(Execution execution, Status newStatus) throws BadConfigurationException {
@@ -249,113 +222,76 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public InputStream getOutputFile(final String buildCompositeKey, final String executionId, final String packageId, final String outputFilePath) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.getOutputFileStream(execution, packageId, outputFilePath);
+	public InputStream getOutputFile(String releaseCenterKey, final String buildKey, final String executionId, final String outputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+		return dao.getOutputFileStream(execution, outputFilePath);
 	}
 
 	@Override
-	public List<String> getExecutionPackageOutputFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.listOutputFilePaths(execution, packageId);
+	public List<String> getOutputFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+		return dao.listOutputFilePaths(execution);
 	}
 
 	@Override
-	public InputStream getInputFile(final String buildCompositeKey, final String executionId, final String packageId, final String inputFilePath) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.getInputFileStream(execution, packageId, inputFilePath);
+	public InputStream getInputFile(String releaseCenterKey, final String buildKey, final String executionId, final String inputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+		return dao.getInputFileStream(execution, inputFilePath);
 	}
 
 	@Override
-	public List<String> getExecutionPackageInputFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.listInputFileNames(execution, packageId);
+	public List<String> getInputFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+		return dao.listInputFileNames(execution);
 	}
 
 	@Override
-	public InputStream getLogFile(final String buildCompositeKey, final String executionId, final String packageId, final String logFileName) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.getLogFileStream(execution, packageId, logFileName);
+	public InputStream getLogFile(String releaseCenterKey, final String buildKey, final String executionId, final String logFileName) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+		return dao.getLogFileStream(execution, logFileName);
 	}
 
 	@Override
-	public List<String> getExecutionPackageLogFilePaths(final String buildCompositeKey, final String executionId, final String packageId) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.listLogFilePaths(execution, packageId);
-	}
-
-	@Override
-	public List<String> getExecutionLogFilePaths(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
+	public List<String> getLogFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
 		return dao.listExecutionLogFilePaths(execution);
-	}
-
-	@Override
-	public InputStream getExecutionLogFile(final String buildCompositeKey, final String executionId, final String logFileName) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		return dao.getExecutionLogFileStream(execution, logFileName);
 	}
 
 	private void runPreconditionChecks(final Execution execution) {
 	    LOGGER.info("Start of Pre-condition checks");
-		final Map<String, List<PreConditionCheckReport>> preConditionReports = preconditionManager.runPreconditionChecks(execution);
+		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(execution);
 		execution.setPreConditionCheckReports(preConditionReports);
-		//analyze report to check whether there is fatal error for all packages
-		int fatalCountByPkg = 0;
-		for (final String pkgName : preConditionReports.keySet()) {
-			for (final PreConditionCheckReport report : preConditionReports.get(pkgName)) {
-				if (report.getResult() == State.FATAL) {
-					fatalCountByPkg++;
-					LOGGER.warn("Fatal error occurred during pre-condition check for package {}", pkgName);
-					break;
-				}
+		// analyze report to check whether there is fatal error for all packages
+		for (PreConditionCheckReport report : preConditionReports) {
+			if (report.getResult() == State.FATAL) {
+				// Need to alert release manager of fatal pre-condition check error.
+				execution.setStatus(Status.FAILED_PRE_CONDITIONS);
+				LOGGER.warn("Fatal error occurred during pre-condition checks, execution {} will be halted.", execution.getId());
+				break;
 			}
-		}
-		//need to alert release manager as all packages have fatal pre-condition check error.
-		if (fatalCountByPkg > 0 && fatalCountByPkg == execution.getBuild().getPackages().size()) {
-			execution.setStatus(Status.FAILED_PRE_CONDITIONS);
-			LOGGER.warn("Fatal error occurred for all packages during pre-condition checks and execution {} will be halted.", execution.getId());
 		}
 		LOGGER.info("End of Pre-condition checks");
 	}
 
-	@SuppressWarnings("unchecked")
-	private List<ExecutionPackageDTO> getExecutionPackages(final String buildCompositeKey, final String executionId, final String packageId) throws IOException, ResourceNotFoundException {
-		final List<ExecutionPackageDTO> executionPackageDTOs = new ArrayList<>();
-		final Execution execution = getExecutionOrThrow(buildCompositeKey, executionId);
-		final Map<String, Object> stringObjectMap = dao.loadConfigurationMap(execution);
-		final Map<String, Object> build = (Map<String, Object>) stringObjectMap.get("build");
-		final List<Map<String, Object>> packages = (List<Map<String, Object>>) build.get("packages");
-		for (final Map<String, Object> aPackage : packages) {
-			final String id = (String) aPackage.get("id");
-			if (packageId == null || packageId.equals(id)) {
-				executionPackageDTOs.add(new ExecutionPackageDTO(id, (String) aPackage.get("name")));
-			}
-		}
-		return executionPackageDTOs;
-	}
+	private void executeBuild(final Execution execution) throws BusinessServiceException {
+		LOGGER.info("Start execution {}", execution.getUniqueId());
+		Build build = execution.getBuild();
 
-	private void executePackage(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
-		final Execution execution = executionPackageBean.getExecution();
-		final Package pkg = executionPackageBean.getPackage();
+		checkManifestPresent(execution);
 
-		LOGGER.info("Start executing package {}", pkg.getName());
-
-		checkManifestPresent(executionPackageBean);
-
-		if (pkg.isJustPackage()) {
-			copyFilesForJustPackaging(executionPackageBean);
+		if (build.isJustPackage()) {
+			copyFilesForJustPackaging(execution);
 		} else {
-			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(executionPackageBean);
-			transformationService.transformFiles(executionPackageBean, inputFileSchemaMap);
+			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution);
+			transformationService.transformFiles(execution, inputFileSchemaMap);
 
 			// Convert Delta input files to Full, Snapshot and Delta release files
-			Rf2FileExportRunner generator = new Rf2FileExportRunner(executionPackageBean, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			Rf2FileExportRunner generator = new Rf2FileExportRunner(execution, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
-			if (pkg.isCreateInferredRelationships()) {
+			if (build.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, pkg, inputFileSchemaMap);
+				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, inputFileSchemaMap);
 				if (relationshipSnapshotOutputFilename != null) {
 					generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
 				}
@@ -365,14 +301,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 
 		// Generate readme file
-		generateReadmeFile(executionPackageBean);
+		generateReadmeFile(execution);
 
 		File zipPackage;
 		try {
-			final Zipper zipper = new Zipper(executionPackageBean, dao);
+			final Zipper zipper = new Zipper(execution, dao);
 			zipPackage = zipper.createZipFile();
 			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
-			dao.putOutputFile(execution, pkg, zipPackage, "", true);
+			dao.putOutputFile(execution, zipPackage, true);
 			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
 		} catch (JAXBException | IOException | ResourceNotFoundException e) {
 			throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
@@ -382,7 +318,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 		String rvfResultMsg = "RVF validation configured to not run.";
 		if (!offlineMode || localRvf) {
 			try {
-				rvfResultMsg = runRVFPostConditionCheck(executionPackageBean, zipPackage);
+				rvfResultMsg = runRVFPostConditionCheck(execution, zipPackage);
 				if (rvfResultMsg == null) {
 					rvfStatus = "Completed without errors.";
 				} else {
@@ -394,16 +330,16 @@ public class ExecutionServiceImpl implements ExecutionService {
 				rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
 			}
 		}
-		final ExecutionPackageReport report = executionPackageBean.getExecutionPackageReport();
+		final ExecutionReport report = execution.getExecutionReport();
 		report.add("Post Validation Status", rvfStatus);
 		report.add("RVF Test Failures", rvfResultMsg);
 
-		LOGGER.info("End of executing package {}", pkg.getName());
+		LOGGER.info("End of running execution {}", execution.getUniqueId());
 	}
 
-	private void checkManifestPresent(ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+	private void checkManifestPresent(Execution execution) throws BusinessServiceException {
 		try {
-			final InputStream manifestStream = dao.getManifestStream(executionPackageBean.getExecution(), executionPackageBean.getPackage());
+			final InputStream manifestStream = dao.getManifestStream(execution);
 			if (manifestStream == null) {
 				throw new BadConfigurationException("Failed to find valid manifest file.");
 			} else {
@@ -414,33 +350,29 @@ public class ExecutionServiceImpl implements ExecutionService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final ExecutionPackageBean executionPackageBean, final File zipPackage) throws IOException,
+	private String runRVFPostConditionCheck(final Execution execution, final File zipPackage) throws IOException,
 			PostConditionException {
 	    	LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
 		String logFilename = "postcheck-rvf-" + zipPackage.getName() + ".log";
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(
-					 executionPackageBean.getExecution(),
-					 executionPackageBean.getPackage().getBusinessKey(),
-					 logFilename)) {
+			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(execution, logFilename)) {
+
 			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
 		}
 	}
 
-	private void copyFilesForJustPackaging(final ExecutionPackageBean executionPackageBean) {
-		final String packageBusinessKey = executionPackageBean.getPackage().getBusinessKey();
-		final Execution execution = executionPackageBean.getExecution();
-		LOGGER.info("Just copying files in execution {}, package {} for packaging", execution.getId(), packageBusinessKey);
+	private void copyFilesForJustPackaging(final Execution execution) {
+		LOGGER.info("Just copying files in execution {} for packaging", execution.getUniqueId());
 
 		// Iterate each execution input file
-		final List<String> executionInputFilePaths = dao.listInputFileNames(execution, packageBusinessKey);
+		final List<String> executionInputFilePaths = dao.listInputFileNames(execution);
 		for (final String relativeFilePath : executionInputFilePaths) {
-			dao.copyInputFileToOutputFile(execution, packageBusinessKey, relativeFilePath);
+			dao.copyInputFileToOutputFile(execution, relativeFilePath);
 		}
 	}
 
-	private Map<String, TableSchema> getInputFileSchemaMap(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
-		final List<String> executionInputFilePaths = dao.listInputFileNames(executionPackageBean.getExecution(), executionPackageBean.getPackage().getBusinessKey());
+	private Map<String, TableSchema> getInputFileSchemaMap(Execution execution) throws BusinessServiceException {
+		final List<String> executionInputFilePaths = dao.listInputFileNames(execution);
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String executionInputFilePath : executionInputFilePaths) {
 			final TableSchema schemaBean;
@@ -454,19 +386,18 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return inputFileSchemaMap;
 	}
 
-	private Execution getExecutionOrThrow(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
-		final Execution execution = getExecution(buildCompositeKey, executionId);
+	private Execution getExecutionOrThrow(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecution(releaseCenterKey, buildKey, executionId);
 		if (execution == null) {
-			final String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
-			throw new ResourceNotFoundException("Unable to find execution: " + item);
+			throw new ResourceNotFoundException("Unable to find execution for releaseCenterKey: " + releaseCenterKey + ", buildKey: " + buildKey + ", executionId: " + executionId);
 		}
 		return execution;
 	}
 
-	private Execution getExecution(final String buildCompositeKey, final String executionId) throws ResourceNotFoundException {
-		final Build build = getBuild(buildCompositeKey);
+	private Execution getExecution(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
+		final Build build = getBuild(releaseCenterKey, buildKey);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
+			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
 		}
 		return dao.find(build, executionId);
 	}
@@ -476,21 +407,15 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 	
 
-	private Build getBuild(final String buildCompositeKey) throws ResourceNotFoundException {
-		final Long buildId = CompositeKeyHelper.getId(buildCompositeKey);
-		if (buildId == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildCompositeKey);
-		}
-		return buildDAO.find(buildId, SecurityHelper.getRequiredUser());
+	private Build getBuild(String releaseCenterKey, final String buildKey) throws ResourceNotFoundException {
+		return buildDAO.find(releaseCenterKey, buildKey, SecurityHelper.getRequiredUser());
 	}
 
-	private void generateReadmeFile(final ExecutionPackageBean executionPackageBean) throws BusinessServiceException {
+	private void generateReadmeFile(final Execution execution) throws BusinessServiceException {
 		try {
-			final Execution execution = executionPackageBean.getExecution();
-			final Package pkg = executionPackageBean.getPackage();
-			LOGGER.info("Generating readMe file for package {}", pkg.getName());
+			LOGGER.info("Generating readMe file for execution {}", execution.getUniqueId());
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
-			final InputStream manifestStream = dao.getManifestStream(execution, pkg);
+			final InputStream manifestStream = dao.getManifestStream(execution);
 			final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
 
 			String readmeFilename = null;
@@ -510,9 +435,10 @@ public class ExecutionServiceImpl implements ExecutionService {
 				LOGGER.warn("Can not generate readme, manifest listing is null.");
 			}
 			if (readmeFilename != null) {
-				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, pkg.getBusinessKey(), readmeFilename);
+				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, readmeFilename);
 				try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-					readmeGenerator.generate(pkg.getReadmeHeader(), pkg.getReadmeEndDate(), manifestListing, readmeOutputStream);
+					Build build = execution.getBuild();
+					readmeGenerator.generate(build.getReadmeHeader(), build.getReadmeEndDate(), manifestListing, readmeOutputStream);
 					asyncPipedStreamBean.waitForFinish();
 				}
 			} else {

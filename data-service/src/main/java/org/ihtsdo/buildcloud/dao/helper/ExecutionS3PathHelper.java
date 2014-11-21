@@ -2,8 +2,7 @@ package org.ihtsdo.buildcloud.dao.helper;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class ExecutionS3PathHelper {
 
@@ -19,79 +18,34 @@ public class ExecutionS3PathHelper {
 	public static final String EXECUTION_LOG_TXT = "execution_log.txt";
 
 	public StringBuilder getBuildPath(Build build) {
-		String releaseCenterBusinessKey = build.getProduct().getExtension().getReleaseCenter().getBusinessKey();
+		return getReleaseCenterPath(build.getReleaseCenter()).append(build.getBusinessKey()).append(SEPARATOR);
+	}
+
+	public StringBuilder getReleaseCenterPath(ReleaseCenter releaseCenter) {
 		StringBuilder path = new StringBuilder();
-		path.append(releaseCenterBusinessKey);
-		path.append(SEPARATOR);
-		path.append(build.getCompositeKey());
+		path.append(releaseCenter.getBusinessKey());
 		path.append(SEPARATOR);
 		return path;
 	}
 
-	public StringBuilder getProductPath(Product product) {
-		StringBuilder path = new StringBuilder();
-		path.append(product.getExtension().getReleaseCenter().getBusinessKey());
-		path.append(SEPARATOR);
-		path.append(product.getExtension().getBusinessKey());
-		path.append(SEPARATOR);
-		path.append(product.getBusinessKey());
-		path.append(SEPARATOR);
-		return path;
+	public StringBuilder getBuildManifestDirectoryPath(Build build) {
+		return getBuildPath(build).append(BUILD_FILES).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 	}
 
-	public String getPackageInputFilesPath(Package aPackage) {
-		return getPackageFilesPathAsStringBuilder(aPackage, INPUT_FILES).toString();
+	public StringBuilder getExecutionInputFilesPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(INPUT_FILES).append(SEPARATOR);
 	}
 
-	public String getPackageInputFilePath(Package aPackage, String filename) {
-		return getPackageFilesPathAsStringBuilder(aPackage, INPUT_FILES).append(filename).toString();
+	public String getExecutionInputFilePath(Execution execution, String inputFile) {
+		return getExecutionInputFilesPath(execution).append(inputFile).toString();
 	}
 
-	//Note that getPackageOutputFilePath(Package aPackage, String filename) should not exist because all output 
-	//files are specific to the execution that creates them.  See getExecutionOutputFilePath instead.
-
-	public StringBuilder getPackageManifestDirectoryPath(Package aPackage) {
-		StringBuilder buildPath = getBuildPath(aPackage.getBuild());
-		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
-		return buildPath;
+	public StringBuilder getExecutionOutputFilesPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(OUTPUT_FILES).append(SEPARATOR);
 	}
 
-	//There will also be a copy of the manifest for each execution's package
-	public StringBuilder getExecutionManifestDirectoryPath(Execution execution, Package pkg) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(pkg.getBusinessKey()).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
-	}
-
-	public StringBuilder getExecutionPath(Execution execution) {
-		return getExecutionPath(execution.getBuild(), execution.getId());
-	}
-
-	public StringBuilder getExecutionInputFilesPath(Execution execution, Package aPackage) {
-		String businessKey = aPackage.getBusinessKey();
-		return getExecutionInputFilesPath(execution, businessKey);
-	}
-
-	public StringBuilder getExecutionInputFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(INPUT_FILES).append(SEPARATOR);
-	}
-
-	public String getExecutionInputFilePath(Execution execution, String packageBusinessKey, String inputFile) {
-		return getExecutionInputFilesPath(execution, packageBusinessKey).append(inputFile).toString();
-	}
-
-	public StringBuilder getExecutionOutputFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(OUTPUT_FILES).append(SEPARATOR);
-	}
-
-	public String getExecutionOutputFilePath(Execution execution, String packageBusinessKey, String relativeFilePath) {
-		return getExecutionOutputFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
-	}
-
-	public StringBuilder getExecutionPackageLogFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(LOG).append(SEPARATOR);
-	}
-
-	public String getExecutionLogFilePath(Execution execution, String packageBusinessKey, String relativeFilePath) {
-		return getExecutionPackageLogFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+	public String getExecutionOutputFilePath(Execution execution, String relativeFilePath) {
+		return getExecutionOutputFilesPath(execution).append(relativeFilePath).toString();
 	}
 
 	public String getExecutionLogFilePath(Execution execution, String relativeFilePath) {
@@ -102,15 +56,16 @@ public class ExecutionS3PathHelper {
 		return getExecutionPath(execution.getBuild(), execution.getId()).append(LOG).append(SEPARATOR);
 	}
 
-	public String getExecutionLogFilePath(Execution execution) {
+	public String getMainExecutionLogFilePath(Execution execution) {
 		return getExecutionLogFilesPath(execution).append(EXECUTION_LOG_TXT).toString();
 	}
 
+	public StringBuilder getExecutionPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId());
+	}
+
 	public StringBuilder getExecutionPath(Build build, String executionId) {
-		StringBuilder path = getBuildPath(build);
-		path.append(executionId);
-		path.append(SEPARATOR);
-		return path;
+		return getBuildPath(build).append(executionId).append(SEPARATOR);
 	}
 
 	public String getConfigFilePath(Execution execution) {
@@ -121,37 +76,36 @@ public class ExecutionS3PathHelper {
 		return getExecutionPath(execution).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
 
-	public String getOutputFilesPath(Execution execution, String packageId) {
-		return getExecutionPath(execution).append(packageId).append(SEPARATOR).append("output-files").append(SEPARATOR).toString();
-	}
-
-	private StringBuilder getPackageFilesPathAsStringBuilder(Package aPackage, String directionModifier) {
-		StringBuilder buildPath = getBuildPath(aPackage.getBuild());
-		buildPath.append(BUILD_FILES).append(SEPARATOR).append(aPackage.getBusinessKey()).append(SEPARATOR).append(directionModifier).append(SEPARATOR);
-		return buildPath;
+	public String getOutputFilesPath(Execution execution) {
+		return getExecutionPath(execution).append("output-files").append(SEPARATOR).toString();
 	}
 
 	private String getFilePath(Execution execution, String relativePath) {
 		return getExecutionPath(execution).append(relativePath).toString();
 	}
 
-	public StringBuilder getExecutionTransformedFilesPath(Execution execution, String packageBusinessKey) {
-		return getExecutionPath(execution.getBuild(), execution.getId()).append(packageBusinessKey).append(SEPARATOR).append(TRANSFORMED_FILES).append(SEPARATOR);
+	public StringBuilder getExecutionTransformedFilesPath(Execution execution) {
+		return getExecutionPath(execution.getBuild(), execution.getId()).append(TRANSFORMED_FILES).append(SEPARATOR);
 	}
 
-	public String getTransformedFilePath(Execution execution,
-			String packageBusinessKey, String relativeFilePath) {
-		return getExecutionTransformedFilesPath(execution, packageBusinessKey).append(relativeFilePath).toString();
+	public String getTransformedFilePath(Execution execution, String relativeFilePath) {
+		return getExecutionTransformedFilesPath(execution).append(relativeFilePath).toString();
 	}
 
-	public String getPublishedFilePath(Product product, String publishedFileName) {
-		StringBuilder productPath = getProductPath(product);
-		productPath.append(publishedFileName);
-		return productPath.toString();
+	public String getPublishedFilePath(ReleaseCenter releaseCenter, String publishedFileName) {
+		return getReleaseCenterPath(releaseCenter).append(publishedFileName).toString();
 	}
 
 	public String getReportPath(Execution execution) {
 		return getExecutionPath(execution.getBuild(), execution.getId()).append("execution_report.json").toString();
+	}
+
+	public String getBuildInputFilesPath(Build build) {
+		return getBuildPath(build).append(BUILD_FILES).append(SEPARATOR).append(INPUT_FILES).append(SEPARATOR).toString();
+	}
+
+	public String getExecutionManifestDirectoryPath(Execution execution) {
+		return getExecutionPath(execution).append(MANIFEST).append(SEPARATOR).toString();
 	}
 
 }

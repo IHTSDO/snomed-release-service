@@ -32,21 +32,22 @@ public class ExecutionConfigurationJsonGeneratorTest {
 	@Before
 	public void setup() throws IOException {
 		TestEntityFactory factory = new TestEntityFactory();
-		org.ihtsdo.buildcloud.entity.Package internationalPackage = factory.createPackage(
-				"International Release Center", "International", "SNOMED CT International Edition",
-				"SNOMED CT International Edition", "International Release", "RF2 Release");
+		Build build = factory.createBuild(
+				"International Release Center", "International",
+				"International Release");
 		List<String> inputFiles = new ArrayList<>();
 		inputFiles.add("sct2_Concept_Delta_INT_20140131.txt");
 		inputFiles.add("sct2_Description_Delta-en_INT_20140131.txt");
 		inputFiles.add("sct2_Relationship_Delta_INT_20140131.txt");
-		internationalPackage.setInputFiles(inputFiles);
-		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 0).getTime(), internationalPackage.getBuild());
+		build.setInputFiles(inputFiles);
+		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 0).getTime(), build);
 		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json"), RF2Constants.UTF_8));
 	}
 
 	@Test
 	public void testGetConfig() throws IOException, JSONException {
 		String actual = executionConfigurationJsonGenerator.getJsonConfig(execution);
+		System.out.println(actual);
 		JSONAssert.assertEquals(expectedExport, actual, false);
 	}
 

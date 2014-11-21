@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
+import org.ihtsdo.buildcloud.entity.ExecutionReport;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ public class StreamingFileTransformation {
 		transformations = new ArrayList<>();
 	}
 
-	public void transformFile(InputStream inputStream, OutputStream outputStream, String fileName, ExecutionPackageReport report)
+	public void transformFile(InputStream inputStream, OutputStream outputStream, String fileName, ExecutionReport report)
 			throws IOException, TransformationException {
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
@@ -72,7 +72,7 @@ public class StreamingFileTransformation {
 		}
 	}
 
-	private void processLinesInBuffer(List<String[]> columnValuesList, BufferedWriter writer, String fileName, int lineNumberAtEndOfBatch, ExecutionPackageReport report, StringBuilder stringBuilder) throws IOException {
+	private void processLinesInBuffer(List<String[]> columnValuesList, BufferedWriter writer, String fileName, int lineNumberAtEndOfBatch, ExecutionReport report, StringBuilder stringBuilder) throws IOException {
 		int listSize = columnValuesList.size();
 
 		for (Transformation transformation : transformations) {
