@@ -19,8 +19,7 @@ public class RootControllerTest extends AbstractControllerTest {
 				.andDo(print())
 				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
 				.andExpect(jsonPath("$.url", is(ROOT_URL)))
-				.andExpect(jsonPath("$.centers_url", is(ROOT_URL + "/centers")))
-				.andExpect(jsonPath("$.builds_url", is(ROOT_URL + "/builds")));
+				.andExpect(jsonPath("$.centers_url", is(ROOT_URL + "/centers")));
 	}
 
 }
