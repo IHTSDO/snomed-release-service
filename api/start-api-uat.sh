@@ -13,7 +13,7 @@ if [ -f "$propertiesFile" ]; then
 	echo "Starting API webapp using $environmentName environment."
 	echo
 	sleep 1
-	java -jar api/target/exec-api.jar -DdataServicePropertiesPath="file://$propertiesFile"
+	java -jar target/exec-api.jar -DdataServicePropertiesPath="file://$propertiesFile"
 else
 	echo "You don't have access to the $environmentName environment."
 	echo
