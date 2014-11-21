@@ -1,5 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
-import org.ihtsdo.buildcloud.entity.ExecutionPackageReport;
+import org.ihtsdo.buildcloud.entity.ExecutionReport;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,7 +20,7 @@ public class StreamingFileTransformationTest {
 	private StreamingFileTransformation fileTransformation;
 	private File rf2File;
 	private File tempOutputFile;
-	private ExecutionPackageReport report;
+	private ExecutionReport report;
 
 	@Before
 	public void setup() throws URISyntaxException, IOException {
@@ -32,7 +32,7 @@ public class StreamingFileTransformationTest {
 		rf2File = tempFile.toFile();
 
 		tempOutputFile = Files.createTempFile(getClass().getName(), origRf2File.getName() + "output").toFile();
-		report = ExecutionPackageReport.getDummyReport();
+		report = ExecutionReport.getDummyReport();
 	}
 
 	@Test

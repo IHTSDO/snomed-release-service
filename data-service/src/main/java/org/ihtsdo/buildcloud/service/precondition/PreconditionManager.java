@@ -1,16 +1,13 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PreconditionManager {
 
@@ -23,27 +20,21 @@ public class PreconditionManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
 
 	/**
-	 * For each package in turn, loops through each check that has been added to the manager
+	 * Runs each PreconditionCheck which has been added to the manager.
 	 *
 	 * @return the report in a JSON friendly structure
 	 */
-	public Map<String, List<PreConditionCheckReport>> runPreconditionChecks(final Execution execution) {
-		Map<String, List<PreConditionCheckReport>> results = new HashMap<>();
-		for (Package pkg : execution.getBuild().getPackages()) {
-			if (!pkg.isJustPackage()) {
-				List<PreConditionCheckReport> thisPackageResults = new ArrayList<>();
-				for (PreconditionCheck thisCheck : preconditionChecks) {
-					if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
-						thisCheck.runCheck(pkg, execution);
-						thisPackageResults.add(thisCheck.getReport());
-					} else {
-						LOGGER.warn("Skipping {} as requires network.", thisCheck.getClass().getName());
-					}
-				}
-				results.put(pkg.getName(), thisPackageResults);
+	public List<PreConditionCheckReport> runPreconditionChecks(final Execution execution) {
+		List<PreConditionCheckReport> checkReports = new ArrayList<>();
+		for (PreconditionCheck thisCheck : preconditionChecks) {
+			if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
+				thisCheck.runCheck(execution);
+				checkReports.add(thisCheck.getReport());
+			} else {
+				LOGGER.warn("Skipping {} as requires network.", thisCheck.getClass().getName());
 			}
 		}
-		return results;
+		return checkReports;
 	}
 
 	public PreconditionManager preconditionChecks(PreconditionCheck... preconditionCheckArray) {

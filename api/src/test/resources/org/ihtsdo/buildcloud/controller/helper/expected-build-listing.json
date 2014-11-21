@@ -1,9 +1,16 @@
 [ {
-  "id" : "1_20140131_international_release_build",
-  "name" : "20140131 International Release Build",
+  "id" : "snomed_ct_release",
+  "name" : "SNOMED CT Release",
   "effectiveTime" : null,
-  "starred" : false,
-  "url" : "http://localhost/api/v1/builds/1_20140131_international_release_build",
-  "packages_url" : "http://localhost/api/v1/builds/1_20140131_international_release_build/packages",
-  "executions_url" : "http://localhost/api/v1/builds/1_20140131_international_release_build/executions"
+  "readmeHeader" : null,
+  "readmeEndDate" : null,
+  "firstTimeRelease" : false,
+  "workbenchDataFixesRequired" : false,
+  "justPackage" : false,
+  "previousPublishedPackage" : null,
+  "createInferredRelationships" : false,
+  "refsetCompositeKeys" : null,
+  "newRF2InputFiles" : null,
+  "url" : "http://localhost/api/v1/builds/snomed_ct_release",
+  "executions_url" : "http://localhost/api/v1/builds/snomed_ct_release/executions"
 } ]

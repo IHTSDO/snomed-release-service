@@ -13,7 +13,6 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -85,17 +84,17 @@ public class ExecutionDAOImplTest {
 		executionDAO.save(execution, "");
 		mocksControl.verify();
 
-		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		Assert.assertEquals("international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
+		Assert.assertEquals("international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 
 	@Test
 	public void testFindAllDesc() {
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-03-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-03-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
@@ -129,8 +128,8 @@ public class ExecutionDAOImplTest {
 	public void testFindOne() {
 		String executionId = "2014-02-04T10:30:01";
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/" + executionId + "/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getCompositeKey() + "/" + executionId + "/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/" + executionId + "/configuration.json");
+		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/" + executionId + "/status:BEFORE_TRIGGER");
 		Capture<ListObjectsRequest> listObjectsRequestCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
@@ -149,14 +148,14 @@ public class ExecutionDAOImplTest {
 	public void testPutOutputFile() throws Exception {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
-		boolean offlineMode = true; 
+		boolean offlineMode = true;
 		S3Client s3Client1 = factory.getClient(offlineMode);
 		executionDAO.setS3Client(s3Client1);
-		
-		Package pkg = execution.getBuild().getPackages().iterator().next();
 		String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/execution/"+ TEST_FILE_NAME).getFile();
+
 		boolean calcMD5 = true;
-		String md5Received = executionDAO.putOutputFile(execution, pkg, new File(testFile), "", calcMD5);
+		String md5Received = executionDAO.putOutputFile(execution, new File(testFile), calcMD5);
+
 		System.out.println(md5Received);
 
 		//Amazon are expecting the md5 to be xWJD6+IqEtukiwI9rz4pNw==
@@ -166,7 +165,7 @@ public class ExecutionDAOImplTest {
 		Assert.assertArrayEquals(md5BytesExpected, md5BytesReceived);
 		
 		//Now lets see if we can get that file back out again
-		InputStream is = executionDAO.getOutputFileInputStream(execution, pkg, TEST_FILE_NAME);
+		InputStream is = executionDAO.getOutputFileInputStream(execution, TEST_FILE_NAME);
 		Assert.assertNotNull(is);
 	}
 

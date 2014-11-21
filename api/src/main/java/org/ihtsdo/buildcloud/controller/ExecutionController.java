@@ -1,17 +1,11 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.ExecutionService;
-import org.ihtsdo.buildcloud.service.PackageService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/builds/{buildCompositeKey}/executions")
+@RequestMapping("/centers/{releaseCenterKey}/builds/{buildKey}/executions")
 public class ExecutionController {
 
 	@Autowired
@@ -44,21 +38,14 @@ public class ExecutionController {
 	@Autowired
 	private PublishService publishService;
 
-	@Autowired
-	private PackageService packageService;
-
-	private static final String[] EXECUTION_LINKS = {"configuration", "packages", "logs"};
-
-	private static final String[] PACKAGE_LINKS = {"inputfiles", "outputfiles", "logs"};
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionController.class);
+	private static final String[] EXECUTION_LINKS = {"configuration", "inputfiles", "outputfiles", "logs"};
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<Map<String, Object>> createExecution(@PathVariable String buildCompositeKey,
+	public ResponseEntity<Map<String, Object>> createExecution(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
 			HttpServletRequest request) throws BusinessServiceException {
 
-		Execution execution = executionService.createExecutionFromBuild(buildCompositeKey);
+		Execution execution = executionService.createExecutionFromBuild(releaseCenterKey, buildKey);
 
 		boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS), HttpStatus.CREATED);
@@ -66,18 +53,19 @@ public class ExecutionController {
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> findAll(@PathVariable String buildCompositeKey, HttpServletRequest request) throws ResourceNotFoundException {
-		List<Execution> executions = executionService.findAllDesc(buildCompositeKey);
+	public List<Map<String, Object>> getExecutions(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			HttpServletRequest request) throws ResourceNotFoundException {
+		List<Execution> executions = executionService.findAllDesc(releaseCenterKey, buildKey);
 		return hypermediaGenerator.getEntityCollectionHypermedia(executions, request, EXECUTION_LINKS);
 	}
 
 	@RequestMapping("/{executionId}")
 	@ResponseBody
-	public Map<String, Object> find(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			HttpServletRequest request) throws ResourceNotFoundException {
-		Execution execution = executionService.find(buildCompositeKey, executionId);
+	public Map<String, Object> getExecution(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId, HttpServletRequest request) throws ResourceNotFoundException {
+		Execution execution = executionService.find(releaseCenterKey, buildKey, executionId);
 
-		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
+		ifExecutionIsNullThrow(buildKey, executionId, execution);
 
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(execution, currentResource, request, EXECUTION_LINKS);
@@ -85,151 +73,92 @@ public class ExecutionController {
 
 	@RequestMapping(value = "/{executionId}/configuration", produces = "application/json")
 	@ResponseBody
-	public void getConfiguration(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+	public void getConfiguration(@PathVariable String releaseCenterKey, @PathVariable String buildKey, @PathVariable String executionId,
 			HttpServletResponse response) throws IOException, BusinessServiceException {
 
-		String executionConfiguration = executionService.loadConfiguration(buildCompositeKey, executionId);
+		String executionConfiguration = executionService.loadConfiguration(releaseCenterKey, buildKey, executionId);
 		response.setContentType("application/json");
 		response.getOutputStream().print(executionConfiguration);
 	}
 
-	@RequestMapping(value = "/{executionId}/packages")
+	@RequestMapping(value = "/{executionId}/inputfiles")
 	@ResponseBody
-	public List<Map<String, Object>> getPackages(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			HttpServletRequest request) throws BusinessServiceException {
+	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId, HttpServletRequest request) throws IOException, ResourceNotFoundException {
 
-		List<ExecutionPackageDTO> executionPackages = executionService.getExecutionPackages(buildCompositeKey, executionId);
-		return hypermediaGenerator.getEntityCollectionHypermedia(executionPackages, request, PACKAGE_LINKS);
-	}
-
-	@RequestMapping(value = "/{executionId}/packages/{packageId}")
-	@ResponseBody
-	public Map<String, Object> getPackage(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId,
-			HttpServletRequest request) throws BusinessServiceException {
-
-		ExecutionPackageDTO executionPackage = executionService.getExecutionPackage(buildCompositeKey, executionId, packageId);
-		return hypermediaGenerator.getEntityHypermedia(executionPackage, true, request, PACKAGE_LINKS);
-	}
-
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles")
-	@ResponseBody
-	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId,
-			HttpServletRequest request) throws IOException, ResourceNotFoundException {
-
-		List<String> relativeFilePaths = executionService.getExecutionPackageInputFilePaths(buildCompositeKey, executionId, packageId);
+		List<String> relativeFilePaths = executionService.getInputFilePaths(releaseCenterKey, buildKey, executionId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/inputfiles/{inputFileName:.*}")
-	public void getPackageInputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId, @PathVariable String inputFileName,
-			HttpServletResponse response) throws IOException, ResourceNotFoundException {
+	@RequestMapping(value = "/{executionId}/inputfiles/{inputFileName:.*}")
+	public void getPackageInputFile(@PathVariable String releaseCenterKey, @PathVariable String buildKey, @PathVariable String executionId,
+			@PathVariable String inputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
-		try (InputStream inputFileStream = executionService.getInputFile(buildCompositeKey, executionId, packageId, inputFileName)) {
-			StreamUtils.copy(inputFileStream, response.getOutputStream());
-		}
-	}
-
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles")
-	@ResponseBody
-	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId,
-			HttpServletRequest request) throws BusinessServiceException {
-
-		List<String> relativeFilePaths = executionService.getExecutionPackageOutputFilePaths(buildCompositeKey, executionId, packageId);
-		return convertFileListToEntities(request, relativeFilePaths);
-	}
-
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/outputfiles/{outputFileName:.*}")
-	public void getPackageOutputFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId, @PathVariable String outputFileName,
-			HttpServletResponse response) throws IOException, ResourceNotFoundException {
-
-		try (InputStream outputFileStream = executionService.getOutputFile(buildCompositeKey, executionId, packageId, outputFileName)) {
+		try (InputStream outputFileStream = executionService.getInputFile(releaseCenterKey, buildKey, executionId, inputFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
 
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/logs")
+	@RequestMapping(value = "/{executionId}/outputfiles")
 	@ResponseBody
-	public List<Map<String, Object>> listPackageLogFiles(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId,
-			HttpServletRequest request) throws IOException, ResourceNotFoundException {
+	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId, HttpServletRequest request) throws BusinessServiceException {
 
-		List<String> relativeFilePaths = executionService.getExecutionPackageLogFilePaths(buildCompositeKey, executionId, packageId);
+		List<String> relativeFilePaths = executionService.getOutputFilePaths(releaseCenterKey, buildKey, executionId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{executionId}/packages/{packageId}/logs/{logFileName:.*}")
-	public void getPackageLogFile(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			@PathVariable String packageId, @PathVariable String logFileName,
-			HttpServletResponse response) throws IOException, ResourceNotFoundException {
+	@RequestMapping(value = "/{executionId}/outputfiles/{outputFileName:.*}")
+	public void getPackageOutputFile(@PathVariable String releaseCenterKey, @PathVariable String buildKey, @PathVariable String executionId,
+			@PathVariable String outputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
-		try (InputStream outputFileStream = executionService.getLogFile(buildCompositeKey, executionId, packageId, logFileName)) {
+		try (InputStream outputFileStream = executionService.getOutputFile(releaseCenterKey, buildKey, executionId, outputFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
 
 	@RequestMapping(value = "/{executionId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
-	public Map<String, Object> triggerBuild(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			HttpServletRequest request) throws BusinessServiceException {
-		Execution execution = executionService.triggerExecution(buildCompositeKey, executionId);
+	public Map<String, Object> triggerBuild(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId, HttpServletRequest request) throws BusinessServiceException {
+		Execution execution = executionService.triggerExecution(releaseCenterKey, buildKey, executionId);
 
 		return hypermediaGenerator.getEntityHypermediaOfAction(execution, request, EXECUTION_LINKS);
 	}
 
-	@RequestMapping(value = "/{executionId}/status/{status}", method = RequestMethod.POST)
-	@ResponseBody
-	public void setStatus(@PathVariable String buildCompositeKey, @PathVariable String executionId, @PathVariable String status) throws BusinessServiceException {
-		executionService.updateStatus(buildCompositeKey, executionId, status);
-	}
-
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
-	public void publishReleasePackage(@PathVariable String buildCompositeKey, @PathVariable String executionId) throws ResourceNotFoundException {
+	public void publishReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId) throws BusinessServiceException {
 
-		Execution execution = executionService.find(buildCompositeKey, executionId);
-		ifExecutionIsNullThrow(buildCompositeKey, executionId, execution);
-
-		List<Package> packages = packageService.findAll(buildCompositeKey);
-		String lastPackage = "No Package";
-		for (Package pk : packages) {
-			try {
-				lastPackage = pk.getBusinessKey();
-				publishService.publishExecutionPackage(execution, pk);
-			} catch (Exception e) {
-				LOGGER.error("Failed to publish package {}", lastPackage, e);
-				throw new InternalError("Failed to publish package " + lastPackage);
-			}
-		}
-	}
-
-	private void ifExecutionIsNullThrow(String buildCompositeKey, String executionId, Execution execution) throws ResourceNotFoundException {
-		if (execution == null) {
-			String item = CompositeKeyHelper.getPath(buildCompositeKey, executionId);
-			throw new ResourceNotFoundException("Unable to find execution: " + item);
-		}
+		Execution execution = executionService.find(releaseCenterKey, buildKey, executionId);
+		ifExecutionIsNullThrow(buildKey, executionId, execution);
+		publishService.publishExecution(execution);
 	}
 
 	@RequestMapping(value = "/{executionId}/logs")
 	@ResponseBody
-	public List<Map<String, Object>> listExecutionLogs(@PathVariable String buildCompositeKey, @PathVariable String executionId,
-			HttpServletRequest request) throws ResourceNotFoundException {
+	public List<Map<String, Object>> getExecutionLogs(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
+			@PathVariable String executionId, HttpServletRequest request) throws ResourceNotFoundException {
 
-		return convertFileListToEntities(request, executionService.getExecutionLogFilePaths(buildCompositeKey, executionId));
+		return convertFileListToEntities(request, executionService.getLogFilePaths(releaseCenterKey, buildKey, executionId));
 	}
 
 	@RequestMapping(value = "/{executionId}/logs/{logFileName:.*}")
-	public void getExecutionLog(@PathVariable String buildCompositeKey, @PathVariable String executionId,
+	public void getExecutionLog(@PathVariable String releaseCenterKey, @PathVariable String buildKey, @PathVariable String executionId,
 			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
-		try (InputStream outputFileStream = executionService.getExecutionLogFile(buildCompositeKey, executionId, logFileName)) {
+		try (InputStream outputFileStream = executionService.getLogFile(releaseCenterKey, buildKey, executionId, logFileName)) {
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
+
+	private void ifExecutionIsNullThrow(String buildKey, String executionId, Execution execution) throws ResourceNotFoundException {
+		if (execution == null) {
+			throw new ResourceNotFoundException("Unable to find execution, buildKey: " + buildKey + ", executionId:" + executionId);
+		}
+	}
+
 
 	private List<Map<String, Object>> convertFileListToEntities(HttpServletRequest request, List<String> relativeFilePaths) {
 		List<Map<String, String>> files = new ArrayList<>();

@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.dto.ExecutionPackageDTO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
@@ -12,35 +11,26 @@ public interface ExecutionService {
 
 	String MDC_EXECUTION_KEY = "execution";
 
-	Execution createExecutionFromBuild(String buildCompositeKey) throws BusinessServiceException;
+	Execution createExecutionFromBuild(String releaseCenterKey, String buildKey) throws BusinessServiceException;
 
-	Execution triggerExecution(String buildCompositeKey, String executionId) throws BusinessServiceException;
+	Execution triggerExecution(String releaseCenterKey, String buildKey, String executionId) throws BusinessServiceException;
 
-	List<Execution> findAllDesc(String buildCompositeKey) throws ResourceNotFoundException;
+	List<Execution> findAllDesc(String releaseCenterKey, String buildKey) throws ResourceNotFoundException;
 
-	Execution find(String buildCompositeKey, String executionId) throws ResourceNotFoundException;
+	Execution find(String releaseCenterKey, String buildKey, String executionId) throws ResourceNotFoundException;
 
-	String loadConfiguration(String buildCompositeKey, String executionId) throws BusinessServiceException;
+	String loadConfiguration(String releaseCenterKey, String buildKey, String executionId) throws BusinessServiceException;
 
-	List<ExecutionPackageDTO> getExecutionPackages(String buildCompositeKey, String executionId) throws BusinessServiceException;
+	InputStream getOutputFile(String releaseCenterKey, String buildKey, String executionId, String outputFilePath) throws ResourceNotFoundException;
 
-	ExecutionPackageDTO getExecutionPackage(String buildCompositeKey, String executionId, String packageId) throws BusinessServiceException;
+	List<String> getOutputFilePaths(String releaseCenterKey, String buildKey, String executionId) throws BusinessServiceException;
 
-	void updateStatus(String buildCompositeKey, String executionId, String status) throws BusinessServiceException;
+	InputStream getInputFile(String releaseCenterKey, String buildKey, String executionId, String inputFileName) throws ResourceNotFoundException;
 
-	InputStream getOutputFile(String buildCompositeKey, String executionId, String packageId, String outputFilePath) throws ResourceNotFoundException;
+	List<String> getInputFilePaths(String releaseCenterKey, String buildKey, String executionId) throws ResourceNotFoundException;
 
-	List<String> getExecutionPackageOutputFilePaths(String buildCompositeKey, String executionId, String packageId) throws BusinessServiceException;
+	List<String> getLogFilePaths(String releaseCenterKey, String buildKey, String executionId) throws ResourceNotFoundException;
 
-	InputStream getInputFile(String buildCompositeKey, String executionId, String packageId, String inputFileName) throws ResourceNotFoundException;
+	InputStream getLogFile(String releaseCenterKey, String buildKey, String executionId, String logFileName) throws ResourceNotFoundException;
 
-	List<String> getExecutionPackageInputFilePaths(String buildCompositeKey, String executionId, String packageId) throws ResourceNotFoundException;
-
-	InputStream getLogFile(String buildCompositeKey, String executionId, String packageId, String logFileName) throws ResourceNotFoundException;
-
-	List<String> getExecutionPackageLogFilePaths(String buildCompositeKey, String executionId, String packageId) throws ResourceNotFoundException;
-
-	List<String> getExecutionLogFilePaths(String buildCompositeKey, String executionId) throws ResourceNotFoundException;
-
-	InputStream getExecutionLogFile(String buildCompositeKey, String executionId, String logFileName) throws ResourceNotFoundException;
 }

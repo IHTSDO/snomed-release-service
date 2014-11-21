@@ -3,8 +3,8 @@ package org.ihtsdo.buildcloud.service;
 import com.google.common.io.Files;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.service.exception.ProcessingException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
@@ -40,9 +40,9 @@ public class RF2ClassifierService {
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 */
-	public String generateInferredRelationshipSnapshot(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
-		String packageBusinessKey = pkg.getBusinessKey();
+	public String generateInferredRelationshipSnapshot(Execution execution, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
+		Build build = execution.getBuild();
 
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
@@ -65,18 +65,18 @@ public class RF2ClassifierService {
 				// Download snapshot files
 				logger.info("Sufficient files for relationship classification. Downloading local copy...");
 				File tempDir = Files.createTempDir();
-				List<String> localConceptFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getConceptSnapshotFilenames());
-				List<String> localStatedRelationshipFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
+				List<String> localConceptFilePaths = downloadFiles(execution, tempDir, classifierFiles.getConceptSnapshotFilenames());
+				List<String> localStatedRelationshipFilePaths = downloadFiles(execution, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
 				File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
-				if (checkNoStatedRelationshipCycles(execution, packageBusinessKey, localConceptFilePaths, localStatedRelationshipFilePaths,
+				if (checkNoStatedRelationshipCycles(execution, localConceptFilePaths, localStatedRelationshipFilePaths,
 						cycleFile)) {
 
 					logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
-					String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
+					String effectiveTimeSnomedFormat = build.getEffectiveTimeSnomedFormat();
 					List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-					if (!pkg.isFirstTimeRelease()) {
-						String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, pkg, classifierFiles, tempDir);
+					if (!build.isFirstTimeRelease()) {
+						String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, classifierFiles, tempDir);
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
 						} else {
@@ -99,13 +99,13 @@ public class RF2ClassifierService {
 
 					logger.info("Classification finished.");
 
-					uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
+					uploadLog(execution, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
 					// Upload inferred relationships file with null ids
-					executionDAO.putTransformedFile(execution, pkg, inferredRelationshipsOutputFile);
+					executionDAO.putTransformedFile(execution, inferredRelationshipsOutputFile);
 
 					// Generate inferred relationship ids using transform
-					transformationService.transformInferredRelationshipFile(execution, pkg, inferredRelationshipSnapshotFilename);
+					transformationService.transformInferredRelationshipFile(execution, inferredRelationshipSnapshotFilename);
 
 					return inferredRelationshipSnapshotFilename;
 				} else {
@@ -121,7 +121,7 @@ public class RF2ClassifierService {
 		return null;
 	}
 
-	public boolean checkNoStatedRelationshipCycles(Execution execution, String packageBusinessKey, List<String> localConceptFilePaths,
+	public boolean checkNoStatedRelationshipCycles(Execution execution, List<String> localConceptFilePaths,
 			List<String> localStatedRelationshipFilePaths, File cycleFile) throws ProcessingException {
 		try {
 			logger.info("Performing stated relationship cycle check...");
@@ -129,7 +129,7 @@ public class RF2ClassifierService {
 			boolean cycleDetected = cycleCheck.cycleDetected();
 			if (cycleDetected) {
 				// Upload cycles file
-				uploadLog(execution, packageBusinessKey, cycleFile, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
+				uploadLog(execution, cycleFile, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
 			}
 			return !cycleDetected;
 		} catch (IOException | ClassificationException e) {
@@ -139,9 +139,9 @@ public class RF2ClassifierService {
 		}
 	}
 
-	public void uploadLog(Execution execution, String packageBusinessKey, File logFile, String targetFilename) throws ProcessingException {
+	public void uploadLog(Execution execution, File logFile, String targetFilename) throws ProcessingException {
 		try (FileInputStream in = new FileInputStream(logFile);
-			 AsyncPipedStreamBean logFileOutputStream = executionDAO.getLogFileOutputStream(execution, packageBusinessKey, targetFilename)) {
+			 AsyncPipedStreamBean logFileOutputStream = executionDAO.getLogFileOutputStream(execution, targetFilename)) {
 			OutputStream outputStream = logFileOutputStream.getOutputStream();
 			StreamUtils.copy(in, outputStream);
 			outputStream.close();
@@ -150,13 +150,13 @@ public class RF2ClassifierService {
 		}
 	}
 
-	private String getPreviousInferredRelationshipFilePath(Execution execution, Package pkg, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
-		String previousPublishedPackage = pkg.getPreviousPublishedPackage();
+	private String getPreviousInferredRelationshipFilePath(Execution execution, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
+		String previousPublishedPackage = execution.getBuild().getPreviousPublishedPackage();
 		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
 		String previousInferredRelationshipFilename = inferredRelationshipFilename + ".previous_published";
 
 		File localFile = new File(tempDir, previousInferredRelationshipFilename);
-		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getBuild().getProduct(), inferredRelationshipFilename, previousPublishedPackage);
+		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getBuild().getReleaseCenter(), inferredRelationshipFilename, previousPublishedPackage);
 			 FileOutputStream out = new FileOutputStream(localFile)) {
 			if (publishedFileArchiveEntry != null) {
 				StreamUtils.copy(publishedFileArchiveEntry, out);
@@ -167,12 +167,12 @@ public class RF2ClassifierService {
 		return null;
 	}
 
-	private List<String> downloadFiles(Execution execution, String packageBusinessKey, File tempDir, List<String> filenameLists) throws ProcessingException {
+	private List<String> downloadFiles(Execution execution, File tempDir, List<String> filenameLists) throws ProcessingException {
 		List<String> localFilePaths = new ArrayList<>();
 		for (String downloadFilename : filenameLists) {
 
 			File localFile = new File(tempDir, downloadFilename);
-			try (InputStream inputFileStream = executionDAO.getOutputFileInputStream(execution, packageBusinessKey, downloadFilename);
+			try (InputStream inputFileStream = executionDAO.getOutputFileInputStream(execution, downloadFilename);
 				 FileOutputStream out = new FileOutputStream(localFile)) {
 				if (inputFileStream != null) {
 					StreamUtils.copy(inputFileStream, out);

@@ -4,18 +4,16 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.hibernate.annotations.Sort;
-import org.hibernate.annotations.SortType;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.Date;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
 public class Build {
+
+	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
 
 	@Id
 	@GeneratedValue
@@ -26,54 +24,105 @@ public class Build {
 
 	private Date effectiveTime;
 
-	private boolean starred;
-
 	@JsonIgnore
 	private String businessKey;
 
 	@ManyToOne
 	@JsonIgnore
-	private Product product;
+	private ReleaseCenter releaseCenter;
 
-	@OneToMany(mappedBy = "build")
-	@Sort(type = SortType.NATURAL)
+	@Transient
 	@JsonIgnore
-	private SortedSet<Package> packages;
+	private List<String> inputFiles;
 
-	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
+	@Column(columnDefinition = "TEXT")
+	private String readmeHeader;
+
+	private String readmeEndDate;
+
+	private boolean firstTimeRelease = false;
+
+	private boolean workbenchDataFixesRequired = false;
+
+	private boolean justPackage = false;
+
+	private String previousPublishedPackage;
+	private boolean createInferredRelationships;
+
+	@ElementCollection(fetch = FetchType.EAGER)
+	private Set<RefsetCompositeKey> refsetCompositeKeys;
+
+	private String newRF2InputFiles;
 
 	public Build() {
-		packages = new TreeSet<>();
+
 	}
 
 	public Build(String name) {
 		this();
 		setName(name);
+		inputFiles = new ArrayList<>();
 	}
 	
-	public Build(String name, boolean isStarred) {
-		this();
-		this.setName(name);
-		this.starred = isStarred;
-	}	
-
 	public Build(Long id, String name) {
 		this(name);
 		this.id = id;
 	}
 
-	public boolean addPackage(Package aPackage) {
-		aPackage.setBuild(this);
-		if (packages.add(aPackage)) {
-			return true;
-		} else {
-			return false;
-		}
+	@JsonProperty("effectiveTime")
+	public String getEffectiveDateFormatted() {
+		return effectiveTime != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveTime) : null;
 	}
 
-	@JsonProperty("id")
-	public String getCompositeKey() {
-		return id + "_" + businessKey;
+	@JsonIgnore
+	public String getEffectiveTimeSnomedFormat() {
+		return effectiveTime != null ? DateFormatUtils.format(effectiveTime, SNOMED_DATE_FORMAT) : null;
+	}
+
+	public void setCustomRefsetCompositeKeys(Map<String, List<Integer>> customRefsetCompositeKeys) {
+		this.refsetCompositeKeys = toRefsetCompositeKeys(customRefsetCompositeKeys);
+	}
+
+	private Set<RefsetCompositeKey> toRefsetCompositeKeys(Map<String, List<Integer>> customRefsetCompositeKeys) {
+		Set<RefsetCompositeKey> keys = new HashSet<>();
+		for (String key : customRefsetCompositeKeys.keySet()) {
+			keys.add(new RefsetCompositeKey(key, customRefsetCompositeKeys.get(key).toString().replaceAll("[\\[\\]]", "")));
+		}
+		return keys;
+	}
+
+	@JsonIgnore
+	public Map<String, List<Integer>> getCustomRefsetCompositeKeysMap() {
+		Map<String, List<Integer>> map = new HashMap<>();
+		if (refsetCompositeKeys != null) {
+			for (RefsetCompositeKey refsetCompositeKey : refsetCompositeKeys) {
+				String[] split = refsetCompositeKey.getFieldIndexes().split(",");
+				List<Integer> indexes = new ArrayList<>();
+				for (String s : split) {
+					indexes.add(Integer.parseInt(s.trim()));
+				}
+				map.put(refsetCompositeKey.getRefsetId(), indexes);
+			}
+		}
+		return map;
+	}
+
+	@JsonIgnore
+	public Set<String> getNewRF2InputFileSet() {
+		Set<String> files = new HashSet<>();
+		if (newRF2InputFiles != null) {
+			Collections.addAll(files, newRF2InputFiles.split("\\|"));
+		}
+		return files;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+		generateBusinessKey();
+	}
+
+	private void generateBusinessKey() {
+		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 
 	public Long getId() {
@@ -88,21 +137,6 @@ public class Build {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-		generateBusinessKey();
-	}
-
-	@JsonProperty("effectiveTime")
-	public String getEffectiveDateFormatted() {
-		return effectiveTime != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveTime) : null;
-	}
-
-	@JsonIgnore
-	public String getEffectiveTimeSnomedFormat() {
-		return effectiveTime != null ? DateFormatUtils.format(effectiveTime, SNOMED_DATE_FORMAT) : null;
-	}
-
 	public Date getEffectiveTime() {
 		return effectiveTime;
 	}
@@ -111,32 +145,101 @@ public class Build {
 		this.effectiveTime = effectiveTime;
 	}
 
+	@JsonProperty("id")
 	public String getBusinessKey() {
 		return businessKey;
 	}
 
-	public Product getProduct() {
-		return product;
+	public ReleaseCenter getReleaseCenter() {
+		return releaseCenter;
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
+	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+		this.releaseCenter = releaseCenter;
 	}
 
-	public SortedSet<Package> getPackages() {
-		return packages;
+	public void setBusinessKey(String businessKey) {
+		this.businessKey = businessKey;
 	}
 
-	private void generateBusinessKey() {
-		this.businessKey = EntityHelper.formatAsBusinessKey(name);
+	public List<String> getInputFiles() {
+		return inputFiles;
 	}
 
-	public boolean isStarred() {
-		return starred;
+	public void setInputFiles(List<String> inputFiles) {
+		this.inputFiles = inputFiles;
 	}
 
-	public void setStarred(boolean isStarred) {
-		this.starred = isStarred;
+	public String getReadmeHeader() {
+		return readmeHeader;
+	}
+
+	public void setReadmeHeader(String readmeHeader) {
+		this.readmeHeader = readmeHeader;
+	}
+
+	public String getReadmeEndDate() {
+		return readmeEndDate;
+	}
+
+	public void setReadmeEndDate(String readmeEndDate) {
+		this.readmeEndDate = readmeEndDate;
+	}
+
+	public boolean isFirstTimeRelease() {
+		return firstTimeRelease;
+	}
+
+	public void setFirstTimeRelease(boolean firstTimeRelease) {
+		this.firstTimeRelease = firstTimeRelease;
+	}
+
+	public boolean isWorkbenchDataFixesRequired() {
+		return workbenchDataFixesRequired;
+	}
+
+	public void setWorkbenchDataFixesRequired(boolean workbenchDataFixesRequired) {
+		this.workbenchDataFixesRequired = workbenchDataFixesRequired;
+	}
+
+	public boolean isJustPackage() {
+		return justPackage;
+	}
+
+	public void setJustPackage(boolean justPackage) {
+		this.justPackage = justPackage;
+	}
+
+	public String getPreviousPublishedPackage() {
+		return previousPublishedPackage;
+	}
+
+	public void setPreviousPublishedPackage(String previousPublishedPackage) {
+		this.previousPublishedPackage = previousPublishedPackage;
+	}
+
+	public boolean isCreateInferredRelationships() {
+		return createInferredRelationships;
+	}
+
+	public void setCreateInferredRelationships(boolean createInferredRelationships) {
+		this.createInferredRelationships = createInferredRelationships;
+	}
+
+	public Set<RefsetCompositeKey> getRefsetCompositeKeys() {
+		return refsetCompositeKeys;
+	}
+
+	public void setRefsetCompositeKeys(Set<RefsetCompositeKey> refsetCompositeKeys) {
+		this.refsetCompositeKeys = refsetCompositeKeys;
+	}
+
+	public String getNewRF2InputFiles() {
+		return newRF2InputFiles;
+	}
+
+	public void setNewRF2InputFiles(String newRF2InputFiles) {
+		this.newRF2InputFiles = newRF2InputFiles;
 	}
 
 	@Override
@@ -153,7 +256,7 @@ public class Build {
 		if (!businessKey.equals(build.businessKey)) {
 			return false;
 		}
-		if (!product.equals(build.product)) {
+		if (!releaseCenter.equals(build.releaseCenter)) {
 			return false;
 		}
 
@@ -163,8 +266,41 @@ public class Build {
 	@Override
 	public int hashCode() {
 		int result = businessKey.hashCode();
-		result = 31 * result + product.hashCode();
+		result = 31 * result + releaseCenter.hashCode();
 		return result;
+	}
+
+	@Embeddable
+	private static class RefsetCompositeKey {
+
+		private String refsetId;
+
+		private String fieldIndexes;
+
+		private RefsetCompositeKey() {
+		}
+
+		public RefsetCompositeKey(String refsetId, String fieldIndexes) {
+			this.refsetId = refsetId;
+			this.fieldIndexes = fieldIndexes;
+		}
+
+		public String getRefsetId() {
+			return refsetId;
+		}
+
+		public void setRefsetId(String refsetId) {
+			this.refsetId = refsetId;
+		}
+
+		public String getFieldIndexes() {
+			return fieldIndexes;
+		}
+
+		public void setFieldIndexes(String fieldIndexes) {
+			this.fieldIndexes = fieldIndexes;
+		}
+
 	}
 
 }

@@ -10,32 +10,68 @@ import java.util.Map;
 
 public class ExecutionReport {
 
-	@JsonIgnore
-	private Map<String, ExecutionPackageReport> executionPackageReports;
+	public static final String ERROR_COUNT = "Error Count";
+	public static final String FIRST_ERROR = "First Error";
+	public static final String FIRST_LINE = "First Line";
 
-	@JsonAnyGetter
-	public Map<String, ExecutionPackageReport> getExecutionPackageReports() {
-		return executionPackageReports;
+	@JsonIgnore
+	private Map<String, Object> report;
+
+	ExecutionReport() {
+		report = new HashMap<>();
 	}
 
-	public ExecutionPackageReport getOrCreateExecutionPackgeReport(Package pkg) {
-		// Do we already have a map of Execution Report objects per package?
-		if (this.executionPackageReports == null) {
-			this.executionPackageReports = new HashMap<>();
+	public void add(String executionStage, String result) {
+		report.put(executionStage, result);
+	}
+
+	private Map<String, Map<String, String>> getDetails(String executionStage) {
+		
+		//TODO If we already had a straight string here, we could move it into the detail map...
+		// Do we have a detail set for this execution stage?
+		if (!report.containsKey(executionStage)) {
+			report.put(executionStage, new HashMap<String, Map<String, String>>());
 		}
 
-		// Do we already know about this package?
-		if (!this.executionPackageReports.containsKey(pkg.getName())) {
-			this.executionPackageReports.put(pkg.getName(), new ExecutionPackageReport());
+		@SuppressWarnings("unchecked")
+		HashMap<String, Map<String, String>> stringMapHashMap = (HashMap<String, Map<String, String>>) report.get(executionStage);
+		return stringMapHashMap;
+	}
+
+	public void add(String executionStage, String fileName, String problem, int lineNumber) {
+
+		Map<String, Map<String, String>> reportDetail = getDetails(executionStage);
+
+		// Have we heard about this file before?
+		if (!reportDetail.containsKey(fileName)) {
+			Map<String, String> fileReport = new HashMap<>();
+			reportDetail.put(fileName, fileReport);
+			fileReport.put(ERROR_COUNT, Integer.toString(0));
+			fileReport.put(FIRST_ERROR, problem);
+			fileReport.put(FIRST_LINE, Integer.toString(lineNumber));
 		}
 
-		return this.executionPackageReports.get(pkg.getName());
+		// Increment the error count
+		Map<String, String> fileReport = reportDetail.get(fileName);
+		String currentErrorCountStr = fileReport.get(ERROR_COUNT);
+		int currentErrorCount = Integer.parseInt(currentErrorCountStr);
+		fileReport.put(ERROR_COUNT, Integer.toString(++currentErrorCount));
+	}
+
+	public static ExecutionReport getDummyReport() {
+		return new ExecutionReport();
+	}
+
+	// JsonUnwrapped doesn't work for maps apparently. See https://jira.codehaus.org/browse/JACKSON-765
+	@JsonAnyGetter
+	public Map<String, Object> getReport() {
+		return report;
 	}
 
 	public String toString() {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(executionPackageReports);
+			return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(report);
 		} catch (IOException e) {
 			return "Unable to persist Execution Report due to " + e.getLocalizedMessage();
 		}

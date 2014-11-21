@@ -1,12 +1,9 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.exception.BadRequestException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -16,12 +13,12 @@ import java.util.List;
  */
 public interface PublishService {
 
-	List<String> getPublishedPackages(Product product);
+	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
-	void publishExecutionPackage(Execution execution, Package pk) throws IOException;
+	void publishExecution(Execution execution) throws BusinessServiceException;
 
-	void publishPackage(String buildCompositeKey, String packageBusinessKey,
-			String productBusinessKey, InputStream inputStream, String originalFilename, long size) throws ResourceNotFoundException, BadRequestException, IOException;
+	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException;
 
-	boolean exists(Product product, String previouslyPublishedPackageName);
+	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
+
 }

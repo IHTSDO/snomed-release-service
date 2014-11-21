@@ -2,10 +2,10 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.*;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.service.ExecutionPackageBean;
 import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.junit.After;
@@ -31,12 +31,14 @@ public class Rf2FileExportRunnerTest {
 	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
 	private static final String EXECUTION_BUCKET_NAME = "local.execution.bucket";
 	private static final String RELEASE_DATE = "20140731";
-	//simple refset
+
+	// Simple refset
 	private static final String TRANSFORMED_SIMPLE_DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140731.txt";
 	private static final String EXPECTED_SIMPLE_FULL_FILE_NAME = "der2_Refset_SimpleFull_INT_20140731.txt";
 	private static final String EXPECTED_SIMPLE_DELTA_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140731.txt";
 	private static final String EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME = "der2_Refset_SimpleSnapshot_INT_20140731.txt";
-	//attribute value file
+
+	// Attribute value refset
 	private static final String TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE = "der2_cRefset_AttributeValueDelta_INT_20140731.txt";
 	private static final String PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140331.txt";
 	private static final String PREVIOUS_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140331.txt";
@@ -44,7 +46,7 @@ public class Rf2FileExportRunnerTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
 	
-	private Package pkg;
+	private Build build;
 	@Autowired
 	private ExecutionDAO dao;
 	@Autowired
@@ -53,17 +55,12 @@ public class Rf2FileExportRunnerTest {
 	private String publishedPath;
 	private final PesudoUUIDGenerator uuidGenerator = new PesudoUUIDGenerator();
 	private Execution execution;
-	
+
 	@Before
 	public void setUp() throws IOException {
-		//use count so that multiple tests don't use the same execution.
-		Build build = new Build(1L, "Test");
-		Product product = new Product("Test Product");
-		Extension extension = new Extension("extension");
+		build = new Build(1L, "Test");
 		ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
-		extension.setReleaseCenter(releaseCenter);
-		product.setExtension(extension);
-		build.setProduct(product);
+		build.setReleaseCenter(releaseCenter);
 		Date date = new Date();
 		execution = new Execution(date, build);
 		SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
@@ -72,47 +69,45 @@ public class Rf2FileExportRunnerTest {
 		} catch (ParseException e) {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
-		transformedFileFullPath = "int/1_test/" + EntityHelper.formatAsIsoDateTime(date) + "/pk1/transformed-files/";
-		publishedPath = "int/extension/test_product/" + PREVIOUS_RELEASE + "/";
-		pkg = new Package("PK1");
-		pkg.setBuild(build);
+		transformedFileFullPath = "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
+		publishedPath = "int/" + PREVIOUS_RELEASE + "/";
 	}
 
 	@Test
 	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
-		pkg.setFirstTimeRelease(true);
-		pkg.setWorkbenchDataFixesRequired(false);
+		build.setFirstTimeRelease(true);
+		build.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
-		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(new ExecutionPackageBean(execution, pkg), dao, uuidGenerator, 1);
+		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(execution, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
-		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
+		List<String> outputFiles = dao.listOutputFilePaths(execution);
 		Assert.assertEquals(3, outputFiles.size());
 		
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_DELTA_FILE_NAME));
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME));
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_FULL_FILE_NAME), dao.getOutputFileInputStream(execution, pkg, EXPECTED_SIMPLE_FULL_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(execution, EXPECTED_SIMPLE_DELTA_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(execution, EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_FULL_FILE_NAME), dao.getOutputFileInputStream(execution, EXPECTED_SIMPLE_FULL_FILE_NAME));
 
 	}
 
 	@Test
 	public void testEmptyValueIdFix() throws Exception {
-		pkg.setFirstTimeRelease(false);
-		pkg.setPreviousPublishedPackage(PREVIOUS_RELEASE);
-		pkg.setWorkbenchDataFixesRequired(true);
+		build.setFirstTimeRelease(false);
+		build.setPreviousPublishedPackage(PREVIOUS_RELEASE);
+		build.setWorkbenchDataFixesRequired(true);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
-		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(new ExecutionPackageBean(execution, pkg), dao, uuidGenerator, 1);
+		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(execution, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
-		List<String> outputFiles = dao.listOutputFilePaths(execution, pkg.getBusinessKey());
+		List<String> outputFiles = dao.listOutputFilePaths(execution);
 		Assert.assertEquals(3, outputFiles.size());
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
-		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(execution, pkg, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(execution, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(execution, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(execution, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));
 	}
 
 	@Test
@@ -131,10 +126,8 @@ public class Rf2FileExportRunnerTest {
 	}
 	
 	@After
-	public void tearDown() throws InterruptedException
-	{
+	public void tearDown() throws InterruptedException {
 		uuidGenerator.reset();
-		//delay as it might use the same execution.
-		Thread.sleep(1000);
+		Thread.sleep(1000); // Delay to prevent execution id overlap
 	}
 }

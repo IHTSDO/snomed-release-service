@@ -1,18 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -20,6 +7,9 @@ import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.*;
+import java.util.*;
 
 public class LegacyIdTransformationService {
 
@@ -38,7 +28,7 @@ public class LegacyIdTransformationService {
 	private ExecutionDAO executionDAO;
 	
 	public void transformLegacyIds(final CachedSctidFactory cachedSctidFactory, final Map<String, List<UUID>> moduleIdAndUuidMap, 
-			final Execution execution, final String packageBusinessKey) throws TransformationException {
+			final Execution execution) throws TransformationException {
 		final List<UUID> newConceptUuids   = new ArrayList<>();
 		for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
@@ -62,7 +52,7 @@ public class LegacyIdTransformationService {
 		LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
 		//generate snomed id
 		LOGGER.info("Total new SctIds need to generate SnomedIds:" + sctIds.size());
-		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution, packageBusinessKey);
+		final Map<Long, Long> sctIdAndParentMap = getParentSctId(sctIds, execution);
 		if (LOGGER.isDebugEnabled()) {
 			for (final Long sctId : sctIdAndParentMap.keySet()) {
 				LOGGER.debug("SctId:" + sctId + " parent sctId:" + sctIdAndParentMap.get(sctId));
@@ -80,16 +70,16 @@ public class LegacyIdTransformationService {
 		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
-		executionDAO.renameTransformedFile(execution, packageBusinessKey, simpleRefsetMapDelta, orignalTransformedDelta);
+		executionDAO.renameTransformedFile(execution, simpleRefsetMapDelta, orignalTransformedDelta);
 		try (
-				final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, packageBusinessKey, simpleRefsetMapDelta).getOutputStream();
+				final OutputStream outputStream = executionDAO.getTransformedFileOutputStream(execution, simpleRefsetMapDelta).getOutputStream();
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
-				final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, orignalTransformedDelta);
+				final InputStream inputStream = executionDAO.getTransformedFileAsInputStream(execution, orignalTransformedDelta);
 				if (inputStream == null) {
 					LOGGER.warn("No existing transformed file found for " + simpleRefsetMapDelta);
 				} else {
 						try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-							String line = null;
+							String line;
 							while ((line = reader.readLine()) != null) {
 								writer.write(line);
 								writer.write(RF2Constants.LINE_ENDING);
@@ -130,15 +120,14 @@ public class LegacyIdTransformationService {
 		}
 	}
 
-	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution, final String packageBusinessKey) throws TransformationException {
+	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
 		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
-		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, packageBusinessKey, statedRelationsipDelta);
+		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, statedRelationsipDelta);
 		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
 		}
-		final Map<Long, Long> result = finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
-		return result;
+		return finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
 	}
 
 	private String buildSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {

@@ -3,8 +3,7 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
-import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 
 import java.io.*;
@@ -27,64 +26,58 @@ public interface ExecutionDAO {
 
 	void assertStatus(Execution execution, Execution.Status ensureStatus) throws BadConfigurationException;
 
-	InputStream getOutputFileStream(Execution execution, String packageId, String filePath);
+	InputStream getOutputFileStream(Execution execution, String filePath);
 
-	List<String> listInputFileNames(Execution execution, String packageId);
+	List<String> listInputFileNames(Execution execution);
 
-	InputStream getInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath);
+	InputStream getInputFileStream(Execution execution, String relativeFilePath);
 
-	InputStream getLocalInputFileStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
+	InputStream getLocalInputFileStream(Execution execution, String relativeFilePath) throws FileNotFoundException;
 
-	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	AsyncPipedStreamBean getOutputFileOutputStream(Execution execution, String relativeFilePath) throws IOException;
 
-	AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	AsyncPipedStreamBean getLogFileOutputStream(Execution execution, String relativeFilePath) throws IOException;
 
-	void copyInputFileToOutputFile(Execution execution, String packageBusinessKey, String relativeFilePath);
+	void copyInputFileToOutputFile(Execution execution, String relativeFilePath);
 
 	void copyAll(Build buildSource, Execution execution);
 
-	InputStream getOutputFileInputStream(Execution execution, String packageBusinessKey, String name);
+	InputStream getOutputFileInputStream(Execution execution, String name);
 
-	InputStream getOutputFileInputStream(Execution execution, Package pkg, String name);
-
-	String putOutputFile(Execution execution, Package aPackage, File file, String targetRelativePath, boolean calcMD5)
+	String putOutputFile(Execution execution, File file, boolean calcMD5)
 			throws IOException;
 
-	String putOutputFile(Execution execution, Package aPackage, File file)
+	String putOutputFile(Execution execution, File file)
 			throws IOException;
 
-	void putTransformedFile(Execution execution, Package pkg, File file) throws IOException;
+	void putTransformedFile(Execution execution, File file) throws IOException;
 
-	InputStream getManifestStream(Execution execution, Package pkg);
+	InputStream getManifestStream(Execution execution);
 
-	List<String> listTransformedFilePaths(Execution execution, String packageId);
+	List<String> listTransformedFilePaths(Execution execution);
 
-	List<String> listOutputFilePaths(Execution execution, String packageId);
+	List<String> listOutputFilePaths(Execution execution);
 
-	List<String> listLogFilePaths(Execution execution, String packageId);
+	List<String> listLogFilePaths(Execution execution);
 
 	List<String> listExecutionLogFilePaths(Execution execution);
 
-	InputStream getLogFileStream(Execution execution, String packageId, String logFileName);
+	InputStream getLogFileStream(Execution execution, String logFileName);
 
 	InputStream getExecutionLogFileStream(Execution execution, String logFileName);
 
 	String getTelemetryExecutionLogFilePath(Execution execution);
 
-	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws IOException;
+	AsyncPipedStreamBean getTransformedFileOutputStream(Execution execution, String relativeFilePath) throws IOException;
 
-	OutputStream getLocalTransformedFileOutputStream(Execution execution, String packageBusinessKey, String relativeFilePath) throws FileNotFoundException;
+	OutputStream getLocalTransformedFileOutputStream(Execution execution, String relativeFilePath) throws FileNotFoundException;
 
-	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName);
+	InputStream getTransformedFileAsInputStream(Execution execution, String relativeFilePath);
 
-	void copyTransformedFileToOutput(Execution execution, String packageBusinessKey, String relativeFilePath);
-
-	InputStream getTransformedFileAsInputStream(Execution execution, String businessKey, String relativeFilePath);
-
-	public InputStream getPublishedFileArchiveEntry(Product product, String targetFileName, String previousPublishedPackage) throws IOException;
+	public InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Execution execution);
 	
-	void renameTransformedFile(Execution execution, String packageBusinessKey, String sourceFileName, String targetFileName);
+	void renameTransformedFile(Execution execution, String sourceFileName, String targetFileName);
 
 }

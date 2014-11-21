@@ -6,7 +6,6 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * An Execution is a snapshot of a Build and may be used to run the release process.
@@ -23,7 +22,7 @@ public class Execution {
 	@JsonIgnore
 	private final Build build;
 	
-	private Map<String, List<PreConditionCheckReport>> preConditionCheckReports;
+	private List<PreConditionCheckReport> preConditionCheckReports;
 
 	ExecutionReport executionReport;
 
@@ -31,19 +30,24 @@ public class Execution {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN
 	}
 
-	public Execution(String creationTime, String statusString, Build build) {
+	public Execution(Build build, String creationTime) {
+		this.status = Status.BEFORE_TRIGGER;
+		this.executionReport = new ExecutionReport();
+		this.build = build;
 		this.creationTime = creationTime;
+	}
+
+	public Execution(String creationTime, String statusString, Build build) {
+		this(build, creationTime);
 		try {
 			this.status = Status.valueOf(statusString);
 		} catch (IllegalArgumentException e) {
 			this.status = Status.UNKNOWN;
 		}
-		this.build = build;
 	}
 
 	public Execution(Date creationTime, Build build) {
-		this.creationTime = EntityHelper.formatAsIsoDateTime(creationTime);
-		this.build = build;
+		this(build, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
 
 	public String getId() {
@@ -67,26 +71,22 @@ public class Execution {
 	}
 
 	public String getUniqueId() {
-		return getBuild().getCompositeKey() + "|" + getId();
+		return getBuild().getBusinessKey() + "|" + getId();
 	}
 
-	public void setPreConditionCheckReports(Map<String, List<PreConditionCheckReport>> preConditionReports) {
-		this.preConditionCheckReports = preConditionReports;
-	}
-
-	public Map<String, List<PreConditionCheckReport>> getPreConditionCheckReports() {
+	public List<PreConditionCheckReport> getPreConditionCheckReports() {
 		return preConditionCheckReports;
 	}
 
+	public void setPreConditionCheckReports(List<PreConditionCheckReport> preConditionCheckReports) {
+		this.preConditionCheckReports = preConditionCheckReports;
+	}
+
 	public ExecutionReport getExecutionReport() {
-		if (executionReport == null) {
-			this.executionReport = new ExecutionReport();
-		}
 		return executionReport;
 	}
 
 	public void setExecutionReport(ExecutionReport executionReport) {
 		this.executionReport = executionReport;
 	}
-
 }

@@ -11,9 +11,9 @@ public interface BuildDAO extends EntityDAO<Build> {
 
 	List<Build> findAll(Set<FilterOption> filterOptions, User user);
 
-	List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User user);
+	List<Build> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user);
 
-	Build find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildBusinessKey, User user);
+	Build find(String releaseCenterKey, String buildKey, User user);
 
 	Build find(Long id, User user);
 

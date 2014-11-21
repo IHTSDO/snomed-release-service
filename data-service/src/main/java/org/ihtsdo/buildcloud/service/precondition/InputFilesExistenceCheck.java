@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
@@ -38,21 +37,15 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 	private ExecutionDAO executionDAO;
 
 	@Override
-	public void runCheck(Package pkg, Execution execution) {
+	public void runCheck(Execution execution) {
 		//check against the manifest file
 		boolean isFailed = false;
-		ListingType listingType;
-		try( InputStream manifestInputSteam = executionDAO.getManifestStream(execution, pkg) ) {
-		    	ManifestXmlFileParser parser = new ManifestXmlFileParser();
-			listingType = parser.parse(manifestInputSteam);
-			List<String> filesFromManifiest = ManifestFileListingHelper.listAllFiles(listingType);
+		try (InputStream manifestInputSteam = executionDAO.getManifestStream(execution)) {
+			ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			ListingType listingType = parser.parse(manifestInputSteam);
 			Set<String> filesExpected = new HashSet<>();
 			boolean isFirstReadmeFound = false;
-			for (String fileName : filesFromManifiest) {
-				//it shouldn't be null double check anyway.
-				if (fileName == null) {
-					continue;
-				}
+			for (String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
 				//dealing with der2 and sct2 full/snapshot/delta files
 				String[] splits = fileName.split(FILE_NAME_SEPARATOR);
 				String fileNamePrefix = splits[0];
@@ -78,7 +71,7 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 
 			}
 			//get a list of input file names
-			List<String> inputfilesList = executionDAO.listInputFileNames(execution, pkg.getBusinessKey());
+			List<String> inputfilesList = executionDAO.listInputFileNames(execution);
 			//check expected against input files
 			StringBuilder msgBuilder = new StringBuilder();
 			int count = 0;

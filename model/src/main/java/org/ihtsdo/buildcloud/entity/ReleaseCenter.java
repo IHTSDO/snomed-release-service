@@ -28,12 +28,12 @@ public class ReleaseCenter {
 
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
-	private List<Extension> extensions;
+	private List<Build> builds;
 
 	private boolean removed;
 
 	public ReleaseCenter() {
-		extensions = new ArrayList<>();
+		builds = new ArrayList<>();
 	}
 
 	public ReleaseCenter(String name, String shortName) {
@@ -42,9 +42,9 @@ public class ReleaseCenter {
 		setShortName(shortName);
 	}
 
-	public void addExtension(Extension extension) {
-		extensions.add(extension);
-		extension.setReleaseCenter(this);
+	public void addBuild(Build build) {
+		builds.add(build);
+		build.setReleaseCenter(this);
 	}
 
 	public Long getId() {
@@ -76,8 +76,8 @@ public class ReleaseCenter {
 		return businessKey;
 	}
 
-	public List<Extension> getExtensions() {
-		return extensions;
+	public List<Build> getBuilds() {
+		return builds;
 	}
 
 	public boolean isRemoved() {

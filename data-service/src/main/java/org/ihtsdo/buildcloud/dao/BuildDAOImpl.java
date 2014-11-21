@@ -6,7 +6,9 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.stereotype.Repository;
 
-import java.util.EnumSet;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Set;
 
@@ -19,34 +21,25 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 
 	@Override
 	public List<Build> findAll(Set<FilterOption> filterOptions, User user) {
-		return findAll(null, null, filterOptions, user);
+		return findAll(null, filterOptions, user);
 	}
 
 	@Override
-	public List<Build> findAll(String releaseCenterBusinessKey, String extensionBusinessKey, Set<FilterOption> filterOptions, User user) {
+	@SuppressWarnings("unchecked")
+	public List<Build> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user) {
 
 		String filter = "";
 		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
 			filter += " and ( removed = 'N' or removed is null) ";
 		}
-		if (filterOptions.contains(FilterOption.STARRED_ONLY)) {
-			filter += " and starred = true ";
-		}
 		if (releaseCenterBusinessKey != null) {
 			filter += " and releaseCenter.businessKey = :releaseCenterBusinessKey ";
-		}
-		if (extensionBusinessKey != null) {
-			//TODO Watch here that extension business key is not guaranteed unique, so 
-			//potentially we want to only allow ext if rc also specified.
-			filter += " and extension.businessKey = :extensionBusinessKey ";
 		}
 		Query query = getCurrentSession().createQuery(
 				"select build " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.extensions extension " +
-						"join extension.products product " +
-						"join product.builds build " +
+						"join releaseCenter.builds build " +
 						"where membership.user = :user " +
 						filter +
 						"order by build.id ");
@@ -54,9 +47,6 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 
 		if (releaseCenterBusinessKey != null) {
 			query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
-		}
-		if (extensionBusinessKey != null) {
-			query.setString("extensionBusinessKey", extensionBusinessKey);
 		}
 		return query.list();
 	}
@@ -67,9 +57,7 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 				"select build " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.extensions extension " +
-						"join extension.products product " +
-						"join product.builds build " +
+						"join releaseCenter.builds build " +
 						"where membership.user = :user " +
 						"and build.id = :buildId " +
 						"order by build.id ");
@@ -82,26 +70,19 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	 * Look for a specific build where the id (primary key) is not necessarily known
 	 */
 	@Override
-	public Build find(String releaseCenterBusinessKey,
-			String extensionBusinessKey, String productBusinessKey,
-			String buildBusinessKey, User user) {
+	public Build find(String releaseCenterKey,
+			String buildKey, User user) {
 		Query query = getCurrentSession().createQuery(
 				"select build " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.extensions extension " +
-						"join extension.products product " +
-						"join product.builds build " +
+						"join releaseCenter.builds build " +
 						"where membership.user = :user " +
 						"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
-						"and extension.businessKey = :extensionBusinessKey " +
-						"and product.businessKey = :productBusinessKey " +
 						"and build.businessKey = :buildBusinessKey ");
 		query.setEntity("user", user);
-		query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
-		query.setString("extensionBusinessKey", extensionBusinessKey);
-		query.setString("productBusinessKey", productBusinessKey);
-		query.setString("buildBusinessKey", buildBusinessKey);
+		query.setString("releaseCenterBusinessKey", releaseCenterKey);
+		query.setString("buildBusinessKey", buildKey);
 		return (Build) query.uniqueResult();
 	}
 
