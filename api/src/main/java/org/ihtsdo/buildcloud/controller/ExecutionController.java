@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.ExecutionService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -129,7 +130,8 @@ public class ExecutionController {
 	@RequestMapping(value = "/{executionId}/output/publish")
 	@ResponseBody
 	public void publishReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String buildKey,
-			@PathVariable String executionId) throws BusinessServiceException {
+ @PathVariable String executionId)
+			throws BusinessServiceException, EntityAlreadyExistsException {
 
 		Execution execution = executionService.find(releaseCenterKey, buildKey, executionId);
 		ifExecutionIsNullThrow(buildKey, executionId, execution);
@@ -158,7 +160,6 @@ public class ExecutionController {
 			throw new ResourceNotFoundException("Unable to find execution, buildKey: " + buildKey + ", executionId:" + executionId);
 		}
 	}
-
 
 	private List<Map<String, Object>> convertFileListToEntities(HttpServletRequest request, List<String> relativeFilePaths) {
 		List<Map<String, String>> files = new ArrayList<>();

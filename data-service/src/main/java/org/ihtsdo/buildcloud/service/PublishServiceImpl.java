@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
@@ -75,6 +76,7 @@ public class PublishServiceImpl implements PublishService {
 		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
 		try {
 			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution).toString();
+			ReleaseCenter rc = execution.getBuild().getReleaseCenter();
 			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 			String releaseFileName = null;
 			String md5FileName = null;
@@ -88,27 +90,38 @@ public class PublishServiceImpl implements PublishService {
 					md5FileName = fileName;
 				}
 			}
+
 			if (releaseFileName == null) {
 				LOGGER.error("No zip file found for execution:{}", execution.getUniqueId());
 			} else {
-				String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, releaseFileName);
-				String publishedFilePath = getPublishFilePath(execution.getBuild().getReleaseCenter(), releaseFileName);
-				executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-				LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-				publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-			}
-			// copy MD5 file if available
-			if (md5FileName != null) {
-				String source = executionS3PathHelper.getExecutionOutputFilePath(execution, md5FileName);
-				String target = getPublishFilePath(execution.getBuild().getReleaseCenter(), md5FileName);
-				executionFileHelper.copyFile(source, publishedBucketName, target);
-				LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+				String fileLock = releaseFileName.intern();
+				synchronized (fileLock) {
+					//Does a published file already exist for this product?
+					if (exists(rc, releaseFileName)) {
+						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + rc.getName() + " (" + execution.getCreationTime() + ")");
+					}
+					
+					String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, releaseFileName);
+					String publishedFilePath = getPublishFilePath(execution.getBuild().getReleaseCenter(), releaseFileName);
+					executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+					
+					// copy MD5 file if available
+					if (md5FileName != null) {
+						String source = executionS3PathHelper.getExecutionOutputFilePath(execution, md5FileName);
+						String target = getPublishFilePath(execution.getBuild().getReleaseCenter(), md5FileName);
+						executionFileHelper.copyFile(source, publishedBucketName, target);
+						LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+					}
+				}
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish execution " + execution.getUniqueId(), e);
 		} finally {
 			MDC.remove(ExecutionService.MDC_EXECUTION_KEY);
 		}
+
 	}
 
 	@Override
@@ -120,23 +133,32 @@ public class PublishServiceImpl implements PublishService {
 
 		File tempZipFile = null;
 		try {
-			LOGGER.debug("Reading stream to temp file");
-			tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
-			try (InputStream in = inputStream; OutputStream out = new FileOutputStream(tempZipFile)) {
-				StreamUtils.copy(in, out);
+			//Synchronize on the product to protect against double uploads
+			// Internalize the filename so we can use it as a synchronization object
+			String fileLock = originalFilename.intern();
+			synchronized (fileLock) {
+				//Does a published file already exist for this product?
+				if (exists(releaseCenter, originalFilename)) {
+					throw new EntityAlreadyExistsException(originalFilename + " has already been published for " + releaseCenter.getName() );
+				}
+				
+				LOGGER.debug("Reading stream to temp file");
+				tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
+				try (InputStream in = inputStream; OutputStream out = new FileOutputStream(tempZipFile)) {
+					StreamUtils.copy(in, out);
+				}
+				
+				// Upload file
+				String publishFilePath = getPublishDirPath(releaseCenter) + originalFilename;
+				LOGGER.info("Uploading package to {}", publishFilePath);
+				publishedFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
+				//Also upload the extracted version of the archive for random access performance improvements
+				publishExtractedVersionOfPackage(publishFilePath, new FileInputStream(tempZipFile));
 			}
-
-			// Upload file
-			String publishFilePath = getPublishDirPath(releaseCenter) + originalFilename;
-			LOGGER.info("Uploading package to {}", publishFilePath);
-			publishedFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
-
-			publishExtractedVersionOfPackage(publishFilePath, new FileInputStream(tempZipFile));
-
-			// Delete temp zip file
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish ad-hoc file.", e);
 		} finally {
+			// Delete temp zip file
 			if (tempZipFile != null && tempZipFile.isFile()) {
 				if (!tempZipFile.delete()) {
 					LOGGER.warn("Failed to delete file {}", tempZipFile.getAbsolutePath());
