@@ -29,7 +29,7 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	public List<Build> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user) {
 
 		String filter = "";
-		if (filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
+		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
 			filter += " and ( removed = 'N' or removed is null) ";
 		}
 		if (releaseCenterBusinessKey != null) {
