@@ -50,14 +50,14 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	}
 
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
-		String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
-		integrationTestHelper.publishOutput(executionURL1);
+		String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INTBadDelta_" + releaseDate + ".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}

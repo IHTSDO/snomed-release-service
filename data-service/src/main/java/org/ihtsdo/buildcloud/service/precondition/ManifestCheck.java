@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.DER2;
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SCT2;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DER2;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
 
 public class ManifestCheck extends PreconditionCheck {
 
@@ -21,17 +21,17 @@ public class ManifestCheck extends PreconditionCheck {
 			"the same release date as configured in the product:%s";
 
 	@Autowired
-	private ExecutionDAO executionDAO;
+	private BuildDAO buildDAO;
 
 	@Override
-	public void runCheck(final Execution execution) {
-		try (InputStream manifestInputSteam = executionDAO.getManifestStream(execution)) {
+	public void runCheck(final Build build) {
+		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
 			//check that a manifest file is present.
 			//check that the manifest conforms to the XSD and specifically, that we can find a valid root folder
 			ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			ListingType manifestListing = parser.parse(manifestInputSteam);
 			//check release date in manifest
-			String releaseVersion = execution.getProduct().getEffectiveTimeSnomedFormat();
+			String releaseVersion = build.getProduct().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				String errorMsg = checkReleaseDate(manifestListing, releaseVersion);
 				if (errorMsg != null) {
@@ -41,7 +41,7 @@ public class ManifestCheck extends PreconditionCheck {
 			}
 			pass();
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
-			fatalError("Execution manifest is missing or invalid: " + e.getMessage());
+			fatalError("Build manifest is missing or invalid: " + e.getMessage());
 		}
 	}
 

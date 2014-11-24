@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +24,11 @@ public class PreconditionManager {
 	 *
 	 * @return the report in a JSON friendly structure
 	 */
-	public List<PreConditionCheckReport> runPreconditionChecks(final Execution execution) {
+	public List<PreConditionCheckReport> runPreconditionChecks(final Build build) {
 		List<PreConditionCheckReport> checkReports = new ArrayList<>();
 		for (PreconditionCheck thisCheck : preconditionChecks) {
 			if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
-				thisCheck.runCheck(execution);
+				thisCheck.runCheck(build);
 				checkReports.add(thisCheck.getReport());
 			} else {
 				LOGGER.warn("Skipping {} as requires network.", thisCheck.getClass().getName());

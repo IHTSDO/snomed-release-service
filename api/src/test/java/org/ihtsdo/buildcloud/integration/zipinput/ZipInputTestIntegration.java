@@ -29,9 +29,9 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
-		String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
-		integrationTestHelper.publishOutput(executionURL1);
+		String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
@@ -52,7 +52,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleAnotherDelta_INT_20140131.txt";
-		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileFirstRelease, getClass());
 	}
 

@@ -49,8 +49,8 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ProductInputFileDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.ExecutionDAOImpl">
-		<property name="executionBucketName" ref="executionBucketName"/>
+	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl">
+		<property name="buildBucketName" ref="buildBucketName"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
@@ -59,14 +59,14 @@
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCenterServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl"/>
-	<bean class="org.ihtsdo.buildcloud.service.ExecutionServiceImpl">
+	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl">
 		<property name="fileProcessingFailureMaxRetry" ref="fileProcessingFailureMaxRetry"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.service.RF2ClassifierService"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PublishServiceImpl">
-		<constructor-arg name="executionBucketName" ref="executionBucketName"/>
+		<constructor-arg name="buildBucketName" ref="buildBucketName"/>
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
 	</bean>
 
@@ -123,8 +123,8 @@
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.S3ClientHelper"/>
 
-	<bean class="java.lang.String" id="executionBucketName">
-		<constructor-arg value="${executionBucketName}" />
+	<bean class="java.lang.String" id="buildBucketName">
+		<constructor-arg value="${buildBucketName}" />
 	</bean>
 	
 	<bean class="java.lang.String" id="publishedBucketName">
@@ -160,9 +160,9 @@
 
 	<bean id="objectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>
 
-	<bean class="org.ihtsdo.buildcloud.service.mapping.ExecutionConfigurationJsonGenerator"/>
+	<bean class="org.ihtsdo.buildcloud.service.mapping.BuildConfigurationJsonGenerator"/>
 
-	<bean class="org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper"/>
+	<bean class="org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper"/>
 
 	<bean class="org.springframework.security.crypto.password.StandardPasswordEncoder">
 		<constructor-arg value="${encryption.salt}"/>
@@ -186,11 +186,11 @@
 		<constructor-arg value="${releaseValidationFramework.url}"/>
 	</bean>
 
-	<bean class="org.ihtsdo.buildcloud.service.execution.readme.ReadmeGenerator" />
+	<bean class="org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator" />
 
 	<bean class="org.ihtsdo.snomed.util.rf2.schema.SchemaFactory"/>
-	<bean class="org.ihtsdo.buildcloud.service.execution.transform.LegacyIdTransformationService"/>
-	<bean class="org.ihtsdo.buildcloud.service.execution.transform.TransformationService"/>
+	<bean class="org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService"/>
+	<bean class="org.ihtsdo.buildcloud.service.build.transform.TransformationService"/>
 	
 
 	<bean class="org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService">
@@ -210,25 +210,25 @@
 		<constructor-arg value="${offlineMode}" />
 	</bean>
 
-	<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIFactory" name="idAssignmentBIFactory">
+	<bean class="org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIFactory" name="idAssignmentBIFactory">
 		<constructor-arg>
 			<bean class="org.ihtsdo.idgeneration.IdAssignmentImpl" >
 				<constructor-arg value="${idGenerator.url}" />
 			</bean>
 		</constructor-arg>
 		<constructor-arg>
-			<bean class="org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl"/>
+			<bean class="org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIOfflineDemoImpl"/>
 		</constructor-arg>
 	</bean>
 	<bean factory-bean="uuIdGeneratorFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
 	</bean>
-	<bean class="org.ihtsdo.buildcloud.service.execution.transform.UUIDGeneratorFactory" name ="uuIdGeneratorFactory">
+	<bean class="org.ihtsdo.buildcloud.service.build.transform.UUIDGeneratorFactory" name ="uuIdGeneratorFactory">
 		<constructor-arg>
-			<bean class="org.ihtsdo.buildcloud.service.execution.transform.RandomUUIDGenerator"/>
+			<bean class="org.ihtsdo.buildcloud.service.build.transform.RandomUUIDGenerator"/>
 		</constructor-arg>
 		<constructor-arg>
-			<bean class="org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator"/>
+			<bean class="org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator"/>
 		</constructor-arg>
 	</bean>
 </beans>

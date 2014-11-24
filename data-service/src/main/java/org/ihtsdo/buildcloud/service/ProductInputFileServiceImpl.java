@@ -2,13 +2,13 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
-import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.slf4j.Logger;
@@ -43,11 +43,11 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private ProductInputFileDAO dao;
 
 	@Autowired
-	private ExecutionS3PathHelper s3PathHelper;
+	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileServiceImpl(final String executionBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
+	public ProductInputFileServiceImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override

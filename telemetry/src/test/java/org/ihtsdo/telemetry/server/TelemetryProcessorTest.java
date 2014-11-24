@@ -61,7 +61,7 @@ public class TelemetryProcessorTest {
 		UUID uniqueSuffix = UUID.randomUUID();
 		streamFileName = "test_telemetry_stream_" + uniqueSuffix + ".txt";
 		streamFileDestination = "file:///tmp/" + streamFileName;
-		streamS3Destination = "s3://local.execution.bucket/test_telemetry_stream_" + uniqueSuffix + ".txt";
+		streamS3Destination = "s3://local.build.bucket/test_telemetry_stream_" + uniqueSuffix + ".txt";
 
 		testBroker = new TestBroker();
 
@@ -121,7 +121,7 @@ public class TelemetryProcessorTest {
 		// Set up mock expectations
 		final Capture<File> fileCapture = new Capture<>();
 		final BooleanHolder fileAssertionsRan = new BooleanHolder();
-		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.execution.bucket"), EasyMock.eq(streamFileName), EasyMock.capture(fileCapture))).andReturn(mockUpload);
+		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.build.bucket"), EasyMock.eq(streamFileName), EasyMock.capture(fileCapture))).andReturn(mockUpload);
 		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(new IAnswer<UploadResult>() {
 			@Override
 			public UploadResult answer() throws Throwable {

@@ -219,9 +219,9 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
 	}
 
-	public String createExecution() throws Exception {
-		final MvcResult createExecutionResult = mockMvc.perform(
-				post(getProductUrl() + "/executions")
+	public String createBuild() throws Exception {
+		final MvcResult createBuildResult = mockMvc.perform(
+				post(getProductUrl() + "/builds")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -230,13 +230,13 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
 				.andReturn();
 
-		final String executionId = JsonPath.read(createExecutionResult.getResponse().getContentAsString(), "$.id");
-		return getProductUrl() + "/executions/" + executionId;
+		final String buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
+		return getProductUrl() + "/builds/" + buildId;
 	}
 
-	public void triggerExecution(final String executionURL) throws Exception {
+	public void triggerBuild(final String buildURL) throws Exception {
 		final MvcResult triggerResult = mockMvc.perform(
-				post(executionURL + "/trigger")
+				post(buildURL + "/trigger")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -247,15 +247,15 @@ public class IntegrationTestHelper {
 
 		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
 		final JSONObject jsonObject = new JSONObject(outputFileListJson);
-		final JSONObject executionReport = jsonObject.getJSONObject("executionReport");
-		final String status = executionReport.getString("Progress Status");
-		final String message = executionReport.getString("Message");
-		Assert.assertEquals("Execution bad status. Message: " + message, COMPLETION_STATUS, status);
+		final JSONObject buildReport = jsonObject.getJSONObject("buildReport");
+		final String status = buildReport.getString("Progress Status");
+		final String message = buildReport.getString("Message");
+		Assert.assertEquals("Build bad status. Message: " + message, COMPLETION_STATUS, status);
 	}
 
-	public void publishOutput(final String executionURL) throws Exception {
+	public void publishOutput(final String buildURL) throws Exception {
 		mockMvc.perform(
-				post(executionURL + "/output/publish")
+				post(buildURL + "/output/publish")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -304,9 +304,9 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public ZipFile testZipNameAndEntryNames(final String executionURL, final String expectedZipFilename, final String expectedZipEntries, final Class classpathResourceOwner) throws Exception {
+	public ZipFile testZipNameAndEntryNames(final String buildURL, final String expectedZipFilename, final String expectedZipEntries, final Class classpathResourceOwner) throws Exception {
 		final MvcResult outputFileListResult = mockMvc.perform(
-				get(executionURL + "/outputfiles")
+				get(buildURL + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -328,7 +328,7 @@ public class IntegrationTestHelper {
 
 		Assert.assertEquals(expectedZipFilename, zipFilePath);
 
-		final ZipFile zipFile = new ZipFile(downloadToTempFile(executionURL, zipFilePath, classpathResourceOwner));
+		final ZipFile zipFile = new ZipFile(downloadToTempFile(buildURL, zipFilePath, classpathResourceOwner));
 		final List<String> entryPaths = getZipEntryPaths(zipFile);
 		Assert.assertEquals("Zip entries expected.",
 				expectedZipEntries,
@@ -336,9 +336,9 @@ public class IntegrationTestHelper {
 		return zipFile;
 	}
 
-	private File downloadToTempFile(final String executionURL, final String zipFilePath, final Class classpathResourceOwner) throws Exception {
+	private File downloadToTempFile(final String buildURL, final String zipFilePath, final Class classpathResourceOwner) throws Exception {
 		final MvcResult outputFileResult = mockMvc.perform(
-				get(executionURL + "/outputfiles/" + zipFilePath)
+				get(buildURL + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
