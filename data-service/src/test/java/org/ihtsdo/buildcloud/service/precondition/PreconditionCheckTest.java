@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.dao.BuildInputFileDAO;
+import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.service.BuildInputFileService;
+import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
@@ -32,21 +32,21 @@ import java.util.List;
 public abstract class PreconditionCheckTest {
 
 	@Autowired
-	protected BuildInputFileService buildInputFileService;
+	protected ProductInputFileService productInputFileService;
 
 	@Autowired
-	private BuildDAO buildDAO;
+	private ProductDAO productDAO;
 
 	@Autowired
 	private ExecutionDAO executionDAO;
 
 	@Autowired
-	private BuildInputFileDAO buildInputFileDAO;
+	private ProductInputFileDAO productInputFileDAO;
 
 	@Autowired
 	private TestUtils testUtils;
 
-	protected Build build;
+	protected Product product;
 	protected Execution execution = null;
 	protected PreconditionManager manager;
 
@@ -57,21 +57,21 @@ public abstract class PreconditionCheckTest {
 
 	@Before
 	public void setup() throws Exception {
-		build = buildDAO.find(1L, TestUtils.TEST_USER);
-		if (build.getEffectiveTime() == null) {
-			build.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
+		product = productDAO.find(1L, TestUtils.TEST_USER);
+		if (product.getEffectiveTime() == null) {
+			product.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
 		}
 	}
 
 	protected void createNewExecution() {
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, executionIdx++).getTime();
-		execution = new Execution(creationTime, build);
+		execution = new Execution(creationTime, product);
 
 		// Because we're working with a unit test, that execution will probably already exist on disk, so wipe
 		testUtils.scrubExecution(execution);
 
-		// Copy all files from Build input and manifest directory to Execution input and manifest directory
-		executionDAO.copyAll(build, execution);
+		// Copy all files from Product input and manifest directory to Execution input and manifest directory
+		executionDAO.copyAll(product, execution);
 	}
 
 	protected PreConditionCheckReport runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
@@ -101,9 +101,9 @@ public abstract class PreconditionCheckTest {
 		if (filename != null) {
 			String testFilePath = getClass().getResource(filename).getFile();
 			File testManifest = new File(testFilePath);
-			buildInputFileDAO.putManifestFile(build, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+			productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
 		} else {
-			buildInputFileDAO.deleteManifest(build);
+			productInputFileDAO.deleteManifest(product);
 		}
 
 		//When we load a manifest, we need that copied over to a new execution
@@ -120,14 +120,14 @@ public abstract class PreconditionCheckTest {
 	protected void addEmptyFileToInputDirectory(String filename) throws ResourceNotFoundException, IOException {
 		File tempFile = File.createTempFile("testTemp", ".txt");
 		try (InputStream inputStream = new FileInputStream(tempFile)) {
-			buildInputFileService.putInputFile(build.getReleaseCenter().getBusinessKey(), build.getBusinessKey(), inputStream, filename, 0L);
+			productInputFileService.putInputFile(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, filename, 0L);
 		} finally {
 			tempFile.deleteOnExit();
 		}
 	}
 
 	protected void deleteFilesFromInputFileByPattern(String fileExtension) throws ResourceNotFoundException {
-		buildInputFileService.deleteFilesByPattern(build.getReleaseCenter().getBusinessKey(), build.getBusinessKey(), fileExtension);
+		productInputFileService.deleteFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), fileExtension);
 	}
 
 }

@@ -5,18 +5,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
-public class GlobalControllerExceptionHandler {
+public class
+		GlobalControllerExceptionHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalControllerExceptionHandler.class);
 
@@ -34,6 +36,14 @@ public class GlobalControllerExceptionHandler {
 	public Map<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorPayload(exception, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	@ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+	@ResponseBody
+	public Map<String, String> handleMethodNotSupportedError(Exception exception, HttpServletRequest request) {
+		logError(request, exception);
+		return getErrorPayload(exception, HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 	@ExceptionHandler(ResourceNotFoundException.class)

@@ -24,7 +24,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		String effectiveTime = "20140131";
@@ -56,7 +56,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileFirstRelease, getClass());
 
-		// Sleep for a second. Next build must have a different timestamp.
+		// Sleep for a second. Next product must have a different timestamp.
 		Thread.sleep(1000);
 
 

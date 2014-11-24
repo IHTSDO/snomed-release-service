@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
@@ -8,23 +8,23 @@ import java.util.GregorianCalendar;
 
 public class TestEntityFactory extends TestEntityGenerator {
 
-	public Build createBuild(String releaseCenterName, String releaseCenterShortName, String buildName) {
+	public Product createProduct(String releaseCenterName, String releaseCenterShortName, String productName) {
 		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterName, releaseCenterShortName);
-		Build build = new Build(1L, buildName);
-		releaseCenter.addBuild(build);
-		return build;
+		Product product = new Product(1L, productName);
+		releaseCenter.addProduct(product);
+		return product;
 	}
 	
-	public Build createBuild(){
+	public Product createProduct(){
 		ReleaseCenter releaseCenter = new ReleaseCenter(releaseCenterNames[0], releaseCenterShortNames[0]);
-		Build build = new Build(1L, buildNames[0]);
-		releaseCenter.addBuild(build);
-		return build;
+		Product product = new Product(1L, productNames[0]);
+		releaseCenter.addProduct(product);
+		return product;
 	}
 
 	public Execution createExecution() {
-		Build build = createBuild();
-		return new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), build);
+		Product product = createProduct();
+		return new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), product);
 	}
 
 }

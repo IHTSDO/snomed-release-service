@@ -5,12 +5,9 @@ set -e; # Stop on error
 effectiveDate="2014-07-31"
 readmeEndDate="2014"
 isFirstTime=false
-extensionName="SNOMED CT International Edition"
 externalDataLocation="test_suite"
 previousPublishedPackageName="SnomedCT_Release_INT_20140131.zip"
-productName="Snomed CT Release"
-buildName="TestSuite"
-
+productName="Test Suite"
 
 while getopts ":t:" opt
 do

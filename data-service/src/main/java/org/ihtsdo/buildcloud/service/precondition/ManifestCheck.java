@@ -18,7 +18,7 @@ import static org.ihtsdo.buildcloud.service.execution.RF2Constants.SCT2;
 public class ManifestCheck extends PreconditionCheck {
 
 	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have " +
-			"the same release date as configured in the build:%s";
+			"the same release date as configured in the product:%s";
 
 	@Autowired
 	private ExecutionDAO executionDAO;
@@ -31,7 +31,7 @@ public class ManifestCheck extends PreconditionCheck {
 			ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			ListingType manifestListing = parser.parse(manifestInputSteam);
 			//check release date in manifest
-			String releaseVersion = execution.getBuild().getEffectiveTimeSnomedFormat();
+			String releaseVersion = execution.getProduct().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				String errorMsg = checkReleaseDate(manifestListing, releaseVersion);
 				if (errorMsg != null) {

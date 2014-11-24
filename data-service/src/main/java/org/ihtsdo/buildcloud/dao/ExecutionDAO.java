@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
@@ -14,9 +14,9 @@ public interface ExecutionDAO {
 
 	void save(Execution execution, String jsonConfig);
 
-	List<Execution> findAllDesc(Build build);
+	List<Execution> findAllDesc(Product product);
 
-	Execution find(Build build, String executionId);
+	Execution find(Product product, String executionId);
 
 	String loadConfiguration(Execution execution) throws IOException;
 
@@ -40,7 +40,7 @@ public interface ExecutionDAO {
 
 	void copyInputFileToOutputFile(Execution execution, String relativeFilePath);
 
-	void copyAll(Build buildSource, Execution execution);
+	void copyAll(Product productSource, Execution execution);
 
 	InputStream getOutputFileInputStream(Execution execution, String name);
 

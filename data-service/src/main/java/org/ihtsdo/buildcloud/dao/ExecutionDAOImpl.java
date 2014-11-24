@@ -11,7 +11,7 @@ import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
@@ -64,7 +64,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	private String executionBucketName;
 
 	@Autowired
-	private BuildInputFileDAO buildInputFileDAO;
+	private ProductInputFileDAO productInputFileDAO;
 
 	@Autowired
 	public ExecutionDAOImpl(final String executionBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -89,15 +89,15 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public List<Execution> findAllDesc(final Build build) {
-		final String buildDirectoryPath = pathHelper.getBuildPath(build).toString();
-		return findExecutionsDesc(buildDirectoryPath, build);
+	public List<Execution> findAllDesc(final Product product) {
+		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
+		return findExecutionsDesc(productDirectoryPath, product);
 	}
 
 	@Override
-	public Execution find(final Build build, final String executionId) {
-		final String executionDirectoryPath = pathHelper.getExecutionPath(build, executionId).toString();
-		final List<Execution> executions = findExecutionsDesc(executionDirectoryPath, build);
+	public Execution find(final Product product, final String executionId) {
+		final String executionDirectoryPath = pathHelper.getExecutionPath(product, executionId).toString();
+		final List<Execution> executions = findExecutionsDesc(executionDirectoryPath, product);
 		if (!executions.isEmpty()) {
 			return executions.get(0);
 		} else {
@@ -193,18 +193,18 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 	}
 
 	@Override
-	public void copyAll(final Build buildSource, final Execution execution) {
+	public void copyAll(final Product productSource, final Execution execution) {
 		// Copy input files
-		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(buildSource);
+		final String productInputFilesPath = pathHelper.getProductInputFilesPath(productSource);
 		final String executionInputFilesPath = pathHelper.getExecutionInputFilesPath(execution).toString();
-		final List<String> filePaths = buildInputFileDAO.listRelativeInputFilePaths(buildSource);
+		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(productSource);
 		for (final String filePath : filePaths) {
-			executionFileHelper.copyFile(buildInputFilesPath + filePath, executionInputFilesPath + filePath);
+			executionFileHelper.copyFile(productInputFilesPath + filePath, executionInputFilesPath + filePath);
 		}
 
 		// Copy manifest file
-		final String manifestPath = buildInputFileDAO.getManifestPath(buildSource);
-		if (manifestPath != null) { // Let the packages with manifests build
+		final String manifestPath = productInputFileDAO.getManifestPath(productSource);
+		if (manifestPath != null) { // Let the packages with manifests product
 			final String executionManifestDirectoryPath = pathHelper.getExecutionManifestDirectoryPath(execution);
 			executionFileHelper.copyFile(manifestPath, executionManifestDirectoryPath + "manifest.xml");
 		}
@@ -354,15 +354,15 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		executionFileHelper.copyFile(soureFilePath, targetFilePath);
 	}
 
-	private List<Execution> findExecutionsDesc(final String buildDirectoryPath, final Build build) {
+	private List<Execution> findExecutionsDesc(final String productDirectoryPath, final Product product) {
 		final List<Execution> executions = new ArrayList<>();
-		LOGGER.info("List s3 objects {}, {}", executionBucketName, buildDirectoryPath);
+		LOGGER.info("List s3 objects {}, {}", executionBucketName, productDirectoryPath);
 
-		// Not easy to make this efficient because our timestamp immediately under the build name means that we can only prefix
-		// with the build name. The S3 API doesn't allow us to pattern match just the status files.
+		// Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
+		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
 		// I think an "index" directory might be the solution
 
-		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, buildDirectoryPath, null, null, 10000);
+		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(executionBucketName, productDirectoryPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 
 		boolean firstPass = true;
@@ -371,7 +371,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 				objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			}
 			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			findExecutions(build, objectSummaries, executions);
+			findExecutions(product, objectSummaries, executions);
 			firstPass = false;
 		}
 
@@ -380,7 +380,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 		return executions;
 	}
 
-	private void findExecutions(final Build build, final List<S3ObjectSummary> objectSummaries, final List<Execution> executions) {
+	private void findExecutions(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Execution> executions) {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
@@ -388,7 +388,7 @@ public class ExecutionDAOImpl implements ExecutionDAO {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[2];
 				final String status = keyParts[3].split(":")[1];
-				final Execution execution = new Execution(dateString, status, build);
+				final Execution execution = new Execution(dateString, status, product);
 				executions.add(execution);
 			}
 		}

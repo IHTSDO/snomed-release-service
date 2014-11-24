@@ -17,11 +17,8 @@ isFirstTime=false
 isWorkbenchDataFixesRequired=true
 headless=true
 #createInferredRelationships=true
-extensionName="SNOMED CT International Edition"
 previousPublishedPackageName="SnomedCT_Release_INT_20140731.zip"
 productName="SNOMED CT Release"
-buildName="Int Daily Build"
-packageName="Snomed Release Package"
 
 echo "Configuration set to pull export files from $1"
 

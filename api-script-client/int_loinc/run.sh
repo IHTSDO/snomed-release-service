@@ -8,10 +8,7 @@ isFirstTime=true
 isWorkbenchDataFixesRequired=false
 justPackage=true
 headless=true
-extensionName="SNOMED CT International Edition"
-productName="SNOMED CT Release"
-buildName="Int_LOINC"
-packageName="LOINC Technology Preview Release Package"
+productName="Int_LOINC"
 
 # Call api_client
 source ../api_client.sh

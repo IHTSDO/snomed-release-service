@@ -24,10 +24,10 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void testFirstReleaseConfiguredCorrectly() throws InstantiationException, IllegalAccessException, ParseException {
-		build.setFirstTimeRelease(true);
-		build.setPreviousPublishedPackage(null);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(true);
+		product.setPreviousPublishedPackage(null);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		State actualResult = report.getResult();
@@ -37,10 +37,10 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testSubsequentReleaseConfiguredCorrectly() throws InstantiationException, IllegalAccessException, ParseException {
-		build.setFirstTimeRelease(false);
-		build.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(false);
+		product.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		State actualResult = report.getResult();
@@ -51,8 +51,8 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testFirstReleaseConfiguredIncorrectly() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(true);
-		build.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
+		product.setFirstTimeRelease(true);
+		product.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals( State.FAIL, report.getResult());
@@ -61,10 +61,10 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testSubsequentConfiguredIncorrectly() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(false);
-		build.setPreviousPublishedPackage(null);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(false);
+		product.setPreviousPublishedPackage(null);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -73,11 +73,11 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingEffectiveTime() throws InstantiationException, IllegalAccessException {
-		build.setEffectiveTime(null);
-		build.setFirstTimeRelease(true);
-		build.setPreviousPublishedPackage(null);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setEffectiveTime(null);
+		product.setFirstTimeRelease(true);
+		product.setPreviousPublishedPackage(null);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -85,9 +85,9 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingReadmeHeader() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(true);
-		build.setPreviousPublishedPackage(null);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(true);
+		product.setPreviousPublishedPackage(null);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -95,9 +95,9 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingReadmeEndDate() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(true);
-		build.setPreviousPublishedPackage(null);
-		build.setReadmeHeader(README_HEADER);
+		product.setFirstTimeRelease(true);
+		product.setPreviousPublishedPackage(null);
+		product.setReadmeHeader(README_HEADER);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -105,10 +105,10 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testPreviousPublishedReleaseDateIsNotBeforeCurrentReleaseDate() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(false);
-		build.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JULY);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(false);
+		product.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JULY);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -117,10 +117,10 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testInvalidPublishedPackageName() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(false);
-		build.setPreviousPublishedPackage(INVALID_PUBLISHED_PAKCAGE_NAME);
-		build.setReadmeHeader(README_HEADER);
-		build.setReadmeEndDate(JULY_RELEASE);
+		product.setFirstTimeRelease(false);
+		product.setPreviousPublishedPackage(INVALID_PUBLISHED_PAKCAGE_NAME);
+		product.setReadmeHeader(README_HEADER);
+		product.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -129,7 +129,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testAllMissingForSubsequentRelease() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(false);
+		product.setFirstTimeRelease(false);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());	
@@ -139,7 +139,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void testAllMissingForFirstTimeRelease() throws InstantiationException, IllegalAccessException {
-		build.setFirstTimeRelease(true);
+		product.setFirstTimeRelease(true);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		Assert.assertEquals(State.FAIL, report.getResult());

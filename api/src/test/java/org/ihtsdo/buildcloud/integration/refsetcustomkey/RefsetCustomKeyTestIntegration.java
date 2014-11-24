@@ -35,16 +35,16 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 	}
 
 	private void runTest(String customRefsetCompositeKeys, String expectedOutputPackageName) throws Exception {
-		setupBuild();
+		setupProduct();
 		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
 		String executionId = integrationTestHelper.createExecution();
 		integrationTestHelper.triggerExecution(executionId);
 		assertOutput(expectedOutputPackageName, executionId);
 	}
 
-	private void setupBuild() throws Exception {
+	private void setupProduct() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		String effectiveTime = "20140131";

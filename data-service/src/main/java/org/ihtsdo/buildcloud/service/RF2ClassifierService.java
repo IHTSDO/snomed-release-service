@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import com.google.common.io.Files;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.exception.ProcessingException;
 import org.ihtsdo.buildcloud.service.execution.RF2Constants;
@@ -42,7 +42,7 @@ public class RF2ClassifierService {
 	 */
 	public String generateInferredRelationshipSnapshot(Execution execution, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
-		Build build = execution.getBuild();
+		Product product = execution.getProduct();
 
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
@@ -73,9 +73,9 @@ public class RF2ClassifierService {
 
 					logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
-					String effectiveTimeSnomedFormat = build.getEffectiveTimeSnomedFormat();
+					String effectiveTimeSnomedFormat = product.getEffectiveTimeSnomedFormat();
 					List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-					if (!build.isFirstTimeRelease()) {
+					if (!product.isFirstTimeRelease()) {
 						String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, classifierFiles, tempDir);
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
@@ -151,12 +151,12 @@ public class RF2ClassifierService {
 	}
 
 	private String getPreviousInferredRelationshipFilePath(Execution execution, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
-		String previousPublishedPackage = execution.getBuild().getPreviousPublishedPackage();
+		String previousPublishedPackage = execution.getProduct().getPreviousPublishedPackage();
 		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
 		String previousInferredRelationshipFilename = inferredRelationshipFilename + ".previous_published";
 
 		File localFile = new File(tempDir, previousInferredRelationshipFilename);
-		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getBuild().getReleaseCenter(), inferredRelationshipFilename, previousPublishedPackage);
+		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getProduct().getReleaseCenter(), inferredRelationshipFilename, previousPublishedPackage);
 			 FileOutputStream out = new FileOutputStream(localFile)) {
 			if (publishedFileArchiveEntry != null) {
 				StreamUtils.copy(publishedFileArchiveEntry, out);

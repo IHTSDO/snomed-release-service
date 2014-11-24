@@ -11,7 +11,7 @@ import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
@@ -44,12 +44,12 @@ public class ExecutionDAOImplTest {
 	private S3ClientFactory factory;
 
 	@Autowired
-	protected BuildDAO buildDAO;
+	protected ProductDAO productDAO;
 
 	@Autowired
 	private S3Client s3Client;
 
-	private Build build;
+	private Product product;
 	protected Execution execution;
 	private MocksControl mocksControl;
 	private S3Client mockS3Client;
@@ -60,9 +60,9 @@ public class ExecutionDAOImplTest {
 		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		executionDAO.setS3Client(mockS3Client);
 
-		build = buildDAO.find(1L, TestUtils.TEST_USER);
+		product = productDAO.find(1L, TestUtils.TEST_USER);
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
-		execution = new Execution(creationTime, build);
+		execution = new Execution(creationTime, product);
 	}
 	
 	@After
@@ -84,21 +84,21 @@ public class ExecutionDAOImplTest {
 		executionDAO.save(execution, "");
 		mocksControl.verify();
 
-		Assert.assertEquals("international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		Assert.assertEquals("international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
+		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
+		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 
 	@Test
 	public void testFindAllDesc() {
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-03-04T10:30:01/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/2014-03-04T10:30:01/configuration.json");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/2014-03-04T10:30:01/status:BEFORE_TRIGGER");
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
-		List<Execution> all = executionDAO.findAllDesc(build);
+		List<Execution> all = executionDAO.findAllDesc(product);
 		mocksControl.verify();
 
 		Assert.assertEquals(2, all.size());
@@ -118,7 +118,7 @@ public class ExecutionDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
 		mocksControl.replay();
-		Execution foundExecution = executionDAO.find(build, executionId);
+		Execution foundExecution = executionDAO.find(product, executionId);
 		mocksControl.verify();
 
 		Assert.assertNull(foundExecution);
@@ -128,13 +128,13 @@ public class ExecutionDAOImplTest {
 	public void testFindOne() {
 		String executionId = "2014-02-04T10:30:01";
 		ObjectListing objectListing = new ObjectListing();
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/" + executionId + "/configuration.json");
-		addObjectSummary(objectListing, "international/" + build.getBusinessKey() + "/" + executionId + "/status:BEFORE_TRIGGER");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/" + executionId + "/configuration.json");
+		addObjectSummary(objectListing, "international/" + product.getBusinessKey() + "/" + executionId + "/status:BEFORE_TRIGGER");
 		Capture<ListObjectsRequest> listObjectsRequestCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
 		mocksControl.replay();
-		Execution foundExecution = executionDAO.find(build, executionId);
+		Execution foundExecution = executionDAO.find(product, executionId);
 		mocksControl.verify();
 
 		Assert.assertNotNull(foundExecution);

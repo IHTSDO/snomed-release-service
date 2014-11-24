@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service.execution.transform;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ExecutionReport;
 import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
@@ -81,13 +81,13 @@ public class TransformationService {
 	public void transformFiles(final Execution execution, final Map<String, TableSchema> inputFileSchemaMap)
 			throws BusinessServiceException {
 
-		final Build build = execution.getBuild();
+		final Product product = execution.getProduct();
 		final ExecutionReport report = execution.getExecutionReport();
 
-		final String effectiveDateInSnomedFormat = build.getEffectiveTimeSnomedFormat();
+		final String effectiveDateInSnomedFormat = product.getEffectiveTimeSnomedFormat();
 		final String executionId = execution.getId();
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
-		final boolean workbenchDataFixesRequired = build.isWorkbenchDataFixesRequired();
+		final boolean workbenchDataFixesRequired = product.isWorkbenchDataFixesRequired();
 		
 		LOGGER.info("Transforming files in execution {}, workbench data fixes {}.", execution.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
 
@@ -98,10 +98,10 @@ public class TransformationService {
 			// Phase 0
 			// Get list of conceptIds which should be in the model module.
 
-			if (!build.isFirstTimeRelease()) {
-				final String previousPublishedPackage = build.getPreviousPublishedPackage();
+			if (!product.isFirstTimeRelease()) {
+				final String previousPublishedPackage = product.getPreviousPublishedPackage();
 				try {
-					final InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(build.getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+					final InputStream statedRelationshipSnapshotStream = executionDAO.getPublishedFileArchiveEntry(product.getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 					if (statedRelationshipSnapshotStream != null) {
 						final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -275,7 +275,7 @@ public class TransformationService {
 	}
 
 	public void transformInferredRelationshipFile(final Execution execution, final String inferredRelationshipSnapshotFilename) {
-		final TransformationFactory transformationFactory = getTransformationFactory(execution.getBuild().getEffectiveTimeSnomedFormat(), execution.getId());
+		final TransformationFactory transformationFactory = getTransformationFactory(execution.getProduct().getEffectiveTimeSnomedFormat(), execution.getId());
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(execution, inferredRelationshipSnapshotFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
 			final ExecutionReport report = execution.getExecutionReport();
@@ -310,7 +310,7 @@ public class TransformationService {
 		//last segment will be like 20140131.txt
 		final String dateFromFile = segments[segments.length - 1].substring(0, effectiveDate.length());
 		if (!dateFromFile.equals(effectiveDate)) {
-			throw new EffectiveDateNotMatchedException("Effective date from build:" + effectiveDate + " does not match the date from input file:" + fileName);
+			throw new EffectiveDateNotMatchedException("Effective date from product:" + effectiveDate + " does not match the date from input file:" + fileName);
 		}
 	}
 }

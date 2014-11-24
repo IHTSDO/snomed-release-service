@@ -45,7 +45,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 
-			// Build Schema
+			// Product Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
 			String headerLine = reader.readLine();
 			if (headerLine == null) {
@@ -136,7 +136,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	}
 
 	private void createTable(TableSchema tableSchema) throws SQLException {
-		StringBuilder builder = new StringBuilder()
+		StringBuilder producter = new StringBuilder()
 				.append("create table ")
 				.append(tableSchema.getTableName())
 				.append(" (");
@@ -147,24 +147,24 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 			if (firstField) {
 				firstField = false;
 			} else {
-				builder.append(", ");
+				producter.append(", ");
 			}
 
 			DataType type = field.getType();
 			String typeString = dataTypeConverter.convert(type);
 
-			builder.append(field.getName())
+			producter.append(field.getName())
 					.append(" ")
 					.append(typeString)
 					.append(" ");
 		}
 
-		builder.append(")");
-		connection.createStatement().execute(builder.toString());
+		producter.append(")");
+		connection.createStatement().execute(producter.toString());
 	}
 
 	private PreparedStatement getInsertStatement(TableSchema schema, String tableName) throws SQLException {
-		StringBuilder builder = new StringBuilder()
+		StringBuilder producter = new StringBuilder()
 				.append("insert into ")
 				.append(tableName)
 				.append(" (");
@@ -174,25 +174,25 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 			if (firstField) {
 				firstField = false;
 			} else {
-				builder.append(", ");
+				producter.append(", ");
 			}
-			builder.append(field.getName());
+			producter.append(field.getName());
 		}
-		builder.append(")");
+		producter.append(")");
 
-		builder.append(" values (");
+		producter.append(" values (");
 		firstField = true;
 		for (Field field : schema.getFields()) {
 			if (firstField) {
 				firstField = false;
 			} else {
-				builder.append(", ");
+				producter.append(", ");
 			}
-			builder.append("?");
+			producter.append("?");
 		}
-		builder.append(")");
+		producter.append(")");
 
-		return connection.prepareStatement(builder.toString());
+		return connection.prepareStatement(producter.toString());
 	}
 
 	void insertData(BufferedReader reader, TableSchema tableSchema, PreparedStatement insertStatement) throws IOException, SQLException,
