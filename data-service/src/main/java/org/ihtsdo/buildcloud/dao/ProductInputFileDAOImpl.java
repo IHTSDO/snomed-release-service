@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
@@ -19,11 +19,11 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	private FileHelper fileHelper;
 
 	@Autowired
-	private ExecutionS3PathHelper s3PathHelper;
+	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileDAOImpl(String executionBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
+	public ProductInputFileDAOImpl(String buildBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override

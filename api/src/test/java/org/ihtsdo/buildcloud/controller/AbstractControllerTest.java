@@ -4,9 +4,9 @@ import java.nio.charset.Charset;
 
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
-import org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl;
-import org.ihtsdo.buildcloud.service.execution.transform.PesudoUUIDGenerator;
-import org.ihtsdo.buildcloud.service.execution.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIOfflineDemoImpl;
+import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.junit.After;
 import org.junit.Assert;
@@ -48,7 +48,7 @@ public abstract class AbstractControllerTest {
 	private IdAssignmentBI idAssignmentBI;
 
 	@Autowired
-	private String executionBucketName;
+	private String buildBucketName;
 
 	@Autowired
 	private String publishedBucketName;
@@ -66,7 +66,7 @@ public abstract class AbstractControllerTest {
 		if (s3Client instanceof TestS3Client) {
 			final TestS3Client testS3Client = (TestS3Client) s3Client;
 			testS3Client.freshBucketStore();
-			testS3Client.createBucket(executionBucketName);
+			testS3Client.createBucket(buildBucketName);
 			testS3Client.createBucket(publishedBucketName);
 		}
 		

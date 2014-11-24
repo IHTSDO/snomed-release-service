@@ -1,11 +1,10 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAOImpl;
+import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
@@ -36,13 +35,13 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl2Test.class);
 
 	@Autowired
-	protected ExecutionDAOImpl executionDAO;
+	protected BuildDAOImpl buildDAO;
 
 	@Autowired
 	private ProductService productService;
 
 	@Autowired
-	private ExecutionService executionService;
+	private BuildService buildService;
 
 	@Autowired
 	private PublishService publishService;
@@ -53,8 +52,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	@Autowired
 	private S3Client s3Client;
 
-	Execution execution = null;
-
+	Build build = null;
 
 	private static final String TEST_FILENAME = "test.zip";
 
@@ -72,20 +70,20 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		List<Product> products = productService.findAll(releaseCenterName, null);
 		Product product = products.get(0);
 		product.setEffectiveTime(new Date());
-		execution = executionService.createExecutionFromProduct(releaseCenterName, product.getBusinessKey());
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey());
 
-		//Put a zip file into the execution's output directory so we have something to publish.
+		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();
-		executionDAO.putOutputFile(execution, new File(testFile), false);
+		buildDAO.putOutputFile(build, new File(testFile), false);
 	}
 
 	@Test
 	public void testPublishing() throws IOException, InterruptedException, BusinessServiceException {
 		//Using separate threads to check second thread detects file already written.
-		Thread a = runThread("one", publishService, execution, null);
+		Thread a = runThread("one", publishService, build, null);
 		// Give thread a a head start to ensure it enters the sync block first
 		Thread.sleep(1);
-		Thread b = runThread("two", publishService, execution, EntityAlreadyExistsException.class);
+		Thread b = runThread("two", publishService, build, EntityAlreadyExistsException.class);
 
 		//Wait for both threads to finish.
 		a.join();
@@ -94,7 +92,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			publishService.publishExecution(execution);
+			publishService.publishBuild(build);
 		} catch (EntityAlreadyExistsException eaee) {
 			expectedExceptionThrown = true;
 		}
@@ -103,13 +101,13 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 
 	}
 
-	private static Thread runThread(final String threadName, final PublishService service, final Execution execution,
+	private static Thread runThread(final String threadName, final PublishService service, final Build build,
 			final Class<?> expectedExceptionClass) {
 		Thread thread = new Thread() {
 			@Override
 			public void run() {
 				try {
-					service.publishExecution(execution);
+					service.publishBuild(build);
 					LOGGER.info("Publishing complete in thread " +threadName );
 				} catch (Exception e) {
 					if (expectedExceptionClass == null) {

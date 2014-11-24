@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -30,12 +30,12 @@ public class ConfigurationCheck extends PreconditionCheck {
 	private static final String INVALID_FIRST_TIME_REPLEASE_CONFIG_ERROR_MSG = "Cannot have a previous published package specified for a first time release.";
 
 	@Override
-	public final void runCheck(final Execution execution) {
+	public final void runCheck(final Build build) {
 		// Perhaps another example where we should be driving off the
-		// execution's copy, not the product?
+		// build's copy, not the product?
 		List<String> errorList = new ArrayList<>();
 
-		Product product = execution.getProduct();
+		Product product = build.getProduct();
 		if (product.isFirstTimeRelease() && product.getPreviousPublishedPackage() != null) {
 			errorList.add(INVALID_FIRST_TIME_REPLEASE_CONFIG_ERROR_MSG);
 		} else if (!product.isFirstTimeRelease() && product.getPreviousPublishedPackage() == null) {

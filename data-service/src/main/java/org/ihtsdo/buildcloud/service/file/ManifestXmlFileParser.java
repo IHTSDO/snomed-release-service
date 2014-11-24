@@ -9,7 +9,7 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.MANIFEST_CONTEXT_PATH;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.MANIFEST_CONTEXT_PATH;
 
 public class ManifestXmlFileParser {
 

@@ -5,10 +5,10 @@ import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.controller.ProductController;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class HypermediaGeneratorTest {
 	private ObjectMapper objectMapper;
 
 	private Product product;
-	private Execution execution;
+	private Build build;
 	private MocksControl mocksControl;
 	private HttpServletRequest mockServletRequest;
 
@@ -45,7 +45,7 @@ public class HypermediaGeneratorTest {
 	public void setup() {
 		TestEntityFactory entityFactory = new TestEntityFactory();
 		product = entityFactory.createProduct();
-		execution = entityFactory.createExecution();
+		build = entityFactory.createBuild();
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		mockServletRequest = mocksControl.createMock(HttpServletRequest.class);
 		EasyMock.expect(mockServletRequest.getContextPath()).andReturn("api").anyTimes();
@@ -77,7 +77,7 @@ public class HypermediaGeneratorTest {
 
 		String linkNameAndUrl = "productScripts|product-scripts.zip";
 		boolean currentResource = true;
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(execution, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
 
 		Assert.assertNotNull(hypermedia);
 //		System.out.println(toString(hypermedia));
@@ -89,7 +89,7 @@ public class HypermediaGeneratorTest {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/products/something/exec/something/trigger")).anyTimes();
 		mocksControl.replay();
 
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(execution, mockServletRequest, "configuration", "productScripts|product-scripts.zip");
+		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(build, mockServletRequest, "configuration", "productScripts|product-scripts.zip");
 
 		Assert.assertNotNull(hypermedia);
 		System.out.println(toString(hypermedia));

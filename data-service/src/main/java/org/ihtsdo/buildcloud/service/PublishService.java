@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 
@@ -15,7 +15,7 @@ public interface PublishService {
 
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
-	void publishExecution(Execution execution) throws BusinessServiceException;
+	void publishBuild(Build build) throws BusinessServiceException;
 
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException;
 

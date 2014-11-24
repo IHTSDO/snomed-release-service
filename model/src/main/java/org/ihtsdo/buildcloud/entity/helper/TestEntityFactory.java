@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 import java.util.GregorianCalendar;
@@ -22,9 +22,9 @@ public class TestEntityFactory extends TestEntityGenerator {
 		return product;
 	}
 
-	public Execution createExecution() {
+	public Build createBuild() {
 		Product product = createProduct();
-		return new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), product);
+		return new Build(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), product);
 	}
 
 }

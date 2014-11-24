@@ -2,14 +2,14 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +38,7 @@ public abstract class PreconditionCheckTest {
 	private ProductDAO productDAO;
 
 	@Autowired
-	private ExecutionDAO executionDAO;
+	private BuildDAO buildDAO;
 
 	@Autowired
 	private ProductInputFileDAO productInputFileDAO;
@@ -47,12 +47,12 @@ public abstract class PreconditionCheckTest {
 	private TestUtils testUtils;
 
 	protected Product product;
-	protected Execution execution = null;
+	protected Build build = null;
 	protected PreconditionManager manager;
 
 	protected static final String JULY_RELEASE = "20140731";
 
-	private static int executionIdx = 0;
+	private static int buildIdx = 0;
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionCheckTest.class);
 
 	@Before
@@ -63,26 +63,26 @@ public abstract class PreconditionCheckTest {
 		}
 	}
 
-	protected void createNewExecution() {
-		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, executionIdx++).getTime();
-		execution = new Execution(creationTime, product);
+	protected void createNewBuild() {
+		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, buildIdx++).getTime();
+		build = new Build(creationTime, product);
 
-		// Because we're working with a unit test, that execution will probably already exist on disk, so wipe
-		testUtils.scrubExecution(execution);
+		// Because we're working with a unit test, that build will probably already exist on disk, so wipe
+		testUtils.scrubBuild(build);
 
-		// Copy all files from Product input and manifest directory to Execution input and manifest directory
-		executionDAO.copyAll(product, execution);
+		// Copy all files from Product input and manifest directory to Build input and manifest directory
+		buildDAO.copyAll(product, build);
 	}
 
 	protected PreConditionCheckReport runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
 
-		// Do we need an execution? // TODO: remove this - we should always know the state of a test
-		if (execution == null) {
-			createNewExecution();
+		// Do we need an build? // TODO: remove this - we should always know the state of a test
+		if (build == null) {
+			createNewBuild();
 		}
 
 		// Create a manager for this test
-		List<PreConditionCheckReport> report = manager.runPreconditionChecks(execution);
+		List<PreConditionCheckReport> report = manager.runPreconditionChecks(build);
 		Assert.assertNotNull(report);
 
 		PreConditionCheckReport testResult = report.get(0); // Get the first test run
@@ -106,8 +106,8 @@ public abstract class PreconditionCheckTest {
 			productInputFileDAO.deleteManifest(product);
 		}
 
-		//When we load a manifest, we need that copied over to a new execution
-		createNewExecution();
+		//When we load a manifest, we need that copied over to a new build
+		createNewBuild();
 	}
 
 	/**

@@ -52,22 +52,22 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 
 		memoryRecordings.add(getStats("After upload mem used"));
 
-		String executionURL1 = integrationTestHelper.createExecution();
+		String buildURL1 = integrationTestHelper.createBuild();
 
 		memoryRecordings.add(getStats("After create exec mem used"));
 
 
-		integrationTestHelper.triggerExecution(executionURL1);
+		integrationTestHelper.triggerBuild(buildURL1);
 
 		memoryRecordings.add(getStats("After trigger exec mem used"));
 		Runtime.getRuntime().gc();
 		memoryRecordings.add(getStats("After trigger exec mem used after GC"));
 
-		integrationTestHelper.publishOutput(executionURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		memoryRecordings.add(getStats("After publish mem used"));
 
-		verfiyResults(effectiveDate, executionURL1);
+		verfiyResults(effectiveDate, buildURL1);
 
 		memoryRecordings.add(getStats("After verify mem used"));
 	}
@@ -88,11 +88,11 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate + ".txt", getClass());
 	}
 
-	private void verfiyResults(String releaseDate, String executionURL1) throws Exception {
+	private void verfiyResults(String releaseDate, String buildURL1) throws Exception {
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 	}
 
 	private String createExpectedZipEntries(String effectiveTime) {

@@ -1,16 +1,16 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.log4j.MDC;
-import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,19 +34,19 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
-	private final FileHelper executionFileHelper;
+	private final FileHelper buildFileHelper;
 
 	private final FileHelper publishedFileHelper;
 
 	private final String publishedBucketName;
 
 	@Autowired
-	private ExecutionS3PathHelper executionS3PathHelper;
+	private BuildS3PathHelper buildS3PathHelper;
 
 	@Autowired
-	public PublishServiceImpl(final String executionBucketName, final String publishedBucketName,
+	public PublishServiceImpl(final String buildBucketName, final String publishedBucketName,
 			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
-		executionFileHelper = new FileHelper(executionBucketName, s3Client, s3ClientHelper);
+		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
 	}
@@ -72,12 +72,11 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishExecution(final Execution execution) throws BusinessServiceException {
-		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
+	public void publishBuild(final Build build) throws BusinessServiceException {
+		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		try {
-			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution).toString();
-			ReleaseCenter rc = execution.getProduct().getReleaseCenter();
-			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
+			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
+			List<String> filesFound = buildFileHelper.listFiles(pkgOutPutDir);
 			String releaseFileName = null;
 			String md5FileName = null;
 			for (String fileName : filesFound) {
@@ -91,35 +90,35 @@ public class PublishServiceImpl implements PublishService {
 				}
 			}
 
+			ReleaseCenter releaseCenter = build.getProduct().getReleaseCenter();
 			if (releaseFileName == null) {
-				LOGGER.error("No zip file found for execution:{}", execution.getUniqueId());
+				LOGGER.error("No zip file found for build:{}", build.getUniqueId());
 			} else {
 				String fileLock = releaseFileName.intern();
 				synchronized (fileLock) {
 					//Does a published file already exist for this product?
-					if (exists(rc, releaseFileName)) {
-						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + rc.getName() + " (" + execution.getCreationTime() + ")");
+					if (exists(releaseCenter, releaseFileName)) {
+						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")");
 					}
 
-					String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, releaseFileName);
-					String publishedFilePath = getPublishFilePath(execution.getProduct().getReleaseCenter(), releaseFileName);
-					executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+					String outputFileFullPath = buildS3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+					String publishedFilePath = getPublishFilePath(releaseCenter, releaseFileName);
+					buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-
-					// copy MD5 file if available
-					if (md5FileName != null) {
-						String source = executionS3PathHelper.getExecutionOutputFilePath(execution, md5FileName);
-						String target = getPublishFilePath(execution.getProduct().getReleaseCenter(), md5FileName);
-						executionFileHelper.copyFile(source, publishedBucketName, target);
-						LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
-					}
+				}
+				// copy MD5 file if available
+				if (md5FileName != null) {
+					String source = buildS3PathHelper.getBuildOutputFilePath(build, md5FileName);
+					String target = getPublishFilePath(releaseCenter, md5FileName);
+					buildFileHelper.copyFile(source, publishedBucketName, target);
+					LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
 				}
 			}
 		} catch (IOException e) {
-			throw new BusinessServiceException("Failed to publish execution " + execution.getUniqueId(), e);
+			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
 		} finally {
-			MDC.remove(ExecutionService.MDC_EXECUTION_KEY);
+			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
 
 	}

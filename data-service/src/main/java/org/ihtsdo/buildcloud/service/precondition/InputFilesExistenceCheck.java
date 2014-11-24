@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 /**
  * To check all files specified in the manifest file can be derived from the input files.
@@ -34,13 +34,13 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 
 	private static final String ERROR_MSG = "The input files directory doesn't contain the following files required by the manifest.xml: ";
 	@Autowired
-	private ExecutionDAO executionDAO;
+	private BuildDAO buildDAO;
 
 	@Override
-	public void runCheck(Execution execution) {
+	public void runCheck(Build build) {
 		//check against the manifest file
 		boolean isFailed = false;
-		try (InputStream manifestInputSteam = executionDAO.getManifestStream(execution)) {
+		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
 			ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			ListingType listingType = parser.parse(manifestInputSteam);
 			Set<String> filesExpected = new HashSet<>();
@@ -71,7 +71,7 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 
 			}
 			//get a list of input file names
-			List<String> inputfilesList = executionDAO.listInputFileNames(execution);
+			List<String> inputfilesList = buildDAO.listInputFileNames(build);
 			//check expected against input files
 			StringBuilder msgBuilder = new StringBuilder();
 			int count = 0;

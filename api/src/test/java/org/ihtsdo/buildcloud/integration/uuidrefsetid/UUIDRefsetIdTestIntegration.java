@@ -32,9 +32,9 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setWorkbenchDataFixesRequired(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
-		String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
-		integrationTestHelper.publishOutput(executionURL1);
+		String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
@@ -55,7 +55,7 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/sct2_Concept_Delta_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileFirstRelease, getClass());
 
 		// Sleep for a second. Next product must have a different timestamp.
@@ -71,9 +71,9 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
-		String executionURL2 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL2);
-		integrationTestHelper.publishOutput(executionURL2);
+		String buildURL2 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL2);
+		integrationTestHelper.publishOutput(buildURL2);
 
 
 		// Assert second release output expectations
@@ -92,7 +92,7 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140731.txt";
-		ZipFile zipFileSecondRelease = integrationTestHelper.testZipNameAndEntryNames(executionURL2, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileSecondRelease = integrationTestHelper.testZipNameAndEntryNames(buildURL2, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFileSecondRelease, getClass());
 	}
 
