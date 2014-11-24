@@ -4,7 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
@@ -45,18 +45,18 @@ public class Rf2FileExportRunner {
 
 	public Rf2FileExportRunner(final Execution execution, final ExecutionDAO dao, final UUIDGenerator uuidGenerator, final int maxRetries) {
 		this.execution = execution;
-		Build build = execution.getBuild();
-		releaseCenter = build.getReleaseCenter();
+		Product product = execution.getProduct();
+		releaseCenter = product.getReleaseCenter();
 		executionDao = dao;
 		this.maxRetries = maxRetries;
 		this.uuidGenerator = uuidGenerator;
-		firstTimeRelease = build.isFirstTimeRelease();
-		effectiveTime = build.getEffectiveTimeSnomedFormat();
-		workbenchDataFixesRequired = build.isWorkbenchDataFixesRequired();
+		firstTimeRelease = product.isFirstTimeRelease();
+		effectiveTime = product.getEffectiveTimeSnomedFormat();
+		workbenchDataFixesRequired = product.isWorkbenchDataFixesRequired();
 
 		if (!firstTimeRelease) {
 			// Find previous published package
-			previousPublishedPackage = build.getPreviousPublishedPackage();
+			previousPublishedPackage = product.getPreviousPublishedPackage();
 		} else {
 			previousPublishedPackage = null;
 		}
@@ -65,8 +65,8 @@ public class Rf2FileExportRunner {
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		final List<String> transformedFiles = getTransformedDeltaFiles();
-		Build build = execution.getBuild();
-		final Set<String> newRF2InputFiles = build.getNewRF2InputFileSet();
+		Product product = execution.getProduct();
+		final Set<String> newRF2InputFiles = product.getNewRF2InputFileSet();
 		for (final String thisFile : transformedFiles) {
 			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				continue;
@@ -77,7 +77,7 @@ public class Rf2FileExportRunner {
 				try {
 					final boolean newFile = newRF2InputFiles.contains(thisFile.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
 					final boolean fileFirstTimeRelease = newFile || firstTimeRelease;
-					generateReleaseFile(thisFile, build.getCustomRefsetCompositeKeysMap(), fileFirstTimeRelease);
+					generateReleaseFile(thisFile, product.getCustomRefsetCompositeKeysMap(), fileFirstTimeRelease);
 					success = true;
 				} catch (final ReleaseFileGenerationException e) {
 					failureCount = handleException(e, thisFile, failureCount);
@@ -191,7 +191,7 @@ public class Rf2FileExportRunner {
 			timer.logTimeTaken("selectAllOrdered");
 
 			rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
-					execution.getBuild().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
+					execution.getProduct().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
 					snapshotAsyncPipe.getOutputStream());
 			LOGGER.debug("Completed processing full and snapshot files for {}, waiting for network.", tableSchema.getTableName());
 			fullFileAsyncPipe.waitForFinish();

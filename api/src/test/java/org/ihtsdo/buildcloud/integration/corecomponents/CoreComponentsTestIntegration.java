@@ -24,7 +24,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);

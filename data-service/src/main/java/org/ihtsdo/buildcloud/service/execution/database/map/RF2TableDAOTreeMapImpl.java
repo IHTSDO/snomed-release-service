@@ -54,7 +54,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	@Override
 	public TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, FileRecognitionException, DatabasePopulatorException, BadConfigurationException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
-			// Build Schema
+			// Product Schema
 			String rf2Filename = FileUtils.getFilenameFromPath(rf2FilePath);
 			LOGGER.info("Creating table from {}", rf2Filename);
 			String headerLine = getHeader(rf2FilePath, reader);
@@ -278,7 +278,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private Pattern getRefsetCompositeKeyPattern(TableSchema tableSchema, String refsetId) throws DatabasePopulatorException, BadConfigurationException {
 		if (tableSchema.getComponentType() == ComponentType.REFSET) {
 			if (!refsetCompositeKeyPatternCache.containsKey(refsetId)) {
-				refsetCompositeKeyPatternCache.put(refsetId, buildRefsetCompositeKeyPattern(tableSchema, refsetId));
+				refsetCompositeKeyPatternCache.put(refsetId, productRefsetCompositeKeyPattern(tableSchema, refsetId));
 			}
 			return refsetCompositeKeyPatternCache.get(refsetId);
 		} else {
@@ -286,7 +286,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
-	private Pattern buildRefsetCompositeKeyPattern(TableSchema tableSchema, String refsetId) throws BadConfigurationException {
+	private Pattern productRefsetCompositeKeyPattern(TableSchema tableSchema, String refsetId) throws BadConfigurationException {
 		Set<Integer> fieldIndexes = new TreeSet<>();
 
 		List<Field> fields = tableSchema.getFields();

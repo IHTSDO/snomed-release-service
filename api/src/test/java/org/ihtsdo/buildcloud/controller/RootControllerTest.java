@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class RootControllerTest extends AbstractControllerTest {
 
 	@Test
-	public void root_returns_centers_and_builds() throws Exception {
+	public void root_returns_centers_and_products() throws Exception {
 
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())

@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * An Execution is a snapshot of a Build and may be used to run the release process.
+ * An Execution is a snapshot of a Product and may be used to run the release process.
  *
  * This entity is stored via S3, not Hibernate.
  */
@@ -20,7 +20,7 @@ public class Execution {
 	private Status status;
 
 	@JsonIgnore
-	private final Build build;
+	private final Product product;
 	
 	private List<PreConditionCheckReport> preConditionCheckReports;
 
@@ -30,15 +30,15 @@ public class Execution {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN
 	}
 
-	public Execution(Build build, String creationTime) {
+	public Execution(Product product, String creationTime) {
 		this.status = Status.BEFORE_TRIGGER;
 		this.executionReport = new ExecutionReport();
-		this.build = build;
+		this.product = product;
 		this.creationTime = creationTime;
 	}
 
-	public Execution(String creationTime, String statusString, Build build) {
-		this(build, creationTime);
+	public Execution(String creationTime, String statusString, Product product) {
+		this(product, creationTime);
 		try {
 			this.status = Status.valueOf(statusString);
 		} catch (IllegalArgumentException e) {
@@ -46,8 +46,8 @@ public class Execution {
 		}
 	}
 
-	public Execution(Date creationTime, Build build) {
-		this(build, EntityHelper.formatAsIsoDateTime(creationTime));
+	public Execution(Date creationTime, Product product) {
+		this(product, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
 
 	public String getId() {
@@ -66,12 +66,12 @@ public class Execution {
 		this.status = status;
 	}
 
-	public Build getBuild() {
-		return build;
+	public Product getProduct() {
+		return product;
 	}
 
 	public String getUniqueId() {
-		return getBuild().getBusinessKey() + "|" + getId();
+		return getProduct().getBusinessKey() + "|" + getId();
 	}
 
 	public List<PreConditionCheckReport> getPreConditionCheckReports() {

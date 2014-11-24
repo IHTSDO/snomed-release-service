@@ -11,6 +11,6 @@
   "createInferredRelationships" : false,
   "refsetCompositeKeys" : null,
   "newRF2InputFiles" : null,
-  "url" : "http://localhost/api/v1/builds/snomed_ct_release",
-  "executions_url" : "http://localhost/api/v1/builds/snomed_ct_release/executions"
+  "url" : "http://localhost/api/v1/products/snomed_ct_release",
+  "executions_url" : "http://localhost/api/v1/products/snomed_ct_release/executions"
 } ]

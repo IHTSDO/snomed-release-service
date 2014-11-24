@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.controller;
 
 import java.nio.charset.Charset;
 
-import javax.servlet.ServletException;
-
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.service.execution.transform.IdAssignmentBIOfflineDemoImpl;
@@ -56,7 +54,7 @@ public abstract class AbstractControllerTest {
 	private String publishedBucketName;
 
 	@Before
-	public void setup() throws ServletException, Exception {
+	public void setup() throws Exception {
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		Assert.assertNotNull(mockMvc);
 		if (uuidGenerator instanceof PesudoUUIDGenerator) {

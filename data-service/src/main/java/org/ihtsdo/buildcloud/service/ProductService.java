@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.AuthenticationException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface BuildService extends EntityService<Build> {
+public interface ProductService extends EntityService<Product> {
 
 	String NAME = "name";
 	String EFFECTIVE_TIME = "effectiveTime";
@@ -24,12 +24,12 @@ public interface BuildService extends EntityService<Build> {
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
 	String TRUE = "true";
 
-	List<Build> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
+	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
-	Build find(String releaseCenterKey, String buildKey) throws BusinessServiceException;
+	Product find(String releaseCenterKey, String productKey) throws BusinessServiceException;
 
-	Build create(String releaseCenterKey, String name) throws BusinessServiceException;
+	Product create(String releaseCenterKey, String name) throws BusinessServiceException;
 
-	Build update(String releaseCenterKey, String buildKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
+	Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
 
 }

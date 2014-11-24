@@ -1,7 +1,7 @@
 {
 	"id" : "2013-03-05T16:30:00",
 	"creationTime" : "2013-03-05T16:30:00",
-	"build" : {
+	"product" : {
 		"id" : "international_release",
 		"name" : "International Release",
 		"inputFiles" : [ "sct2_Concept_Delta_INT_20140131.txt", "sct2_Description_Delta-en_INT_20140131.txt", "sct2_Relationship_Delta_INT_20140131.txt" ],

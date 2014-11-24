@@ -18,7 +18,7 @@ import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
 
 /**
  * To check all files specified in the manifest file can be derived from the input files.
- * If not the build process will be halted and the release manager should be alerted.
+ * If not the product process will be halted and the release manager should be alerted.
  * RF2 files:Full/snapshot/delta
  * der2_Refset_SimpleSnapshot_INT_20140831.txt
  * sct2_Concept_Snapshot_INT_20140131.txt

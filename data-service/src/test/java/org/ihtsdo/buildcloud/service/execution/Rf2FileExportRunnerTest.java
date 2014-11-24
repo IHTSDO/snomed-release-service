@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
@@ -46,7 +46,7 @@ public class Rf2FileExportRunnerTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
 	
-	private Build build;
+	private Product product;
 	@Autowired
 	private ExecutionDAO dao;
 	@Autowired
@@ -58,14 +58,14 @@ public class Rf2FileExportRunnerTest {
 
 	@Before
 	public void setUp() throws IOException {
-		build = new Build(1L, "Test");
+		product = new Product(1L, "Test");
 		ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
-		build.setReleaseCenter(releaseCenter);
+		product.setReleaseCenter(releaseCenter);
 		Date date = new Date();
-		execution = new Execution(date, build);
+		execution = new Execution(date, product);
 		SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
 		try {
-			build.setEffectiveTime(formater.parse(RELEASE_DATE));
+			product.setEffectiveTime(formater.parse(RELEASE_DATE));
 		} catch (ParseException e) {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
@@ -75,8 +75,8 @@ public class Rf2FileExportRunnerTest {
 
 	@Test
 	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
-		build.setFirstTimeRelease(true);
-		build.setWorkbenchDataFixesRequired(false);
+		product.setFirstTimeRelease(true);
+		product.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
 		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(execution, dao, uuidGenerator, 1);
@@ -93,9 +93,9 @@ public class Rf2FileExportRunnerTest {
 
 	@Test
 	public void testEmptyValueIdFix() throws Exception {
-		build.setFirstTimeRelease(false);
-		build.setPreviousPublishedPackage(PREVIOUS_RELEASE);
-		build.setWorkbenchDataFixesRequired(true);
+		product.setFirstTimeRelease(false);
+		product.setPreviousPublishedPackage(PREVIOUS_RELEASE);
+		product.setWorkbenchDataFixesRequired(true);
 		s3Client.putObject(EXECUTION_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));

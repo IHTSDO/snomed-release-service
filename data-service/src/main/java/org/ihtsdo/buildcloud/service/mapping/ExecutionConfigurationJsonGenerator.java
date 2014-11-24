@@ -15,7 +15,7 @@ public class ExecutionConfigurationJsonGenerator {
 	private static final String ID = "id";
 
 	private static final String CREATION_TIME = "creationTime";
-	private static final String BUILD = "build";
+	private static final String BUILD = "product";
 	private static final String NAME = "name";
 	private static final String SHORT_NAME = "shortName";
 	private static final String INPUT_FILES = "inputFiles";
@@ -32,18 +32,18 @@ public class ExecutionConfigurationJsonGenerator {
 		Map<String, Object> config = new LinkedHashMap<>();
 		config.put(ID, execution.getId());
 		config.put(CREATION_TIME, execution.getCreationTime());
-		config.put(BUILD, getConfig(execution.getBuild()));
+		config.put(BUILD, getConfig(execution.getProduct()));
 		return config;
 	}
 
-	private Map<String, Object> getConfig(Build build) {
+	private Map<String, Object> getConfig(Product product) {
 		Map<String, Object> config = new LinkedHashMap<>();
-		config.put(ID, build.getBusinessKey());
-		config.put(NAME, build.getName());
-		config.put(ID, build.getBusinessKey());
-		config.put(NAME, build.getName());
-		config.put(INPUT_FILES, build.getInputFiles());
-		config.put(RELEASE_CENTER, getConfig(build.getReleaseCenter()));
+		config.put(ID, product.getBusinessKey());
+		config.put(NAME, product.getName());
+		config.put(ID, product.getBusinessKey());
+		config.put(NAME, product.getName());
+		config.put(INPUT_FILES, product.getInputFiles());
+		config.put(RELEASE_CENTER, getConfig(product.getReleaseCenter()));
 		return config;
 	}
 

@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.service.BuildInputFileService;
+import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,21 +13,21 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Controller
-@RequestMapping("/centers/{releaseCenterKey}/builds/{buildKey}")
+@RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
 public class InputFileController {
 
 	@Autowired
-	private BuildInputFileService buildInputFileService;
+	private ProductInputFileService productInputFileService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -39,18 +39,18 @@ public class InputFileController {
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String releaseCenterKey,
-			@PathVariable final String buildKey, @RequestParam(value = "file") final MultipartFile file)
+			@PathVariable final String productKey, @RequestParam(value = "file") final MultipartFile file)
 			throws IOException, ResourceNotFoundException {
 
-		buildInputFileService.putManifestFile(releaseCenterKey, buildKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
+		productInputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
 	@RequestMapping(value = "/manifest")
 	@ResponseBody
-	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		String manifestFileName = buildInputFileService.getManifestFileName(releaseCenterKey, buildKey);
+		String manifestFileName = productInputFileService.getManifestFileName(releaseCenterKey, productKey);
 		Map<String, String> objectHashMap = new HashMap<>();
 		if (manifestFileName != null) {
 			objectHashMap.put(FILENAME, manifestFileName);
@@ -61,10 +61,10 @@ public class InputFileController {
 	}
 
 	@RequestMapping(value = "/manifest/file", produces = "application/xml")
-	public void getManifestFile(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public void getManifestFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletResponse response) throws ResourceNotFoundException {
 
-		try (InputStream fileStream = buildInputFileService.getManifestStream(releaseCenterKey, buildKey)) {
+		try (InputStream fileStream = productInputFileService.getManifestStream(releaseCenterKey, productKey)) {
 			if (fileStream != null) {
 				response.setContentType("application/xml");
 				StreamUtils.copy(fileStream, response.getOutputStream());
@@ -79,18 +79,18 @@ public class InputFileController {
 
 	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 
-		buildInputFileService.putInputFile(releaseCenterKey, buildKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
+		productInputFileService.putInputFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
 	@RequestMapping(value = "/inputfiles")
 	@ResponseBody
-	public List<Map<String, Object>> listInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public List<Map<String, Object>> listInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		List<String> filePaths = buildInputFileService.listInputFilePaths(releaseCenterKey, buildKey);
+		List<String> filePaths = productInputFileService.listInputFilePaths(releaseCenterKey, productKey);
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
 			Map<String, String> file = new HashMap<>();
@@ -101,11 +101,11 @@ public class InputFileController {
 	}
 
 	@RequestMapping(value = "/inputfiles/{inputFileName:.*}")
-	public void getInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public void getInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String inputFileName,
 			final HttpServletResponse response) throws ResourceNotFoundException {
 
-		try (InputStream fileStream = buildInputFileService.getFileInputStream(releaseCenterKey, buildKey, inputFileName)) {
+		try (InputStream fileStream = productInputFileService.getFileInputStream(releaseCenterKey, productKey, inputFileName)) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
@@ -120,14 +120,14 @@ public class InputFileController {
 	// Using Regex to match variable name here due to problems with .txt getting truncated
 	// See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
 	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
-	public ResponseEntity<Object> deleteInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String buildKey,
+	public ResponseEntity<Object> deleteInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String inputFileNamePattern) throws IOException, ResourceNotFoundException {
 
 		// Are we working with a file name or a pattern?
 		if (inputFileNamePattern.contains("*")) {
-			buildInputFileService.deleteFilesByPattern(releaseCenterKey, buildKey, inputFileNamePattern);
+			productInputFileService.deleteFilesByPattern(releaseCenterKey, productKey, inputFileNamePattern);
 		} else {
-			buildInputFileService.deleteFile(releaseCenterKey, buildKey, inputFileNamePattern);
+			productInputFileService.deleteFile(releaseCenterKey, productKey, inputFileNamePattern);
 		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}

@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
 
 @Repository
 public class DevDatabasePrimerDAO extends TestEntityGenerator {
@@ -31,7 +30,7 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator {
 			User anonymousUser = createUser(User.ANONYMOUS_USER, "");
 
 			// Create international release center
-			ReleaseCenter internationalReleaseCenter = createTestReleaseCenterWithBuilds("International Release Center", "International");
+			ReleaseCenter internationalReleaseCenter = createTestReleaseCenterWithProducts("International Release Center", "International");
 			save(internationalReleaseCenter);
 
 			// Grant anonymous access
@@ -65,9 +64,9 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator {
 		// Iterative save
 		Session session = getSession();
 		session.save(releaseCenter);
-		List<Build> builds = releaseCenter.getBuilds();
-		for (Build build : builds) {
-			session.save(build);
+		List<Product> products = releaseCenter.getProducts();
+		for (Product product : products) {
+			session.save(product);
 		}
 	}
 

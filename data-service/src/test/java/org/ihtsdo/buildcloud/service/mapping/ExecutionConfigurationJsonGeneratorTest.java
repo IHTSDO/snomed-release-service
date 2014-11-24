@@ -32,16 +32,16 @@ public class ExecutionConfigurationJsonGeneratorTest {
 	@Before
 	public void setup() throws IOException {
 		TestEntityFactory factory = new TestEntityFactory();
-		Build build = factory.createBuild(
+		Product product = factory.createProduct(
 				"International Release Center", "International",
 				"International Release");
 		List<String> inputFiles = new ArrayList<>();
 		inputFiles.add("sct2_Concept_Delta_INT_20140131.txt");
 		inputFiles.add("sct2_Description_Delta-en_INT_20140131.txt");
 		inputFiles.add("sct2_Relationship_Delta_INT_20140131.txt");
-		build.setInputFiles(inputFiles);
-		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 0).getTime(), build);
-		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-build-config-export.json"), RF2Constants.UTF_8));
+		product.setInputFiles(inputFiles);
+		execution = new Execution(new GregorianCalendar(2013, 2, 5, 16, 30, 0).getTime(), product);
+		expectedExport = FileCopyUtils.copyToString(new InputStreamReader(this.getClass().getResourceAsStream("expected-product-config-export.json"), RF2Constants.UTF_8));
 	}
 
 	@Test

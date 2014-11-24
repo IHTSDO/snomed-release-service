@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.entity.helper;
 
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class TestEntityGenerator {
@@ -9,7 +9,7 @@ public class TestEntityGenerator {
 
 	public static final String [] releaseCenterShortNames = {"International"};
 
-	public static final String [] buildNames =
+	public static final String [] productNames =
 			{"SNOMED CT Release",
 					"NLM Example Refset",
 					"Medical Devices Technical Preview",
@@ -22,15 +22,15 @@ public class TestEntityGenerator {
 		return new ReleaseCenter(fullName, shortName);
 	}
 
-	protected ReleaseCenter createTestReleaseCenterWithBuilds(String fullName, String shortName) {
+	protected ReleaseCenter createTestReleaseCenterWithProducts(String fullName, String shortName) {
 		ReleaseCenter releaseCenter = createTestReleaseCenter(fullName, shortName);
-		addBuildsToReleaseCenter(releaseCenter);
+		addProductsToReleaseCenter(releaseCenter);
 		return releaseCenter;
 	}
 
-	protected void addBuildsToReleaseCenter(ReleaseCenter releaseCenter) {
-		for (String buildName : buildNames) {
-			releaseCenter.addBuild(new Build(buildName));
+	protected void addProductsToReleaseCenter(ReleaseCenter releaseCenter) {
+		for (String productName : productNames) {
+			releaseCenter.addProduct(new Product(productName));
 		}
 	}
 	

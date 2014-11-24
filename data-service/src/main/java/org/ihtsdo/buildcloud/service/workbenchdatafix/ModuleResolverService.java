@@ -65,7 +65,7 @@ public class ModuleResolverService {
 	public void addNewModelConceptIds(Set<String> modelConceptIds, InputStream inputStatedRelationshipDelta) throws BadInputFileException {
 		Map<String, List<String>> destinationIdToSourceIdListMap = new LinkedHashMap<>();
 
-		// Build destination id > source ids map
+		// Product destination id > source ids map
 		try (BufferedReader deltaReader = new BufferedReader(new InputStreamReader(inputStatedRelationshipDelta))) {
 			String line = deltaReader.readLine();
 			if (line != null) {

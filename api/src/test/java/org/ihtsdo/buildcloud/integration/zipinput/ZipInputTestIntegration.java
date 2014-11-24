@@ -21,7 +21,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testRelease() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		integrationTestHelper.uploadDeltaInputFile("Archive.zip", getClass());

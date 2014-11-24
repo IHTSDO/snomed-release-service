@@ -2,13 +2,13 @@ package org.ihtsdo.buildcloud.service.execution;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
-import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAOImpl;
 import org.ihtsdo.buildcloud.dao.helper.ExecutionS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
@@ -44,7 +44,7 @@ public class ZipperTest {
 	private ExecutionS3PathHelper pathHelper;
 	
 	@Autowired
-	protected BuildDAO buildDAO;
+	protected ProductDAO productDAO;
 
 	@Autowired
 	private ExecutionDAOImpl executionDAO;
@@ -59,9 +59,9 @@ public class ZipperTest {
 	
 	@Before
 	public void setup() throws NoSuchAlgorithmException, IOException, DecoderException, InterruptedException {
-		Build build = buildDAO.find(1L, TestUtils.TEST_USER);
+		Product product = productDAO.find(1L, TestUtils.TEST_USER);
 		Thread.sleep(1000);// Make execution unique
-		execution = new Execution(new Date(), build);
+		execution = new Execution(new Date(), product);
 
 		//We're going to locally copy a manifest file for the test
 		FileHelper fileHelper = new FileHelper(executionBucketName, s3client, new S3ClientHelper(s3client));

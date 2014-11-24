@@ -6,12 +6,12 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
-import javax.persistence.*;
 import java.util.*;
+import javax.persistence.*;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
-public class Build {
+public class Product {
 
 	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
 
@@ -54,17 +54,17 @@ public class Build {
 
 	private String newRF2InputFiles;
 
-	public Build() {
+	public Product() {
 
 	}
 
-	public Build(String name) {
+	public Product(String name) {
 		this();
 		setName(name);
 		inputFiles = new ArrayList<>();
 	}
 	
-	public Build(Long id, String name) {
+	public Product(Long id, String name) {
 		this(name);
 		this.id = id;
 	}
@@ -247,16 +247,16 @@ public class Build {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof Build)) {
+		if (!(o instanceof Product)) {
 			return false;
 		}
 
-		Build build = (Build) o;
+		Product product = (Product) o;
 
-		if (!businessKey.equals(build.businessKey)) {
+		if (!businessKey.equals(product.businessKey)) {
 			return false;
 		}
-		if (!releaseCenter.equals(build.releaseCenter)) {
+		if (!releaseCenter.equals(product.releaseCenter)) {
 			return false;
 		}
 

@@ -66,7 +66,7 @@ public class LegacyIdTransformationService {
 			LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 		}
 		
-		final String effectiveDate = execution.getBuild().getEffectiveTimeSnomedFormat();
+		final String effectiveDate = execution.getProduct().getEffectiveTimeSnomedFormat();
 		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
@@ -102,11 +102,11 @@ public class LegacyIdTransformationService {
 						}
 						for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
 							final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
-							writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
+							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
 							final String snomedId = sctIdAndSnomedIdMap.get(sctId);
 							if (snomedId != null && !snomedId.equals("")) {
-								writer.write(buildSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, snomedId));
+								writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, SNOMED_ID_REFSET_ID, sctId, snomedId));
 								writer.write(RF2Constants.LINE_ENDING);
 							}
 							else {
@@ -122,7 +122,7 @@ public class LegacyIdTransformationService {
 
 	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Execution execution) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
-		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getBuild().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
+		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + execution.getProduct().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream transformedDeltaInput = executionDAO.getTransformedFileAsInputStream(execution, statedRelationsipDelta);
 		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
@@ -130,22 +130,22 @@ public class LegacyIdTransformationService {
 		return finder.getParentSctIdFromStatedRelationship(transformedDeltaInput, sourceSctIds);
 	}
 
-	private String buildSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
-		final StringBuilder builder = new StringBuilder();
-		builder.append(componentId);
-		builder.append(TAB);
-		builder.append(effectiveDate);
-		builder.append(TAB);
-		builder.append("1");
-		builder.append(TAB);
-		builder.append(moduleId);
-		builder.append(TAB);
-		builder.append(refsetId);
-		builder.append(TAB);
-		builder.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
-		builder.append(TAB);
-		builder.append(mapTarget);
-		builder.append(TAB);
-		return builder.toString();
+	private String productSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
+		final StringBuilder producter = new StringBuilder();
+		producter.append(componentId);
+		producter.append(TAB);
+		producter.append(effectiveDate);
+		producter.append(TAB);
+		producter.append("1");
+		producter.append(TAB);
+		producter.append(moduleId);
+		producter.append(TAB);
+		producter.append(refsetId);
+		producter.append(TAB);
+		producter.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
+		producter.append(TAB);
+		producter.append(mapTarget);
+		producter.append(TAB);
+		return producter.toString();
 	}
 }

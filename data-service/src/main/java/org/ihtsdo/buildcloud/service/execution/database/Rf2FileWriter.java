@@ -20,7 +20,7 @@ public class Rf2FileWriter {
 			List<Field> fields = tableSchema.getFields();
 
 			// Write header
-			String header = buildHeader(fields);
+			String header = productHeader(fields);
 			deltaWriter.write(header);
 			deltaWriter.append(RF2Constants.LINE_ENDING);
 
@@ -38,11 +38,11 @@ public class Rf2FileWriter {
 			 BufferedWriter snapshotWriter = new BufferedWriter(new OutputStreamWriter(snapshotOutputStream, RF2Constants.UTF_8))) {
 
 			// Declare a few objects to reuse over and over.
-			final StringBuilder builder = new StringBuilder();
+			final StringBuilder producter = new StringBuilder();
 			final List<Field> fields = schema.getFields();
 
-			// Build header
-			String header = buildHeader(fields);
+			// Product header
+			String header = productHeader(fields);
 			fullWriter.write(header);
 			fullWriter.append(RF2Constants.LINE_ENDING);
 			snapshotWriter.write(header);
@@ -87,7 +87,7 @@ public class Rf2FileWriter {
 
 				// Record last id
 				lastId = currentId;
-				builder.setLength(0); // Reset builder, reuse is cheapest.
+				producter.setLength(0); // Reset producter, reuse is cheapest.
 			}
 
 			// Write out any valid line not yet written
@@ -102,7 +102,7 @@ public class Rf2FileWriter {
 
 	public void exportFull(RF2TableResults results, TableSchema tableSchema, OutputStream fullOutputStream) throws IOException, SQLException {
 		try (BufferedWriter fullWriter = new BufferedWriter(new OutputStreamWriter(fullOutputStream, RF2Constants.UTF_8))) {
-			String header = buildHeader(tableSchema.getFields());
+			String header = productHeader(tableSchema.getFields());
 			fullWriter.append(header);
 			fullWriter.append(RF2Constants.LINE_ENDING);
 
@@ -114,17 +114,17 @@ public class Rf2FileWriter {
 		}
 	}
 
-	private String buildHeader(List<Field> fields) {
-		StringBuilder builder = new StringBuilder();
+	private String productHeader(List<Field> fields) {
+		StringBuilder producter = new StringBuilder();
 		boolean firstField = true;
 		for (Field field : fields) {
 			if (firstField) {
 				firstField = false;
 			} else {
-				builder.append(RF2Constants.COLUMN_SEPARATOR);
+				producter.append(RF2Constants.COLUMN_SEPARATOR);
 			}
-			builder.append(field.getName());
+			producter.append(field.getName());
 		}
-		return builder.toString();
+		return producter.toString();
 	}
 }

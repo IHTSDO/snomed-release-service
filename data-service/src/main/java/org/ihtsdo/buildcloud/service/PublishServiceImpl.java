@@ -76,7 +76,7 @@ public class PublishServiceImpl implements PublishService {
 		MDC.put(ExecutionService.MDC_EXECUTION_KEY, execution.getUniqueId());
 		try {
 			String pkgOutPutDir = executionS3PathHelper.getExecutionOutputFilesPath(execution).toString();
-			ReleaseCenter rc = execution.getBuild().getReleaseCenter();
+			ReleaseCenter rc = execution.getProduct().getReleaseCenter();
 			List<String> filesFound = executionFileHelper.listFiles(pkgOutPutDir);
 			String releaseFileName = null;
 			String md5FileName = null;
@@ -100,17 +100,17 @@ public class PublishServiceImpl implements PublishService {
 					if (exists(rc, releaseFileName)) {
 						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + rc.getName() + " (" + execution.getCreationTime() + ")");
 					}
-					
+
 					String outputFileFullPath = executionS3PathHelper.getExecutionOutputFilePath(execution, releaseFileName);
-					String publishedFilePath = getPublishFilePath(execution.getBuild().getReleaseCenter(), releaseFileName);
+					String publishedFilePath = getPublishFilePath(execution.getProduct().getReleaseCenter(), releaseFileName);
 					executionFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-					
+
 					// copy MD5 file if available
 					if (md5FileName != null) {
 						String source = executionS3PathHelper.getExecutionOutputFilePath(execution, md5FileName);
-						String target = getPublishFilePath(execution.getBuild().getReleaseCenter(), md5FileName);
+						String target = getPublishFilePath(execution.getProduct().getReleaseCenter(), md5FileName);
 						executionFileHelper.copyFile(source, publishedBucketName, target);
 						LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
 					}

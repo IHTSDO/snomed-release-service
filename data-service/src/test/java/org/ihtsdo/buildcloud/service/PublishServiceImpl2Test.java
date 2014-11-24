@@ -1,11 +1,12 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAOImpl;
+import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
-import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Execution;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
@@ -38,19 +39,16 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	protected ExecutionDAOImpl executionDAO;
 
 	@Autowired
-	private BuildService bs;
+	private ProductService productService;
 
 	@Autowired
-	private ExecutionService es;
+	private ExecutionService executionService;
 
 	@Autowired
-	private PublishService ps;
+	private PublishService publishService;
 
 	@Autowired
-	private S3ClientFactory factory;
-
-	@Autowired
-	protected BuildDAO buildDAO;
+	protected ProductDAO productDAO;
 
 	@Autowired
 	private S3Client s3Client;
@@ -69,12 +67,12 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Tidyup in case we've run this test already today
 		((TestS3Client)s3Client).freshBucketStore();
 
-		//Packages get looked up using a build composite key (ie include the unique ID)
-		//so first lets find the first build for a known product, and use that
-		List<Build> builds = bs.findAll(releaseCenterName, null);
-		Build build=builds.get(0);
-		build.setEffectiveTime(new Date());
-		execution = es.createExecutionFromBuild(releaseCenterName, build.getBusinessKey());
+		//Packages get looked up using a product composite key (ie include the unique ID)
+		//so first lets find the first product for a known product, and use that
+		List<Product> products = productService.findAll(releaseCenterName, null);
+		Product product = products.get(0);
+		product.setEffectiveTime(new Date());
+		execution = executionService.createExecutionFromProduct(releaseCenterName, product.getBusinessKey());
 
 		//Put a zip file into the execution's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();
@@ -84,10 +82,10 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	@Test
 	public void testPublishing() throws IOException, InterruptedException, BusinessServiceException {
 		//Using separate threads to check second thread detects file already written.
-		Thread a = runThread("one", ps, execution, null);
+		Thread a = runThread("one", publishService, execution, null);
 		// Give thread a a head start to ensure it enters the sync block first
 		Thread.sleep(1);
-		Thread b = runThread("two", ps, execution, EntityAlreadyExistsException.class);
+		Thread b = runThread("two", publishService, execution, EntityAlreadyExistsException.class);
 
 		//Wait for both threads to finish.
 		a.join();
@@ -96,7 +94,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			ps.publishExecution(execution);
+			publishService.publishExecution(execution);
 		} catch (EntityAlreadyExistsException eaee) {
 			expectedExceptionThrown = true;
 		}

@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.log4j.MDC;
-import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Execution;
 import org.ihtsdo.buildcloud.entity.Execution.Status;
 import org.ihtsdo.buildcloud.entity.ExecutionReport;
@@ -63,7 +63,7 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private ExecutionDAO dao;
 
 	@Autowired
-	private BuildDAO buildDAO;
+	private ProductDAO productDAO;
 
 	@Autowired
 	private ExecutionConfigurationJsonGenerator executionConfigurationJsonGenerator;
@@ -99,31 +99,31 @@ public class ExecutionServiceImpl implements ExecutionService {
 	private RF2ClassifierService classifierService;
 
 	@Override
-	public Execution createExecutionFromBuild(final String releaseCenterKey, final String buildKey) throws BusinessServiceException {
+	public Execution createExecutionFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
-		final Build build = getBuild(releaseCenterKey, buildKey);
-		if (build.getEffectiveTime() == null) {
-			throw new BadConfigurationException("Build effective time must be set before an execution is created.");
+		final Product product = getProduct(releaseCenterKey, productKey);
+		if (product.getEffectiveTime() == null) {
+			throw new BadConfigurationException("Product effective time must be set before an execution is created.");
 		}
 		Execution execution;
 		try {
-			synchronized (buildKey) {
+			synchronized (productKey) {
 				// Do we already have an execution for that date?
-				final Execution existingExecution = getExecution(build, creationDate);
+				final Execution existingExecution = getExecution(product, creationDate);
 				if (existingExecution != null) {
-					throw new EntityAlreadyExistsException("An Execution for build " + buildKey + " already exists with execution id " + existingExecution.getId());
+					throw new EntityAlreadyExistsException("An Execution for product " + productKey + " already exists with execution id " + existingExecution.getId());
 				}
-				execution = new Execution(creationDate, build);
-				// Create Build config export
+				execution = new Execution(creationDate, product);
+				// Create Product config export
 				final String jsonConfig = executionConfigurationJsonGenerator.getJsonConfig(execution);
 				// save execution with config
 				dao.save(execution, jsonConfig);
 				MDC.put(MDC_EXECUTION_KEY, execution.getUniqueId());
-				LOGGER.info("Created execution.", buildKey, execution.getId());
-				// Copy all files from Build input and manifest directory to Execution input and manifest directory
-				dao.copyAll(build, execution);
+				LOGGER.info("Created execution.", productKey, execution.getId());
+				// Copy all files from Product input and manifest directory to Execution input and manifest directory
+				dao.copyAll(product, execution);
 			}
-			if (!build.isJustPackage()) {
+			if (!product.isJustPackage()) {
 				// Perform Pre-condition testing
 				final Status preStatus = execution.getStatus();
 				runPreconditionChecks(execution);
@@ -141,22 +141,22 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public Execution triggerExecution(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public Execution triggerExecution(String releaseCenterKey, final String productKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 
 		// Start the execution telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryExecutionLogFilePath(execution));
-		LOGGER.info("Trigger build", buildKey, executionId);
+		LOGGER.info("Trigger product", productKey, executionId);
 
 		try {
 			updateStatusWithChecks(execution, Status.BUILDING);
 
-			// Run build
+			// Run product
 			ExecutionReport report = execution.getExecutionReport();
 			String resultStatus = "completed";
 			String resultMessage = "Process completed successfully";
 			try {
-				executeBuild(execution);
+				executeProduct(execution);
 			} catch (final BusinessServiceException e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing execution " + execution.getUniqueId() + " due to: "
@@ -177,29 +177,29 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public List<Execution> findAllDesc(String releaseCenterKey, final String buildKey) throws ResourceNotFoundException {
-		final Build build = getBuild(releaseCenterKey, buildKey);
-		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
+	public List<Execution> findAllDesc(String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
+		final Product product = getProduct(releaseCenterKey, productKey);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 
-		return dao.findAllDesc(build);
+		return dao.findAllDesc(product);
 	}
 
 	@Override
-	public Execution find(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
-		final Build build = getBuild(releaseCenterKey, buildKey);
+	public Execution find(String releaseCenterKey, final String productKey, final String executionId) throws ResourceNotFoundException {
+		final Product product = getProduct(releaseCenterKey, productKey);
 
-		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 
-		return dao.find(build, executionId);
+		return dao.find(product, executionId);
 	}
 
 	@Override
-	public String loadConfiguration(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public String loadConfiguration(String releaseCenterKey, final String productKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		try {
 			return dao.loadConfiguration(execution);
 		} catch (IOException e) {
@@ -222,38 +222,38 @@ public class ExecutionServiceImpl implements ExecutionService {
 	}
 
 	@Override
-	public InputStream getOutputFile(String releaseCenterKey, final String buildKey, final String executionId, final String outputFilePath) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public InputStream getOutputFile(String releaseCenterKey, final String productKey, final String executionId, final String outputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.getOutputFileStream(execution, outputFilePath);
 	}
 
 	@Override
-	public List<String> getOutputFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws BusinessServiceException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public List<String> getOutputFilePaths(String releaseCenterKey, final String productKey, final String executionId) throws BusinessServiceException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.listOutputFilePaths(execution);
 	}
 
 	@Override
-	public InputStream getInputFile(String releaseCenterKey, final String buildKey, final String executionId, final String inputFilePath) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public InputStream getInputFile(String releaseCenterKey, final String productKey, final String executionId, final String inputFilePath) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.getInputFileStream(execution, inputFilePath);
 	}
 
 	@Override
-	public List<String> getInputFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public List<String> getInputFilePaths(String releaseCenterKey, final String productKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.listInputFileNames(execution);
 	}
 
 	@Override
-	public InputStream getLogFile(String releaseCenterKey, final String buildKey, final String executionId, final String logFileName) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public InputStream getLogFile(String releaseCenterKey, final String productKey, final String executionId, final String logFileName) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.getLogFileStream(execution, logFileName);
 	}
 
 	@Override
-	public List<String> getLogFilePaths(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
-		final Execution execution = getExecutionOrThrow(releaseCenterKey, buildKey, executionId);
+	public List<String> getLogFilePaths(String releaseCenterKey, final String productKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecutionOrThrow(releaseCenterKey, productKey, executionId);
 		return dao.listExecutionLogFilePaths(execution);
 	}
 
@@ -273,13 +273,13 @@ public class ExecutionServiceImpl implements ExecutionService {
 		LOGGER.info("End of Pre-condition checks");
 	}
 
-	private void executeBuild(final Execution execution) throws BusinessServiceException {
+	private void executeProduct(final Execution execution) throws BusinessServiceException {
 		LOGGER.info("Start execution {}", execution.getUniqueId());
-		Build build = execution.getBuild();
+		Product product = execution.getProduct();
 
 		checkManifestPresent(execution);
 
-		if (build.isJustPackage()) {
+		if (product.isJustPackage()) {
 			copyFilesForJustPackaging(execution);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(execution);
@@ -289,14 +289,14 @@ public class ExecutionServiceImpl implements ExecutionService {
 			Rf2FileExportRunner generator = new Rf2FileExportRunner(execution, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
-			if (build.isCreateInferredRelationships()) {
+			if (product.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
 				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(execution, inputFileSchemaMap);
 				if (relationshipSnapshotOutputFilename != null) {
 					generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
 				}
 			} else {
-				LOGGER.info("Skipping inferred relationship creation due to build configuration.");
+				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
 		}
 
@@ -386,29 +386,29 @@ public class ExecutionServiceImpl implements ExecutionService {
 		return inputFileSchemaMap;
 	}
 
-	private Execution getExecutionOrThrow(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
-		final Execution execution = getExecution(releaseCenterKey, buildKey, executionId);
+	private Execution getExecutionOrThrow(String releaseCenterKey, final String productKey, final String executionId) throws ResourceNotFoundException {
+		final Execution execution = getExecution(releaseCenterKey, productKey, executionId);
 		if (execution == null) {
-			throw new ResourceNotFoundException("Unable to find execution for releaseCenterKey: " + releaseCenterKey + ", buildKey: " + buildKey + ", executionId: " + executionId);
+			throw new ResourceNotFoundException("Unable to find execution for releaseCenterKey: " + releaseCenterKey + ", productKey: " + productKey + ", executionId: " + executionId);
 		}
 		return execution;
 	}
 
-	private Execution getExecution(String releaseCenterKey, final String buildKey, final String executionId) throws ResourceNotFoundException {
-		final Build build = getBuild(releaseCenterKey, buildKey);
-		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildKey);
+	private Execution getExecution(String releaseCenterKey, final String productKey, final String executionId) throws ResourceNotFoundException {
+		final Product product = getProduct(releaseCenterKey, productKey);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
-		return dao.find(build, executionId);
+		return dao.find(product, executionId);
 	}
 
-	private Execution getExecution(final Build build, final Date creationTime) {
-		return dao.find(build, EntityHelper.formatAsIsoDateTime(creationTime));
+	private Execution getExecution(final Product product, final Date creationTime) {
+		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
 	
 
-	private Build getBuild(String releaseCenterKey, final String buildKey) throws ResourceNotFoundException {
-		return buildDAO.find(releaseCenterKey, buildKey, SecurityHelper.getRequiredUser());
+	private Product getProduct(String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
+		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
 	}
 
 	private void generateReadmeFile(final Execution execution) throws BusinessServiceException {
@@ -437,8 +437,8 @@ public class ExecutionServiceImpl implements ExecutionService {
 			if (readmeFilename != null) {
 				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(execution, readmeFilename);
 				try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-					Build build = execution.getBuild();
-					readmeGenerator.generate(build.getReadmeHeader(), build.getReadmeEndDate(), manifestListing, readmeOutputStream);
+					Product product = execution.getProduct();
+					readmeGenerator.generate(product.getReadmeHeader(), product.getReadmeEndDate(), manifestListing, readmeOutputStream);
 					asyncPipedStreamBean.waitForFinish();
 				}
 			} else {

@@ -1,32 +1,29 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.stereotype.Repository;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Set;
 
 @Repository
-public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
+public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO {
 
-	public BuildDAOImpl() {
-		super(Build.class);
+	public ProductDAOImpl() {
+		super(Product.class);
 	}
 
 	@Override
-	public List<Build> findAll(Set<FilterOption> filterOptions, User user) {
+	public List<Product> findAll(Set<FilterOption> filterOptions, User user) {
 		return findAll(null, filterOptions, user);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<Build> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user) {
+	public List<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user) {
 
 		String filter = "";
 		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
@@ -36,13 +33,13 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 			filter += " and releaseCenter.businessKey = :releaseCenterBusinessKey ";
 		}
 		Query query = getCurrentSession().createQuery(
-				"select build " +
+				"select product " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.builds build " +
+						"join releaseCenter.products product " +
 						"where membership.user = :user " +
 						filter +
-						"order by build.id ");
+						"order by product.id ");
 		query.setEntity("user", user);
 
 		if (releaseCenterBusinessKey != null) {
@@ -52,38 +49,38 @@ public class BuildDAOImpl extends EntityDAOImpl<Build> implements BuildDAO {
 	}
 
 	@Override
-	public Build find(Long id, User user) {
+	public Product find(Long id, User user) {
 		Query query = getCurrentSession().createQuery(
-				"select build " +
+				"select product " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.builds build " +
+						"join releaseCenter.products product " +
 						"where membership.user = :user " +
-						"and build.id = :buildId " +
-						"order by build.id ");
+						"and product.id = :productId " +
+						"order by product.id ");
 		query.setEntity("user", user);
-		query.setLong("buildId", id);
-		return (Build) query.uniqueResult();
+		query.setLong("productId", id);
+		return (Product) query.uniqueResult();
 	}
 
 	/**
-	 * Look for a specific build where the id (primary key) is not necessarily known
+	 * Look for a specific product where the id (primary key) is not necessarily known
 	 */
 	@Override
-	public Build find(String releaseCenterKey,
-			String buildKey, User user) {
+	public Product find(String releaseCenterKey,
+			String productKey, User user) {
 		Query query = getCurrentSession().createQuery(
-				"select build " +
+				"select product " +
 						"from ReleaseCenterMembership membership " +
 						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.builds build " +
+						"join releaseCenter.products product " +
 						"where membership.user = :user " +
 						"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
-						"and build.businessKey = :buildBusinessKey ");
+						"and product.businessKey = :productBusinessKey ");
 		query.setEntity("user", user);
 		query.setString("releaseCenterBusinessKey", releaseCenterKey);
-		query.setString("buildBusinessKey", buildKey);
-		return (Build) query.uniqueResult();
+		query.setString("productBusinessKey", productKey);
+		return (Product) query.uniqueResult();
 	}
 
 }

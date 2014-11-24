@@ -15,12 +15,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/centers")
@@ -35,7 +35,7 @@ public class ReleaseCenterController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] RELEASE_CENTER_LINKS = {"builds", "published"};
+	private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
 
 	@RequestMapping
 	@ResponseBody
@@ -91,7 +91,7 @@ public class ReleaseCenterController {
 		List<String> publishedPackages = publishService.getPublishedPackages(center);
 		Map<String, Object> representation = new HashMap<>();
 		representation.put("publishedPackages", publishedPackages);
-		return hypermediaGenerator.getEntityHypermedia(representation, true, request, RELEASE_CENTER_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(representation, true, request);
 	}
 
 	@RequestMapping(value = "/{releaseCenterBusinessKey}/published", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
