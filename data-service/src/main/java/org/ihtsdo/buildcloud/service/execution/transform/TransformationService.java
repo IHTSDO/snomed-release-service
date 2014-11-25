@@ -1,23 +1,5 @@
 package org.ihtsdo.buildcloud.service.execution.transform;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.ihtsdo.buildcloud.dao.ExecutionDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Execution;
@@ -34,6 +16,14 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TransformationService {
 
@@ -72,9 +62,6 @@ public class TransformationService {
 	private final ExecutorService executorService;
 	@Autowired
 	private LegacyIdTransformationService legacyIdTransformation;
-	@Autowired
-	private Boolean isLegacyIdsRequired;
-
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
@@ -97,7 +84,8 @@ public class TransformationService {
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, executionId);
 		final String packageBusinessKey = pkg.getBusinessKey();
 		final boolean workbenchDataFixesRequired = pkg.isWorkbenchDataFixesRequired();
-		
+		final boolean createLegacyIds = pkg.isCreateLegacyIds();
+
 		LOGGER.info("Transforming files in execution {}, package {}{}", execution.getId(), packageBusinessKey,
 				workbenchDataFixesRequired ? ", workbench data fixes enabled" : "");
 
@@ -173,7 +161,7 @@ public class TransformationService {
 
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName, report);
-						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && isLegacyIdsRequired.booleanValue()) {
+						if (componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && createLegacyIds) {
 							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, packageBusinessKey, inputFileName);
 						}
 					}
@@ -246,7 +234,7 @@ public class TransformationService {
 				}
 			}
 		}
-		if (isLegacyIdsRequired.booleanValue() && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+		if (createLegacyIds && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
 			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
 		}
 	}

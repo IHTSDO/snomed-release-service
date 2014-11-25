@@ -39,6 +39,8 @@ public class Package implements Comparable<Package> {
 
 	private boolean workbenchDataFixesRequired = false;
 
+	private boolean createLegacyIds = false;
+
 	private boolean justPackage = false;
 
 	private String previousPublishedPackage;
@@ -141,6 +143,14 @@ public class Package implements Comparable<Package> {
 
 	public void setWorkbenchDataFixesRequired(boolean workbenchDataFixesRequired) {
 		this.workbenchDataFixesRequired = workbenchDataFixesRequired;
+	}
+
+	public boolean isCreateLegacyIds() {
+		return createLegacyIds;
+	}
+
+	public void setCreateLegacyIds(boolean createLegacyIds) {
+		this.createLegacyIds = createLegacyIds;
 	}
 
 	public void setCreateInferredRelationships(boolean createInferredRelationships) {

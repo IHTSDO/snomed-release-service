@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.33</version>
+		<version>0.1.34</version>
 	</parent>
 
 	<artifactId>api</artifactId>

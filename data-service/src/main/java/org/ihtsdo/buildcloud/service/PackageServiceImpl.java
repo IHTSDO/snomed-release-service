@@ -103,6 +103,10 @@ public class PackageServiceImpl extends EntityServiceImpl<Package> implements Pa
 			aPackage.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
 
+		if (newPropertyValues.containsKey(PackageService.CREATE_LEGACY_IDS)) {
+			aPackage.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
+		}
+
 		if (newPropertyValues.containsKey(PackageService.PREVIOUS_PUBLISHED_PACKAGE)) {
 			String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
 			//Validate that a file of that name actually exists

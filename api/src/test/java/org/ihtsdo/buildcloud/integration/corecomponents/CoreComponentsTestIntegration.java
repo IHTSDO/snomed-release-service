@@ -29,6 +29,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setCreateInferredRelationships(true);
+		integrationTestHelper.setCreateLegacyIds(true);
 		String effectiveTime1 = "20140131";
 		integrationTestHelper.setEffectiveTime(effectiveTime1);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
