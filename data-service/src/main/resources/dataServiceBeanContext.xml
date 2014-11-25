@@ -156,9 +156,6 @@
 	<bean class="java.lang.Boolean" id="offlineMode" >
 		<constructor-arg value="${offlineMode}"/>
 	</bean>
-	<bean class="java.lang.Boolean" id="isLegacyIdsRequired">
-		<constructor-arg value="${isLegacyIdsRequired}"/>
-	</bean>
 
 	<!-- Used to enable RVF calls when in offlineMode is true -->
 	<bean class="java.lang.Boolean" id="localRvf" >
