@@ -1,0 +1,60 @@
+The SNOMED CT LOINC Technology Preview is provided in UTF-8 encoded tab-delimited flat files which can be imported into any database or other software application.  SNOMED CT is not software.
+
+The SNOMED CT files are designed as relational tables with each line in the file representing a row in the table. The first row of each table contains column headings. All other rows contain data.
+
+The SNOMED CT LOINC Technology Preview is delivered to IHTSDO Member National Centers and authorized Affiliate Licensees via Internet download.
+
+© 2002-2014 The International Health Terminology Standards Development Organisation (IHTSDO).  All Rights Reserved.  SNOMED CT® was originally created by The College of American Pathologists.  "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
+
+SNOMED CT has been created by combining SNOMED RT and a computer based nomenclature and classification known as Clinical Terms Version 3, formerly known as Read Codes Version 3, which was created on behalf of the UK Department of Health and is Crown copyright.
+
+Directory listing
+
+    SnomedCT_LOINC_TechnologyPreview_INT_20140926
+        Documentation
+            Current
+                doc_SctLoincTechnologyPreviewReleaseNotes_Current-en-US_INT_20140926.pdf
+        RF2Release
+            Full
+                Terminology
+                    sct2_Concept_SctLoincTechnologyPreviewFull_INT_20140926.txt
+                    sct2_Description_SctLoincTechnologyPreviewFull-en_INT_20140926.txt
+                    sct2_StatedRelationship_SctLoincTechnologyPreviewFull_INT_20140926.txt
+                    sct2_TextDefinition_SctLoincTechnologyPreviewFull-en_INT_20140926.txt
+                Refset
+                    Content
+                        der2_scccRefset_MapCorrelationOriginFull_INT_20140926.txt
+                        der2_sscccRefset_ExpressionAssociationFull_INT_20140926.txt
+                    Language
+                        der2_cRefset_LanguageSctLoincTechnologyPreviewFull-en_INT_20140926.txt
+                    Metadata
+                        der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewFull_INT_20140926.txt
+            Snapshot
+                Terminology
+                    sct2_Concept_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt
+                    sct2_Description_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt
+                    sct2_StatedRelationship_SctLoincTechnologyPreviewSnapshot_INT_20140926.txt
+                    sct2_TextDefinition_SctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt
+                Refset
+                    Content
+                        der2_scccRefset_MapCorrelationOriginSnapshot_INT_20140926.txt
+                        der2_sscccRefset_ExpressionAssociationSnapshot_INT_20140926.txt
+                    Language
+                        der2_cRefset_LanguageSctLoincTechnologyPreviewSnapshot-en_INT_20140926.txt
+                    Metadata
+                        der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewSnapshot_INT_20140926.txt
+            Delta
+                Terminology
+                    sct2_Concept_SctLoincTechnologyPreviewDelta_INT_20140926.txt
+                    sct2_Description_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt
+                    sct2_StatedRelationship_SctLoincTechnologyPreviewDelta_INT_20140926.txt
+                    sct2_TextDefinition_SctLoincTechnologyPreviewDelta-en_INT_20140926.txt
+                Refset
+                    Content
+                        der2_scccRefset_MapCorrelationOriginDelta_INT_20140926.txt
+                        der2_sscccRefset_ExpressionAssociationDelta_INT_20140926.txt
+                    Language
+                        der2_cRefset_LanguageSctLoincTechnologyPreviewDelta-en_INT_20140926.txt
+                    Metadata
+                        der2_cciRefset_RefsetDescriptorSctLoincTechnologyPreviewDelta_INT_20140926.txt
+        Readme_en_20140926.txt

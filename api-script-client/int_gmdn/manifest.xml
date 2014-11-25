@@ -1,0 +1,70 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+  <folder Name="SnomedCT_MedicalDevicesRelease_INT_20140731">
+    <file Name="Readme_en_20140731.txt"/>
+  	
+  	
+    <folder Name="Documentation">
+      <folder Name="Current">
+        <file Name="doc_SnomedCTMedicalDevicesReleaseNotes_Current-en-US_INT_20140731.pdf"/>
+      </folder>
+    </folder>
+    <folder Name="RF2Release">
+      <folder Name="Full">
+        <folder Name="Refset">
+          <folder Name="Content">
+            <file Name="der2_cRefset_MedicalDevicesAssociationReferenceFull_INT_20140731.txt" />
+            <file Name="der2_cRefset_MedicalDevicesAttributeValueFull_INT_20140731.txt" />
+            <file Name="der2_Refset_MedicalDevicesSimpleFull_INT_20140731.txt" />
+          </folder>
+          <folder Name="Language">
+            <file Name="der2_cRefset_LanguageFull-en_INT_20140731.txt" />
+          </folder>
+          <folder Name="Map">
+            <file Name="der2_sRefset_MedicalDevicesSimpleMapFull_INT_20140731.txt" />
+          </folder>
+          <folder Name="Metadata">
+            <file Name="der2_cciRefset_MedicalDevicesRefsetDescriptorFull_INT_20140731.txt" />
+            <file Name="der2_ciRefset_DescriptionTypeFull_INT_20140731.txt" />
+            <file Name="der2_ssRefset_MedicalDevicesModuleDependencyFull_INT_20140731.txt" />
+          </folder>
+        </folder>
+        <folder Name="Terminology">
+          <file Name="sct2_Concept_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_Description_MedicalDevicesFull-en_INT_20140731.txt" />
+          <file Name="sct2_Identifier_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_Relationship_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_StatedRelationship_MedicalDevicesFull_INT_20140731.txt" />
+          <file Name="sct2_TextDefinition_MedicalDevicesFull-en_INT_20140731.txt" />
+        </folder>
+      </folder>
+      <folder Name="Snapshot">
+        <folder Name="Refset">
+          <folder Name="Content">
+            <file Name="der2_cRefset_MedicalDevicesAssociationReferenceSnapshot_INT_20140731.txt" />
+            <file Name="der2_cRefset_MedicalDevicesAttributeValueSnapshot_INT_20140731.txt" />
+            <file Name="der2_Refset_MedicalDevicesSimpleSnapshot_INT_20140731.txt" />
+          </folder>
+          <folder Name="Language">
+            <file Name="der2_cRefset_LanguageSnapshot-en_INT_20140731.txt" />
+          </folder>
+          <folder Name="Map">
+            <file Name="der2_sRefset_MedicalDevicesSimpleMapSnapshot_INT_20140731.txt" />
+          </folder>
+          <folder Name="Metadata">
+            <file Name="der2_cciRefset_MedicalDevicesRefsetDescriptorSnapshot_INT_20140731.txt" />
+            <file Name="der2_ciRefset_DescriptionTypeSnapshot_INT_20140731.txt" />
+            <file Name="der2_ssRefset_MedicalDevicesModuleDependencySnapshot_INT_20140731.txt" />
+          </folder>
+        </folder>
+        <folder Name="Terminology">
+          <file Name="sct2_Concept_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_Description_MedicalDevicesSnapshot-en_INT_20140731.txt" />
+          <file Name="sct2_Identifier_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_Relationship_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_StatedRelationship_MedicalDevicesSnapshot_INT_20140731.txt" />
+          <file Name="sct2_TextDefinition_MedicalDevicesSnapshot-en_INT_20140731.txt" />
+        </folder>
+      </folder>
+    </folder>
+  </folder>
+</listing>
