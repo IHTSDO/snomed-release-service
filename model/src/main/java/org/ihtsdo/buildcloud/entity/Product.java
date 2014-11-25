@@ -48,6 +48,7 @@ public class Product {
 
 	private String previousPublishedPackage;
 	private boolean createInferredRelationships;
+	private boolean createLegacyIds = false;
 
 	@ElementCollection(fetch = FetchType.EAGER)
 	private Set<RefsetCompositeKey> refsetCompositeKeys;
@@ -224,6 +225,14 @@ public class Product {
 
 	public void setCreateInferredRelationships(boolean createInferredRelationships) {
 		this.createInferredRelationships = createInferredRelationships;
+	}
+
+	public boolean isCreateLegacyIds() {
+		return createLegacyIds;
+	}
+
+	public void setCreateLegacyIds(boolean createLegacyIds) {
+		this.createLegacyIds = createLegacyIds;
 	}
 
 	public Set<RefsetCompositeKey> getRefsetCompositeKeys() {
