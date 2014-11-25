@@ -1,0 +1,458 @@
+#!/bin/bash
+
+# Stop on error
+set -e;
+
+#
+# Command line statements which use the API to create a simple refset
+# Expects to be called from one of the run_*.sh scripts.
+#
+
+# Declare common parameters
+api=http://localhost:8080/api/v1
+#api="http://local.ihtsdotools.org/api/v1"
+#api="https://uat-release.ihtsdotools.org/api/v1"
+#api="https://release.ihtsdotools.org/api/v1"
+
+# Should come from caller script:
+#	productName
+
+releaseCentreId="international"
+readmeHeader="readme-header.txt"
+externalDataRoot="../../../snomed-release-service-data/api-script-client-data/"
+
+# Set curl verbocity
+curlFlags="isS"
+# i - Show response header
+# s - quiet
+# S - show errors
+
+ensureCorrectResponse() {
+	while read response 
+	do
+		httpResponseCode=`echo $response | grep "HTTP" | awk '{print $2}'`
+		echo " Response received: $response "
+		if [ "${httpResponseCode:0:1}" != "2" ] && [ "${httpResponseCode:0:1}" != "1" ]
+		then
+			echo -e "Failure detected with non-2xx HTTP response code received at $(getElapsedTime).\nScript halted."
+			exit -1
+		fi
+	done
+	echo
+}
+
+getElapsedTime() {
+	seconds=${SECONDS}
+	hours=$((seconds / 3600))
+	seconds=$((seconds % 3600))
+	minutes=$((seconds / 60))
+	seconds=$((seconds % 60))
+	
+	echo "$hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+downloadFile() {
+	read fileName
+	echo "Downloading file to: ${localDownloadDirectory}/${fileName}"
+	mkdir -p ${localDownloadDirectory}
+	# Using curl as the MAC doesn't have wget loaded by default
+	curl ${commonParamsSilent} ${downloadUrlRoot}/${fileName} -o "${localDownloadDirectory}/${fileName}" | grep HTTP | ensureCorrectResponse >/dev/null
+}
+
+findEntity() {
+	# Gather params
+	entityType=$1
+	entityResponseFile="tmp/entity-${entityType}-response.txt"
+	curl ${entityUrl} 2>/dev/null | tee ${entityResponseFile} | grep HTTP | ensureCorrectResponse >/dev/null
+	cat ${entityResponseFile} | grep -i -B1 "\"name\" : \"${entityName}\"" | head -n1 | sed 's/.*: "\(.*\)",/\1/'
+}
+findOrCreateEntity() {
+	# Gather params
+	entityType=$1
+	entityUrl=$2
+	entityName=$3
+
+	if [ -z "${entityName}" ]
+	then
+		echo -e "${entityType} name not specified.\nScript halted."
+		exit -1
+	fi
+
+	# Find existing entity
+	entityId="`findEntity ${entityType}`"
+
+	# Test if entity found
+	if [ -z "${entityId}" ]
+	then
+		# Entity doesn't exist, create
+		echo "Creating ${entityType}: ${entityName} using URL ${entityUrl}"
+		jsonData="{ \"name\" : \"${entityName}\" }"
+		curl ${commonParams} -X POST -H 'Content-Type:application/json' --data-binary "$jsonData" ${entityUrl} | grep HTTP | ensureCorrectResponse
+		# Retrieve new entity id
+		entityId="`findEntity ${entityType}-create`"
+	fi
+
+	echo "${entityType} Name '${entityName}', ID '${entityId}'."
+	echo
+}
+
+# Check command line arguments
+if [ -z "$effectiveDate" ]
+then
+	echo -e "Please call this script from one of the 'run' scripts.\nScript halted."
+	exit -1	
+fi
+
+skipLoad=false
+listOnly=false
+autoPublish=false
+completePublish=false
+
+# Reset getopts 
+OPTIND=1
+while getopts ":slcart:p:h:" opt
+do
+	case $opt in
+		s) 
+			skipLoad=true
+			echo "Option set to skip input file load."
+		;;
+		l) 
+			listOnly=true
+			echo "Option set to list input files only."
+		;;
+		a) 
+			autoPublish=true
+			echo "Option set to automatically publish packages on successful build."
+		;;
+		p) 
+			publishFile=$OPTARG
+			echo "Option set to upload ${publishFile} for publishing only."
+		;;
+		c) 
+			completePublish=true
+			if [ -n "${publishFile}" ] || ${autoPublish} 
+			then
+				echo "Mutually exclusive command line options set"
+				exit -1
+			fi
+			echo "Option set to complete. Last build will be published."
+		;;
+		r) 
+			replaceInputFile=$OPTARG
+			if  ${skipLoad} 
+			then
+				echo "Mutually exclusive command line options set"
+				exit -1
+			fi
+			echo "Option set to replace input file ${replaceInputFile} and build a product."
+		;;
+		h)
+			apiHost=$OPTARG
+			api="https://${apiHost}/api/v1"
+		;;
+		help|\?)
+			echo -e "Usage: [-s] [-l] [-a] [-c] [-r <filename>] [-p <filename>] -h [api-host]"
+			echo -e "\t s - skip.  Skips the upload of input files (say if you've already run the process and they don't need to change)."
+			echo -e "\t l - list.  Just lists the current input files and does no further processing." 
+			echo -e "\t r <filename> - replace.  Uploads just the file specified and then runs the build."
+			echo -e "\t c - complete.  Completes the build by publishing the last generated zip file."
+			echo -e "\t a - automatically publish packages on successful build."
+			echo -e "\t p <filename> - publish. Uploads the specified zip file for publishing independent of any build (eg for priming the system with a previous release)."
+			echo -e "\t h <api-host> - target api host. Overrides the host to target, assumes URL https://HOST/api/v1"
+			exit 0
+		;;
+	esac
+done
+
+echo
+echo "Target API URL: ${api}/"
+echo
+
+mkdir -p tmp
+
+# If we're setting up external data, lets do that now while we have the user's attention
+if [ -n "$externalDataLocation" ]
+then
+	source ../setup_external_data_location.sh
+fi
+
+# Make sure we're starting with a clean slate
+# But not if we're completing 'cos we'll need the build id from the last run
+if [ -z "${completePublish}" ]
+then
+	rm -rf tmp/*  || true
+fi
+rm -rf logs/* || true
+rm -rf output/*  || true
+
+
+# Login
+echo "Login and record authorisation token."
+curl -${curlFlags} -F username=manager -F password=test123 ${api}/login | tee tmp/login-response.txt | grep HTTP | ensureCorrectResponse
+token=`cat tmp/login-response.txt | grep "Token" | sed 's/.*: "\([^"]*\)".*/\1/g'`
+echo "Authorisation Token is '${token}'"
+# Ensure we have a valid token before proceeding
+if [ -z "${token}" ]
+then
+	echo "Cannot proceed further if we haven't logged in!"
+	exit -1
+fi
+commonParamsSilent="-s --retry 0 -u ${token}:"
+commonParams="-${curlFlags} --retry 0 -u ${token}:"
+echo
+
+findOrCreateEntity "Product" "${api}/centers/${releaseCentreId}/products" "${productName}"
+productId=${entityId}
+
+# Are we just listing the input and published files and stopping there?
+if ${listOnly}
+then
+	echo "Recover input file list"
+	curl ${commonParams} ${api}/centers/${releaseCentreId}/products/${productId}/inputfiles | tee tmp/listing-response.txt | grep HTTP | ensureCorrectResponse
+	echo "Input delta files currently held:"
+	cat tmp/listing-response.txt | grep "id" | sed 's/.*: "\([^"]*\).*".*/\1/g'
+	
+	echo "Recover list of published files"
+	curl ${commonParams} ${api}/centers/${releaseCentreId}/products/${productId}/published | tee tmp/published-listing-response.txt | grep HTTP | ensureCorrectResponse 
+	echo "Published files for product ${productName}:"
+	cat tmp/published-listing-response.txt 
+	exit 0
+fi
+
+# Are we just uploading a file for publishing and stopping there?
+if [ -n "${publishFile}" ]
+then
+	echo "Upload file to be published: ${publishFile}"
+	curl ${commonParams} -X POST -F "file=@${publishFile}" ${api}/centers/${releaseCentreId}/published  | grep HTTP | ensureCorrectResponse
+	echo "File successfully published in $(getElapsedTime)"
+	exit 0
+fi
+
+# Are we just publishing the last build and stopping there?
+if ${completePublish}
+then 
+	# Recover the last known build ID
+	buildId=`cat tmp/build-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
+	echo "Build ID is '${buildId}'"
+	echo "Publish the package"
+	curl ${commonParams} ${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/output/publish  | grep HTTP | ensureCorrectResponse
+	echo "Process Complete in $(getElapsedTime)"
+	exit 0
+fi
+
+echo "Set Readme Header and readmeEndDate"
+readmeHeaderContents=`cat ${readmeHeader} | python -c 'import json,sys; print json.dumps(sys.stdin.read())' | sed -e 's/^.\(.*\).$/\1/'`
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"readmeHeader\" : \"${readmeHeaderContents}\", \"readmeEndDate\" : \"${readmeEndDate}\" }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+
+
+if ! ${skipLoad}
+then
+    #Are we using the assumed filename for the manifest file?
+    if [ -z "${manifestFile}" ]
+    then
+    manifestFile="manifest.xml"
+    fi
+    echo "Upload Manifest: ${manifestFile}"
+    curl ${commonParams} --write-out \\n%{http_code} -F "file=@${manifestFile}" ${api}/centers/${releaseCentreId}/products/${productId}/manifest  | grep HTTP | ensureCorrectResponse
+	# Are we just replacing one file, or uploading the whole lot?
+	if [ -n "${replaceInputFile}" ]
+	then
+			echo "Replacing Input File ${replaceInputFile}"
+			curl ${commonParams} -F "file=@${replaceInputFile}" ${api}/centers/${releaseCentreId}/products/${productId}/inputfiles | grep HTTP | ensureCorrectResponse
+				
+	else
+		# If we've done a different release before, then we need to delete the input files from the last run!
+		# Not checking the return code from this call, doesn't matter if the files aren't there
+		echo "Delete previous delta Input Files "
+		curl ${commonParams} -X DELETE ${api}/centers/${releaseCentreId}/products/${productId}/inputfiles/*.txt | grep HTTP | ensureCorrectResponse
+		
+		if [ -n "$externalDataLocation" ]
+		then
+			inputFilesPath=${externalDataRoot}${externalDataLocation}
+		elif [ -n "$dataLocation" ]
+		then
+			inputFilesPath="$dataLocation"
+		else
+			inputFilesPath="input_files"
+		fi
+		
+		filesUploaded=0
+		echo "Upload Input Files from ${inputFilesPath}:"
+		for file in `ls ${inputFilesPath}`;
+		do
+			echo "Upload Input File ${file}"
+			curl ${commonParams} -F "file=@${inputFilesPath}/${file}" ${api}/centers/${releaseCentreId}/products/${productId}/inputfiles | grep HTTP | ensureCorrectResponse
+			filesUploaded=$((filesUploaded+1))
+		done
+		
+		if [ ${filesUploaded} -lt 1 ] 
+		then
+			echo -e "Failed to find files to upload.\nScript halted."
+			exit -1
+		fi
+	fi
+fi
+
+echo "Set effectiveTime to ${effectiveDate}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"effectiveTime\" : \"${effectiveDate}\" }"  ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+
+if [ "${justPackage}" = "true" ]
+then
+	echo "Set justPackage flag to true"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"justPackage\" : \"true\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+else
+
+	echo "Set justPackage flag to false"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"justPackage\" : \"false\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+
+	# Set the first time release flag, and if a subsequent release, recover the previously published package and set that
+	firstTimeStr="${isFirstTime}"
+	if ${isFirstTime}
+	then
+		echo "Set first time flag to ${firstTimeStr}"
+		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"firstTimeRelease\" : \"${firstTimeStr}\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+	else
+		echo "Set first time flag to ${firstTimeStr} and previous published package to ${previousPublishedPackageName}"
+		updateJSON="{ \"firstTimeRelease\" : \"${firstTimeStr}\", \"previousPublishedPackage\" : \"${previousPublishedPackageName}\" }"
+		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "$updateJSON" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+	fi
+
+	# Set isWorkbenchDataFixesRequired flag
+	if [ -n "$isWorkbenchDataFixesRequired" ]
+	then
+		echo "Set workbench-data-fixes-required flag to ${isWorkbenchDataFixesRequired}"
+		curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"workbenchDataFixesRequired\" : \"${isWorkbenchDataFixesRequired}\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+	fi
+
+fi
+
+if [ "${createInferredRelationships}" = "true" ]
+then
+	createInferredRelationshipsFlag="true"
+else
+	createInferredRelationshipsFlag="false"
+fi
+echo "Set createInferredRelastionships flag to ${createInferredRelationshipsFlag}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"${createInferredRelationshipsFlag}\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+
+if [ "${customRefsetCompositeKeys}" ]
+then
+	echo "Set customRefsetCompositeKeys to ${customRefsetCompositeKeys}"
+	curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"customRefsetCompositeKeys\" : \"${customRefsetCompositeKeys}\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+fi
+
+if [ -z "${newRF2InputFiles}" ]
+then
+	# Variable not set. Set to blank string.
+	newRF2InputFiles="";
+fi
+echo "Set newRF2InputFiles to ${newRF2InputFiles}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"newRF2InputFiles\" : \"${newRF2InputFiles}\"  }" ${api}/centers/${releaseCentreId}/products/${productId} | grep HTTP | ensureCorrectResponse
+
+echo "Create Build"
+curl ${commonParams} -X POST ${api}/centers/${releaseCentreId}/products/${productId}/builds | tee tmp/build-response.txt | grep HTTP | ensureCorrectResponse
+buildId=`cat tmp/build-response.txt | grep "\"id\"" | sed 's/.*: "\([^"]*\).*".*/\1/g'`
+echo "Build ID is '${buildId}'"
+echo "Build URL is '${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}'"
+echo
+echo "Preparation complete.  Time taken so far: $(getElapsedTime)"
+echo
+
+
+echo "List the logs"
+logsUrl=${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/logs
+downloadUrlRoot="$logsUrl"
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+# Download files
+cat tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+
+#Check whether any pre-condition checks failed and get users confirmation to continue or not if failures occcured
+preConditionFailures=`cat tmp/build-response.txt | grep -C1 FAIL` || true
+if [ -n "${preConditionFailures}" ]
+then
+	echo "Failures detected in Pre-Condition Check: "
+	echo ${preConditionFailures}
+	echo
+	
+	#Only ask the question if we've got someone there to answer it
+	if ! ${headless}
+	then
+		while read -p "Please confirm whether you still want to continue (y/n):" choice
+		do
+			case "$choice" in
+			y|Y)
+				break
+				;;
+			n|N)
+				echo "Script is stopped by user."
+			exit 0
+			;;
+			esac
+		done
+	fi
+fi
+
+
+# Has there been a fatal pre-condition failure?  We'll stop the script if so.
+preConditionFatalFailures=`cat tmp/build-response.txt | grep -C1 FATAL` || true
+if [ -n "${preConditionFatalFailures}" ]
+then
+	echo "Fatal failure detected in Pre-Condition Check: "
+	echo ${preConditionFatalFailures}
+	echo "Script Halted"
+	exit 0
+fi
+
+echo
+echo "Trigger Build"
+curl ${commonParams} -X POST ${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
+triggerSuccess=`cat tmp/trigger-response.txt | grep "Process completed successfully"` || true # Do not fail on exit here, some reporting first
+if [ -z "${triggerSuccess}" ]
+then
+	echo "Failed to successfully process any packages. "
+fi
+
+#Output the build return object which will contain the processing report, in all cases
+echo "Received response: "
+cat tmp/trigger-response.txt
+echo
+
+echo "Product build ended at $(getElapsedTime)"
+echo
+
+if [ ! -z "${triggerSuccess}" ] && ${autoPublish}
+then
+	echo "Publish the package"
+	curl ${commonParams} ${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/output/publish  | grep HTTP | ensureCorrectResponse
+fi
+
+echo "List post condition logs"
+downloadUrlRoot="$logsUrl"
+localDownloadDirectory=logs
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/log-file-listing.txt | grep HTTP | ensureCorrectResponse
+grep -v 'precheck' tmp/log-file-listing.txt | grep id | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+echo
+
+echo "List the output files"
+downloadUrlRoot=${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/outputfiles
+localDownloadDirectory=output
+curl ${commonParams} ${downloadUrlRoot} | tee tmp/output-file-listing.txt | grep HTTP | ensureCorrectResponse
+# Download files
+cat tmp/output-file-listing.txt | grep "\"id\"" | while read line ; do echo  $line | sed 's/.*: "\([^"]*\).*".*/\1/g' | downloadFile; done
+echo
+
+echo
+echo "Script Complete in $(getElapsedTime)"
+if [ -z "${triggerSuccess}" ]
+then
+	echo
+	echo ' !! There were failures !!'
+else
+	if ! ${autoPublish}
+	then
+		echo "Run again with the -c flag to just publish the packages, or -a to re-run the whole build and automatically publish the results."
+	fi
+fi
+echo
