@@ -105,7 +105,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			product.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
 
-		if (newPropertyValues.containsKey(PackageService.CREATE_LEGACY_IDS)) {
+		if (newPropertyValues.containsKey(ProductService.CREATE_LEGACY_IDS)) {
 			product.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
 		}
 
