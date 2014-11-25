@@ -171,6 +171,10 @@ public class IntegrationTestHelper {
 		setPackageProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships)) + " }");
 	}
 
+	public void setCreateLegacyIds(final boolean createLegacyIds) throws Exception {
+		setPackageProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
+	}
+
 	public void setWorkbenchDataFixesRequired(final boolean isWorkbenchDataFixesRequired) throws Exception {
 		setPackageProperty("{ " + jsonPair(ProductService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
 	}
