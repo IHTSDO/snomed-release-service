@@ -343,7 +343,7 @@ else
 	createLegacyIds="false"
 fi
 echo "Set createLegacyIds flag to ${createLegacyIds}"
-curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createLegacyIds\" : \"${createLegacyIds}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createLegacyIds\" : \"${createLegacyIds}\"  }" ${api}/centers/${releaseCentreId}/products/${productId}  | grep HTTP | ensureCorrectResponse
 
 if [ "${customRefsetCompositeKeys}" ]
 then
@@ -416,7 +416,7 @@ fi
 
 echo
 echo "Trigger Build"
-curl ${commonParams} -X POST ${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/trigger  | tee tmp/trigger-response.txt | grep HTTP | ensureCorrectResponse
+curl ${commonParams} -X POST ${api}/centers/${releaseCentreId}/products/${productId}/builds/${buildId}/trigger  | tee tmp/trigger-response.txt 
 triggerSuccess=`cat tmp/trigger-response.txt | grep "Process completed successfully"` || true # Do not fail on exit here, some reporting first
 if [ -z "${triggerSuccess}" ]
 then
@@ -458,6 +458,8 @@ if [ -z "${triggerSuccess}" ]
 then
 	echo
 	echo ' !! There were failures !!'
+	#Make sure we give a non-zero exit code here so that maven and thus jenkins can detect the error
+	exit -1
 else
 	if ! ${autoPublish}
 	then
