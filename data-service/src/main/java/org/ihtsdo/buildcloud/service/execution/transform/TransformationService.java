@@ -72,6 +72,8 @@ public class TransformationService {
 	private final ExecutorService executorService;
 	@Autowired
 	private LegacyIdTransformationService legacyIdTransformation;
+	@Autowired
+	private Boolean isLegacyIdsRequired;
 
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
@@ -171,7 +173,7 @@ public class TransformationService {
 
 						// Apply transformations
 						steamingFileTransformation.transformFile(executionInputFileInputStream, transformedOutputStream, inputFileName, report);
-						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent) {
+						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && isLegacyIdsRequired.booleanValue()) {
 							moduleIdAndNewConceptUUids = getNewConceptUUIDs(execution, packageBusinessKey, inputFileName);
 						}
 					}
@@ -244,7 +246,7 @@ public class TransformationService {
 				}
 			}
 		}
-		if (isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+		if (isLegacyIdsRequired.booleanValue() && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
 			legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, execution, packageBusinessKey);
 		}
 	}
