@@ -358,6 +358,15 @@ fi
 echo "Set createInferredRelastionships flag to ${createInferredRelationshipsFlag}"
 curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createInferredRelationships\" : \"${createInferredRelationshipsFlag}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
 
+if [ "${createLegacyIds}" = "true" ]
+then
+	createLegacyIds="true"
+else
+	createLegacyIds="false"
+fi
+echo "Set createLegacyIds flag to ${createLegacyIds}"
+curl ${commonParams} -X PATCH -H 'Content-Type:application/json' --data-binary "{ \"createLegacyIds\" : \"${createLegacyIds}\"  }" ${api}/builds/${buildId}/packages/${packageId}  | grep HTTP | ensureCorrectResponse
+
 if [ "${customRefsetCompositeKeys}" ]
 then
 	echo "Set customRefsetCompositeKeys to ${customRefsetCompositeKeys}"
