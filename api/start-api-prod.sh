@@ -15,7 +15,7 @@ read tunnelUserName
 echo "What port is nginx expecting to find the api on? "
 read apiPort
 
-propertiesFile="`pwd`/data-service/target/classes/${filename}"
+propertiesFile="../data-service/target/classes/${filename}"
 if [ -f "$propertiesFile" ]; then
 
 	# Check if tunnel is already established before running
@@ -31,7 +31,7 @@ if [ -f "$propertiesFile" ]; then
 	
 	echo 'Building API webapp (skipping tests)..'
 	sleep 1
-	mvn clean install -Dapple.awt.UIElement='true' -DskipTests=true
+	mvn -f ../pom.xml clean install -Dapple.awt.UIElement='true' -DskipTests=true
 	echo
 
 	echo "Starting API webapp using $environmentName environment."
