@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
@@ -73,12 +74,11 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json")
 	@ResponseBody
-	public void getConfiguration(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
-			HttpServletResponse response) throws IOException, BusinessServiceException {
+	public Map<String, Object> getConfiguration(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
+			HttpServletRequest request) throws IOException, BusinessServiceException {
 
-		String buildConfiguration = buildService.loadConfiguration(releaseCenterKey, productKey, buildId);
-		response.setContentType("application/json");
-		response.getOutputStream().print(buildConfiguration);
+		BuildConfiguration buildConfiguration = buildService.loadConfiguration(releaseCenterKey, productKey, buildId);
+		return hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request, BUILD_LINKS);
 	}
 
 	@RequestMapping(value = "/{buildId}/inputfiles")

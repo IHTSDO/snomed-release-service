@@ -69,7 +69,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//so first lets find the first product for a known product, and use that
 		List<Product> products = productService.findAll(releaseCenterName, null);
 		Product product = products.get(0);
-		product.setEffectiveTime(new Date());
+		product.getBuildConfiguration().setEffectiveTime(new Date());
 		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey());
 
 		//Put a zip file into the build's output directory so we have something to publish.

@@ -66,7 +66,7 @@ public class LegacyIdTransformationService {
 			LOGGER.info("Generated SnomedIds:" + sctIdAndSnomedIdMap.keySet().size());
 		}
 		
-		final String effectiveDate = build.getProduct().getEffectiveTimeSnomedFormat();
+		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
@@ -122,7 +122,7 @@ public class LegacyIdTransformationService {
 
 	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Build build) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
-		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + build.getProduct().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
+		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + build.getConfiguration().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream transformedDeltaInput = buildDAO.getTransformedFileAsInputStream(build, statedRelationsipDelta);
 		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);

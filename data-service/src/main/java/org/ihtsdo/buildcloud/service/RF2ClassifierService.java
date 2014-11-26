@@ -3,11 +3,11 @@ package org.ihtsdo.buildcloud.service;
 import com.google.common.io.Files;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.service.exception.ProcessingException;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.exception.ProcessingException;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
 import org.ihtsdo.classifier.CycleCheck;
@@ -42,7 +42,7 @@ public class RF2ClassifierService {
 	 */
 	public String generateInferredRelationshipSnapshot(Build build, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
-		Product product = build.getProduct();
+		BuildConfiguration configuration = build.getConfiguration();
 
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
@@ -73,9 +73,9 @@ public class RF2ClassifierService {
 
 					logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
-					String effectiveTimeSnomedFormat = product.getEffectiveTimeSnomedFormat();
+					String effectiveTimeSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
 					List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-					if (!product.isFirstTimeRelease()) {
+					if (!configuration.isFirstTimeRelease()) {
 						String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(build, classifierFiles, tempDir);
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
@@ -151,7 +151,7 @@ public class RF2ClassifierService {
 	}
 
 	private String getPreviousInferredRelationshipFilePath(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
-		String previousPublishedPackage = build.getProduct().getPreviousPublishedPackage();
+		String previousPublishedPackage = build.getConfiguration().getPreviousPublishedPackage();
 		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
 		String previousInferredRelationshipFilename = inferredRelationshipFilename + ".previous_published";
 

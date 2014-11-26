@@ -6,9 +6,10 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Transient;
 
 /**
- * An Build is a snapshot of a Product and may be used to run the release process.
+ * A Build is a snapshot of a Product and may be used to run the release process.
  *
  * This entity is stored via S3, not Hibernate.
  */
@@ -19,26 +20,34 @@ public class Build {
 
 	private Status status;
 
-	@JsonIgnore
-	private final Product product;
-	
+	private BuildConfiguration configuration;
+
+	private String productBusinessKey;
+
 	private List<PreConditionCheckReport> preConditionCheckReports;
 
 	BuildReport buildReport;
+
+	@Transient
+	private Product product;
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN
 	}
 
-	public Build(Product product, String creationTime) {
-		this.status = Status.BEFORE_TRIGGER;
+	private Build(String creationTime, String productBusinessKey, BuildConfiguration configuration) {
 		this.buildReport = new BuildReport();
-		this.product = product;
+		this.productBusinessKey = productBusinessKey;
 		this.creationTime = creationTime;
+		this.configuration = configuration;
 	}
 
-	public Build(String creationTime, String statusString, Product product) {
-		this(product, creationTime);
+	public Build(String creationTime, String productBusinessKey, String statusString) {
+		this(creationTime, productBusinessKey, null, statusString);
+	}
+
+	public Build(String creationTime, String productBusinessKey, BuildConfiguration configuration, String statusString) {
+		this(creationTime, productBusinessKey, configuration);
 		try {
 			this.status = Status.valueOf(statusString);
 		} catch (IllegalArgumentException e) {
@@ -47,7 +56,8 @@ public class Build {
 	}
 
 	public Build(Date creationTime, Product product) {
-		this(product, EntityHelper.formatAsIsoDateTime(creationTime));
+		this(EntityHelper.formatAsIsoDateTime(creationTime), product.getBusinessKey(), product.getBuildConfiguration());
+		this.product = product;
 	}
 
 	public String getId() {
@@ -66,12 +76,17 @@ public class Build {
 		this.status = status;
 	}
 
-	public Product getProduct() {
-		return product;
+	public String getUniqueId() {
+		return productBusinessKey + "|" + getId();
 	}
 
-	public String getUniqueId() {
-		return getProduct().getBusinessKey() + "|" + getId();
+	@JsonIgnore // BuildConfiguration is not loaded when listing Builds for efficiency
+	public BuildConfiguration getConfiguration() {
+		return configuration;
+	}
+
+	public void setConfiguration(BuildConfiguration configuration) {
+		this.configuration = configuration;
 	}
 
 	public List<PreConditionCheckReport> getPreConditionCheckReports() {
@@ -88,5 +103,14 @@ public class Build {
 
 	public void setBuildReport(BuildReport buildReport) {
 		this.buildReport = buildReport;
+	}
+
+	@JsonIgnore
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
 	}
 }

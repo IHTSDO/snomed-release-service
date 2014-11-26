@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 
 import java.text.ParseException;
@@ -35,20 +35,20 @@ public class ConfigurationCheck extends PreconditionCheck {
 		// build's copy, not the product?
 		List<String> errorList = new ArrayList<>();
 
-		Product product = build.getProduct();
-		if (product.isFirstTimeRelease() && product.getPreviousPublishedPackage() != null) {
+		BuildConfiguration configuration = build.getConfiguration();
+		if (configuration.isFirstTimeRelease() && configuration.getPreviousPublishedPackage() != null) {
 			errorList.add(INVALID_FIRST_TIME_REPLEASE_CONFIG_ERROR_MSG);
-		} else if (!product.isFirstTimeRelease() && product.getPreviousPublishedPackage() == null) {
+		} else if (!configuration.isFirstTimeRelease() && configuration.getPreviousPublishedPackage() == null) {
 			errorList.add(INVALID_SUBSEQUENT_RELEASE_CONFIG_ERROR_MSG);
 		}
 		// effective time check
-		Date effectiveTime = product.getEffectiveTime();
+		Date effectiveTime = configuration.getEffectiveTime();
 		if (effectiveTime == null) {
 			errorList.add(NO_EFFECTIVE_TIME);
 		}
 		// check the published release date is in the past
-		if (product.getPreviousPublishedPackage() != null && effectiveTime != null) {
-			String[] tokens = product.getPreviousPublishedPackage().split(RF2Constants.FILE_NAME_SEPARATOR);
+		if (configuration.getPreviousPublishedPackage() != null && effectiveTime != null) {
+			String[] tokens = configuration.getPreviousPublishedPackage().split(RF2Constants.FILE_NAME_SEPARATOR);
 			if (tokens.length > 0) {
 				String releaseDateStr = tokens[tokens.length - 1].replace(RF2Constants.ZIP_FILE_EXTENSION, "");
 				try {
@@ -61,12 +61,12 @@ public class ConfigurationCheck extends PreconditionCheck {
 				}
 			}
 		}
-		String readmeEndDate = product.getReadmeEndDate();
+		String readmeEndDate = configuration.getReadmeEndDate();
 		if (readmeEndDate == null || readmeEndDate.length() < 4) {
 			errorList.add(NO_COPYRIGHT_END_DATE);
 		}
 
-		if (product.getReadmeHeader() == null || product.getReadmeHeader().isEmpty()) {
+		if (configuration.getReadmeHeader() == null || configuration.getReadmeHeader().isEmpty()) {
 			errorList.add(NO_README_HEADER_DETECTED);
 		}
 

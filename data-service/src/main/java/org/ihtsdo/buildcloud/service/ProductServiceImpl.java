@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
@@ -77,36 +78,37 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	public Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException {
 		LOGGER.info("update product, newPropertyValues: {}", newPropertyValues);
 		Product product = find(releaseCenterKey, productKey);
+		BuildConfiguration configuration = product.getBuildConfiguration();
 
-		if (product == null) {
+		if (configuration == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
 				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
-				product.setEffectiveTime(date);
+				configuration.setEffectiveTime(date);
 			} catch (ParseException e) {
 				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
 		if (newPropertyValues.containsKey(ProductService.JUST_PACKAGE)) {
-			product.setJustPackage(TRUE.equals(newPropertyValues.get(ProductService.JUST_PACKAGE)));
+			configuration.setJustPackage(TRUE.equals(newPropertyValues.get(ProductService.JUST_PACKAGE)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.FIRST_TIME_RELEASE)) {
-			product.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(ProductService.FIRST_TIME_RELEASE)));
+			configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(ProductService.FIRST_TIME_RELEASE)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.CREATE_INFERRED_RELATIONSHIPS)) {
-			product.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(ProductService.CREATE_INFERRED_RELATIONSHIPS)));
+			configuration.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(ProductService.CREATE_INFERRED_RELATIONSHIPS)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)) {
-			product.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)));
+			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.CREATE_LEGACY_IDS)) {
-			product.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
+			configuration.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.PREVIOUS_PUBLISHED_PACKAGE)) {
@@ -122,7 +124,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			}
 
 			if (pppExists) {
-				product.setPreviousPublishedPackage(pPP);
+				configuration.setPreviousPublishedPackage(pPP);
 			} else {
 				throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
 			}
@@ -151,21 +153,21 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			} catch (NumberFormatException e) {
 				throw new BadConfigurationException("Failed to parse " + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
 			}
-			product.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
+			configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.README_HEADER)) {
 			String readmeHeader = newPropertyValues.get(ProductService.README_HEADER);
-			product.setReadmeHeader(readmeHeader);
+			configuration.setReadmeHeader(readmeHeader);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.README_END_DATE)) {
 			String readmeEndDate = newPropertyValues.get(ProductService.README_END_DATE);
-			product.setReadmeEndDate(readmeEndDate);
+			configuration.setReadmeEndDate(readmeEndDate);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.NEW_RF2_INPUT_FILES)) {
-			product.setNewRF2InputFiles(newPropertyValues.get(ProductService.NEW_RF2_INPUT_FILES));
+			configuration.setNewRF2InputFiles(newPropertyValues.get(ProductService.NEW_RF2_INPUT_FILES));
 		}
 
 		productDAO.update(product);

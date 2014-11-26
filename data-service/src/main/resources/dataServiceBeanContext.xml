@@ -1,13 +1,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	   xmlns:context="http://www.springframework.org/schema/context"
 	   xmlns:tx="http://www.springframework.org/schema/tx"
-	   xmlns:jdbc="http://www.springframework.org/schema/jdbc"
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xsi:schemaLocation="
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
-		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
-		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd">
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
 
 	<context:annotation-config />
 	<tx:annotation-driven/>
@@ -159,8 +157,6 @@
 	<bean factory-bean="objectMapperFactory" factory-method="createObjectMapper"/>
 
 	<bean id="objectMapperFactory" class="org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory"/>
-
-	<bean class="org.ihtsdo.buildcloud.service.mapping.BuildConfigurationJsonGenerator"/>
 
 	<bean class="org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper"/>
 

@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.ReleaseCenterMembership;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,8 +36,13 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 	}
 
 	@Override
-	public ReleaseCenter find(String businessKey) {
-		return dao.find(businessKey, SecurityHelper.getRequiredUser());
+	public ReleaseCenter find(String businessKey) throws ResourceNotFoundException {
+		ReleaseCenter releaseCenter = dao.find(businessKey, SecurityHelper.getRequiredUser());
+		if (releaseCenter != null) {
+			return releaseCenter;
+		} else {
+			throw new ResourceNotFoundException("Release Center '" + businessKey + "' not found.");
+		}
 	}
 
 	@Override

@@ -3,8 +3,8 @@ package org.ihtsdo.buildcloud.service.build.transform;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
-import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
@@ -80,14 +80,14 @@ public class TransformationService {
 	public void transformFiles(final Build build, final Map<String, TableSchema> inputFileSchemaMap)
 			throws BusinessServiceException {
 
-		final Product product = build.getProduct();
+		BuildConfiguration configuration = build.getConfiguration();
 		final BuildReport report = build.getBuildReport();
 
-		final String effectiveDateInSnomedFormat = product.getEffectiveTimeSnomedFormat();
+		final String effectiveDateInSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
 		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, buildId);
-		final boolean workbenchDataFixesRequired = product.isWorkbenchDataFixesRequired();
-		final boolean createLegacyIds = product.isCreateLegacyIds();
+		final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
+		final boolean createLegacyIds = configuration.isCreateLegacyIds();
 
 		LOGGER.info("Transforming files in build {}, workbench data fixes {}.", build.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
 
@@ -98,10 +98,10 @@ public class TransformationService {
 			// Phase 0
 			// Get list of conceptIds which should be in the model module.
 
-			if (!product.isFirstTimeRelease()) {
-				final String previousPublishedPackage = product.getPreviousPublishedPackage();
+			if (!configuration.isFirstTimeRelease()) {
+				final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 				try {
-					final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(product.getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+					final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 					if (statedRelationshipSnapshotStream != null) {
 						final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -275,7 +275,7 @@ public class TransformationService {
 	}
 
 	public void transformInferredRelationshipFile(final Build build, final String inferredRelationshipSnapshotFilename) {
-		final TransformationFactory transformationFactory = getTransformationFactory(build.getProduct().getEffectiveTimeSnomedFormat(), build.getId());
+		final TransformationFactory transformationFactory = getTransformationFactory(build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getId());
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, inferredRelationshipSnapshotFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
 			final BuildReport report = build.getBuildReport();
