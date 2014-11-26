@@ -78,7 +78,7 @@ public class BuildController {
 			HttpServletRequest request) throws IOException, BusinessServiceException {
 
 		BuildConfiguration buildConfiguration = buildService.loadConfiguration(releaseCenterKey, productKey, buildId);
-		return hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request, BUILD_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request);
 	}
 
 	@RequestMapping(value = "/{buildId}/inputfiles")
