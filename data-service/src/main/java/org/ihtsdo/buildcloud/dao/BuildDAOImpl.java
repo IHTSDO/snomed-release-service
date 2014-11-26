@@ -4,19 +4,21 @@ import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.helper.FileHelper;
 import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
@@ -28,16 +30,15 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class BuildDAOImpl implements BuildDAO {
-
-	private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REF = new TypeReference<HashMap<String, Object>>() {
-	};
 
 	private static final String BLANK = "";
 
@@ -47,7 +48,8 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final FileHelper buildFileHelper;
 
-	private final ObjectMapper objectMapper;
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	private final File tempDir;
 
@@ -68,7 +70,6 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	public BuildDAOImpl(final String buildBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
-		objectMapper = new ObjectMapper();
 		executorService = Executors.newCachedThreadPool();
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
@@ -79,13 +80,22 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void save(final Build build, final String jsonConfig) {
+	public void save(final Build build) throws IOException {
 		// Save config file
 		final String configPath = pathHelper.getConfigFilePath(build);
-		putFile(configPath, jsonConfig);
+		putFile(configPath, toJson(build.getConfiguration()));
+
 		// Save status file
-		final Status status = build.getStatus() == null ? Build.Status.BEFORE_TRIGGER : build.getStatus();
-		updateStatus(build, status);
+		updateStatus(build, Build.Status.BEFORE_TRIGGER);
+	}
+
+	private String toJson(BuildConfiguration configuration) throws IOException {
+		StringWriter stringWriter = new StringWriter();
+		JsonFactory jsonFactory = objectMapper.getJsonFactory();
+		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(stringWriter)) {
+			jsonGenerator.writeObject(configuration);
+		}
+		return stringWriter.toString();
 	}
 
 	@Override
@@ -106,24 +116,14 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public String loadConfiguration(final Build build) throws IOException {
+	public void loadConfiguration(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getConfigFilePath(build);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
-		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			return FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8)); // Closes stream
-		} else {
-			return null;
-		}
-	}
-
-	@Override
-	public Map<String, Object> loadConfigurationMap(final Build build) throws IOException {
-		final String jsonConfigString = loadConfiguration(build);
-		if (jsonConfigString != null) {
-			return objectMapper.readValue(jsonConfigString, MAP_TYPE_REF);
-		} else {
-			return null;
+		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+		String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+		try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
+			BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+			build.setConfiguration(buildConfiguration);
 		}
 	}
 
@@ -362,6 +362,9 @@ public class BuildDAOImpl implements BuildDAO {
 		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
 		// I think an "index" directory might be the solution
 
+		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
+		// the simplest way to give performance - KK
+
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 
@@ -388,7 +391,7 @@ public class BuildDAOImpl implements BuildDAO {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[2];
 				final String status = keyParts[3].split(":")[1];
-				final Build build = new Build(dateString, status, product);
+				final Build build = new Build(dateString, product.getBusinessKey(), status);
 				builds.add(build);
 			}
 		}

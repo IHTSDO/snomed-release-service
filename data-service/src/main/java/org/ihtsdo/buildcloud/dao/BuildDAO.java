@@ -8,19 +8,16 @@ import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 
 import java.io.*;
 import java.util.List;
-import java.util.Map;
 
 public interface BuildDAO {
 
-	void save(Build build, String jsonConfig);
+	void save(Build build) throws IOException;
 
 	List<Build> findAllDesc(Product product);
 
 	Build find(Product product, String buildId);
 
-	String loadConfiguration(Build build) throws IOException;
-
-	Map<String, Object> loadConfigurationMap(Build build) throws IOException;
+	void loadConfiguration(Build build) throws IOException;
 
 	void updateStatus(Build build, Build.Status newStatus);
 

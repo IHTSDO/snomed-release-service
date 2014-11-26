@@ -61,7 +61,7 @@ public class ReleaseCenterController {
 	@ResponseBody
 	public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterBusinessKey,
 			@RequestBody(required = false) Map<String, String> json,
-			HttpServletRequest request) throws IOException {
+			HttpServletRequest request) throws ResourceNotFoundException {
 
 		ReleaseCenter center = releaseCenterService.find(releaseCenterBusinessKey);
 		center.setName(json.get("name"));

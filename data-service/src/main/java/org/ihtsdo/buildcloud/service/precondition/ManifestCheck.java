@@ -7,10 +7,10 @@ import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import javax.xml.bind.JAXBException;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.DER2;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
@@ -31,7 +31,7 @@ public class ManifestCheck extends PreconditionCheck {
 			ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			ListingType manifestListing = parser.parse(manifestInputSteam);
 			//check release date in manifest
-			String releaseVersion = build.getProduct().getEffectiveTimeSnomedFormat();
+			String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				String errorMsg = checkReleaseDate(manifestListing, releaseVersion);
 				if (errorMsg != null) {

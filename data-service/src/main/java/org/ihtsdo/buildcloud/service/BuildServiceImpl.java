@@ -4,25 +4,21 @@ import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Build.Status;
-import org.ihtsdo.buildcloud.entity.BuildReport;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
 import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.exception.*;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.mapping.BuildConfigurationJsonGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
@@ -66,9 +62,6 @@ public class BuildServiceImpl implements BuildService {
 	private ProductDAO productDAO;
 
 	@Autowired
-	private BuildConfigurationJsonGenerator buildConfigurationJsonGenerator;
-
-	@Autowired
 	private PreconditionManager preconditionManager;
 
 	@Autowired
@@ -102,28 +95,27 @@ public class BuildServiceImpl implements BuildService {
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
-		if (product.getEffectiveTime() == null) {
+		if (product.getBuildConfiguration().getEffectiveTime() == null) {
 			throw new BadConfigurationException("Product effective time must be set before an build is created.");
 		}
 		Build build;
 		try {
-			synchronized (productKey) {
+			synchronized (product) {
 				// Do we already have an build for that date?
 				final Build existingBuild = getBuild(product, creationDate);
 				if (existingBuild != null) {
 					throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
 				}
 				build = new Build(creationDate, product);
-				// Create Product config export
-				final String jsonConfig = buildConfigurationJsonGenerator.getJsonConfig(build);
+				build.setProduct(product);
 				// save build with config
-				dao.save(build, jsonConfig);
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
+				dao.save(build);
 				LOGGER.info("Created build.", productKey, build.getId());
 				// Copy all files from Product input and manifest directory to Build input and manifest directory
 				dao.copyAll(product, build);
 			}
-			if (!product.isJustPackage()) {
+			if (!product.getBuildConfiguration().isJustPackage()) {
 				// Perform Pre-condition testing
 				final Status preStatus = build.getStatus();
 				runPreconditionChecks(build);
@@ -143,6 +135,11 @@ public class BuildServiceImpl implements BuildService {
 	@Override
 	public Build triggerBuild(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		try {
+			dao.loadConfiguration(build);
+		} catch (IOException e) {
+			throw new BusinessServiceException("Failed to load build configuration.", e);
+		}
 
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
@@ -156,7 +153,7 @@ public class BuildServiceImpl implements BuildService {
 			String resultStatus = "completed";
 			String resultMessage = "Process completed successfully";
 			try {
-				executeProduct(build);
+				executeBuild(build);
 			} catch (final BusinessServiceException e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
@@ -189,19 +186,21 @@ public class BuildServiceImpl implements BuildService {
 	@Override
 	public Build find(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
-
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 
-		return dao.find(product, buildId);
+		Build build = dao.find(product, buildId);
+		build.setProduct(product);
+		return build;
 	}
 
 	@Override
-	public String loadConfiguration(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public BuildConfiguration loadConfiguration(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
-			return dao.loadConfiguration(build);
+			dao.loadConfiguration(build);
+			return build.getConfiguration();
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to load configuration.", e);
 		}
@@ -273,13 +272,12 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.info("End of Pre-condition checks");
 	}
 
-	private void executeProduct(final Build build) throws BusinessServiceException {
+	private void executeBuild(final Build build) throws BusinessServiceException {
 		LOGGER.info("Start build {}", build.getUniqueId());
-		Product product = build.getProduct();
-
 		checkManifestPresent(build);
 
-		if (product.isJustPackage()) {
+		BuildConfiguration configuration = build.getConfiguration();
+		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
@@ -289,7 +287,7 @@ public class BuildServiceImpl implements BuildService {
 			Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
-			if (product.isCreateInferredRelationships()) {
+			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
 				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
 				if (relationshipSnapshotOutputFilename != null) {
@@ -387,25 +385,16 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuildOrThrow(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
-		final Build build = getBuild(releaseCenterKey, productKey, buildId);
+		final Build build = find(releaseCenterKey, productKey, buildId);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build for releaseCenterKey: " + releaseCenterKey + ", productKey: " + productKey + ", buildId: " + buildId);
 		}
 		return build;
 	}
 
-	private Build getBuild(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
-		final Product product = getProduct(releaseCenterKey, productKey);
-		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
-		}
-		return dao.find(product, buildId);
-	}
-
 	private Build getBuild(final Product product, final Date creationTime) {
 		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
-	
 
 	private Product getProduct(String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
 		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
@@ -437,8 +426,8 @@ public class BuildServiceImpl implements BuildService {
 			if (readmeFilename != null) {
 				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(build, readmeFilename);
 				try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-					Product product = build.getProduct();
-					readmeGenerator.generate(product.getReadmeHeader(), product.getReadmeEndDate(), manifestListing, readmeOutputStream);
+					BuildConfiguration configuration = build.getConfiguration();
+					readmeGenerator.generate(configuration.getReadmeHeader(), configuration.getReadmeEndDate(), manifestListing, readmeOutputStream);
 					asyncPipedStreamBean.waitForFinish();
 				}
 			} else {

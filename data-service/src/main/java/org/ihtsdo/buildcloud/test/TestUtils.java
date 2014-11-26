@@ -7,6 +7,11 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 public class TestUtils {
 
 	public static final User TEST_USER = new User(1L, "test");
@@ -36,5 +41,16 @@ public class TestUtils {
 
 	public static void setTestUser() {
 		SecurityHelper.setUser(TEST_USER);
+	}
+
+	public static String readStream(InputStream inputStream) throws IOException {
+		StringBuilder builder = new StringBuilder();
+		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+			String line;
+			while ((line = bufferedReader.readLine()) != null) {
+				builder.append(line);
+			}
+		}
+		return builder.toString();
 	}
 }

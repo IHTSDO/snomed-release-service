@@ -55,7 +55,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
+	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException {
 		ObjectListing listing = new ObjectListing();
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
 
@@ -88,7 +88,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	/**
 	 * Only bucketName and prefix is used from the ListObjectsRequest.
 	 */
-	public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException {
+	public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException {
 		return listObjects(listObjectsRequest.getBucketName(), listObjectsRequest.getPrefix());
 	}
 
@@ -111,12 +111,12 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public PutObjectResult putObject(String bucketName, String key, File file) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(String bucketName, String key, File file) throws AmazonClientException {
 		return putObject(bucketName, key, getInputStream(file), null);
 	}
 
 	@Override
-	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException {
 		File outFile = getFile(bucketName, key);
 
 		// Create the target directory
@@ -156,7 +156,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException {
 		String bucketName = putRequest.getBucketName();
 		String key = putRequest.getKey();
 		InputStream inputStream = putRequest.getInputStream();
@@ -179,14 +179,14 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException, AmazonServiceException {
+	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException {
 		S3Object object = getObject(sourceBucketName, sourceKey);
 		putObject(destinationBucketName, destinationKey, object.getObjectContent(), null);
 		return null;
 	}
 
 	@Override
-	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
+	public void deleteObject(String bucketName, String key) throws AmazonClientException {
 		File file = getFile(bucketName, key);
 
 		//Are we deleting a file or a directory?

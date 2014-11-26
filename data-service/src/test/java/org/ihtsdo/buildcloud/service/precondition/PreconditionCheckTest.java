@@ -58,8 +58,8 @@ public abstract class PreconditionCheckTest {
 	@Before
 	public void setup() throws Exception {
 		product = productDAO.find(1L, TestUtils.TEST_USER);
-		if (product.getEffectiveTime() == null) {
-			product.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
+		if (product.getBuildConfiguration().getEffectiveTime() == null) {
+			product.getBuildConfiguration().setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
 		}
 	}
 

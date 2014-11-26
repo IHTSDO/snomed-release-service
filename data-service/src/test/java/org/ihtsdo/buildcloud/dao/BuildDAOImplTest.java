@@ -13,6 +13,8 @@ import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.dao.s3.S3ClientFactory;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -23,9 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -64,7 +66,7 @@ public class BuildDAOImplTest {
 		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
 		build = new Build(creationTime, product);
 	}
-	
+
 	@After
 	public void tearDown() {
 		//Need to return the buildDAO to it's original state for other unitTests which expect to use the Offline client
@@ -72,19 +74,34 @@ public class BuildDAOImplTest {
 	}
 
 	@Test
-	public void testSave() {
+	public void testSave() throws IOException {
 
 		Capture<String> configPathCapture = new Capture<>();
-		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(configPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+		Capture<InputStream> configJsonStreamCapture = new Capture<>();
+		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(configPathCapture), EasyMock.capture(configJsonStreamCapture), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
 
 		Capture<String> statusPathCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(statusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
 
 		mocksControl.replay();
-		buildDAO.save(build, "");
+		buildDAO.save(build);
 		mocksControl.verify();
 
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
+		String configJson = TestUtils.readStream(configJsonStreamCapture.getValue());
+		Assert.assertEquals("{" +
+				"\"readmeHeader\":null," +
+				"\"readmeEndDate\":null," +
+				"\"firstTimeRelease\":false," +
+				"\"previousPublishedPackage\":null," +
+				"\"newRF2InputFiles\":null," +
+				"\"justPackage\":false," +
+				"\"workbenchDataFixesRequired\":false," +
+				"\"createInferredRelationships\":false," +
+				"\"createLegacyIds\":false," +
+				"\"customRefsetCompositeKeys\":{}," +
+				"\"effectiveTime\":null" +
+				"}", configJson);
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}
 

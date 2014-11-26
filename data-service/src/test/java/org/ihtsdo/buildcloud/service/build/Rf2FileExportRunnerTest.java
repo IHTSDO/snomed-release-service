@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.build;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.s3.S3Client;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
@@ -55,6 +56,7 @@ public class Rf2FileExportRunnerTest {
 	private String publishedPath;
 	private final PesudoUUIDGenerator uuidGenerator = new PesudoUUIDGenerator();
 	private Build build;
+	private BuildConfiguration buildConfiguration;
 
 	@Before
 	public void setUp() throws IOException {
@@ -62,10 +64,11 @@ public class Rf2FileExportRunnerTest {
 		ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
 		product.setReleaseCenter(releaseCenter);
 		Date date = new Date();
+		buildConfiguration = product.getBuildConfiguration();
 		build = new Build(date, product);
 		SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
 		try {
-			product.setEffectiveTime(formater.parse(RELEASE_DATE));
+			buildConfiguration.setEffectiveTime(formater.parse(RELEASE_DATE));
 		} catch (ParseException e) {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
@@ -75,8 +78,8 @@ public class Rf2FileExportRunnerTest {
 
 	@Test
 	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
-		product.setFirstTimeRelease(true);
-		product.setWorkbenchDataFixesRequired(false);
+		buildConfiguration.setFirstTimeRelease(true);
+		buildConfiguration.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
 		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
@@ -93,9 +96,9 @@ public class Rf2FileExportRunnerTest {
 
 	@Test
 	public void testEmptyValueIdFix() throws Exception {
-		product.setFirstTimeRelease(false);
-		product.setPreviousPublishedPackage(PREVIOUS_RELEASE);
-		product.setWorkbenchDataFixesRequired(true);
+		buildConfiguration.setFirstTimeRelease(false);
+		buildConfiguration.setPreviousPublishedPackage(PREVIOUS_RELEASE);
+		buildConfiguration.setWorkbenchDataFixesRequired(true);
 		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
