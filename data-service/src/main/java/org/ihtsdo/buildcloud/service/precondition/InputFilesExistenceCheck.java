@@ -84,7 +84,8 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				}
 			}
 			if (count > 0) {
-				fatalError(ERROR_MSG + msgBuilder.toString());
+				// Missing files is no longer considered FATAL
+				fail(ERROR_MSG + msgBuilder.toString());
 				isFailed = true;
 			}
 
