@@ -17,6 +17,7 @@ isFirstTime=false
 isWorkbenchDataFixesRequired=true
 headless=true
 #createInferredRelationships=true
+createLegacyIds=true
 previousPublishedPackageName="SnomedCT_Release_INT_20140731.zip"
 productName="SNOMED CT Release"
 
