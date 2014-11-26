@@ -25,7 +25,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	public void checkInputFilesNotExisting() throws Exception {
 		loadManifest("valid_manifest.xml");
 		State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 
 	@Test
@@ -33,7 +33,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140831.txt");
 		loadManifest("valid_manifest.xml");
 		State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 
 	@Test
