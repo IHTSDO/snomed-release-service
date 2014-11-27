@@ -5,7 +5,6 @@ import org.ihtsdo.buildcloud.service.helper.Type5UuidFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 
 public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 
@@ -22,13 +21,15 @@ public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 		// sourceId + destinationId + typeId + relationshipGroup
 		if (columnValues[0].equals(RF2Constants.NULL_STRING)) {
 			try {
-				UUID.randomUUID();
-				UUID uuid = type5UuidFactory.get(columnValues[4] + columnValues[5] + columnValues[7] + columnValues[6]);
-				columnValues[0] = uuid.toString();
+				columnValues[0] = getCalculatedUuidFromRelationshipValues(columnValues);
 			} catch (UnsupportedEncodingException e) {
 				throw new TransformationException("Failed to create UUID.", e);
 			}
 		}
+	}
+
+	public String getCalculatedUuidFromRelationshipValues(String[] columnValues) throws UnsupportedEncodingException {
+		return type5UuidFactory.get(columnValues[4] + columnValues[5] + columnValues[7] + columnValues[6]).toString();
 	}
 
 	@Override

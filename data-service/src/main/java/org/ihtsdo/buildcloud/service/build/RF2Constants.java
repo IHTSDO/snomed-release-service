@@ -31,6 +31,7 @@ public class RF2Constants {
 	public static final String INFERRED_RELATIONSHIPS_TXT = "inferred_relationships.txt";
 	public static final String EQUIVALENCY_REPORT_TXT = "equivalency_report.txt";
 	public static final String CONCEPTS_WITH_CYCLES_TXT = "concepts_with_cycles.txt";
+	public static final String STATED = "Stated";
 
 	public static final String NULL_STRING = "null";
 }

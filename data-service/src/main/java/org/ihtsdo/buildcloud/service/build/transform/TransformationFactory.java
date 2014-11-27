@@ -1,16 +1,12 @@
 package org.ihtsdo.buildcloud.service.build.transform;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Set;
-
 import org.ihtsdo.buildcloud.service.build.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.build.transform.conditional.ConditionalTransformation;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class TransformationFactory {
 
@@ -21,6 +17,7 @@ public class TransformationFactory {
 	private final String modelModuleSctid;
 	private final Integer transformBufferSize;
 	private Set<String> modelConceptIdsForModuleIdFix;
+	private Map<String, String> existingUuidToSctidMap;
 
 	public TransformationFactory(final String effectiveTimeInSnomedFormat, final CachedSctidFactory cachedSctidFactory, final UUIDGenerator uuidGenerator,
 			final String coreModuleSctid, final String modelModuleSctid, final Integer transformBufferSize) {
@@ -209,8 +206,12 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new RepeatableRelationshipUUIDTransform())
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
+				.addTransformation(new RepeatableRelationshipUUIDTransform());
+		if (existingUuidToSctidMap != null) {
+			streamingFileTransformation.addTransformation(new ReplaceStringTransform(0, existingUuidToSctidMap));
+		}
+		streamingFileTransformation
+			.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
 
 		return streamingFileTransformation;
 	}
@@ -294,4 +295,9 @@ public class TransformationFactory {
 	public CachedSctidFactory getCachedSctidFactory() {
 		return cachedSctidFactory;
 	}
+
+	public void setExistingUuidToSctidMap(Map<String, String> existingUuidToSctidMap) {
+		this.existingUuidToSctidMap = existingUuidToSctidMap;
+	}
+
 }

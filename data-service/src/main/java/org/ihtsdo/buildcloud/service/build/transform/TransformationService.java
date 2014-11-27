@@ -274,10 +274,16 @@ public class TransformationService {
 		return moduleIdAndUuidMap;
 	}
 
-	public void transformInferredRelationshipFile(final Build build, final String inferredRelationshipSnapshotFilename) {
-		final TransformationFactory transformationFactory = getTransformationFactory(build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getId());
+	public void transformInferredRelationshipFile(final Build build, final String inferredRelationshipSnapshotFilename,
+			Map<String, String> existingUuidToSctidMap) {
+
+		final TransformationFactory transformationFactory =
+				getTransformationFactory(build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getId());
+		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
+
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, inferredRelationshipSnapshotFilename)) {
-			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
+			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
+					new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
 			final BuildReport report = build.getBuildReport();
 			fileTransformation.transformFile(
 					dao.getTransformedFileAsInputStream(build, inferredRelationshipSnapshotFilename),
