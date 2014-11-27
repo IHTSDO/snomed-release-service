@@ -10,6 +10,8 @@ import java.util.Map;
 
 public class SCTIDTransformation implements BatchLineTransformation {
 
+	public static final String ID_GEN_MODULE_ID_PARAM = "1";
+	
 	private final CachedSctidFactory sctidFactory;
 
 	private final int componentIdCol;
@@ -43,45 +45,23 @@ public class SCTIDTransformation implements BatchLineTransformation {
 
 	@Override
 	public void transformLines(List<String[]> columnValuesList) throws TransformationException {
-		// Collect uuid strings grouped by moduleId
+		// Collect uuid strings
 		List<String> uuidStrings = new ArrayList<>();
-		String uuidString, moduleId, groupModuleId = null;
-		int runStart = 0, runEnd = 0;
+		String uuidString;
 		for (String[] columnValues : columnValuesList) {
 			uuidString = columnValues[componentIdCol];
 			if (uuidString.contains("-")) {
-				columnValues[componentIdCol] = uuidString;
-				moduleId = columnValues[moduleIdCol];
-				if (!moduleId.equals(groupModuleId)) {
-					if (groupModuleId != null) {
-						// Process collected UUIDs for this moduleId run.
-						// ID Gen/Lookup for UUID-moduleId group
-						transformLineGroup(columnValuesList, uuidStrings, groupModuleId, runStart, runEnd);
-					}
-					uuidStrings.clear();
-					groupModuleId = moduleId;
-					runStart = runEnd;
-				}
 				uuidStrings.add(uuidString);
 			}
-			runEnd++;
 		}
-
-		if (!uuidStrings.isEmpty() && groupModuleId != null) {
-			transformLineGroup(columnValuesList, uuidStrings, groupModuleId, runStart, runEnd);
-		}
-
+		transformLineGroup(columnValuesList, uuidStrings);
 	}
 
-	public void transformLineGroup(List<String[]> columnValuesList, List<String> uuidStrings, String groupModuleId,
-			int runStart, int runEnd) throws TransformationException {
-
+	public void transformLineGroup(List<String[]> columnValuesList, List<String> uuidStrings) throws TransformationException {
 		try {
-			Map<String, Long> sctiDs = sctidFactory.getSCTIDs(uuidStrings, partitionId, groupModuleId);
-
+			Map<String, Long> sctiDs = sctidFactory.getSCTIDs(uuidStrings, partitionId, ID_GEN_MODULE_ID_PARAM);
 			// Replace UUIDs with looked up SCTIDs
-			for (int a = runStart; a < runEnd; a++) {
-				String[] columnValuesReplace = columnValuesList.get(a);
+			for (String[] columnValuesReplace : columnValuesList) {
 				String idString = columnValuesReplace[componentIdCol];
 				if (idString.contains("-")) {
 					Long aLong = sctiDs.get(idString);
@@ -92,7 +72,6 @@ public class SCTIDTransformation implements BatchLineTransformation {
 					}
 				}
 			}
-
 		} catch (RemoteException | CreateSCTIDListFaultException | InterruptedException e) {
 			throw new TransformationException("SCTID list creation request failed.", e);
 		}
