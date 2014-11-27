@@ -5,7 +5,7 @@ App.DSModel = DS.Model.extend(Ember.Validations.Mixin);
 App.Center = App.DSModel.extend({
 	name: DS.attr(),
 	shortName: DS.attr(),
-	extensions: DS.hasMany('extension', { async: true }),
+	products: DS.hasMany('product', { async: false }),
 	removed: DS.attr('boolean'),
 	validations: {
 		name: {
@@ -18,101 +18,67 @@ App.Center = App.DSModel.extend({
 		}
 	}
 });
-App.Extension = DS.Model.extend({
+App.Product = DS.Model.extend({
 	parent: DS.belongsTo('center'),
 	name: DS.attr(),
-	products: DS.hasMany('product', { async: true }),
-	isInternationalEdition: function() {
-		return this.get('id') === 'snomed_ct_international_edition';
-	}.property('name')
-});
-App.Product = DS.Model.extend({
-	parent: DS.belongsTo('extension'),
-	name: DS.attr(),
+	manifest: DS.belongsTo('manifest', { async: true }),
+	inputfiles: DS.hasMany('inputFile', { async: true }),
 	builds: DS.hasMany('build', { async: true })
+	//isInternationalEdition: function() {
+	//	return this.get('id') === 'snomed_ct_international_edition';
+	//}.property('name')
 });
 var activeBuilds=['1_20140731_international_release_build'];
+var demoBuilds=['2014-03-31T09:30:23'];
 App.Build = DS.Model.extend({
-	product: DS.belongsTo('product'),
+	parent: DS.belongsTo('product'),
 	name: DS.attr(),
-	config: DS.belongsTo('buildConfig', { async: true }),
-	packages: DS.hasMany('package', { async: true }),
-	executions: DS.hasMany('execution', { async: true }),
-	isDemoData: function () {
-		for (var i=0; i<activeBuilds.length; i++){
-			if (activeBuilds[i] == this.get('id'))
-				return false;
-		}
-		return true;
-	}.property('name')
-});
-App.BuildConfig = DS.Model.extend({
-	parent: DS.belongsTo('build'),
-	configStr: DS.attr()
-});
-App.Package = DS.Model.extend({
-	parent: DS.belongsTo('build'),
-	name: DS.attr(),
-	status: DS.attr(),
-	inputfiles: DS.hasMany('inputFile', { async: true }),
-	manifest: DS.belongsTo('manifest', { async: true })
-});
-App.InputFile = DS.Model.extend({
-	parent: DS.belongsTo('package', { inverse: 'inputfiles' }),
-	filename: DS.attr()
-});
-App.Manifest = DS.Model.extend({
-	parent: DS.belongsTo('package', { inverse: 'manifest' }),
-	filename: DS.attr(),
-	file_url: DS.attr()
-});
-var demoExecutions=['2014-03-31T09:30:23'];
-App.Execution = DS.Model.extend({
-	parent: DS.belongsTo('build'),
 	creationTimeString: DS.attr(),
+	manifest: DS.belongsTo('manifest', { async: true }),
+	inputfiles: DS.hasMany('inputFile', { async: true }),
 	status: DS.attr(),
-	buildScripts_url: DS.attr(),
-	configuration: DS.belongsTo('executionConfiguration', { async: true }),
 	statusTitle: function() {
 		var status = this.get('status');
 		switch (status) {
-			case App.ExecutionStatus.BEFORE_TRIGGER:
+			case App.BuildStatus.BEFORE_TRIGGER:
 				return 'Before Trigger'
 		}
 	}.property('status'),
 	isNotTriggered: function() {
-		return this.get('status') == App.ExecutionStatus.BEFORE_TRIGGER;
+		return this.get('status') == App.BuildStatus.BEFORE_TRIGGER;
 	}.property('status'),
 	isTriggered: function() {
-		return this.get('status') != App.ExecutionStatus.BEFORE_TRIGGER;
+		return this.get('status') != App.BuildStatus.BEFORE_TRIGGER;
 	}.property('status'),
 	isBuilt: function() {
-		return this.get('status') == App.ExecutionStatus.BUILT;
+		return this.get('status') == App.BuildStatus.BUILT;
 	}.property('status'),
 	creationTime: function() {
 		return moment(this.get('creationTimeString')).format('DD MMM, YYYY hh:mm:ss (UTC)');
 	}.property('creationTimeString'),
 	isDemoData: function () {
-		for (var i=0; i<demoExecutions.length; i++){
-			if (demoExecutions[i] == this.get('id'))
+		for (var i=0; i<demoBuilds.length; i++){
+			if (demoBuilds[i] == this.get('id'))
 				return true;
 		}
 		return false;
 	}.property('creationTime')
 });
-App.ExecutionStatus = {
+App.InputFile = DS.Model.extend({
+	parent: DS.belongsTo('build', { inverse: 'inputfiles' }),
+	filename: DS.attr()
+});
+App.Manifest = DS.Model.extend({
+	parent: DS.belongsTo('build', { inverse: 'manifest' }),
+	filename: DS.attr(),
+	file_url: DS.attr()
+});
+App.BuildStatus = {
 	BEFORE_TRIGGER: 'BEFORE_TRIGGER',
 	QUEUED: 'QUEUED',
 	BUILDING: 'BUILDING',
 	BUILT: 'BUILT'
 }
-App.ExecutionConfiguration = DS.Model.extend({
-	dummy: DS.attr(),
-	json: function() {
-		return JSON.stringify(this._data, null, 2);
-	}.property('dummy')
-});
-
 
 // Configuration
 

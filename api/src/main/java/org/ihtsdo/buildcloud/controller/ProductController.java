@@ -30,7 +30,7 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] PRODUCT_LINKS = {"builds"};
+	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles", "builds"};
 
 	@RequestMapping
 	@ResponseBody
