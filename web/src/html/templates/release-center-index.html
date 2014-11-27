@@ -4,18 +4,18 @@
 </ol>
 
 <h2>{{name}} <small>{{partial "title-dropdown"}}</small></h2>
-<h3>Extensions</h3>
+<h3>Products</h3>
 <ul>
-	{{#each extensions}}
+	{{#each products}}
 	<li>
-		{{#link-to "extension" this}}
+		{{#link-to "product" this}}
 		{{name}}
 		{{/link-to}}
 	</li>
 	{{/each}}
 </ul>
 {{#if controllers.application.isAuthenticated}}
-<button class="btn btn-primary btn-md list-align" {{action 'addExtension' this}}>
-	<span class="glyphicon glyphicon-plus"></span> Add an Extension
+<button class="btn btn-primary btn-md list-align" {{action 'addProduct' this}}>
+	<span class="glyphicon glyphicon-plus"></span> Add a Product
 </button>
 {{/if}}
