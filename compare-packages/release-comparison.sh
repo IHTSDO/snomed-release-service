@@ -69,27 +69,44 @@ fi
 mkdir -p ${workDir}
 
 #And clean it out in case we've done a previous run
-rm -rf ${workDir}/*
-
+#rm -rf ${workDir}/*
+#
 #Copy our two files in there and extract
-echo "Copying files to working directory: ${workDir} and extracting..."
-cp  ${currentRelease} ${workDir}
-cp  ${prospectiveRelease} ${workDir}
+#echo "Copying files to working directory: ${workDir} and extracting..."
+#cp  ${currentRelease} ${workDir}
+#cp  ${prospectiveRelease} ${workDir}
 cd ${workDir}
-unzip ${currentRelease} -d a > /dev/null
-unzip ${prospectiveRelease} -d b > /dev/null
-mkdir {a_flat,b_flat,c}
-
-echo "Flattening structure..."
-cd a
-find . -type f | xargs -I {} cp {} ../a_flat
-cd ../b
-find . -type f | xargs -I {} cp {} ../b_flat
-cd ..
-
-createFileList "current" a_flat
-createFileList "prospective" b_flat
+#unzip ${currentRelease} -d a > /dev/null
+#unzip ${prospectiveRelease} -d b > /dev/null
+#mkdir {a_flat,b_flat,c}
+#
+#echo "Flattening structure..."
+#cd a
+#find . -type f | xargs -I {} cp {} ../a_flat
+#cd ../b
+#find . -type f | xargs -I {} cp {} ../b_flat
+#cd ..
+#
+#createFileList "current" a_flat
+#createFileList "prospective" b_flat
 
 echo -e "*** File list differences ${currReleaseDate} vs ${prosReleaseDate} ***\n"
 diff c/current_file_list.txt c/prospective_file_list.txt && echo "None"
 echo
+
+#Now check that all prospective full files are larger than all current full files
+for file in `cat c/current_file_list.txt | grep Full`; do
+	currFile=`ls a_flat/${file}*`
+	prosFile=`ls b_flat/${file}*`
+	#echo "Comparing ${currFile} to ${prosFile}"
+	currLineCount=`wc -l ${currFile} | awk {'print $1'}`
+	prosLineCount=`wc -l ${prosFile} | awk {'print $1'}`
+	if (( ! prosLineCount > currLineCount ))
+	then
+		echo -e "Warning - ${file}: ${currLineCount} lines in ${currReleaseDate} compared to ${prosLineCount} in ${prosReleaseDate}"
+	fi	
+	
+done
+
+echo
+echo "Comparison Complete."
