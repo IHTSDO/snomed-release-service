@@ -121,7 +121,7 @@ public class RF2ClassifierService {
 							"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in build package logs for more details.");
 				}
 			} catch (ClassificationException | IOException e) {
-				throw new ProcessingException("Failed to generate inferred relationship snapshot.");
+				throw new ProcessingException("Failed to generate inferred relationship snapshot.", e);
 			}
 		} else {
 			logger.info("Stated relationship and concept files not present. Skipping classification.");
