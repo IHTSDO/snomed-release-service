@@ -36,7 +36,8 @@ function createFileList {
 	home=`pwd`
 	cd $dir
 	#We're comparing two different release dates so we need to strip out any numbers
-	find . -type f | sed -e 's/..\(.*\)\([0-9]\{8\}\).*/\1/'  > ../c/${listName}_file_list.txt
+	#Also strip out any leading x's.  We'll compare regardless
+	find . -type f | sed -e 's/..\(.*\)\([0-9]\{8\}\).*/\1/' | sed 's/^x\(.*\)/\1/'  > ../c/${listName}_file_list.txt
 	cd - > /dev/null
 }
 
@@ -69,44 +70,83 @@ fi
 mkdir -p ${workDir}
 
 #And clean it out in case we've done a previous run
-#rm -rf ${workDir}/*
-#
+rm -rf ${workDir}/*
+
 #Copy our two files in there and extract
-#echo "Copying files to working directory: ${workDir} and extracting..."
-#cp  ${currentRelease} ${workDir}
-#cp  ${prospectiveRelease} ${workDir}
+echo
+echo -n "Copying files to working directory: ${workDir} and extracting into flat structure (see a_flat, b_flat)"
+cp  ${currentRelease} ${workDir}
+echo -n "."
+cp  ${prospectiveRelease} ${workDir}
+echo -n "."
 cd ${workDir}
-#unzip ${currentRelease} -d a > /dev/null
-#unzip ${prospectiveRelease} -d b > /dev/null
-#mkdir {a_flat,b_flat,c}
-#
+unzip ${currentRelease} -d a > /dev/null
+echo -n "."
+unzip ${prospectiveRelease} -d b > /dev/null
+echo -n "."
+mkdir {a_flat,b_flat,c}
+
 #echo "Flattening structure..."
-#cd a
-#find . -type f | xargs -I {} cp {} ../a_flat
-#cd ../b
-#find . -type f | xargs -I {} cp {} ../b_flat
-#cd ..
-#
-#createFileList "current" a_flat
-#createFileList "prospective" b_flat
+cd a
+find . -type f | xargs -I {} cp {} ../a_flat
+echo -n "."
+
+cd ../b
+find . -type f | xargs -I {} cp {} ../b_flat
+cd ..
+echo "."
+
+createFileList "current" a_flat
+createFileList "prospective" b_flat
 
 echo -e "*** File list differences ${currReleaseDate} vs ${prosReleaseDate} ***\n"
 diff c/current_file_list.txt c/prospective_file_list.txt && echo "None"
 echo
 
 #Now check that all prospective full files are larger than all current full files
+message="PASS: All full files larger that previous full files."
 for file in `cat c/current_file_list.txt | grep Full`; do
-	currFile=`ls a_flat/${file}*`
-	prosFile=`ls b_flat/${file}*`
+	currFile=`ls a_flat/*${file}*`
+	prosFile=`ls b_flat/*${file}*`
 	#echo "Comparing ${currFile} to ${prosFile}"
 	currLineCount=`wc -l ${currFile} | awk {'print $1'}`
 	prosLineCount=`wc -l ${prosFile} | awk {'print $1'}`
 	if (( ! prosLineCount > currLineCount ))
 	then
+		message="FAIL: One or more full files was not larger than it's previous version"
 		echo -e "Warning - ${file}: ${currLineCount} lines in ${currReleaseDate} compared to ${prosLineCount} in ${prosReleaseDate}"
 	fi	
-	
 done
+echo ${message}
+
+#Now check that line count of current full + prospective delta = prospective full
+message="PASS: All prospective full files are the size of the previous full plus the prospective delta"
+for file in `cat c/current_file_list.txt | grep Full`; do
+	currFullFile=`ls a_flat/*${file}*`
+	prosFullFile=`ls b_flat/*${file}*`
+	prosDeltaFile=`echo ${prosFullFile} | sed 's/Full/Delta/'`
+	
+	#echo "Comparing ${currFullFile} plus ${prosDeltaFile} equals ${prosFullFile}"
+	currFullLineCount=`wc -l ${currFullFile} | awk {'print $1'}`
+	prosFullLineCount=`wc -l ${prosFullFile} | awk {'print $1'}`
+	
+	#It is acceptable for the delta file to be missing eg zres2_icRefset_OrderedTypeDelete_INT_20110731.txt
+	if [ -e ${prosDeltaFile} ]
+	then
+		prosDeltaLineCount=`wc -l ${prosDeltaFile} | awk {'print $1'}`
+	else 
+		echo "Warning - ${prosDeltaFile} is not present.  Assuming size to be 0 + header = 1."
+		prosDeltaLineCount=1
+	fi
+	
+	#Subtract 1 from the delta line count because we don't add the header line again
+	if (( currFullLineCount + prosDeltaLineCount -1 !=  prosFullLineCount))
+	then
+		message="FAIL: One or more prospective full files was not the sum of the previous full plus the prospective delta"
+		echo -e "Warning - ${file}: ${currFullLineCount} + ${prosDeltaLineCount} -1 DOES NOT EQUAL  ${prosFullLineCount}"
+	fi	
+done
+echo ${message}
 
 echo
 echo "Comparison Complete."
