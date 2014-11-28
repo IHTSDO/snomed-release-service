@@ -41,6 +41,26 @@ function createFileList {
 	cd - > /dev/null
 }
 
+function ensureXinY () {
+	subset=$1
+	superset=$2
+	lineCount=0
+	for thisLine in `cat ${subset}`; do
+		lineFound=`grep "${thisLine}" $superset`
+		
+		if [ -z "${lineFound}" ] 
+		then 
+			echo "Failed to find: ${thisLine} in ${superset} at line ${lineCount}" 
+		fi
+		
+		((lineCount++))
+		if (( lineCount % 500 == 0 ))
+		then
+			echo -n "."
+		fi
+	done
+}
+
 #Check we've been passed current (old) and prospective (new) releases 
 currentRelease=$1
 prospectiveRelease=$2
@@ -145,6 +165,30 @@ for file in `cat c/current_file_list.txt | grep Full`; do
 		message="FAIL: One or more prospective full files was not the sum of the previous full plus the prospective delta"
 		echo -e "Warning - ${file}: ${currFullLineCount} + ${prosDeltaLineCount} -1 DOES NOT EQUAL  ${prosFullLineCount}"
 	fi	
+done
+echo ${message}
+
+#Now check that all delta files are contained in the full and snapshot, and that the snapshot is contained in the full
+message="PASS: All files are contained in their respective supersets"
+for file in `cat c/prospective_file_list.txt | grep Full`; do
+	echo -n "${file} "
+	prosFullFile=`ls b_flat/*${file}*`
+	prosSnapFile=`echo ${prosFullFile} | sed 's/Full/Snapshot/'`
+	prosDeltaFile=`echo ${prosFullFile} | sed 's/Full/Delta/'`
+	fullLineCount=`wc -l ${prosFullFile} | awk {'print $1'}`
+	echo -n "${file} (${fullLineCount}) "	
+	ensureXinY ${prosSnapFile} ${prosFullFile}
+	echo -n "_"
+	
+	if [ -e ${prosDeltaFile} ]
+	then
+		ensureXinY ${prosDeltaFile} ${prosFullFile}
+		echo -n "_"
+		ensureXinY ${prosDeltaFile} ${prosSnapFile}
+		echo "_"
+	else 
+		echo "Warning - ${prosDeltaFile} is not present.  Cannot check it exists in supersets"
+	fi
 done
 echo ${message}
 
