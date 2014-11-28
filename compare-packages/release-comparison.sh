@@ -30,6 +30,16 @@ function getReleaseDate() {
 	echo $releaseDate
 } 
 
+function createFileList {
+	listName=$1
+	dir=$2
+	home=`pwd`
+	cd $dir
+	#We're comparing two different release dates so we need to strip out any numbers
+	find . -type f | sed -e 's/..\(.*\)\([0-9]\{8\}\).*/\1/'  > ../c/${listName}_file_list.txt
+	cd - > /dev/null
+}
+
 #Check we've been passed current (old) and prospective (new) releases 
 currentRelease=$1
 prospectiveRelease=$2
@@ -58,7 +68,7 @@ fi
 #Create our working directory
 mkdir -p ${workDir}
 
-#And clean it out incase we've done a previous run
+#And clean it out in case we've done a previous run
 rm -rf ${workDir}/*
 
 #Copy our two files in there and extract
@@ -68,11 +78,18 @@ cp  ${prospectiveRelease} ${workDir}
 cd ${workDir}
 unzip ${currentRelease} -d a > /dev/null
 unzip ${prospectiveRelease} -d b > /dev/null
-mkdir {a_flat,b_flat}
+mkdir {a_flat,b_flat,c}
 
 echo "Flattening structure..."
 cd a
 find . -type f | xargs -I {} cp {} ../a_flat
 cd ../b
 find . -type f | xargs -I {} cp {} ../b_flat
+cd ..
 
+createFileList "current" a_flat
+createFileList "prospective" b_flat
+
+echo -e "*** File list differences ${currReleaseDate} vs ${prosReleaseDate} ***\n"
+diff c/current_file_list.txt c/prospective_file_list.txt && echo "None"
+echo
