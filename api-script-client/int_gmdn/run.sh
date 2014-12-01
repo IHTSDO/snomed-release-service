@@ -8,6 +8,8 @@ isFirstTime=true
 isWorkbenchDataFixesRequired=true
 headless=true
 productName="Int GMDN"
+isFirstTime=true
+createInferredRelationships=true
 
 # Call api_client
 source ../api_client.sh
