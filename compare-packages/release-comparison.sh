@@ -69,7 +69,7 @@ function ensureXinY () {
 	
 	if (( subsetLineCount  !=  commonLineCount ))
 	then
-		echo "\nWarning - ${subset} (${subsetLineCount} lines) is not fully contained in superset ${superset} - ${commonLineCount} lines in common."
+		echo -e "\nWarning - ${subset} (${subsetLineCount} lines) is not fully contained in superset ${superset} - ${commonLineCount} lines in common."
 		subsetCheckMessage="FAIL: One or more subset files was not fully contained in its superset."
 	fi
 }
