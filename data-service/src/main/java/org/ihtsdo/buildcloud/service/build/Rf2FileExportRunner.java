@@ -1,7 +1,14 @@
 package org.ihtsdo.buildcloud.service.build;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -21,14 +28,8 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 
 public class Rf2FileExportRunner {
 
@@ -51,7 +52,7 @@ public class Rf2FileExportRunner {
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		final List<String> transformedFiles = getTransformedDeltaFiles();
-		BuildConfiguration configuration = build.getConfiguration();
+		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		for (final String thisFile : transformedFiles) {
 			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
@@ -88,8 +89,8 @@ public class Rf2FileExportRunner {
 	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys,
 			final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
 
-		String effectiveTime = configuration.getEffectiveTimeSnomedFormat();
-		String previousPublishedPackage = configuration.getPreviousPublishedPackage();
+		final String effectiveTime = configuration.getEffectiveTimeSnomedFormat();
+		final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 
 		LOGGER.info("Generating release file using {}, isFirstRelease={}", transformedDeltaDataFile, fileFirstTimeRelease);
 		final StatTimer timer = new StatTimer(getClass());
@@ -104,7 +105,7 @@ public class Rf2FileExportRunner {
 
 			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, customRefsetCompositeKeys);
 			timer.split();
-			boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
+			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
 			final String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
@@ -219,7 +220,12 @@ public class Rf2FileExportRunner {
 
 		// Export delta
 		final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
-		RF2TableResults results = rf2TableDAO.selectWithEffectiveDateOrdered(tableSchema, configuration.getEffectiveTimeSnomedFormat());
+		RF2TableResults results = null;
+		if (configuration.isFirstTimeRelease()) {
+			results = rf2TableDAO.selectNone(tableSchema);
+		} else {
+			results = rf2TableDAO.selectWithEffectiveDateOrdered(tableSchema, configuration.getEffectiveTimeSnomedFormat());
+		}
 		try (AsyncPipedStreamBean deltaOutputStream = buildDao.getOutputFileOutputStream(build, deltaFilename)) {
 			rf2FileWriter.exportDelta(results, tableSchema, deltaOutputStream.getOutputStream());
 		} catch (IOException | SQLException e) {
