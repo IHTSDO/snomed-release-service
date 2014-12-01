@@ -91,9 +91,13 @@
 								<argument>${daily_export_output}/delta</argument>
 								<argument>${host}</argument><!-- From command line -->
 							</arguments>
+							<successCodes>
+    							<successCode>0</successCode>
+							</successCodes>
 						</configuration>
 					</execution>
 				</executions>
+				
 			</plugin>
 		</plugins>
 	</build>
