@@ -2,6 +2,7 @@
 
 # Stop on error
 set -e;
+#set -x;  #Debug on
 
 workDir="/tmp/srs_release_comparison"
 
@@ -41,24 +42,36 @@ function createFileList {
 	cd - > /dev/null
 }
 
+function sortIfNeeded() {
+	original=$1
+	sorted=$2
+	if [ ! -e ${sorted} ] 
+	then
+		`sort ${original} > ${sorted}`
+	fi
+}
+
 function ensureXinY () {
 	subset=$1
+	subset_sorted="${subset}_sorted"
 	superset=$2
-	lineCount=0
-	for thisLine in `cat ${subset}`; do
-		lineFound=`grep "${thisLine}" $superset`
-		
-		if [ -z "${lineFound}" ] 
-		then 
-			echo "Failed to find: ${thisLine} in ${superset} at line ${lineCount}" 
-		fi
-		
-		((lineCount++))
-		if (( lineCount % 500 == 0 ))
-		then
-			echo -n "."
-		fi
-	done
+	superset_sorted="${superset}_sorted"
+	#Sort the two files if a sorted version does not already exist
+	sortIfNeeded ${subset} ${subset_sorted}
+	echo -n "."
+	sortIfNeeded ${superset} ${superset_sorted}
+	echo -n "."
+	
+	#The number of lines common to both files should be equal to the size of the subset
+	#Note that the header line will also match, so OK to use line count unmodified
+	subsetLineCount=`wc -l ${subset_sorted} | awk {'print $1'}`
+	commonLineCount=`comm -12 ${subset_sorted} ${superset_sorted} | wc -l | awk {'print $1'}`
+	
+	if (( subsetLineCount  !=  commonLineCount ))
+	then
+		echo "\nWarning - ${subset} (${subsetLineCount} lines) is not fully contained in superset ${superset} - ${commonLineCount} lines in common."
+		subsetCheckMessage="FAIL: One or more subset files was not fully contained in its superset."
+	fi
 }
 
 #Check we've been passed current (old) and prospective (new) releases 
@@ -169,28 +182,29 @@ done
 echo ${message}
 
 #Now check that all delta files are contained in the full and snapshot, and that the snapshot is contained in the full
-message="PASS: All files are contained in their respective supersets"
+subsetCheckMessage="PASS: All files are contained in their respective supersets"
+echo
 for file in `cat c/prospective_file_list.txt | grep Full`; do
 	echo -n "${file} "
 	prosFullFile=`ls b_flat/*${file}*`
 	prosSnapFile=`echo ${prosFullFile} | sed 's/Full/Snapshot/'`
 	prosDeltaFile=`echo ${prosFullFile} | sed 's/Full/Delta/'`
 	fullLineCount=`wc -l ${prosFullFile} | awk {'print $1'}`
-	echo -n "${file} (${fullLineCount}) "	
+	echo -n "Subset checking: ${file} (${fullLineCount}) "	
 	ensureXinY ${prosSnapFile} ${prosFullFile}
-	echo -n "_"
+	echo -n "."
 	
 	if [ -e ${prosDeltaFile} ]
 	then
 		ensureXinY ${prosDeltaFile} ${prosFullFile}
-		echo -n "_"
+		echo -n "."
 		ensureXinY ${prosDeltaFile} ${prosSnapFile}
-		echo "_"
+		echo "."
 	else 
 		echo "Warning - ${prosDeltaFile} is not present.  Cannot check it exists in supersets"
 	fi
 done
-echo ${message}
+echo ${subsetCheckMessage}
 
 echo
 echo "Comparison Complete."
