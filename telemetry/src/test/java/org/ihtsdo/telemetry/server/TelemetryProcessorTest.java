@@ -154,7 +154,7 @@ public class TelemetryProcessorTest {
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
-		String capturedEventStream = replaceDates(fileToString(testStreamFile));
+		String capturedEventStream = stripLineNumbersFromStackTrace(replaceDates(fileToString(testStreamFile)));
 
 		// Grab first 8 lines. The lower part of the stack includes the container (Maven, IDE etc.) so should not be part of unit test.
 		String capturedEventStreamFirstEightLines = StringUtils.join(Arrays.copyOfRange(capturedEventStream.split("\n"), 0, 8), "\n");
@@ -163,12 +163,16 @@ public class TelemetryProcessorTest {
 				"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Processing...\n" +
 				"DATE ERROR org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - User input is not a valid float: a\n" +
 				"java.lang.NumberFormatException: For input string: \"a\"\n" +
-				"\tat sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1241)\n" +
-				"\tat java.lang.Float.parseFloat(Float.java:452)\n" +
-				"\tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:37)\n" +
-				"\tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:153)";
+				"\tat sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:LINE)\n" +
+				"\tat java.lang.Float.parseFloat(Float.java:LINE)\n" +
+				"\tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:LINE)\n" +
+				"\tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:LINE)";
 
 		Assert.assertEquals(expected, capturedEventStreamFirstEightLines);
+	}
+
+	private String stripLineNumbersFromStackTrace(String s) {
+		return s.replaceAll(":[\\d]+", ":LINE");
 	}
 
 	private String replaceDates(String capturedEventStream) {
