@@ -2,25 +2,23 @@ package org.ihtsdo.telemetry.server;
 
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.apache.commons.mail.EmailException;
-import org.ihtsdo.telemetry.client.TelemetryStream;
+import org.ihtsdo.commons.email.EmailRequest;
+import org.ihtsdo.commons.email.EmailSender;
 import org.ihtsdo.telemetry.core.Constants;
 import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.ihtsdo.commons.email.EmailRequest;
-import org.ihtsdo.commons.email.EmailSender;
-
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 
 public class TelemetryProcessor {
 
@@ -110,6 +108,11 @@ public class TelemetryProcessor {
 									BufferedWriter writer = streamWriters.get(correlationID);
 									if (writer != null) {
 										writer.write(text);
+										String exception = message.getStringProperty(Constants.EXCEPTION);
+										if (exception != null) {
+											writer.write(exception);
+											writer.write(Constants.LINE_BREAK);
+										}
 									} else {
 										logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
 									}

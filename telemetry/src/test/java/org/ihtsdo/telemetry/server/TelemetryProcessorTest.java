@@ -1,15 +1,12 @@
 package org.ihtsdo.telemetry.server;
 
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
-
-import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.helpers.LogLog;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -19,7 +16,6 @@ import org.easymock.internal.MocksControl;
 import org.ihtsdo.commons.email.EmailRequest;
 import org.ihtsdo.commons.email.EmailSender;
 import org.ihtsdo.telemetry.TestService;
-import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.ihtsdo.telemetry.core.Constants;
 import org.junit.After;
 import org.junit.Assert;
@@ -33,7 +29,7 @@ import org.springframework.util.FileCopyUtils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.*;
 
 @RunWith(JMockit.class)
 public class TelemetryProcessorTest {
@@ -104,16 +100,17 @@ public class TelemetryProcessorTest {
 
 	@Test
 	public void testAggregateEventsToFile() throws IOException, InterruptedException {
-		doProcessing(TelemetryProcessorTest.streamFileDestination);
+		TestProcessor.doProcessing(TelemetryProcessorTest.streamFileDestination);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
-		String capturedEventStream = fileToString(testStreamFile);
+		String capturedEventStream = replaceDates(fileToString(testStreamFile));
 		Assert.assertNotNull(capturedEventStream);
 		Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
-		Assert.assertTrue(capturedEventStream.matches("[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Start of event stream\n" +
-				"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Processing...\n" +
-				"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - End of event stream\n"));
+		Assert.assertEquals("DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
+				"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
+				"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
+				capturedEventStream);
 	}
 
 	@Test
@@ -128,12 +125,13 @@ public class TelemetryProcessorTest {
 				// Run temp file assertions before it's deleted
 				File capturedFile = fileCapture.getValue();
 				Assert.assertNotNull(capturedFile);
-				String capturedEventStream = fileToString(capturedFile);
+				String capturedEventStream = replaceDates(fileToString(capturedFile));
 				Assert.assertNotNull(capturedEventStream);
 				Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
-				Assert.assertTrue(capturedEventStream.matches("[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Start of event stream\n" +
-						"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - Processing...\n" +
-						"[^ ]+ INFO  org.ihtsdo.telemetry.server.TelemetryProcessorTest.doProcessing - End of event stream\n"));
+				Assert.assertEquals("DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
+						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
+						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
+						capturedEventStream);
 				fileAssertionsRan.b = true;
 				return null;
 			}
@@ -141,7 +139,7 @@ public class TelemetryProcessorTest {
 		mocksControl.replay();
 
 		// Perform test scenario
-		doProcessing(TelemetryProcessorTest.streamS3Destination);
+		TestProcessor.doProcessing(TelemetryProcessorTest.streamS3Destination);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
@@ -150,20 +148,31 @@ public class TelemetryProcessorTest {
 		Assert.assertTrue(fileAssertionsRan.b);
 	}
 
-	public void doProcessing(String streamDestination) {
-		Logger logger = LoggerFactory.getLogger(TestService.class);
+	@Test
+	public void testAggregateEventsToFileWithException() throws IOException, InterruptedException {
+		TestProcessor.doProcessingWithException(TelemetryProcessorTest.streamFileDestination);
+		// Wait for the aggregator to finish.
+		Thread.sleep(1000);
 
-		logger.info("Before stream started");
+		String capturedEventStream = replaceDates(fileToString(testStreamFile));
 
-		TelemetryStream.start(logger, streamDestination);
-		logger.info("Start of event stream");
+		// Grab first 8 lines. The lower part of the stack includes the container (Maven, IDE etc.) so should not be part of unit test.
+		String capturedEventStreamFirstEightLines = StringUtils.join(Arrays.copyOfRange(capturedEventStream.split("\n"), 0, 8), "\n");
 
-		logger.info("Processing...");
+		String expected = "DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Start of event stream\n" +
+				"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Processing...\n" +
+				"DATE ERROR org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - User input is not a valid float: a\n" +
+				"java.lang.NumberFormatException: For input string: \"a\"\n" +
+				"\tat sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1241)\n" +
+				"\tat java.lang.Float.parseFloat(Float.java:452)\n" +
+				"\tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:37)\n" +
+				"\tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:153)";
 
-		logger.info("End of event stream");
-		TelemetryStream.finish(logger);
+		Assert.assertEquals(expected, capturedEventStreamFirstEightLines);
+	}
 
-		logger.info("After stream ended");
+	private String replaceDates(String capturedEventStream) {
+		return capturedEventStream.replaceAll("[\\d]{8}[^ ]* ", "DATE ");
 	}
 
 	private String fileToString(File file) throws IOException {
