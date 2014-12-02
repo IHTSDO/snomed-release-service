@@ -56,12 +56,15 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private Set<Key> dirtyKeys;
 
+	private final ReferenceSetCompositeKeyPatternFactory refsetCompositeKeyPatternFactory;
+
 	public RF2TableDAOTreeMapImpl(final UUIDGenerator uuidGenerator, final Map<String, List<Integer>> customRefsetCompositeKeys) {
 		this.uuidGenerator = uuidGenerator;
 		schemaFactory = new SchemaFactory();
 		table = new TreeMap<>();
 		this.customRefsetCompositeKeys = customRefsetCompositeKeys;
 		refsetCompositeKeyPatternCache = new HashMap<>();
+		refsetCompositeKeyPatternFactory = new ReferenceSetCompositeKeyPatternFactory(this.customRefsetCompositeKeys);
 	}
 
 	@Override
@@ -291,7 +294,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	private Pattern getRefsetCompositeKeyPattern(final TableSchema tableSchema, final String refsetId) throws DatabasePopulatorException, BadConfigurationException {
 		if (tableSchema.getComponentType() == ComponentType.REFSET) {
 			if (!refsetCompositeKeyPatternCache.containsKey(refsetId)) {
-				refsetCompositeKeyPatternCache.put(refsetId, productRefsetCompositeKeyPattern(tableSchema, refsetId));
+				refsetCompositeKeyPatternCache.put(refsetId, refsetCompositeKeyPatternFactory.getRefsetCompositeKeyPattern(tableSchema, refsetId));
 			}
 			return refsetCompositeKeyPatternCache.get(refsetId);
 		} else {

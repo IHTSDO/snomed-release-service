@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service.build;
 
-import org.apache.commons.lang3.time.FastDateFormat;
-
 import java.nio.charset.Charset;
+
+import org.apache.commons.lang3.time.FastDateFormat;
 
 public class RF2Constants {
 
@@ -32,6 +32,11 @@ public class RF2Constants {
 	public static final String EQUIVALENCY_REPORT_TXT = "equivalency_report.txt";
 	public static final String CONCEPTS_WITH_CYCLES_TXT = "concepts_with_cycles.txt";
 	public static final String STATED = "Stated";
-
 	public static final String NULL_STRING = "null";
+	public static final CharSequence SIMPLE_MAP_FILE_IDENTIFIER = "SimpleMap";
+	public static final CharSequence ASSOCIATION_REFERENCE_FILE_IDENTIFIER = "AssociationReference";
+	public static final CharSequence EXTENEDED_MAP_FILE_IDENTIFIER = "ExtendedMap";
+	public static final CharSequence REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER = "RefsetDescriptor";
+	public static final CharSequence MODULE_DEPENDENCY_FILE_IDENTIFIER = "ModuleDependency";
+	public static final CharSequence COMPLEX_MAP_FILE_IDENTIFIER = "ComplexMap";
 }
