@@ -139,11 +139,18 @@ echo
 #Now check that all prospective full files are larger than all current full files
 message="PASS: All full files larger that previous full files."
 for file in `cat c/current_file_list.txt | grep Full`; do
-	currFile=`ls a_flat/*${file}*`
-	prosFile=`ls b_flat/*${file}*`
+	currFile=`ls a_flat/*${file}* 2> /dev/null || true`
+	prosFile=`ls b_flat/*${file}* 2> /dev/null || true`
 	#echo "Comparing ${currFile} to ${prosFile}"
+	#if either file is missing, skip - will already have been reported as a discrepancy
+	if [[ ! -e $currFile  || ! -e $prosFile ]]
+	then
+		continue
+	fi
+	
 	currLineCount=`wc -l ${currFile} | awk {'print $1'}`
 	prosLineCount=`wc -l ${prosFile} | awk {'print $1'}`
+	
 	if (( ! prosLineCount > currLineCount ))
 	then
 		message="FAIL: One or more full files was not larger than it's previous version"
@@ -155,9 +162,15 @@ echo ${message}
 #Now check that line count of current full + prospective delta = prospective full
 message="PASS: All prospective full files are the size of the previous full plus the prospective delta"
 for file in `cat c/current_file_list.txt | grep Full`; do
-	currFullFile=`ls a_flat/*${file}*`
-	prosFullFile=`ls b_flat/*${file}*`
+	currFullFile=`ls a_flat/*${file}* 2> /dev/null || true`
+	prosFullFile=`ls b_flat/*${file}* 2> /dev/null|| true`
 	prosDeltaFile=`echo ${prosFullFile} | sed 's/Full/Delta/'`
+	
+	#if either file is missing, skip - will already have been reported as a discrepancy
+	if [[ ! -e $currFullFile  || ! -e $prosFullFile ]]
+	then
+		continue
+	fi
 	
 	#echo "Comparing ${currFullFile} plus ${prosDeltaFile} equals ${prosFullFile}"
 	currFullLineCount=`wc -l ${currFullFile} | awk {'print $1'}`
@@ -186,7 +199,13 @@ subsetCheckMessage="PASS: All files are contained in their respective supersets"
 echo
 for file in `cat c/prospective_file_list.txt | grep Full`; do
 	echo -n "${file} "
-	prosFullFile=`ls b_flat/*${file}*`
+	prosFullFile=`ls b_flat/*${file}* 2> /dev/null || true`
+	
+	#if  file is missing, skip - will already have been reported as a discrepancy
+	if [[ ! -e $prosFullFile ]]
+	then
+		continue
+	fi
 	prosSnapFile=`echo ${prosFullFile} | sed 's/Full/Snapshot/'`
 	prosDeltaFile=`echo ${prosFullFile} | sed 's/Full/Delta/'`
 	fullLineCount=`wc -l ${prosFullFile} | awk {'print $1'}`
