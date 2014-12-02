@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/version")
 public class VersionController {
 
-	public static final String VERSION_FILE_PATH = "/var/opt/snomed-release-service-api/version.txt";
+	public static final String VERSION_FILE_PATH = "/var/opt/rvf-api/version.txt";
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -27,7 +27,7 @@ public class VersionController {
 	public Map<String, Object> getVersion(HttpServletRequest request) throws IOException {
 		Map<String, String> entity = new HashMap<>();
 		entity.put("package_version", getVersionString());
-		return hypermediaGenerator.getEntityHypermedia(entity, true, request, new String[]{});
+		return hypermediaGenerator.getEntityHypermedia(entity, true, request, new String[] {});
 	}
 
 	private String getVersionString() throws IOException {
@@ -38,6 +38,8 @@ public class VersionController {
 				try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
 					versionString = bufferedReader.readLine();
 				}
+			} else {
+				versionString = "Version information not found.";
 			}
 			this.versionString = versionString;
 		}
