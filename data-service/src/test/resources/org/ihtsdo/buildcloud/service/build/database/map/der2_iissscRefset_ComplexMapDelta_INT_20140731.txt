@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	refSetId	referencedComponentId	mapGroup	mapPriority	mapRule	mapAdvice	mapTarget	correlationId
+c110d029-bd46-5ccf-9390-07a8493ea420	20140731	0	900000000000207008	447563008	1178005	1	1			343.9	447558009
