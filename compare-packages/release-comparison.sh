@@ -105,18 +105,14 @@ mkdir -p ${workDir}
 #And clean it out in case we've done a previous run
 rm -rf ${workDir}/*
 
-#Copy our two files in there and extract
+#Extract files
 echo
-echo -n "Copying files to working directory: ${workDir} and extracting into flat structure (see a_flat, b_flat)"
-cp  ${currentRelease} ${workDir}
+echo -n "Extracting files to working directory: ${workDir} and into flat structure (see a_flat, b_flat)"
+unzip ${currentRelease} -d ${workDir}/a > /dev/null
 echo -n "."
-cp  ${prospectiveRelease} ${workDir}
+unzip ${prospectiveRelease} -d ${workDir}/b > /dev/null
 echo -n "."
 cd ${workDir}
-unzip ${currentRelease} -d a > /dev/null
-echo -n "."
-unzip ${prospectiveRelease} -d b > /dev/null
-echo -n "."
 mkdir {a_flat,b_flat,c}
 
 #echo "Flattening structure..."
