@@ -137,7 +137,7 @@ diff c/current_file_list.txt c/prospective_file_list.txt && echo "None"
 echo
 
 #Now check that all prospective full files are larger than all current full files
-message="PASS: All full files larger that previous full files."
+message="PASS: All full files larger than previous full files."
 for file in `cat c/current_file_list.txt | grep Full`; do
 	currFile=`ls a_flat/*${file}* 2> /dev/null || true`
 	prosFile=`ls b_flat/*${file}* 2> /dev/null || true`
@@ -190,6 +190,8 @@ for file in `cat c/current_file_list.txt | grep Full`; do
 	then
 		message="FAIL: One or more prospective full files was not the sum of the previous full plus the prospective delta"
 		echo -e "Warning - ${file}: ${currFullLineCount} + ${prosDeltaLineCount} -1 DOES NOT EQUAL  ${prosFullLineCount}"
+	else
+		echo "${file}: ${currFullLineCount} + ${prosDeltaLineCount} -1 EQUALS  ${prosFullLineCount}"
 	fi	
 done
 echo ${message}
