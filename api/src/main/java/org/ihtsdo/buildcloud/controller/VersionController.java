@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/version")
 public class VersionController {
 
-	public static final String VERSION_FILE_PATH = "/var/opt/rvf-api/version.txt";
+	public static final String VERSION_FILE_PATH = "/var/opt/snomed-release-service-api/version.txt";
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
