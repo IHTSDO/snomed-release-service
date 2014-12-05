@@ -155,7 +155,6 @@ public class LegacyIdTransformationService {
 		builder.append(sctId != null ? sctId.toString() : "null");
 		builder.append(TAB);
 		builder.append(mapTarget);
-		builder.append(TAB);
 		return builder.toString();
 	}
 }
