@@ -1,5 +1,18 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
@@ -7,9 +20,6 @@ import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.*;
-import java.util.*;
 
 public class LegacyIdTransformationService {
 
@@ -145,7 +155,6 @@ public class LegacyIdTransformationService {
 		producter.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
 		producter.append(TAB);
 		producter.append(mapTarget);
-		producter.append(TAB);
 		return producter.toString();
 	}
 }
