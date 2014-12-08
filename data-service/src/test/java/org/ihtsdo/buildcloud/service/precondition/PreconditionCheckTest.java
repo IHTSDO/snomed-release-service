@@ -1,17 +1,15 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
+import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.service.InputFileService;
+import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,7 +25,6 @@ import java.io.*;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/test/testDataServiceContext.xml"})
@@ -35,66 +32,65 @@ import java.util.Map;
 public abstract class PreconditionCheckTest {
 
 	@Autowired
-	protected InputFileService inputFileService;
+	protected ProductInputFileService productInputFileService;
+
+	@Autowired
+	private ProductDAO productDAO;
 
 	@Autowired
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private ExecutionDAO executionDAO;
-
-	@Autowired
-	private InputFileDAO inputFileDAO;
+	private ProductInputFileDAO productInputFileDAO;
 
 	@Autowired
 	private TestUtils testUtils;
 
-	protected Build build;
-	protected Execution execution = null;
+	protected Product product;
+	protected Build build = null;
 	protected PreconditionManager manager;
 
 	protected static final String JULY_RELEASE = "20140731";
 
-	private static int executionIdx = 0;
+	private static int buildIdx = 0;
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionCheckTest.class);
 
 	@Before
 	public void setup() throws Exception {
-		build = buildDAO.find(1L, TestEntityGenerator.TEST_USER);
-		if (build.getEffectiveTime() == null) {
-			build.setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
+		product = productDAO.find(1L, TestUtils.TEST_USER);
+		if (product.getBuildConfiguration().getEffectiveTime() == null) {
+			product.getBuildConfiguration().setEffectiveTime(RF2Constants.DATE_FORMAT.parse(JULY_RELEASE));
 		}
 	}
 
-	protected void createNewExecution() {
-		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, executionIdx++).getTime();
-		execution = new Execution(creationTime, build);
+	protected void createNewBuild() {
+		Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, buildIdx++).getTime();
+		build = new Build(creationTime, product);
 
-		//Because we're working with a unit test, that execution will probably already exist on disk, so wipe
-		testUtils.scrubExecution(execution);
+		// Because we're working with a unit test, that build will probably already exist on disk, so wipe
+		testUtils.scrubBuild(build);
 
-		// Copy all files from Build input and manifest directory to Execution input and manifest directory
-		executionDAO.copyAll(build, execution);
+		// Copy all files from Product input and manifest directory to Build input and manifest directory
+		buildDAO.copyAll(product, build);
 	}
 
 	protected PreConditionCheckReport runPreConditionCheck(Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
 
-		//Do we need an execution? // TODO: remove this - we should always know the state of a test
-		if (execution == null) {
-			createNewExecution();
+		// Do we need an build? // TODO: remove this - we should always know the state of a test
+		if (build == null) {
+			createNewBuild();
 		}
 
-		//Create a manager for this test
-		Map<String, List<PreConditionCheckReport>> report = manager.runPreconditionChecks(execution);
+		// Create a manager for this test
+		List<PreConditionCheckReport> report = manager.runPreconditionChecks(build);
 		Assert.assertNotNull(report);
 
-		List<PreConditionCheckReport> allPrechecks = report.get(TestEntityGenerator.packageNames[0][0][0]);        //For the "Snomed Release Package"
-		PreConditionCheckReport testResult = allPrechecks.get(0);                                                //Get the first test run
+		PreConditionCheckReport testResult = report.get(0); // Get the first test run
 
 		String testName = testResult.getPreConditionCheckName();
 		Assert.assertEquals(classUnderTest.getSimpleName(), testName);
 
-		//If it's a fail, we'll debug that message just for testing purposes
+		// If it's a fail, we'll debug that message just for testing purposes
 		if (State.PASS != testResult.getResult()) {
 			LOGGER.warn("Test {} Reported {}", testName, testResult.getMessage());
 		}
@@ -102,18 +98,16 @@ public abstract class PreconditionCheckTest {
 	}
 
 	protected void loadManifest(String filename) throws FileNotFoundException {
-		for (Package pkg : build.getPackages()) {
-			if (filename != null) {
-				String testFilePath = getClass().getResource(filename).getFile();
-				File testManifest = new File(testFilePath);
-				inputFileDAO.putManifestFile(pkg, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
-			} else {
-				inputFileDAO.deleteManifest(pkg);
-			}
+		if (filename != null) {
+			String testFilePath = getClass().getResource(filename).getFile();
+			File testManifest = new File(testFilePath);
+			productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+		} else {
+			productInputFileDAO.deleteManifest(product);
 		}
 
-		//When we load a manifest, we need that copied over to a new execution
-		createNewExecution();
+		//When we load a manifest, we need that copied over to a new build
+		createNewBuild();
 	}
 
 	/**
@@ -124,22 +118,16 @@ public abstract class PreconditionCheckTest {
 	 * @throws IOException
 	 */
 	protected void addEmptyFileToInputDirectory(String filename) throws ResourceNotFoundException, IOException {
-		for (Package pkg : build.getPackages()) {
-			File tempFile = File.createTempFile("testTemp", ".txt");
-			try (InputStream inputStream = new FileInputStream(tempFile)) {
-				inputFileService.putInputFile(build.getCompositeKey(), pkg.getBusinessKey(),
-						inputStream, filename, 0L, TestEntityGenerator.TEST_USER);
-			} finally {
-				tempFile.deleteOnExit();
-			}
+		File tempFile = File.createTempFile("testTemp", ".txt");
+		try (InputStream inputStream = new FileInputStream(tempFile)) {
+			productInputFileService.putInputFile(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, filename, 0L);
+		} finally {
+			tempFile.deleteOnExit();
 		}
 	}
 
 	protected void deleteFilesFromInputFileByPattern(String fileExtension) throws ResourceNotFoundException {
-		for (Package pkg : build.getPackages()) {
-			inputFileService.deleteFilesByPattern(build.getCompositeKey(), pkg.getBusinessKey(),
-					fileExtension, TestEntityGenerator.TEST_USER);
-		}
+		productInputFileService.deleteFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), fileExtension);
 	}
 
 }

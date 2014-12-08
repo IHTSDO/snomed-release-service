@@ -9,7 +9,7 @@ import org.apache.commons.codec.binary.Hex;
 import java.io.InputStream;
 
 /**
- * Wraps the JetS3t ObjectMetadata enabling builder pattern.
+ * Wraps the JetS3t ObjectMetadata enabling producter pattern.
  */
 public class S3PutRequestBuilder extends PutObjectRequest {
 

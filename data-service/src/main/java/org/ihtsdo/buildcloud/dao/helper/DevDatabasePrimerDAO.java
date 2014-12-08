@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.dao.helper;
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.ihtsdo.buildcloud.entity.*;
-import org.ihtsdo.buildcloud.entity.Package;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
 
 @Repository
 public class DevDatabasePrimerDAO extends TestEntityGenerator {
@@ -32,7 +30,7 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator {
 			User anonymousUser = createUser(User.ANONYMOUS_USER, "");
 
 			// Create international release center
-			ReleaseCenter internationalReleaseCenter = createTestReleaseCenterWithExtensions("International Release Center", "International");
+			ReleaseCenter internationalReleaseCenter = createTestReleaseCenterWithProducts("International Release Center", "International");
 			save(internationalReleaseCenter);
 
 			// Grant anonymous access
@@ -63,24 +61,12 @@ public class DevDatabasePrimerDAO extends TestEntityGenerator {
 	}
 
 	private void save(ReleaseCenter releaseCenter) {
-		//Work down the hierarchy saving objects as we go
+		// Iterative save
 		Session session = getSession();
 		session.save(releaseCenter);
-		List<Extension> extensions = releaseCenter.getExtensions();
-		for (Extension extension : extensions) {
-			session.save(extension);
-			List<Product> products = extension.getProducts();
-			for (Product product : products) {
-				session.save(product);
-				List<Build> builds = product.getBuilds();
-				for (Build build : builds) {
-					session.save(build);
-					Set<Package> packages = build.getPackages();
-					for (Package pkg : packages) {  //package is a reserved work
-						session.save(pkg);
-					}
-				}
-			}
+		List<Product> products = releaseCenter.getProducts();
+		for (Product product : products) {
+			session.save(product);
 		}
 	}
 

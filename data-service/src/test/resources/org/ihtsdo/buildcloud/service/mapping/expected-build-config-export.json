@@ -1,26 +1,14 @@
 {
 	"id" : "2013-03-05T16:30:00",
 	"creationTime" : "2013-03-05T16:30:00",
-	"build" : {
+	"product" : {
 		"id" : "international_release",
 		"name" : "International Release",
-		"packages" : [ {
-			"id" : "rf2_release",
-			"name" : "RF2 Release",
-			"inputFiles" : [ "sct2_Concept_Delta_INT_20140131.txt", "sct2_Description_Delta-en_INT_20140131.txt", "sct2_Relationship_Delta_INT_20140131.txt" ]
-		} ],
-		"product" : {
-			"id" : "snomed_ct_international_edition",
-			"name" : "SNOMED CT International Edition",
-			"extension" : {
-				"id" : "snomed_ct_international_edition",
-				"name" : "SNOMED CT International Edition",
-				"releaseCenter" : {
-					"id" : "international",
-					"name" : "International Release Center",
-					"shortName" : "International"
-				}
-			}
+		"inputFiles" : [ "sct2_Concept_Delta_INT_20140131.txt", "sct2_Description_Delta-en_INT_20140131.txt", "sct2_Relationship_Delta_INT_20140131.txt" ],
+		"releaseCenter" : {
+			"id" : "international",
+			"name" : "International Release Center",
+			"shortName" : "International"
 		}
 	}
 }

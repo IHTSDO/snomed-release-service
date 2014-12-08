@@ -13,7 +13,7 @@ public class FileUtilsTest {
 
 	@Test
 	public void test() throws URISyntaxException, NoSuchAlgorithmException, IOException {
-		String testFilePath = "/org/ihtsdo/buildcloud/service/execution/der2_Refset_SimpleDelta_INT_20140831.txt";
+		String testFilePath = "/org/ihtsdo/buildcloud/service/build/der2_Refset_SimpleDelta_INT_20140831.txt";
 		URL testFileURL = getClass().getResource(testFilePath);
 		File testFile = new File(testFileURL.toURI());
 		

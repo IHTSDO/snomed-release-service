@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.dao.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
-
+import org.apache.commons.lang.NotImplementedException;
 import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Offers an offline version of S3 cloud storage for demos or working without a connection.
+ * Offers an offline version of S3 cloud storage for testing or working offline.
  * N.B. Metadata and ACL security are not implemented.
  */
 public class OfflineS3ClientImpl implements S3Client, TestS3Client {
@@ -55,7 +55,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException, AmazonServiceException {
+	public ObjectListing listObjects(String bucketName, String prefix) throws AmazonClientException {
 		ObjectListing listing = new ObjectListing();
 		List<S3ObjectSummary> objectSummaries = listing.getObjectSummaries();
 
@@ -88,7 +88,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	/**
 	 * Only bucketName and prefix is used from the ListObjectsRequest.
 	 */
-	public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException {
+	public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException {
 		return listObjects(listObjectsRequest.getBucketName(), listObjectsRequest.getPrefix());
 	}
 
@@ -111,12 +111,12 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public PutObjectResult putObject(String bucketName, String key, File file) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(String bucketName, String key, File file) throws AmazonClientException {
 		return putObject(bucketName, key, getInputStream(file), null);
 	}
 
 	@Override
-	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(String bucketName, String key, InputStream inputStream, ObjectMetadata metadata) throws AmazonClientException {
 		File outFile = getFile(bucketName, key);
 
 		// Create the target directory
@@ -156,7 +156,7 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException, AmazonServiceException {
+	public PutObjectResult putObject(PutObjectRequest putRequest) throws AmazonClientException {
 		String bucketName = putRequest.getBucketName();
 		String key = putRequest.getKey();
 		InputStream inputStream = putRequest.getInputStream();
@@ -179,14 +179,14 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 	}
 
 	@Override
-	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException, AmazonServiceException {
+	public CopyObjectResult copyObject(String sourceBucketName, String sourceKey, String destinationBucketName, String destinationKey) throws AmazonClientException {
 		S3Object object = getObject(sourceBucketName, sourceKey);
 		putObject(destinationBucketName, destinationKey, object.getObjectContent(), null);
 		return null;
 	}
 
 	@Override
-	public void deleteObject(String bucketName, String key) throws AmazonClientException, AmazonServiceException {
+	public void deleteObject(String bucketName, String key) throws AmazonClientException {
 		File file = getFile(bucketName, key);
 
 		//Are we deleting a file or a directory?
@@ -283,7 +283,8 @@ public class OfflineS3ClientImpl implements S3Client, TestS3Client {
 
 	@Override
 	public ObjectListing listNextBatchOfObjects(ObjectListing objectListing) {
-		throw new RuntimeException("Offline S3 Client does not suffer from an item count limit");
+		// This could be implemented for consistency with the online version.
+		throw new NotImplementedException("Offline S3 Client does not need batching.");
 	}
 
 }

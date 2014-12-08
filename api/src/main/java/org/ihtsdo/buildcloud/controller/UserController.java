@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,14 +23,14 @@ public class UserController {
 	@RequestMapping
 	@ResponseBody
 	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getSubject();
-		HashMap<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
-		boolean currentResource = false;
+		User authenticatedUser = SecurityHelper.getRequiredUser();
+		Map<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
+		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(userRepresentation, currentResource, request);
 	}
 
-	private HashMap<String, Object> getUserRepresentation(User user) {
-		HashMap<String, Object> representation = new HashMap<>();
+	private Map<String, Object> getUserRepresentation(User user) {
+		Map<String, Object> representation = new HashMap<>();
 		String username = user.getUsername();
 		representation.put("username", username);
 		boolean authenticated = !username.equals(User.ANONYMOUS_USER);

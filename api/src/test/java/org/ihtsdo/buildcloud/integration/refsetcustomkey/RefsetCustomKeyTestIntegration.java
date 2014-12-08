@@ -35,16 +35,16 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 	}
 
 	private void runTest(String customRefsetCompositeKeys, String expectedOutputPackageName) throws Exception {
-		setupBuild();
+		setupProduct();
 		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
-		String executionId = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionId);
-		assertOutput(expectedOutputPackageName, executionId);
+		String buildId = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildId);
+		assertOutput(expectedOutputPackageName, buildId);
 	}
 
-	private void setupBuild() throws Exception {
+	private void setupProduct() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		String effectiveTime = "20140131";
@@ -58,7 +58,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeHeader("header");
 	}
 
-	private void assertOutput(String expectedOutputPackageName, String executionId) throws Exception {
+	private void assertOutput(String expectedOutputPackageName, String buildId) throws Exception {
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
@@ -68,7 +68,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccsiRefset_UnknownFormatFull_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt";
-		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(executionId, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildId, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents(expectedOutputPackageName, zipFileFirstRelease, getClass());
 	}
 

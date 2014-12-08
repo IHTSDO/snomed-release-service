@@ -6,12 +6,12 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
 public class Product {
+
+	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
 
 	@Id
 	@GeneratedValue
@@ -20,29 +20,44 @@ public class Product {
 
 	private String name;
 
-	@JsonProperty("id")
+	@JsonIgnore
 	private String businessKey;
 
 	@ManyToOne
 	@JsonIgnore
-	private Extension extension;
+	private ReleaseCenter releaseCenter;
 
-	@OneToMany(mappedBy = "product")
-	@JsonIgnore
-	private List<Build> builds;
+	private BuildConfiguration buildConfiguration;
 
 	public Product() {
-		builds = new ArrayList<>();
+		buildConfiguration = new BuildConfiguration();
 	}
 
 	public Product(String name) {
 		this();
 		setName(name);
 	}
+	
+	public Product(Long id, String name) {
+		this(name);
+		this.id = id;
+	}
 
-	public void addBuild(Build build) {
-		builds.add(build);
-		build.setProduct(this);
+	public BuildConfiguration getBuildConfiguration() {
+		return buildConfiguration;
+	}
+
+	public void setBuildConfiguration(BuildConfiguration buildConfiguration) {
+		this.buildConfiguration = buildConfiguration;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+		generateBusinessKey();
+	}
+
+	private void generateBusinessKey() {
+		this.businessKey = EntityHelper.formatAsBusinessKey(name);
 	}
 
 	public Long getId() {
@@ -57,24 +72,47 @@ public class Product {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-		this.businessKey = EntityHelper.formatAsBusinessKey(name);
-	}
-
+	@JsonProperty("id")
 	public String getBusinessKey() {
 		return businessKey;
 	}
 
-	public Extension getExtension() {
-		return extension;
+	public ReleaseCenter getReleaseCenter() {
+		return releaseCenter;
 	}
 
-	public void setExtension(Extension extension) {
-		this.extension = extension;
+	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+		this.releaseCenter = releaseCenter;
 	}
 
-	public List<Build> getBuilds() {
-		return builds;
+	public void setBusinessKey(String businessKey) {
+		this.businessKey = businessKey;
 	}
+
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof Product)) {
+			return false;
+		}
+
+		Product product = (Product) o;
+
+		if (!businessKey.equals(product.businessKey)) {
+			return false;
+		}
+		if (!releaseCenter.equals(product.releaseCenter)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public int hashCode() {
+		int result = businessKey.hashCode();
+		result = 31 * result + releaseCenter.hashCode();
+		return result;
+	}
+
 }

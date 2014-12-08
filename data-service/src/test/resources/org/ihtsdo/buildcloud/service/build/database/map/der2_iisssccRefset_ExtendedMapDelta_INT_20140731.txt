@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	refSetId	referencedComponentId	mapGroup	mapPriority	mapRule	mapAdvice	mapTarget	correlationId	mapCategoryId
+eb06f231-de00-53a1-901b-f016aa4d2e65	20140731	1	449080006	447562003	171008	1	1	TRUE	ALWAYS S36.50 | POSSIBLE REQUIREMENT FOR AN EXTERNAL CAUSE CODE	S36.50	447561005	447637006

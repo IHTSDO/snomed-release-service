@@ -15,4 +15,5 @@ public class Constants {
 	public static final String FILE = "file";
 	public static final String s3 = "s3";
 	public static final String PROTOCOL_SEPARATOR = "://";
+	public static final String LINE_BREAK = "\n";
 }

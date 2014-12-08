@@ -1,9 +1,0 @@
-[ {
-  "id" : "1_20140131_international_release_build",
-  "name" : "20140131 International Release Build",
-  "effectiveTime" : null,
-  "starred" : false,
-  "url" : "http://localhost/api/v1/builds/1_20140131_international_release_build",
-  "packages_url" : "http://localhost/api/v1/builds/1_20140131_international_release_build/packages",
-  "executions_url" : "http://localhost/api/v1/builds/1_20140131_international_release_build/executions"
-} ]

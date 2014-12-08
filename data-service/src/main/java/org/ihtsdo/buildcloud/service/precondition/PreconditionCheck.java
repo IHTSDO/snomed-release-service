@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 
@@ -11,7 +10,7 @@ public abstract class PreconditionCheck {
 
 	private String responseMessage = "";
 
-	public abstract void runCheck(Package pkg, Execution execution);
+	public abstract void runCheck(Build build);
 
 	public PreConditionCheckReport getReport() {
 		PreConditionCheckReport report = new PreConditionCheckReport();

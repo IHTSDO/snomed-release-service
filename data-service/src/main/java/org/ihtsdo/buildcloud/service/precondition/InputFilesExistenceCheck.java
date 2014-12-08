@@ -1,8 +1,7 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
@@ -15,11 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.ihtsdo.buildcloud.service.execution.RF2Constants.*;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 /**
  * To check all files specified in the manifest file can be derived from the input files.
- * If not the build process will be halted and the release manager should be alerted.
+ * If not the product process will be halted and the release manager should be alerted.
  * RF2 files:Full/snapshot/delta
  * der2_Refset_SimpleSnapshot_INT_20140831.txt
  * sct2_Concept_Snapshot_INT_20140131.txt
@@ -35,24 +34,18 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 
 	private static final String ERROR_MSG = "The input files directory doesn't contain the following files required by the manifest.xml: ";
 	@Autowired
-	private ExecutionDAO executionDAO;
+	private BuildDAO buildDAO;
 
 	@Override
-	public void runCheck(Package pkg, Execution execution) {
+	public void runCheck(Build build) {
 		//check against the manifest file
 		boolean isFailed = false;
-		ListingType listingType;
-		try( InputStream manifestInputSteam = executionDAO.getManifestStream(execution, pkg) ) {
-		    	ManifestXmlFileParser parser = new ManifestXmlFileParser();
-			listingType = parser.parse(manifestInputSteam);
-			List<String> filesFromManifiest = ManifestFileListingHelper.listAllFiles(listingType);
+		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
+			ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			ListingType listingType = parser.parse(manifestInputSteam);
 			Set<String> filesExpected = new HashSet<>();
 			boolean isFirstReadmeFound = false;
-			for (String fileName : filesFromManifiest) {
-				//it shouldn't be null double check anyway.
-				if (fileName == null) {
-					continue;
-				}
+			for (String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
 				//dealing with der2 and sct2 full/snapshot/delta files
 				String[] splits = fileName.split(FILE_NAME_SEPARATOR);
 				String fileNamePrefix = splits[0];
@@ -78,7 +71,7 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 
 			}
 			//get a list of input file names
-			List<String> inputfilesList = executionDAO.listInputFileNames(execution, pkg.getBusinessKey());
+			List<String> inputfilesList = buildDAO.listInputFileNames(build);
 			//check expected against input files
 			StringBuilder msgBuilder = new StringBuilder();
 			int count = 0;
@@ -91,7 +84,8 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				}
 			}
 			if (count > 0) {
-				fatalError(ERROR_MSG + msgBuilder.toString());
+				// Missing files is no longer considered FATAL
+				fail(ERROR_MSG + msgBuilder.toString());
 				isFailed = true;
 			}
 

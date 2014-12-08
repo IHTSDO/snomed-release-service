@@ -97,9 +97,6 @@
 	loadEmberTemplate('header');
 	loadEmberTemplate('release-center');
 	loadEmberTemplate('release-center-index');
-	loadEmberTemplate('extension');
-	loadEmberTemplate('extension-index');
-	loadEmberTemplate('extension-maintenance');	
 	loadEmberTemplate('product');
 	loadEmberTemplate('product-index');
 	loadEmberTemplate('product-maintenance');
@@ -115,18 +112,18 @@
 	loadEmberTemplate('post-conditions');
 	loadEmberTemplate('build-input');
 
-	loadEmberTemplate('execution');
-	loadEmberTemplate('execution/configuration');
-	loadEmberTemplate('execution/build-scripts');
-	loadEmberTemplate('execution/output');
-	loadEmberTemplate('execution/results');
-	loadEmberTemplate('execution/publish');
-	loadEmberTemplate('execution-mock');
-	loadEmberTemplate('execution-history');
-	loadEmberTemplate('execution-mock/results');
-	loadEmberTemplate('execution-mock/debug');
-	loadEmberTemplate('execution-mock/output');
-	loadEmberTemplate('execution-mock/publish');
+//	loadEmberTemplate('build');
+	loadEmberTemplate('build/configuration');
+	loadEmberTemplate('build/build-scripts');
+	loadEmberTemplate('build/output');
+	loadEmberTemplate('build/results');
+	loadEmberTemplate('build/publish');
+//	loadEmberTemplate('build-mock');
+//	loadEmberTemplate('build-history');
+	loadEmberTemplate('build-mock/results');
+	loadEmberTemplate('build-mock/debug');
+	loadEmberTemplate('build-mock/output');
+	loadEmberTemplate('build-mock/publish');
 
 	loadEmberPartial('title-dropdown');
 
@@ -144,8 +141,6 @@
 <script src="js/app-data.js"></script>
 <script src="js/ember-data-extensions.js"></script>
 <script src="js/ember-data-nested-resources.js"></script>
-<script src="js/execution-tour.js"></script>
-<script src="js/configuration-tour.js"></script>
 
 </body>
 </html>

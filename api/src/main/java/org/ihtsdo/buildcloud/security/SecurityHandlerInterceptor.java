@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.security;
 
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-		SecurityHelper.clearSubject();
+		SecurityHelper.clearUser();
 
 		final String authHeader = request.getHeader("Authorization");
 		//For a file upload we're sending the auth token in a hidden input element
@@ -58,7 +59,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 
 		if (validUser != null) {
 			// Bind authenticated subject/user to thread
-			SecurityHelper.setSubject(validUser);
+			SecurityHelper.setUser(validUser);
 			return true;
 		} else {
 			response.setHeader("WWW-Authenticate", "Basic realm=\"API Authentication Token\"");
@@ -69,7 +70,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 
 	@Override
 	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-		SecurityHelper.clearSubject();
+		SecurityHelper.clearUser();
 	}
 
 	@Override

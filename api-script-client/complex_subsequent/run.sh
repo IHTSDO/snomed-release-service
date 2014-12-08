@@ -2,7 +2,6 @@
 set -e; # Stop on error
 
 # Declare run specific parameters
-extensionName="Examples"
 productName="Complex Refset"
 effectiveDate="2014-07-31"
 readmeEndDate="2014"

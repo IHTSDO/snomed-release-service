@@ -12,7 +12,7 @@
 #idGenerator.url =
 #releaseValidationFramework.url =
 
-#executionBucketName =
+#buildBucketName =
 #publishedBucketName =
 
 # These values are specific to the Telemtry Server

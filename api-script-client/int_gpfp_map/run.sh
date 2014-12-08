@@ -7,10 +7,7 @@ readmeEndDate="2014"
 isFirstTime=true
 isWorkbenchDataFixesRequired=false
 headless=true
-extensionName="SNOMED CT International Edition"
-productName="SNOMED CT Release"
-buildName="Int GPFP Map Build"
-packageName="GPFP Release Package"
+productName="Int GPFP Map"
 
 # Call api_client
 source ../api_client.sh
