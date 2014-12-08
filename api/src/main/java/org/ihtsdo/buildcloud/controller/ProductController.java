@@ -2,114 +2,90 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
-import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BadRequestException;
-import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.helper.CompositeKeyHelper;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 @Controller
-@RequestMapping("/centers/{releaseCenterBusinessKey}/extensions/{extensionBusinessKey}/products")
+@RequestMapping("/centers/{releaseCenterKey}/products")
 public class ProductController {
 
 	@Autowired
 	private ProductService productService;
-	
-	@Autowired
-	private PublishService publishService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	private static final String[] PRODUCT_LINKS = {"builds", "published"};
+	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles", "builds"};
 
 	@RequestMapping
 	@ResponseBody
-	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, HttpServletRequest request) throws Exception{
-		User authenticatedUser = SecurityHelper.getSubject();
-		List<Product> products = productService.findAll(releaseCenterBusinessKey, extensionBusinessKey, authenticatedUser);
+	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey, @RequestParam(required = false) boolean includeRemoved,
+			HttpServletRequest request) {
+		
+		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
+		if (includeRemoved) {
+			filterOptions.add(FilterOption.INCLUDE_REMOVED);
+		}
+
+		List<Product> products = productService.findAll(releaseCenterKey, filterOptions);
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
-
-	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterBusinessKey,
-											 @PathVariable String extensionBusinessKey,
-											 @RequestBody(required = false) Map<String, String> json,
-												   HttpServletRequest request) throws IOException, ResourceNotFoundException, EntityAlreadyExistsException {
-
-		String name = json.get("name");
-		User authenticatedUser = SecurityHelper.getSubject();
-		Product product = productService.create(releaseCenterBusinessKey, extensionBusinessKey, name, authenticatedUser);
-
-		boolean currentResource = true;
-		Map<String, Object> entityHypermedia = hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
-
-		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
-	}
-
-	@RequestMapping("/{productBusinessKey}")
+	@RequestMapping("/{productKey}")
 	@ResponseBody
-	public Map<String, Object> getProduct(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
-
-		User authenticatedUser = SecurityHelper.getSubject();
-		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
+	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+			HttpServletRequest request) throws BusinessServiceException {
+		Product product = productService.find(releaseCenterKey, productKey);
 		
 		if (product == null) {
-			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
+		}
+		
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+	}
+
+	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterKey,
+			@RequestBody(required = false) Map<String, String> json,
+			HttpServletRequest request) throws BusinessServiceException {
+
+		if (json == null) {
+			throw new BadRequestException("No JSON payload in request body.");
 		}
 
-		boolean currentResource = true;
-		return hypermediaGenerator.getEntityHypermedia(product, currentResource, request, PRODUCT_LINKS);
+		String name = json.get(ProductService.NAME);
+		Product product = productService.create(releaseCenterKey, name);
 
+		boolean currentResource = false;
+		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, currentResource, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
-	
-	@RequestMapping("/{productBusinessKey}/published")
-	@ResponseBody
-	public Map<String, Object> getPublishedPackages(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
-		User authenticatedUser = SecurityHelper.getSubject();  
-		Product product = productService.find(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, authenticatedUser);
-		
+	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+			@RequestBody(required = false) Map<String, String> json,
+			HttpServletRequest request) throws BusinessServiceException {
+
+		Product product = productService.update(releaseCenterKey, productKey, json);
 		if (product == null) {
-			String item = CompositeKeyHelper.getPath(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey);
-			throw new ResourceNotFoundException ("Unable to find product: " +  item);
+			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
 		}
-		
-		List<String> publishedPackages = publishService.getPublishedPackages(product);
-		Map<String, Object> jsonStructure = new HashMap<>();
-		jsonStructure.put("publishedPackages", publishedPackages);
-		boolean currentResource = true;
-		return hypermediaGenerator.getEntityHypermedia(jsonStructure, currentResource, request);
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 	
-	
-	@RequestMapping(value = "/{productBusinessKey}/published", method = RequestMethod.POST)
-	@ResponseBody
-	public ResponseEntity<Void> uploadInputFileFile(@PathVariable String releaseCenterBusinessKey, @PathVariable String extensionBusinessKey, @PathVariable String productBusinessKey,
-											 @RequestParam(value = "file") MultipartFile file) throws IOException, ResourceNotFoundException, BadRequestException {
-
-		publishService.publishPackage(releaseCenterBusinessKey, extensionBusinessKey, productBusinessKey, file.getInputStream(), file.getOriginalFilename(), file.getSize(), SecurityHelper.getSubject());
-		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-	}
-
-
 }

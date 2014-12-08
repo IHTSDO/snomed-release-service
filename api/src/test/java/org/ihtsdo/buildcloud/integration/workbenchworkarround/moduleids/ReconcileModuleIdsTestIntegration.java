@@ -24,7 +24,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
@@ -53,14 +53,14 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 	}
 
 	private void executeAndVerfiyResults(String releaseDate) throws Exception {
-		String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
-		integrationTestHelper.publishOutput(executionURL1);
+		String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}

@@ -26,28 +26,24 @@ App.Router.map(function() {
 		});
 		this.resource('extension', { path: '/:extension_id' }, function() {
 			this.resource('product', { path: '/:product_id' }, function() {
+				this.resource('build-input');
+				this.resource('pre-conditions');
+				this.resource('post-conditions');
+				this.resource('build-trigger');
+				this.resource('pre-execution');
+				this.resource('execution-history');
+				this.resource('build-mock', function() {
+					this.route('results');
+					this.route('debug');
+					this.route('output');
+					this.route('publish');
+				});
 				this.resource('build', { path: '/:build_id' }, function() {
-					this.resource('package', { path: '/package/:package_id' }, function() {
-						this.resource('build-input');
-						this.resource('pre-conditions');
-						this.resource('post-conditions');
-						this.resource('build-trigger');
-					});
-					this.resource('pre-execution');
-					this.resource('execution-history');
-					this.resource('execution-mock', function() {
-						this.route('results');
-						this.route('debug');
-						this.route('output');
-						this.route('publish');
-					});
-					this.resource('execution', { path: '/:execution_id' }, function() {
-						this.route('configuration');
-						this.route('build-scripts');
-						this.route('output');
-						this.route('results');
-						this.route('publish');
-					});
+					this.route('configuration');
+					this.route('build-scripts');
+					this.route('output');
+					this.route('results');
+					this.route('publish');
 				});
 			});
 		});
@@ -151,12 +147,9 @@ App.IndexRoute = App.AuthorisedRoute.extend({
 		}
 	},
 	actions: {
-		addProduct: function(extension) {
-			this.send('openModal', 'create-product', extension);
-		},
-		addExtension: function(releaseCenter) {
-			this.send('openModal', 'create-extension', releaseCenter);
-		}		
+		addProduct: function(releaseCenter) {
+			this.send('openModal', 'create-product', releaseCenter);
+		}
 	}
 })
 
@@ -188,8 +181,8 @@ App.ReleaseCenterIndexRoute = App.AuthorisedRoute.extend({
 		return this.modelFor('release-center');
 	},
 	actions: {
-		addExtension: function(releaseCenter) {
-			this.send('openModal', 'create-extension', releaseCenter);
+		addProduct: function(releaseCenter) {
+			this.send('openModal', 'create-product', releaseCenter);
 		}			
 	}
 })
@@ -230,82 +223,20 @@ App.RuleSetRoute = App.AuthorisedRoute.extend({
 })
 
 // Extension
-App.ExtensionRoute = App.AuthorisedRoute.extend({
-	model: function(params) {
-		var center = this.modelFor('release-center');
-		return center.get('extensions').then(function(extensions) {
-			var extension = extensions.findBy('id', params.extension_id);
-			extension.set('parent', center);
-			return  extension;
-		});
-	}
-})
-App.ExtensionIndexRoute = App.AuthorisedRoute.extend({
-	model: function() {
-		return this.modelFor('extension');
-	},
-	actions: {
-		addProduct: function(extension) {
-			this.send('openModal', 'create-product', extension);
-		}			
-	}
-})
-App.CreateExtensionView = Ember.View.extend({
-	templateName: 'extension-maintenance',
-	didInsertElement: function() {
-		this.controller.send('modalInserted');
-	}
-})
-App.CreateExtensionController = Ember.ObjectController.extend({
-	getModel: function(releaseCenter) {
-		var extension = this.store.createRecord('extension', {
-			parent: releaseCenter
-		});
-		return  extension;
-	},
-	actions: {
-		submit: function() {
-			var extension = this.get('model');
-			var releaseCenter = extension.get('parent');
-			releaseCenter.get('extensions').pushObject(extension);
-			extension.save();
-			this.send('closeModal');
-		}
-	}
-})
-
-// Product
 App.ProductRoute = App.AuthorisedRoute.extend({
 	model: function(params) {
-		var extension = this.modelFor('extension');
-		return extension.get('products').then(function(products) {
+		var center = this.modelFor('release-center');
+		return center.get('products').then(function(products) {
 			var product = products.findBy('id', params.product_id);
-			product.set('parent', extension);
-			return product;
+			product.set('parent', center);
+			return  product;
 		});
 	}
 })
 App.ProductIndexRoute = App.AuthorisedRoute.extend({
 	model: function() {
 		return this.modelFor('product');
-	},
-	actions: {
-		addBuild: function(product) {
-			this.send('openModal', 'create-build', product);
-		}
-	}	
-})
-App.ProductIndexController = Ember.ObjectController.extend({
-	selectedBuild: function() {
-		var controller = this;
-		this.get('model.builds').then(function(builds) {
-			var lastBuild = null;
-			builds.forEach(function(build) {
-				lastBuild = build;
-			})
-			controller.set('selectedBuild', lastBuild);
-		});
-	}.property('selectedBuild')
+	}
 })
 App.CreateProductView = Ember.View.extend({
 	templateName: 'product-maintenance',
@@ -314,17 +245,17 @@ App.CreateProductView = Ember.View.extend({
 	}
 })
 App.CreateProductController = Ember.ObjectController.extend({
-	getModel: function(extension) {
+	getModel: function(releaseCenter) {
 		var product = this.store.createRecord('product', {
-			parent: extension
+			parent: releaseCenter
 		});
 		return  product;
 	},
 	actions: {
 		submit: function() {
 			var product = this.get('model');
-			var extension = product.get('parent');
-			extension.get('products').pushObject(product);
+			var releaseCenter = product.get('parent');
+			releaseCenter.get('products').pushObject(product);
 			product.save();
 			this.send('closeModal');
 		}
@@ -540,7 +471,7 @@ App.ExecutionController = Ember.ObjectController.extend({
 			success: function(data) {
 				var newStatus = data.status;
 				model.set('status', newStatus);
-				if (newStatus == App.ExecutionStatus.BUILT) {
+				if (newStatus == App.BuildStatus.BUILT) {
 					// No need to keep updating, status can't change now.
 					App.ExecutionController.updateStatusHalt = true;
 				}

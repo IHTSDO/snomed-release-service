@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
 
@@ -18,7 +17,11 @@ public class FileUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
-	public static final String ZIP_EXTENSION = ".zip";
+	private static final String ZIP_EXTENSION = ".zip";
+
+	private static final int KB = 1024;
+
+	private static final String MD5 = "MD5";
 
 	public static Map<String, String> examineZipContents(final String filename, final InputStream is) {
 		//TODO Option to try treating this stream as GZip (GZipInputStream) also.
@@ -41,65 +44,14 @@ public class FileUtils {
 		return contents;
 	}
 
-	/**
-	 * Modified functionality to add folder as root object ie relative path to the parent.
-	 *
-	 * @param zipFilePath
-	 * @param dirToZip
-	 * @throws Exception
-	 * @author http://www.java2s.com/Code/Java/File-Input-Output/Makingazipfileofdirectoryincludingitssubdirectoriesrecursively.htm
-	 */
-	public static File zipDir(final String zipFilePath, final String dirToZip) throws Exception {
-		File dirObj = new File(dirToZip);
-		File zipFile = new File(zipFilePath);
-		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
-		LOGGER.debug("Creating zip file: " + zipFilePath);
-		addDir(dirObj, out, dirObj.getAbsolutePath().length());
-		out.close();
-		return zipFile;
-	}
-
-	/*
-	 * @param parentPathLength We will deduct this parent path from files/directories put into the zip file
-	 */
-	public static void addDir(final File dirObj, final ZipOutputStream out, final int parentPathLen) throws IOException {
-		File[] files = dirObj.listFiles();
-		byte[] tmpBuf = new byte[1024];
-
-		//We also want directories to be represented in the zip file, even if they're empty
-		//but no need to do that for the top level directory, so check for that first
-		if (dirObj.getAbsolutePath().length() > parentPathLen) {
-			String relativePath = dirObj.getAbsolutePath().substring(parentPathLen) + File.separator;
-			out.putNextEntry(new ZipEntry(relativePath));
-		}
-
-		for (File file : files) {
-			if (file.isDirectory()) {
-				addDir(file, out, parentPathLen);
-				continue;
-			}
-
-			FileInputStream in = new FileInputStream(file.getAbsolutePath());
-			LOGGER.debug(" Adding: " + file.getAbsolutePath());
-			String relativePath = file.getAbsolutePath().substring(parentPathLen);
-			out.putNextEntry(new ZipEntry(relativePath));
-			int len;
-			while ((len = in.read(tmpBuf)) > 0) {
-				out.write(tmpBuf, 0, len);
-			}
-			out.closeEntry();
-			in.close();
-		}
-	}
-
 	/*
 	 *@author http://www.mkyong.com/java/how-to-generate-a-file-checksum-value-in-java/
 	 */
 	public static String calculateMD5(final File file) throws NoSuchAlgorithmException, IOException {
-		StringBuffer sb = new StringBuffer("");
-		MessageDigest md = MessageDigest.getInstance("MD5");
+		StringBuilder sb = new StringBuilder("");
+		MessageDigest md = MessageDigest.getInstance(MD5);
 		FileInputStream fis = new FileInputStream(file);
-		byte[] dataBytes = new byte[1024];
+		byte[] dataBytes = new byte[KB];
 
 		int bytesRead;
 		while ((bytesRead = fis.read(dataBytes)) != -1) {
@@ -108,8 +60,8 @@ public class FileUtils {
 
 		//convert the byte to hex format
 		byte[] md5Bytes = md.digest();
-		for (int i = 0; i < md5Bytes.length; i++) {
-			sb.append(Integer.toString((md5Bytes[i] & 0xff) + 0x100, 16).substring(1));
+		for (byte md5Byte : md5Bytes) {
+			sb.append(Integer.toString((md5Byte & 0xff) + 0x100, 16).substring(1));
 		}
 		fis.close();
 		return sb.toString();

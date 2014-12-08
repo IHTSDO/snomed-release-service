@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,13 +18,14 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	public void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager().preconditionChecks(inputFilesCheck);
+		TestUtils.setTestUser();
 	}
 
 	@Test
 	public void checkInputFilesNotExisting() throws Exception {
 		loadManifest("valid_manifest.xml");
 		State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 
 	@Test
@@ -31,7 +33,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140831.txt");
 		loadManifest("valid_manifest.xml");
 		State actualResult = runPreConditionCheck(InputFilesExistenceCheck.class).getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 
 	@Test

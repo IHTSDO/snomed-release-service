@@ -25,7 +25,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_20140131.txt", getClass());
 		integrationTestHelper.uploadManifest("/just_package_manifest_20140131.xml", getClass());
@@ -33,10 +33,10 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setJustPackage(true);
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("Header");
-		String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
+		String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
 
-		integrationTestHelper.publishOutput(executionURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "JustPackage_Release_INT_20140131.zip";
@@ -46,7 +46,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
 				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
-		integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 	}
 
 }

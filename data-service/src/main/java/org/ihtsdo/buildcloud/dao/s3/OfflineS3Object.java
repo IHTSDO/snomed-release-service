@@ -18,6 +18,7 @@ public class OfflineS3Object extends S3Object {
 	}
 
 	@Override
+	@SuppressWarnings("all") // Have to throw a RuntimeException here. Can't modify interface.
 	public S3ObjectInputStream getObjectContent() {
 		try {
 			return new S3ObjectInputStream(new FileInputStream(contents), null);

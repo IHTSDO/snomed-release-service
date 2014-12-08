@@ -20,11 +20,13 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.loginAsManager();
 
 		//publish test file
-		integrationTestHelper.publishFile("/three_readmes.zip", getClass(),HttpStatus.NO_CONTENT);
-		
+		integrationTestHelper.publishFile("/three_readmes.zip", getClass(), HttpStatus.CREATED);
+
+		//publish test file a second time - expect rejection
+		integrationTestHelper.publishFile("/three_readmes.zip", getClass(),HttpStatus.CONFLICT);
+
 		//publish non zip file which we expect to fail
 		integrationTestHelper.publishFile("/invalid-file-test-defn.xsd", getClass(), HttpStatus.BAD_REQUEST);
-
 	}
 
 	@Override

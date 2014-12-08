@@ -7,10 +7,9 @@ readmeEndDate="2014"
 isFirstTime=true
 isWorkbenchDataFixesRequired=true
 headless=true
-extensionName="SNOMED CT International Edition"
-productName="SNOMED CT Release"
-buildName="Int GMDN Build"
-packageName="GMDN Release Package"
+productName="Int GMDN"
+isFirstTime=true
+createInferredRelationships=true
 
 # Call api_client
 source ../api_client.sh

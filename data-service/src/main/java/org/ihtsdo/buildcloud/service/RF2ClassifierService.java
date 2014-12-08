@@ -1,13 +1,14 @@
 package org.ihtsdo.buildcloud.service;
 
 import com.google.common.io.Files;
-import org.ihtsdo.buildcloud.dao.ExecutionDAO;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Execution;
-import org.ihtsdo.buildcloud.entity.Package;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.transform.RepeatableRelationshipUUIDTransform;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.exception.ProcessingException;
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
-import org.ihtsdo.buildcloud.service.execution.transform.TransformationService;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
 import org.ihtsdo.classifier.CycleCheck;
@@ -20,14 +21,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StreamUtils;
 
 import java.io.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RF2ClassifierService {
 
 	@Autowired
-	private ExecutionDAO executionDAO;
+	private BuildDAO buildDAO;
 
 	@Autowired
 	private String coreModuleSctid;
@@ -40,9 +43,9 @@ public class RF2ClassifierService {
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 */
-	public String generateInferredRelationshipSnapshot(Execution execution, Package pkg, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException, IOException, ClassificationException {
-		String packageBusinessKey = pkg.getBusinessKey();
+	public String generateInferredRelationshipSnapshot(Build build, Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
+		BuildConfiguration configuration = build.getConfiguration();
 
 		// Collect names of concept and relationship output files
 		for (String inputFilename : inputFileSchemaMap.keySet()) {
@@ -61,55 +64,64 @@ public class RF2ClassifierService {
 		}
 
 		if (classifierFiles.isSufficientToClassify()) {
-			// Download snapshot files
-			logger.info("Sufficient files for relationship classification. Downloading local copy...");
-			File tempDir = Files.createTempDir();
-			List<String> localConceptFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getConceptSnapshotFilenames());
-			List<String> localStatedRelationshipFilePaths = downloadFiles(execution, packageBusinessKey, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
-			File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
-			if (checkNoStatedRelationshipCycles(execution, packageBusinessKey, localConceptFilePaths, localStatedRelationshipFilePaths,
-					cycleFile)) {
+			try {
+				// Download snapshot files
+				logger.info("Sufficient files for relationship classification. Downloading local copy...");
+				File tempDir = Files.createTempDir();
+				List<String> localConceptFilePaths = downloadFiles(build, tempDir, classifierFiles.getConceptSnapshotFilenames());
+				List<String> localStatedRelationshipFilePaths = downloadFiles(build, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
+				File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
+				if (checkNoStatedRelationshipCycles(build, localConceptFilePaths, localStatedRelationshipFilePaths,
+						cycleFile)) {
 
-				logger.info("No cycles in stated relationship snapshot. Performing classification...");
+					logger.info("No cycles in stated relationship snapshot. Performing classification...");
 
-				String effectiveTimeSnomedFormat = pkg.getBuild().getEffectiveTimeSnomedFormat();
-				List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-				if (!pkg.isFirstTimeRelease()) {
-					String previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(execution, pkg, classifierFiles, tempDir);
-					if (previousInferredRelationshipFilePath != null) {
-						previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
-					} else {
-						logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+					String effectiveTimeSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
+					List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
+					String previousInferredRelationshipFilePath = null;
+					if (!configuration.isFirstTimeRelease()) {
+						previousInferredRelationshipFilePath = getPreviousInferredRelationshipFilePath(build, classifierFiles, tempDir);
+						if (previousInferredRelationshipFilePath != null) {
+							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
+						} else {
+							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+						}
 					}
+
+					String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
+					String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
+							.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
+							.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+
+					File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
+					File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
+
+					ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
+							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
+							inferredRelationshipsOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
+					classificationRunner.execute();
+
+					logger.info("Classification finished.");
+
+					uploadLog(build, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
+
+					// Upload inferred relationships file with null ids
+					buildDAO.putTransformedFile(build, inferredRelationshipsOutputFile);
+
+					// Generate inferred relationship ids using transform
+					Map<String, String> uuidToSctidMap = null;
+					if (!configuration.isFirstTimeRelease()) {
+						uuidToSctidMap = buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath);
+					}
+					transformationService.transformInferredRelationshipFile(build, inferredRelationshipSnapshotFilename, uuidToSctidMap);
+
+					return inferredRelationshipSnapshotFilename;
+				} else {
+					logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
+							"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in build package logs for more details.");
 				}
-
-				String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();
-				String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
-						.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
-						.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-
-				File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
-				File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
-
-				ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
-						localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
-						inferredRelationshipsOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
-				classificationRunner.execute();
-
-				logger.info("Classification finished.");
-
-				uploadLog(execution, packageBusinessKey, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
-
-				// Upload inferred relationships file with null ids
-				executionDAO.putTransformedFile(execution, pkg, inferredRelationshipsOutputFile);
-
-				// Generate inferred relationship ids using transform
-				transformationService.transformInferredRelationshipFile(execution, pkg, inferredRelationshipSnapshotFilename);
-
-				return inferredRelationshipSnapshotFilename;
-			} else {
-				logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
-						"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in execution package logs for more details.");
+			} catch (ClassificationException | IOException e) {
+				throw new ProcessingException("Failed to generate inferred relationship snapshot.", e);
 			}
 		} else {
 			logger.info("Stated relationship and concept files not present. Skipping classification.");
@@ -117,7 +129,28 @@ public class RF2ClassifierService {
 		return null;
 	}
 
-	public boolean checkNoStatedRelationshipCycles(Execution execution, String packageBusinessKey, List<String> localConceptFilePaths,
+	private Map<String, String> buildUuidSctidMapFromPreviousRelationshipFile(String previousInferredRelationshipFilePath) throws ProcessingException {
+		try {
+			Map<String, String> uuidSctidMap = new HashMap<>();
+			RepeatableRelationshipUUIDTransform relationshipUUIDTransform = new RepeatableRelationshipUUIDTransform();
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(previousInferredRelationshipFilePath)))) {
+				String line;
+				String[] columnValues;
+				reader.readLine(); // Discard header
+				while ((line = reader.readLine()) != null) {
+					columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+					uuidSctidMap.put(relationshipUUIDTransform.getCalculatedUuidFromRelationshipValues(columnValues), columnValues[0]);
+				}
+			}
+			return uuidSctidMap;
+		} catch (IOException e) {
+			throw new ProcessingException("Failed to read previous relationship file during id reconciliation.", e);
+		} catch (NoSuchAlgorithmException e) {
+			throw new ProcessingException("Failed to use previous relationship file during id reconciliation.", e);
+		}
+	}
+
+	public boolean checkNoStatedRelationshipCycles(Build build, List<String> localConceptFilePaths,
 			List<String> localStatedRelationshipFilePaths, File cycleFile) throws ProcessingException {
 		try {
 			logger.info("Performing stated relationship cycle check...");
@@ -125,7 +158,7 @@ public class RF2ClassifierService {
 			boolean cycleDetected = cycleCheck.cycleDetected();
 			if (cycleDetected) {
 				// Upload cycles file
-				uploadLog(execution, packageBusinessKey, cycleFile, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
+				uploadLog(build, cycleFile, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
 			}
 			return !cycleDetected;
 		} catch (IOException | ClassificationException e) {
@@ -135,9 +168,9 @@ public class RF2ClassifierService {
 		}
 	}
 
-	public void uploadLog(Execution execution, String packageBusinessKey, File logFile, String targetFilename) throws ProcessingException {
+	public void uploadLog(Build build, File logFile, String targetFilename) throws ProcessingException {
 		try (FileInputStream in = new FileInputStream(logFile);
-			 AsyncPipedStreamBean logFileOutputStream = executionDAO.getLogFileOutputStream(execution, packageBusinessKey, targetFilename)) {
+			 AsyncPipedStreamBean logFileOutputStream = buildDAO.getLogFileOutputStream(build, targetFilename)) {
 			OutputStream outputStream = logFileOutputStream.getOutputStream();
 			StreamUtils.copy(in, outputStream);
 			outputStream.close();
@@ -146,13 +179,12 @@ public class RF2ClassifierService {
 		}
 	}
 
-	private String getPreviousInferredRelationshipFilePath(Execution execution, Package pkg, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
-		String previousPublishedPackage = pkg.getPreviousPublishedPackage();
-		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
-		String previousInferredRelationshipFilename = inferredRelationshipFilename + ".previous_published";
+	private String getPreviousInferredRelationshipFilePath(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws IOException {
+		String previousPublishedPackage = build.getConfiguration().getPreviousPublishedPackage();
+		String inferredRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0).replace(RF2Constants.STATED, "");
 
-		File localFile = new File(tempDir, previousInferredRelationshipFilename);
-		try (InputStream publishedFileArchiveEntry = executionDAO.getPublishedFileArchiveEntry(execution.getBuild().getProduct(), inferredRelationshipFilename, previousPublishedPackage);
+		File localFile = new File(tempDir, inferredRelationshipFilename + ".previous_published");
+		try (InputStream publishedFileArchiveEntry = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), inferredRelationshipFilename, previousPublishedPackage);
 			 FileOutputStream out = new FileOutputStream(localFile)) {
 			if (publishedFileArchiveEntry != null) {
 				StreamUtils.copy(publishedFileArchiveEntry, out);
@@ -163,12 +195,12 @@ public class RF2ClassifierService {
 		return null;
 	}
 
-	private List<String> downloadFiles(Execution execution, String packageBusinessKey, File tempDir, List<String> filenameLists) throws ProcessingException {
+	private List<String> downloadFiles(Build build, File tempDir, List<String> filenameLists) throws ProcessingException {
 		List<String> localFilePaths = new ArrayList<>();
 		for (String downloadFilename : filenameLists) {
 
 			File localFile = new File(tempDir, downloadFilename);
-			try (InputStream inputFileStream = executionDAO.getOutputFileInputStream(execution, packageBusinessKey, downloadFilename);
+			try (InputStream inputFileStream = buildDAO.getOutputFileInputStream(build, downloadFilename);
 				 FileOutputStream out = new FileOutputStream(localFile)) {
 				if (inputFileStream != null) {
 					StreamUtils.copy(inputFileStream, out);

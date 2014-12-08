@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.file;
 
-import org.ihtsdo.buildcloud.service.execution.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 
 public class Rf2FileNameTransformation implements FileNameTransformation {
 

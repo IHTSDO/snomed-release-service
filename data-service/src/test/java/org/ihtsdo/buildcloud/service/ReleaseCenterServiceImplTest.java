@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,23 +21,22 @@ public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 	
 	@Autowired
 	private ReleaseCenterService rcs;
-	private User authenticatedUser;
 
 	@Before
 	public void setup() {
-		authenticatedUser = TestEntityGenerator.TEST_USER;
+		TestUtils.setTestUser();
 	}
 
 	@Test
 	public void testCreate() throws Exception{
 
 		Assert.assertNotNull(rcs);
-		List<ReleaseCenter> releaseCenters = rcs.findAll(authenticatedUser);
+		List<ReleaseCenter> releaseCenters = rcs.findAll();
 		int before = releaseCenters.size();
 		//LOGGER.warn("Found " + before + " release centers");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
-		rcs.create("my test releaseCenter name", "some short name", authenticatedUser);
-		int after = rcs.findAll(authenticatedUser).size();
+		rcs.create("my test releaseCenter name", "some short name");
+		int after = rcs.findAll().size();
 		//LOGGER.warn("After create, found " + after + " release centers");
 		Assert.assertEquals(before + 1, after);
 		

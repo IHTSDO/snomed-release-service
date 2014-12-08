@@ -12,15 +12,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class RootControllerTest extends AbstractControllerTest {
 
 	@Test
-	public void root_returns_centers_and_builds() throws Exception {
-
+	public void root_returns_centers_and_products() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
 				.andDo(print())
 				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
 				.andExpect(jsonPath("$.url", is(ROOT_URL)))
-				.andExpect(jsonPath("$.centers_url", is(ROOT_URL + "/centers")))
-				.andExpect(jsonPath("$.builds_url", is(ROOT_URL + "/builds")));
+				.andExpect(jsonPath("$.user_url", is(ROOT_URL + "/user")))
+				.andExpect(jsonPath("$.login_url", is(ROOT_URL + "/login")))
+				.andExpect(jsonPath("$.centers_url", is(ROOT_URL + "/centers")));
 	}
 
 }

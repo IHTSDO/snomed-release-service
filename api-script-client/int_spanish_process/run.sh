@@ -9,10 +9,7 @@ isWorkbenchDataFixesRequired=true
 externalDataLocation="int_spanish_process"
 justPackage=false
 headless=true
-extensionName="SNOMED CT Spanish Edition"
-productName="Spanish Release"
-buildName="Int Spanish Process"
-packageName="Spanish Release Package"
+productName="Int Spanish Release"
 previousPublishedPackageName="SnomedCT_Release-es_INT_20140430.zip"
 
 # Call api_client

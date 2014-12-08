@@ -27,7 +27,7 @@ public class VersionController {
 	public Map<String, Object> getVersion(HttpServletRequest request) throws IOException {
 		Map<String, String> entity = new HashMap<>();
 		entity.put("package_version", getVersionString());
-		return hypermediaGenerator.getEntityHypermedia(entity, true, request, new String[]{});
+		return hypermediaGenerator.getEntityHypermedia(entity, true, request, new String[] {});
 	}
 
 	private String getVersionString() throws IOException {
@@ -38,6 +38,8 @@ public class VersionController {
 				try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
 					versionString = bufferedReader.readLine();
 				}
+			} else {
+				versionString = "Version information not found.";
 			}
 			this.versionString = versionString;
 		}

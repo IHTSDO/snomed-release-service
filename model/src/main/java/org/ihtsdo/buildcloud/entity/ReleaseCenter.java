@@ -5,9 +5,9 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
-import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.*;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
@@ -28,12 +28,12 @@ public class ReleaseCenter {
 
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
-	private List<Extension> extensions;
+	private List<Product> products;
 
 	private boolean removed;
 
 	public ReleaseCenter() {
-		extensions = new ArrayList<>();
+		products = new ArrayList<>();
 	}
 
 	public ReleaseCenter(String name, String shortName) {
@@ -42,9 +42,9 @@ public class ReleaseCenter {
 		setShortName(shortName);
 	}
 
-	public void addExtension(Extension extension) {
-		extensions.add(extension);
-		extension.setReleaseCenter(this);
+	public void addProduct(Product product) {
+		products.add(product);
+		product.setReleaseCenter(this);
 	}
 
 	public Long getId() {
@@ -76,8 +76,8 @@ public class ReleaseCenter {
 		return businessKey;
 	}
 
-	public List<Extension> getExtensions() {
-		return extensions;
+	public List<Product> getProducts() {
+		return products;
 	}
 
 	public boolean isRemoved() {

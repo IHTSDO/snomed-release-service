@@ -24,7 +24,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
-		integrationTestHelper.createTestBuildStructure();
+		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
@@ -142,13 +142,13 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	}
 
 	private void executeAndVerfiyResults(final String releaseDate, String expectedZipEntries) throws Exception {
-		final String executionURL1 = integrationTestHelper.createExecution();
-		integrationTestHelper.triggerExecution(executionURL1);
-		integrationTestHelper.publishOutput(executionURL1);
+		final String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
 		final String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
-		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(executionURL1, expectedZipFilename, expectedZipEntries, getClass());
+		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
 	}

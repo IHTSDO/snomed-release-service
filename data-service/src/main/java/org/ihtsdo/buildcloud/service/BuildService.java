@@ -1,31 +1,37 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.helper.FilterOption;
 
-import java.util.EnumSet;
+import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
-public interface BuildService extends EntityService<Build> {
+public interface BuildService {
 
-	static final String EFFECTIVE_TIME = "effectiveTime";
+	String MDC_BUILD_KEY = "build";
 
-	List<Build> findAll(EnumSet<FilterOption> filterOptions, User authenticatedUser);
+	Build createBuildFromProduct(String releaseCenterKey, String productKey) throws BusinessServiceException;
 
-	Build find(String buildCompositeKey, User authenticatedUser) throws ResourceNotFoundException;
+	Build triggerBuild(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
 
-	Build find(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String buildName, User authenticatedUser) throws ResourceNotFoundException;
+	List<Build> findAllDesc(String releaseCenterKey, String productKey) throws ResourceNotFoundException;
 
-	List<Build> findForExtension(String releaseCenterBusinessKey, String extensionBusinessKey, EnumSet<FilterOption> filterOptions, User authenticatedUser);
+	Build find(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
-	List<Build> findForProduct(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, User authenticatedUser) throws ResourceNotFoundException;
+	BuildConfiguration loadConfiguration(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
 
-	Build create(String releaseCenterBusinessKey, String extensionBusinessKey, String productBusinessKey, String name, User authenticatedUser) throws Exception;
+	InputStream getOutputFile(String releaseCenterKey, String productKey, String buildId, String outputFilePath) throws ResourceNotFoundException;
 
-	Build update(String buildCompositeKey, Map<String, String> newPropertyValues, User authenticatedUser) throws BadRequestException, ResourceNotFoundException;
+	List<String> getOutputFilePaths(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
+
+	InputStream getInputFile(String releaseCenterKey, String productKey, String buildId, String inputFileName) throws ResourceNotFoundException;
+
+	List<String> getInputFilePaths(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
+
+	List<String> getLogFilePaths(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
+
+	InputStream getLogFile(String releaseCenterKey, String productKey, String buildId, String logFileName) throws ResourceNotFoundException;
 
 }
