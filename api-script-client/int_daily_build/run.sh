@@ -18,7 +18,7 @@ isWorkbenchDataFixesRequired=true
 headless=true
 createInferredRelationships=true
 createLegacyIds=true
-previousPublishedPackageName="SnomedCT_Release_INT_20140731.zip"
+previousPublishedPackageName="SnomedCT-GMDN-TermMed_Release_INT_20140731.zip"
 productName="SNOMED CT Release"
 
 echo "Configuration set to pull export files from $1"
