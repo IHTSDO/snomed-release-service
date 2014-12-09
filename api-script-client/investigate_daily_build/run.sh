@@ -16,7 +16,7 @@ readmeEndDate="2014"
 isFirstTime=false
 isWorkbenchDataFixesRequired=true
 headless=true
-previousPublishedPackageName="SnomedCT-GMDN-TermMed_Release_INT_20140731.zip"
+previousPublishedPackageName="SnomedCTGMDN_Release_INT_20140731.zip"
 productName="Investigate Daily Build"
 
 echo "Configuration set to pull export files from $1"
