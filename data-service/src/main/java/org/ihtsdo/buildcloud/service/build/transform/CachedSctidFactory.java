@@ -59,6 +59,9 @@ public class CachedSctidFactory {
 
 	public Map<String, Long> getSCTIDs(final List<String> componentUuidStrings, final String partitionId, final String moduleId) throws CreateSCTIDListFaultException, RemoteException, InterruptedException {
 		final Map<String, Long> uuidStringToSctidMapResults = new HashMap<>();
+		if (componentUuidStrings == null || componentUuidStrings.isEmpty()) {
+			return uuidStringToSctidMapResults;
+		}
 		Map<UUID, Long> uuidToSctidMap = null;
 
 		// Convert uuid strings to UUID objects
