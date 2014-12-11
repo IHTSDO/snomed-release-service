@@ -99,6 +99,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(ProductService.FIRST_TIME_RELEASE)));
 		}
 
+		if (newPropertyValues.containsKey(ProductService.BETA_RELEASE)) {
+			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(ProductService.BETA_RELEASE)));
+		}
+
 		if (newPropertyValues.containsKey(ProductService.CREATE_INFERRED_RELATIONSHIPS)) {
 			configuration.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(ProductService.CREATE_INFERRED_RELATIONSHIPS)));
 		}
