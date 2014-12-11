@@ -88,7 +88,6 @@ public class TransformationService {
 		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, buildId);
 		final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 		final boolean createLegacyIds = configuration.isCreateLegacyIds();
-		final boolean isBeta = configuration.isBetaRelease();
 
 		LOGGER.info("Transforming files in build {}, workbench data fixes {}.", build.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
 
@@ -196,11 +195,7 @@ public class TransformationService {
 								buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
 							}
 
-							String outputFilename = tableSchema.getFilename();
-							if (isBeta) {
-								outputFilename = BuildConfiguration.BETA_PREFIX + outputFilename;
-							}
-							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
+							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, tableSchema.getFilename());
 							final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 
 							// Get appropriate transformations for this file.
@@ -209,7 +204,7 @@ public class TransformationService {
 							// Get the report to output to
 							// Apply transformations
 							steamingFileTransformation.transformFile(buildInputFileInputStream, buildTransformedOutputStream,
-									outputFilename, report);
+									tableSchema.getFilename(), report);
 
 							// Wait for upload of transformed file to finish
 							asyncPipedStreamBean.waitForFinish();
