@@ -10,12 +10,14 @@ import javax.persistence.*;
 
 @Embeddable
 public class BuildConfiguration {
+	public static final String BETA_PREFIX = "x";
 
 	private Date effectiveTime;
 	@Column(columnDefinition = "TEXT")
 	private String readmeHeader;
 	private String readmeEndDate;
 	private boolean firstTimeRelease = false;
+	private boolean betaRelease = false;
 	private String previousPublishedPackage;
 	private String newRF2InputFiles;
 
@@ -116,6 +118,14 @@ public class BuildConfiguration {
 
 	public void setFirstTimeRelease(boolean firstTimeRelease) {
 		this.firstTimeRelease = firstTimeRelease;
+	}
+
+	public boolean isBetaRelease() {
+		return betaRelease;
+	}
+
+	public void setBetaRelease(boolean betaRelease) {
+		this.betaRelease = betaRelease;
 	}
 
 	public boolean isWorkbenchDataFixesRequired() {

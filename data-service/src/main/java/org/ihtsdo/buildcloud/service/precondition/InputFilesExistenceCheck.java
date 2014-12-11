@@ -2,12 +2,14 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.xml.bind.JAXBException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -40,6 +42,10 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 	public void runCheck(Build build) {
 		//check against the manifest file
 		boolean isFailed = false;
+
+		// If this is a beta build, manifest may specify x prefix.
+		boolean isBeta = build.getConfiguration().isBetaRelease();
+
 		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
 			ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			ListingType listingType = parser.parse(manifestInputSteam);
@@ -49,6 +55,9 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				//dealing with der2 and sct2 full/snapshot/delta files
 				String[] splits = fileName.split(FILE_NAME_SEPARATOR);
 				String fileNamePrefix = splits[0];
+				if (isBeta && fileNamePrefix.startsWith(BuildConfiguration.BETA_PREFIX)) {
+					fileNamePrefix = fileNamePrefix.substring(1);
+				}
 				if (DER2.equals(fileNamePrefix) || SCT2.equals(fileNamePrefix)) {
 					String token3 = splits[2];
 					String temp = fileName;
@@ -70,17 +79,23 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				}
 
 			}
+
 			//get a list of input file names
 			List<String> inputfilesList = buildDAO.listInputFileNames(build);
 			//check expected against input files
 			StringBuilder msgBuilder = new StringBuilder();
 			int count = 0;
 			for (String expectedFileName : filesExpected) {
-				if (!inputfilesList.contains(expectedFileName)) {
+				// If this is a beta build, then the input files may optionally miss out the 'x' prefix
+				String acceptableFileName = expectedFileName;
+				if (isBeta && expectedFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
+					acceptableFileName = expectedFileName.substring(1);
+				}
+				if (!inputfilesList.contains(expectedFileName) && !inputfilesList.contains(acceptableFileName)) {
 					if (count++ > 0) {
 						msgBuilder.append(",");
 					}
-					msgBuilder.append(expectedFileName);
+					msgBuilder.append(isBeta ? acceptableFileName : expectedFileName);
 				}
 			}
 			if (count > 0) {
