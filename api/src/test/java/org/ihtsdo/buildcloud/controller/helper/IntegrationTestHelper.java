@@ -164,45 +164,43 @@ public class IntegrationTestHelper {
 	}
 
 	public void setFirstTimeRelease(final boolean isFirstTime) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
+		setPackageProperty("{ " + jsonPair(ProductService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
 	public void setCreateInferredRelationships(final boolean isCreateInferredRelationships) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships))
-				+ " }");
+		setPackageProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships)) + " }");
 	}
 
 	public void setCreateLegacyIds(final boolean createLegacyIds) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
+		setPackageProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
 	}
 
 	public void setWorkbenchDataFixesRequired(final boolean isWorkbenchDataFixesRequired) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired))
-				+ " }");
+		setPackageProperty("{ " + jsonPair(ProductService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
 	}
 
 	public void setJustPackage(final boolean justPackage) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
+		setPackageProperty("{ " + jsonPair(ProductService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
 	}
 
 	public void setPreviousPublishedPackage(final String previousPublishedFile) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
+		setPackageProperty("{ " + jsonPair(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
 	}
 
 	public void setReadmeHeader(final String readmeHeader) throws Exception {
-		setProductProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
+		setPackageProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
 	}
 
 	public void setReadmeEndDate(final String readmeEndDate) throws Exception {
-		setProductProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
+		setPackageProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
 	}
 
 	public void setCustomRefsetCompositeKeys(final String customRefsetCompositeKeys) throws Exception {
-		setProductProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
+		setPackageProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
 	}
 
 	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {
-		setProductProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
+		setPackageProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
 
 	/*
@@ -213,7 +211,7 @@ public class IntegrationTestHelper {
 		return "  \"" + key + "\" : \"" + value + "\" ";
 	}
 
-	private void setProductProperty(final String jsonContent) throws Exception {
+	private void setPackageProperty(final String jsonContent) throws Exception {
 		mockMvc.perform(
 				request(HttpMethod.PATCH, getProductUrl())
 						.header("Authorization", getBasicDigestHeaderValue())

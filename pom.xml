@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.snomed.util</groupId>
 			<artifactId>snomed-utilities</artifactId>
-			<version>1.0.7-SNAPSHOT</version>
+			<version>1.0.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>

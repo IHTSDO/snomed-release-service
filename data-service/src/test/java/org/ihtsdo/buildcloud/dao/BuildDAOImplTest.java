@@ -90,18 +90,17 @@ public class BuildDAOImplTest {
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
 		String configJson = TestUtils.readStream(configJsonStreamCapture.getValue());
 		Assert.assertEquals("{" +
-			"\"readmeHeader\":null," +
-			"\"readmeEndDate\":null," +
-			"\"firstTimeRelease\":false," +
-			"\"betaRelease\":false," +
-			"\"previousPublishedPackage\":null," +
-			"\"newRF2InputFiles\":null," +
-			"\"justPackage\":false," +
-			"\"workbenchDataFixesRequired\":false," +
-			"\"createInferredRelationships\":false," +
-			"\"createLegacyIds\":false," +
-			"\"customRefsetCompositeKeys\":{}," +
-			"\"effectiveTime\":null" +
+				"\"readmeHeader\":null," +
+				"\"readmeEndDate\":null," +
+				"\"firstTimeRelease\":false," +
+				"\"previousPublishedPackage\":null," +
+				"\"newRF2InputFiles\":null," +
+				"\"justPackage\":false," +
+				"\"workbenchDataFixesRequired\":false," +
+				"\"createInferredRelationships\":false," +
+				"\"createLegacyIds\":false," +
+				"\"customRefsetCompositeKeys\":{}," +
+				"\"effectiveTime\":null" +
 				"}", configJson);
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}

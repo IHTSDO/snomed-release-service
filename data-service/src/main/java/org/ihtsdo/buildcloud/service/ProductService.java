@@ -16,7 +16,6 @@ public interface ProductService extends EntityService<Product> {
 	String README_HEADER = "readmeHeader";
 	String JUST_PACKAGE = "justPackage";
 	String FIRST_TIME_RELEASE = "firstTimeRelease";
-	String BETA_RELEASE = "betaRelease";
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";
 	String WORKBENCH_DATA_FIXES_REQUIRED = "workbenchDataFixesRequired";

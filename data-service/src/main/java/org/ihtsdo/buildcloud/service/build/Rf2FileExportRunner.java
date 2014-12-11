@@ -110,32 +110,23 @@ public class Rf2FileExportRunner {
 
 			final String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 
-			String cleanCurrentSnapshotFileName = currentSnapshotFileName;
-			if (configuration.isBetaRelease() && currentSnapshotFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
-				cleanCurrentSnapshotFileName = currentSnapshotFileName.substring(1); // Previous file will not be a beta release
-			}
-
 			if (workbenchDataFixesRequired) {
 				if (!fileFirstTimeRelease) {
 					if (tableSchema.getComponentType() == ComponentType.REFSET) {
 						// Workbench workaround - correct refset member ids using previous snapshot file.
 						// See interface javadoc for more info.
-						rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName),
-								currentSnapshotFileName, effectiveTime);
+						rf2TableDAO.reconcileRefsetMemberIds(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
 					}
 
 					//Workbench workaround for dealing Attribute Value File with empty valueId
 					//ideally we should combine all workbench workaround together so that don't read snapshot file twice
 					if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
-						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName),
-								effectiveTime);
+						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), effectiveTime);
 					}
 
 					// Workbench workaround - use full file to discard invalid delta entries
 					// See interface javadoc for more info.
-					rf2TableDAO.discardAlreadyPublishedDeltaStates(
-							getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName), currentSnapshotFileName,
-							effectiveTime);
+					rf2TableDAO.discardAlreadyPublishedDeltaStates(getPreviousFileStream(previousPublishedPackage, currentSnapshotFileName), currentSnapshotFileName, effectiveTime);
 				}
 
 				rf2TableDAO.generateNewMemberIds(effectiveTime);
@@ -169,11 +160,7 @@ public class Rf2FileExportRunner {
 
 			final String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
 			if (!fileFirstTimeRelease) {
-				String cleanFullFileName = currentFullFileName;
-				if (configuration.isBetaRelease() && currentFullFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
-					cleanFullFileName = currentFullFileName.substring(1); // Previous file will not be a beta release
-				}
-				final InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, cleanFullFileName);
+				final InputStream previousFullFileStream = getPreviousFileStream(previousPublishedPackage, currentFullFileName);
 
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
@@ -248,11 +235,7 @@ public class Rf2FileExportRunner {
 		// Import any previous full
 		if (!configuration.isFirstTimeRelease()) {
 			try {
-				String cleanFileName = fullFilename;
-				if (configuration.isBetaRelease() && fullFilename.startsWith(BuildConfiguration.BETA_PREFIX)) {
-					cleanFileName = fullFilename.substring(1); // Previous file will not be a beta release
-				}
-				final InputStream previousFullStream = getPreviousFileStream(configuration.getPreviousPublishedPackage(), cleanFileName);
+				final InputStream previousFullStream = getPreviousFileStream(configuration.getPreviousPublishedPackage(), fullFilename);
 				rf2TableDAO.appendData(tableSchema, previousFullStream, false);
 			} catch(IOException | DatabasePopulatorException | BadConfigurationException e) {
 				throw new ReleaseFileGenerationException("Failed to import previous full " + fullFilename, e);
