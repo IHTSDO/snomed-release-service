@@ -74,6 +74,19 @@
 		<property name="username" value="${srs.jdbc.username}" />
 		<property name="password" value="${srs.jdbc.password}" />
 	</bean>
+	
+	<bean id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
+      <property name="dataSource" ref="dataSource" />
+      <property name="changeLog" value="classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml" />
+
+      <!--contexts specifies the runtime contexts to use.
+      "${ENV_NAME}"
+       <property name="contexts" value="UAT" />
+      -->
+      <property name="contexts" value="${ENV_NAME}"/>
+ 	</bean>
+ 
+ 
 
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
@@ -87,7 +100,7 @@
 			<props>
 				<prop key="hibernate.dialect">${srs.hibernate.dialect}</prop>
 				<prop key="hibernate.show_sql">false</prop>
-				<prop key="hibernate.hbm2ddl.auto">create</prop>
+				<!--  <prop key="hibernate.hbm2ddl.auto">validate</prop>-->
 			</props>
 		</property>
 	</bean>
