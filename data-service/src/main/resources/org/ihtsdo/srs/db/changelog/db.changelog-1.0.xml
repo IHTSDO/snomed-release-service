@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
     <changeSet author="mchu (generated)" id="1418147335737-1">
         <createTable tableName="AuthToken">
@@ -13,24 +13,27 @@
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="createInferredRelationships" type="BIT(1)">
+            <column name="betaRelease" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
-            <column name="createLegacyIds" type="BIT(1)">
+            <column name="createInferredRelationships" type="CHAR(1)" defaultValue="N">
+                <constraints nullable="false"/>
+            </column>
+            <column name="createLegacyIds" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
             <column name="effectiveTime" type="datetime"/>
-            <column name="firstTimeRelease" type="BIT(1)">
+            <column name="firstTimeRelease" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
-            <column name="justPackage" type="BIT(1)">
+            <column name="justPackage" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
             <column name="newRF2InputFiles" type="VARCHAR(255)"/>
             <column name="previousPublishedPackage" type="VARCHAR(255)"/>
             <column name="readmeEndDate" type="VARCHAR(255)"/>
             <column name="readmeHeader" type="TEXT"/>
-            <column name="workbenchDataFixesRequired" type="BIT(1)">
+            <column name="workbenchDataFixesRequired" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
             <column name="businessKey" type="VARCHAR(255)"/>
@@ -54,7 +57,7 @@
             </column>
             <column name="businessKey" type="VARCHAR(255)"/>
             <column name="name" type="VARCHAR(255)"/>
-            <column name="removed" type="BIT(1)">
+            <column name="removed" type="CHAR(1)" defaultValue="N">
                 <constraints nullable="false"/>
             </column>
             <column name="shortName" type="VARCHAR(255)"/>

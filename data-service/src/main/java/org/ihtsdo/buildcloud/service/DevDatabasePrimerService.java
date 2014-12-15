@@ -19,7 +19,7 @@ public class DevDatabasePrimerService implements org.springframework.context.App
 
 	@Override
 	public void onApplicationEvent(final ContextRefreshedEvent contextRefreshedEvent) {
-//		primeDatabase();
+		primeDatabase();
 	}
 
 }
