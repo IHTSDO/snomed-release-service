@@ -266,7 +266,7 @@ public class IntegrationTestHelper {
 
 	public void publishOutput(final String buildURL) throws Exception {
 		mockMvc.perform(
-				post(buildURL + "/output/publish")
+				post(buildURL + "/publish")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
