@@ -11,9 +11,9 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<hibernate.version>3.6.10.Final</hibernate.version>
-		<spring.version>3.2.7.RELEASE</spring.version>
-		<spring-security.version>3.2.3.RELEASE</spring-security.version>
+		<hibernate.version>4.3.7.Final</hibernate.version>
+		<spring.version>4.1.3.RELEASE</spring.version>
+		<spring-security.version>3.2.5.RELEASE</spring-security.version>
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.snomed.util</groupId>
 			<artifactId>snomed-utilities</artifactId>
-			<version>1.0.7-SNAPSHOT</version>
+			<version>1.0.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -80,6 +80,31 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-context</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-tx</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-jdbc</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-orm</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.security</groupId>
+				<artifactId>spring-security-crypto</artifactId>
+				<version>${spring-security.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
