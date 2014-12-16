@@ -31,7 +31,7 @@ public abstract class AbstractControllerTest {
 			Charset.forName("utf8")
 		);
 
-	public static final String ROOT_URL = "http://localhost:80";
+	public static final String ROOT_URL = "http://localhost";
 
 	protected MockMvc mockMvc;
 

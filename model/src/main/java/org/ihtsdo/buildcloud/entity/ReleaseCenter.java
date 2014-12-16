@@ -1,13 +1,19 @@
 package org.ihtsdo.buildcloud.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.hibernate.annotations.Type;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-
-import java.util.ArrayList;
-import java.util.List;
-import javax.persistence.*;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
@@ -28,21 +34,21 @@ public class ReleaseCenter {
 
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
-	private List<Product> products;
-
-	private boolean removed;
+	private final List<Product> products;
+	@Type(type="yes_no")
+	private boolean removed = false;
 
 	public ReleaseCenter() {
 		products = new ArrayList<>();
 	}
 
-	public ReleaseCenter(String name, String shortName) {
+	public ReleaseCenter(final String name, final String shortName) {
 		this();
 		this.name = name;
 		setShortName(shortName);
 	}
 
-	public void addProduct(Product product) {
+	public void addProduct(final Product product) {
 		products.add(product);
 		product.setReleaseCenter(this);
 	}
@@ -51,7 +57,7 @@ public class ReleaseCenter {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
@@ -59,7 +65,7 @@ public class ReleaseCenter {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
@@ -67,7 +73,7 @@ public class ReleaseCenter {
 		return shortName;
 	}
 
-	public void setShortName(String shortName) {
+	public void setShortName(final String shortName) {
 		this.shortName = shortName;
 		this.businessKey = EntityHelper.formatAsBusinessKey(shortName);
 	}
@@ -84,7 +90,7 @@ public class ReleaseCenter {
 		return removed;
 	}
 
-	public void setRemoved(boolean removed) {
+	public void setRemoved(final boolean removed) {
 		this.removed = removed;
 	}
 }

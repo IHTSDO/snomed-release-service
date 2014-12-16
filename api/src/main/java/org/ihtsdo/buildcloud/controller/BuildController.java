@@ -126,9 +126,9 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 
-	@RequestMapping(value = "/{buildId}/output/publish")
+	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
 	@ResponseBody
-	public void publishReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+	public void publishBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId) throws BusinessServiceException {
 
 		Build build = buildService.find(releaseCenterKey, productKey, buildId);

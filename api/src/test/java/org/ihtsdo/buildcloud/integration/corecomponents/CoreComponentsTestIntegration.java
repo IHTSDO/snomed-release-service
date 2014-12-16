@@ -1,12 +1,12 @@
 package org.ihtsdo.buildcloud.integration.corecomponents;
 
+import java.util.zip.ZipFile;
+
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.zip.ZipFile;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
@@ -30,7 +30,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setCreateInferredRelationships(true);
 		integrationTestHelper.setCreateLegacyIds(true);
-		String effectiveTime1 = "20140131";
+		final String effectiveTime1 = "20140131";
 		integrationTestHelper.setEffectiveTime(effectiveTime1);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
@@ -82,7 +82,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		//delete previous input files
 		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
-		String effectiveTime2 = "20140731";
+		final String effectiveTime2 = "20140731";
 		integrationTestHelper.setEffectiveTime(effectiveTime2);
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2015");
@@ -141,7 +141,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	}
 
-	private void executeAndVerfiyResults(final String releaseDate, String expectedZipEntries) throws Exception {
+	private void executeAndVerfiyResults(final String releaseDate, final String expectedZipEntries) throws Exception {
 		final String buildURL1 = integrationTestHelper.createBuild();
 		integrationTestHelper.triggerBuild(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);

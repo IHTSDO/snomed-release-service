@@ -5,6 +5,7 @@
     "readmeHeader" : null,
     "readmeEndDate" : null,
     "firstTimeRelease" : false,
+    "betaRelease" : false,
     "previousPublishedPackage" : null,
     "newRF2InputFiles" : null,
     "justPackage" : false,
