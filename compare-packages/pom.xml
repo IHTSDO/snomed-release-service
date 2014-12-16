@@ -14,6 +14,7 @@
 		<slf4j.version>1.7.5</slf4j.version>
 		<daily_legacy_build_output>target/daily_legacy_build</daily_legacy_build_output>
 		<daily_release_service_build_output>target/daily_release_service_build</daily_release_service_build_output>
+		<build_date>today</build_date> <!-- will be overridden by environment variable if passed in -->
 	</properties>
 
 	<dependencies>
@@ -52,6 +53,7 @@
 								<argument>download-latest-release-service-build.sh</argument>
 								<argument>${daily_release_service_build_output}</argument>
 								<argument>${api_host}</argument>
+								<argument>${build_date}</argument>
 							</arguments>
 						</configuration>
 					</execution>
