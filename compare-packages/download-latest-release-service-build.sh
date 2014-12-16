@@ -10,6 +10,8 @@ fi
 
 outputDir=$1
 apiHost=$2
+buildDate=$3
+
 if [ -n "$apiHost" ]; then
 	api="https://$apiHost/api/v1"
 else
@@ -18,15 +20,18 @@ fi
 timeoutMins=3
 
 function getBuiltExecutionId {
-	curl -s $api/builds/5_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$today" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
+	curl -s $api/builds/5_int_daily_build/executions 2>/dev/null | grep -A2 "\"id\" : \"$targetDate" | grep -B2 '"status" : "BUILT"' | head -n1 | awk -F \" '{print $4}'
 }
 
 echo "Target API URL: ${api}/"
-
-today=$(date +%Y-%m-%d)
+if [[ -n "$buildDate" &&  "$buildDate" != "today" ]]; then
+	targetDate=${buildDate}
+else
+	targetDate=$(date +%Y-%m-%d)
+fi
 attempt=1
 executionsURL="${api}/builds/5_int_daily_build/executions"
-echo "Looking for executions files at ${executionsURL} with date ${today}"
+echo "Looking for executions files at ${executionsURL} with date ${targetDate}"
 builtExecutionId=$(getBuiltExecutionId)
 while [ "$builtExecutionId" == "" ] && [ $attempt -le $timeoutMins ]; do
 	echo "Built execution not available, sleeping a minute."

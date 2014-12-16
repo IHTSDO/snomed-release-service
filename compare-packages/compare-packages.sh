@@ -1,14 +1,6 @@
 #!/bin/bash
 set -e
 
-if [ $# -ne 2 ]; then
-	echo "Usage: compare-packages.sh <SRS Zip Archive location> <Legacy Build Download Directory>"
-	exit 1
-fi
-
-srsArchive=$1
-legacyDir=$2
-
 function extractZip {
 	zipName=$1
 	dirName=$2
@@ -26,11 +18,28 @@ function createLists {
 	cd - > /dev/null
 }
 
+mkdir -p target
 
-extractZip $srsArchive "target"
+if [ $# -ne 2 ]; then
+	echo "Usage: compare-packages.sh <SRS Zip Archive location> <Legacy Build or Download Directory>"
+	exit 1
+fi
 
-srsLocation="target/SRS_Daily_Build_20150131"
-legacyLocation="${legacyDir}/destination"
+srsArchive=$1
+legacyData=$2
+
+srsLocation="target/left_archive"
+extractZip ${srsArchive} ${srsLocation}
+
+#Did we in fact get passed two zip files for comparison?  Extract if so
+if [[ $legacyData =~ \.zip$ ]]
+then 
+	legacyDir="target/right_archive" 
+	echo "2nd archive detected instead of directory, resolving to ${legacyDir}"
+	unzip $legacyData -d ${legacyDir}
+else
+	legacyDir=${legacyData}
+fi
 
 #Flatten the SRS structure into directory "a"
 mkdir -p target/a
@@ -40,7 +49,7 @@ find ${srsLocation} -type f | xargs -I {} mv {} target/a
 #Move the legacy structure into "b"
 mkdir -p target/b
 echo "Moving Legacy Build into flat structure 'b'"
-find ${legacyLocation} -type f | xargs -I {} mv {} target/b
+find ${legacyDir} -type f | xargs -I {} mv {} target/b
 
 createLists "srs" "target/a"
 createLists "legacy" "target/b"
@@ -56,6 +65,10 @@ echo
 processOrderFile="_process_order.txt"
 find target/a -type f | sed "s/target\/a\///" | grep "sct2_" | sort > ${processOrderFile}
 find target/a -type f | sed "s/target\/a\///" | grep "der2_" | sort >> ${processOrderFile}
+#Now also compare RF1 Files
+find target/a -type f | sed "s/target\/a\///" | grep "sct1_" | sort >> ${processOrderFile}
+find target/a -type f | sed "s/target\/a\///" | grep "der1_" | sort >> ${processOrderFile}
+find target/a -type f | sed "s/target\/a\///" | grep "res1_" | sort >> ${processOrderFile}
 for file in `cat ${processOrderFile}`; do
 	leftFile="target/a/${file}"
 	rightFile="target/b/${file}"
