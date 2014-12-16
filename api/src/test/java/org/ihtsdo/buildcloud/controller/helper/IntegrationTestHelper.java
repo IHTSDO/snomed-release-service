@@ -1,6 +1,27 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
-import com.jayway.jsonpath.JsonPath;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
@@ -16,23 +37,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.jayway.jsonpath.JsonPath;
 
 public class IntegrationTestHelper {
 
@@ -164,43 +169,45 @@ public class IntegrationTestHelper {
 	}
 
 	public void setFirstTimeRelease(final boolean isFirstTime) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
 	public void setCreateInferredRelationships(final boolean isCreateInferredRelationships) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships)) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships))
+				+ " }");
 	}
 
 	public void setCreateLegacyIds(final boolean createLegacyIds) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
 	}
 
 	public void setWorkbenchDataFixesRequired(final boolean isWorkbenchDataFixesRequired) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired)) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.WORKBENCH_DATA_FIXES_REQUIRED, Boolean.toString(isWorkbenchDataFixesRequired))
+				+ " }");
 	}
 
 	public void setJustPackage(final boolean justPackage) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.JUST_PACKAGE, Boolean.toString(justPackage)) + " }");
 	}
 
 	public void setPreviousPublishedPackage(final String previousPublishedFile) throws Exception {
-		setPackageProperty("{ " + jsonPair(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
+		setProductProperty("{ " + jsonPair(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
 	}
 
 	public void setReadmeHeader(final String readmeHeader) throws Exception {
-		setPackageProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
+		setProductProperty("{ \"readmeHeader\" : \"" + readmeHeader + "\" }");
 	}
 
 	public void setReadmeEndDate(final String readmeEndDate) throws Exception {
-		setPackageProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
+		setProductProperty("{ \"readmeEndDate\" : \"" + readmeEndDate + "\" }");
 	}
 
 	public void setCustomRefsetCompositeKeys(final String customRefsetCompositeKeys) throws Exception {
-		setPackageProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
+		setProductProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
 	}
 
 	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {
-		setPackageProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
+		setProductProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
 
 	/*
@@ -211,7 +218,7 @@ public class IntegrationTestHelper {
 		return "  \"" + key + "\" : \"" + value + "\" ";
 	}
 
-	private void setPackageProperty(final String jsonContent) throws Exception {
+	private void setProductProperty(final String jsonContent) throws Exception {
 		mockMvc.perform(
 				request(HttpMethod.PATCH, getProductUrl())
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -259,7 +266,7 @@ public class IntegrationTestHelper {
 
 	public void publishOutput(final String buildURL) throws Exception {
 		mockMvc.perform(
-				post(buildURL + "/output/publish")
+				post(buildURL + "/publish")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		)
@@ -290,7 +297,7 @@ public class IntegrationTestHelper {
 				.andReturn();
 
 		final String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
-		final String expectedURL = "http://localhost:80/centers/international/published";
+		final String expectedURL = "http://localhost/centers/international/published";
 
 		Assert.assertEquals(expectedURL, publishedURL);
 
