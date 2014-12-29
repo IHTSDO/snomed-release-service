@@ -1,14 +1,13 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.xml.bind.JAXBException;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DELTA;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DER2;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.FILE_NAME_SEPARATOR;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.FULL;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.INPUT_FILE_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.SNAPSHOT;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +15,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
+import javax.xml.bind.JAXBException;
+
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * To check all files specified in the manifest file can be derived from the input files.
@@ -34,40 +41,42 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
  */
 public class InputFilesExistenceCheck extends PreconditionCheck {
 
+	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
+	private static final String RELATIONSHIP = "_Relationship_";
 	private static final String ERROR_MSG = "The input files directory doesn't contain the following files required by the manifest.xml: ";
 	@Autowired
 	private BuildDAO buildDAO;
 
 	@Override
-	public void runCheck(Build build) {
+	public void runCheck(final Build build) {
 		//check against the manifest file
 		boolean isFailed = false;
 
 		// If this is a beta build, manifest may specify x prefix.
-		boolean isBeta = build.getConfiguration().isBetaRelease();
+		final boolean isBeta = build.getConfiguration().isBetaRelease();
 
 		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
-			ManifestXmlFileParser parser = new ManifestXmlFileParser();
-			ListingType listingType = parser.parse(manifestInputSteam);
-			Set<String> filesExpected = new HashSet<>();
+			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			final ListingType listingType = parser.parse(manifestInputSteam);
+			final Set<String> filesExpected = new HashSet<>();
 			boolean isFirstReadmeFound = false;
-			for (String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
+			for (final String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
 				//dealing with der2 and sct2 full/snapshot/delta files
-				String[] splits = fileName.split(FILE_NAME_SEPARATOR);
+				final String[] splits = fileName.split(FILE_NAME_SEPARATOR);
 				String fileNamePrefix = splits[0];
 				if (isBeta && fileNamePrefix.startsWith(BuildConfiguration.BETA_PREFIX)) {
 					fileNamePrefix = fileNamePrefix.substring(1);
 				}
 				if (DER2.equals(fileNamePrefix) || SCT2.equals(fileNamePrefix)) {
-					String token3 = splits[2];
+					final String token3 = splits[2];
 					String temp = fileName;
 					if (token3.contains(FULL)) {
 						temp = fileName.replace(FULL, DELTA);
 					} else if (token3.contains(SNAPSHOT)) {
 						temp = fileName.replace(SNAPSHOT, DELTA);
 					}
-					if (temp.contains(SCT2 + "_Relationship_")) {
-						temp = temp.replace(SCT2 + "_Relationship_", SCT2 + "_StatedRelationship_");
+					if (temp.contains(SCT2 + RELATIONSHIP)) {
+						temp = temp.replace(SCT2 + RELATIONSHIP, SCT2 + STATED_RELATIONSHIP);
 					}
 					filesExpected.add(temp.replace(fileNamePrefix, INPUT_FILE_PREFIX));
 				} else if (!isFirstReadmeFound && README_FILENAME_PREFIX.equals(fileNamePrefix)) {
@@ -75,17 +84,18 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 					isFirstReadmeFound = true;
 				} else {
 					//add all static documentation and resources files.
-					filesExpected.add(fileName);
+					if (fileName.trim().length() > 0) {
+						filesExpected.add(fileName);
+					}
 				}
-
 			}
 
 			//get a list of input file names
-			List<String> inputfilesList = buildDAO.listInputFileNames(build);
+			final List<String> inputfilesList = buildDAO.listInputFileNames(build);
 			//check expected against input files
-			StringBuilder msgBuilder = new StringBuilder();
+			final StringBuilder msgBuilder = new StringBuilder();
 			int count = 0;
-			for (String expectedFileName : filesExpected) {
+			for (final String expectedFileName : filesExpected) {
 				// If this is a beta build, then the input files may optionally miss out the 'x' prefix
 				String acceptableFileName = expectedFileName;
 				if (isBeta && expectedFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
