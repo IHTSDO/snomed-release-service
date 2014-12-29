@@ -11,6 +11,8 @@
 		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
 		">
 
+	<bean class="org.ihtsdo.telemetry.server.TestBroker" destroy-method="close"/>
+
 	<context:component-scan base-package="org.ihtsdo.buildcloud.controller" />
 
 	<mvc:interceptors>

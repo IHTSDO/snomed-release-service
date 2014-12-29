@@ -3,9 +3,6 @@
 	   xsi:schemaLocation="
 	    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
-	<!-- TODO: Replace temp embedded JMS broker with ActiveMQ installation -->
-	<bean class="org.ihtsdo.telemetry.server.TestBroker" id="testBroker" destroy-method="close"/>
-
 	<bean class="com.amazonaws.auth.BasicAWSCredentials" id="awsCredentials" depends-on="configurer2">
 		<constructor-arg value="${aws.key}" />
 		<constructor-arg value="${aws.privateKey}" />
