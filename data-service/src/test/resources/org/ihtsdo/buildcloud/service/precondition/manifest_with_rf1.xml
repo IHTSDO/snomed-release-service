@@ -1,0 +1,28 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+  <folder Name="SnomedCT_SpanishRelease_INT_20140731">
+    <file Name="Readme_en_20140731.txt"/>
+  	<folder Name="Documentation">
+      <folder Name="Current">
+        <file Name=""/>
+      </folder>
+    </folder>
+    	<folder Name="Resources">
+		<file Name="zres_SctLoincTechnologyPreview_INT_20140731.owl"/>
+	</folder>
+    <folder Name="RF1Release">
+      <folder Name="Subsets">
+        <folder Name="Language-es">
+          <file Name="der1_SubsetMembers_es_INT_20140731.txt" />
+          <file Name="der1_Subsets_es_INT_20140731.txt" />
+        </folder>
+      </folder>
+      <folder Name="Terminology">
+        <folder Name="Content">
+          <file Name="sct1_Concepts_Core_INT_20140731.txt" />
+          <file Name="sct1_descriptions_es_INT_20140731.txt" />
+          <file Name="sct1_Relationships_Core_INT_20140731.txt" />
+        </folder>
+      </folder>
+    </folder>
+  </folder>
+</listing>
