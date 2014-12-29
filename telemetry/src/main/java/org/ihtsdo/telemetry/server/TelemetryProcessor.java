@@ -15,10 +15,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
+import javax.jms.IllegalStateException;
+import javax.jms.*;
 
 public class TelemetryProcessor {
 
@@ -129,6 +127,9 @@ public class TelemetryProcessor {
 								}
 							}
 						}
+					} catch (IllegalStateException e) {
+						logger.info("Connection closed. Shutting down telemetry consumer.");
+						shutdown = true;
 					} catch (JMSException e) {
 						Exception linkedException = e.getLinkedException();
 						if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {
