@@ -117,11 +117,11 @@ mkdir {a_flat,b_flat,c}
 
 #echo "Flattening structure..."
 cd a
-find . -type f | xargs -I {} cp {} ../a_flat
+find . -type f | xargs -I {} mv {} ../a_flat
 echo -n "."
 
 cd ../b
-find . -type f | xargs -I {} cp {} ../b_flat
+find . -type f | xargs -I {} mv {} ../b_flat
 cd ..
 echo "."
 
