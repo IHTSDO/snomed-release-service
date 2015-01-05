@@ -20,8 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ManifestCheck extends PreconditionCheck {
 
 	private static final String COMMA = ",";
-	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have " +
-			"the same release date as configured in the product:%s.";
+	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have " 
+			+ "the same release date as configured in the product:%s.";
 	private static final String INVALID_RELEASE_FILE_FORMAT_MSG = "The following file names specified in the manifest:%s don't follow naming convention:%s.";
 	private static final String FILE_NAME_CONVENTION = "<FileType>_<ContentType>_<ContentSubType>_<Country|Namespace>_<VersionDate>.<Extension>";
 	
@@ -39,7 +39,6 @@ public class ManifestCheck extends PreconditionCheck {
 			//check that the manifest conforms to the XSD and specifically, that we can find a valid root folder
 			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			final ListingType manifestListing = parser.parse(manifestInputSteam);
-			//check release date in manifest
 			final String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				final String errorMsg = validate(manifestListing, releaseVersion);
@@ -68,7 +67,7 @@ public class ManifestCheck extends PreconditionCheck {
 		int emptyFileNameCount = 0;
 		for (final String fileName : fileNames) {
 			//check file name is not empty
-			if ( fileName.trim().length() == 0) {
+			if (fileName.trim().length() == 0) {
 				emptyFileNameCount++;
 				continue;
 			}
@@ -76,7 +75,7 @@ public class ManifestCheck extends PreconditionCheck {
 			if (!isReadmeFound && fileName.startsWith(RF2Constants.README_FILENAME_PREFIX) && fileName.endsWith(RF2Constants.README_FILENAME_EXTENSION)) {
 				//Readme_20140831.txt
 				isReadmeFound = true;
-				if ( fileName.split(RF2Constants.FILE_NAME_SEPARATOR).length >=2) {
+				if (fileName.split(RF2Constants.FILE_NAME_SEPARATOR).length >= 2) {
 					if (!fileName.contains(releaseVersion)) {
 						if (releaseVersionMsgBuilder.length() > 0) {
 							releaseVersionMsgBuilder.append(COMMA);
@@ -95,7 +94,7 @@ public class ManifestCheck extends PreconditionCheck {
 					}
 					invalidFileNameMsgBuilder.append(fileName);
 				}
-				if (!tokens[tokens.length-1].contains(releaseVersion)) {
+				if (!tokens[tokens.length - 1].contains(releaseVersion)) {
 					if (releaseVersionMsgBuilder.length() > 0) {
 						releaseVersionMsgBuilder.append(COMMA);
 					}
