@@ -31,7 +31,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
-				+ " rel2_Refset_SimpleDelta_INT_20140731.txt";
+				+ " rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
 
@@ -43,7 +43,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
-				+ " rel2_Refset_SimpleDelta_INT_20140731.txt";
+				+ " rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
 
@@ -85,7 +85,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
-		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt";
+		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
 	
@@ -97,7 +97,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
 		final String expectedMsg ="The input files directory doesn't contain the following files required by the manifest.xml: der1_SubsetMembers_es_INT_20140731.txt,der1_Subsets_es_INT_20140731.txt,"
-				+ "sct1_Relationships_Core_INT_20140731.txt,sct1_descriptions_es_INT_20140731.txt,sct1_Concepts_Core_INT_20140731.txt,zres_SctLoincTechnologyPreview_INT_20140731.owl";
+				+ "sct1_Relationships_Core_INT_20140731.txt,sct1_descriptions_es_INT_20140731.txt,sct1_Concepts_Core_INT_20140731.txt,zres_SctLoincTechnologyPreview_INT_20140731.owl.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
 
@@ -108,11 +108,9 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
-		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_Refset_SimpleDelta_INT_20140731.txt";
+		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
-	
-	
 
 	@Test
 	public void checkInputFilesMatchedBetaManifest() throws Exception {
@@ -124,11 +122,45 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		assertEquals(State.PASS, actualResult);
 	}
 	
+	@Test
+	public void missingInputFilesForJustPackage() throws Exception {
+		product.getBuildConfiguration().setBetaRelease(true);
+		product.getBuildConfiguration().setJustPackage(true);
+		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140731.txt");
+		loadManifest("valid_manifest_betaRelease.xml");
+		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
+		final State actualResult = report.getResult();
+		assertEquals(State.FAIL, actualResult);
+		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
+				+ " xder2_Refset_SimpleSnapshot_INT_20140731.txt,xder2_Refset_SimpleFull_INT_20140731.txt,xder2_Refset_SimpleDelta_INT_20140731.txt.";
+		assertEquals(expectedMsg, report.getMessage());
+	}
+	
+	@Test
+	public void testMissingStatedRelationshipWhenClassifierIsActive() throws Exception {
+		product.getBuildConfiguration().setCreateInferredRelationships(true);
+		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_TextDefinition_Delta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
+		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
+		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
+		loadManifest("valid_core_manifest.xml");
+		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
+		final State actualResult = report.getResult();
+		assertEquals(State.FAIL, actualResult);
+		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt."
+				+ " The create inferred relationship flag is active but no stated relationship file is found in the input file directory.";
+		assertEquals(expectedMsg, report.getMessage());
+	}
+	
 	@After
 	public void tearDown() throws ResourceNotFoundException {
 		deleteFilesFromInputFileByPattern("*.txt");
 		deleteFilesFromInputFileByPattern("*.pdf");
 		deleteFilesFromInputFileByPattern("*.owl");
+		product = null;
 	}
 
 }
