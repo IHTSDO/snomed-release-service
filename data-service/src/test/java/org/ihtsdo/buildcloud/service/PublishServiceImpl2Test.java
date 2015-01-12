@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
@@ -11,6 +9,8 @@ import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.TestS3Client;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
