@@ -4,10 +4,10 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

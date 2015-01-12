@@ -5,14 +5,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.utils.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +25,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

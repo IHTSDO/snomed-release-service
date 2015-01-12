@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.test;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.BufferedReader;

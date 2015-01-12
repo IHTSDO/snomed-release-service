@@ -23,7 +23,7 @@ import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
