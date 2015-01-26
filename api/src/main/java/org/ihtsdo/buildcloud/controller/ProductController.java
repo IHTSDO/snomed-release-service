@@ -13,6 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.mangofactory.swagger.annotations.ApiIgnore;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -22,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
+@Api(value = "Product", position = 2)
 public class ProductController {
 
 	@Autowired
@@ -32,7 +36,9 @@ public class ProductController {
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles", "builds"};
 
-	@RequestMapping
+	@RequestMapping( method = RequestMethod.GET )
+	@ApiOperation( value = "Returns a list of products",
+	notes = "Returns a list of products for the extension specified in the URL" )
 	@ResponseBody
 	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey, @RequestParam(required = false) boolean includeRemoved,
 			HttpServletRequest request) {
@@ -46,7 +52,8 @@ public class ProductController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
 	}
 
-	@RequestMapping("/{productKey}")
+	@RequestMapping( value = "/{productKey}", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a product", notes = "Returns a single product object" )
 	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -60,6 +67,9 @@ public class ProductController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	@ApiOperation( value = "Create a product", 
+		notes = "creates a new Product with a name as specified in  the request "
+				+ "and returns the new product object" )
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterKey,
 			@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -77,6 +87,7 @@ public class ProductController {
 
 	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
+	@ApiIgnore
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {

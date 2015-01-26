@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.mangofactory.swagger.annotations.ApiIgnore;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/centers")
+@Api(value = "Release Center", position = 3)
 public class ReleaseCenterController {
 
 	@Autowired
@@ -37,7 +41,9 @@ public class ReleaseCenterController {
 
 	private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
 
-	@RequestMapping
+	@RequestMapping( method = RequestMethod.GET )
+	@ApiOperation( value = "Returns a list all release center for a logged in user",
+		notes = "Returns a list of all release centers visible to the currently logged in user." )
 	@ResponseBody
 	public List<Map<String, Object>> getReleaseCenters(HttpServletRequest request) {
 		List<ReleaseCenter> centers = releaseCenterService.findAll();
@@ -45,6 +51,8 @@ public class ReleaseCenterController {
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	@ApiOperation( value = "Returns a list all release center for a logged in user",
+		notes = " Creates a new Release Center and returns the newly created release center." )
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
 
@@ -58,6 +66,9 @@ public class ReleaseCenterController {
 	}
 
 	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@ApiOperation( value = "Updates a release center details",
+		notes = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed.   "
+				+ "Note that the short name is used in the formation of the ‘business key'" )
 	@ResponseBody
 	public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterBusinessKey,
 			@RequestBody(required = false) Map<String, String> json,
@@ -72,7 +83,9 @@ public class ReleaseCenterController {
 		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 	}
 
-	@RequestMapping("/{releaseCenterBusinessKey}")
+	@RequestMapping( value = "/{releaseCenterBusinessKey}", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a single release center",
+		notes = "Returns a single release center for given releaseCenterBusinessKey" )
 	@ResponseBody
 	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -84,6 +97,7 @@ public class ReleaseCenterController {
 
 	@RequestMapping("/{releaseCenterBusinessKey}/published")
 	@ResponseBody
+	@ApiIgnore
 	public Map<String, Object> getReleaseCenterPublishedPackages(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);
@@ -96,6 +110,7 @@ public class ReleaseCenterController {
 
 	@RequestMapping(value = "/{releaseCenterBusinessKey}/published", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
+	@ApiIgnore
 	public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterBusinessKey,
 			@RequestParam(value = "file") final MultipartFile file) throws BusinessServiceException, IOException {
 
