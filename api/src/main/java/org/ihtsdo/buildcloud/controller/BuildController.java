@@ -17,17 +17,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.mangofactory.swagger.annotations.ApiIgnore;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}/builds")
+@Api(value = "Build", position = 1)
 public class BuildController {
 
 	@Autowired
@@ -41,7 +47,9 @@ public class BuildController {
 
 	private static final String[] BUILD_LINKS = {"configuration", "inputfiles", "outputfiles", "logs"};
 
-	@RequestMapping(method = RequestMethod.POST)
+	@RequestMapping( method = RequestMethod.POST )
+	@ApiOperation( value = "Create a build",
+		notes = "Create a build for given product key and release center key" )
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -52,7 +60,10 @@ public class BuildController {
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
 	}
 
-	@RequestMapping
+	@RequestMapping(value = "/", method = RequestMethod.GET )
+	@ApiOperation( value = "Returns a list all builds for a logged in user",
+		notes = "Returns a list all builds visible to the currently logged in user, "
+			+ "so this could potentially span across Release Centres" )
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws ResourceNotFoundException {
@@ -60,8 +71,10 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
-	@RequestMapping("/{buildId}")
+	@RequestMapping(value = "/{buildId}", method = RequestMethod.GET )
 	@ResponseBody
+	@ApiOperation( value = "Get a build id",
+	notes = "Returns a single build object for given key" )
 	public Map<String, Object> getBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws ResourceNotFoundException {
 		Build build = buildService.find(releaseCenterKey, productKey, buildId);
@@ -72,8 +85,10 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
 	}
 
-	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json")
+	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json", method = RequestMethod.GET)
 	@ResponseBody
+	@ApiOperation( value = "Retrieves configuration details",
+	notes = "Retrieves configuration details for given product key, release center key, and build id" )
 	public Map<String, Object> getConfiguration(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			HttpServletRequest request) throws IOException, BusinessServiceException {
 
@@ -81,8 +96,9 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request);
 	}
 
-	@RequestMapping(value = "/{buildId}/inputfiles")
+	@RequestMapping(value = "/{buildId}/inputfiles", method = RequestMethod.GET)
 	@ResponseBody
+	@ApiIgnore
 	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws IOException, ResourceNotFoundException {
 
@@ -91,6 +107,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}")
+	@ApiIgnore
 	public void getPackageInputFile(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String inputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -101,6 +118,7 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/outputfiles")
 	@ResponseBody
+	@ApiIgnore
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws BusinessServiceException {
 
@@ -109,6 +127,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}")
+	@ApiIgnore
 	public void getPackageOutputFile(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String outputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -119,6 +138,7 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/trigger", method = RequestMethod.POST)
 	@ResponseBody
+	@ApiIgnore
 	public Map<String, Object> triggerProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws BusinessServiceException {
 		Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId);
@@ -128,6 +148,7 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
 	@ResponseBody
+	@ApiIgnore
 	public void publishBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId) throws BusinessServiceException {
 
@@ -138,6 +159,7 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/logs")
 	@ResponseBody
+	@ApiIgnore
 	public List<Map<String, Object>> getBuildLogs(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -145,6 +167,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}")
+	@ApiIgnore
 	public void getBuildLog(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
