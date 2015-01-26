@@ -25,4 +25,8 @@
 
 	<bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
 
+	<mvc:resources mapping="/webjars/**" location="classpath:/META-INF/resources/webjars/"/>
+	<mvc:resources mapping="/api-doc.html" location="/" />
+	<bean class="org.ihtsdo.buildcloud.config.SwaggerConfig" />
+	
 </beans>

@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -13,6 +16,7 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/version")
+@Api(value = "Version", position = 5)
 public class VersionController {
 
 	public static final String VERSION_FILE_PATH = "/var/opt/snomed-release-service-api/version.txt";
@@ -22,7 +26,9 @@ public class VersionController {
 
 	private String versionString;
 
-	@RequestMapping
+	@RequestMapping( method = RequestMethod.GET )
+	@ApiOperation( value = "Returns version of current deployment",
+		notes = "Returns the software-build version as captured during installation (deployment using ansible)" )
 	@ResponseBody
 	public Map<String, Object> getVersion(HttpServletRequest request) throws IOException {
 		Map<String, String> entity = new HashMap<>();
