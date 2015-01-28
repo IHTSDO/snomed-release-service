@@ -42,8 +42,8 @@ public class SwaggerConfig {
 		
 		return new ApiInfo(
 				"SRS API Docs",
-				"This is a listing of available apis of SNOMED release service. For more technical details visit page @ github.com "
-				+ " - https://github.com/IHTSDO/snomed-release-service ",
+				"This is a listing of available apis of SNOMED release service. For more technical details visit "
+				+ "<a src='https://github.com/IHTSDO/snomed-release-service' > SNOMED Release Service </a> page @ github.com ",
 				"https://github.com/IHTSDO/snomed-release-service",
 				"info@ihtsdotools.org",
 				"Apache License, Version 2.0",

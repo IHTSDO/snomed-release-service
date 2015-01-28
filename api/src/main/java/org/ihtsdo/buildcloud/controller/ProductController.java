@@ -53,7 +53,7 @@ public class ProductController {
 	}
 
 	@RequestMapping( value = "/{productKey}", method = RequestMethod.GET)
-	@ApiOperation( value = "Returns a product", notes = "Returns a single product object" )
+	@ApiOperation( value = "Returns a product", notes = "Returns a single product object for a given product key" )
 	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -87,7 +87,8 @@ public class ProductController {
 
 	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
 	@ResponseBody
-	@ApiIgnore
+	@ApiOperation( value = "Update a product", notes = "Update an existing product with new details "
+			+ "and returns updated product" )
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
