@@ -51,7 +51,7 @@ public class ReleaseCenterController {
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	@ApiOperation( value = "Returns a list all release center for a logged in user",
+	@ApiOperation( value = "Creates a new Release Center for a logged in user",
 		notes = " Creates a new Release Center and returns the newly created release center." )
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
@@ -85,7 +85,7 @@ public class ReleaseCenterController {
 
 	@RequestMapping( value = "/{releaseCenterBusinessKey}", method = RequestMethod.GET)
 	@ApiOperation( value = "Returns a single release center",
-		notes = "Returns a single release center for given releaseCenterBusinessKey" )
+		notes = "Returns a single release center for a given releaseCenterBusinessKey" )
 	@ResponseBody
 	public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -95,9 +95,10 @@ public class ReleaseCenterController {
 		return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
 	}
 
-	@RequestMapping("/{releaseCenterBusinessKey}/published")
+	@RequestMapping(value = "/{releaseCenterBusinessKey}/published", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a list published releases names",
+		notes = "Returns a list published releases names for a given release center" )
 	@ResponseBody
-	@ApiIgnore
 	public Map<String, Object> getReleaseCenterPublishedPackages(@PathVariable String releaseCenterBusinessKey, HttpServletRequest request) throws ResourceNotFoundException {
 
 		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);

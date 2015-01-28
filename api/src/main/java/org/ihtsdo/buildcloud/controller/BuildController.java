@@ -49,7 +49,7 @@ public class BuildController {
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
-		notes = "Create a build for given product key and release center key" )
+		notes = "Create a build for given product key and release center key and returns build id" )
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -88,7 +88,7 @@ public class BuildController {
 	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json", method = RequestMethod.GET)
 	@ResponseBody
 	@ApiOperation( value = "Retrieves configuration details",
-	notes = "Retrieves configuration details for given product key, release center key, and build id" )
+		notes = "Retrieves configuration details for given product key, release center key, and build id" )
 	public Map<String, Object> getConfiguration(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			HttpServletRequest request) throws IOException, BusinessServiceException {
 
@@ -98,7 +98,8 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/inputfiles", method = RequestMethod.GET)
 	@ResponseBody
-	@ApiIgnore
+	@ApiOperation( value = "Retrieves list of input file names",
+		notes = "Retrieves list of input file names for given release center, product key and build id" )
 	public List<Map<String, Object>> listPackageInputFiles(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws IOException, ResourceNotFoundException {
 
@@ -106,8 +107,9 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}")
-	@ApiIgnore
+	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Download a specific file",
+		notes = "Download a specific file content for given release center, product key, build id and given input file name combination" )
 	public void getPackageInputFile(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String inputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -116,9 +118,11 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/outputfiles")
+	@RequestMapping(value = "/{buildId}/outputfiles", method = RequestMethod.GET)
 	@ResponseBody
-	@ApiIgnore
+	@ApiOperation( value = "Retrieves a list of file names from output directory",
+		notes = "Retrieves a list of file names from output directory for given release center, "
+				+ "product key, build id combination" )
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws BusinessServiceException {
 
@@ -126,8 +130,10 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}")
-	@ApiIgnore
+	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Download a specific file from output directory",
+		notes = "Download a specific file from output directory for given release center, "
+			+ "product key, build id and file name combination" )
 	public void getPackageOutputFile(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String outputFileName, HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -148,7 +154,8 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
 	@ResponseBody
-	@ApiIgnore
+	@ApiOperation( value = "Publish a release for given build id",
+	notes = "Publish release for given build id to make it available in repository for wider usages" )
 	public void publishBuild(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId) throws BusinessServiceException {
 
@@ -157,17 +164,20 @@ public class BuildController {
 		publishService.publishBuild(build);
 	}
 
-	@RequestMapping(value = "/{buildId}/logs")
+	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
 	@ResponseBody
-	@ApiIgnore
+	@ApiOperation( value = "Retrieves a list of build log file names",
+		notes = "Retrieves a list of build log file names for given release center, product key, and build id" )
 	public List<Map<String, Object>> getBuildLogs(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@PathVariable String buildId, HttpServletRequest request) throws ResourceNotFoundException {
 
 		return convertFileListToEntities(request, buildService.getLogFilePaths(releaseCenterKey, productKey, buildId));
 	}
 
-	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}")
-	@ApiIgnore
+	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Download a specific build log file",
+		notes = "Download a specific log file for given release center, "
+		+ "product key, build id and file name combination" )
 	public void getBuildLog(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
 			@PathVariable String logFileName, HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
