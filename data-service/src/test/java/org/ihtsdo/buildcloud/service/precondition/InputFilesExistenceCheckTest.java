@@ -155,6 +155,13 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		assertEquals(expectedMsg, report.getMessage());
 	}
 	
+	
+	@Test
+	public void manifestFailedToBeParsed() throws Exception {
+		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
+		final State actualResult = report.getResult();
+		Assert.assertEquals(State.FATAL, actualResult);
+	}
 	@After
 	public void tearDown() throws ResourceNotFoundException {
 		deleteFilesFromInputFileByPattern("*.txt");
