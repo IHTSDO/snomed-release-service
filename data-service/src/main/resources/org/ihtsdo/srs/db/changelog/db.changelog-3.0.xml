@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+	<changeSet author="mchu (generated)" id="1418306828825-10" context="PROD">
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="permanent_packages_duplicateTerms"/>
+			<column name="name" value="Permanent_Packages_DuplicateTerms"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="permanent_packages_bridgefile"/>
+			<column name="name" value="Permanent_Packages_BridgeFile"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="permanent_packages_loincintegration"/>
+			<column name="name" value="Permanent_Packages_LoincIntegration"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="permanent_packages_navigationsubsets"/>
+			<column name="name" value="Permanent_Packages_NavigationSubsets"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="permanent_packages_orderedtype"/>
+			<column name="name" value="Permanent_Packages_OrderedType"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_loinc_human_readable"/>
+			<column name="name" value="Int_LOINC_human_readable"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_gmdn_build"/>
+			<column name="name" value="Int GMDN Build"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="test_int_jan_2015_rf2"/>
+			<column name="name" value="TEST_Int_Jan_2015_RF2"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_jan_2015_rf2_updated"/>
+			<column name="name" value="Int_Jan_2015_RF2_updated"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_jan_2015_rf2_updated_2"/>
+			<column name="name" value="Int_Jan_2015_RF2_updated_2"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_jan_2015_rf1"/>
+			<column name="name" value="Int_Jan_2015_RF1"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+		<insert tableName="Product">
+			<column name="createInferredRelationships" value="N"/>
+			<column name="createLegacyIds" value="N"/>
+			<column name="effectiveTime"/>
+			<column name="firstTimeRelease" value="N"/>
+			<column name="justPackage" value="N"/>
+			<column name="newRF2InputFiles"/>
+			<column name="previousPublishedPackage"/>
+			<column name="readmeEndDate"/>
+			<column name="readmeHeader"/>
+			<column name="workbenchDataFixesRequired" value="N"/>
+			<column name="businessKey" value="int_jan_2015_rf2"/>
+			<column name="name" value="Int_Jan_2015_RF2"/>
+			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+		</insert>
+	</changeSet>
+</databaseChangeLog>   
