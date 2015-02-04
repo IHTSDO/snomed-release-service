@@ -157,7 +157,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	
 	
 	@Test
-	public void manifestFailedToBeParsed() throws Exception {
+	public void testManifestFailedToBeParsed() throws Exception {
+		loadManifest("invalid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		Assert.assertEquals(State.FATAL, actualResult);
