@@ -1,0 +1,63 @@
+"assertionsFailed" : 0,
+  "assertionsRun" : 4,
+  "assertions" : {
+    "Assertion{id=3, name='Defines procedure that tests that terms that contain EN-GB language-specific words are in the same GB language refset.'}" : [ {
+      "assertionText" : "Assertion{id=3, name='Defines procedure that tests that terms that contain EN-GB language-specific words are in the same GB language refset.'}",
+      "executionId" : "1",
+      "testTime" : 1423483713816,
+      "configuration" : null,
+      "testType" : "SQL",
+      "testPattern" : null,
+      "failure" : false,
+      "runTime" : 9,
+      "failureMessage" : null,
+      "firstNInstances" : [ ],
+      "failureCount" : 0,
+      "startDate" : "09/02/15 12:08"
+    } ],
+    "Assertion{id=1, name='Build a table of all concepts edited in the current release cycle.'}" : [ {
+      "assertionText" : "Assertion{id=1, name='Build a table of all concepts edited in the current release cycle.'}",
+      "executionId" : "1",
+      "testTime" : 1423483706462,
+      "configuration" : null,
+      "testType" : "SQL",
+      "testPattern" : null,
+      "failure" : false,
+      "runTime" : 7238,
+      "failureMessage" : null,
+      "firstNInstances" : [ ],
+      "failureCount" : 0,
+      "startDate" : "09/02/15 12:08"
+    } ],
+    "Assertion{id=4, name='Defines procedure that tests that terms that contain EN-US language-specific words are in the same US language refset.'}" : [ {
+      "assertionText" : "Assertion{id=4, name='Defines procedure that tests that terms that contain EN-US language-specific words are in the same US language refset.'}",
+      "executionId" : "1",
+      "testTime" : 1423483713833,
+      "configuration" : null,
+      "testType" : "SQL",
+      "testPattern" : null,
+      "failure" : false,
+      "runTime" : 5,
+      "failureMessage" : null,
+      "firstNInstances" : [ ],
+      "failureCount" : 0,
+      "startDate" : "09/02/15 12:08"
+    } ],
+    "Assertion{id=2, name='Create shared resource tables and indexes.'}" : [ {
+      "assertionText" : "Assertion{id=2, name='Create shared resource tables and indexes.'}",
+      "executionId" : "1",
+      "testTime" : 1423483713718,
+      "configuration" : null,
+      "testType" : "SQL",
+      "testPattern" : null,
+      "failure" : false,
+      "runTime" : 89,
+      "failureMessage" : null,
+      "firstNInstances" : [ ],
+      "failureCount" : 0,
+      "startDate" : "09/02/15 12:08"
+    } ]
+  },
+  "reportUrl" : "http://localhost:80/reports/manifest_validation_1",
+  "type" : "post"
+}
