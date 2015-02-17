@@ -33,6 +33,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
@@ -101,18 +102,18 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void save(final Build build) throws IOException {
 		// Save config file
-		final String configPath = pathHelper.getConfigFilePath(build);
+		final String configPath = pathHelper.getBuildConfigFilePath(build);
 		putFile(configPath, toJson(build.getConfiguration()));
-
+		putFile(pathHelper.getQATestConfigFilePath(build),toJson(build.getQaTestConfig()));
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
 	}
 
-	private String toJson(final BuildConfiguration configuration) throws IOException {
+	private String toJson(final Object obj) throws IOException {
 		final StringWriter stringWriter = new StringWriter();
 		final JsonFactory jsonFactory = objectMapper.getJsonFactory();
 		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(stringWriter)) {
-			jsonGenerator.writeObject(configuration);
+			jsonGenerator.writeObject(obj);
 		}
 		return stringWriter.toString();
 	}
@@ -135,14 +136,27 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void loadConfiguration(final Build build) throws IOException {
-		final String configFilePath = pathHelper.getConfigFilePath(build);
+	public void loadBuildConfiguration(final Build build) throws IOException {
+		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
 		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
 		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
 		try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
 			final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
 			build.setConfiguration(buildConfiguration);
+		}
+	}
+	
+	
+	@Override
+	public void loadQaTestConfig(final Build build) throws IOException {
+		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
+		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+		try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
+			final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+			build.setQaTestConfig(qaTestConfig);
 		}
 	}
 
@@ -454,4 +468,9 @@ public class BuildDAOImpl implements BuildDAO {
 		this.buildFileHelper.setS3Client(s3Client);
 	}
 
+	@Override
+	public void loadConfiguration(final Build build) throws IOException {
+		loadBuildConfiguration(build);
+		loadQaTestConfig(build);
+	}
 }

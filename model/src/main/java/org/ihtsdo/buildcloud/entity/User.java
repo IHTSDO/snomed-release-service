@@ -1,14 +1,18 @@
 package org.ihtsdo.buildcloud.entity;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import java.util.List;
+import javax.persistence.Table;
+
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 @Entity
+@Table(name="user")
 public class User {
 
 	public static final String ANONYMOUS_USER = "anonymous_user";
@@ -17,10 +21,11 @@ public class User {
 	@GeneratedValue
 	@JsonIgnore
 	private Long id;
-
+	@Column(name="user_name")
 	private String username;
 
 	@JsonIgnore
+	@Column(name="encoded_password")
 	private String encodedPassword;
 
 	@OneToMany(mappedBy = "user")
@@ -30,12 +35,12 @@ public class User {
 	public User() {
 	}
 
-	public User(String username) {
+	public User(final String username) {
 		this();
 		this.username = username;
 	}
 
-	public User(Long id, String username) {
+	public User(final Long id, final String username) {
 		this(username);
 		this.id = id;
 	}
@@ -44,7 +49,7 @@ public class User {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
@@ -52,7 +57,7 @@ public class User {
 		return username;
 	}
 
-	public void setUsername(String username) {
+	public void setUsername(final String username) {
 		this.username = username;
 	}
 
@@ -60,7 +65,7 @@ public class User {
 		return encodedPassword;
 	}
 
-	public void setEncodedPassword(String encodedPassword) {
+	public void setEncodedPassword(final String encodedPassword) {
 		this.encodedPassword = encodedPassword;
 	}
 
@@ -68,7 +73,7 @@ public class User {
 		return releaseCenterMemberships;
 	}
 
-	public void setReleaseCenterMemberships(List<ReleaseCenterMembership> releaseCenterMemberships) {
+	public void setReleaseCenterMemberships(final List<ReleaseCenterMembership> releaseCenterMemberships) {
 		this.releaseCenterMemberships = releaseCenterMemberships;
 	}
 

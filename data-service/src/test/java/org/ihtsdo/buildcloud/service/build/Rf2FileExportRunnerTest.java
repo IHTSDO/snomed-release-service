@@ -1,9 +1,19 @@
 package org.ihtsdo.buildcloud.service.build;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
@@ -17,12 +27,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.io.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/test/testDataServiceContext.xml" })
@@ -60,16 +64,20 @@ public class Rf2FileExportRunnerTest {
 
 	@Before
 	public void setUp() throws IOException {
-		product = new Product(1L, "Test");
-		ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
+		product = new Product("Test");
+		final ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
 		product.setReleaseCenter(releaseCenter);
-		Date date = new Date();
+		final Date date = new Date();
 		buildConfiguration = product.getBuildConfiguration();
+		if (buildConfiguration == null) {
+			buildConfiguration = new BuildConfiguration();
+			product.setBuildConfiguration(buildConfiguration);
+		}
 		build = new Build(date, product);
-		SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
+		final SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
 		try {
 			buildConfiguration.setEffectiveTime(formater.parse(RELEASE_DATE));
-		} catch (ParseException e) {
+		} catch (final ParseException e) {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
 		transformedFileFullPath = "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
@@ -82,10 +90,10 @@ public class Rf2FileExportRunnerTest {
 		buildConfiguration.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
-		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
-		List<String> outputFiles = dao.listOutputFilePaths(build);
+		final List<String> outputFiles = dao.listOutputFilePaths(build);
 		Assert.assertEquals(3, outputFiles.size());
 		
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_DELTA_FILE_NAME));
@@ -103,10 +111,10 @@ public class Rf2FileExportRunnerTest {
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
-		Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
 		rf2ExportService.generateReleaseFiles();
 
-		List<String> outputFiles = dao.listOutputFilePaths(build);
+		final List<String> outputFiles = dao.listOutputFilePaths(build);
 		Assert.assertEquals(3, outputFiles.size());
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
@@ -118,12 +126,12 @@ public class Rf2FileExportRunnerTest {
 
 	}
 
-	private InputStream getExpectedFileInputStreamFromResource(String fileName) throws FileNotFoundException {
-		String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/build/export/expected/" + fileName).getFile();
+	private InputStream getExpectedFileInputStreamFromResource(final String fileName) throws FileNotFoundException {
+		final String filePath = getClass().getResource("/org/ihtsdo/buildcloud/service/build/export/expected/" + fileName).getFile();
 		return new FileInputStream(filePath);
 	}
 
-	private File getFileByName(String fileName) {
+	private File getFileByName(final String fileName) {
 		return new File(getClass().getResource("/org/ihtsdo/buildcloud/service/build/export/" + fileName).getFile());
 	}
 	
