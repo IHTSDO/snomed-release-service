@@ -30,17 +30,17 @@
         <insert tableName="membership">
             <column name="role" valueNumeric="0"/>
             <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
-            <column name="user_id"  valueComputed="(select id from User where user_name='anonymous_user')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='anonymous_user')"/>
         </insert>
         <insert tableName="membership">
             <column name="role" valueNumeric="0"/>
             <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
-            <column name="user_id" valueComputed="(select id from User where user_name='manager')"/>
+            <column name="user_id" valueComputed="(select id from user where user_name='manager')"/>
         </insert>
         <insert tableName="membership">
             <column name="role" valueNumeric="0"/>
             <column name="release_center_id" valueComputed="(select id from release_center where short_name ='UK')"/>
-            <column name="user_id" valueComputed="(select id from User where user_name='manager.ukrc')"/>
+            <column name="user_id" valueComputed="(select id from user where user_name='manager.ukrc')"/>
         </insert>
     </changeSet>
 <changeSet author="mchu (generated)" id="1418306828825-7" context="local">
