@@ -4,6 +4,7 @@ import java.util.zip.ZipFile;
 
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.service.ProductService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,11 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	public void testMultipleReleases() throws Exception {
 		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
+		
+		//config assertion tests
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "2");
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "1");
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASES, "20130731");
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);

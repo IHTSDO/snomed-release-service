@@ -1,185 +1,359 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+	<changeSet author="mchu (generated)" id="1418306828825-4" context="LOCAL,UAT,DEV">
+		<insert tableName="product">
+            <column name="business_key" value="snomed_ct_release"/>
+            <column name="name" value="SNOMED CT Release"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="nlm_example_refset"/>
+            <column name="name" value="NLM Example Refset"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="medical_devices_technical_preview"/>
+            <column name="name" value="Medical Devices Technical Preview"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="gpfp_refset_technical_preview"/>
+            <column name="name" value="GP/FP Refset Technical Preview"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="loinc_expressions_technical_preview"/>
+            <column name="name" value="LOINC Expressions Technical Preview"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="icpc2_map_technical_preview"/>
+            <column name="name" value="ICPC2 Map Technical Preview"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="spanish_release"/>
+            <column name="name" value="Spanish Release"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='snomed_ct_release')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='nlm_example_refset')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='medical_devices_technical_preview')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='gpfp_refset_technical_preview')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='loinc_expressions_technical_preview')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='icpc2_map_technical_preview')"/>
+        </insert>
+        <insert tableName="build_config">
+            <column name="product_id" valueComputed="(select id from product where business_key ='spanish_release')"/>
+        </insert>
+        
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1418306828825-5" context="UAT">
+    	<insert tableName="product">
+            <column name="business_key" value="20140731_international_release_build"/>
+            <column name="name" value="20140731 International Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20140131_international_release_build"/>
+            <column name="name" value="20140131 International Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20130731_international_release_build"/>
+            <column name="name" value="20130731 International Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20130131_international_release_build"/>
+            <column name="name" value="20130131 International Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="int_daily_build"/>
+            <column name="name" value="Int Daily Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="20140831_simple_refset_build"/>
+            <column name="name" value="20140831 Simple Refset Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        <insert tableName="product">
+            <column name="business_key" value="20140731_spanish_release_build"/>
+            <column name="name" value="20140731 Spanish Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20140131_spanish_release_build"/>
+            <column name="name" value="20140131 Spanish Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20130731_spanish_release_build"/>
+            <column name="name" value="20130731 Spanish Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="20130131_spanish_release_build"/>
+            <column name="name" value="20130131 Spanish Release Build"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+         <insert tableName="product">
+            <column name="business_key" value="Int_Beta_Jan_2015"/>
+            <column name="name" value="Int_Beta_Jan_2015 "/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+          <insert tableName="product">
+            <column name="business_key" value="test_int_beta_jan_2015"/>
+            <column name="name" value="TEST_Int_Beta_Jan_2015"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+          <insert tableName="product">
+            <column name="business_key" value="test_firsttime_int_beta_jan_2015"/>
+            <column name="name" value="TEST_FIRSTTIME_Int_Beta_Jan_2015"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+          <insert tableName="product">
+            <column name="business_key" value="simple_refset"/>
+            <column name="name" value="Simple Refset"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+        </insert>
+        
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1418306828825-6" context="PROD">
+	    <insert tableName="product">
+		<column name="business_key" value="20140731_international_release_build"/>
+		<column name="name" value="20140731 International Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20140131_international_release_build"/>
+		<column name="name" value="20140131 International Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20130731_international_release_build"/>
+		<column name="name" value="20130731 International Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20130131_international_release_build"/>
+		<column name="name" value="20130131 International Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_daily_build"/>
+		<column name="name" value="Int Daily Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20140831_simple_refset_build"/>
+		<column name="name" value="20140831 Simple Refset Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20140731_spanish_release_build"/>
+		<column name="name" value="20140731 Spanish Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20140131_spanish_release_build"/>
+		<column name="name" value="20140131 Spanish Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20130731_spanish_release_build"/>
+		<column name="name" value="20130731 Spanish Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="20130131_spanish_release_build"/>
+		<column name="name" value="20130131 Spanish Release Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_spanish"/>
+		<column name="name" value="Int Spanish"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_duplicate_terms"/>
+		<column name="name" value="Static_Packages_Duplicate_Terms"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_navigation"/>
+		<column name="name" value="Static_Packages_Navigation"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_ordered_type"/>
+		<column name="name" value="Static_Packages_Ordered_Type"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_bridge_file"/>
+		<column name="name" value="Static_Packages_Bridge_File"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_loinc"/>
+		<column name="name" value="Static_Packages_Loinc"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_spanish_process"/>
+		<column name="name" value="Int Spanish Process"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_gpfp_map_build"/>
+		<column name="name" value="Int GPFP Map Build"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_loinc"/>
+		<column name="name" value="Int_LOINC"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_loinc_owl"/>
+		<column name="name" value="Int_LOINC_OWL"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_bridgefile"/>
+		<column name="name" value="Static_Packages_BridgeFile"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_developertoolkit"/>
+		<column name="name" value="Static_Packages_DeveloperToolKit"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_duplicateterms"/>
+		<column name="name" value="Static_Packages_DuplicateTerms"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_loincintegration"/>
+		<column name="name" value="Static_Packages_LoincIntegration"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_navigationsubsets"/>
+		<column name="name" value="Static_Packages_NavigationSubsets"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_orderedtype"/>
+		<column name="name" value="Static_Packages_OrderedType"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_statedrelationships"/>
+		<column name="name" value="Static_Packages_StatedRelationships"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_statedreltoowl"/>
+		<column name="name" value="Static_Packages_StatedRelToOwl"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="static_packages_textdefinitions"/>
+		<column name="name" value="Static_Packages_TextDefinitions"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_beta_jan_2015"/>
+		<column name="name" value="Int_Beta_Jan_2015"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_beta_jan_2015_qa"/>
+		<column name="name" value="Int_Beta_Jan_2015_QA"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+	<insert tableName="product">
+		<column name="business_key" value="int_beta_rf1_jan_2015"/>
+		<column name="name" value="Int_Beta_RF1_Jan_2015"/>
+		<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+	</insert>
+</changeSet>
 	<changeSet author="mchu (generated)" id="1418306828825-10" context="PROD">
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="permanent_packages_duplicateTerms"/>
+		<insert tableName="product">
+			<column name="business_key" value="permanent_packages_duplicateTerms"/>
 			<column name="name" value="Permanent_Packages_DuplicateTerms"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="permanent_packages_bridgefile"/>
+		<insert tableName="product">
+			<column name="business_key" value="permanent_packages_bridgefile"/>
 			<column name="name" value="Permanent_Packages_BridgeFile"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="permanent_packages_loincintegration"/>
+		<insert tableName="product">
+			<column name="business_key" value="permanent_packages_loincintegration"/>
 			<column name="name" value="Permanent_Packages_LoincIntegration"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="permanent_packages_navigationsubsets"/>
+		<insert tableName="product">
+			<column name="business_key" value="permanent_packages_navigationsubsets"/>
 			<column name="name" value="Permanent_Packages_NavigationSubsets"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="permanent_packages_orderedtype"/>
+		<insert tableName="product">
+			<column name="business_key" value="permanent_packages_orderedtype"/>
 			<column name="name" value="Permanent_Packages_OrderedType"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_loinc_human_readable"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_loinc_human_readable"/>
 			<column name="name" value="Int_LOINC_human_readable"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_gmdn_build"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_gmdn_build"/>
 			<column name="name" value="Int GMDN Build"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="test_int_jan_2015_rf2"/>
+		<insert tableName="product">
+			<column name="business_key" value="test_int_jan_2015_rf2"/>
 			<column name="name" value="TEST_Int_Jan_2015_RF2"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_jan_2015_rf2_updated"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_jan_2015_rf2_updated"/>
 			<column name="name" value="Int_Jan_2015_RF2_updated"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_jan_2015_rf2_updated_2"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_jan_2015_rf2_updated_2"/>
 			<column name="name" value="Int_Jan_2015_RF2_updated_2"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_jan_2015_rf1"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_jan_2015_rf1"/>
 			<column name="name" value="Int_Jan_2015_RF1"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
-		<insert tableName="Product">
-			<column name="createInferredRelationships" value="N"/>
-			<column name="createLegacyIds" value="N"/>
-			<column name="effectiveTime"/>
-			<column name="firstTimeRelease" value="N"/>
-			<column name="justPackage" value="N"/>
-			<column name="newRF2InputFiles"/>
-			<column name="previousPublishedPackage"/>
-			<column name="readmeEndDate"/>
-			<column name="readmeHeader"/>
-			<column name="workbenchDataFixesRequired" value="N"/>
-			<column name="businessKey" value="int_jan_2015_rf2"/>
+		<insert tableName="product">
+			<column name="business_key" value="int_jan_2015_rf2"/>
 			<column name="name" value="Int_Jan_2015_RF2"/>
-			<column name="releaseCenter_id" valueComputed="(select id from ReleaseCenter where shortName ='International')"/>
+			<column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
 		</insert>
 	</changeSet>
 </databaseChangeLog>   

@@ -1,14 +1,28 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.service.exception.*;
+import org.ihtsdo.buildcloud.service.exception.AuthenticationException;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.BadRequestException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.slf4j.Logger;
@@ -16,9 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.text.ParseException;
-import java.util.*;
 
 @Service
 @Transactional
@@ -36,58 +47,90 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	PublishService publishService;
 
 	@Autowired
-	public ProductServiceImpl(ProductDAO dao) {
+	public ProductServiceImpl(final ProductDAO dao) {
 		super(dao);
 	}
 
 	@Override
-	public List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException {
+	public List<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions) throws AuthenticationException {
 		return productDAO.findAll(filterOptions, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Product find(String releaseCenterKey, String productKey) throws BusinessServiceException {
+	public Product find(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
-	public Product create(String releaseCenterKey, String productName) throws BusinessServiceException {
-		User user = SecurityHelper.getRequiredUser();
+	public Product create(final String releaseCenterKey, final String productName) throws BusinessServiceException {
+		final User user = SecurityHelper.getRequiredUser();
 		LOGGER.info("create product, releaseCenterBusinessKey: {}", releaseCenterKey);
 
-		ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey, user);
+		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey, user);
 
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException("Unable to find Release Center: " + releaseCenterKey);
 		}
 
 		// Check that we don't already have one of these
-		String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
-		Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey, user);
+		final String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
+		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey, user);
 		if (existingProduct != null) {
 			throw new EntityAlreadyExistsException("Product named '" + productName + "' already exists.");
 		}
 
-		Product product = new Product(productName);
+		final Product product = new Product(productName);
 		releaseCenter.addProduct(product);
 		productDAO.save(product);
 		return product;
 	}
 
 	@Override
-	public Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException {
+	public Product update(final String releaseCenterKey, final String productKey, final Map<String, String> newPropertyValues) throws BusinessServiceException {
 		LOGGER.info("update product, newPropertyValues: {}", newPropertyValues);
-		Product product = find(releaseCenterKey, productKey);
-		BuildConfiguration configuration = product.getBuildConfiguration();
+		final Product product = find(releaseCenterKey, productKey);
+		if (product == null ) {
+			throw new ResourceNotFoundException("No product found for product key:" + productKey);
+		}
+		updateProductBuildConfiguration(newPropertyValues, product);
+		updateProductQaTestConfig(newPropertyValues, product);
+		productDAO.save(product);
+		return product;
+	}
+
+	private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) {
+		QATestConfig qaTestConfig = product.getQaTestConfig();
+		if( qaTestConfig == null ) {
+			qaTestConfig = new QATestConfig();
+			qaTestConfig.setProduct(product);
+			product.setQaTestConfig(qaTestConfig);
+		}
+		if (newPropertyValues.containsKey(ProductService.PREVIOUS_INTERNATIONAL_RELEASES)) {
+			qaTestConfig.setPreviousReleaseVersions(newPropertyValues.get(ProductService.PREVIOUS_INTERNATIONAL_RELEASES));
+		}
+		if (newPropertyValues.containsKey(ProductService.PREVIOUS_EXTENSION_RELEASE)) {
+			qaTestConfig.setPreviousExtensionRelease(newPropertyValues.get(ProductService.PREVIOUS_EXTENSION_RELEASE));
+		}
+		if (newPropertyValues.containsKey(ProductService.ASSERTION_GROUP_NAMES)) {
+			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ProductService.ASSERTION_GROUP_NAMES));
+		}
+	}
+
+	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
+			throws ResourceNotFoundException, BadRequestException,
+			BadConfigurationException {
+		 BuildConfiguration configuration = product.getBuildConfiguration();
 
 		if (configuration == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			configuration = new BuildConfiguration();
+			configuration.setProduct(product);
+			product.setBuildConfiguration(configuration);
 		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
-				Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
+				final Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
 				configuration.setEffectiveTime(date);
-			} catch (ParseException e) {
+			} catch (final ParseException e) {
 				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
@@ -116,14 +159,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 
 		if (newPropertyValues.containsKey(ProductService.PREVIOUS_PUBLISHED_PACKAGE)) {
-			ReleaseCenter releaseCenter = product.getReleaseCenter();
-			String pPP = newPropertyValues.get(ProductService.PREVIOUS_PUBLISHED_PACKAGE);
+			final ReleaseCenter releaseCenter = product.getReleaseCenter();
+			final String pPP = newPropertyValues.get(ProductService.PREVIOUS_PUBLISHED_PACKAGE);
 			//Validate that a file of that name actually exists
 			boolean pppExists = false;
 			Exception rootCause = new Exception("No further information");
 			try {
 				pppExists = publishService.exists(releaseCenter, pPP);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				rootCause = e;
 			}
 
@@ -135,47 +178,44 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 
 		if (newPropertyValues.containsKey(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
-			Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
+			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
 			try {
-				String refsetCompositeKeyIndexes = newPropertyValues.get(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
-				String[] split = refsetCompositeKeyIndexes.split("\\|");
+				final String refsetCompositeKeyIndexes = newPropertyValues.get(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
+				final String[] split = refsetCompositeKeyIndexes.split("\\|");
 				for (String refsetKeyAndIndexes : split) {
 					refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
 					if (!refsetKeyAndIndexes.isEmpty()) {
-						String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
-						String refsetKey = keyAndIndexes[0].trim();
-						List<Integer> indexes = new ArrayList<>();
-						String value = keyAndIndexes[1];
-						String[] indexStrings = value.split(",");
-						for (String indexString : indexStrings) {
-							String trim = indexString.trim();
+						final String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
+						final String refsetKey = keyAndIndexes[0].trim();
+						final List<Integer> indexes = new ArrayList<>();
+						final String value = keyAndIndexes[1];
+						final String[] indexStrings = value.split(",");
+						for (final String indexString : indexStrings) {
+							final String trim = indexString.trim();
 							indexes.add(Integer.parseInt(trim));
 						}
 						refsetCompositeKeyMap.put(refsetKey, indexes);
 					}
 				}
-			} catch (NumberFormatException e) {
+			} catch (final NumberFormatException e) {
 				throw new BadConfigurationException("Failed to parse " + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
 			}
 			configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.README_HEADER)) {
-			String readmeHeader = newPropertyValues.get(ProductService.README_HEADER);
+			final String readmeHeader = newPropertyValues.get(ProductService.README_HEADER);
 			configuration.setReadmeHeader(readmeHeader);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.README_END_DATE)) {
-			String readmeEndDate = newPropertyValues.get(ProductService.README_END_DATE);
+			final String readmeEndDate = newPropertyValues.get(ProductService.README_END_DATE);
 			configuration.setReadmeEndDate(readmeEndDate);
 		}
 
 		if (newPropertyValues.containsKey(ProductService.NEW_RF2_INPUT_FILES)) {
 			configuration.setNewRF2InputFiles(newPropertyValues.get(ProductService.NEW_RF2_INPUT_FILES));
 		}
-
-		productDAO.update(product);
-		return product;
 	}
 
 }

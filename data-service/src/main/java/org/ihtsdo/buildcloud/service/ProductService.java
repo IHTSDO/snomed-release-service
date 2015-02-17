@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.exception.AuthenticationException;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public interface ProductService extends EntityService<Product> {
 
@@ -25,6 +25,9 @@ public interface ProductService extends EntityService<Product> {
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
 	String TRUE = "true";
+	String PREVIOUS_INTERNATIONAL_RELEASES = "previousInternationalReleases";
+	String PREVIOUS_EXTENSION_RELEASE = "previousExtensionRelease";
+	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
 
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

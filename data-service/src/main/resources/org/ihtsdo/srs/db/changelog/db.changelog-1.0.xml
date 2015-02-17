@@ -1,106 +1,122 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
-    <changeSet author="mchu (generated)" id="1418147335737-1">
-        <createTable tableName="AuthToken">
+    <changeSet author="mchu (generated)" id="1424115902308-1">
+        <createTable tableName="auth_token">
             <column name="token" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="user_id" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-2">
-        <createTable tableName="Product">
+    <changeSet author="mchu (generated)" id="1424115902308-2">
+        <createTable tableName="build_config">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="betaRelease" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="createInferredRelationships" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="createLegacyIds" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="effectiveTime" type="datetime"/>
-            <column name="firstTimeRelease" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="justPackage" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="newRF2InputFiles" type="VARCHAR(255)"/>
-            <column name="previousPublishedPackage" type="VARCHAR(255)"/>
-            <column name="readmeEndDate" type="VARCHAR(255)"/>
-            <column name="readmeHeader" type="TEXT"/>
-            <column name="workbenchDataFixesRequired" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="businessKey" type="VARCHAR(255)"/>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="releaseCenter_id" type="BIGINT"/>
+            <column name="beta_release" type="CHAR(1)" defaultValue="N"/>
+            <column name="create_inferred_relationships" type="CHAR(1)" defaultValue="N"/>
+            <column name="create_legacy_ids" type="CHAR(1)" defaultValue="N"/>
+            <column name="effective_time" type="datetime"/>
+            <column name="first_time_release" type="CHAR(1)" defaultValue="N"/>
+            <column name="just_package" type="CHAR(1)" defaultValue="N"/>
+            <column name="rf2_input_files" type="VARCHAR(255)"/>
+            <column name="previous_published_release" type="VARCHAR(255)"/>
+            <column name="readme_end_date" type="VARCHAR(255)"/>
+            <column name="readme_header" type="TEXT"/>
+            <column name="require_wb_data_fix" type="CHAR(1)" defaultValue="N"/>
+            <column name="product_id" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-3">
-        <createTable tableName="Product_refsetCompositeKeys">
-            <column name="Product_id" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="fieldIndexes" type="VARCHAR(255)"/>
-            <column name="refsetId" type="VARCHAR(255)"/>
-        </createTable>
-    </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-4">
-        <createTable tableName="ReleaseCenter">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="businessKey" type="VARCHAR(255)"/>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="removed" type="CHAR(1)" defaultValue="N">
-                <constraints nullable="false"/>
-            </column>
-            <column name="shortName" type="VARCHAR(255)"/>
-        </createTable>
-    </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-5">
-        <createTable tableName="ReleaseCenterMembership">
+    <changeSet author="mchu (generated)" id="1424115902308-3">
+        <createTable tableName="membership">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
             <column name="role" type="INT"/>
-            <column name="releaseCenter_id" type="BIGINT"/>
+            <column name="release_center_id" type="BIGINT"/>
             <column name="user_id" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-6">
-        <createTable tableName="User">
+    <changeSet author="mchu (generated)" id="1424115902308-4">
+        <createTable tableName="product">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="encodedPassword" type="VARCHAR(255)"/>
-            <column name="username" type="VARCHAR(255)"/>
+            <column name="business_key" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="release_center_id" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-7">
-        <addPrimaryKey columnNames="token" constraintName="PRIMARY" tableName="AuthToken"/>
+    <changeSet author="mchu (generated)" id="1424115902308-5">
+        <createTable tableName="qa_config">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="assertion_group_names" type="VARCHAR(255)"/>
+            <column name="previous_extension_release" type="VARCHAR(255)"/>
+            <column name="previous_international_releases" type="VARCHAR(255)"/>
+            <column name="product_id" type="BIGINT"/>
+        </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-8">
-        <addUniqueConstraint columnNames="businessKey" constraintName="businessKey" deferrable="false" disabled="false" initiallyDeferred="false" tableName="ReleaseCenter"/>
+    <changeSet author="mchu (generated)" id="1424115902308-6">
+        <createTable tableName="refset_composite_key">
+            <column name="build_config_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="field_indexes" type="VARCHAR(255)"/>
+            <column name="refset_id" type="VARCHAR(255)"/>
+        </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-9">
-        <addForeignKeyConstraint baseColumnNames="releaseCenter_id" baseTableName="Product" constraintName="FK50C664CFB50591BB" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ReleaseCenter"/>
+    <changeSet author="mchu (generated)" id="1424115902308-7">
+        <createTable tableName="release_center">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="business_key" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="removed" type="CHAR(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="short_name" type="VARCHAR(255)"/>
+        </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-10">
-        <addForeignKeyConstraint baseColumnNames="releaseCenter_id" baseTableName="ReleaseCenterMembership" constraintName="FKB369E012B50591BB" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="ReleaseCenter"/>
+    <changeSet author="mchu (generated)" id="1424115902308-8">
+        <createTable tableName="user">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="encoded_password" type="VARCHAR(255)"/>
+            <column name="user_name" type="VARCHAR(255)"/>
+        </createTable>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-11">
-        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="ReleaseCenterMembership" constraintName="FKB369E012B8433F59" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+    <changeSet author="mchu (generated)" id="1424115902308-9">
+        <addPrimaryKey columnNames="token" constraintName="PRIMARY" tableName="auth_token"/>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-12">
-        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="AuthToken" constraintName="FKCDE85511B8433F59" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="User"/>
+    <changeSet author="mchu (generated)" id="1424115902308-10">
+        <addUniqueConstraint columnNames="business_key" constraintName="UK_2cwvape5nikwgxjbt5p274nd3" deferrable="false" disabled="false" initiallyDeferred="false" tableName="product"/>
     </changeSet>
-    <changeSet author="mchu (generated)" id="1418147335737-13">
-        <addForeignKeyConstraint baseColumnNames="Product_id" baseTableName="Product_refsetCompositeKeys" constraintName="FKF7D642FCC5BCCD7B" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="Product"/>
+    <changeSet author="mchu (generated)" id="1424115902308-11">
+        <addUniqueConstraint columnNames="business_key" constraintName="UK_tig1lnebl9hn3x5r9mphg0tu" deferrable="false" disabled="false" initiallyDeferred="false" tableName="release_center"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-12">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="qa_config" constraintName="FK_2an6biwfqdb0n7j7rp4m78mq2" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="product"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-13">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="membership" constraintName="FK_7ax6kj56u4dbtiqmmec1vubqb" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-14">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="auth_token" constraintName="FK_aiqc20kpjasth5bxogsragoif" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-15">
+        <addForeignKeyConstraint baseColumnNames="release_center_id" baseTableName="membership" constraintName="FK_b8909eeoccir3ox1t15lr3c4p" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="release_center"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-16">
+        <addForeignKeyConstraint baseColumnNames="release_center_id" baseTableName="product" constraintName="FK_n1bcn1aqphptt29mahnkc7mdn" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="release_center"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-17">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="build_config" constraintName="FK_nrgxex5v1f4w816in16h79sim" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="product"/>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="1424115902308-18">
+        <addForeignKeyConstraint baseColumnNames="build_config_id" baseTableName="refset_composite_key" constraintName="FK_rouvy92955ityot4j3lbh71tu" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="build_config"/>
     </changeSet>
 </databaseChangeLog>

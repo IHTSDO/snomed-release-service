@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -209,6 +210,10 @@ public class IntegrationTestHelper {
 	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {
 		setProductProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
+	
+	public void setAssertionTestConfigProperty( final String name, final String value) throws Exception {
+		setProductProperty("{ \"" + name + "\" : \"" + value + "\" }");
+	}
 
 	/*
 		 * @return a string formatted for use as a JSON key/value pair eg 	"\"effectiveTime\" : \""+ effectiveDate + "\","
@@ -391,6 +396,10 @@ public class IntegrationTestHelper {
 
 	public String getProductUrl() {
 		return CENTER_URL + "/products/" + productId;
+	}
+
+	public void configureAssertionGroups(final Map<String, String> assertionConfig, final String ... groupNames) {
+		
 	}
 
 }
