@@ -169,24 +169,14 @@ public class RVFClient implements Closeable {
 
 	public String checkOutputPackage(final File zipPackage, final AsyncPipedStreamBean logFileOutputStream, final QATestConfig qaTestConfig) throws FileNotFoundException {
 		final StringBuilder msgBuilder = new StringBuilder();
+		final String runId = Long.toString(System.currentTimeMillis());
+		
 		final String fileType = "output";
 		final String checkType = "postcondition";
 		final String zipFileName = zipPackage.getName();
 		final String targetUrl = "/run-post";
-		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
-		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
-		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipFileName));
-//		multiPartBuilder.addTextBody("manifest");
-		if(qaTestConfig.getAssertionGroupNames() != null) {
-			for(final String groupName : qaTestConfig.getAssertionGroupNames().split(",")) {
-				multiPartBuilder.addTextBody("groups", groupName);
-			}
-		}
-		multiPartBuilder.addTextBody("prospectiveReleaseVersion",zipFileName);
-		multiPartBuilder.addTextBody("previousReleaseVersions",qaTestConfig.getPreviousReleaseVersions());
-		final String runId = Long.toString(System.currentTimeMillis());
-		multiPartBuilder.addTextBody("runId",runId);
-		post.setEntity(multiPartBuilder.build());
+		
+		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName,targetUrl);
 		LOGGER.info("Posting input file {} to RVF for {} check with run id {}.", zipFileName, checkType, runId);
 		LOGGER.debug("Using {}.", targetUrl);
 		final File tmpJson = new File(FileUtils.getTempDirectory(),"tmpResp_" + runId + ".json");
@@ -230,6 +220,33 @@ public class RVFClient implements Closeable {
 			LOGGER.info("RVF {} check of {} complete.", checkType, zipFileName);
 		}
 		return msgBuilder.toString();
+	}
+
+	private HttpPost createHttpPostRequest(final File zipPackage,
+			final QATestConfig qaTestConfig, final String runId,
+			final String zipFileName, final String targetUrl)
+			throws FileNotFoundException {
+		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
+		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
+		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipFileName));
+		if(qaTestConfig.getAssertionGroupNames() != null) {
+			for(final String groupName : qaTestConfig.getAssertionGroupNames().split(",")) {
+				multiPartBuilder.addTextBody("groups", groupName);
+			}
+		}
+		multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
+		final String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
+		if (previousExtensionRelease != null) {
+			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
+		}
+		final String extensionBaseLineRelease = qaTestConfig.getExtensionBaseLineRelease();
+		if (extensionBaseLineRelease != null) 
+		{
+			multiPartBuilder.addTextBody("extensionBaseLineReleaseVersion", extensionBaseLineRelease);
+		}
+		multiPartBuilder.addTextBody("runId",runId);
+		post.setEntity(multiPartBuilder.build());
+		return post;
 	}
 
 	private String parseRvfJsonResponse( final File tmpJson) {

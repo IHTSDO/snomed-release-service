@@ -53,8 +53,9 @@
                 <constraints primaryKey="true"/>
             </column>
             <column name="assertion_group_names" type="VARCHAR(255)"/>
-            <column name="previous_extension_release" type="VARCHAR(255)"/>
-            <column name="previous_international_releases" type="VARCHAR(255)"/>
+            <column name="previous_ext_release" type="VARCHAR(100)"/>
+            <column name="previous_int_release" type="VARCHAR(100)"/>
+            <column name="extension_baseline_release" type="VARCHAR(100)"/>
             <column name="product_id" type="BIGINT"/>
         </createTable>
     </changeSet>

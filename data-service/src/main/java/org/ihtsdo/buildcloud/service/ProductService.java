@@ -25,9 +25,10 @@ public interface ProductService extends EntityService<Product> {
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
 	String TRUE = "true";
-	String PREVIOUS_INTERNATIONAL_RELEASES = "previousInternationalReleases";
+	String PREVIOUS_INTERNATIONAL_RELEASE = "previousInternationalReleases";
 	String PREVIOUS_EXTENSION_RELEASE = "previousExtensionRelease";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
+	String EXTENSION_BASELINE_RELEASE = "extensionBaseLineRelease";
 
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
