@@ -94,7 +94,7 @@ public class
 	}
 
 	private void logError(HttpServletRequest request, Exception exception) {
-		LOGGER.error("Request '{}' raised:", request.getRequestURL(), exception);
+		LOGGER.error("Request '{}' raised: " + exception.getMessage(), request.getRequestURL(), exception);
 	}
 
 }
