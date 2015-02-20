@@ -361,10 +361,11 @@ public class BuildServiceImpl implements BuildService {
 
 	private String runRVFPostConditionCheck(final Build build, final File zipPackage) throws IOException,
 			PostConditionException {
-	    	LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
+		LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
 		final String logFilename = "postcheck-rvf-" + zipPackage.getName() + ".log";
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
 			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(build, logFilename)) {
+			LOGGER.info("RVF Log file established: ", logFilename);
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			if (qaTestConfig != null) {
 				return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream, qaTestConfig);

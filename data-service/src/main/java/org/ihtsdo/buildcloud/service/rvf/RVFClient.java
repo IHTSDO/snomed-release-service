@@ -80,11 +80,14 @@ public class RVFClient implements Closeable {
 			targetUrl = "/test-post";
 		}
 
+		LOGGER.info("Adding {} to RVF Request.", inputFileName);
+
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		post.setEntity(MultipartEntityBuilder.create().addPart("file", new InputStreamBody(inputFileStream, inputFileName)).build());
 
-		LOGGER.info("Posting input file {} to RVF for {} check.", inputFileName, checkType);
-		LOGGER.debug("Using {}.", targetUrl);
+		LOGGER.info("Posting file {} to RVF for {} check, using {}", inputFileName, checkType, targetUrl);
+		
+		String debugMsg = "Logged results to " + logFileOutputStream.getOutputFilePath();
 
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
@@ -94,7 +97,7 @@ public class RVFClient implements Closeable {
 				 BufferedReader responseReader = new BufferedReader(new InputStreamReader(content, RF2Constants.UTF_8));
 				 BufferedWriter logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream.getOutputStream(), RF2Constants.UTF_8))) {
 
-				failureCount = processResponse(responseReader, logWriter);
+				failureCount = processResponse(responseReader, logWriter, debugMsg);
 			} finally {
 				logFileOutputStream.waitForFinish();
 			}
@@ -125,9 +128,10 @@ public class RVFClient implements Closeable {
 		return errorMessage;
 	}
 
-	protected long processResponse(final BufferedReader responseReader, final BufferedWriter logWriter) throws IOException, RVFClientException {
+	protected long processResponse(final BufferedReader responseReader, final BufferedWriter logWriter, String debugMsg) throws IOException, RVFClientException {
 		long failureCount = 0;
 		boolean foundFailureCount = false;
+		boolean noLinesReceived = false;
 
 		String line = responseReader.readLine(); // read header
 		if (line != null) {
@@ -153,12 +157,13 @@ public class RVFClient implements Closeable {
 		} else {
 			logWriter.write(ERROR_NO_LINES_RECEIVED_FROM_RVF);
 			logWriter.write(RF2Constants.LINE_ENDING);
+			noLinesReceived = true;
 		}
 
 		if (foundFailureCount) {
 			return failureCount;
 		} else {
-			throw new RVFClientException("Failure count not found in RVF response.");
+			throw new RVFClientException("Failure count not found in RVF response. " + (noLinesReceived?"No data received. ":"") + debugMsg);
 		}
 	}
 
@@ -178,7 +183,6 @@ public class RVFClient implements Closeable {
 		
 		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName,targetUrl);
 		LOGGER.info("Posting input file {} to RVF at {} for {} check with run id {}.", zipFileName, targetUrl, checkType, runId);
-		LOGGER.debug("Using {}.", targetUrl);
 		final File tmpJson = new File(FileUtils.getTempDirectory(),"tmpResp_" + runId + ".json");
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
