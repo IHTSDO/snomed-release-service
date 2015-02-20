@@ -40,6 +40,7 @@ public class TelemetryProcessor {
 
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
 		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
+			logger.info("Telemetry server configured to use SMTP " + smtpUsername + "@" + smtpHost + ":" + smtpPort.intValue());
 			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
 					smtpSsl.booleanValue());
 		} else {
