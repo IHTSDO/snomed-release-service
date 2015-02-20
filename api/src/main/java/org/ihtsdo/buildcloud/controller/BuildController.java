@@ -93,9 +93,14 @@ public class BuildController {
 	public Map<String, Object> getConfiguration(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			final HttpServletRequest request) throws IOException, BusinessServiceException {
 		final BuildConfiguration buildConfiguration = buildService.loadBuildConfiguration(releaseCenterKey, productKey, buildId);
-		final Map<String,Object> result = hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request);
+		final Map<String,Object> result = new HashMap<>();
+		if (buildConfiguration != null ) {
+			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request));
+		}
 		final QATestConfig qaTestConfig = buildService.loadQATestConfig(releaseCenterKey, productKey, buildId);
-		result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, true, request));
+		if( qaTestConfig != null) {
+			result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, true, request));
+		}
 		return result;
 	}
 

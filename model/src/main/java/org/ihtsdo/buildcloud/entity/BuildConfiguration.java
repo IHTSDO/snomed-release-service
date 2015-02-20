@@ -238,6 +238,22 @@ public class BuildConfiguration {
 		this.product = product;
 	}
 
+	
+	@Override
+	public String toString() {
+		return "BuildConfiguration [id=" + id + ", effectiveTime="
+				+ effectiveTime
+				+ ", readmeEndDate=" + readmeEndDate + ", firstTimeRelease="
+				+ firstTimeRelease + ", betaRelease=" + betaRelease
+				+ ", previousPublishedPackage=" + previousPublishedPackage
+				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
+				+ justPackage + ", workbenchDataFixesRequired="
+				+ workbenchDataFixesRequired + ", createInferredRelationships="
+				+ createInferredRelationships + ", createLegacyIds="
+				+ createLegacyIds + "]";
+	}
+
+
 	@Embeddable
 	public static class RefsetCompositeKey {
 		@Column(name="refset_id")
