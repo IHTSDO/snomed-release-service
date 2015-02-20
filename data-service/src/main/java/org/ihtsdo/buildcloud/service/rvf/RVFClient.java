@@ -116,7 +116,7 @@ public class RVFClient implements Closeable {
 				StreamUtils.copy(errorMessage.getBytes(), logOutputStream);
 				logFileOutputStream.waitForFinish();
 			} catch (final Exception e2) {
-				LOGGER.error("Failed to write exception to log.", e);
+				LOGGER.error("Failed to write exception to log with message: " + errorMessage, e);
 			}
 		} finally {
 			LOGGER.info("RVF {} check of {} complete.", checkType, inputFileName);
