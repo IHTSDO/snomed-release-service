@@ -105,14 +105,17 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			qaTestConfig.setProduct(product);
 			product.setQaTestConfig(qaTestConfig);
 		}
-		if (newPropertyValues.containsKey(ProductService.PREVIOUS_INTERNATIONAL_RELEASES)) {
-			qaTestConfig.setPreviousReleaseVersions(newPropertyValues.get(ProductService.PREVIOUS_INTERNATIONAL_RELEASES));
+		if (newPropertyValues.containsKey(ProductService.PREVIOUS_INTERNATIONAL_RELEASE)) {
+			qaTestConfig.setPreviousInternationalRelease(newPropertyValues.get(ProductService.PREVIOUS_INTERNATIONAL_RELEASE));
 		}
 		if (newPropertyValues.containsKey(ProductService.PREVIOUS_EXTENSION_RELEASE)) {
 			qaTestConfig.setPreviousExtensionRelease(newPropertyValues.get(ProductService.PREVIOUS_EXTENSION_RELEASE));
 		}
 		if (newPropertyValues.containsKey(ProductService.ASSERTION_GROUP_NAMES)) {
 			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ProductService.ASSERTION_GROUP_NAMES));
+		}
+		if (newPropertyValues.containsKey(ProductService.EXTENSION_BASELINE_RELEASE)) {
+			qaTestConfig.setExtensionBaseLineRelease(newPropertyValues.get(ProductService.EXTENSION_BASELINE_RELEASE));
 		}
 	}
 

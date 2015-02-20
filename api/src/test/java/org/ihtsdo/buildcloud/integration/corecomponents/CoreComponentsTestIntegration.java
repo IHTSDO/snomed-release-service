@@ -28,9 +28,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.createTestProductStructure();
 		
 		//config assertion tests
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "2");
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "1");
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASES, "20130731");
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20140731");
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);

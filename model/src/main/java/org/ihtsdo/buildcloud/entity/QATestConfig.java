@@ -27,11 +27,14 @@ public class QATestConfig {
 	@Column(name="assertion_group_names")
 	private String assertionGroupNames;
 	
-	@Column(name="previous_international_releases")
-	private String previousInternationReleases;
+	@Column(name="previous_int_release")
+	private String previousInternationalRelease;
 	
-	@Column(name="previous_extension_release")
+	@Column(name="previous_ext_release")
 	private String previousExtensionRelease;
+	
+	@Column(name="extension_baseline_release")
+	private String extensionBaseLineRelease;
 	
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
@@ -39,11 +42,12 @@ public class QATestConfig {
 	public void setAssertionGroupNames(final String assertionGroupNames) {
 		this.assertionGroupNames = assertionGroupNames;
 	}
-	public String getPreviousReleaseVersions() {
-		return previousInternationReleases;
+	
+	public String getPreviousInternationalRelease() {
+		return previousInternationalRelease;
 	}
-	public void setPreviousReleaseVersions(final String previousIntReleases) {
-		this.previousInternationReleases = previousIntReleases;
+	public void setPreviousInternationalRelease(final String previousIntRelease) {
+		this.previousInternationalRelease = previousIntRelease;
 	}
 	public Product getProduct() {
 		return product;
@@ -57,4 +61,11 @@ public class QATestConfig {
 	public void setPreviousExtensionRelease(final String previousExtensionRelease) {
 		this.previousExtensionRelease = previousExtensionRelease;
 	}
+	public String getExtensionBaseLineRelease() {
+		return extensionBaseLineRelease;
+	}
+	public void setExtensionBaseLineRelease(final String extBaseLineRelease) {
+		extensionBaseLineRelease = extBaseLineRelease;
+	}
+	
 }
