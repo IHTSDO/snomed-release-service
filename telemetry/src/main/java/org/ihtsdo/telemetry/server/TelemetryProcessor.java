@@ -115,6 +115,8 @@ public class TelemetryProcessor {
 											writer.write(exception);
 											writer.write(Constants.LINE_BREAK);
 										}
+										// We need output to disk to be up to the minute, so flush each line
+										writer.flush();
 									} else {
 										logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
 									}
