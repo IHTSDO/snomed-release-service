@@ -177,7 +177,7 @@ public class RVFClient implements Closeable {
 		final String targetUrl = "/run-post";
 		
 		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName,targetUrl);
-		LOGGER.info("Posting input file {} to RVF for {} check with run id {}.", zipFileName, checkType, runId);
+		LOGGER.info("Posting input file {} to RVF at {} for {} check with run id {}.", zipFileName, targetUrl, checkType, runId);
 		LOGGER.debug("Using {}.", targetUrl);
 		final File tmpJson = new File(FileUtils.getTempDirectory(),"tmpResp_" + runId + ".json");
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
@@ -190,7 +190,7 @@ public class RVFClient implements Closeable {
 			try (InputStream content = response.getEntity().getContent()) {
 				//write response locally
 				FileUtils.copyInputStreamToFile(content, tmpJson);
-				LOGGER.info("Response JSON is wrttien to temp file:" + tmpJson.getAbsolutePath());
+				LOGGER.info("Response JSON is written to temp file:" + tmpJson.getAbsolutePath());
 			}
 			//parse json before upload to S3
 			final String responseMsg = parseRvfJsonResponse(tmpJson);
