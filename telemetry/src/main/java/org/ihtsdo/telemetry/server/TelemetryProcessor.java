@@ -40,9 +40,10 @@ public class TelemetryProcessor {
 
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
 		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
-			logger.info("Telemetry server configured to use SMTP " + smtpUsername + "@" + smtpHost + ":" + smtpPort.intValue());
 			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
 					smtpSsl.booleanValue());
+			logger.info("Telemetry server configured to use SMTP " + TelemetryProcessor.emailSender.toString());
+
 		} else {
 			logger.info("Telemetry server has not been given SMTP connection details.  Email connectivity disabled.");
 			TelemetryProcessor.emailSender = null;
@@ -53,6 +54,8 @@ public class TelemetryProcessor {
 	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
 			EmailSender emailSender) throws JMSException {
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		logger.info("Telemetry server using pre-configured " + emailSender.toString());
+
 		TelemetryProcessor.emailSender = emailSender;
 	}
 
@@ -124,7 +127,7 @@ public class TelemetryProcessor {
 								try {
 									sendEmailAlert(message);
 								} catch (Exception e) {
-									logger.error("Unable to send email alert", e);
+									logger.error("Unable to send email alert to report: " + message.getText(), e);
 								}
 							}
 						}
