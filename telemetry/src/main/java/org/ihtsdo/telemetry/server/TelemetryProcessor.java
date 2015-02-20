@@ -129,7 +129,11 @@ public class TelemetryProcessor {
 								try {
 									sendEmailAlert(message);
 								} catch (Exception e) {
-									logger.error("Unable to send email alert to report: " + message.getText(), e);
+									String msg = message.getText();
+									if (message.propertyExists(Constants.EXCEPTION)) {
+										msg += "\n" + message.getStringProperty(Constants.EXCEPTION);
+									}
+									logger.error("Unable to send email alert to report: " + msg, e);
 								}
 							}
 						}

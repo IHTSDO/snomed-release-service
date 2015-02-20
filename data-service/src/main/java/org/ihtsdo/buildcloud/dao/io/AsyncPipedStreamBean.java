@@ -47,4 +47,8 @@ public class AsyncPipedStreamBean implements Closeable {
 		return outputStream;
 	}
 
+	public String getOutputFilePath() {
+		return this.outputFilePath;
+	}
+
 }
