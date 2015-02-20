@@ -94,7 +94,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 		updateProductBuildConfiguration(newPropertyValues, product);
 		updateProductQaTestConfig(newPropertyValues, product);
-		productDAO.save(product);
+		productDAO.update(product);
 		return product;
 	}
 
@@ -123,7 +123,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			throws ResourceNotFoundException, BadRequestException,
 			BadConfigurationException {
 		 BuildConfiguration configuration = product.getBuildConfiguration();
-
 		if (configuration == null) {
 			configuration = new BuildConfiguration();
 			configuration.setProduct(product);

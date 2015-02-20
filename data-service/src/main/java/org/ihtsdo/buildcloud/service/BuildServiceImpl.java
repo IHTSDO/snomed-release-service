@@ -367,11 +367,25 @@ public class BuildServiceImpl implements BuildService {
 			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(build, logFilename)) {
 			LOGGER.info("RVF Log file established: ", logFilename);
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
-			if (qaTestConfig != null) {
+			if (isQATestConfigured(qaTestConfig)) {
 				return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream, qaTestConfig);
 			}
+			LOGGER.info("QATestConfig is not fully configured:" + qaTestConfig);
 			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
 		}
+	}
+
+	private boolean isQATestConfigured(final QATestConfig qaTestConfig) {
+		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
+			return false;
+		}
+		if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionBaseLineRelease() == null) {
+			return false;
+		}
+		if (qaTestConfig.getPreviousInternationalRelease() == null && qaTestConfig.getPreviousExtensionRelease() == null) {
+			return false;
+		}
+		return true;
 	}
 
 	private void copyFilesForJustPackaging(final Build build) {

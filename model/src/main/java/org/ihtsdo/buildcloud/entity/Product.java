@@ -104,7 +104,15 @@ public class Product {
 	public void setBusinessKey(final String businessKey) {
 		this.businessKey = businessKey;
 	}
-		
+	
+	@Override
+	public String toString() {
+		return "Product [id=" + id + ", name=" + name + ", businessKey="
+				+ businessKey + ", releaseCenter=" + releaseCenter
+				+ ", buildConfiguration=" + buildConfiguration
+				+ ", qaTestConfig=" + qaTestConfig + "]";
+	}
+
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o) {

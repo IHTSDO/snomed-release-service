@@ -67,5 +67,12 @@ public class QATestConfig {
 	public void setExtensionBaseLineRelease(final String extBaseLineRelease) {
 		extensionBaseLineRelease = extBaseLineRelease;
 	}
-	
+	@Override
+	public String toString() {
+		return "QATestConfig [id=" + id + ", assertionGroupNames="
+				+ assertionGroupNames + ", previousInternationalRelease="
+				+ previousInternationalRelease + ", previousExtensionRelease="
+				+ previousExtensionRelease + ", extensionBaseLineRelease="
+				+ extensionBaseLineRelease + "]";
+	}
 }
