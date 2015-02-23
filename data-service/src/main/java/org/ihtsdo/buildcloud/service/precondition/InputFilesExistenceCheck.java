@@ -139,15 +139,15 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 					fileNamePrefix = fileNamePrefix.substring(1);
 				}
 				if (DER2.equals(fileNamePrefix) || SCT2.equals(fileNamePrefix)) {
+					if (fileName.contains(SCT2 + RELATIONSHIP)) {
+						fileName = fileName.replace(SCT2 + RELATIONSHIP, SCT2 + STATED_RELATIONSHIP);
+					}
 					fileName = fileName.replace(fileNamePrefix, INPUT_FILE_PREFIX);
 					final String token3 = splits[2];
 					if (token3.contains(FULL)) {
 						fileName = fileName.replace(FULL, DELTA);
 					} else if (token3.contains(SNAPSHOT)) {
 						fileName = fileName.replace(SNAPSHOT, DELTA);
-					}
-					if (fileName.contains(SCT2 + RELATIONSHIP)) {
-						fileName = fileName.replace(SCT2 + RELATIONSHIP, SCT2 + STATED_RELATIONSHIP);
 					}
 				} 
 			}

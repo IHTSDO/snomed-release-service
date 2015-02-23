@@ -74,6 +74,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingStatedRelationship() throws Exception {
+		product.getBuildConfiguration().setJustPackage(false);
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
