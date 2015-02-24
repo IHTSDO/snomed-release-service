@@ -41,6 +41,10 @@ public class EmailSender {
 		email.setSmtpPort(smtpPort);
 		email.setAuthenticator(new DefaultAuthenticator(smtpUsername, smtpPassword));
 		email.setSSLOnConnect(smtpSsl);
+		// If we're using SSL, then the port specified will be the port to use for sSmtp also
+		if (smtpSsl) {
+			email.setSslSmtpPort(Integer.toString(smtpPort));
+		}
 	}
 
 	public String toString() {
