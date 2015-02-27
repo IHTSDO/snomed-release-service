@@ -99,7 +99,7 @@ public class Rf2FileExportRunner {
 
 		try {
 			// Create table containing transformed input delta
-			LOGGER.debug("Creating table for {}", transformedDeltaDataFile);
+			LOGGER.debug("Start: creating table for {}", transformedDeltaDataFile);
 			final InputStream transformedDeltaInputStream = buildDao.getTransformedFileAsInputStream(build,
 					transformedDeltaDataFile);
 

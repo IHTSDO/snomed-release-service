@@ -36,6 +36,9 @@ public class QATestConfig {
 	@Column(name="extension_baseline_release")
 	private String extensionBaseLineRelease;
 	
+	@Column(name = "storage_location")
+	private String storageLocation;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -73,6 +76,14 @@ public class QATestConfig {
 				+ assertionGroupNames + ", previousInternationalRelease="
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionBaseLineRelease="
-				+ extensionBaseLineRelease + "]";
+				+ extensionBaseLineRelease + ", storageLocation=" + storageLocation + "]";
+	}
+
+	public String getStorageLocation() {
+		return storageLocation;
+	}
+
+	public void setStorageLocation(final String storageLocation) {
+		this.storageLocation = storageLocation;
 	}
 }
