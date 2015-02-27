@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -202,6 +203,10 @@ public class BuildServiceImpl implements BuildService {
 		}
 
 		final Build build = dao.find(product, buildId);
+		if (build == null) {
+			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+		}
+
 		build.setProduct(product);
 		return build;
 	}
@@ -341,7 +346,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 		final BuildReport report = build.getBuildReport();
 		report.add("Post Validation Status", rvfStatus);
-		report.add("RVF Test Failures", rvfResultMsg);
+		report.add("RVF Reponse", rvfResultMsg);
 
 		LOGGER.info("End of running build {}", build.getUniqueId());
 	}
@@ -360,18 +365,22 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private String runRVFPostConditionCheck(final Build build, final File zipPackage) throws IOException,
-			PostConditionException {
-		LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
-		final String logFilename = "postcheck-rvf-" + zipPackage.getName() + ".log";
-		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(build, logFilename)) {
-			LOGGER.info("RVF Log file established: ", logFilename);
+			PostConditionException, ConfigurationException {
+		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
+		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
-			if (isQATestConfigured(qaTestConfig)) {
-				return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream, qaTestConfig);
+			// Has the client told us where to tell the RVF to store the results? Set if not
+			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
+				String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey() 
+						+ "/" + build.getProduct().getBusinessKey()
+						+ "/" + build.getId();
+				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			LOGGER.info("QATestConfig is not fully configured:" + qaTestConfig);
-			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+			if (isQATestConfigured(qaTestConfig)) {
+				return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
+			} else {
+				throw new ConfigurationException ("No QA test configured. Was Prev Int Version specifield before execution started?");
+			}
 		}
 	}
 

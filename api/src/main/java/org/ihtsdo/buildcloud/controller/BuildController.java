@@ -18,6 +18,9 @@ import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +39,8 @@ import com.wordnik.swagger.annotations.ApiOperation;
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}/builds")
 @Api(value = "Build", position = 1)
 public class BuildController {
+
+	private final Logger logger = LoggerFactory.getLogger(BuildController.class);
 
 	@Autowired
 	private BuildService buildService;
@@ -190,7 +195,24 @@ public class BuildController {
 			@PathVariable final String logFileName, final HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
 		try (InputStream outputFileStream = buildService.getLogFile(releaseCenterKey, productKey, buildId, logFileName)) {
-			StreamUtils.copy(outputFileStream, response.getOutputStream());
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("Did not find requested log file: " + productKey + "/" + buildId + "/" + logFileName);
+			}
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.HEAD)
+	@ApiOperation(value = "Download a specific build log file", notes = "Download a specific log file for given release center, "
+			+ "product key, build id and file name combination")
+	public void getBuildLogHead(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+			@PathVariable final String buildId, @PathVariable final String logFileName, final HttpServletResponse response)
+			throws ResourceNotFoundException, IOException {
+
+		try (InputStream outputFileStream = buildService.getLogFile(releaseCenterKey, productKey, buildId, logFileName)) {
+			// This will blow up with 404 if the file isn't found. HTTP HEAD demands that no body is returned, so nothing to do here
+			logger.debug("HTTP 200 reponse to head request for {}/{}/{}", productKey, buildId, logFileName);
 		}
 	}
 

@@ -12,14 +12,17 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -57,10 +60,6 @@ public class RVFClient implements Closeable {
 
 	public String checkInputFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream) {
 		return checkFile(inputFileStream, inputFileName, logFileOutputStream, true);
-	}
-
-	public String checkOutputPackage(final File zipPackage, final AsyncPipedStreamBean logFileOutputStream) throws IOException {
-		return checkFile(new FileInputStream(zipPackage), zipPackage.getName(), logFileOutputStream, false);
 	}
 
 	private String checkFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream, final boolean preCheck) {
@@ -172,58 +171,41 @@ public class RVFClient implements Closeable {
 		httpClient.close();
 	}
 
-	public String checkOutputPackage(final File zipPackage, final AsyncPipedStreamBean logFileOutputStream, final QATestConfig qaTestConfig) throws FileNotFoundException {
-		final StringBuilder msgBuilder = new StringBuilder();
+	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig) throws FileNotFoundException {
+
 		final String runId = Long.toString(System.currentTimeMillis());
-		
-		final String fileType = "output";
-		final String checkType = "postcondition";
 		final String zipFileName = zipPackage.getName();
 		final String targetUrl = "/run-post";
 		
-		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName,targetUrl);
-		LOGGER.info("Posting input file {} to RVF at {} for {} check with run id {}.", zipFileName, targetUrl, checkType, runId);
-		final File tmpJson = new File(FileUtils.getTempDirectory(),"tmpResp_" + runId + ".json");
+		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName, targetUrl);
+		LOGGER.info("Posting input file {} to RVF at {} for {} check with run id {}.", zipFileName, post.getURI(), runId);
+		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
-			if (200 != statusCode) {
-				msgBuilder.append(" Received RVF response HTTP status code " + statusCode);
-				LOGGER.info("RVF Service failure: {}", msgBuilder.toString());
-				return msgBuilder.toString();
-			} 
 			try (InputStream content = response.getEntity().getContent()) {
-				//write response locally
-				FileUtils.copyInputStreamToFile(content, tmpJson);
-				LOGGER.info("Response JSON is written to temp file:" + tmpJson.getAbsolutePath());
+				rvfResponse = IOUtils.toString(content);
+				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
+				if (200 == statusCode) {
+					// If all is good, expecting to find URL in the response
+					int urlStart = rvfResponse.indexOf("http");
+					if (urlStart != -1) {
+						int urlEnd = rvfResponse.indexOf("\"", urlStart);
+						rvfResponse = rvfResponse.substring(urlStart, urlEnd);
+					}
+					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
+							zipFileName, rvfResponse);
+				} else {
+					rvfResponse = " Received RVF response HTTP status code: " + statusCode + 
+							" with body: " + rvfResponse;
+					LOGGER.info("RVF Service failure: {}", rvfResponse);
+				}
 			}
-			//parse json before upload to S3
-			final String responseMsg = parseRvfJsonResponse(tmpJson);
-			if (responseMsg != null ) {
-				msgBuilder.append(responseMsg);
-				LOGGER.info(responseMsg);
-			}
-			
-		} catch (final IOException e) {
-			msgBuilder.append( "Failed to check " + fileType + " file against RVF: " + zipFileName + " due to " + e.getMessage());
-			LOGGER.error(msgBuilder.toString(), e);
+		} catch (Exception e) {
+			rvfResponse = "Exception detected while initiating RVF at: " + targetUrl + 
+					" to test: " + zipFileName + " which said: " + e.getMessage();
+			LOGGER.error (rvfResponse, e);
 		}
-		//load JSON file to s3
-		try(InputStream tempJsonInput = new FileInputStream(tmpJson);
-			OutputStream output = logFileOutputStream.getOutputStream()) {
-			IOUtils.copy(tempJsonInput, output);
-		} catch (final IOException e) {
-			LOGGER.error("Failed to load response JSON to S3." + e.fillInStackTrace());
-		} finally {
-			try {
-				logFileOutputStream.waitForFinish();
-			} catch (final Exception e) {
-				msgBuilder.append("Response JSON has not been loaded to S3 successfully due to:" + e.getMessage());
-				LOGGER.error(msgBuilder.toString(), e);
-			}
-			FileUtils.deleteQuietly(tmpJson);
-			LOGGER.info("RVF {} check of {} complete.", checkType, zipFileName);
-		}
-		return msgBuilder.toString();
+		return rvfResponse;
 	}
 
 	private HttpPost createHttpPostRequest(final File zipPackage,
@@ -232,23 +214,33 @@ public class RVFClient implements Closeable {
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
+		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipFileName));
-		if(qaTestConfig.getAssertionGroupNames() != null) {
-			for(final String groupName : qaTestConfig.getAssertionGroupNames().split(",")) {
-				multiPartBuilder.addTextBody("groups", groupName);
-			}
-		}
+
+		// Currently getting knocked back with HTTP400 so making this call more like the RVF Menu client which is working fine.
+		/*
+		 * if(qaTestConfig.getAssertionGroupNames() != null) { for(final String groupName :
+		 * qaTestConfig.getAssertionGroupNames().split(",")) { multiPartBuilder.addTextBody("groups", groupName); } }
+		 */
+		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
+
 		multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
+
 		final String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
 		if (previousExtensionRelease != null) {
 			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
 		}
+
 		final String extensionBaseLineRelease = qaTestConfig.getExtensionBaseLineRelease();
 		if (extensionBaseLineRelease != null) 
 		{
 			multiPartBuilder.addTextBody("extensionBaseLineReleaseVersion", extensionBaseLineRelease);
 		}
+
 		multiPartBuilder.addTextBody("runId",runId);
+
+		multiPartBuilder.addTextBody("storageLocation", qaTestConfig.getStorageLocation());
+
 		post.setEntity(multiPartBuilder.build());
 		return post;
 	}
