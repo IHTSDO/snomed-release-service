@@ -1,13 +1,17 @@
 package org.ihtsdo.buildcloud.dao;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-
-import java.io.*;
-import java.util.List;
 
 public interface BuildDAO {
 
@@ -16,8 +20,10 @@ public interface BuildDAO {
 	List<Build> findAllDesc(Product product);
 
 	Build find(Product product, String buildId);
-
+	
 	void loadConfiguration(Build build) throws IOException;
+
+	void loadBuildConfiguration(Build build) throws IOException;
 
 	void updateStatus(Build build, Build.Status newStatus);
 
@@ -76,5 +82,7 @@ public interface BuildDAO {
 	void persistReport(Build build);
 	
 	void renameTransformedFile(Build build, String sourceFileName, String targetFileName);
+
+	void loadQaTestConfig(Build build) throws IOException;
 
 }

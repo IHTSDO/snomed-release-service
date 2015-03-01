@@ -1,14 +1,17 @@
 package org.ihtsdo.buildcloud.entity;
 
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
+@Table(name="membership")
 public class ReleaseCenterMembership {
 
 	@Id
@@ -16,9 +19,11 @@ public class ReleaseCenterMembership {
 	private Long id;
 
 	@ManyToOne
+	@JoinColumn(name="release_center_id")
 	private ReleaseCenter releaseCenter;
 
 	@ManyToOne
+	@JoinColumn(name="user_id")
 	private User user;
 
 	private Role role;
@@ -26,7 +31,7 @@ public class ReleaseCenterMembership {
 	public ReleaseCenterMembership() {
 	}
 
-	public ReleaseCenterMembership(ReleaseCenter releaseCenter, User user) {
+	public ReleaseCenterMembership(final ReleaseCenter releaseCenter, final User user) {
 		this.releaseCenter = releaseCenter;
 		this.user = user;
 		this.role = Role.VIEW;
@@ -36,7 +41,7 @@ public class ReleaseCenterMembership {
 		return releaseCenter;
 	}
 
-	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+	public void setReleaseCenter(final ReleaseCenter releaseCenter) {
 		this.releaseCenter = releaseCenter;
 	}
 
@@ -44,7 +49,7 @@ public class ReleaseCenterMembership {
 		return user;
 	}
 
-	public void setUser(User user) {
+	public void setUser(final User user) {
 		this.user = user;
 	}
 
@@ -52,7 +57,7 @@ public class ReleaseCenterMembership {
 		return role;
 	}
 
-	public void setRole(Role role) {
+	public void setRole(final Role role) {
 		this.role = role;
 	}
 

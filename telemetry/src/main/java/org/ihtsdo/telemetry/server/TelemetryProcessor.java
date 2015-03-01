@@ -15,10 +15,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
+import javax.jms.IllegalStateException;
+import javax.jms.*;
 
 public class TelemetryProcessor {
 
@@ -44,6 +42,8 @@ public class TelemetryProcessor {
 		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
 			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
 					smtpSsl.booleanValue());
+			logger.info("Telemetry server configured to use SMTP " + TelemetryProcessor.emailSender.toString());
+
 		} else {
 			logger.info("Telemetry server has not been given SMTP connection details.  Email connectivity disabled.");
 			TelemetryProcessor.emailSender = null;
@@ -54,6 +54,8 @@ public class TelemetryProcessor {
 	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
 			EmailSender emailSender) throws JMSException {
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		logger.info("Telemetry server using pre-configured " + emailSender.toString());
+
 		TelemetryProcessor.emailSender = emailSender;
 	}
 
@@ -113,6 +115,8 @@ public class TelemetryProcessor {
 											writer.write(exception);
 											writer.write(Constants.LINE_BREAK);
 										}
+										// We need output to disk to be up to the minute, so flush each line
+										writer.flush();
 									} else {
 										logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
 									}
@@ -125,10 +129,17 @@ public class TelemetryProcessor {
 								try {
 									sendEmailAlert(message);
 								} catch (Exception e) {
-									logger.error("Unable to send email alert", e);
+									String msg = message.getText();
+									if (message.propertyExists(Constants.EXCEPTION)) {
+										msg += "\n" + message.getStringProperty(Constants.EXCEPTION);
+									}
+									logger.error("Unable to send email alert to report: " + msg, e);
 								}
 							}
 						}
+					} catch (IllegalStateException e) {
+						logger.info("Connection closed. Shutting down telemetry consumer.");
+						shutdown = true;
 					} catch (JMSException e) {
 						Exception linkedException = e.getLinkedException();
 						if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {

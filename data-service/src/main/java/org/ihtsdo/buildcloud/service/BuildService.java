@@ -1,12 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
-
 import java.io.InputStream;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 
 public interface BuildService {
 
@@ -20,7 +21,9 @@ public interface BuildService {
 
 	Build find(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
-	BuildConfiguration loadConfiguration(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
+	BuildConfiguration loadBuildConfiguration(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
+	
+	QATestConfig loadQATestConfig(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
 
 	InputStream getOutputFile(String releaseCenterKey, String productKey, String buildId, String outputFilePath) throws ResourceNotFoundException;
 

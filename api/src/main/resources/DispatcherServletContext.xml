@@ -18,6 +18,9 @@
 	</mvc:interceptors>
 
 	<import resource="servletContext.xml"/>
+	<import resource="swaggerContext.xml"/>
+
+	<import resource="jms-broker.xml"/>
 
 	<import resource="classpath*:dataServiceContext.xml"/>
 

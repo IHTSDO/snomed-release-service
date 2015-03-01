@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.file;
 
+import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.junit.Assert;
-
 import org.junit.Test;
 
 public class Rf2FileNameTransformationTest {

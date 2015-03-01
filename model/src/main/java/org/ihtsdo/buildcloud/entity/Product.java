@@ -1,57 +1,73 @@
 package org.ihtsdo.buildcloud.entity;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
-import javax.persistence.*;
-
 @Entity
+@Table(name="product")
 @JsonPropertyOrder({"id", "name"})
 public class Product {
-
 	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
-
 	@Id
 	@GeneratedValue
 	@JsonIgnore
-	private Long id;
-
+	@Column(name="id")
+	private long id;
+	@Column(name="name")
 	private String name;
 
 	@JsonIgnore
+	@Column(name="business_key", unique=true)
 	private String businessKey;
 
 	@ManyToOne
+	@JoinColumn(name="release_center_id")
 	@JsonIgnore
 	private ReleaseCenter releaseCenter;
-
+	
+	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private BuildConfiguration buildConfiguration;
 
+	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
+	private QATestConfig qaTestConfig;
+	
 	public Product() {
-		buildConfiguration = new BuildConfiguration();
 	}
 
-	public Product(String name) {
+	public Product(final String name) {
 		this();
 		setName(name);
 	}
-	
-	public Product(Long id, String name) {
-		this(name);
-		this.id = id;
+
+	public QATestConfig getQaTestConfig() {
+		return qaTestConfig;
+	}
+
+	public void setQaTestConfig(final QATestConfig qaTestConfig) {
+		this.qaTestConfig = qaTestConfig;
 	}
 
 	public BuildConfiguration getBuildConfiguration() {
 		return buildConfiguration;
 	}
 
-	public void setBuildConfiguration(BuildConfiguration buildConfiguration) {
+	public void setBuildConfiguration(final BuildConfiguration buildConfiguration) {
 		this.buildConfiguration = buildConfiguration;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 		generateBusinessKey();
 	}
@@ -64,7 +80,7 @@ public class Product {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
@@ -81,15 +97,24 @@ public class Product {
 		return releaseCenter;
 	}
 
-	public void setReleaseCenter(ReleaseCenter releaseCenter) {
+	public void setReleaseCenter(final ReleaseCenter releaseCenter) {
 		this.releaseCenter = releaseCenter;
 	}
 
-	public void setBusinessKey(String businessKey) {
+	public void setBusinessKey(final String businessKey) {
 		this.businessKey = businessKey;
 	}
+	
+	@Override
+	public String toString() {
+		return "Product [id=" + id + ", name=" + name + ", businessKey="
+				+ businessKey + ", releaseCenter=" + releaseCenter
+				+ ", buildConfiguration=" + buildConfiguration
+				+ ", qaTestConfig=" + qaTestConfig + "]";
+	}
 
-	public boolean equals(Object o) {
+	@Override
+	public boolean equals(final Object o) {
 		if (this == o) {
 			return true;
 		}
@@ -97,7 +122,7 @@ public class Product {
 			return false;
 		}
 
-		Product product = (Product) o;
+		final Product product = (Product) o;
 
 		if (!businessKey.equals(product.businessKey)) {
 			return false;
@@ -109,6 +134,7 @@ public class Product {
 		return true;
 	}
 
+	@Override
 	public int hashCode() {
 		int result = businessKey.hashCode();
 		result = 31 * result + releaseCenter.hashCode();

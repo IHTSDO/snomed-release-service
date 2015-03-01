@@ -1,12 +1,23 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.controller.ProductController;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityFactory;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.junit.Assert;
@@ -17,14 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.FileCopyUtils;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/testDispatcherServletContext.xml"})
@@ -43,8 +46,12 @@ public class HypermediaGeneratorTest {
 
 	@Before
 	public void setup() {
-		TestEntityFactory entityFactory = new TestEntityFactory();
+		final TestEntityFactory entityFactory = new TestEntityFactory();
 		product = entityFactory.createProduct();
+		final BuildConfiguration buildConfig = new BuildConfiguration();
+		product.setBuildConfiguration(buildConfig);
+		final QATestConfig qaConfig = new QATestConfig();
+		product.setQaTestConfig(qaConfig);
 		build = entityFactory.createBuild();
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		mockServletRequest = mocksControl.createMock(HttpServletRequest.class);
@@ -54,18 +61,18 @@ public class HypermediaGeneratorTest {
 
 	@Test
 	public void testGetEntityCollectionHypermedia() throws Exception {
-		List<Product> products = new ArrayList<>();
+		final List<Product> products = new ArrayList<>();
 		products.add(product);
 
-		String expected = FileCopyUtils.copyToString(new InputStreamReader(getClass().getResourceAsStream("expected-product-listing.json"), RF2Constants.UTF_8));
+		final String expected = FileCopyUtils.copyToString(new InputStreamReader(getClass().getResourceAsStream("expected-product-listing.json"), RF2Constants.UTF_8));
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_international_edition/products")).anyTimes();
 		mocksControl.replay();
 
-		List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(products, mockServletRequest, ProductController.PRODUCT_LINKS, "/products");
+		final List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(products, mockServletRequest, ProductController.PRODUCT_LINKS, "/products");
 
 		mocksControl.verify();
 		Assert.assertNotNull(hypermedia);
-		String actual = toString(hypermedia);
+		final String actual = toString(hypermedia);
 //		System.out.println(actual);
 		Assert.assertEquals(expected, actual);
 	}
@@ -75,9 +82,9 @@ public class HypermediaGeneratorTest {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/products/something/exec/something")).anyTimes();
 		mocksControl.replay();
 
-		String linkNameAndUrl = "productScripts|product-scripts.zip";
-		boolean currentResource = true;
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
+		final String linkNameAndUrl = "productScripts|product-scripts.zip";
+		final boolean currentResource = true;
+		final Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
 
 		Assert.assertNotNull(hypermedia);
 //		System.out.println(toString(hypermedia));
@@ -89,7 +96,7 @@ public class HypermediaGeneratorTest {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/products/something/exec/something/trigger")).anyTimes();
 		mocksControl.replay();
 
-		Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(build, mockServletRequest, "configuration", "productScripts|product-scripts.zip");
+		final Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(build, mockServletRequest, "configuration", "productScripts|product-scripts.zip");
 
 		Assert.assertNotNull(hypermedia);
 		System.out.println(toString(hypermedia));
@@ -97,8 +104,8 @@ public class HypermediaGeneratorTest {
 		Assert.assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
 	}
 
-	private String toString(Object hypermedia) throws IOException {
-		StringWriter stringWriter = new StringWriter();
+	private String toString(final Object hypermedia) throws IOException {
+		final StringWriter stringWriter = new StringWriter();
 		objectMapper.writeValue(stringWriter, hypermedia);
 		return stringWriter.toString();
 	}
