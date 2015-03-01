@@ -212,7 +212,7 @@ public class BuildController {
 
 		try (InputStream outputFileStream = buildService.getLogFile(releaseCenterKey, productKey, buildId, logFileName)) {
 			// This will blow up with 404 if the file isn't found. HTTP HEAD demands that no body is returned, so nothing to do here
-			logger.debug("HTTP 200 reponse to head request for {}/{}/{}", productKey, buildId, logFileName);
+			logger.debug("HTTP 200 response to head request for {}/{}/{}", productKey, buildId, logFileName);
 		}
 	}
 
