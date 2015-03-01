@@ -10,42 +10,79 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
+import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.hibernate.annotations.Type;
 
-@Embeddable
+@Entity
+@Table(name="build_config")
 public class BuildConfiguration {
+	@Id
+	@GeneratedValue
+	@JsonIgnore
+	@Column(name="id")
+	private long id;
 	public static final String BETA_PREFIX = "x";
-
+	@OneToOne
+	@JoinColumn(name="product_id")
+	@JsonIgnore
+	private Product product;
+	
+	@Column(name="effective_time")
 	private Date effectiveTime;
-	@Column(columnDefinition = "TEXT")
+	
+	@Column(name="readme_header",columnDefinition = "TEXT")
 	private String readmeHeader;
+	
+	@Column(name="readme_end_date")
 	private String readmeEndDate;
+	
 	@Type(type="yes_no")
+	@Column(name="first_time_release")
 	private boolean firstTimeRelease = false;
+	
 	@Type(type="yes_no")
+	@Column(name="beta_release")
 	private boolean betaRelease = false;
+	
+	@Column(name="previous_published_release")
 	private String previousPublishedPackage;
+	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
+	
 	@Type(type="yes_no")
+	@Column(name="just_package")
 	private boolean justPackage = false;
+	
 	@Type(type="yes_no")
+	@Column(name="require_wb_data_fix")
 	private boolean workbenchDataFixesRequired = false;
+	
 	@Type(type="yes_no")
+	@Column(name="create_inferred_relationships")
 	private boolean createInferredRelationships = false;
+	
 	@Type(type="yes_no")
+	@Column(name="create_legacy_ids")
 	private boolean createLegacyIds = false;
 
 	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name="refset_composite_key", joinColumns=@JoinColumn(name="build_config_id"))
 	private Set<RefsetCompositeKey> refsetCompositeKeys;
-
+	
 	public BuildConfiguration() {
 	}
 
@@ -192,12 +229,36 @@ public class BuildConfiguration {
 	public void setNewRF2InputFiles(final String newRF2InputFiles) {
 		this.newRF2InputFiles = newRF2InputFiles;
 	}
+	
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(final Product product) {
+		this.product = product;
+	}
+
+	
+	@Override
+	public String toString() {
+		return "BuildConfiguration [id=" + id + ", effectiveTime="
+				+ effectiveTime
+				+ ", readmeEndDate=" + readmeEndDate + ", firstTimeRelease="
+				+ firstTimeRelease + ", betaRelease=" + betaRelease
+				+ ", previousPublishedPackage=" + previousPublishedPackage
+				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
+				+ justPackage + ", workbenchDataFixesRequired="
+				+ workbenchDataFixesRequired + ", createInferredRelationships="
+				+ createInferredRelationships + ", createLegacyIds="
+				+ createLegacyIds + "]";
+	}
+
 
 	@Embeddable
 	public static class RefsetCompositeKey {
-
+		@Column(name="refset_id")
 		private String refsetId;
-
+		@Column(name="field_indexes")
 		private String fieldIndexes;
 
 		private RefsetCompositeKey() {
@@ -241,5 +302,4 @@ public class BuildConfiguration {
 			return refsetId.hashCode();
 		}
 	}
-
 }

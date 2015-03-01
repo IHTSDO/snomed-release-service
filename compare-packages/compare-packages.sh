@@ -17,7 +17,7 @@ function createLists {
 	find . -type f > ${home}/target/${listName}_file_list.txt
 	cd - > /dev/null
 }
-
+rm -rf target || true
 mkdir -p target
 
 if [ $# -ne 2 ]; then

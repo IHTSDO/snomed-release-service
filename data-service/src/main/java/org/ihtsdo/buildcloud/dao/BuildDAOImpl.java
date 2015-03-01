@@ -1,34 +1,18 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.model.*;
-import com.google.common.io.Files;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.io.IOUtils;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
-import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.util.FileCopyUtils;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.StringWriter;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +21,42 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.io.IOUtils;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.FileCopyUtils;
+
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.google.common.io.Files;
 
 public class BuildDAOImpl implements BuildDAO {
 
@@ -82,18 +102,18 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void save(final Build build) throws IOException {
 		// Save config file
-		final String configPath = pathHelper.getConfigFilePath(build);
+		final String configPath = pathHelper.getBuildConfigFilePath(build);
 		putFile(configPath, toJson(build.getConfiguration()));
-
+		putFile(pathHelper.getQATestConfigFilePath(build),toJson(build.getQaTestConfig()));
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
 	}
 
-	private String toJson(BuildConfiguration configuration) throws IOException {
-		StringWriter stringWriter = new StringWriter();
-		JsonFactory jsonFactory = objectMapper.getJsonFactory();
+	private String toJson(final Object obj) throws IOException {
+		final StringWriter stringWriter = new StringWriter();
+		final JsonFactory jsonFactory = objectMapper.getJsonFactory();
 		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(stringWriter)) {
-			jsonGenerator.writeObject(configuration);
+			jsonGenerator.writeObject(obj);
 		}
 		return stringWriter.toString();
 	}
@@ -116,14 +136,27 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void loadConfiguration(final Build build) throws IOException {
-		final String configFilePath = pathHelper.getConfigFilePath(build);
+	public void loadBuildConfiguration(final Build build) throws IOException {
+		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
 		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-		String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
 		try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
-			BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+			final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
 			build.setConfiguration(buildConfiguration);
+		}
+	}
+	
+	
+	@Override
+	public void loadQaTestConfig(final Build build) throws IOException {
+		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
+		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+		try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
+			final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+			build.setQaTestConfig(qaTestConfig);
 		}
 	}
 
@@ -206,7 +239,8 @@ public class BuildDAOImpl implements BuildDAO {
 		final String manifestPath = productInputFileDAO.getManifestPath(productSource);
 		if (manifestPath != null) { // Let the packages with manifests product
 			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + "manifest.xml");
+			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
+			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
 		}
 	}
 
@@ -218,7 +252,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public String putOutputFile(final Build build, final File file, final boolean calcMD5) throws IOException {
-		String filename = file.getName();
+		final String filename = file.getName();
 		final String outputFilePath = pathHelper.getBuildOutputFilePath(build, filename);
 		try {
 			return buildFileHelper.putFile(file, outputFilePath, calcMD5);
@@ -434,4 +468,9 @@ public class BuildDAOImpl implements BuildDAO {
 		this.buildFileHelper.setS3Client(s3Client);
 	}
 
+	@Override
+	public void loadConfiguration(final Build build) throws IOException {
+		loadBuildConfiguration(build);
+		loadQaTestConfig(build);
+	}
 }

@@ -12,7 +12,7 @@
 		<param name="Environment" value="${ENV_NAME}"/>
 	</appender>
 	<logger name="org.ihtsdo" additivity="false">
-		<level value="info"/>
+		<level value="debug"/>
 		<appender-ref ref="console"/>
 		<appender-ref ref="telemetry"/>
 	</logger>

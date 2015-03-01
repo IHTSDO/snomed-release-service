@@ -1,0 +1,22 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+  <folder Name="SnomedCT_SpanishRelease_INT_20140731">
+    <file Name="Readme_en_20140731.txt"/>
+  	<folder Name="Documentation">
+      <folder Name="Current">
+        <file Name=""/>
+      </folder>
+    </folder>
+    <folder Name="RF1Release">
+      <folder Name="Subsets">
+        <folder Name="Language-es">
+          <file Name=" " />
+        </folder>
+      </folder>
+      <folder Name="Terminology">
+        <folder Name="Content">
+          <file Name=" " />
+        </folder>
+      </folder>
+    </folder>
+  </folder>
+</listing>

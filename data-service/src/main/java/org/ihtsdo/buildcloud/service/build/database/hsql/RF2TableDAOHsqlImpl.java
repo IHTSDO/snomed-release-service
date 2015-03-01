@@ -4,7 +4,7 @@ import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
+import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

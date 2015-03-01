@@ -1,36 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.apache.log4j.MDC;
-import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.*;
-import org.ihtsdo.buildcloud.entity.Build.Status;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.manifest.FileType;
-import org.ihtsdo.buildcloud.manifest.FolderType;
-import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
-import org.ihtsdo.buildcloud.service.build.Zipper;
-import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
-import org.ihtsdo.buildcloud.service.exception.*;
-import org.ihtsdo.buildcloud.service.file.FileUtils;
-import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
-import org.ihtsdo.buildcloud.service.rvf.RVFClient;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.ihtsdo.telemetry.client.TelemetryStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_EXTENSION;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,13 +12,53 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_EXTENSION;
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
+import org.apache.log4j.MDC;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Build.Status;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.BuildReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.manifest.FileType;
+import org.ihtsdo.buildcloud.manifest.FolderType;
+import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
+import org.ihtsdo.buildcloud.service.build.Zipper;
+import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.exception.EntityAlreadyExistsException;
+import org.ihtsdo.buildcloud.service.exception.PostConditionException;
+import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.telemetry.client.TelemetryStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -108,6 +119,7 @@ public class BuildServiceImpl implements BuildService {
 				}
 				build = new Build(creationDate, product);
 				build.setProduct(product);
+				build.setQaTestConfig(product.getQaTestConfig());
 				// save build with config
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 				dao.save(build);
@@ -124,7 +136,7 @@ public class BuildServiceImpl implements BuildService {
 					dao.updateStatus(build, newStatus);
 				}
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new BusinessServiceException("Failed to create build.", e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
@@ -133,11 +145,11 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
 			dao.loadConfiguration(build);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new BusinessServiceException("Failed to load build configuration.", e);
 		}
 
@@ -149,7 +161,7 @@ public class BuildServiceImpl implements BuildService {
 			updateStatusWithChecks(build, Status.BUILDING);
 
 			// Run product
-			BuildReport report = build.getBuildReport();
+			final BuildReport report = build.getBuildReport();
 			String resultStatus = "completed";
 			String resultMessage = "Process completed successfully";
 			try {
@@ -174,7 +186,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public List<Build> findAllDesc(String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
+	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
@@ -184,29 +196,33 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build find(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
+	public Build find(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 
-		Build build = dao.find(product, buildId);
+		final Build build = dao.find(product, buildId);
+		if (build == null) {
+			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+		}
+
 		build.setProduct(product);
 		return build;
 	}
 
 	@Override
-	public BuildConfiguration loadConfiguration(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public BuildConfiguration loadBuildConfiguration(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
-			dao.loadConfiguration(build);
+			dao.loadBuildConfiguration(build);
 			return build.getConfiguration();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new BusinessServiceException("Failed to load configuration.", e);
 		}
 	}
 
-	private void updateStatusWithChecks(Build build, Status newStatus) throws BadConfigurationException {
+	private void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
 		// Assert status workflow position
 		switch (newStatus) {
 			case BUILDING :
@@ -221,37 +237,37 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public InputStream getOutputFile(String releaseCenterKey, final String productKey, final String buildId, final String outputFilePath) throws ResourceNotFoundException {
+	public InputStream getOutputFile(final String releaseCenterKey, final String productKey, final String buildId, final String outputFilePath) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getOutputFileStream(build, outputFilePath);
 	}
 
 	@Override
-	public List<String> getOutputFilePaths(String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public List<String> getOutputFilePaths(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.listOutputFilePaths(build);
 	}
 
 	@Override
-	public InputStream getInputFile(String releaseCenterKey, final String productKey, final String buildId, final String inputFilePath) throws ResourceNotFoundException {
+	public InputStream getInputFile(final String releaseCenterKey, final String productKey, final String buildId, final String inputFilePath) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getInputFileStream(build, inputFilePath);
 	}
 
 	@Override
-	public List<String> getInputFilePaths(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
+	public List<String> getInputFilePaths(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.listInputFileNames(build);
 	}
 
 	@Override
-	public InputStream getLogFile(String releaseCenterKey, final String productKey, final String buildId, final String logFileName) throws ResourceNotFoundException {
+	public InputStream getLogFile(final String releaseCenterKey, final String productKey, final String buildId, final String logFileName) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getLogFileStream(build, logFileName);
 	}
 
 	@Override
-	public List<String> getLogFilePaths(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
+	public List<String> getLogFilePaths(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.listBuildLogFilePaths(build);
 	}
@@ -261,7 +277,7 @@ public class BuildServiceImpl implements BuildService {
 		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(build);
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
-		for (PreConditionCheckReport report : preConditionReports) {
+		for (final PreConditionCheckReport report : preConditionReports) {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
 				build.setStatus(Status.FAILED_PRE_CONDITIONS);
@@ -276,7 +292,7 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
-		BuildConfiguration configuration = build.getConfiguration();
+		final BuildConfiguration configuration = build.getConfiguration();
 		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
@@ -284,12 +300,12 @@ public class BuildServiceImpl implements BuildService {
 			transformationService.transformFiles(build, inputFileSchemaMap);
 
 			// Convert Delta input files to Full, Snapshot and Delta release files
-			Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+				final String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
 				if (relationshipSnapshotOutputFilename != null) {
 					generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
 				}
@@ -330,12 +346,12 @@ public class BuildServiceImpl implements BuildService {
 		}
 		final BuildReport report = build.getBuildReport();
 		report.add("Post Validation Status", rvfStatus);
-		report.add("RVF Test Failures", rvfResultMsg);
+		report.add("RVF Response", rvfResultMsg);
 
 		LOGGER.info("End of running build {}", build.getUniqueId());
 	}
 
-	private void checkManifestPresent(Build build) throws BusinessServiceException {
+	private void checkManifestPresent(final Build build) throws BusinessServiceException {
 		try {
 			final InputStream manifestStream = dao.getManifestStream(build);
 			if (manifestStream == null) {
@@ -343,20 +359,42 @@ public class BuildServiceImpl implements BuildService {
 			} else {
 				manifestStream.close();
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new BusinessServiceException("Failed to close manifest file.", e);
 		}
 	}
 
 	private String runRVFPostConditionCheck(final Build build, final File zipPackage) throws IOException,
-			PostConditionException {
-	    	LOGGER.info("Run RVF post-condition check for zip file {}", zipPackage.getName());
-		String logFilename = "postcheck-rvf-" + zipPackage.getName() + ".log";
-		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl);
-			 AsyncPipedStreamBean logFileOutputStream = dao.getLogFileOutputStream(build, logFilename)) {
-
-			return rvfClient.checkOutputPackage(zipPackage, logFileOutputStream);
+			PostConditionException, ConfigurationException {
+		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
+		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
+			final QATestConfig qaTestConfig = build.getQaTestConfig();
+			// Has the client told us where to tell the RVF to store the results? Set if not
+			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
+				String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey() 
+						+ "/" + build.getProduct().getBusinessKey()
+						+ "/" + build.getId();
+				qaTestConfig.setStorageLocation(storageLocation);
+			}
+			if (isQATestConfigured(qaTestConfig)) {
+				return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
+			} else {
+				throw new ConfigurationException ("No QA test configured. Was Prev Int Version specifield before execution started?");
+			}
 		}
+	}
+
+	private boolean isQATestConfigured(final QATestConfig qaTestConfig) {
+		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
+			return false;
+		}
+		if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionBaseLineRelease() == null) {
+			return false;
+		}
+		if (qaTestConfig.getPreviousInternationalRelease() == null && qaTestConfig.getPreviousExtensionRelease() == null) {
+			return false;
+		}
+		return true;
 	}
 
 	private void copyFilesForJustPackaging(final Build build) {
@@ -369,14 +407,14 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private Map<String, TableSchema> getInputFileSchemaMap(Build build) throws BusinessServiceException {
+	private Map<String, TableSchema> getInputFileSchemaMap(final Build build) throws BusinessServiceException {
 		final List<String> buildInputFilePaths = dao.listInputFileNames(build);
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String buildInputFilePath : buildInputFilePaths) {
 			final TableSchema schemaBean;
 			try {
 				schemaBean = schemaFactory.createSchemaBean(FileUtils.getFilenameFromPath(buildInputFilePath));
-			} catch (FileRecognitionException e) {
+			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
 			}
 			inputFileSchemaMap.put(buildInputFilePath, schemaBean);
@@ -384,7 +422,7 @@ public class BuildServiceImpl implements BuildService {
 		return inputFileSchemaMap;
 	}
 
-	private Build getBuildOrThrow(String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
+	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Build build = find(releaseCenterKey, productKey, buildId);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build for releaseCenterKey: " + releaseCenterKey + ", productKey: " + productKey + ", buildId: " + buildId);
@@ -396,7 +434,7 @@ public class BuildServiceImpl implements BuildService {
 		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
 
-	private Product getProduct(String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
+	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
 		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
 	}
 
@@ -426,7 +464,7 @@ public class BuildServiceImpl implements BuildService {
 			if (readmeFilename != null) {
 				final AsyncPipedStreamBean asyncPipedStreamBean = dao.getOutputFileOutputStream(build, readmeFilename);
 				try (OutputStream readmeOutputStream = asyncPipedStreamBean.getOutputStream()) {
-					BuildConfiguration configuration = build.getConfiguration();
+					final BuildConfiguration configuration = build.getConfiguration();
 					readmeGenerator.generate(configuration.getReadmeHeader(), configuration.getReadmeEndDate(), manifestListing, readmeOutputStream);
 					asyncPipedStreamBean.waitForFinish();
 				}
@@ -441,6 +479,17 @@ public class BuildServiceImpl implements BuildService {
 
 	public void setFileProcessingFailureMaxRetry(final Integer fileProcessingFailureMaxRetry) {
 		this.fileProcessingFailureMaxRetry = fileProcessingFailureMaxRetry;
+	}
+
+	@Override
+	public QATestConfig loadQATestConfig(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		try {
+			dao.loadBuildConfiguration(build);
+			return build.getQaTestConfig();
+		} catch (final IOException e) {
+			throw new BusinessServiceException("Failed to load configuration.", e);
+		}
 	}
 
 }

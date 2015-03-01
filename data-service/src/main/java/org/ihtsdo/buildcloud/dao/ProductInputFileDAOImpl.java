@@ -1,34 +1,34 @@
 package org.ihtsdo.buildcloud.dao;
 
+import java.io.InputStream;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.helper.FileHelper;
-import org.ihtsdo.buildcloud.dao.helper.S3ClientHelper;
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.InputStream;
-import java.util.List;
 
 public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProductInputFileDAOImpl.class);
 
-	private FileHelper fileHelper;
+	private final FileHelper fileHelper;
 
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileDAOImpl(String buildBucketName, S3Client s3Client, S3ClientHelper s3ClientHelper) {
+	public ProductInputFileDAOImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
-	public InputStream getManifestStream(Product product) {
-		String manifestPath = getManifestPath(product);
+	public InputStream getManifestStream(final Product product) {
+		final String manifestPath = getManifestPath(product);
 		if (manifestPath != null) {
 			return fileHelper.getFileStream(manifestPath);
 		} else {
@@ -37,18 +37,22 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public List<String> listRelativeInputFilePaths(Product product) {
-		String directoryPath = s3PathHelper.getProductInputFilesPath(product);
+	public List<String> listRelativeInputFilePaths(final Product product) {
+		final String directoryPath = s3PathHelper.getProductInputFilesPath(product);
 		return fileHelper.listFiles(directoryPath);
 	}
 
 	@Override
-	public String getManifestPath(Product product) {
-		String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product).toString();
+	public String getManifestPath(final Product product) {
+		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product).toString();
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
-		List<String> files = fileHelper.listFiles(manifestDirectoryPath);
+		final List<String> files = fileHelper.listFiles(manifestDirectoryPath);
 		//The first file in the manifest directory will be the manifest
 		if (!files.isEmpty()) {
+			if ( files.size() > 1 ) {
+				//Expecting just one manifest file but more than one file is found in the manifest folder.
+				LOGGER.warn("Expecting just one manifest file but more than one is found in the manifest folder: " + manifestDirectoryPath);
+			}
 			return manifestDirectoryPath + files.iterator().next();
 		} else {
 			return null;
@@ -56,28 +60,26 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(Product product, InputStream inputStream, String originalFilename, long fileSize) {
-
+	public void putManifestFile(final Product product, final InputStream inputStream, final String originalFilename, final long fileSize) {
 		// Fist delete any existing manifest files
 		deleteManifest(product);
-
 		// Put new manifest file
-		String filePath = getKnownManifestPath(product, originalFilename);
+		final String filePath = getKnownManifestPath(product, originalFilename);
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
 	@Override
-	public void deleteManifest(Product product) {
-		StringBuilder manifestDirectoryPathSB = s3PathHelper.getProductManifestDirectoryPath(product);
-		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
-		for (String file : files) {
+	public void deleteManifest(final Product product) {
+		final StringBuilder manifestDirectoryPathSB = s3PathHelper.getProductManifestDirectoryPath(product);
+		final List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
+		for (final String file : files) {
 			fileHelper.deleteFile(manifestDirectoryPathSB.toString() + file);
 		}
 
 	}
 
 	@Override
-	public String getKnownManifestPath(Product product, String filename) {
+	public String getKnownManifestPath(final Product product, final String filename) {
 		return s3PathHelper.getProductManifestDirectoryPath(product).append(filename).toString();
 	}
 

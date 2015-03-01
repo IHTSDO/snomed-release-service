@@ -38,7 +38,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 		if (pathInfo != null && pathInfo.startsWith("/login")) {
 			// Trying to log in
 			validUser = authenticationService.getAnonymousSubject();
-		} else if (authHeader == null && requestMethod.equals("GET")) {
+		} else if (authHeader == null && (requestMethod.equals("GET") || requestMethod.equals("HEAD"))) {
 			// An anonymous GET
 			validUser = authenticationService.getAnonymousSubject();
 		} else if (authHeader == null && requestMethod.equals("POST") && authParameter != null) {

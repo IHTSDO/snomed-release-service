@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
+@Api(value = "Input Files", position = 4)
 public class InputFileController {
 
 	@Autowired
@@ -37,6 +40,8 @@ public class InputFileController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
+	@ApiOperation( value = "Stores a manifest file",
+		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
 	@ResponseBody
 	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey, @RequestParam(value = "file") final MultipartFile file)
@@ -46,7 +51,9 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/manifest")
+	@RequestMapping(value = "/manifest", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a manifest file name",
+		notes = "Returns a manifest file name for given release center and product" )
 	@ResponseBody
 	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws ResourceNotFoundException {
@@ -60,7 +67,9 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/manifest/file", produces = "application/xml")
+	@RequestMapping(value = "/manifest/file", produces = "application/xml", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a specified manifest file",
+		notes = "Returns the content of the manifest file as xml" )
 	public void getManifestFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletResponse response) throws ResourceNotFoundException {
 
@@ -78,6 +87,8 @@ public class InputFileController {
 	}
 
 	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
+	@ApiOperation( value = "Store or Replace a file",
+		notes = "Stores or replaces a file with its original name against the package specified in the URL" )
 	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
@@ -86,7 +97,9 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/inputfiles")
+	@RequestMapping(value = "/inputfiles", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a list of file names",
+		notes = "Returns a list of file names for the package specified in the URL" )
 	@ResponseBody
 	public List<Map<String, Object>> listInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws ResourceNotFoundException {
@@ -100,7 +113,9 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName:.*}")
+	@RequestMapping(value = "/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a specified file",
+		notes = "Returns the content of the specified file." )
 	public void getInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String inputFileName,
 			final HttpServletResponse response) throws ResourceNotFoundException {
@@ -120,6 +135,9 @@ public class InputFileController {
 	// Using Regex to match variable name here due to problems with .txt getting truncated
 	// See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
 	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
+	@ApiOperation( value = "Returns a specified file",
+		notes = "Deletes the specified file, if found. "
+			+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String inputFileNamePattern) throws IOException, ResourceNotFoundException {
 

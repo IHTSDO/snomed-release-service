@@ -2,12 +2,12 @@ package org.ihtsdo.buildcloud.controller;
 
 import java.nio.charset.Charset;
 
-import org.ihtsdo.buildcloud.dao.s3.S3Client;
-import org.ihtsdo.buildcloud.dao.s3.TestS3Client;
 import org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIOfflineDemoImpl;
 import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.idgeneration.IdAssignmentBI;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.TestS3Client;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

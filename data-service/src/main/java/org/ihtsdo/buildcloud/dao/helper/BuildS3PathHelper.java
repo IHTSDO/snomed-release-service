@@ -16,95 +16,99 @@ public class BuildS3PathHelper {
 	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
 	public static final String BUILD_LOG_TXT = "build_log.txt";
+	private static final String QA_CONFIG_JSON = "qa-test-config.json";
 
-	public StringBuilder getProductPath(Product product) {
+	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
 	}
 
-	public StringBuilder getReleaseCenterPath(ReleaseCenter releaseCenter) {
-		StringBuilder path = new StringBuilder();
+	public StringBuilder getReleaseCenterPath(final ReleaseCenter releaseCenter) {
+		final StringBuilder path = new StringBuilder();
 		path.append(releaseCenter.getBusinessKey());
 		path.append(SEPARATOR);
 		return path;
 	}
 
-	public StringBuilder getProductManifestDirectoryPath(Product product) {
+	public StringBuilder getProductManifestDirectoryPath(final Product product) {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(MANIFEST).append(SEPARATOR);
 	}
 
-	public StringBuilder getBuildInputFilesPath(Build build) {
+	public StringBuilder getBuildInputFilesPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId()).append(INPUT_FILES).append(SEPARATOR);
 	}
 
-	public String getBuildInputFilePath(Build build, String inputFile) {
+	public String getBuildInputFilePath(final Build build, final String inputFile) {
 		return getBuildInputFilesPath(build).append(inputFile).toString();
 	}
 
-	public StringBuilder getBuildOutputFilesPath(Build build) {
+	public StringBuilder getBuildOutputFilesPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId()).append(OUTPUT_FILES).append(SEPARATOR);
 	}
 
-	public String getBuildOutputFilePath(Build build, String relativeFilePath) {
+	public String getBuildOutputFilePath(final Build build, final String relativeFilePath) {
 		return getBuildOutputFilesPath(build).append(relativeFilePath).toString();
 	}
 
-	public String getBuildLogFilePath(Build build, String relativeFilePath) {
+	public String getBuildLogFilePath(final Build build, final String relativeFilePath) {
 		return getBuildLogFilesPath(build).append(relativeFilePath).toString();
 	}
 
-	public StringBuilder getBuildLogFilesPath(Build build) {
+	public StringBuilder getBuildLogFilesPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId()).append(LOG).append(SEPARATOR);
 	}
 
-	public String getMainBuildLogFilePath(Build build) {
+	public String getMainBuildLogFilePath(final Build build) {
 		return getBuildLogFilesPath(build).append(BUILD_LOG_TXT).toString();
 	}
 
-	public StringBuilder getBuildPath(Build build) {
+	public StringBuilder getBuildPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId());
 	}
 
-	public StringBuilder getBuildPath(Product product, String buildId) {
+	public StringBuilder getBuildPath(final Product product, final String buildId) {
 		return getProductPath(product).append(buildId).append(SEPARATOR);
 	}
 
-	public String getConfigFilePath(Build build) {
+	public String getBuildConfigFilePath(final Build build) {
 		return getFilePath(build, CONFIG_JSON);
 	}
 
-	public String getStatusFilePath(Build build, Build.Status status) {
+	public String getQATestConfigFilePath(final Build build) {
+		return getFilePath(build, QA_CONFIG_JSON);
+	} 
+	public String getStatusFilePath(final Build build, final Build.Status status) {
 		return getBuildPath(build).append(STATUS_PREFIX).append(status.toString()).toString();
 	}
 
-	public String getOutputFilesPath(Build build) {
+	public String getOutputFilesPath(final Build build) {
 		return getBuildPath(build).append("output-files").append(SEPARATOR).toString();
 	}
 
-	private String getFilePath(Build build, String relativePath) {
+	private String getFilePath(final Build build, final String relativePath) {
 		return getBuildPath(build).append(relativePath).toString();
 	}
 
-	public StringBuilder getBuildTransformedFilesPath(Build build) {
+	public StringBuilder getBuildTransformedFilesPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId()).append(TRANSFORMED_FILES).append(SEPARATOR);
 	}
 
-	public String getTransformedFilePath(Build build, String relativeFilePath) {
+	public String getTransformedFilePath(final Build build, final String relativeFilePath) {
 		return getBuildTransformedFilesPath(build).append(relativeFilePath).toString();
 	}
 
-	public String getPublishedFilePath(ReleaseCenter releaseCenter, String publishedFileName) {
+	public String getPublishedFilePath(final ReleaseCenter releaseCenter, final String publishedFileName) {
 		return getReleaseCenterPath(releaseCenter).append(publishedFileName).toString();
 	}
 
-	public String getReportPath(Build build) {
+	public String getReportPath(final Build build) {
 		return getBuildPath(build.getProduct(), build.getId()).append("build_report.json").toString();
 	}
 
-	public String getProductInputFilesPath(Product product) {
+	public String getProductInputFilesPath(final Product product) {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(INPUT_FILES).append(SEPARATOR).toString();
 	}
 
-	public String getBuildManifestDirectoryPath(Build build) {
+	public String getBuildManifestDirectoryPath(final Build build) {
 		return getBuildPath(build).append(MANIFEST).append(SEPARATOR).toString();
 	}
 

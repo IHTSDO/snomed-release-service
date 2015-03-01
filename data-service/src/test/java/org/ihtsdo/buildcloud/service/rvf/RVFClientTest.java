@@ -26,7 +26,8 @@ public class RVFClientTest {
 				"Total number of failures: 0\n" +
 				"Total number of successes: 37362\n";
 
-		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)), new BufferedWriter(new StringWriter()));
+		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
+				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseNoFailures");
 
 		Assert.assertEquals(0, failureCount);
 	}
@@ -39,7 +40,8 @@ public class RVFClientTest {
 				"Total number of failures: 2\n" +
 				"Total number of successes: 37360\n";
 
-		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)), new BufferedWriter(new StringWriter()));
+		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
+				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseFailures");
 
 		Assert.assertEquals(2, failureCount);
 	}

@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -17,6 +18,7 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
+@Table(name="release_center")
 public class ReleaseCenter {
 
 	@Id
@@ -24,12 +26,14 @@ public class ReleaseCenter {
 	@JsonIgnore
 	private Long id;
 
-	@Column(unique = true)
+	@Column(name="business_key", unique = true)
 	@JsonProperty("id")
 	private String businessKey;
-
+	
+	@Column(name="name")
 	private String name;
-
+	
+	@Column(name="short_name")
 	private String shortName;
 
 	@OneToMany(mappedBy = "releaseCenter")
