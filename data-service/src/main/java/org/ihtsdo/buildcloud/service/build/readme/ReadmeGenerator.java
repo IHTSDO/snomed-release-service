@@ -46,7 +46,9 @@ public class ReadmeGenerator {
 		for (int a = 0; a < depth; a++) {
 			writer.write(INDENTATION);
 		}
-		writer.write(line);
+		if (line != null) {
+			writer.write(line);
+		}
 		writer.write(RF2Constants.LINE_ENDING);
 	}
 
