@@ -67,7 +67,7 @@ public class ManifestCheck extends PreconditionCheck {
 		int emptyFileNameCount = 0;
 		for (final String fileName : fileNames) {
 			//check file name is not empty
-			if (fileName.trim().length() == 0) {
+			if (fileName == null || fileName.trim().length() == 0) {
 				emptyFileNameCount++;
 				continue;
 			}
