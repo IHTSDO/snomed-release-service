@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.workbenchdatafix;
 
-import org.ihtsdo.buildcloud.service.exception.BadInputFileException;
+import org.ihtsdo.otf.rest.exception.BadInputFileException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

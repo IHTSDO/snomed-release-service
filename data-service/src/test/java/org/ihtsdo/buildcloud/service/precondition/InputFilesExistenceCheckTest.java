@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

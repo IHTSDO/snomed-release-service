@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
