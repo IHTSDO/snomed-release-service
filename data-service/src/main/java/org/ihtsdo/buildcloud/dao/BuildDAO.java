@@ -11,7 +11,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 
 public interface BuildDAO {
 

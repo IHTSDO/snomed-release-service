@@ -1,12 +1,13 @@
 package org.ihtsdo.buildcloud.service.file;
 
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+
 import java.io.InputStream;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.MANIFEST_CONTEXT_PATH;

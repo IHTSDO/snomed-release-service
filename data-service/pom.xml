@@ -41,7 +41,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
 			<artifactId>otf-common</artifactId>
-			<version>0.0.5</version>
+			<version>0.0.8-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>spring-beans</artifactId>

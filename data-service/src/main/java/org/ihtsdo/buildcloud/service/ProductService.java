@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.exception.AuthenticationException;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.otf.rest.exception.AuthenticationException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 
 public interface ProductService extends EntityService<Product> {
 
