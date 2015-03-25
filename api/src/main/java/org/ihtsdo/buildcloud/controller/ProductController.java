@@ -102,4 +102,20 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 	
+	// Writing clients in Java we find that the standard Java libraries don't support PATCH so, we need
+	// a new end point that uses a more common HTTP method.
+	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
+	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
+	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+			@RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
+
+		Product product = productService.update(releaseCenterKey, productKey, json);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+		}
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+	}
+
 }
