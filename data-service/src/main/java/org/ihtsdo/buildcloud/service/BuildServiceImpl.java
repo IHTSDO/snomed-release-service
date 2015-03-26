@@ -345,8 +345,8 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		final BuildReport report = build.getBuildReport();
-		report.add("Post Validation Status", rvfStatus);
-		report.add("RVF Response", rvfResultMsg);
+		report.add("post_validation_status", rvfStatus);
+		report.add("rvf_response", rvfResultMsg);
 
 		LOGGER.info("End of running build {}", build.getUniqueId());
 	}
