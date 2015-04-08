@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <changeSet author="mchu" id="201504080853-1">
+        <insert tableName="user">
+         	<column name="user_name" value="termmed"/>
+        </insert>
+    </changeSet>  
+    <changeSet author="mchu" id="201504080853-2">
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='International')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='termmed')"/>
+        </insert>
+    </changeSet>
+    <changeSet author="mchu" id="201504080853-3" context="UAT,DEV">
+        <update  tableName="user">
+            <column name="encoded_password" value="dcba55e911be37af304f56b938676f40d1957c906cc7d1524014e9eb4fa33beb736897c01c962b62"/>
+            <where> user_name ='termmed'</where>
+        </update >
+    </changeSet>
+    <changeSet author="mchu" id="201504080853-4" context="PROD">
+        <update  tableName="user">
+            <column name="encoded_password" value="cfea71b886a89aa0a4ae4107a34507fffdddcc7184dd4308408bc4fb4a6f7d583330f727846c3f10"/>
+           <where> user_name ='termmed'</where>
+        </update >
+    </changeSet>
+</databaseChangeLog>
