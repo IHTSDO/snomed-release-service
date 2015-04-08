@@ -14,7 +14,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;

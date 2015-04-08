@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.build;
 
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 
 /**
  * Exception occurred during release file generation.

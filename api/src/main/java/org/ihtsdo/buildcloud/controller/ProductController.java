@@ -3,16 +3,17 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.ProductService;
-import org.ihtsdo.buildcloud.service.exception.BadRequestException;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.otf.rest.exception.BadRequestException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.mangofactory.swagger.annotations.ApiIgnore;
@@ -21,6 +22,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
 @Controller
@@ -100,4 +102,20 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 	
+	// Writing clients in Java we find that the standard Java libraries don't support PATCH so, we need
+	// a new end point that uses a more common HTTP method.
+	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
+	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@ResponseBody
+	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
+	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+			@RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
+
+		Product product = productService.update(releaseCenterKey, productKey, json);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+		}
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+	}
+
 }

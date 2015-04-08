@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 
 import java.io.InputStream;
 import java.util.List;

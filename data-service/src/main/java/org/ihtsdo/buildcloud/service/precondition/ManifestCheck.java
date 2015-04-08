@@ -13,8 +13,8 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ManifestCheck extends PreconditionCheck {
@@ -67,7 +67,7 @@ public class ManifestCheck extends PreconditionCheck {
 		int emptyFileNameCount = 0;
 		for (final String fileName : fileNames) {
 			//check file name is not empty
-			if (fileName.trim().length() == 0) {
+			if (fileName == null || fileName.trim().length() == 0) {
 				emptyFileNameCount++;
 				continue;
 			}

@@ -6,8 +6,8 @@ import java.util.List;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
-import org.ihtsdo.buildcloud.service.exception.BusinessServiceException;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 public interface BuildService {
 

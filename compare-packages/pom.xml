@@ -67,7 +67,9 @@
 							<executable>/bin/bash</executable>
 							<arguments>
 								<argument>compare-packages.sh</argument>
+								<argument>SRS</argument>
 								<argument>${daily_release_service_build_output}/SRS_Daily_Build_20150131.zip</argument>
+								<argument>Legacy</argument>
 								<argument>${daily_legacy_build_output}</argument>
 							</arguments>
 						</configuration>

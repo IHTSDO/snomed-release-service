@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import com.google.common.io.Files;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -8,10 +9,10 @@ import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.transform.RepeatableRelationshipUUIDTransform;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.exception.ProcessingException;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
 import org.ihtsdo.classifier.CycleCheck;
+import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
