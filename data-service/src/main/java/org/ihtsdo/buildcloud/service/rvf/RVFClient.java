@@ -30,7 +30,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.exception.ApplicationWiringException;
+import org.ihtsdo.otf.rest.exception.ApplicationWiringException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;

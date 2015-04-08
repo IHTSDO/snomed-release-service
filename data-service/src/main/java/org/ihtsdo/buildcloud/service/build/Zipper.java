@@ -1,20 +1,22 @@
 package org.ihtsdo.buildcloud.service.build;
 
 import com.google.common.io.Files;
+
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.ResourceNotFoundException;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 import javax.xml.bind.JAXBException;
 
 

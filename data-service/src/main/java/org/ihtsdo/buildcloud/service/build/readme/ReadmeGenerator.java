@@ -3,8 +3,8 @@ package org.ihtsdo.buildcloud.service.build.readme;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -46,7 +46,9 @@ public class ReadmeGenerator {
 		for (int a = 0; a < depth; a++) {
 			writer.write(INDENTATION);
 		}
-		writer.write(line);
+		if (line != null) {
+			writer.write(line);
+		}
 		writer.write(RF2Constants.LINE_ENDING);
 	}
 

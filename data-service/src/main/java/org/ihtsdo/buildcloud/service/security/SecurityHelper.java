@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.security;
 
 import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.service.exception.AuthenticationException;
+import org.ihtsdo.otf.rest.exception.AuthenticationException;
 
 import java.util.HashMap;
 import java.util.Map;

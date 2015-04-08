@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.build.database;
 
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 

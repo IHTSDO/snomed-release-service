@@ -22,7 +22,7 @@ import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
-import org.ihtsdo.buildcloud.service.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
