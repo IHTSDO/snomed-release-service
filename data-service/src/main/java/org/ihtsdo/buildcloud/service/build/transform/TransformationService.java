@@ -76,16 +76,16 @@ public class TransformationService {
 
 	/**
 	 * A streaming transformation of build input files, creating build output files.
+	 * @throws NoSuchAlgorithmException 
 	 */
 	public void transformFiles(final Build build, final Map<String, TableSchema> inputFileSchemaMap)
-			throws BusinessServiceException {
+			throws BusinessServiceException, NoSuchAlgorithmException {
 
 		BuildConfiguration configuration = build.getConfiguration();
 		final BuildReport report = build.getBuildReport();
 
 		final String effectiveDateInSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
-		final String buildId = build.getId();
-		final TransformationFactory transformationFactory = getTransformationFactory(effectiveDateInSnomedFormat, buildId);
+		final TransformationFactory transformationFactory = getTransformationFactory(build);
 		final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 		final boolean createLegacyIds = configuration.isCreateLegacyIds();
 		final boolean isBeta = configuration.isBetaRelease();
@@ -279,28 +279,28 @@ public class TransformationService {
 		return moduleIdAndUuidMap;
 	}
 
-	public void transformInferredRelationshipFile(final Build build, final String inferredRelationshipSnapshotFilename,
+	public void transformInferredRelationshipFile(final Build build, final String relationshipFilename,
 			Map<String, String> existingUuidToSctidMap) {
 
-		final TransformationFactory transformationFactory =
-				getTransformationFactory(build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getId());
-		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
+		final TransformationFactory transformationFactory = getTransformationFactory(build);
 
-		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, inferredRelationshipSnapshotFilename)) {
+		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, relationshipFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
-					new TableSchema(ComponentType.RELATIONSHIP, inferredRelationshipSnapshotFilename));
+					new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));
 			final BuildReport report = build.getBuildReport();
 			fileTransformation.transformFile(
-					dao.getTransformedFileAsInputStream(build, inferredRelationshipSnapshotFilename),
+					dao.getTransformedFileAsInputStream(build, relationshipFilename),
 					outputFileOutputStream.getOutputStream(),
-					inferredRelationshipSnapshotFilename,
+					relationshipFilename,
 					report);
 		} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
 			LOGGER.error("Failed to transform inferred relationship file.", e);
 		}
 	}
 
-	private TransformationFactory getTransformationFactory(final String effectiveDateInSnomedFormat, final String buildId) {
+	public TransformationFactory getTransformationFactory(Build build) {
+		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
+		final String buildId =  build.getId();
 		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
 				buildId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
 

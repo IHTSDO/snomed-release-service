@@ -48,7 +48,10 @@ public class StreamTestUtils {
 				if (usePatterns) {
 					assertEqualsWithPatterns("Content should match pattern" + errorMessageNamePart + " on line " + line, expectedLine, actualLine);
 				} else {
-					Assert.assertEquals("Content should be equal" + errorMessageNamePart + " on line " + line, expectedLine, actualLine);
+					String msg = "Content should be equal" + errorMessageNamePart + " on line " + line + 
+							". Expected: " + expectedLine +
+							" Actual: " + actualLine;
+					Assert.assertEquals(msg, expectedLine, actualLine);
 				}
 			}
 			line++;

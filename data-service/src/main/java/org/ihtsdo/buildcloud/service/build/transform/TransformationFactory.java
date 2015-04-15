@@ -29,11 +29,15 @@ public class TransformationFactory {
 		this.transformBufferSize = transformBufferSize;
 	}
 
-	public StreamingFileTransformation getPreProcessFileTransformation(final ComponentType componentType) {
+	public StreamingFileTransformation getPreProcessFileTransformation(final ComponentType componentType) throws NoSuchAlgorithmException {
 		if (componentType == ComponentType.CONCEPT) {
 			return getPreProcessConceptFileTransformation();
 		} else if (componentType == ComponentType.DESCRIPTION) {
 			return getPreProcessDescriptionFileTransformation();
+		} else if (componentType == ComponentType.RELATIONSHIP) {
+			// PreProcess transform is same as later transform - use repeatable UUID to lookup historic SCTID,
+			// or request from IDGen
+			return getRelationshipFileTransformation();
 		} else {
 			return null;
 		}

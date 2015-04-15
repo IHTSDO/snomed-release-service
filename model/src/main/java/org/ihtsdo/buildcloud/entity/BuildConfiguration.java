@@ -72,6 +72,10 @@ public class BuildConfiguration {
 	private boolean workbenchDataFixesRequired = false;
 	
 	@Type(type="yes_no")
+	@Column(name="require_input_files_fix")
+	private boolean inputFilesFixesRequired = false;
+	
+	@Type(type="yes_no")
 	@Column(name="create_inferred_relationships")
 	private boolean createInferredRelationships = false;
 	
@@ -248,7 +252,8 @@ public class BuildConfiguration {
 				+ ", previousPublishedPackage=" + previousPublishedPackage
 				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
 				+ justPackage + ", workbenchDataFixesRequired="
-				+ workbenchDataFixesRequired + ", createInferredRelationships="
+				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
+				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
 				+ createLegacyIds + "]";
 	}
@@ -301,5 +306,14 @@ public class BuildConfiguration {
 		public int hashCode() {
 			return refsetId.hashCode();
 		}
+	}
+
+
+	public boolean isInputFilesFixesRequired() {
+		return inputFilesFixesRequired;
+	}
+
+	public void setInputFilesFixesRequired(boolean inputFilesFixesRequired) {
+		this.inputFilesFixesRequired = inputFilesFixesRequired;
 	}
 }
