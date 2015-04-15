@@ -20,6 +20,7 @@ public interface ProductService extends EntityService<Product> {
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";
 	String WORKBENCH_DATA_FIXES_REQUIRED = "workbenchDataFixesRequired";
+	String INPUT_FILES_FIXES_REQUIRED = "inputFilesFixesRequired";
 	String CREATE_INFERRED_RELATIONSHIPS = "createInferredRelationships";
 	String CREATE_LEGACY_IDS = "createLegacyIds";
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";

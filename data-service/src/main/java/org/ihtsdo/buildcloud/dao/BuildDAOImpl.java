@@ -266,6 +266,18 @@ public class BuildDAOImpl implements BuildDAO {
 		return putOutputFile(build, file, false);
 	}
 
+
+	@Override
+	public String putInputFile(Build build, File file, final boolean calcMD5) throws IOException {
+		final String filename = file.getName();
+		final String inputFilePath = pathHelper.getBuildInputFilePath(build, filename);
+		try {
+			return buildFileHelper.putFile(file, inputFilePath, calcMD5);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading " + filename, e);
+		}
+	}
+
 	@Override
 	public void putTransformedFile(final Build build, final File file) throws IOException {
 		final String name = file.getName();
@@ -473,4 +485,5 @@ public class BuildDAOImpl implements BuildDAO {
 		loadBuildConfiguration(build);
 		loadQaTestConfig(build);
 	}
+
 }
