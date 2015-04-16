@@ -101,6 +101,7 @@ public class BuildDAOImplTest {
 			"\"newRF2InputFiles\":null," +
 			"\"justPackage\":false," +
 			"\"workbenchDataFixesRequired\":false," +
+			"\"inputFilesFixesRequired\":false," +
 			"\"createInferredRelationships\":false," +
 			"\"createLegacyIds\":false," +
 			"\"customRefsetCompositeKeys\":{}," +

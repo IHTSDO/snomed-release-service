@@ -53,6 +53,8 @@ public interface BuildDAO {
 	String putOutputFile(Build build, File file)
 			throws IOException;
 
+	String putInputFile(Build build, File file, final boolean calcMD5) throws IOException;
+
 	void putTransformedFile(Build build, File file) throws IOException;
 
 	InputStream getManifestStream(Build build);
