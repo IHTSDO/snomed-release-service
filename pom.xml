@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.1.43</version>
+	<version>0.1.44</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -18,6 +18,7 @@
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
+		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 	</properties>
 
 	<modules>
@@ -39,7 +40,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.snomed.util</groupId>
 			<artifactId>snomed-utilities</artifactId>
-			<version>1.0.7</version>
+			<version>${snomed-utilities.version}</version> 
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -48,11 +49,11 @@
 		</dependency>
 		<!-- Test -->
 		<dependency>
-      		<groupId>org.jmockit</groupId>
-     	 	<artifactId>jmockit</artifactId>
-      		<version>1.8</version>
-      		<scope>test</scope>
-      	</dependency>
+			<groupId>org.jmockit</groupId>
+			<artifactId>jmockit</artifactId>
+			<version>1.8</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
@@ -189,6 +190,7 @@
 						<include>**/*Test.java</include>
 						<include>**/*TestIntegration.java</include>
 					</includes>
+					<trimStackTrace>false</trimStackTrace>
 				</configuration>
 			</plugin>
 			<plugin>

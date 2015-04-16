@@ -4,9 +4,12 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_E
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +38,14 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.RF2ClassifierService.Relationship;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
 import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
@@ -48,8 +55,10 @@ import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.PostConditionException;
+import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -59,6 +68,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.io.Files;
 
 @Service
 @Transactional
@@ -102,6 +113,9 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private RF2ClassifierService classifierService;
 
+	@Autowired
+	private RelationshipHelper relationshipHelper;
+
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
@@ -130,6 +144,13 @@ public class BuildServiceImpl implements BuildService {
 			if (!product.getBuildConfiguration().isJustPackage()) {
 				// Perform Pre-condition testing
 				final Status preStatus = build.getStatus();
+				if (product.getBuildConfiguration().isInputFilesFixesRequired()) {
+					try {
+						doInputFileFixup(build);
+					} catch (Exception e) {
+						LOGGER.error("Failed to fix up input files", e);
+					}
+				}
 				runPreconditionChecks(build);
 				final Status newStatus = build.getStatus();
 				if (newStatus != preStatus) {
@@ -142,6 +163,48 @@ public class BuildServiceImpl implements BuildService {
 			MDC.remove(MDC_BUILD_KEY);
 		}
 		return build;
+	}
+
+	private void doInputFileFixup(Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
+		// Due to design choices made in the terminology server, we may see input files with null SCTIDs in the
+		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
+		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
+		LOGGER.debug("Performing fixup on input file prior to input file validation");
+		final String buildId = build.getId();
+		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
+		
+		String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
+
+		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
+
+		// We can't replace the file while we're reading it, so use a temp file
+		File tempDir = Files.createTempDir();
+		File tempFile = new File(tempDir, statedRelationshipInputFile);
+		FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
+		
+		// Generate inferred relationship ids using transform looking up previous IDs where available
+		Map<String, String> existingUuidToSctidMap = null;
+		String relationshipSnapshotFilename = statedRelationshipInputFile.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+		LOGGER.debug("Recovering previous stated relationship snapshot");
+		String previousStatedRelationshipFilePath = classifierService.getPreviousRelationshipFilePath(build, relationshipSnapshotFilename,
+				tempDir,
+				Relationship.STATED);
+		
+		LOGGER.debug("Creating map of previous stated relationships from {}", previousStatedRelationshipFilePath);
+		existingUuidToSctidMap = RelationshipHelper.buildUuidSctidMapFromPreviousRelationshipFile(previousStatedRelationshipFilePath);
+		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
+
+		final StreamingFileTransformation steamingFileTransformation = transformationFactory
+				.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
+
+		// Apply transformations
+		steamingFileTransformation.transformFile(statedRelationshipInputFileStream, tempOutputStream, statedRelationshipInputFile,
+				build.getBuildReport());
+
+		// Overwrite the original file, and delete local temp copy
+		dao.putInputFile(build, tempFile, false);
+		tempFile.delete();
+		tempDir.delete();
 	}
 
 	@Override
@@ -166,7 +229,7 @@ public class BuildServiceImpl implements BuildService {
 			String resultMessage = "Process completed successfully";
 			try {
 				executeBuild(build);
-			} catch (final BusinessServiceException e) {
+			} catch (final BusinessServiceException | NoSuchAlgorithmException e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
 						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
@@ -288,7 +351,7 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.info("End of Pre-condition checks");
 	}
 
-	private void executeBuild(final Build build) throws BusinessServiceException {
+	private void executeBuild(final Build build) throws BusinessServiceException, NoSuchAlgorithmException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
