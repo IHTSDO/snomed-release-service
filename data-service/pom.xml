@@ -41,7 +41,7 @@
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
 			<artifactId>otf-common</artifactId>
-			<version>0.0.8</version>
+			<version>${otf-common.version}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>spring-beans</artifactId>
@@ -123,7 +123,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
-			<version>1.7.0</version>
+			<version>1.9.31</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.jknack</groupId>
