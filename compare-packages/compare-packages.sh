@@ -21,7 +21,7 @@ rm -rf target || true
 mkdir -p target
 
 if [ $# -lt 4 ]; then
-	echo "Usage: compare-packages.sh <Left Name eg SRS> <Left Archive location> <Right Name eg Legacy> <Right Archive or Download Directory>"
+	echo "Usage: compare-packages.sh <Left Name eg SRS> <Left Archive location> <Right Name eg Legacy> <Right Archive or Download Directory> [-normaliseDates]"
 	exit 1
 fi
 
