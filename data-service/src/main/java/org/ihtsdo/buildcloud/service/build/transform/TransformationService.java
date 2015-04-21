@@ -283,6 +283,7 @@ public class TransformationService {
 			Map<String, String> existingUuidToSctidMap) {
 
 		final TransformationFactory transformationFactory = getTransformationFactory(build);
+		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
 
 		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, relationshipFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
