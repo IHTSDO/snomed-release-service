@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -24,6 +23,7 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
+import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
@@ -104,22 +104,35 @@ public class BuildDAOImpl implements BuildDAO {
 		// Save config file
 		final String configPath = pathHelper.getBuildConfigFilePath(build);
 		LOGGER.debug("Readme header from build config:"  +  build.getConfiguration().getReadmeHeader());
-		LOGGER.debug("Default JVM File Encoding: " + System.getProperty("file.encoding"));
-		final String configJson = toJson(build.getConfiguration());
-		LOGGER.debug("Config JSON:" + configJson);
-		putFile(configPath, configJson);
-		putFile(pathHelper.getQATestConfigFilePath(build),toJson(build.getQaTestConfig()));
+		File configJson = null;
+		try {
+			configJson = toJson(build.getConfiguration());
+			s3Client.putObject(buildBucketName, configPath, new FileInputStream(configJson), new ObjectMetadata());
+		} finally {
+			if (configJson != null) {
+				configJson.delete();
+			}
+		}
+		File qaConfigJson = null;
+		try {
+			qaConfigJson = toJson(build.getQaTestConfig());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), new FileInputStream(qaConfigJson), new ObjectMetadata());
+		} finally {
+			if (qaConfigJson != null) {
+				qaConfigJson.delete();
+			}
+		}
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
 	}
 
-	private String toJson(final Object obj) throws IOException {
-		final StringWriter stringWriter = new StringWriter();
+	private File toJson(final Object obj) throws IOException {
+		final File temp = File.createTempFile("tempJson", ".tmp"); 
 		final JsonFactory jsonFactory = objectMapper.getJsonFactory();
-		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(stringWriter)) {
+		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(temp, JsonEncoding.UTF8)) {
 			jsonGenerator.writeObject(obj);
 		}
-		return new String(stringWriter.toString().getBytes(), RF2Constants.UTF_8);
+		return temp;
 	}
 
 	@Override
