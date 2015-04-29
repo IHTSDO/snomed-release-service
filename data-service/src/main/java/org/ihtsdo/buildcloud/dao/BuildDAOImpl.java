@@ -103,7 +103,11 @@ public class BuildDAOImpl implements BuildDAO {
 	public void save(final Build build) throws IOException {
 		// Save config file
 		final String configPath = pathHelper.getBuildConfigFilePath(build);
-		putFile(configPath, toJson(build.getConfiguration()));
+		LOGGER.debug("Readme header from build config:"  +  build.getConfiguration().getReadmeHeader());
+		LOGGER.debug("Default JVM File Encoding: " + System.getProperty("file.encoding"));
+		final String configJson = toJson(build.getConfiguration());
+		LOGGER.debug("Config JSON:" + configJson);
+		putFile(configPath, configJson);
 		putFile(pathHelper.getQATestConfigFilePath(build),toJson(build.getQaTestConfig()));
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
