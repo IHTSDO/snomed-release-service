@@ -115,7 +115,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(stringWriter)) {
 			jsonGenerator.writeObject(obj);
 		}
-		return stringWriter.toString();
+		return new String(stringWriter.toString().getBytes(), RF2Constants.UTF_8);
 	}
 
 	@Override
@@ -268,7 +268,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 
 	@Override
-	public String putInputFile(Build build, File file, final boolean calcMD5) throws IOException {
+	public String putInputFile(final Build build, final File file, final boolean calcMD5) throws IOException {
 		final String filename = file.getName();
 		final String inputFilePath = pathHelper.getBuildInputFilePath(build, filename);
 		try {
