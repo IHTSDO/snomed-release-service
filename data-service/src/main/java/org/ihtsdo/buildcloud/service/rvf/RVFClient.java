@@ -178,7 +178,7 @@ public class RVFClient implements Closeable {
 		final String targetUrl = "/run-post";
 		
 		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName, targetUrl);
-		LOGGER.info("Posting input file {} to RVF at {} for {} check with run id {}.", zipFileName, post.getURI(), runId);
+		LOGGER.info("Posting input file {} to RVF at {} with run id {}.", zipFileName, post.getURI(), runId);
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
