@@ -94,11 +94,12 @@ public class RF2ClassifierService {
 								Relationship.INFERRED);
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
+							uuidToSctidMap = RelationshipHelper
+									.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath);
+							logger.debug("Successfully build map of previously allocated inferred relationship SCTIDs");
 						} else {
-							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found.");
+							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found - unable to reconcile prior allocated SCTIDs.");
 						}
-						uuidToSctidMap = RelationshipHelper
-								.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath);
 					}
 
 					String statedRelationshipDeltaPath = localStatedRelationshipFilePaths.iterator().next();

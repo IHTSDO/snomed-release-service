@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.1.45</version>
+	<version>0.1.47</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -18,6 +18,7 @@
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
+		<otf-common.version>0.0.9</otf-common.version>
 		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 	</properties>
 

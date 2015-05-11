@@ -175,6 +175,11 @@ public class BuildServiceImpl implements BuildService {
 		
 		String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
 
+		if (statedRelationshipInputFile == null) {
+			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
+			return;
+		}
+
 		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
