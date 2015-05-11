@@ -145,7 +145,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 		// This code extremely sensitive to timing issues because IdAssignmentBIOfflineDemoImpl only has one counter being accessed
 		// by multiple streams.
-		// executeAndVerfiyResults(effectiveTime2, expectedZipEntries2);
+		executeAndVerfiyResults(effectiveTime2, expectedZipEntries2);
 
 	}
 

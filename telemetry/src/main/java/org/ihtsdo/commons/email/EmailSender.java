@@ -29,8 +29,15 @@ public class EmailSender {
 		SimpleEmail email = new SimpleEmail();
 		email.setFrom(request.getFromEmail(), request.getFromName());
 		email.setSubject(request.getSubject());
-		email.addTo(request.getToEmail());
+		// Split multiple email addresses on either comma or semicolon
+		String[] toAddresses = request.getToEmail().split(",|;");
+		for (String thisToAddress : toAddresses) {
+			email.addTo(thisToAddress);
+		}
 		email.setMsg(request.getTextBody());
+
+		// Send email to multiple recipients even if one email address is invalid.
+		email.setSendPartial(true);
 
 		addStandardDetails(email);
 		email.send();
