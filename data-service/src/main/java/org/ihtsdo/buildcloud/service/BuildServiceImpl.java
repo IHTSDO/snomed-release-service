@@ -372,9 +372,9 @@ public class BuildServiceImpl implements BuildService {
 
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				final String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
-				if (relationshipSnapshotOutputFilename != null) {
-					generator.generateRelationshipFilesFromClassifierResult(relationshipSnapshotOutputFilename);
+				final String relationshipSnapshotFileFromClassifer = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+				if (relationshipSnapshotFileFromClassifer != null) {
+					generator.generateRelationshipFilesFromClassifierResult(relationshipSnapshotFileFromClassifer);
 				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
