@@ -244,6 +244,13 @@ public class Rf2FileExportRunner {
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
 		} 
+		// import Delta to generate snapshot and full
+		final InputStream deltaInputStream = buildDao.getOutputFileInputStream(build, deltaFilename);
+		try {
+			tableSchema =  rf2TableDAO.createTable(deltaFilename, deltaInputStream, false);
+		} catch (BadConfigurationException | IOException| FileRecognitionException | DatabasePopulatorException e) {
+			throw new ReleaseFileGenerationException("Failed to create table from " + deltaFilename, e);
+		}
 		// Import any previous full
 		if (!configuration.isFirstTimeRelease()) {
 			try {
