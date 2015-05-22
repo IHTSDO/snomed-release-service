@@ -7,6 +7,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Scanner;
+
 public class RepeatableRelationshipUUIDTransformTest {
 
 	private RepeatableRelationshipUUIDTransform transform;
@@ -40,5 +42,35 @@ public class RepeatableRelationshipUUIDTransformTest {
 		Assert.assertEquals(RF2Constants.NULL_STRING, valuesB2[0]);
 		transform.transformLine(valuesB2);
 		Assert.assertEquals("81342da0-c3df-5ce2-900a-95fd6be13885", valuesB2[0]);
+	}
+
+	public static void main(String[] args) throws TransformationException, NoSuchAlgorithmException {
+		RepeatableRelationshipUUIDTransformTest test = new RepeatableRelationshipUUIDTransformTest();
+		test.setup();
+		// create a scanner so we can read the command-line input
+		Scanner scanner = new Scanner(System.in);
+
+		// prompt for the conceptid, destination, relationship group and relationship type
+		System.out.print("Enter source concept id: ");
+		String sourceSCTID = scanner.next();
+
+		System.out.print("Enter destination id: ");
+		String destinationSCTID = scanner.next();
+
+		System.out.print("Enter type id: ");
+		String typeSCTID = scanner.next();
+
+		for (int i = 0; i <= 5; i++) {
+
+			String[] values = new String[8];
+			values[4] = sourceSCTID;
+			values[5] = destinationSCTID;
+			values[6] = Integer.toString(i);
+			values[7] = typeSCTID;
+
+			test.transform.transformLine(values);
+			System.out.println("Group: " + i + " UUID: " + values[0]);
+
+		}
 	}
 }
