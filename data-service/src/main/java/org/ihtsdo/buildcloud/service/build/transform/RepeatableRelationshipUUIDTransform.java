@@ -19,7 +19,7 @@ public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 		// Create repeatable UUID to ensure SCTIDs are reused.
 		// (Technique lifted from workbench release process.)
 		// sourceId + destinationId + typeId + relationshipGroup
-		if (columnValues[0].equals(RF2Constants.NULL_STRING) || columnValues[0].isEmpty()) {
+		if (columnValues[0] == null || columnValues[0].equals(RF2Constants.NULL_STRING) || columnValues[0].isEmpty()) {
 			try {
 				columnValues[0] = getCalculatedUuidFromRelationshipValues(columnValues);
 			} catch (UnsupportedEncodingException e) {
