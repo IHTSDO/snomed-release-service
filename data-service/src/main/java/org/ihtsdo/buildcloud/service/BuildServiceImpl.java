@@ -4,7 +4,6 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_E
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -147,7 +146,7 @@ public class BuildServiceImpl implements BuildService {
 				if (product.getBuildConfiguration().isInputFilesFixesRequired()) {
 					try {
 						doInputFileFixup(build);
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						LOGGER.error("Failed to fix up input files", e);
 					}
 				}
@@ -165,7 +164,7 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void doInputFileFixup(Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
+	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
 		// Due to design choices made in the terminology server, we may see input files with null SCTIDs in the
 		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
 		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
@@ -173,7 +172,7 @@ public class BuildServiceImpl implements BuildService {
 		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
 		
-		String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
+		final String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
 
 		if (statedRelationshipInputFile == null) {
 			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
@@ -183,15 +182,15 @@ public class BuildServiceImpl implements BuildService {
 		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
-		File tempDir = Files.createTempDir();
-		File tempFile = new File(tempDir, statedRelationshipInputFile);
-		FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
+		final File tempDir = Files.createTempDir();
+		final File tempFile = new File(tempDir, statedRelationshipInputFile);
+		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
 		
 		// Generate inferred relationship ids using transform looking up previous IDs where available
 		Map<String, String> existingUuidToSctidMap = null;
-		String relationshipSnapshotFilename = statedRelationshipInputFile.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+		final String relationshipSnapshotFilename = statedRelationshipInputFile.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 		LOGGER.debug("Recovering previous stated relationship snapshot");
-		String previousStatedRelationshipFilePath = classifierService.getPreviousRelationshipFilePath(build, relationshipSnapshotFilename,
+		final String previousStatedRelationshipFilePath = classifierService.getPreviousRelationshipFilePath(build, relationshipSnapshotFilename,
 				tempDir,
 				Relationship.STATED);
 		
@@ -373,9 +372,9 @@ public class BuildServiceImpl implements BuildService {
 
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				final String relationshipSnapshotOutputFilename = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
-				if (relationshipSnapshotOutputFilename != null) {
-					generator.generateDeltaAndFullFromSnapshot(relationshipSnapshotOutputFilename);
+				final String relationshipSnapshotFileFromClassifer = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+				if (relationshipSnapshotFileFromClassifer != null) {
+					generator.generateRelationshipFilesFromClassifierResult(relationshipSnapshotFileFromClassifer);
 				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
@@ -439,7 +438,7 @@ public class BuildServiceImpl implements BuildService {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
 			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
-				String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey() 
+				final String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey() 
 						+ "/" + build.getProduct().getBusinessKey()
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
