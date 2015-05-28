@@ -73,12 +73,12 @@ public class Rf2FileExportRunner {
 		}
 	}
 
-	public void generateDeltaAndFullFromSnapshot(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
+	public void generateRelationshipFilesFromClassifierResult(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
 		boolean success = false;
 		int failureCount = 0;
 		while (!success) {
 			try {
-				generateDeltaAndFull(snapshotOutputFilename);
+				generateInferredRelationshipFiles(snapshotOutputFilename);
 				success = true;
 			} catch (final ReleaseFileGenerationException e) {
 				failureCount = handleException(e, snapshotOutputFilename, failureCount);
@@ -216,7 +216,7 @@ public class Rf2FileExportRunner {
 		}
 	}
 
-	private void generateDeltaAndFull(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
+	private void generateInferredRelationshipFiles(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
 
 		final String deltaFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA);
 		final String fullFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.FULL);
@@ -243,8 +243,14 @@ public class Rf2FileExportRunner {
 			rf2FileWriter.exportDelta(results, tableSchema, deltaOutputStream.getOutputStream());
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
+		} 
+		// import Delta to generate snapshot and full
+		final InputStream deltaInputStream = buildDao.getOutputFileInputStream(build, deltaFilename);
+		try {
+			tableSchema =  rf2TableDAO.createTable(deltaFilename, deltaInputStream, false);
+		} catch (BadConfigurationException | IOException| FileRecognitionException | DatabasePopulatorException e) {
+			throw new ReleaseFileGenerationException("Failed to create table from " + deltaFilename, e);
 		}
-
 		// Import any previous full
 		if (!configuration.isFirstTimeRelease()) {
 			try {
@@ -254,15 +260,19 @@ public class Rf2FileExportRunner {
 				}
 				final InputStream previousFullStream = getPreviousFileStream(configuration.getPreviousPublishedPackage(), cleanFileName);
 				rf2TableDAO.appendData(tableSchema, previousFullStream, false);
-			} catch(IOException | DatabasePopulatorException | BadConfigurationException e) {
+			} catch (IOException | DatabasePopulatorException | BadConfigurationException e) {
 				throw new ReleaseFileGenerationException("Failed to import previous full " + fullFilename, e);
 			}
 		}
 
-		// Export full
+		// Export snapshot and full
 		results = rf2TableDAO.selectAllOrdered(tableSchema);
-		try (AsyncPipedStreamBean snapshotOutputStream = buildDao.getOutputFileOutputStream(build, fullFilename)) {
-			rf2FileWriter.exportFull(results, tableSchema, snapshotOutputStream.getOutputStream());
+		try (AsyncPipedStreamBean fullFileAsyncPipe = buildDao.getOutputFileOutputStream(build, fullFilename);
+			AsyncPipedStreamBean snapshotFileAsyncPipe = buildDao.getOutputFileOutputStream(build, snapshotOutputFilename)) {
+//			rf2FileWriter.exportFull(results, tableSchema, snapshotOutputStream.getOutputStream());
+			rf2FileWriter.exportFullAndSnapshot(results, tableSchema,
+					build.getConfiguration().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
+					snapshotFileAsyncPipe.getOutputStream());
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export previous full " + fullFilename, e);
 		}
