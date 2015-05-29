@@ -54,7 +54,7 @@ public class Rf2FileExportRunner {
 		final List<String> transformedFiles = getTransformedDeltaFiles();
 		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
-		for (final String thisFile : transformedFiles) {
+		for ( String thisFile : transformedFiles) {
 			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				continue;
 			}
@@ -62,8 +62,13 @@ public class Rf2FileExportRunner {
 			boolean success = false;
 			while (!success) {
 				try {
-					final boolean newFile = newRF2InputFiles.contains(thisFile.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
-					final boolean fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
+					boolean fileFirstTimeRelease = false;
+					String cleanFileName  = thisFile;
+					if (configuration.isBetaRelease()) {
+						cleanFileName = thisFile.substring(1);
+					}
+					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
 					success = true;
 				} catch (final ReleaseFileGenerationException e) {

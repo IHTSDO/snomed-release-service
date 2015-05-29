@@ -194,8 +194,11 @@ public class RF2ClassifierService {
 
 	private List<String> downloadFiles(final Build build, final File tempDir, final List<String> filenameLists) throws ProcessingException {
 		final List<String> localFilePaths = new ArrayList<>();
-		for (final String downloadFilename : filenameLists) {
-
+		boolean isBeta = build.getConfiguration().isBetaRelease();
+		for (String downloadFilename : filenameLists) {
+			if (isBeta) {
+				downloadFilename = "x" + downloadFilename;
+			}
 			final File localFile = new File(tempDir, downloadFilename);
 			try (InputStream inputFileStream = buildDAO.getOutputFileInputStream(build, downloadFilename);
 				 FileOutputStream out = new FileOutputStream(localFile)) {
