@@ -173,6 +173,11 @@ public class IntegrationTestHelper {
 		setProductProperty("{ " + jsonPair(ProductService.FIRST_TIME_RELEASE, Boolean.toString(isFirstTime)) + " }");
 	}
 
+	
+	public void setBetaRelease(final boolean isBeta) throws Exception {
+		setProductProperty("{ " + jsonPair(ProductService.BETA_RELEASE, Boolean.toString(isBeta)) + " }");
+	}
+	
 	public void setCreateInferredRelationships(final boolean isCreateInferredRelationships) throws Exception {
 		setProductProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships))
 				+ " }");
@@ -361,7 +366,7 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk())
 				.andReturn();
 
-		final Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file");
+		final Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file" );
 		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
 			 FileOutputStream tmp = new FileOutputStream("/tmp/zip.zip")) {
 			final byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
@@ -372,17 +377,7 @@ public class IntegrationTestHelper {
 	}
 
 	public void assertZipContents(final String expectedOutputPackageName, final ZipFile zipFile, final Class classpathResourceOwner) throws IOException {
-		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
-		while (entries.hasMoreElements()) {
-			final ZipEntry zipEntry = entries.nextElement();
-			if (!zipEntry.isDirectory()) {
-				final String zipEntryName = getFileName(zipEntry);
-				StreamTestUtils.assertStreamsEqualLineByLine(
-						zipEntryName,
-						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
-						zipFile.getInputStream(zipEntry));
-			}
-		}
+		assertZipContents(expectedOutputPackageName, zipFile, classpathResourceOwner, false);
 	}
 
 	private String getFileName(final ZipEntry zipEntry) {
@@ -400,6 +395,27 @@ public class IntegrationTestHelper {
 
 	public void configureAssertionGroups(final Map<String, String> assertionConfig, final String ... groupNames) {
 		
+	}
+
+	public void assertZipContents(String expectedOutputPackageName, ZipFile zipFile, Class classpathResourceOwner, boolean isBeta) throws IOException {
+		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
+		while (entries.hasMoreElements()) {
+			final ZipEntry zipEntry = entries.nextElement();
+			if (!zipEntry.isDirectory()) {
+				 String zipEntryName = getFileName(zipEntry);
+				if (isBeta) {
+					if (zipEntryName.contains("Readme_")) {
+						zipEntryName = zipEntryName.replace(".txt", "_beta.txt");
+					} else {
+						zipEntryName = zipEntryName.substring(1);
+					}
+				}
+				StreamTestUtils.assertStreamsEqualLineByLine(
+						zipEntryName,
+						classpathResourceOwner.getResourceAsStream(expectedOutputPackageName + "/" + zipEntryName),
+						zipFile.getInputStream(zipEntry));
+			}
+		}
 	}
 
 }

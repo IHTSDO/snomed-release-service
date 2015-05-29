@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class LegacyIdTransformationService {
 
+	private static final String BETA_PREFIX = "x";
 	private static final String STATED_RELATIONSHIP_DELTA_FILE_PREFIX = "sct2_StatedRelationship_Delta_INT_";
 	private static final String REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX = "der2_sRefset_SimpleMapDelta_INT_";
 	private static final String SNOMED_ID_REFSET_ID = "900000000000498005";
@@ -77,7 +78,8 @@ public class LegacyIdTransformationService {
 		}
 		
 		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
-		final String simpleRefsetMapDelta = REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
+		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
+		final String simpleRefsetMapDelta = fileNamePrefix + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
 		buildDAO.renameTransformedFile(build, simpleRefsetMapDelta, orignalTransformedDelta);
@@ -132,7 +134,8 @@ public class LegacyIdTransformationService {
 
 	private Map<Long, Long> getParentSctId(final List<Long> sourceSctIds, final Build build) throws TransformationException {
 		final ParentSctIdFinder finder = new ParentSctIdFinder();
-		final String statedRelationsipDelta = STATED_RELATIONSHIP_DELTA_FILE_PREFIX + build.getConfiguration().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
+		String fileNamePrifix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + STATED_RELATIONSHIP_DELTA_FILE_PREFIX : STATED_RELATIONSHIP_DELTA_FILE_PREFIX;
+		final String statedRelationsipDelta = fileNamePrifix + build.getConfiguration().getEffectiveTimeSnomedFormat() + RF2Constants.TXT_FILE_EXTENSION;
 		final InputStream transformedDeltaInput = buildDAO.getTransformedFileAsInputStream(build, statedRelationsipDelta);
 		if (transformedDeltaInput == null) {
 			LOGGER.error("No transformed file found for " + statedRelationsipDelta);
