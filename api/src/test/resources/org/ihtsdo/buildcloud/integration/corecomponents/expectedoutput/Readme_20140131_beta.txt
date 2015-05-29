@@ -1,0 +1,42 @@
+This is the readme for the first release © 2002-2014.
+Table of contents:
+
+    SnomedCT_Release_INT_20140131
+        RF2Release
+            Full
+                Refset
+                    Language
+                        xder2_cRefset_LanguageFull-en_INT_20140131.txt
+                    Map
+                        xder2_sRefset_SimpleMapFull_INT_20140131.txt
+                Terminology
+                    xsct2_Concept_Full_INT_20140131.txt
+                    xsct2_Description_Full-en_INT_20140131.txt
+                    xsct2_TextDefinition_Full-en_INT_20140131.txt
+                    xsct2_Relationship_Full_INT_20140131.txt
+                    xsct2_StatedRelationship_Full_INT_20140131.txt
+            Snapshot
+                Refset
+                    Language
+                        xder2_cRefset_LanguageSnapshot-en_INT_20140131.txt
+                    Map
+                        xder2_sRefset_SimpleMapSnapshot_INT_20140131.txt
+                Terminology
+                    xsct2_Concept_Snapshot_INT_20140131.txt
+                    xsct2_Description_Snapshot-en_INT_20140131.txt
+                    xsct2_TextDefinition_Snapshot-en_INT_20140131.txt
+                    xsct2_Relationship_Snapshot_INT_20140131.txt
+                    xsct2_StatedRelationship_Snapshot_INT_20140131.txt
+            Delta
+                Refset
+                    Language
+                        xder2_cRefset_LanguageDelta-en_INT_20140131.txt
+                    Map
+                        xder2_sRefset_SimpleMapDelta_INT_20140131.txt
+                Terminology
+                    xsct2_Concept_Delta_INT_20140131.txt
+                    xsct2_Description_Delta-en_INT_20140131.txt
+                    xsct2_TextDefinition_Delta-en_INT_20140131.txt
+                    xsct2_Relationship_Delta_INT_20140131.txt
+                    xsct2_StatedRelationship_Delta_INT_20140131.txt
+        Readme_20140131.txt
