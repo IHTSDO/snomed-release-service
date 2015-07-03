@@ -97,7 +97,8 @@ public class RF2ClassifierService {
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
 							uuidToSctidMap = RelationshipHelper
-									.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath);
+									.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath,
+											RF2Constants.RelationshipFileType.INFERRED);
 							logger.debug("Successfully build map of previously allocated inferred relationship SCTIDs");
 						} else {
 							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found - unable to reconcile prior allocated SCTIDs.");

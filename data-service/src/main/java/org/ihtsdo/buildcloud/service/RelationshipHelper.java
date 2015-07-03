@@ -26,11 +26,12 @@ public class RelationshipHelper {
 	
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 
-	public static Map<String, String> buildUuidSctidMapFromPreviousRelationshipFile(String previousRelationshipFilePath)
+	public static Map<String, String> buildUuidSctidMapFromPreviousRelationshipFile(String previousRelationshipFilePath,
+			RF2Constants.RelationshipFileType relFileType)
 			throws ProcessingException {
 		try {
 			Map<String, String> uuidSctidMap = new HashMap<>();
-			RepeatableRelationshipUUIDTransform relationshipUUIDTransform = new RepeatableRelationshipUUIDTransform();
+			RepeatableRelationshipUUIDTransform relationshipUUIDTransform = new RepeatableRelationshipUUIDTransform(relFileType);
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(previousRelationshipFilePath)))) {
 				String line;
 				String[] columnValues;

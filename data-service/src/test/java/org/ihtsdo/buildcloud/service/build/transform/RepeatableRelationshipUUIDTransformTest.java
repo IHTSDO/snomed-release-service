@@ -15,7 +15,7 @@ public class RepeatableRelationshipUUIDTransformTest {
 
 	@Before
 	public void setup() throws NoSuchAlgorithmException {
-		transform = new RepeatableRelationshipUUIDTransform();
+		transform = new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED);
 	}
 
 	@Test
