@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.RF2Constants.RelationshipFileType;
 import org.ihtsdo.buildcloud.service.helper.Type5UuidFactory;
 
 import java.io.UnsupportedEncodingException;
@@ -10,7 +11,11 @@ public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 
 	private Type5UuidFactory type5UuidFactory;
 
-	public RepeatableRelationshipUUIDTransform() throws NoSuchAlgorithmException {
+	private RelationshipFileType relationshipFileType;
+
+	private static final String STATED_RELATIONSHIP_MODIFIER = "S";
+
+	public RepeatableRelationshipUUIDTransform(RelationshipFileType stated) throws NoSuchAlgorithmException {
 		type5UuidFactory = new Type5UuidFactory();
 	}
 
@@ -29,7 +34,14 @@ public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 	}
 
 	public String getCalculatedUuidFromRelationshipValues(String[] columnValues) throws UnsupportedEncodingException {
-		return type5UuidFactory.get(columnValues[4] + columnValues[5] + columnValues[7] + columnValues[6]).toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append(columnValues[4]).append(columnValues[5]).append(columnValues[7]).append(columnValues[6]);
+
+		// Stated relationships need to be different from inferred ones, for the same triple + group
+		if (relationshipFileType == RF2Constants.RelationshipFileType.STATED) {
+			sb.append(STATED_RELATIONSHIP_MODIFIER);
+		}
+		return type5UuidFactory.get(sb.toString()).toString();
 	}
 
 	@Override

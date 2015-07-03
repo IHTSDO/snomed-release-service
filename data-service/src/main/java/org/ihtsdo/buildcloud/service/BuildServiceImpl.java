@@ -189,14 +189,9 @@ public class BuildServiceImpl implements BuildService {
 		// Generate inferred relationship ids using transform looking up previous IDs where available
 		Map<String, String> existingUuidToSctidMap = null;
 		final String relationshipSnapshotFilename = statedRelationshipInputFile.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-		LOGGER.debug("Recovering previous stated relationship snapshot");
-		final String previousStatedRelationshipFilePath = classifierService.getPreviousRelationshipFilePath(build, relationshipSnapshotFilename,
-				tempDir,
-				Relationship.STATED);
 		
-		LOGGER.debug("Creating map of previous stated relationships from {}", previousStatedRelationshipFilePath);
-		existingUuidToSctidMap = RelationshipHelper.buildUuidSctidMapFromPreviousRelationshipFile(previousStatedRelationshipFilePath);
-		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
+		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
+		// groups.
 
 		final StreamingFileTransformation steamingFileTransformation = transformationFactory
 				.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
