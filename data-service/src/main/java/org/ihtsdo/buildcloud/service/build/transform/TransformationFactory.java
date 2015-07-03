@@ -1,4 +1,6 @@
 package org.ihtsdo.buildcloud.service.build.transform;
+
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.build.transform.conditional.ConditionalTransformation;
 import org.ihtsdo.snomed.util.rf2.schema.*;
@@ -35,9 +37,9 @@ public class TransformationFactory {
 		} else if (componentType == ComponentType.DESCRIPTION) {
 			return getPreProcessDescriptionFileTransformation();
 		} else if (componentType == ComponentType.RELATIONSHIP) {
-			// PreProcess transform is same as later transform - use repeatable UUID to lookup historic SCTID,
-			// or request from IDGen
-			return getRelationshipFileTransformation();
+			// PreProcess transform is similar to transform using modified UUID (so it's
+			// different from inferred UUIDs) but not doing reconcilliation
+			return getPreProcessStatedRelationshipFileTransformation();
 		} else {
 			return null;
 		}
@@ -60,7 +62,7 @@ public class TransformationFactory {
 				transformation = getStatedRelationshipFileTransformation();
 				break;
 			case RELATIONSHIP:
-				transformation = getRelationshipFileTransformation();
+				transformation = getInferredRelationshipFileTransformation();
 				break;
 			case IDENTIFIER:
 				transformation = getIdentifierFileTransformation();
@@ -206,16 +208,26 @@ public class TransformationFactory {
 		return streamingFileTransformation;
 	}
 
-	private StreamingFileTransformation getRelationshipFileTransformation() throws NoSuchAlgorithmException {
+	private StreamingFileTransformation getInferredRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new RepeatableRelationshipUUIDTransform());
+				.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
 		if (existingUuidToSctidMap != null) {
 			streamingFileTransformation.addTransformation(new ReplaceStringTransform(0, existingUuidToSctidMap));
 		}
 		streamingFileTransformation
 			.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
+
+		return streamingFileTransformation;
+	}
+
+	private StreamingFileTransformation getPreProcessStatedRelationshipFileTransformation() throws NoSuchAlgorithmException {
+		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation().addTransformation(
+				new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.STATED));
+
+		streamingFileTransformation.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP,
+				cachedSctidFactory));
 
 		return streamingFileTransformation;
 	}
