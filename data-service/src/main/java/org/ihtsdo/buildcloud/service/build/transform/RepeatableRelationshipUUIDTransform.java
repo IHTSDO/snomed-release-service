@@ -15,7 +15,8 @@ public class RepeatableRelationshipUUIDTransform implements LineTransformation {
 
 	private static final String STATED_RELATIONSHIP_MODIFIER = "S";
 
-	public RepeatableRelationshipUUIDTransform(RelationshipFileType stated) throws NoSuchAlgorithmException {
+	public RepeatableRelationshipUUIDTransform(RelationshipFileType relationshipFileType) throws NoSuchAlgorithmException {
+		this.relationshipFileType = relationshipFileType;
 		type5UuidFactory = new Type5UuidFactory();
 	}
 
