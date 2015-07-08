@@ -33,8 +33,8 @@ public class QATestConfig {
 	@Column(name="previous_ext_release")
 	private String previousExtensionRelease;
 	
-	@Column(name="extension_baseline_release")
-	private String extensionBaseLineRelease;
+	@Column(name="extension_dependency_release")
+	private String extensionDependencyRelease;
 	
 	@Column(name = "storage_location")
 	private String storageLocation;
@@ -64,19 +64,19 @@ public class QATestConfig {
 	public void setPreviousExtensionRelease(final String previousExtensionRelease) {
 		this.previousExtensionRelease = previousExtensionRelease;
 	}
-	public String getExtensionBaseLineRelease() {
-		return extensionBaseLineRelease;
+	public String getExtensionDependencyRelease() {
+		return extensionDependencyRelease;
 	}
-	public void setExtensionBaseLineRelease(final String extBaseLineRelease) {
-		extensionBaseLineRelease = extBaseLineRelease;
+	public void setExtensionDependencyRelease(final String extDependencyRelease) {
+		extensionDependencyRelease = extDependencyRelease;
 	}
 	@Override
 	public String toString() {
 		return "QATestConfig [id=" + id + ", assertionGroupNames="
 				+ assertionGroupNames + ", previousInternationalRelease="
 				+ previousInternationalRelease + ", previousExtensionRelease="
-				+ previousExtensionRelease + ", extensionBaseLineRelease="
-				+ extensionBaseLineRelease + ", storageLocation=" + storageLocation + "]";
+				+ previousExtensionRelease + ", extensionDependencyRelease="
+				+ extensionDependencyRelease + ", storageLocation=" + storageLocation + "]";
 	}
 
 	public String getStorageLocation() {

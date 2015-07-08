@@ -37,7 +37,6 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.RF2ClassifierService.Relationship;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
@@ -431,25 +430,23 @@ public class BuildServiceImpl implements BuildService {
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			if (isQATestConfigured(qaTestConfig)) {
-				return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
-			} else {
-				throw new ConfigurationException ("No QA test configured. Was Prev Int Version specifield before execution started?");
-			}
+			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
+			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
 		}
 	}
 
-	private boolean isQATestConfigured(final QATestConfig qaTestConfig) {
+	private void validateQaTestConfig(final QATestConfig qaTestConfig , boolean isFirstTimeRelease) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
-			return false;
+			throw new ConfigurationException ("No QA test configured. Please check the assertion group name is specifield.");
 		}
-		if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionBaseLineRelease() == null) {
-			return false;
+		if (!isFirstTimeRelease) {
+			if (qaTestConfig.getPreviousInternationalRelease() == null) {
+				throw new ConfigurationException ("No previous international release is configured for non-first time release.");
+			}
+			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
+				throw new ConfigurationException ("No extention dependency release is configured for extension testing.");
+			}
 		}
-		if (qaTestConfig.getPreviousInternationalRelease() == null && qaTestConfig.getPreviousExtensionRelease() == null) {
-			return false;
-		}
-		return true;
 	}
 
 	private void copyFilesForJustPackaging(final Build build) {
