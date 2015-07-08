@@ -114,8 +114,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ProductService.ASSERTION_GROUP_NAMES)) {
 			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ProductService.ASSERTION_GROUP_NAMES));
 		}
-		if (newPropertyValues.containsKey(ProductService.EXTENSION_BASELINE_RELEASE)) {
-			qaTestConfig.setExtensionBaseLineRelease(newPropertyValues.get(ProductService.EXTENSION_BASELINE_RELEASE));
+		if (newPropertyValues.containsKey(ProductService.EXTENSION_DEPENDENCY_RELEASE)) {
+			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(ProductService.EXTENSION_DEPENDENCY_RELEASE));
 		}
 	}
 

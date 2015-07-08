@@ -11,4 +11,5 @@
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-4.0.xml"/> 
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-5.0.xml"/> 
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-6.0.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-7.0.xml"/>
 </databaseChangeLog>

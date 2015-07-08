@@ -12,12 +12,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -231,10 +229,10 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
 		}
 
-		final String extensionBaseLineRelease = qaTestConfig.getExtensionBaseLineRelease();
-		if (extensionBaseLineRelease != null) 
+		final String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
+		if (extensionDependencyRelease != null) 
 		{
-			multiPartBuilder.addTextBody("extensionBaseLineReleaseVersion", extensionBaseLineRelease);
+			multiPartBuilder.addTextBody("extensionDependencyReleaseVersion", extensionDependencyRelease);
 		}
 
 		multiPartBuilder.addTextBody("runId",runId);
