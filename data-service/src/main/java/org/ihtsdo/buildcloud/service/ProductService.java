@@ -29,7 +29,7 @@ public interface ProductService extends EntityService<Product> {
 	String PREVIOUS_INTERNATIONAL_RELEASE = "previousInternationalRelease";
 	String PREVIOUS_EXTENSION_RELEASE = "previousExtensionRelease";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
-	String EXTENSION_BASELINE_RELEASE = "extensionBaseLineRelease";
+	String EXTENSION_DEPENDENCY_RELEASE = "extensionDependencyRelease";
 
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	private static final String TEST_FILENAME = "test.zip";
 
 	@Before
-	public void setup() throws BusinessServiceException, IOException {
+	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
 		TestUtils.setTestUser();
 
 		String releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);

@@ -1,11 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 

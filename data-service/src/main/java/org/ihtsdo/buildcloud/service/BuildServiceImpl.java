@@ -37,7 +37,6 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
-import org.ihtsdo.buildcloud.service.RF2ClassifierService.Relationship;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
@@ -144,11 +143,8 @@ public class BuildServiceImpl implements BuildService {
 				// Perform Pre-condition testing
 				final Status preStatus = build.getStatus();
 				if (product.getBuildConfiguration().isInputFilesFixesRequired()) {
-					try {
-						doInputFileFixup(build);
-					} catch (final Exception e) {
-						LOGGER.error("Failed to fix up input files", e);
-					}
+					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
+					doInputFileFixup(build);
 				}
 				runPreconditionChecks(build);
 				final Status newStatus = build.getStatus();
@@ -156,7 +152,7 @@ public class BuildServiceImpl implements BuildService {
 					dao.updateStatus(build, newStatus);
 				}
 			}
-		} catch (final IOException e) {
+		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to create build.", e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
@@ -185,10 +181,6 @@ public class BuildServiceImpl implements BuildService {
 		final File tempDir = Files.createTempDir();
 		final File tempFile = new File(tempDir, statedRelationshipInputFile);
 		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
-		
-		// Generate inferred relationship ids using transform looking up previous IDs where available
-		Map<String, String> existingUuidToSctidMap = null;
-		final String relationshipSnapshotFilename = statedRelationshipInputFile.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 		
 		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
 		// groups.
@@ -438,25 +430,23 @@ public class BuildServiceImpl implements BuildService {
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			if (isQATestConfigured(qaTestConfig)) {
-				return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
-			} else {
-				throw new ConfigurationException ("No QA test configured. Was Prev Int Version specifield before execution started?");
-			}
+			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
+			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
 		}
 	}
 
-	private boolean isQATestConfigured(final QATestConfig qaTestConfig) {
+	private void validateQaTestConfig(final QATestConfig qaTestConfig , boolean isFirstTimeRelease) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
-			return false;
+			throw new ConfigurationException ("No QA test configured. Please check the assertion group name is specifield.");
 		}
-		if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionBaseLineRelease() == null) {
-			return false;
+		if (!isFirstTimeRelease) {
+			if (qaTestConfig.getPreviousInternationalRelease() == null) {
+				throw new ConfigurationException ("No previous international release is configured for non-first time release.");
+			}
+			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
+				throw new ConfigurationException ("No extention dependency release is configured for extension testing.");
+			}
 		}
-		if (qaTestConfig.getPreviousInternationalRelease() == null && qaTestConfig.getPreviousExtensionRelease() == null) {
-			return false;
-		}
-		return true;
 	}
 
 	private void copyFilesForJustPackaging(final Build build) {
