@@ -221,9 +221,10 @@ public class RVFClient implements Closeable {
 		 * qaTestConfig.getAssertionGroupNames().split(",")) { multiPartBuilder.addTextBody("groups", groupName); } }
 		 */
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
-
-		multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
-
+		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
+		if ( previousIntRelease != null ) {
+			multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
+		}
 		final String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
 		if (previousExtensionRelease != null) {
 			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
