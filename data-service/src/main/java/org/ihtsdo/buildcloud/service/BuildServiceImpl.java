@@ -446,6 +446,10 @@ public class BuildServiceImpl implements BuildService {
 			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
 				throw new ConfigurationException ("No extention dependency release is configured for extension testing.");
 			}
+			
+			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
+				throw new ConfigurationException ("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
+			}
 		}
 	}
 
