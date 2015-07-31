@@ -16,6 +16,7 @@ public class ReadmeGenerator {
 	private static final String INDENTATION = "    ";
 
 	public void generate(String readmeHeader, String readmeEndDate, ListingType manifestListing, OutputStream readmeOutputStream) throws IOException, BadConfigurationException {
+		readmeEndDate = (readmeEndDate != null) ? readmeEndDate : "";
 		readmeHeader = readmeHeader.replace("{readmeEndDate}", readmeEndDate);
 		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(readmeOutputStream, RF2Constants.UTF_8))) {
 			writer.write(readmeHeader);
