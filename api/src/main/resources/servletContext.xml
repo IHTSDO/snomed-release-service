@@ -1,14 +1,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 		xmlns:mvc="http://www.springframework.org/schema/mvc"
-		xmlns:jms="http://www.springframework.org/schema/jms"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
 		http://www.springframework.org/schema/mvc
 		http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
-		http://www.springframework.org/schema/jms
-		http://www.springframework.org/schema/jms/spring-jms.xsd
 		">
 
 	<mvc:annotation-driven>
@@ -22,22 +19,6 @@
 
 	<bean id="objectMapper" class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
 		<property name="indentOutput" value="true"/>
-	</bean>
-
-	<jms:annotation-driven/>
-
-	<bean class="org.springframework.jms.config.SimpleJmsListenerContainerFactory" id="jmsListenerContainerFactory">
-		<property name="connectionFactory" ref="jmsConnectionFactory"/>
-	</bean>
-
-	<bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
-		<property name="brokerURL" value="${orchestration.jms.url}"/>
-		<property name="userName" value="${orchestration.jms.username}"/>
-		<property name="password" value="${orchestration.jms.password}"/>
-	</bean>
-
-	<bean class="org.ihtsdo.buildcloud.messaging.BuildRunConsumer">
-		<property name="connectionFactory" ref="jmsConnectionFactory"/>
 	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator"/>
