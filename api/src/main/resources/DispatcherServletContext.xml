@@ -19,9 +19,8 @@
 
 	<import resource="servletContext.xml"/>
 	<import resource="swaggerContext.xml"/>
-
-	<import resource="jms-broker.xml"/>
-
+	<import resource="jms-api-context.xml"/>
+	<import resource="telemetry-jms-broker.xml"/>
 	<import resource="classpath*:dataServiceContext.xml"/>
 
 </beans>
