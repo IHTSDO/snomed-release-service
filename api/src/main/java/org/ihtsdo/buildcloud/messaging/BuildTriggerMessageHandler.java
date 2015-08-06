@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.jms.MessagingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ import org.springframework.util.Assert;
 import javax.jms.TextMessage;
 
 @Component
-public class BuildRunConsumer {
+public class BuildTriggerMessageHandler {
 
 	public static final String RELEASE_CENTER_KEY = "releaseCenterKey";
 	public static final String PRODUCT_KEY = "productKey";
@@ -33,7 +34,7 @@ public class BuildRunConsumer {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	@JmsListener(destination = "release/build")
+	@JmsListener(destination = "srs.release-build")
 	public void triggerBuild(TextMessage incomingMessage) {
 		logger.info("Received message {}", incomingMessage);
 		try {
