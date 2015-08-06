@@ -20,11 +20,11 @@
 		<property name="password" value="${orchestration.jms.password}"/>
 	</bean>
 
-	<bean class="org.ihtsdo.buildcloud.messaging.BuildRunConsumer"/>
+	<bean class="org.ihtsdo.buildcloud.messaging.BuildTriggerMessageHandler"/>
 
 	<!-- Use this bean to send a test message on context startup -->
 	<!--<bean class="org.ihtsdo.buildcloud.messaging.TestMessageSender"/>-->
 
-	<bean class="org.ihtsdo.buildcloud.messaging.MessagingHelper"/>
+	<bean class="org.ihtsdo.otf.jms.MessagingHelper"/>
 
 </beans>
