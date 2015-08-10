@@ -1,15 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
-import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+
+import java.io.InputStream;
+import java.util.List;
 
 public interface BuildService {
 
@@ -17,6 +15,14 @@ public interface BuildService {
 
 	Build createBuildFromProduct(String releaseCenterKey, String productKey) throws BusinessServiceException;
 
+	/**
+	 * Synchronous method which runs the build.
+	 * @param releaseCenterKey
+	 * @param productKey
+	 * @param buildId
+	 * @return
+	 * @throws BusinessServiceException
+	 */
 	Build triggerBuild(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey) throws ResourceNotFoundException;
