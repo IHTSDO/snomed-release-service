@@ -20,7 +20,7 @@ public class TestMessageSender implements ApplicationListener {
 	@Override
 	public void onApplicationEvent(ApplicationEvent applicationEvent) {
 		if (applicationEvent instanceof ContextRefreshedEvent) {
-			final String destinationName = "release/build";
+			final String destinationName = "srs.release-build";
 			messagingHelper.getJmsTemplate().convertAndSend(destinationName, "", new MessagePostProcessor() {
 				@Override
 				public Message postProcessMessage(Message message) throws JMSException {
