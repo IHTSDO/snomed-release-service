@@ -23,6 +23,11 @@
 			<artifactId>data-service</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.ihtsdo.otf.common</groupId>
+			<artifactId>otf-common</artifactId>
+			<version>0.0.14</version>
+		</dependency>
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -31,6 +36,10 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-jms</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>

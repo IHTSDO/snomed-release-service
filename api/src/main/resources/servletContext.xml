@@ -12,14 +12,14 @@
 		<mvc:message-converters>
 			<!--http://docs.spring.io/spring/docs/3.2.2.RELEASE/javadoc-api/org/springframework/http/converter/json/Jackson2ObjectMapperFactoryBean.html -->
 			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
-				<property name="objectMapper">
-					<bean class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
-						<property name="indentOutput" value="true"/>
-					</bean>
-				</property>
+				<property name="objectMapper" ref="objectMapper"/>
 			</bean>
 		</mvc:message-converters>
 	</mvc:annotation-driven>
+
+	<bean id="objectMapper" class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
+		<property name="indentOutput" value="true"/>
+	</bean>
 
 	<bean class="org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator"/>
 
