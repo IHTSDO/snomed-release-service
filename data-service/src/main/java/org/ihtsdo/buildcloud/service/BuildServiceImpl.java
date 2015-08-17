@@ -386,7 +386,7 @@ public class BuildServiceImpl implements BuildService {
 		String rvfResultMsg = "RVF validation configured to not run.";
 		if (!offlineMode || localRvf) {
 			try {
-				rvfResultMsg = runRVFPostConditionCheck(build, zipPackage);
+				rvfResultMsg = runRVFPostConditionCheck(build, zipPackage, dao.getManifestStream(build));
 				if (rvfResultMsg == null) {
 					rvfStatus = "Completed without errors.";
 				} else {
@@ -418,7 +418,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final File zipPackage) throws IOException,
+	private String runRVFPostConditionCheck(final Build build, final File zipPackage, InputStream manifestInputStream) throws IOException,
 			PostConditionException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
@@ -431,7 +431,8 @@ public class BuildServiceImpl implements BuildService {
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
 			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
-			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
+			
+			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig, manifestInputStream);
 		}
 	}
 
