@@ -130,7 +130,7 @@ public abstract class PreconditionCheckTest {
 		try (InputStream inputStream = new FileInputStream(tempFile)) {
 			productInputFileService.putInputFile(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, filename, 0L);
 		} finally {
-			tempFile.deleteOnExit();
+			tempFile.delete();
 		}
 	}
 

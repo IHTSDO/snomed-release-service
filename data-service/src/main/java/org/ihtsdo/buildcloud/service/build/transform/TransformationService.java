@@ -1,5 +1,22 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -17,14 +34,6 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.*;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class TransformationService {
 
@@ -142,20 +151,17 @@ public class TransformationService {
 				break;
 			}
 		}
+		
 		for (final String inputFileName : buildInputFileNames) {
-			try {
+			try{
 				LOGGER.info("Processing file: {}", inputFileName);
 				final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
-
 				if (tableSchema == null) {
 					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
 				} else {
-
 					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
-
 					final ComponentType componentType = tableSchema.getComponentType();
 					if (isPreProcessType(componentType)) {
-
 						final InputStream buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
 						final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(build, inputFileName);
 
@@ -173,7 +179,6 @@ public class TransformationService {
 				LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
 			}
 		}
-
 		// Phase 2
 		// Process all files
 		final List<Future> concurrentTasks = new ArrayList<>();
@@ -184,7 +189,7 @@ public class TransformationService {
 				// Recognised RF2 file
 
 				checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
-
+				final String outputFilename = isBeta ? BuildConfiguration.BETA_PREFIX + tableSchema.getFilename() : tableSchema.getFilename();
 				final Future<?> future = executorService.submit(new Runnable() {
 					@Override
 					public void run() {
@@ -194,11 +199,6 @@ public class TransformationService {
 								buildInputFileInputStream = dao.getLocalInputFileStream(build, inputFileName);
 							} else {
 								buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
-							}
-
-							String outputFilename = tableSchema.getFilename();
-							if (isBeta) {
-								outputFilename = BuildConfiguration.BETA_PREFIX + outputFilename;
 							}
 							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
 							final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
@@ -219,12 +219,12 @@ public class TransformationService {
 							// Catch blocks just log and let the next file get processed.
 							LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
 						} catch (ExecutionException | InterruptedException e) {
+							dao.renameTransformedFile(build, outputFilename, outputFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
 							LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
 						}
 					}
 				});
 				concurrentTasks.add(future);
-
 			} else {
 				// Not recognised as an RF2 file, copy across without transform
 				dao.copyInputFileToOutputFile(build, inputFileName);
