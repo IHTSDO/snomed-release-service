@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -70,11 +71,15 @@ public class RF2ClassifierService {
 			}
 		}
 
-		if (classifierFiles.isSufficientToClassify()) {
+		if (!classifierFiles.isSufficientToClassify()) {
+			logger.info("Stated relationship and concept files not present. Skipping classification.");
+			return null;
+		}
+			File tempDir = null;
 			try {
 				// Download snapshot files
+				tempDir = Files.createTempDir();
 				logger.info("Sufficient files for relationship classification. Downloading local copy...");
-				final File tempDir = Files.createTempDir();
 				final List<String> localConceptFilePaths = downloadFiles(build, tempDir, classifierFiles.getConceptSnapshotFilenames());
 				final List<String> localStatedRelationshipFilePaths = downloadFiles(build, tempDir, classifierFiles.getStatedRelationshipSnapshotFilenames());
 				final File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);
@@ -131,14 +136,13 @@ public class RF2ClassifierService {
 				} else {
 					logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
 							"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in build package logs for more details.");
+					return null;
 				}
 			} catch (ClassificationException | IOException e) {
 				throw new ProcessingException("Failed to generate inferred relationship snapshot.", e);
+			} finally {
+				FileUtils.deleteQuietly(tempDir);
 			}
-		} else {
-			logger.info("Stated relationship and concept files not present. Skipping classification.");
-		}
-		return null;
 	}
 
 

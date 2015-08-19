@@ -93,7 +93,6 @@ public class BuildDAOImpl implements BuildDAO {
 		executorService = Executors.newCachedThreadPool();
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-
 		this.s3Client = s3Client;
 		this.tempDir = Files.createTempDir();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
@@ -411,10 +410,13 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void renameTransformedFile(final Build build, final String sourceFileName, final String targetFileName) {
+	public void renameTransformedFile(final Build build, final String sourceFileName, final String targetFileName, boolean deleteOriginal) {
 		final String soureFilePath = pathHelper.getTransformedFilePath(build, sourceFileName);
 		final String targetFilePath = pathHelper.getTransformedFilePath(build, targetFileName);
 		buildFileHelper.copyFile(soureFilePath, targetFilePath);
+		if (deleteOriginal) {
+			buildFileHelper.deleteFile(soureFilePath);
+		}
 	}
 
 	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product) {
@@ -502,5 +504,4 @@ public class BuildDAOImpl implements BuildDAO {
 		loadBuildConfiguration(build);
 		loadQaTestConfig(build);
 	}
-
 }

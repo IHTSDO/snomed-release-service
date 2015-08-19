@@ -1,5 +1,17 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -19,16 +31,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
+
+	private static final String PUBLISHED_BUILD = "published_build";
 
 	private static final String SEPARATOR = "/";
 
@@ -106,6 +113,9 @@ public class PublishServiceImpl implements PublishService {
 					buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+					//copy build info to published bucket
+					backupPublishedBuild(build,publishedBucketName);
+					LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 				}
 				// copy MD5 file if available
 				if (md5FileName != null) {
@@ -123,6 +133,15 @@ public class PublishServiceImpl implements PublishService {
 
 	}
 
+	private void backupPublishedBuild(Build build, String publishedBucketName) {
+		String orginalBuildPath = buildS3PathHelper.getBuildPath(build).toString();
+		List<String> buildFiles =  buildFileHelper.listFiles(orginalBuildPath);
+		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + SEPARATOR + build.getProduct().getBusinessKey() + SEPARATOR + PUBLISHED_BUILD + SEPARATOR + build.getId();
+		for (String filename : buildFiles) {
+			buildFileHelper.copyFile(orginalBuildPath + SEPARATOR + filename , publishedBucketName, buildBckUpPath + SEPARATOR + filename);
+		}
+	}
+	
 	@Override
 	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException {
 		//We're expecting a zip file only
