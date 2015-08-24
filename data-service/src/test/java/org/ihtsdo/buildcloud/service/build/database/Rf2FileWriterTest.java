@@ -1,16 +1,15 @@
 package org.ihtsdo.buildcloud.service.build.database;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.database.map.RF2TableDAOTreeMapImpl;
-import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 
 public class Rf2FileWriterTest {
 
@@ -36,7 +35,7 @@ public class Rf2FileWriterTest {
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator(), null);
+	    rf2TableDAO = new RF2TableDAOTreeMapImpl( null);
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();

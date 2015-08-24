@@ -51,6 +51,7 @@ public class Rf2FileExportRunnerTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
 	
+	private static final String LANGUAGE_REFSET = "der2_cRefset_LanguageDelta-en_INT_20150731_transformed.txt";
 	private Product product;
 	@Autowired
 	private BuildDAO dao;
@@ -83,7 +84,7 @@ public class Rf2FileExportRunnerTest {
 		transformedFileFullPath = "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
 		publishedPath = "int/" + PREVIOUS_RELEASE + "/";
 	}
-
+	
 	@Test
 	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
 		buildConfiguration.setFirstTimeRelease(true);
@@ -119,11 +120,6 @@ public class Rf2FileExportRunnerTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));
-	}
-
-	@Test
-	public void testExportFullAndDeltaFromSnapshotAndPrevFull() {
-
 	}
 
 	private InputStream getExpectedFileInputStreamFromResource(final String fileName) throws FileNotFoundException {

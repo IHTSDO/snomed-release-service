@@ -108,7 +108,7 @@ public class Rf2FileExportRunner {
 			final InputStream transformedDeltaInputStream = buildDao.getTransformedFileAsInputStream(build,
 					transformedDeltaDataFile);
 
-			rf2TableDAO = new RF2TableDAOTreeMapImpl(uuidGenerator, customRefsetCompositeKeys);
+			rf2TableDAO = new RF2TableDAOTreeMapImpl(customRefsetCompositeKeys);
 			timer.split();
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
@@ -142,8 +142,6 @@ public class Rf2FileExportRunner {
 							getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName), currentSnapshotFileName,
 							effectiveTime);
 				}
-
-				rf2TableDAO.generateNewMemberIds(effectiveTime);
 			}
 
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
@@ -228,7 +226,7 @@ public class Rf2FileExportRunner {
 
 		// Import snapshot
 		final InputStream snapshotInputStream = buildDao.getOutputFileInputStream(build, snapshotOutputFilename);
-		final RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null, null);
+		final RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
 		TableSchema tableSchema;
 		try {
 			tableSchema = rf2TableDAO.createTable(snapshotOutputFilename, snapshotInputStream, false);
