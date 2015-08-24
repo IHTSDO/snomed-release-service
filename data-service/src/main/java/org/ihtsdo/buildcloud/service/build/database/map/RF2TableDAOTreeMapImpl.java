@@ -6,14 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,12 +18,10 @@ import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -42,11 +37,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private final SchemaFactory schemaFactory;
 
-	private final Map<String, List<Integer>> customRefsetCompositeKeys;
-
-	private final UUIDGenerator uuidGenerator;
-
-	private final Map<String, Pattern> refsetCompositeKeyPatternCache;
+	private Map<String, Pattern> refsetCompositeKeyPatternCache;
 
 	private TableSchema tableSchema;
 
@@ -54,17 +45,15 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private Map<Key, String> table;
 
-	private Set<Key> dirtyKeys;
+	private Map<StringKey,Key> dirtyKeys;
 
 	private final ReferenceSetCompositeKeyPatternFactory refsetCompositeKeyPatternFactory;
 
-	public RF2TableDAOTreeMapImpl(final UUIDGenerator uuidGenerator, final Map<String, List<Integer>> customRefsetCompositeKeys) {
-		this.uuidGenerator = uuidGenerator;
+	public RF2TableDAOTreeMapImpl(final Map<String, List<Integer>> customRefsetCompositeKeys) {
 		schemaFactory = new SchemaFactory();
 		table = new TreeMap<>();
-		this.customRefsetCompositeKeys = customRefsetCompositeKeys;
 		refsetCompositeKeyPatternCache = new HashMap<>();
-		refsetCompositeKeyPatternFactory = new ReferenceSetCompositeKeyPatternFactory(this.customRefsetCompositeKeys);
+		refsetCompositeKeyPatternFactory = new ReferenceSetCompositeKeyPatternFactory(customRefsetCompositeKeys);
 	}
 
 	@Override
@@ -110,7 +99,20 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	@Override
 	public void closeConnection() throws SQLException {
-		table = null;
+		if ( table != null) {
+			table.clear();
+			table = null;
+		}
+		
+		if (dirtyKeys != null) {
+			dirtyKeys.clear();
+			dirtyKeys = null;
+		}
+		
+		if (refsetCompositeKeyPatternCache != null) {
+			refsetCompositeKeyPatternCache.clear();
+			refsetCompositeKeyPatternCache = null;
+		}
 	}
 
 	@Override
@@ -153,10 +155,12 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 					keyPattern = getRefsetCompositeKeyPattern(tableSchema, refsetId);
 					compositeKey = getCompositeKey(keyPattern, line);
 					matcherKey = new StringKey(compositeKey);
-					newValues = table.get(matcherKey);
-					if (newValues != null) {
-						parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-						replaceDirtyKey(matcherKey, parts[0], effectiveTime);
+					if ( dirtyKeys.get(matcherKey) != null) {
+						newValues = table.get(dirtyKeys.get(matcherKey));
+						if (newValues != null) {
+							parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+							replaceDirtyKey(matcherKey, parts[0], effectiveTime);
+						}
 					}
 				} else {
 					throw new DatabasePopulatorException("Can't find refsetId id column");
@@ -220,34 +224,17 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		}
 	}
 
-	@Override
-	public void generateNewMemberIds(final String effectiveTime) throws DatabasePopulatorException {
-		if (!dirtyKeys.isEmpty()) {
-			LOGGER.info("{} dirty refset ids remain. Generating UUIDs for new members.", dirtyKeys.size());
-			while (dirtyKeys.iterator().hasNext()) {
-				final Key remainingDirtyKey = dirtyKeys.iterator().next();
-				final String newKey = uuidGenerator.uuid();
-				replaceDirtyKey(remainingDirtyKey, newKey, effectiveTime);
-			}
-		} else {
-			LOGGER.info("No dirty refset ids remain. No new members.", dirtyKeys.size());
-		}
-	}
 
 	private void replaceDirtyKey(final Key existingDirtyKey, final String newKeyUUID, final String effectiveTime) throws DatabasePopulatorException {
-		final String existingData = table.remove(existingDirtyKey);
+		final String existingData = table.remove(dirtyKeys.get(existingDirtyKey));
 		if (existingData != null) {
 			table.put(new UUIDKey(newKeyUUID, effectiveTime), existingData);
-			if (!dirtyKeys.remove(existingDirtyKey)) {
+			if (dirtyKeys.remove(existingDirtyKey) == null) {
 				throw new DatabasePopulatorException("Failed to remove dirty key " + existingDirtyKey + "'");
 			}
 		} else {
 			throw new DatabasePopulatorException("No match found when replacing dirty key '" + existingDirtyKey + "'");
 		}
-	}
-
-	public Map<Key, String> getTable() {
-		return table;
 	}
 
 	private String getHeader(final String rf2FilePath, final BufferedReader reader) throws IOException, DatabasePopulatorException {
@@ -259,7 +246,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 	}
 
 	private void insertData(final BufferedReader reader, final TableSchema tableSchema, final boolean deltaData, final boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
-		dirtyKeys = new LinkedHashSet<>();
+		dirtyKeys = new LinkedHashMap<>();
 		// Declare variables at top to prevent constant memory reallocation during recursion
 		String line, refsetId, compositeKey;
 		String[] parts;
@@ -268,6 +255,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		Pattern keyPattern;
 		while ((line = reader.readLine()) != null) {
 			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+			key = getKey(parts[0], parts[1]);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
 				// Get refset id
 				refsetIdMatcher = REFSET_ID_PATTERN.matcher(line);
@@ -275,18 +263,17 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 					refsetId = refsetIdMatcher.group(1);
 					keyPattern = getRefsetCompositeKeyPattern(tableSchema, refsetId);
 					compositeKey = getCompositeKey(keyPattern, line);
-					key = new StringKey(compositeKey);
-					if (!dirtyKeys.contains(key)) {
-						dirtyKeys.add(key);
-					} else {
-						LOGGER.info(RF2Constants.DATA_PROBLEM + "Duplicate refset member found. Rows are logically equivalent, the first will be discarded: [{}], [{}].", table.get(key), parts[2]);
-					}
+					StringKey composite = new StringKey(compositeKey);
+					if (dirtyKeys.containsKey(composite)) {
+						LOGGER.info(RF2Constants.DATA_PROBLEM + "Duplicate refset member found. Rows are logically equivalent, the first one will be discarded: [{}], [{}].",
+								table.get(dirtyKeys.get(composite)), parts[2]);
+						table.remove(dirtyKeys.get(composite));
+					} 
+					dirtyKeys.put(composite, key);
 				} else {
 					throw new DatabasePopulatorException("Can't find refsetId id column");
 				}
-			} else {
-				key = getKey(parts[0], parts[1]);
-			}
+			} 
 			table.put(key, parts[2]);
 		}
 	}
@@ -300,75 +287,6 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 		} else {
 			return null;
 		}
-	}
-
-	private Pattern productRefsetCompositeKeyPattern(final TableSchema tableSchema, final String refsetId) throws BadConfigurationException {
-		final Set<Integer> fieldIndexes = new TreeSet<>();
-
-		final List<Field> fields = tableSchema.getFields();
-		fieldIndexes.add(4); // refsetId is a must
-
-		boolean customCompositeKey = false;
-		if (customRefsetCompositeKeys.containsKey(refsetId)) {
-			customCompositeKey = true;
-			fieldIndexes.addAll(customRefsetCompositeKeys.get(refsetId));
-		} else {
-			if (fields.size() == 13 && "mapPriority".equals(fields.get(7).getName())) {
-				// Extended Map
-				fieldIndexes.add(5);
-				fieldIndexes.add(7);
-				fieldIndexes.add(10);
-			} else if (fields.size() == 9 && "attributeOrder".equals(fields.get(8).getName())) {
-				// Reference Set Descriptor - need the attributeOrder to make the row unique
-				fieldIndexes.add(5);
-				fieldIndexes.add(8);
-			} else if (fields.size() >= 7
-					&& ("mapTarget".equals(fields.get(6).getName()) || "targetComponentId".equals(fields.get(6).getName()))) {
-				// Simple Map or Association
-				fieldIndexes.add(5);
-				fieldIndexes.add(6);
-			} else if (fields.size() == 8 && fields.get(6).getName().equals("sourceEffectiveTime") && fields.get(7).getName().equals("targetEffectiveTime")) {
-				// Module Dependency
-				// id	effectiveTime	active	moduleId	[refsetId	referencedComponentId	sourceEffectiveTime	targetEffectiveTime]
-				fieldIndexes.add(5);
-				fieldIndexes.add(6);
-				fieldIndexes.add(7);
-			} else {
-				// Simple RefSet
-				fieldIndexes.add(5);
-			}
-		}
-
-		final int maxFieldIndex = fields.size() - 1;
-		final Integer maxConfiguredFieldIndex = Collections.max(fieldIndexes);
-		if (maxConfiguredFieldIndex > maxFieldIndex) {
-			throw new BadConfigurationException("Reference set composite key index " + maxConfiguredFieldIndex + " is out of bounds for file " + tableSchema.getFilename() + ".");
-		}
-
-		final List<String> fieldNames = new ArrayList<>();
-		String patternString = "";
-		boolean alreadyMatchingTab = false;
-		for (int a = 0; !fieldIndexes.isEmpty(); a++) {
-			if (a > 0) {
-				if (alreadyMatchingTab) {
-					alreadyMatchingTab = false;
-				} else {
-					patternString += "\t";
-				}
-			}
- 			if (!fieldIndexes.contains(a)) {
-				patternString += "[^\t]*";
-			} else {
-				fieldIndexes.remove(a);
-				fieldNames.add(a + " (" + fields.get(a).getName() + ")");
-				patternString += "([^\t]*\t?)";
-				alreadyMatchingTab = true;
-			}
-		}
-		patternString += ".*";
-
-		LOGGER.info("Reference Set {} in {} using {} composite key with fields {}, pattern {}", refsetId, tableSchema.getFilename(), customCompositeKey ? "custom" : "standard", fieldNames, patternString);
-		return Pattern.compile(patternString);
 	}
 
 	private String getCompositeKey(final Pattern keyPattern, final String line) throws DatabasePopulatorException {
