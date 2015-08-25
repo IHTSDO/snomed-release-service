@@ -44,6 +44,8 @@ public class RVFClient implements Closeable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
 
+	private static final String UNDER_SCORE = "_";
+
 	private final String releaseValidationFrameworkUrl;
 
 	private final CloseableHttpClient httpClient;
@@ -169,13 +171,13 @@ public class RVFClient implements Closeable {
 		httpClient.close();
 	}
 
-	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig) throws FileNotFoundException {
+	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig, InputStream manifestInputStream) throws FileNotFoundException {
 
 		final String runId = Long.toString(System.currentTimeMillis());
 		final String zipFileName = zipPackage.getName();
 		final String targetUrl = "/run-post";
 		
-		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, zipFileName, targetUrl);
+		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, targetUrl, manifestInputStream);
 		LOGGER.info("Posting input file {} to RVF at {} with run id {}.", zipFileName, post.getURI(), runId);
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
@@ -207,31 +209,26 @@ public class RVFClient implements Closeable {
 	}
 
 	private HttpPost createHttpPostRequest(final File zipPackage,
-			final QATestConfig qaTestConfig, final String runId,
-			final String zipFileName, final String targetUrl)
+			final QATestConfig qaTestConfig, final String runId, final String targetUrl, InputStream manifestInputStream)
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipFileName));
-
-		// Currently getting knocked back with HTTP400 so making this call more like the RVF Menu client which is working fine.
-		/*
-		 * if(qaTestConfig.getAssertionGroupNames() != null) { for(final String groupName :
-		 * qaTestConfig.getAssertionGroupNames().split(",")) { multiPartBuilder.addTextBody("groups", groupName); } }
-		 */
+		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipPackage.getName()));
+		multiPartBuilder.addPart("manifest", new InputStreamBody(manifestInputStream, "manifest.xml"));
+		
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
 		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
-		if ( previousIntRelease != null ) {
+		if ( previousIntRelease != null && previousIntRelease.split(UNDER_SCORE).length > 1 ) {
 			multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
 		}
 		final String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
-		if (previousExtensionRelease != null) {
+		if (previousExtensionRelease != null && previousExtensionRelease.split(UNDER_SCORE).length > 1) {
 			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
 		}
 
 		final String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
-		if (extensionDependencyRelease != null) 
+		if (extensionDependencyRelease != null && extensionDependencyRelease.split(UNDER_SCORE).length > 1) 
 		{
 			multiPartBuilder.addTextBody("extensionDependencyReleaseVersion", extensionDependencyRelease);
 		}

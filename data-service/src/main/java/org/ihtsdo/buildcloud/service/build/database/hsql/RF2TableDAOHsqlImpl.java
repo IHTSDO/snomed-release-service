@@ -1,14 +1,5 @@
 package org.ihtsdo.buildcloud.service.build.database.hsql;
 
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
-import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
-import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
-import org.ihtsdo.otf.utils.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +10,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
+import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 
@@ -127,11 +131,6 @@ public class RF2TableDAOHsqlImpl implements RF2TableDAO {
 	@Override
 	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException {
 		previousSnapshotFileStream.close();
-		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
-	}
-
-	@Override
-	public void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException {
 		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 

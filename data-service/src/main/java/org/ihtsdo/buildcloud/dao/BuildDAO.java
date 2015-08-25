@@ -79,12 +79,11 @@ public interface BuildDAO {
 
 	InputStream getTransformedFileAsInputStream(Build build, String relativeFilePath);
 
-	public InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
+	InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Build build);
 	
-	void renameTransformedFile(Build build, String sourceFileName, String targetFileName);
+	void renameTransformedFile(Build build, String sourceFileName, String targetFileName, boolean deleteOriginal);
 
 	void loadQaTestConfig(Build build) throws IOException;
-
 }

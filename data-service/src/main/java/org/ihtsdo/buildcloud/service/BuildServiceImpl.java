@@ -371,38 +371,42 @@ public class BuildServiceImpl implements BuildService {
 		// Generate readme file
 		generateReadmeFile(build);
 
-		File zipPackage;
+		File zipPackage = null;
 		try {
-			final Zipper zipper = new Zipper(build, dao);
-			zipPackage = zipper.createZipFile();
-			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
-			dao.putOutputFile(build, zipPackage, true);
-			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-		} catch (JAXBException | IOException | ResourceNotFoundException e) {
-			throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
-		}
-
-		String rvfStatus = "N/A";
-		String rvfResultMsg = "RVF validation configured to not run.";
-		if (!offlineMode || localRvf) {
 			try {
-				rvfResultMsg = runRVFPostConditionCheck(build, zipPackage);
-				if (rvfResultMsg == null) {
-					rvfStatus = "Completed without errors.";
-				} else {
-					rvfStatus = "Completed, errors detected.";
-				}
-			} catch (final Exception e) {
-				LOGGER.error("Failure during RVF Post Condition Testing", e);
-				rvfStatus = "Processing Failed.";
-				rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
-			}
-		}
-		final BuildReport report = build.getBuildReport();
-		report.add("post_validation_status", rvfStatus);
-		report.add("rvf_response", rvfResultMsg);
+				final Zipper zipper = new Zipper(build, dao);
+				zipPackage = zipper.createZipFile();
+				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
+				dao.putOutputFile(build, zipPackage, true);
+				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
+			} catch (JAXBException | IOException | ResourceNotFoundException e) {
+				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
+			} 
 
-		LOGGER.info("End of running build {}", build.getUniqueId());
+			String rvfStatus = "N/A";
+			String rvfResultMsg = "RVF validation configured to not run.";
+			if (!offlineMode || localRvf) {
+				try {
+					rvfResultMsg = runRVFPostConditionCheck(build, zipPackage, dao.getManifestStream(build));
+					if (rvfResultMsg == null) {
+						rvfStatus = "Completed without errors.";
+					} else {
+						rvfStatus = "Completed, errors detected.";
+					}
+				} catch (final Exception e) {
+					LOGGER.error("Failure during RVF Post Condition Testing", e);
+					rvfStatus = "Processing Failed.";
+					rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
+				}
+			}
+			final BuildReport report = build.getBuildReport();
+			report.add("post_validation_status", rvfStatus);
+			report.add("rvf_response", rvfResultMsg);
+			LOGGER.info("End of running build {}", build.getUniqueId());
+		}
+		finally {
+			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
+		}
 	}
 
 	private void checkManifestPresent(final Build build) throws BusinessServiceException {
@@ -418,7 +422,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final File zipPackage) throws IOException,
+	private String runRVFPostConditionCheck(final Build build, final File zipPackage, InputStream manifestInputStream) throws IOException,
 			PostConditionException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
@@ -431,7 +435,8 @@ public class BuildServiceImpl implements BuildService {
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
 			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
-			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig);
+			
+			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig, manifestInputStream);
 		}
 	}
 

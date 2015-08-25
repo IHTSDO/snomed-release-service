@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
-import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +27,7 @@ public class ReferenceSetCompositeKeyPatternFactoryTest {
 	@Before
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
-		dao = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator(), customRefsetCompositeKeys);
+		dao = new RF2TableDAOTreeMapImpl(customRefsetCompositeKeys);
 		refsetCompositeKeyPatternFactory = new ReferenceSetCompositeKeyPatternFactory(customRefsetCompositeKeys);
 	}
 
