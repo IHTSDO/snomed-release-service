@@ -82,7 +82,7 @@ public class LegacyIdTransformationService {
 		final String simpleRefsetMapDelta = fileNamePrefix + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
-		buildDAO.renameTransformedFile(build, simpleRefsetMapDelta, orignalTransformedDelta);
+		buildDAO.renameTransformedFile(build, simpleRefsetMapDelta, orignalTransformedDelta, false);
 		try (
 				final OutputStream outputStream = buildDAO.getTransformedFileOutputStream(build, simpleRefsetMapDelta).getOutputStream();
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {

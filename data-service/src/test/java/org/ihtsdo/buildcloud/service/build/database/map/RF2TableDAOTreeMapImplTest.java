@@ -1,14 +1,5 @@
 package org.ihtsdo.buildcloud.service.build.database.map;
 
-import com.google.common.collect.Lists;
-import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
-import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
-import org.ihtsdo.buildcloud.test.StreamTestUtils;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -16,6 +7,15 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 public class RF2TableDAOTreeMapImplTest {
 
@@ -25,7 +25,7 @@ public class RF2TableDAOTreeMapImplTest {
 	@Before
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
-		dao = new RF2TableDAOTreeMapImpl(new PesudoUUIDGenerator(), customRefsetCompositeKeys);
+		dao = new RF2TableDAOTreeMapImpl(customRefsetCompositeKeys);
 	}
 
 	@Test
@@ -38,8 +38,6 @@ public class RF2TableDAOTreeMapImplTest {
 
 		String previousSnapshot = "der2_Refset_SimpleSnapshot_INT_20140131.txt";
 		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
-
-		dao.generateNewMemberIds(effectiveTime);
 
 		String expectedNewDelta = "der2_Refset_SimpleDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
@@ -57,8 +55,6 @@ public class RF2TableDAOTreeMapImplTest {
 
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
 		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
-
-		dao.generateNewMemberIds(effectiveTime);
 
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
@@ -78,10 +74,9 @@ public class RF2TableDAOTreeMapImplTest {
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
 		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
 
-		dao.generateNewMemberIds(effectiveTime);
-
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731_custom_key.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
+		
 		StreamTestUtils.assertStreamsEqualLineByLine(expectedNewDelta, thisClass.getResourceAsStream(expectedNewDelta),
 				new RF2TableResultsReaderHack(results));
 	}

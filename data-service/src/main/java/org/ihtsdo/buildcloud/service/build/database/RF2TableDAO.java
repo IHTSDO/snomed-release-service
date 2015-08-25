@@ -1,13 +1,13 @@
 package org.ihtsdo.buildcloud.service.build.database;
 
-import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.text.ParseException;
+
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 public interface RF2TableDAO {
 
@@ -54,15 +54,6 @@ public interface RF2TableDAO {
 	 * @throws IOException
 	 */
 	void resolveEmptyValueId(InputStream previousFileStream, String effectiveTime) throws IOException;
-
-	/**
-	 * This is a workaround for Workbench. New member ids can only be generated once reconcileRefsetMemberIds has been used to identify
-	 * which members are new.
-	 * This functionality should be deleted when the Workbench authoring tool is replaced.
-	 * @param effectiveTime
-	 * @throws DatabasePopulatorException
-	 */
-	void generateNewMemberIds(String effectiveTime) throws DatabasePopulatorException;
 
 }
 
