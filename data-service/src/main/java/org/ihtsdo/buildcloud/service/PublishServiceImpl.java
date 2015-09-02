@@ -35,7 +35,7 @@ import org.springframework.util.StreamUtils;
 @Transactional
 public class PublishServiceImpl implements PublishService {
 
-	private static final String PUBLISHED_BUILD = "published_build";
+	private static final String PUBLISHED_BUILD = "published_build_backup";
 
 	private static final String SEPARATOR = "/";
 
@@ -113,9 +113,6 @@ public class PublishServiceImpl implements PublishService {
 					buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-					//copy build info to published bucket
-					backupPublishedBuild(build,publishedBucketName);
-					LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 				}
 				// copy MD5 file if available
 				if (md5FileName != null) {
@@ -124,6 +121,10 @@ public class PublishServiceImpl implements PublishService {
 					buildFileHelper.copyFile(source, publishedBucketName, target);
 					LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
 				}
+				
+				//copy build info to published bucket
+				backupPublishedBuild(build,publishedBucketName);
+				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
@@ -136,9 +137,10 @@ public class PublishServiceImpl implements PublishService {
 	private void backupPublishedBuild(Build build, String publishedBucketName) {
 		String orginalBuildPath = buildS3PathHelper.getBuildPath(build).toString();
 		List<String> buildFiles =  buildFileHelper.listFiles(orginalBuildPath);
-		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + SEPARATOR + build.getProduct().getBusinessKey() + SEPARATOR + PUBLISHED_BUILD + SEPARATOR + build.getId();
+		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + PUBLISHED_BUILD + SEPARATOR 
+				+ build.getProduct().getBusinessKey() + SEPARATOR + build.getId() + SEPARATOR;
 		for (String filename : buildFiles) {
-			buildFileHelper.copyFile(orginalBuildPath + SEPARATOR + filename , publishedBucketName, buildBckUpPath + SEPARATOR + filename);
+			buildFileHelper.copyFile(orginalBuildPath + filename , publishedBucketName, buildBckUpPath  + filename);
 		}
 	}
 	
