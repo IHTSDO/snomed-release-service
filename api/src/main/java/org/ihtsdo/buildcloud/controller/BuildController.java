@@ -16,7 +16,6 @@ import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
-import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -29,6 +28,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.mangofactory.swagger.annotations.ApiIgnore;
@@ -159,8 +159,9 @@ public class BuildController {
 	@ResponseBody
 	@ApiIgnore
 	public Map<String, Object> triggerProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
-		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId);
+			@PathVariable final String buildId, @RequestParam(value = "failureExportMax", required = false) final Integer failureExportMax, final HttpServletRequest request) throws BusinessServiceException {
+		//when failureExportMax is set to less than zero means exporting all results. The default value is 10 when not set
+		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax);
 
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
