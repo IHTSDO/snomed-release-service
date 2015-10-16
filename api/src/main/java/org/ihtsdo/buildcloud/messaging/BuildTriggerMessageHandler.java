@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.messaging;
 
+import javax.jms.TextMessage;
+
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
@@ -13,11 +15,10 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import javax.jms.TextMessage;
-
 @Component
 public class BuildTriggerMessageHandler {
 
+	private static final String RVF_FAILURE_EXPORT_MAX = "RvfFailureExportMax";
 	public static final String RELEASE_CENTER_KEY = "releaseCenterKey";
 	public static final String PRODUCT_KEY = "productKey";
 	public static final String BUILD_ID = "buildId";
@@ -54,7 +55,9 @@ public class BuildTriggerMessageHandler {
 			final String buildId = incomingMessage.getStringProperty(BUILD_ID);
 			Assert.notNull(buildId, BUILD_ID + PROPERTY_IS_REQUIRED);
 
-			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId);
+			String failureExportMax = incomingMessage.getStringProperty(RVF_FAILURE_EXPORT_MAX);
+			Integer exportMax = failureExportMax == null ? null : Integer.valueOf(failureExportMax);
+			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, exportMax);
 
 			messagingHelper.sendResponse(incomingMessage, build);
 		} catch (Exception e) {

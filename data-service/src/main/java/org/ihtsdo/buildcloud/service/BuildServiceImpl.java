@@ -199,7 +199,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
 			dao.loadConfiguration(build);
@@ -219,7 +219,7 @@ public class BuildServiceImpl implements BuildService {
 			String resultStatus = "completed";
 			String resultMessage = "Process completed successfully";
 			try {
-				executeBuild(build);
+				executeBuild(build, failureExportMax);
 			} catch (final BusinessServiceException | NoSuchAlgorithmException e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
@@ -342,7 +342,7 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.info("End of Pre-condition checks");
 	}
 
-	private void executeBuild(final Build build) throws BusinessServiceException, NoSuchAlgorithmException {
+	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
@@ -387,7 +387,7 @@ public class BuildServiceImpl implements BuildService {
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode || localRvf) {
 				try {
-					rvfResultMsg = runRVFPostConditionCheck(build, zipPackage, dao.getManifestStream(build));
+					rvfResultMsg = runRVFPostConditionCheck(build, zipPackage, dao.getManifestStream(build), failureExportMax);
 					if (rvfResultMsg == null) {
 						rvfStatus = "Completed without errors.";
 					} else {
@@ -422,7 +422,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final File zipPackage, InputStream manifestInputStream) throws IOException,
+	private String runRVFPostConditionCheck(final Build build, final File zipPackage, InputStream manifestInputStream, Integer failureExportMax) throws IOException,
 			PostConditionException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
@@ -436,7 +436,7 @@ public class BuildServiceImpl implements BuildService {
 			}
 			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
 			
-			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig, manifestInputStream);
+			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig, manifestInputStream, failureExportMax);
 		}
 	}
 
