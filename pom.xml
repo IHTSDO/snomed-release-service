@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>0.1.54-SNAPSHOT</version>
+	<version>0.1.55-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
