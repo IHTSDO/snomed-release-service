@@ -171,13 +171,13 @@ public class RVFClient implements Closeable {
 		httpClient.close();
 	}
 
-	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig, InputStream manifestInputStream) throws FileNotFoundException {
+	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig, InputStream manifestInputStream, Integer failureExportMax) throws FileNotFoundException {
 
 		final String runId = Long.toString(System.currentTimeMillis());
 		final String zipFileName = zipPackage.getName();
 		final String targetUrl = "/run-post";
 		
-		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, targetUrl, manifestInputStream);
+		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, targetUrl, manifestInputStream,failureExportMax);
 		LOGGER.info("Posting input file {} to RVF at {} with run id {}.", zipFileName, post.getURI(), runId);
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
@@ -209,7 +209,7 @@ public class RVFClient implements Closeable {
 	}
 
 	private HttpPost createHttpPostRequest(final File zipPackage,
-			final QATestConfig qaTestConfig, final String runId, final String targetUrl, InputStream manifestInputStream)
+			final QATestConfig qaTestConfig, final String runId, final String targetUrl, InputStream manifestInputStream, Integer failureExportMax)
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
@@ -234,6 +234,9 @@ public class RVFClient implements Closeable {
 		}
 
 		multiPartBuilder.addTextBody("runId",runId);
+		if (failureExportMax != null && failureExportMax.intValue() != 0) {
+			multiPartBuilder.addTextBody("failureExportMax",String.valueOf(failureExportMax));
+		}
 
 		multiPartBuilder.addTextBody("storageLocation", qaTestConfig.getStorageLocation());
 
