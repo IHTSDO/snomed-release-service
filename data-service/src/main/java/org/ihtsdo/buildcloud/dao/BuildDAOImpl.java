@@ -312,8 +312,10 @@ public class BuildDAOImpl implements BuildDAO {
 		//The first file in the manifest directory we'll call our manifest
 		if (!files.isEmpty()) {
 			final String manifestFilePath = directoryPath + files.iterator().next();
+			LOGGER.info("Opening manifest file found at " + manifestFilePath);
 			return buildFileHelper.getFileStream(manifestFilePath);
 		} else {
+			LOGGER.error("Failed to find manifest file for " + build.getId());
 			return null;
 		}
 	}
