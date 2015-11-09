@@ -102,20 +102,20 @@ for file in `cat ${processOrderFile}`; do
 
 		echo "Line count diff: $[$leftFileCount-$rightFileCount]"
 
+		echo -n "Content differences count (x2): "
 		sort ${leftFile} > tmp.txt
 		mv tmp.txt ${leftFile}
 		sort ${rightFile} > tmp.txt 
 		mv tmp.txt ${rightFile}
-		echo -n "Content differences count (x2): "
 		diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
 
-		if [[ ${leftFile} == *Refset_* ]]
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]]
 		then
+			echo -n "Content without id column differences count (x2): "
 			leftFileTrim="${leftFile}_no_first_col.txt"
 			rightFileTrim="${rightFile}_no_first_col.txt"
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
-			echo -n "Content without id column differences count (x2): "
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
 		fi
 		echo
