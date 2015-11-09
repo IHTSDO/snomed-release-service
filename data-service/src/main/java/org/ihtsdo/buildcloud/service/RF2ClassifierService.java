@@ -115,12 +115,12 @@ public class RF2ClassifierService {
 							.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
 							.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 
-					final File inferredRelationshipsOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename);
+					final File classifierInferredRelationshipResultOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename.replace(RF2Constants.TXT_FILE_EXTENSION,  "_classifier_result.txt"));
 					final File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
 					final ClassificationRunner classificationRunner = new ClassificationRunner(coreModuleSctid, effectiveTimeSnomedFormat,
 							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
-							inferredRelationshipsOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
+							classifierInferredRelationshipResultOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
 					classificationRunner.execute();
 
 					logger.info("Classification finished.");
@@ -128,9 +128,9 @@ public class RF2ClassifierService {
 					uploadLog(build, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
 
 					// Upload inferred relationships file with null ids
-					buildDAO.putTransformedFile(build, inferredRelationshipsOutputFile);
+					buildDAO.putTransformedFile(build, classifierInferredRelationshipResultOutputFile);
 
-					transformationService.transformInferredRelationshipFile(build, inferredRelationshipSnapshotFilename, uuidToSctidMap);
+					transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierInferredRelationshipResultOutputFile), inferredRelationshipSnapshotFilename, uuidToSctidMap);
 
 					return inferredRelationshipSnapshotFilename;
 				} else {
