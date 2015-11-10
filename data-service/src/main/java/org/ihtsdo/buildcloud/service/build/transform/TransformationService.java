@@ -296,6 +296,7 @@ public class TransformationService {
 					relationshipFilename,
 					report);
 		} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
+			dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
 			LOGGER.error("Failed to transform inferred relationship file.", e);
 		}
 	}
