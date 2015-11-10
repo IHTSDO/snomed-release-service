@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -279,22 +280,23 @@ public class TransformationService {
 		return moduleIdAndUuidMap;
 	}
 
-	public void transformInferredRelationshipFile(final Build build, final String relationshipFilename,
+	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
 			Map<String, String> existingUuidToSctidMap) {
 
 		final TransformationFactory transformationFactory = getTransformationFactory(build);
 		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
 
-		try (AsyncPipedStreamBean outputFileOutputStream = dao.getOutputFileOutputStream(build, relationshipFilename)) {
+		try (AsyncPipedStreamBean outputFileOutputStream = dao.getTransformedFileOutputStream(build, relationshipFilename)) {
 			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
 					new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));
 			final BuildReport report = build.getBuildReport();
 			fileTransformation.transformFile(
-					dao.getTransformedFileAsInputStream(build, relationshipFilename),
+					localClassifierResultInputStream,
 					outputFileOutputStream.getOutputStream(),
 					relationshipFilename,
 					report);
 		} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
+			dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
 			LOGGER.error("Failed to transform inferred relationship file.", e);
 		}
 	}

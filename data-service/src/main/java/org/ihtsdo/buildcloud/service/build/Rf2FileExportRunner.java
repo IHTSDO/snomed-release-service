@@ -78,15 +78,15 @@ public class Rf2FileExportRunner {
 		}
 	}
 
-	public void generateRelationshipFilesFromClassifierResult(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
+	public void generateRelationshipFilesFromTransformedClassifierResult(final String transformedSnapshotFilename) throws ReleaseFileGenerationException {
 		boolean success = false;
 		int failureCount = 0;
 		while (!success) {
 			try {
-				generateInferredRelationshipFiles(snapshotOutputFilename);
+				generateInferredRelationshipFiles(transformedSnapshotFilename);
 				success = true;
 			} catch (final ReleaseFileGenerationException e) {
-				failureCount = handleException(e, snapshotOutputFilename, failureCount);
+				failureCount = handleException(e, transformedSnapshotFilename, failureCount);
 			}
 		}
 	}
@@ -225,7 +225,7 @@ public class Rf2FileExportRunner {
 		final String fullFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.FULL);
 
 		// Import snapshot
-		final InputStream snapshotInputStream = buildDao.getOutputFileInputStream(build, snapshotOutputFilename);
+		final InputStream snapshotInputStream = buildDao.getTransformedFileAsInputStream(build, snapshotOutputFilename);
 		final RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
 		TableSchema tableSchema;
 		try {
