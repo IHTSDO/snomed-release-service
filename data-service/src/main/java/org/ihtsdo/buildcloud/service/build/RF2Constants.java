@@ -39,6 +39,7 @@ public class RF2Constants {
 	public static final CharSequence REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER = "RefsetDescriptor";
 	public static final CharSequence MODULE_DEPENDENCY_FILE_IDENTIFIER = "ModuleDependency";
 	public static final CharSequence COMPLEX_MAP_FILE_IDENTIFIER = "ComplexMap";
+	public static final String  RELASHIONSHIP_DELTA_PREFIX = "sct2_Relationship_Delta_INT_";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED

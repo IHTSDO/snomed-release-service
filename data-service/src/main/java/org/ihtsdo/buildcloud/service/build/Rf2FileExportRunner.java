@@ -55,7 +55,7 @@ public class Rf2FileExportRunner {
 		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION) || thisFile.startsWith(RF2Constants.RELASHIONSHIP_DELTA_PREFIX)) {
 				continue;
 			}
 			int failureCount = 0;
@@ -230,6 +230,13 @@ public class Rf2FileExportRunner {
 		TableSchema tableSchema;
 		try {
 			tableSchema = rf2TableDAO.createTable(snapshotOutputFilename, snapshotInputStream, false);
+			// additional relationship fix 
+			//add existing additional relationships from the input inferred delta if there is any to the new delta
+			InputStream additionalRelationshipInputStream = buildDao.getTransformedFileAsInputStream(build, deltaFilename);
+			if (additionalRelationshipInputStream != null) {
+				LOGGER.info("Appending additional relationships to relationship delta file for build id:" + build.getId() );
+				rf2TableDAO.appendData(tableSchema, additionalRelationshipInputStream, false);
+			}
 		} catch (IOException | FileRecognitionException | DatabasePopulatorException | NumberFormatException | BadConfigurationException e) {
 			throw new ReleaseFileGenerationException("Failed to create table from " + snapshotOutputFilename, e);
 		}
@@ -247,6 +254,7 @@ public class Rf2FileExportRunner {
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
 		} 
+		
 		// import Delta to generate snapshot and full
 		final InputStream deltaInputStream = buildDao.getOutputFileInputStream(build, deltaFilename);
 		try {
