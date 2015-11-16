@@ -118,6 +118,17 @@ for file in `cat ${processOrderFile}`; do
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
 		fi
+		
+		if [[ ${leftFile} == *sct2_Relationship* ]]
+		then
+			echo -n "Content without id or group column differences count (x2): "
+			leftFileTrim2="${leftFile}_no_1_7_col.txt"
+			rightFileTrim2="${rightFile}_no_1_7_col.txt"
+			#Ideally I'd use cut's --complement here but it doesn't exist for mac
+			cut -f2,3,4,5,6,8,9,10 ${leftFile} | sort > ${leftFileTrim2}
+			cut -f2,3,4,5,6,8,9,10 ${rightFile} | sort > ${rightFileTrim2}
+			diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${file}_no_1_7_col.txt | wc -l
+		fi
 		echo
 	else
 		echo "Skipping ${file} - no counterpart in ${rightName}"
