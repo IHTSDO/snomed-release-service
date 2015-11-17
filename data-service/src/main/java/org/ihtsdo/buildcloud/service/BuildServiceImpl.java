@@ -430,10 +430,15 @@ public class BuildServiceImpl implements BuildService {
 				String line;
 				boolean isFirstLine = true;
 				while ((line = reader.readLine()) != null) {
-					if (isFirstLine || ADDITIONAL_RELATIONSHIP.equals(line.split(RF2Constants.COLUMN_SEPARATOR)[8])) {
+					if ( isFirstLine) {
 						writer.write(line);
 						writer.write(RF2Constants.LINE_ENDING);
 						isFirstLine = false;
+					}
+					String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR);
+					if (ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && RF2Constants.BOOLEAN_FALSE.equals(columnValues[2])) {
+						writer.write(line);
+						writer.write(RF2Constants.LINE_ENDING);
 					}
 				}
 			}
