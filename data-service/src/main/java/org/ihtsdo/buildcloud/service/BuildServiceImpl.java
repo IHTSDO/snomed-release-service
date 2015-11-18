@@ -3,11 +3,15 @@ package org.ihtsdo.buildcloud.service;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_EXTENSION;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.README_FILENAME_PREFIX;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,6 +76,8 @@ import com.google.common.io.Files;
 @Service
 @Transactional
 public class BuildServiceImpl implements BuildService {
+
+	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 
@@ -352,11 +358,15 @@ public class BuildServiceImpl implements BuildService {
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
 			transformationService.transformFiles(build, inputFileSchemaMap);
-
 			// Convert Delta input files to Full, Snapshot and Delta release files
 			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
-
+			
+			//filter out additional relationships from the transformed delta
+			String inferedDelta = getInferredDeltaFromInput( inputFileSchemaMap);
+			if (inferedDelta != null) {
+				 retrieveAdditionalRelationshipsFromTransformedDelta(build, inferedDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2));
+			}
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
 				final String transformedClassifierSnapshotResult = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
@@ -407,6 +417,50 @@ public class BuildServiceImpl implements BuildService {
 		finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
+	}
+
+	private void retrieveAdditionalRelationshipsFromTransformedDelta(Build build, String inferedDelta) throws BusinessServiceException {
+		String originalDelta = inferedDelta + "_before_filter";
+		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
+		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, inferedDelta).getOutputStream();
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
+		final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
+		if (inputStream != null) {
+			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+				String line;
+				boolean isFirstLine = true;
+				while ((line = reader.readLine()) != null) {
+					if ( isFirstLine) {
+						writer.write(line);
+						writer.write(RF2Constants.LINE_ENDING);
+						isFirstLine = false;
+					}
+					String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR);
+					if (ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && RF2Constants.BOOLEAN_FALSE.equals(columnValues[2])) {
+						writer.write(line);
+						writer.write(RF2Constants.LINE_ENDING);
+					}
+				}
+			}
+		}
+		} catch (final IOException e) {
+			throw new BusinessServiceException("Error occurred when reading original relationship delta transformed file:" + originalDelta, e);
+		}
+	}
+
+	private String getInferredDeltaFromInput(Map<String, TableSchema> inputFileSchemaMap) {
+		for (final String inputFilename : inputFileSchemaMap.keySet()) {
+			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
+
+			if (inputFileSchema == null) {
+				continue;
+			}
+
+			if (inputFileSchema.getComponentType() == ComponentType.RELATIONSHIP) {
+				return inputFilename;
+			}
+		}
+			return null;
 	}
 
 	private void checkManifestPresent(final Build build) throws BusinessServiceException {

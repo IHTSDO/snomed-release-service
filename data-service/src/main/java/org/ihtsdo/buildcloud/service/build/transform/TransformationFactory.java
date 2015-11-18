@@ -1,14 +1,19 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.build.database.ShortFormatSCTIDPartitionIdentifier;
-import org.ihtsdo.buildcloud.service.build.transform.conditional.ConditionalTransformation;
-import org.ihtsdo.snomed.util.rf2.schema.*;
-
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.database.ShortFormatSCTIDPartitionIdentifier;
+import org.ihtsdo.buildcloud.service.build.transform.conditional.ConditionalTransformation;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.DataType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 public class TransformationFactory {
 
@@ -216,8 +221,11 @@ public class TransformationFactory {
 		if (existingUuidToSctidMap != null) {
 			streamingFileTransformation.addTransformation(new ReplaceStringTransform(0, existingUuidToSctidMap));
 		}
+		
 		streamingFileTransformation
-			.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory));
+			.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
+		// effectiveTime
+		.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true));
 
 		return streamingFileTransformation;
 	}
