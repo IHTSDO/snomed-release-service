@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
-import org.ihtsdo.idgen.ws.CreateSCTIDFaultException;
-import org.ihtsdo.idgen.ws.CreateSCTIDListFaultException;
-
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +33,7 @@ public class SCTIDTransformation implements BatchLineTransformation {
 				Long sctid = sctidFactory.getSCTID(uuidString, partitionId, moduleId);
 
 				columnValues[componentIdCol] = sctid.toString();
-			} catch (CreateSCTIDFaultException | RemoteException | InterruptedException e) {
+			} catch (Exception e) {
 				throw new TransformationException("SCTID creation request failed.", e);
 			}
 		}
@@ -72,7 +68,7 @@ public class SCTIDTransformation implements BatchLineTransformation {
 					}
 				}
 			}
-		} catch (RemoteException | CreateSCTIDListFaultException | InterruptedException e) {
+		} catch (Exception e) {
 			throw new TransformationException("SCTID list creation request failed.", e);
 		}
 	}

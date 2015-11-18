@@ -24,8 +24,8 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
-import org.ihtsdo.idgeneration.IdAssignmentBI;
 import org.ihtsdo.otf.rest.exception.BadInputFileException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EffectiveDateNotMatchedException;
@@ -47,7 +47,7 @@ public class TransformationService {
 	private final ExecutorService executorService;
 
 	@Autowired
-	private IdAssignmentBI idAssignmentBI;
+	private IdServiceRestClient idRestClient;
 
 	@Autowired
 	private BuildDAO dao;
@@ -304,8 +304,7 @@ public class TransformationService {
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String buildId =  build.getId();
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
-				buildId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient);
 
 		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
