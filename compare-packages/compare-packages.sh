@@ -102,21 +102,32 @@ for file in `cat ${processOrderFile}`; do
 
 		echo "Line count diff: $[$leftFileCount-$rightFileCount]"
 
+		echo -n "Content differences count (x2): "
 		sort ${leftFile} > tmp.txt
 		mv tmp.txt ${leftFile}
 		sort ${rightFile} > tmp.txt 
 		mv tmp.txt ${rightFile}
-		echo -n "Content differences count (x2): "
 		diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
 
-		if [[ ${leftFile} == *Refset_* ]]
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]]
 		then
+			echo -n "Content without id column differences count (x2): "
 			leftFileTrim="${leftFile}_no_first_col.txt"
 			rightFileTrim="${rightFile}_no_first_col.txt"
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
-			echo -n "Content without id column differences count (x2): "
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
+		fi
+		
+		if [[ ${leftFile} == *sct2_Relationship* ]]
+		then
+			echo -n "Content without id or group column differences count (x2): "
+			leftFileTrim2="${leftFile}_no_1_7_col.txt"
+			rightFileTrim2="${rightFile}_no_1_7_col.txt"
+			#Ideally I'd use cut's --complement here but it doesn't exist for mac
+			cut -f2,3,4,5,6,8,9,10 ${leftFile} | sort > ${leftFileTrim2}
+			cut -f2,3,4,5,6,8,9,10 ${rightFile} | sort > ${rightFileTrim2}
+			diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${file}_no_1_7_col.txt | wc -l
 		fi
 		echo
 	else
