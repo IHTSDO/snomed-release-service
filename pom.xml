@@ -18,7 +18,7 @@
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
-		<otf-common.version>0.0.9</otf-common.version>
+		<otf-common.version>0.0.20</otf-common.version>
 		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 	</properties>
 
@@ -28,6 +28,7 @@
 		<module>data-service</module>
 		<module>api</module>
 		<module>web</module>
+		
 	</modules>
 
 	<scm>
