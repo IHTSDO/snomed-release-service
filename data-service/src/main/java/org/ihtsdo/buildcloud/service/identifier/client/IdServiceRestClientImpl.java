@@ -44,30 +44,33 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final int timeOutInSeconds = 60;
 	private int maxTries;
 	private int retryDelaySeconds;
+	private String userName;
+	private String password;
 	
-	public IdServiceRestClientImpl(String idServiceUrl, String username, String password) throws RestClientException {
+	public IdServiceRestClientImpl(String idServiceUrl, String username, String password) {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		gson = new GsonBuilder().setPrettyPrinting().create();
-		resty.authenticate(idServiceUrl, username, password.toCharArray());
-		token = logIn(username,password);
+		this.userName = username;
+		this.password = password;
+		
 	}
-
+	
 	@Override
-	public String logIn(String username, String password) throws RestClientException {
-		JSONResource response = null;
-		String token = null;
-		try {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("username", username);
-			jsonObject.put("password", password);
-			response = resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject)));
-			token = (String) response.get("token");
-		} catch (Exception e) {
-			throw new RestClientException("Failed to login for user name:" + username, e);
+	public String logIn() throws RestClientException {
+		if (token == null) {
+			LOGGER.info("Id service rest client logs in to get security token." );
+			try {
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("username", this.userName);
+				jsonObject.put("password", this.password);
+				token = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject))).get("token");
+				LOGGER.info("Security token is acquired successfully for id service" );
+			} catch (Exception e) {
+				throw new RestClientException("Failed to login for user name:" + this.userName, e);
+			}
 		}
-		this.token = token;
 		return token;
 	}
 	
@@ -223,6 +226,20 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	public void setRetryDelaySeconds(int retryDelaySeconds) {
 		this.retryDelaySeconds = retryDelaySeconds;
 	}
-	
-	
+
+	@Override
+	public void logOut() throws RestClientException {
+		if (token != null) {
+			LOGGER.info("Id service rest client logs out" );
+			try {
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("token", this.token);
+				resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject)));
+				token = null;
+				LOGGER.info("Id service rest client log out successfully." );
+			} catch (Exception e) {
+				throw new RestClientException("Failed to login out" + this.userName, e);
+			}
+		}
+	}
 }

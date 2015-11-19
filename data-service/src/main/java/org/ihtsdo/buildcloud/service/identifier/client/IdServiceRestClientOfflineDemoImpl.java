@@ -83,12 +83,6 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	}
 
 	@Override
-	public String logIn(String userName, String passWord)
-			throws RestClientException {
-		return "token";
-	}
-
-	@Override
 	public Map<UUID, String> getOrCreateSchemeIds(List<UUID> uuids, SchemeIdType schemeType, String comment) throws RestClientException {
 		if (SchemeIdType.CTV3ID == schemeType) {
 			return createCtv3Ids(uuids);
@@ -97,6 +91,16 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 		} else {
 			throw NOT_IMPLEMENTED_EXCEPTION;
 		}
+	}
+
+	@Override
+	public String logIn() throws RestClientException {
+		return "token";
+	}
+
+	@Override
+	public void logOut() throws RestClientException {
+		
 	}
 
 

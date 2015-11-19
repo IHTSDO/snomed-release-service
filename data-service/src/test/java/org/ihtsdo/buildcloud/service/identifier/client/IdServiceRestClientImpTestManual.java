@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,14 +14,19 @@ public class IdServiceRestClientImpTestManual {
 	
 	private IdServiceRestClient client;
 	private String idServiceApiUrl = "http://162.243.20.236:3000/api";
-	private String userName ="yourUSerName";
-	private String password ="yourPassword";
+	private String userName ="userName";
+	private String password ="password";
 	
 	@Before
 	public void setUp() throws Exception {
 		client = new IdServiceRestClientImpl(idServiceApiUrl, userName, password);
+		client.logIn();
 	}
 	
+	@After
+	public void tearDown() throws Exception {
+		client.logOut();
+	}
 	@Test
 	public void testCreateSctId() throws Exception {
 		
