@@ -51,6 +51,7 @@ public class LegacyIdTransformationService {
 		LOGGER.info("Start CTV3ID generation");
 		Map<UUID, String> uuidCtv3IdMap = new HashMap<>();
 		try {
+			idRestClient.logIn();
 			uuidCtv3IdMap = idRestClient.getOrCreateSchemeIds(newConceptUuids,SchemeIdType.CTV3ID, build.getUniqueId());
 		} catch (RestClientException e) {
 			throw new TransformationException("Failed to generate CTV3 IDs", e);
@@ -64,6 +65,12 @@ public class LegacyIdTransformationService {
 			throw new TransformationException("Failed to generate Snomed IDs", e);
 		}
 		LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.keySet().size());
+		try {
+			idRestClient.logOut();
+		} catch (RestClientException e) {
+			LOGGER.warn("Id service rest client failed to log out", e);
+		}
+		
 		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
 		final String simpleRefsetMapDelta = fileNamePrefix + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;

@@ -20,6 +20,7 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
 import org.ihtsdo.classifier.CycleCheck;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
@@ -51,7 +52,7 @@ public class RF2ClassifierService {
 	/**
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 */
-	public String generateInferredRelationshipSnapshot(final Build build, final Map<String, TableSchema> inputFileSchemaMap) throws ProcessingException {
+	public String generateInferredRelationshipSnapshot(final Build build, final Map<String, TableSchema> inputFileSchemaMap) throws BusinessServiceException {
 		final ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
 		final BuildConfiguration configuration = build.getConfiguration();
 
