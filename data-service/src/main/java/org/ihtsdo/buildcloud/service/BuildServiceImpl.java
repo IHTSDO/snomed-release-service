@@ -365,7 +365,9 @@ public class BuildServiceImpl implements BuildService {
 			//filter out additional relationships from the transformed delta
 			String inferedDelta = getInferredDeltaFromInput( inputFileSchemaMap);
 			if (inferedDelta != null) {
-				 retrieveAdditionalRelationshipsFromTransformedDelta(build, inferedDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2));
+				 String transformedDelta = inferedDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2);
+				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
+				retrieveAdditionalRelationshipsFromTransformedDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
@@ -420,7 +422,8 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private void retrieveAdditionalRelationshipsFromTransformedDelta(Build build, String inferedDelta) throws BusinessServiceException {
-		String originalDelta = inferedDelta + "_before_filter";
+		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
+		String originalDelta = inferedDelta + "_original";
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
 		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, inferedDelta).getOutputStream();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
