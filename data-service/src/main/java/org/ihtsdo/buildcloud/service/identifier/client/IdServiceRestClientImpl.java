@@ -41,7 +41,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private String token;
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
 	private static final String BULK_JOB_COMPLETE_STATUS = "2";
-	private static final int timeOutInSeconds = 60;
+	private int timeOutInSeconds = 300;
 	private int maxTries;
 	private int retryDelaySeconds;
 	private String userName;
@@ -115,7 +115,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	
 	@Override
 	public HashMap<UUID,Long> getOrCreateSctIds(List<UUID> uuids,Integer namespaceId,String partitionId, String comment) throws RestClientException {
-		LOGGER.debug("Start creating sctIds with batch size %d for namespace %s and partitionId %s", uuids.size(), namespaceId, partitionId);
+		LOGGER.debug("Start creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
 		HashMap<UUID, Long> result = new HashMap<>();
 		List<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : uuids) {
@@ -134,7 +134,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
 				LOGGER.debug("Bulk job id:" + jobId);
-				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), timeOutInSeconds)) {
+				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
 						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), new Long((String)items.getJSONObject(i).get(SCTID)));
@@ -168,7 +168,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
 				LOGGER.debug("Scheme ids bulk job id:" + jobId);
-				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), timeOutInSeconds)) {
+				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
 						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get("schemeId"));
@@ -199,7 +199,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			}
 			isCompleted = (BULK_JOB_COMPLETE_STATUS.equals(status));
 			if (!isCompleted && ((new Date().getTime() - startTime) > timeoutInSeconds *1000)) {
-				throw new RestClientException("Client timeout waiting for bulk job complete status:" + url );
+				throw new RestClientException("Client timeout after waiting" + timeoutInSeconds + " seconds for bulk job complete status for url :" + url );
 			}
 			if (!isCompleted) {
 				Thread.sleep(1000 * 10);
@@ -241,5 +241,13 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				throw new RestClientException("Failed to login out" + this.userName, e);
 			}
 		}
+	}
+
+	public int getTimeOutInSeconds() {
+		return timeOutInSeconds;
+	}
+
+	public void setTimeOutInSeconds(int timeOutInSeconds) {
+		this.timeOutInSeconds = timeOutInSeconds;
 	}
 }

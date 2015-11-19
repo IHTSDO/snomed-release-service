@@ -221,6 +221,9 @@
 				<constructor-arg value="${idGenerator.url}" />
 				<constructor-arg value="${idGenerator.userName}" />
 				<constructor-arg value="${idGenerator.password}" />
+				<property name="timeOutInSeconds" value="${idGenerator.timeoutInSeconds}"/>
+				<property name="maxTries" ref = "idGenMaxTries" />
+				<property name="retryDelaySeconds" ref = "idGenRetryDelaySeconds" />
 			</bean>
 		</constructor-arg>
 		<constructor-arg>
