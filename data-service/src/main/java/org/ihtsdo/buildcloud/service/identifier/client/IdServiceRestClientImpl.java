@@ -25,7 +25,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final String SRS = "srs";
 	private static final String SYSTEM_IDS = "systemIds";
 	private static final String QUANTITY = "quantity";
-	private static final String COMMENT2 = "comment";
+	private static final String COMMENT = "comment";
 	private static final String GENERATE_LEGACY_IDS = "generateLegacyIds";
 	private static final String SOFTWARE = "software";
 	private static final String PARTITION_ID = "partitionId";
@@ -87,7 +87,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					requestData.put(SYSTEM_ID, componentUuid.toString());
 					requestData.put(SOFTWARE, SRS);
 					requestData.put(GENERATE_LEGACY_IDS, "false");
-					requestData.put(COMMENT2, comment);
+					requestData.put(COMMENT, comment);
 					response = resty.json(urlHelper.getSctIdGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
 					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						 result = new Long((String)response.get(SCTID));
@@ -129,7 +129,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.put(SYSTEM_IDS, uuidStrings.toArray());
 			requestData.put(SOFTWARE, SRS);
 			requestData.put(GENERATE_LEGACY_IDS, "false");
-			requestData.put(COMMENT2, comment);
+			requestData.put(COMMENT, comment);
 			JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
@@ -163,7 +163,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.put(QUANTITY,uuids.size());
 			requestData.put(SYSTEM_IDS, uuidStrings.toArray());
 			requestData.put(SOFTWARE, SRS);
-			requestData.put(COMMENT2, comment);
+			requestData.put(COMMENT, comment);
 			JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();

@@ -16,7 +16,7 @@ public class SCTIDTransformationTestManual {
 	private CachedSctidFactory cachedSctidFactory;
 	private IdServiceRestClient idRestClient;
 	private SCTIDTransformation sctidTransformation;
-	private String url = "http://localhost:8080/api/";
+	private String url = "http://162.243.20.236:3000/api";
 	private String userName = "userName";
 	private String password = "password";
 
@@ -25,7 +25,7 @@ public class SCTIDTransformationTestManual {
 		idRestClient = new IdServiceRestClientImpl(url, userName, password);
 		idRestClient.logIn();
 		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient);
-		sctidTransformation = new SCTIDTransformation(0, 3, "1", cachedSctidFactory);
+		sctidTransformation = new SCTIDTransformation(0, 3, "00", cachedSctidFactory);
 	}
 
 	@Test
