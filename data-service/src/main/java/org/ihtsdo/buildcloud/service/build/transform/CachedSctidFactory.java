@@ -48,7 +48,7 @@ public class CachedSctidFactory {
 		for (final String componentUuidString : componentUuidStrings) {
 			componentUuids.add(UUID.fromString(componentUuidString));
 		}
-		LOGGER.info("Batch ID Gen lookup, batch size {}.", componentUuids.size());
+		LOGGER.info("Batch ID service request, batch size {}.", componentUuids.size());
 		if ( !componentUuids.isEmpty()) {
 			uuidToSctidMap = idServiceRestClient.getOrCreateSctIds(componentUuids, namespaceId, partitionId, comment);
 		}

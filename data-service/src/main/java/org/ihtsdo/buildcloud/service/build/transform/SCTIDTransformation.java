@@ -69,7 +69,8 @@ public class SCTIDTransformation implements BatchLineTransformation {
 				}
 			}
 		} catch (Exception e) {
-			throw new TransformationException("SCTID list creation request failed.", e);
+			
+			throw new TransformationException("SCTID list creation request failed due to:" + e.getMessage(), e);
 		}
 	}
 
