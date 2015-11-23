@@ -121,7 +121,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			LOGGER.warn("Empty UUIDs submitted for requesting sctIds");
 			return result;
 		}
-		
+		long startTime = new Date().getTime();
 		List<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : uuids) {
 			uuidStrings.add(uuid.toString());
@@ -138,7 +138,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId);
+				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + uuids.size());
 				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
@@ -146,12 +146,17 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				throw new RestClientException("Status is:" + response.getHTTPStatus());
+				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
+				LOGGER.error(statusMsg);
+				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			throw new RestClientException("Bulk getOrCreateSctds job failed",e);
+			String message = "Bulk getOrCreateSctds job failed.";
+			LOGGER.error(message, e);
+			throw new RestClientException(message,e);
 		}
 		LOGGER.debug("End creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
+		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
 		return result;
 	}
 
@@ -163,6 +168,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			LOGGER.warn("Empty UUIDs submitted for requesting schemeIdType:" + schemeType);
 			return result;
 		}
+		long startTime = new Date().getTime();
 		List<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : uuids) {
 			uuidStrings.add(uuid.toString());
@@ -176,7 +182,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
-				LOGGER.info("Scheme ids bulk job id:" + jobId);
+				LOGGER.info("Scheme ids bulk job id:" + jobId + " with batch size:" + uuids.size());
 				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
@@ -184,12 +190,16 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				throw new RestClientException("Status is:" + response.getHTTPStatus());
+				String message = "Received Http status from id service:" + response.getHTTPStatus();
+				throw new RestClientException(message);
 			}
 		} catch (Exception e) {
-			throw new RestClientException("Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType,e);
+			String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
+			LOGGER.error(message, e);
+			throw new RestClientException(message, e);
 		}
 		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
+		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
 		return result;
 	}
 	
@@ -204,11 +214,15 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				Object statusObj = resty.json(url).get("status");
 				status = statusObj.toString() ;
 			} catch (Exception e) {
-				throw new RestClientException("Rest client error while checking bulk job status:" + url, e);
+				String msg = "Rest client error while checking bulk job status:" + url;
+				LOGGER.error(msg, e);
+				throw new RestClientException(msg, e);
 			}
-			isCompleted = (BULK_JOB_COMPLETE_STATUS.equals(status));
+			isCompleted = BULK_JOB_COMPLETE_STATUS.equals(status);
 			if (!isCompleted && ((new Date().getTime() - startTime) > timeoutInSeconds *1000)) {
-				throw new RestClientException("Client timeout after waiting" + timeoutInSeconds + " seconds for bulk job complete status for url :" + url );
+				String message = "Client timeout after waiting" + timeoutInSeconds + " seconds for bulk job complete status for url :" + url;
+				LOGGER.warn(message);
+				throw new RestClientException(message);
 			}
 			if (!isCompleted) {
 				Thread.sleep(1000 * 10);
