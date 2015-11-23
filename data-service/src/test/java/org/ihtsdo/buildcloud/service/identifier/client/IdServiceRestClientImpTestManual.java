@@ -15,7 +15,7 @@ public class IdServiceRestClientImpTestManual {
 	private IdServiceRestClient client;
 	private String idServiceApiUrl = "http://162.243.20.236:3000/api";
 	private String userName ="userName";
-	private String password ="Password";
+	private String password ="password";
 	
 	@Before
 	public void setUp() throws Exception {

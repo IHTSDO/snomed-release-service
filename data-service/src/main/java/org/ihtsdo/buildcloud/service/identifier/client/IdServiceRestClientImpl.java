@@ -117,6 +117,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	public HashMap<UUID,Long> getOrCreateSctIds(List<UUID> uuids,Integer namespaceId,String partitionId, String comment) throws RestClientException {
 		LOGGER.debug("Start creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
 		HashMap<UUID, Long> result = new HashMap<>();
+		if (uuids == null || uuids.isEmpty()) {
+			LOGGER.warn("Empty UUIDs submitted for requesting sctIds");
+			return result;
+		}
+		
 		List<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : uuids) {
 			uuidStrings.add(uuid.toString());
@@ -133,7 +138,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
-				LOGGER.debug("Bulk job id:" + jobId);
+				LOGGER.info("Bulk job id:" + jobId);
 				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
@@ -144,9 +149,9 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				throw new RestClientException("Status is:" + response.getHTTPStatus());
 			}
 		} catch (Exception e) {
-			throw new RestClientException("Failed to bulk getOrCreateSctds",e);
+			throw new RestClientException("Bulk getOrCreateSctds job failed",e);
 		}
-		LOGGER.debug("End creating sctIds with batch size %d for namespace %s and partitionId %s", uuids.size(), namespaceId, partitionId);
+		LOGGER.debug("End creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
 		return result;
 	}
 
@@ -154,6 +159,10 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	public Map<UUID, String> getOrCreateSchemeIds(List<UUID> uuids, SchemeIdType schemeType, String comment) throws RestClientException {
 		LOGGER.debug("Start creating scheme id {} with batch size {} ", schemeType, uuids.size());
 		HashMap<UUID, String> result = new HashMap<>();
+		if (uuids == null || uuids.isEmpty()) {
+			LOGGER.warn("Empty UUIDs submitted for requesting schemeIdType:" + schemeType);
+			return result;
+		}
 		List<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : uuids) {
 			uuidStrings.add(uuid.toString());
@@ -167,7 +176,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
-				LOGGER.debug("Scheme ids bulk job id:" + jobId);
+				LOGGER.info("Scheme ids bulk job id:" + jobId);
 				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
@@ -178,7 +187,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				throw new RestClientException("Status is:" + response.getHTTPStatus());
 			}
 		} catch (Exception e) {
-			throw new RestClientException("Failed to bulk getOrCreateSctds",e);
+			throw new RestClientException("Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType,e);
 		}
 		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
 		return result;
