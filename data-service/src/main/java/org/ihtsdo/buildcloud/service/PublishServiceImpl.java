@@ -68,7 +68,7 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private BuildDAO buildDao;
 	
-	private static final int BATCH_SIZE =1000;
+	private static final int BATCH_SIZE =2000;
 
 
 	@Autowired
@@ -387,9 +387,9 @@ public class PublishServiceImpl implements PublishService {
 					continue;
 				}
 				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
-				if (RF2Constants.BOOLEAN_TRUE.equals(columnValues[1])) {
+//				if (RF2Constants.BOOLEAN_TRUE.equals(columnValues[1])) {
 					sctIds.add( new Long(columnValues[0]));
-				}
+//				}
 			}
 		} 
 		return sctIds;
