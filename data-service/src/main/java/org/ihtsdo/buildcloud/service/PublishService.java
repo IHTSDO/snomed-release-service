@@ -1,11 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.InputStream;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-
-import java.io.InputStream;
-import java.util.List;
 
 /**
  * Service to publish a product release after verification tests are
@@ -20,5 +20,7 @@ public interface PublishService {
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException;
 
 	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
+	
+	void publishComponentIds(Build build) throws BusinessServiceException;
 
 }

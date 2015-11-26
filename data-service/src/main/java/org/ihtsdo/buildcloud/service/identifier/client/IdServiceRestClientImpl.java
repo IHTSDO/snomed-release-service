@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.identifier.client;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,11 @@ import com.google.gson.GsonBuilder;
 
 
 public class IdServiceRestClientImpl implements IdServiceRestClient {
+	private static final String MESSAGE = "message";
+	private static final String STATUS = "status";
+	private static final String SCHEME_ID = "schemeId";
+	private static final String SCHEME_IDS = "schemeIds";
+	private static final String SCTIDS = "sctids";
 	private static final String SRS = "srs";
 	private static final String SYSTEM_IDS = "systemIds";
 	private static final String QUANTITY = "quantity";
@@ -40,7 +46,8 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private Gson gson;
 	private String token;
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
-	private static final String BULK_JOB_COMPLETE_STATUS = "2";
+	
+	
 	private int timeOutInSeconds = 300;
 	private int maxTries;
 	private int retryDelaySeconds;
@@ -74,6 +81,45 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		return token;
 	}
 	
+	
+	@Override
+	public Map<Long,String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
+		Map<Long,String> result = new HashMap<>();
+		if (sctIds == null || sctIds.isEmpty()) {
+			return result;
+		}
+		int attempt = 1;
+		boolean isDone = false;
+		while (!isDone) {
+				JSONResource response = null;
+				try {
+					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
+					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+						JSONArray items = response.array();
+						for (int i =0;i < items.length();i++) {
+							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
+						}
+					} else {
+						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+					}
+					isDone = true;
+				} catch (Exception e) {
+					
+					if (attempt < maxTries) {
+						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+						attempt++;
+						try {
+							Thread.sleep(retryDelaySeconds * 1000);
+						} catch (InterruptedException ie) {
+							LOGGER.warn("Retry dealy interrupted.",e);
+						}
+					} else {
+						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
+					}
+				}
+		}
+		return result;
+	}
 	@Override
 	public Long getOrCreateSctId(UUID componentUuid, Integer namespaceId, String partitionId, String comment) throws RestClientException {
 		Long result = null;
@@ -139,7 +185,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
 				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + uuids.size());
-				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
+				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
 						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), new Long((String)items.getJSONObject(i).get(SCTID)));
@@ -183,10 +229,10 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
 				LOGGER.info("Scheme ids bulk job id:" + jobId + " with batch size:" + uuids.size());
-				if (waitForCompleteStatus(urlHelper.getBulkJobStatusUrl(token, jobId), getTimeOutInSeconds())) {
+				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
-						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get("schemeId"));
+						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get(SCHEME_ID));
 					}
 				}
 			} else {
@@ -204,23 +250,31 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	}
 	
 	
-	private boolean waitForCompleteStatus(String url, int timeoutInSeconds)
+	private int waitForCompleteStatus(String jobId, int timeoutInSeconds)
 			throws RestClientException, InterruptedException {
+		String url = urlHelper.getBulkJobStatusUrl(token, jobId);
 		long startTime = new Date().getTime();
-		String status = "";
+		int status = 0;
 		boolean isCompleted = false;
+		String logMsg = null;
 		while (!isCompleted) {
 			try {
-				Object statusObj = resty.json(url).get("status");
-				status = statusObj.toString() ;
+				JSONResource response = resty.json(url);
+				Object statusObj = response.get(STATUS);
+				status = Integer.parseInt(statusObj.toString()) ;
+				Object log = response.get("log");
+				if (log != null) {
+					logMsg = log.toString();
+				}
+				
 			} catch (Exception e) {
 				String msg = "Rest client error while checking bulk job status:" + url;
 				LOGGER.error(msg, e);
 				throw new RestClientException(msg, e);
 			}
-			isCompleted = BULK_JOB_COMPLETE_STATUS.equals(status);
+			isCompleted = (BULK_JOB_STATUS.PENDING.getCode() != status && BULK_JOB_STATUS.RUNNING.getCode() != status);
 			if (!isCompleted && ((new Date().getTime() - startTime) > timeoutInSeconds *1000)) {
-				String message = "Client timeout after waiting" + timeoutInSeconds + " seconds for bulk job complete status for url :" + url;
+				String message = "Client timeout after waiting " + timeoutInSeconds + " seconds for bulk job to complete:" + url;
 				LOGGER.warn(message);
 				throw new RestClientException(message);
 			}
@@ -228,10 +282,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				Thread.sleep(1000 * 10);
 			}
 		}
-		if (!isCompleted) {
-			LOGGER.warn("ID service bulk job has non-complete status {} from URL {}", status, url);
+		if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() != status) {
+			LOGGER.error("Bulk job id {} finsihed with non successful status {} failureReason: {}", jobId, status, logMsg);
+			throw new RestClientException("Bulk job :" + jobId + " did not complete successfully with status code:" + status);
 		}
-		return isCompleted;
+		return status;
 	}
 
 	public int getMaxTries() {
@@ -272,5 +327,198 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	public void setTimeOutInSeconds(int timeOutInSeconds) {
 		this.timeOutInSeconds = timeOutInSeconds;
+	}
+
+	@Override
+	public boolean publishSctIds(List<Long> sctIds, Integer namespaceId, String comment) throws RestClientException {
+		LOGGER.debug("Start publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
+		if (sctIds == null || sctIds.isEmpty()) {
+			return true;
+		}
+		boolean isPublished = false;
+		long startTime = new Date().getTime();
+		List<String> sctIdStringList = new ArrayList<>();
+		for (Long sctId : sctIds) {
+			sctIdStringList.add(String.valueOf(sctId));
+		}
+		try {
+			JSONObject requestData = new JSONObject();
+			requestData.put(SCTIDS, sctIdStringList.toArray());
+			requestData.put(NAMESPACE, namespaceId.intValue());
+			requestData.put(SOFTWARE, SRS);
+			requestData.put(COMMENT, comment);
+			JSONResource response = resty.put(urlHelper.getSctIdBulkPublishingUrl(token), requestData, APPLICATION_JSON);
+			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+				String jobId =  response.get("id").toString();
+				LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + sctIds.size());
+				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+					isPublished = true;
+				}
+			} else {
+				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
+				LOGGER.error(statusMsg);
+				throw new RestClientException(statusMsg);
+			}
+		} catch (Exception e) {
+			String message = "Bulk publishSctIds job failed.";
+			LOGGER.error(message, e);
+			throw new RestClientException(message, e);
+		}
+		LOGGER.debug("End publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
+		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		return isPublished;
+	}
+
+	@Override
+	public boolean publishSchemeIds(List<String> schemeIds, SchemeIdType schemeType, String comment) throws RestClientException {
+		LOGGER.debug("Start publishing sctIds with batch size {} for namespace {}", schemeIds.size());
+		if (schemeIds == null || schemeIds.isEmpty()) {
+			return true;
+		}
+		boolean isPublished = false;
+		long startTime = new Date().getTime();
+		try {
+			JSONObject requestData = new JSONObject();
+			requestData.put(SCHEME_IDS, schemeIds.toArray());
+			requestData.put(SOFTWARE, SRS);
+			requestData.put(COMMENT, comment);
+			JSONResource response = resty.put(urlHelper.getSchemeIdBulkPublishingUrl(schemeType,token), requestData, APPLICATION_JSON);
+			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+				String jobId =  response.get("id").toString();
+				LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + schemeIds.size());
+				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())){
+					isPublished = true;
+				}
+			} else {
+				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
+				LOGGER.error(statusMsg);
+				throw new RestClientException(statusMsg);
+			}
+		} catch (Exception e) {
+			String message = "Bulk publishSctIds job failed.";
+			LOGGER.error(message, e);
+			throw new RestClientException(message, e);
+		}
+		LOGGER.debug("End publishing sctIds with batch size {}", schemeIds.size());
+		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		return isPublished;
+	}
+
+	
+	@Override
+	public Map<String, String> getSchemeIdStatusMap(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
+		
+		Map<String,String> result = new HashMap<>();
+		if (legacyIds == null || legacyIds.isEmpty()) {
+			return result;
+		}
+		int attempt = 1;
+		boolean isDone = false;
+		while (!isDone) {
+				JSONResource response = null;
+				try {
+					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
+					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+						JSONArray items = response.array();
+						for (int i =0;i < items.length();i++) {
+							result.put((String)items.getJSONObject(i).get(SCHEME_ID), (String)items.getJSONObject(i).get(STATUS));
+						}
+					} else {
+						throw new RestClientException("http status code is:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE));
+					}
+					isDone = true;
+				} catch (Exception e) {
+					
+					if (attempt < maxTries) {
+						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+						attempt++;
+						try {
+							Thread.sleep(retryDelaySeconds * 1000);
+						} catch (InterruptedException ie) {
+							LOGGER.warn("Retry dealy interrupted.",e);
+						}
+					} else {
+						throw new RestClientException("Failed to get scheme Ids for batch size:" + legacyIds.size(), e);
+					}
+				}
+		}
+		return result;
+	}
+	
+	
+	public Map<Long,JSONObject> getSctids(Collection<Long> sctIds) throws RestClientException {
+		Map<Long,JSONObject> result = new HashMap<>();
+		if (sctIds == null || sctIds.isEmpty()) {
+			return result;
+		}
+		int attempt = 1;
+		boolean isDone = false;
+		while (!isDone) {
+				JSONResource response = null;
+				try {
+					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
+					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+						JSONArray items = response.array();
+						for (int i =0;i < items.length();i++) {
+							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
+						}
+					} else {
+						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+					}
+					isDone = true;
+				} catch (Exception e) {
+					
+					if (attempt < maxTries) {
+						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+						attempt++;
+						try {
+							Thread.sleep(retryDelaySeconds * 1000);
+						} catch (InterruptedException ie) {
+							LOGGER.warn("Retry dealy interrupted.",e);
+						}
+					} else {
+						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
+					}
+				}
+		}
+		return result;
+	}
+	
+	public Map<String, JSONObject> getSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
+		Map<String,JSONObject> result = new HashMap<>();
+		if (legacyIds == null || legacyIds.isEmpty()) {
+			return result;
+		}
+		int attempt = 1;
+		boolean isDone = false;
+		while (!isDone) {
+				JSONResource response = null;
+				try {
+					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
+					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+						JSONArray items = response.array();
+						for (int i =0;i < items.length();i++) {
+							result.put((String)items.getJSONObject(i).get(SCHEME_ID), items.getJSONObject(i));
+						}
+					} else {
+						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+					}
+					isDone = true;
+				} catch (Exception e) {
+					
+					if (attempt < maxTries) {
+						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+						attempt++;
+						try {
+							Thread.sleep(retryDelaySeconds * 1000);
+						} catch (InterruptedException ie) {
+							LOGGER.warn("Retry dealy interrupted.",e);
+						}
+					} else {
+						throw new RestClientException("Failed to get sctIds for batch size:" + legacyIds.size(), e);
+					}
+				}
+		}
+		return result;
 	}
 }

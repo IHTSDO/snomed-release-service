@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.identifier.client;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +22,12 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 
 	private int snomedIdCounter;
 	private int ctv3IdChar;
+	
+	private String idStatus;
 
 	public IdServiceRestClientOfflineDemoImpl() {
 		reset();
+		idStatus = IdServiceRestClient.ID_STATUS.ASSIGNED.getName();
 	}
 
 	@Override
@@ -103,5 +107,41 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 		
 	}
 
+	@Override
+	public boolean publishSctIds(List<Long> sctids, Integer namespaceId, String comment) throws RestClientException {
+		return true;
+	}
 
+	@Override
+	public boolean publishSchemeIds(List<String> schemeIds, SchemeIdType schemeType, String comment) throws RestClientException {
+		return true;
+	}
+
+	@Override
+	public Map<Long, String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
+		Map<Long,String> result = new HashMap<>();
+		for (Long sctId : sctIds) {
+			result.put(sctId, idStatus);
+		}
+		return result;
+	}
+
+	@Override
+	public Map<String, String> getSchemeIdStatusMap(SchemeIdType schemeType, Collection<String> legacyIds) {
+		Map<String,String> result = new HashMap<>();
+		for (String id : legacyIds) {
+			result.put(id, idStatus);
+		}
+		return result;
+	}
+
+	public String getIdStatus() {
+		return idStatus;
+	}
+
+	public void setIdStatus(String idStatus) {
+		this.idStatus = idStatus;
+	}
+	
+	
 }
