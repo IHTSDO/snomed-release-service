@@ -68,7 +68,7 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private BuildDAO buildDao;
 	
-	private static final int BATCH_SIZE =2000;
+	private static final int BATCH_SIZE = 5000;
 
 
 	@Autowired
@@ -359,6 +359,7 @@ public class PublishServiceImpl implements PublishService {
 				for (Long sctId : batchJob) {
 					String status = sctIdStatusMap.get(sctId);
 					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+						assignedStatusCounter++;
 						assignedIds.add(sctId);
 					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
 						publishedAlreadyCounter ++;
