@@ -247,6 +247,11 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		try {
+			try {
+				idRestClient.logIn();
+			} catch (RestClientException e) {
+				throw new BusinessServiceException("Failed to logIn to the id service",e);
+			}
 			String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
 			List<String> filesFound = buildFileHelper.listFiles(buildOutputDir);
 			boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
@@ -272,6 +277,11 @@ public class PublishServiceImpl implements PublishService {
 			}
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
+			try {
+				idRestClient.logOut();
+			} catch (RestClientException e) {
+				LOGGER.warn("Failed to log out the id service", e);
+			}
 		}
 		LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
 	}
