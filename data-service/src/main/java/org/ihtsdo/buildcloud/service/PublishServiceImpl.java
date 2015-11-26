@@ -67,6 +67,8 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private BuildDAO buildDao;
+	
+	private static final int BATCH_SIZE =1000;
 
 
 	@Autowired
@@ -339,22 +341,39 @@ public class PublishServiceImpl implements PublishService {
 
 	private void publishSctIds(InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
 		Set<Long> sctIds = getSctIdsFromFile(inputFileStream);
-		Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(sctIds);
-		List<Long> assignedIds = new ArrayList<>();
+		List<Long> batchJob = null;
+		int counter = 0;
 		int publishedAlreadyCounter = 0;
-		for (Long sctId : sctIds) {
-			String status = sctIdStatusMap.get(sctId);
-			if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
-				assignedIds.add(sctId);
-			} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
-				publishedAlreadyCounter ++;
+		int assignedStatusCounter = 0;
+		int otherStatusCounter = 0;
+		for (Long id : sctIds) {
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
+			}
+			batchJob.add(id);
+			counter++;
+			if (counter % BATCH_SIZE == 0 || counter == batchJob.size()) {
+				Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(batchJob);
+				List<Long> assignedIds = new ArrayList<>();
+				
+				for (Long sctId : batchJob) {
+					String status = sctIdStatusMap.get(sctId);
+					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+						assignedIds.add(sctId);
+					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+						publishedAlreadyCounter ++;
+					} else {
+						otherStatusCounter++;
+					}
+				}
+				if (!assignedIds.isEmpty()) {
+					idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
+				}
+				batchJob = null;
 			}
 		}
-		LOGGER.info("Found total sctIds {} in file {} with assigned status: {} and published status: {}", 
-				sctIds.size(), filename, assignedIds.size(), publishedAlreadyCounter);
-		if (!assignedIds.isEmpty()) {
-			idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
-		}
+		LOGGER.info("Found total sctIds {} in file {} with assigned status {} and published statu {} other status {}", 
+				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusCounter);
 	}
 	
 	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {
@@ -367,7 +386,10 @@ public class PublishServiceImpl implements PublishService {
 					isFirstLine = false;
 					continue;
 				}
-				sctIds.add( new Long(line.split(RF2Constants.COLUMN_SEPARATOR,-1)[0]));
+				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
+				if (RF2Constants.BOOLEAN_TRUE.equals(columnValues[1])) {
+					sctIds.add( new Long(columnValues[0]));
+				}
 			}
 		} 
 		return sctIds;
