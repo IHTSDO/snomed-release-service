@@ -1,5 +1,9 @@
 package org.ihtsdo.buildcloud.service.identifier.client;
 
+import java.util.Collection;
+
+
+
 
 
 public class IdServiceRestUrlHelper {
@@ -24,6 +28,23 @@ public class IdServiceRestUrlHelper {
 	public String getSctIdBulkGenerateUrl(String token) {
 		return rootApiUrl + "/sct/bulk/generate" + TOKEN_PARAMETER + token;
 	}
+	
+	public String getSctIdBulkUrl(String token, Collection<Long> sctIds) {
+		StringBuilder urlBuilder =  new StringBuilder(rootApiUrl + "/sct/bulk/ids" + TOKEN_PARAMETER + token + "&sctids=");
+		boolean isFirstOne = true;
+		for ( Long sctId : sctIds) {
+			if (!isFirstOne) {
+				urlBuilder.append(",");
+			}
+			if ( isFirstOne) {
+				isFirstOne = false;
+			}
+			urlBuilder.append(sctId.toString());
+		}
+		return urlBuilder.toString();
+	}
+	
+	
 	public String getBulkJobResultUrl(String jobId, String token) {
 		return rootApiUrl + "/bulk/jobs/" + jobId +"/records" + TOKEN_PARAMETER + token;
 	}
@@ -33,6 +54,30 @@ public class IdServiceRestUrlHelper {
 	}
 	
 	public String getSchemeIdBulkGenerateUrl(String token, SchemeIdType schemeType) {
-		return rootApiUrl + "/scheme/"+ schemeType + "/bulk/generate" + TOKEN_PARAMETER + token;
+		return rootApiUrl + "/scheme/" + schemeType + "/bulk/generate" + TOKEN_PARAMETER + token;
+	}
+
+	public String getSctIdBulkPublishingUrl(String token) {
+		return rootApiUrl + "/sct/bulk/publish" + TOKEN_PARAMETER + token;
+	}
+
+	public String getSchemeIdBulkPublishingUrl(SchemeIdType schemeType, String token) {
+		return rootApiUrl + "/scheme/" + schemeType + "/bulk/publish" + TOKEN_PARAMETER + token;
+	}
+
+	public String getSchemeIdBulkUrl(String token, SchemeIdType schemeType,Collection<String> legacyIds) {
+		
+		StringBuilder urlBuilder =  new StringBuilder(rootApiUrl + "/scheme/" + schemeType + "/bulk" + TOKEN_PARAMETER + token + "&schemeIds=");
+		boolean isFirstOne = true;
+		for ( String legacyId : legacyIds) {
+			if (!isFirstOne) {
+				urlBuilder.append(",");
+			}
+			if ( isFirstOne) {
+				isFirstOne = false;
+			}
+			urlBuilder.append(legacyId.toString());
+		}
+		return urlBuilder.toString();
 	}
 }
