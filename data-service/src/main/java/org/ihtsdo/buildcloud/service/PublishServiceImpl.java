@@ -69,6 +69,8 @@ public class PublishServiceImpl implements PublishService {
 	private BuildDAO buildDao;
 	
 	private static final int BATCH_SIZE = 5000;
+	
+	private static final int MAX_FAILURE = 100;
 
 
 	@Autowired
@@ -370,7 +372,10 @@ public class PublishServiceImpl implements PublishService {
 					}
 				}
 				if (!assignedIds.isEmpty()) {
-					idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
+					boolean isSuccessful = idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
+					if (!isSuccessful) {
+						LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
+					}
 				}
 				batchJob = null;
 			}
@@ -380,7 +385,11 @@ public class PublishServiceImpl implements PublishService {
 		if (otherStatusIds.size() > 0) {
 			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in assigned or published status:");
 			boolean isFirstOne = true;
+			int failureCounter = 0;
 			for (Long id : otherStatusIds) {
+				if (failureCounter > MAX_FAILURE) {
+					break;
+				}
 				if (!isFirstOne) {
 					msgBuilder.append(",");
 				}
@@ -388,8 +397,9 @@ public class PublishServiceImpl implements PublishService {
 					isFirstOne = false;
 				}
 				msgBuilder.append(id);
+				failureCounter++;
 			}
-			LOGGER.warn("Total ids have not been published {} in file {} as {} ", otherStatusIds.size(), filename, msgBuilder.toString());
+			LOGGER.warn("Total ids have not been published {} in file {} for example {} ", otherStatusIds.size(), filename, msgBuilder.toString());
 		}
 		
 	}

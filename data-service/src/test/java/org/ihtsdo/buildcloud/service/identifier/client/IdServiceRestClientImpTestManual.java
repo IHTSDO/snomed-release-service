@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.ihtsdo.otf.rest.client.RestClientException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -19,7 +20,7 @@ public class IdServiceRestClientImpTestManual {
 	private static final String UUID_ONE = "72bc1612-a773-4be9-8eab-b6d48b2ffc9f";
 	private static IdServiceRestClient client;
 	private static final String idServiceApiUrl = "http://107.170.138.113:3000/api";
-	private static final String userName ="userName";
+	private static final String userName ="username";
 	private static final String password ="password";
 	
 	@BeforeClass
@@ -79,7 +80,7 @@ public class IdServiceRestClientImpTestManual {
 		}
 	}
 	
-	@Test
+	@Test(expected=RestClientException.class)
 	public void testPublishSctIds() throws Exception {
 		List<Long> sctids = new ArrayList<>();
 		sctids.add(new Long("714141004"));
@@ -87,7 +88,7 @@ public class IdServiceRestClientImpTestManual {
 		assertTrue(client.publishSctIds(sctids, new Integer("0"), "testing"));
 	}
 	
-	@Test
+	@Test(expected=RestClientException.class)
 	public void testPublishSnomedIds() throws Exception {
 		List<String> snomedIds = new ArrayList<>();
 		snomedIds.add("R-FF605");
@@ -96,11 +97,12 @@ public class IdServiceRestClientImpTestManual {
 	}
 	
 	
-	@Test
+	@Test(expected=RestClientException.class)
 	public void testPublishCtv3Ids() throws Exception {
 		List<String> ctv3Ids = new ArrayList<>();
 		ctv3Ids.add("XUsHT");
 		ctv3Ids.add("XUsfV");
+		
 		assertTrue(client.publishSchemeIds(ctv3Ids, SchemeIdType.CTV3ID, "publish testing"));
 	}
 	

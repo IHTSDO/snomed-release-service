@@ -99,18 +99,30 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		return token;
 	}
 	
-	
 	@Override
 	public Map<Long,String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,String> result = new HashMap<>();
 		if (sctIds == null || sctIds.isEmpty()) {
 			return result;
 		}
+		StringBuilder scdStrList = new StringBuilder();
+		boolean isFirst = true;
+		for (Long id : sctIds) {
+			if (!isFirst) {
+				scdStrList.append(",");
+			}
+			if (isFirst) {
+				isFirst = false;
+			}
+			scdStrList.append(id.toString());
+		}
 		int attempt = 1;
 		boolean isDone = false;
 		while (!isDone) {
 				try {
-					JSONResource response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
+					JSONObject requestData = new JSONObject();
+					requestData.put(SCTIDS, scdStrList.toString());
+					JSONResource response = resty.json(urlHelper.getSctIdBulkUrl(token),RestyHelper.content(requestData, APPLICATION_JSON));
 					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0; i < items.length();i++) {
@@ -137,6 +149,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		}
 		return result;
 	}
+	
 	@Override
 	public Long getOrCreateSctId(UUID componentUuid, Integer namespaceId, String partitionId, String comment) throws RestClientException {
 		Long result = null;
