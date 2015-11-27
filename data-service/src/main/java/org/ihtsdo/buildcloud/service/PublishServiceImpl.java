@@ -345,7 +345,7 @@ public class PublishServiceImpl implements PublishService {
 		int counter = 0;
 		int publishedAlreadyCounter = 0;
 		int assignedStatusCounter = 0;
-		int otherStatusCounter = 0;
+		List<Long> otherStatusIds = new ArrayList<>();
 		for (Long id : sctIds) {
 			if (batchJob == null) {
 				batchJob = new ArrayList<>();
@@ -354,8 +354,10 @@ public class PublishServiceImpl implements PublishService {
 			counter++;
 			if (counter % BATCH_SIZE == 0 || counter == batchJob.size()) {
 				Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(batchJob);
+				if ( batchJob.size() != sctIdStatusMap.size()) {
+					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
+				}
 				List<Long> assignedIds = new ArrayList<>();
-				
 				for (Long sctId : batchJob) {
 					String status = sctIdStatusMap.get(sctId);
 					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
@@ -364,7 +366,7 @@ public class PublishServiceImpl implements PublishService {
 					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
 						publishedAlreadyCounter ++;
 					} else {
-						otherStatusCounter++;
+						otherStatusIds.add(sctId);
 					}
 				}
 				if (!assignedIds.isEmpty()) {
@@ -373,8 +375,23 @@ public class PublishServiceImpl implements PublishService {
 				batchJob = null;
 			}
 		}
-		LOGGER.info("Found total sctIds {} in file {} with assigned status {} and published statu {} other status {}", 
-				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusCounter);
+		LOGGER.info("Found total sctIds {} in file {} with assigned status {} , published statu {} and other status {}", 
+				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+		if (otherStatusIds.size() > 0) {
+			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in assigned or published status:");
+			boolean isFirstOne = true;
+			for (Long id : otherStatusIds) {
+				if (!isFirstOne) {
+					msgBuilder.append(",");
+				}
+				if (isFirstOne) {
+					isFirstOne = false;
+				}
+				msgBuilder.append(id);
+			}
+			LOGGER.warn("Total ids have not been published {} in file {} as {} ", otherStatusIds.size(), filename, msgBuilder.toString());
+		}
+		
 	}
 	
 	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {

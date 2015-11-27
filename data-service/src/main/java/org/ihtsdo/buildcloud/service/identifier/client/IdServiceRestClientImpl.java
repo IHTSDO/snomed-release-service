@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.identifier.client;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -64,8 +65,25 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		
 	}
 	
+	
+	private boolean isServiceRunning() {
+		JSONResource response;
+		try {
+			response = resty.json(urlHelper.getTestServiceUrl());
+			if (response != null && HttpStatus.SC_OK == response.getHTTPStatus()) {
+				return true;
+			}
+		} catch (IOException e) {
+			LOGGER.error("Error when testing service", e);
+		}
+		return false;
+	}
+	
 	@Override
 	public String logIn() throws RestClientException {
+		if (!isServiceRunning()) {
+			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
+		}
 		if (token == null) {
 			LOGGER.info("Id service rest client logs in to get security token." );
 			try {
@@ -91,12 +109,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		int attempt = 1;
 		boolean isDone = false;
 		while (!isDone) {
-				JSONResource response = null;
 				try {
-					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
+					JSONResource response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
 					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
-						for (int i =0;i < items.length();i++) {
+						for (int i =0; i < items.length();i++) {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
 						}
 					} else {
@@ -125,7 +142,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		Long result = null;
 		int attempt = 1;
 		while (result == null) {
-				JSONResource response = null;
 				try {
 					JSONObject requestData = new JSONObject();
 					requestData.put(NAMESPACE, namespaceId.intValue());
@@ -134,8 +150,8 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					requestData.put(SOFTWARE, SRS);
 					requestData.put(GENERATE_LEGACY_IDS, "false");
 					requestData.put(COMMENT, comment);
-					response = resty.json(urlHelper.getSctIdGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					JSONResource response = resty.json(urlHelper.getSctIdGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
+					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						 result = new Long((String)response.get(SCTID));
 					} else {
 						throw new RestClientException("http status code is:" + response.getHTTPStatus());
@@ -312,11 +328,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			try {
 				JSONObject jsonObject = new JSONObject();
 				jsonObject.put("token", this.token);
-				resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject)));
+				resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
 				token = null;
 				LOGGER.info("Id service rest client log out successfully." );
 			} catch (Exception e) {
-				throw new RestClientException("Failed to login out" + this.userName, e);
+				throw new RestClientException("Failed to login out " + this.userName, e);
 			}
 		}
 	}
