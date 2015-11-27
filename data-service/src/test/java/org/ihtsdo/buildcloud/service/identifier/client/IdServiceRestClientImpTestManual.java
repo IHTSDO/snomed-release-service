@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -17,19 +17,19 @@ public class IdServiceRestClientImpTestManual {
 	
 	private static final String UUID_TWO = "ae4de89d-65ce-475c-80e1-a4f92212cd57";
 	private static final String UUID_ONE = "72bc1612-a773-4be9-8eab-b6d48b2ffc9f";
-	private IdServiceRestClient client;
-	private String idServiceApiUrl = "http://107.170.138.113:3000/api";
-	private String userName ="username";
-	private String password ="password";
+	private static IdServiceRestClient client;
+	private static final String idServiceApiUrl = "http://107.170.138.113:3000/api";
+	private static final String userName ="userName";
+	private static final String password ="password";
 	
-	@Before
-	public void setUp() throws Exception {
+	@BeforeClass
+	public static void  setUp() throws Exception {
 		client = new IdServiceRestClientImpl(idServiceApiUrl, userName, password);
 		client.logIn();
 	}
 	
-	@After
-	public void tearDown() throws Exception {
+	@AfterClass
+	public static void tearDown() throws Exception {
 		client.logOut();
 	}
 	@Test

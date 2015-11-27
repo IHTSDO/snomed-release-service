@@ -224,7 +224,6 @@ public class BuildController {
 		}
 	}
 
-
 	private List<Map<String, Object>> convertFileListToEntities(final HttpServletRequest request, final List<String> relativeFilePaths) {
 		final List<Map<String, String>> files = new ArrayList<>();
 		for (final String relativeFilePath : relativeFilePaths) {

@@ -45,6 +45,15 @@ public class IdServiceRestUrlHelper {
 	}
 	
 	
+	/** This is for post api to retrieve a bigger list of sctids
+	 * @param token
+	 * @return url
+	 */
+	public String getSctIdBulkUrl(String token) {
+		return rootApiUrl + "/sct/bulk/ids" + TOKEN_PARAMETER + token;
+		
+	}
+	
 	public String getBulkJobResultUrl(String jobId, String token) {
 		return rootApiUrl + "/bulk/jobs/" + jobId +"/records" + TOKEN_PARAMETER + token;
 	}
@@ -79,5 +88,9 @@ public class IdServiceRestUrlHelper {
 			urlBuilder.append(legacyId.toString());
 		}
 		return urlBuilder.toString();
+	}
+
+	public String getTestServiceUrl() {
+		return rootApiUrl + "/testService";
 	}
 }
