@@ -19,8 +19,8 @@ public class IdServiceRestClientImpTestManual {
 	private static final String UUID_TWO = "ae4de89d-65ce-475c-80e1-a4f92212cd57";
 	private static final String UUID_ONE = "72bc1612-a773-4be9-8eab-b6d48b2ffc9f";
 	private static IdServiceRestClient client;
-	private static final String idServiceApiUrl = "http://107.170.138.113:3000/api";
-	private static final String userName ="username";
+	private static final String idServiceApiUrl = "http://uat-cis.ihtsdotools.org:3000/api";
+	private static final String userName ="usename";
 	private static final String password ="password";
 	
 	@BeforeClass
@@ -39,7 +39,7 @@ public class IdServiceRestClientImpTestManual {
 		Long sctId = client.getOrCreateSctId(UUID.fromString("E2F7B688-396E-4E84-A78B-6802698EB309"), new Integer("0"), "00","testing");
 		assertNotNull(sctId);
 		System.out.println("Sctid:" + sctId);
-		assertEquals( new Long("714141004"), sctId);
+		assertEquals( new Long("715155004"), sctId);
 	}
 	@Test
 	public void testCreateSctids() throws Exception {
