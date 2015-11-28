@@ -2,10 +2,10 @@ package org.ihtsdo.buildcloud.controller;
 
 import java.nio.charset.Charset;
 
-import org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIOfflineDemoImpl;
 import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
-import org.ihtsdo.idgeneration.IdAssignmentBI;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
 import org.junit.After;
@@ -45,7 +45,7 @@ public abstract class AbstractControllerTest {
 	private UUIDGenerator uuidGenerator;
 
 	@Autowired
-	private IdAssignmentBI idAssignmentBI;
+	private IdServiceRestClient idRestClient;
 
 	@Autowired
 	private String buildBucketName;
@@ -60,8 +60,8 @@ public abstract class AbstractControllerTest {
 		if (uuidGenerator instanceof PesudoUUIDGenerator) {
 			((PesudoUUIDGenerator)uuidGenerator).reset();
 		}
-		if ( idAssignmentBI instanceof IdAssignmentBIOfflineDemoImpl) {
-			((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
+		if ( idRestClient instanceof IdServiceRestClientOfflineDemoImpl) {
+			((IdServiceRestClientOfflineDemoImpl)idRestClient).reset();
 		}
 		if (s3Client instanceof TestS3Client) {
 			final TestS3Client testS3Client = (TestS3Client) s3Client;
@@ -78,8 +78,8 @@ public abstract class AbstractControllerTest {
 		if (uuidGenerator instanceof PesudoUUIDGenerator) {
 			((PesudoUUIDGenerator)uuidGenerator).reset();
 		}
-		if ( idAssignmentBI instanceof IdAssignmentBIOfflineDemoImpl) {
-			((IdAssignmentBIOfflineDemoImpl)idAssignmentBI).reset();
+		if ( idRestClient instanceof IdServiceRestClientOfflineDemoImpl) {
+			((IdServiceRestClientOfflineDemoImpl)idRestClient).reset();
 		}
 	}
 

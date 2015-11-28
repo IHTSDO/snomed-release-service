@@ -1,22 +1,26 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
-import org.ihtsdo.idgeneration.IdAssignmentBI;
-import org.ihtsdo.idgeneration.IdAssignmentImpl;
+import java.util.Date;
+
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Date;
-
 public class CachedSctidFactoryTestManual {
 
 	private CachedSctidFactory cachedSctidFactory;
-	private IdAssignmentBI idAssignmentBI;
+	private IdServiceRestClient idRestClient;
+	private String url = "http://localhost:8080/api/";
+	private String userName = "userName";
+	private String password = "password";
 
 	@Before
 	public void setUp() throws Exception {
-		idAssignmentBI = new IdAssignmentImpl("http://cu026.servers.aceworkspace.net:7080/axis2/services/id_generator");
-		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idAssignmentBI, 3, 10);
+		idRestClient = new IdServiceRestClientImpl(url, userName, password);
+		idRestClient.logIn();
+		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient);
 	}
 
 	@Test

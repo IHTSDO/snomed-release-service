@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.ihtsdo.snomed.release</groupId>
 		<artifactId>snomed-release-service</artifactId>
-		<version>0.1.59</version>
+		<version>0.1.60</version>
 	</parent>
 
 	<artifactId>api</artifactId>
@@ -22,11 +22,6 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>data-service</artifactId>
 			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.ihtsdo.otf.common</groupId>
-			<artifactId>otf-common</artifactId>
-			<version>0.0.14</version>
 		</dependency>
 		<!-- Spring -->
 		<dependency>

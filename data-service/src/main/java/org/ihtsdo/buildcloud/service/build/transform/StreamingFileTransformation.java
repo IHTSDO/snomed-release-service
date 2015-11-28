@@ -1,13 +1,19 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class StreamingFileTransformation {
 
@@ -82,7 +88,7 @@ public class StreamingFileTransformation {
 					batchLineTransform.transformLines(columnValuesList);
 				} catch (TransformationException e) {
 					int batchLineStart = lineNumberAtEndOfBatch - listSize;
-					LOGGER.warn("TransformationException while processing {}, lines in buffer {}-{} caused by: {}", fileName, batchLineStart, lineNumberAtEndOfBatch, e.getMessage());
+					LOGGER.warn("TransformationException while processing {}, lines in buffer {}-{} caused by: {}", fileName, batchLineStart, lineNumberAtEndOfBatch, e.getMessage(), e);
 					report.add("File Transformation", fileName, e.getMessage(), lineNumberAtEndOfBatch);
 				}
 			} else {
@@ -93,7 +99,7 @@ public class StreamingFileTransformation {
 						lineTransformation.transformLine(columnValues);
 					} catch (TransformationException e) {
 						int currentLineNumber = lineNumberAtEndOfBatch - listSize + a;
-						LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, currentLineNumber, e.getMessage());
+						LOGGER.warn("TransformationException while processing {} at line {} caused by: {}", fileName, currentLineNumber, e.getMessage(), e);
 						report.add("File Transformation", fileName, e.getMessage(), lineNumberAtEndOfBatch);
 					}
 				}
