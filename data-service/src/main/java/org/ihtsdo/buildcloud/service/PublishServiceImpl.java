@@ -354,7 +354,7 @@ public class PublishServiceImpl implements PublishService {
 			}
 			batchJob.add(id);
 			counter++;
-			if (counter % BATCH_SIZE == 0 || counter == batchJob.size()) {
+			if (counter % BATCH_SIZE == 0 || counter == sctIds.size()) {
 				Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(batchJob);
 				if ( batchJob.size() != sctIdStatusMap.size()) {
 					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
@@ -380,7 +380,7 @@ public class PublishServiceImpl implements PublishService {
 				batchJob = null;
 			}
 		}
-		LOGGER.info("Found total sctIds {} in file {} with assigned status {} , published statu {} and other status {}", 
+		LOGGER.info("Found total sctIds {} in file {} with assigned status {} , published status {} and other status {}", 
 				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
 		if (otherStatusIds.size() > 0) {
 			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in assigned or published status:");
