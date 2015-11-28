@@ -1,25 +1,37 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.log4j.MDC;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
+import org.ihtsdo.buildcloud.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
@@ -49,6 +61,17 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private BuildS3PathHelper buildS3PathHelper;
+
+	@Autowired
+	private IdServiceRestClient idRestClient;
+
+	@Autowired
+	private BuildDAO buildDao;
+	
+	private static final int BATCH_SIZE = 5000;
+	
+	private static final int MAX_FAILURE = 100;
+
 
 	@Autowired
 	public PublishServiceImpl(final String buildBucketName, final String publishedBucketName,
@@ -223,4 +246,180 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.info("Finish: Upload extracted package to {}", zipExtractPath);
 	}
 
+	@Override
+	public void publishComponentIds(Build build) throws BusinessServiceException {
+		LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
+		try {
+			try {
+				idRestClient.logIn();
+			} catch (RestClientException e) {
+				throw new BusinessServiceException("Failed to logIn to the id service",e);
+			}
+			String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
+			List<String> filesFound = buildFileHelper.listFiles(buildOutputDir);
+			boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
+			for (String fileName : filesFound) {
+				String filenameToCheck = isBetaRelease ? fileName.replace(BuildConfiguration.BETA_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
+					if (filenameToCheck.endsWith(RF2Constants.TXT_FILE_EXTENSION) && filenameToCheck.contains(RF2Constants.DELTA)) {
+						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
+							try {
+								publishSctIds(buildDao.getOutputFileInputStream(build, fileName), fileName, build.getId());
+							} catch (IOException | RestClientException e) {
+								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
+							}
+						}
+						
+						if (filenameToCheck.startsWith(RF2Constants.DER2) && filenameToCheck.contains(RF2Constants.SIMPLE_MAP_FILE_IDENTIFIER)) {
+							try {
+								publishLegacyIds(buildDao.getOutputFileInputStream(build, fileName), fileName, build.getId());
+							} catch (IOException | RestClientException e) {
+								throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName, e);
+							}
+						}
+					}
+			}
+		} finally {
+			MDC.remove(BuildService.MDC_BUILD_KEY);
+			try {
+				idRestClient.logOut();
+			} catch (RestClientException e) {
+				LOGGER.warn("Failed to log out the id service", e);
+			}
+		}
+		LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+	}
+
+	private Map<SchemeIdType, Collection<String>> getLegacyIdsFromFile(InputStream inputStream) throws IOException {
+		Map<SchemeIdType, Collection<String>> result = new HashMap<SchemeIdType, Collection<String>>();
+		result.put(SchemeIdType.CTV3ID, new HashSet<String>());
+		result.put(SchemeIdType.SNOMEDID, new HashSet<String>());
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
+			String line = null;
+			boolean isFirstLine = true;
+			while (( line = reader.readLine()) != null) {
+				if (isFirstLine) {
+					isFirstLine = false;
+					continue;
+				}
+				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
+				String refSetId = columnValues[4];
+				String mapTarget = columnValues[6];
+				if (mapTarget == null || mapTarget.isEmpty()) {
+					LOGGER.warn("Found map target is null or empty for refsetId:" + refSetId);
+					continue;
+				}
+				if (RF2Constants.CTV3_ID_REFSET_ID.equals(refSetId) ) {
+					result.get(SchemeIdType.CTV3ID).add(mapTarget);
+				} else if (RF2Constants.SNOMED_ID_REFSET_ID.equals(refSetId)) {
+					result.get(SchemeIdType.SNOMEDID).add(mapTarget);
+				}
+			}
+		} 
+		return result;
+	}
+	
+	private void publishLegacyIds(InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
+		Map<SchemeIdType, Collection<String>> result = getLegacyIdsFromFile(inputFileStream);
+		for (SchemeIdType type : result.keySet()) {
+			int publishedIdCounter = 0;
+			Map<String,String> idStatusMap = idRestClient.getSchemeIdStatusMap(type, result.get(type));
+			List<String> idsAssigned = new ArrayList<>();
+			for (String id : idStatusMap.keySet()) {
+				String status = idStatusMap.get(id);
+				if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+					idsAssigned.add(id);
+				} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+					publishedIdCounter++;
+				}
+			}
+			LOGGER.info("Found total {} ids {} in file {} with assigned status: {} and published status: {}", 
+					type, idStatusMap.size(), filename, idsAssigned.size(), publishedIdCounter);
+			if (!idsAssigned.isEmpty()) {
+				idRestClient.publishSchemeIds(idsAssigned, type, buildId);
+			}
+		}
+	}
+
+	private void publishSctIds(InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
+		Set<Long> sctIds = getSctIdsFromFile(inputFileStream);
+		List<Long> batchJob = null;
+		int counter = 0;
+		int publishedAlreadyCounter = 0;
+		int assignedStatusCounter = 0;
+		List<Long> otherStatusIds = new ArrayList<>();
+		for (Long id : sctIds) {
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
+			}
+			batchJob.add(id);
+			counter++;
+			if (counter % BATCH_SIZE == 0 || counter == sctIds.size()) {
+				Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(batchJob);
+				if ( batchJob.size() != sctIdStatusMap.size()) {
+					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
+				}
+				List<Long> assignedIds = new ArrayList<>();
+				for (Long sctId : batchJob) {
+					String status = sctIdStatusMap.get(sctId);
+					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+						assignedStatusCounter++;
+						assignedIds.add(sctId);
+					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+						publishedAlreadyCounter ++;
+					} else {
+						otherStatusIds.add(sctId);
+					}
+				}
+				if (!assignedIds.isEmpty()) {
+					boolean isSuccessful = idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
+					if (!isSuccessful) {
+						LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
+					}
+				}
+				batchJob = null;
+			}
+		}
+		LOGGER.info("Found total sctIds {} in file {} with assigned status {} , published status {} and other status {}", 
+				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+		if (otherStatusIds.size() > 0) {
+			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in assigned or published status:");
+			boolean isFirstOne = true;
+			int failureCounter = 0;
+			for (Long id : otherStatusIds) {
+				if (failureCounter > MAX_FAILURE) {
+					break;
+				}
+				if (!isFirstOne) {
+					msgBuilder.append(",");
+				}
+				if (isFirstOne) {
+					isFirstOne = false;
+				}
+				msgBuilder.append(id);
+				failureCounter++;
+			}
+			LOGGER.warn("Total ids have not been published {} in file {} for example {} ", otherStatusIds.size(), filename, msgBuilder.toString());
+		}
+		
+	}
+	
+	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {
+		Set<Long> sctIds = new HashSet<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFileStream, RF2Constants.UTF_8))) {
+			String line = null;
+			boolean isFirstLine = true;
+			while (( line = reader.readLine()) != null) {
+				if (isFirstLine) {
+					isFirstLine = false;
+					continue;
+				}
+				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
+//				if (RF2Constants.BOOLEAN_TRUE.equals(columnValues[1])) {
+					sctIds.add( new Long(columnValues[0]));
+//				}
+			}
+		} 
+		return sctIds;
+	}
 }

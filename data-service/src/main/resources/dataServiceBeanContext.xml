@@ -211,21 +211,26 @@
 	<bean class="java.lang.String" id="modelModuleSctid">
 		<constructor-arg value="${snomed.modelModuleSctid}"/>
 	</bean>
-
-	<bean factory-bean="idAssignmentBIFactory" factory-method="getInstance">
+	<bean factory-bean="idServiceClientFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
 	</bean>
 
-	<bean class="org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIFactory" name="idAssignmentBIFactory">
+	<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientFactory" name="idServiceClientFactory">
 		<constructor-arg>
-			<bean class="org.ihtsdo.idgeneration.IdAssignmentImpl" >
+			<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl" >
 				<constructor-arg value="${idGenerator.url}" />
+				<constructor-arg value="${idGenerator.userName}" />
+				<constructor-arg value="${idGenerator.password}" />
+				<property name="timeOutInSeconds" value="${idGenerator.timeoutInSeconds}"/>
+				<property name="maxTries" ref = "idGenMaxTries" />
+				<property name="retryDelaySeconds" ref = "idGenRetryDelaySeconds" />
 			</bean>
 		</constructor-arg>
 		<constructor-arg>
-			<bean class="org.ihtsdo.buildcloud.service.build.transform.IdAssignmentBIOfflineDemoImpl"/>
+			<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl"/>
 		</constructor-arg>
 	</bean>
+
 	<bean factory-bean="uuIdGeneratorFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
 	</bean>

@@ -24,8 +24,9 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
-import org.ihtsdo.idgeneration.IdAssignmentBI;
+import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.exception.BadInputFileException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EffectiveDateNotMatchedException;
@@ -47,7 +48,7 @@ public class TransformationService {
 	private final ExecutorService executorService;
 
 	@Autowired
-	private IdAssignmentBI idAssignmentBI;
+	private IdServiceRestClient idRestClient;
 
 	@Autowired
 	private BuildDAO dao;
@@ -95,6 +96,7 @@ public class TransformationService {
 		final BuildReport report = build.getBuildReport();
 
 		final String effectiveDateInSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
+		idServiceRestClientLogIn();
 		final TransformationFactory transformationFactory = getTransformationFactory(build);
 		final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 		final boolean createLegacyIds = configuration.isCreateLegacyIds();
@@ -248,6 +250,24 @@ public class TransformationService {
 				throw new BusinessServiceException("Failed to create legacy identifiers.", e);
 			}
 		}
+		idServiceClientLogOut();
+	}
+
+	private void idServiceClientLogOut() {
+		try {
+			idRestClient.logOut();
+		} catch (RestClientException e) {
+			LOGGER.warn("Id service rest client failed to log out.", e);
+		}
+	}
+
+	private void idServiceRestClientLogIn() throws BusinessServiceException {
+		try {
+			idRestClient.logIn();
+		} catch (RestClientException e) {
+			//Handle retry later
+			throw new BusinessServiceException("Id servie rest client failed to log in.",e );
+		}
 	}
 	
 	private Map<String,List<UUID>> getNewConceptUUIDs(final Build build, final String inputFileName) throws IOException {
@@ -281,8 +301,9 @@ public class TransformationService {
 	}
 
 	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
-			Map<String, String> existingUuidToSctidMap) {
+			Map<String, String> existingUuidToSctidMap) throws BusinessServiceException {
 
+		idServiceRestClientLogIn();
 		final TransformationFactory transformationFactory = getTransformationFactory(build);
 		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
 
@@ -299,13 +320,13 @@ public class TransformationService {
 			dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
 			LOGGER.error("Failed to transform inferred relationship file.", e);
 		}
+		idServiceClientLogOut();
 	}
 
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String buildId =  build.getId();
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat,
-				buildId, idAssignmentBI, idGenMaxTries, idGenRetryDelaySeconds);
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient);
 
 		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);

@@ -175,6 +175,7 @@ public class BuildController {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
 		ifBuildIsNullThrow(productKey, buildId, build);
+		publishService.publishComponentIds(build);
 		publishService.publishBuild(build);
 	}
 
@@ -222,7 +223,6 @@ public class BuildController {
 			throw new ResourceNotFoundException("Unable to find build, productKey: " + productKey + ", buildId:" + buildId);
 		}
 	}
-
 
 	private List<Map<String, Object>> convertFileListToEntities(final HttpServletRequest request, final List<String> relativeFilePaths) {
 		final List<Map<String, String>> files = new ArrayList<>();

@@ -6,22 +6,26 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.ihtsdo.idgeneration.IdAssignmentBI;
-import org.ihtsdo.idgeneration.IdAssignmentImpl;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl;
 import org.junit.Before;
 import org.junit.Test;
 
 public class SCTIDTransformationTestManual {
 
 	private CachedSctidFactory cachedSctidFactory;
-	private IdAssignmentBI idAssignmentBI;
+	private IdServiceRestClient idRestClient;
 	private SCTIDTransformation sctidTransformation;
+	private String url = "http://162.243.20.236:3000/api";
+	private String userName = "userName";
+	private String password = "password";
 
 	@Before
 	public void setUp() throws Exception {
-		idAssignmentBI = new IdAssignmentImpl("http://localhost:8080/axis2/services/id_generator"); // Point this to test if no local.
-		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idAssignmentBI, 3, 10);
-		sctidTransformation = new SCTIDTransformation(0, 3, "1", cachedSctidFactory);
+		idRestClient = new IdServiceRestClientImpl(url, userName, password);
+		idRestClient.logIn();
+		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient);
+		sctidTransformation = new SCTIDTransformation(0, 3, "00", cachedSctidFactory);
 	}
 
 	@Test
