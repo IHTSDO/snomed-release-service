@@ -245,7 +245,7 @@ public class TransformationService {
 
 		if (createLegacyIds && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
 			try {
-				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, build);
+				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, build, idRestClient);
 			} catch (final TransformationException e) {
 				throw new BusinessServiceException("Failed to create legacy identifiers.", e);
 			}

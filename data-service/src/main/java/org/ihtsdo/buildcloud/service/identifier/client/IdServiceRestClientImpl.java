@@ -14,6 +14,7 @@ import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.resty.RestyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Scope;
 
 import us.monoid.json.JSONArray;
 import us.monoid.json.JSONObject;
@@ -22,7 +23,7 @@ import us.monoid.web.JSONResource;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-
+@Scope(value="prototype")
 public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final String MESSAGE = "message";
 	private static final String STATUS = "status";
@@ -46,6 +47,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private IdServiceRestUrlHelper urlHelper;
 	private Gson gson;
 	private String token;
+	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
 	
 	
@@ -81,19 +83,23 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	
 	@Override
 	public String logIn() throws RestClientException {
-		if (!isServiceRunning()) {
-			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
-		}
-		if (token == null) {
-			LOGGER.info("Id service rest client logs in to get security token." );
-			try {
-				JSONObject jsonObject = new JSONObject();
-				jsonObject.put("username", this.userName);
-				jsonObject.put("password", this.password);
-				token = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject))).get("token");
-				LOGGER.info("Security token is acquired successfully for id service" );
-			} catch (Exception e) {
-				throw new RestClientException("Failed to login for user name:" + this.userName, e);
+		synchronized (LOCK) {
+			if ( token == null) {
+				if (!isServiceRunning()) {
+					throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
+				}
+				LOGGER.info("Id service rest client logs in to get security token." );
+				try {
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put("username", this.userName);
+					jsonObject.put("password", this.password);
+					token = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject))).get("token");
+					LOGGER.info("Security token is acquired successfully for id service:" + token );
+				} catch (Exception e) {
+					throw new RestClientException("Failed to login for user name:" + this.userName, e);
+				}
+			} else {
+				LOGGER.info("ID service rest client is already logged in with token:" + token);
 			}
 		}
 		return token;
@@ -129,7 +135,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
 						}
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+						throw new RestClientException(getFailureMessage(response));
 					}
 					isDone = true;
 				} catch (Exception e) {
@@ -167,7 +173,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						 result = new Long((String)response.get(SCTID));
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+						throw new RestClientException(getFailureMessage(response));
 					}
 				} catch (Exception e) {
 					
@@ -221,7 +227,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
+				String statusMsg = getFailureMessage(response);
 				LOGGER.error(statusMsg);
 				throw new RestClientException(statusMsg);
 			}
@@ -265,8 +271,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				String message = "Received Http status from id service:" + response.getHTTPStatus();
-				throw new RestClientException(message);
+				throw new RestClientException(getFailureMessage(response));
 			}
 		} catch (Exception e) {
 			String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
@@ -276,6 +281,12 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
 		return result;
+	}
+
+
+	private String getFailureMessage(JSONResource response) throws Exception {
+		String message = "Received Http status from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
+		return message;
 	}
 	
 	
@@ -336,16 +347,18 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public void logOut() throws RestClientException {
-		if (token != null) {
-			LOGGER.info("Id service rest client logs out" );
-			try {
-				JSONObject jsonObject = new JSONObject();
-				jsonObject.put("token", this.token);
-				resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
-				token = null;
-				LOGGER.info("Id service rest client log out successfully." );
-			} catch (Exception e) {
-				throw new RestClientException("Failed to login out " + this.userName, e);
+		synchronized (LOCK) {
+			if (token != null) {
+				LOGGER.info("Id service rest client logs out token:" + token );
+				try {
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put("token", this.token);
+					resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
+					token = null;
+					LOGGER.info("Id service rest client log out successfully." );
+				} catch (Exception e) {
+					throw new RestClientException("Failed to login out " + this.userName, e);
+				}
 			}
 		}
 	}

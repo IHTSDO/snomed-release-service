@@ -32,14 +32,12 @@ public class LegacyIdTransformationService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
 
 	@Autowired
-	private IdServiceRestClient idRestClient;
-	@Autowired
 	private UUIDGenerator uuidGenerator;
 	@Autowired
 	private BuildDAO buildDAO;
 	
 	public void transformLegacyIds(final CachedSctidFactory cachedSctidFactory, final Map<String, List<UUID>> moduleIdAndUuidMap, 
-			final Build build) throws TransformationException {
+			final Build build, IdServiceRestClient idRestClient) throws TransformationException {
 		final List<UUID> newConceptUuids   = new ArrayList<>();
 		for (final String moduleId : moduleIdAndUuidMap.keySet()) {
 			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
@@ -49,7 +47,6 @@ public class LegacyIdTransformationService {
 		LOGGER.info("Start CTV3ID generation");
 		Map<UUID, String> uuidCtv3IdMap = new HashMap<>();
 		try {
-			idRestClient.logIn();
 			uuidCtv3IdMap = idRestClient.getOrCreateSchemeIds(newConceptUuids,SchemeIdType.CTV3ID, build.getUniqueId());
 		} catch (RestClientException e) {
 			throw new TransformationException("Failed to generate CTV3 IDs", e);
@@ -63,11 +60,6 @@ public class LegacyIdTransformationService {
 			throw new TransformationException("Failed to generate Snomed IDs", e);
 		}
 		LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.keySet().size());
-		try {
-			idRestClient.logOut();
-		} catch (RestClientException e) {
-			LOGGER.warn("Id service rest client failed to log out", e);
-		}
 		
 		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
