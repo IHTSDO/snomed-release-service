@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.http.HttpStatus;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -22,8 +23,8 @@ import us.monoid.web.JSONResource;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-
 public class IdServiceRestClientImpl implements IdServiceRestClient {
+	private static final String TOKEN = "token";
 	private static final String MESSAGE = "message";
 	private static final String STATUS = "status";
 	private static final String SCHEME_ID = "schemeId";
@@ -45,9 +46,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private RestyHelper resty;
 	private IdServiceRestUrlHelper urlHelper;
 	private Gson gson;
-	private String token;
+	private static String token;
+	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
 	
+	private static AtomicInteger currentSessions = new AtomicInteger();
 	
 	private int timeOutInSeconds = 300;
 	private int maxTries;
@@ -65,7 +68,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		
 	}
 	
-	
 	private boolean isServiceRunning() {
 		JSONResource response;
 		try {
@@ -81,24 +83,60 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	
 	@Override
 	public String logIn() throws RestClientException {
-		if (!isServiceRunning()) {
-			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
-		}
-		if (token == null) {
-			LOGGER.info("Id service rest client logs in to get security token." );
-			try {
-				JSONObject jsonObject = new JSONObject();
-				jsonObject.put("username", this.userName);
-				jsonObject.put("password", this.password);
-				token = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content((jsonObject))).get("token");
-				LOGGER.info("Security token is acquired successfully for id service" );
-			} catch (Exception e) {
-				throw new RestClientException("Failed to login for user name:" + this.userName, e);
+		synchronized (LOCK) {
+			if ( token != null) {
+				LOGGER.info("ID service rest client is already logged in with token:" + token);
+			} 
+			//validate token
+			if ( !isTokenValid(token) ) {
+				//get a new token;
+				token = accquireToken();
 			}
+			currentSessions.getAndIncrement();
 		}
 		return token;
 	}
+
+	private String accquireToken() throws RestClientException {
+		String securityToken = null;
+		if (!isServiceRunning()) {
+			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
+		}
+		LOGGER.info("Id service rest client logs in to get a new security token." );
+		try {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("username", this.userName);
+			jsonObject.put("password", this.password);
+			securityToken = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content(jsonObject)).get(TOKEN);
+			LOGGER.info("Security token is acquired successfully:" + securityToken );
+		} catch (Exception e) {
+			throw new RestClientException("Failed to login for user name:" + this.userName, e);
+		}
+		return securityToken;
+	}
 	
+	private boolean isTokenValid(String token) {
+		if (token == null) {
+			return false;
+		}
+		boolean isValid = false;
+		try {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put(TOKEN, token);
+			JSONResource response = resty.json(urlHelper.getTokenAuthenticationUrl(), RestyHelper.content(jsonObject,APPLICATION_JSON));
+			if (response != null) {
+				if (HttpStatus.SC_OK == (response.getHTTPStatus())) {
+					isValid = true;
+				} else {
+					LOGGER.info("Inavlid token with failure reason from id server:" + response.get(MESSAGE));
+				}
+			}
+		} catch (Exception e) {
+			LOGGER.error("Failed to valid token:" + token, e);
+		}
+		return isValid;
+	}
+
 	@Override
 	public Map<Long,String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,String> result = new HashMap<>();
@@ -129,7 +167,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
 						}
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+						throw new RestClientException(getFailureMessage(response));
 					}
 					isDone = true;
 				} catch (Exception e) {
@@ -167,7 +205,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						 result = new Long((String)response.get(SCTID));
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+						throw new RestClientException(getFailureMessage(response));
 					}
 				} catch (Exception e) {
 					
@@ -221,7 +259,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
+				String statusMsg = getFailureMessage(response);
 				LOGGER.error(statusMsg);
 				throw new RestClientException(statusMsg);
 			}
@@ -265,8 +303,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					}
 				}
 			} else {
-				String message = "Received Http status from id service:" + response.getHTTPStatus();
-				throw new RestClientException(message);
+				throw new RestClientException(getFailureMessage(response));
 			}
 		} catch (Exception e) {
 			String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
@@ -276,6 +313,12 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
 		return result;
+	}
+
+
+	private String getFailureMessage(JSONResource response) throws Exception {
+		String message = "Received Http status from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
+		return message;
 	}
 	
 	
@@ -336,16 +379,20 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public void logOut() throws RestClientException {
-		if (token != null) {
-			LOGGER.info("Id service rest client logs out" );
-			try {
-				JSONObject jsonObject = new JSONObject();
-				jsonObject.put("token", this.token);
-				resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
-				token = null;
-				LOGGER.info("Id service rest client log out successfully." );
-			} catch (Exception e) {
-				throw new RestClientException("Failed to login out " + this.userName, e);
+		currentSessions.getAndDecrement();
+		synchronized (LOCK) {
+			if (token != null) {
+				LOGGER.info("Total current sessions:" + currentSessions.get());
+				if (currentSessions.get() == 0) {
+					try {
+						JSONObject jsonObject = new JSONObject();
+						jsonObject.put(TOKEN, this.token);
+						resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
+						LOGGER.info("Id service rest client logs out successfully with token:" + this.token );
+					} catch (Exception e) {
+						throw new RestClientException("Failed to login out " + this.userName, e);
+					}
+				}
 			}
 		}
 	}
