@@ -103,7 +103,6 @@ public class IdServiceClientConcurrencyTestManual {
 					idGen.logIn();
 					final Long sctId = idGen.getOrCreateSctId(componentUuid, NAMES_SPACE_ID, PARTITION_ID, "testing");
 					System.out.println("Thread:" + id + " created SCT ID:" + sctId + " for UUID:" + componentUuid);
-//					delay(1000);
 					idGen.logOut();
 				} catch (final Exception e) {
 					e.printStackTrace();
