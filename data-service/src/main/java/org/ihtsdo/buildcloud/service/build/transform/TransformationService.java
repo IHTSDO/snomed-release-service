@@ -96,164 +96,169 @@ public class TransformationService {
 		final BuildReport report = build.getBuildReport();
 
 		final String effectiveDateInSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
-		idServiceRestClientLogIn();
-		final TransformationFactory transformationFactory = getTransformationFactory(build);
-		final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
-		final boolean createLegacyIds = configuration.isCreateLegacyIds();
-		final boolean isBeta = configuration.isBetaRelease();
+		try {
+			
+			logInIdServiceRestClient();
+			final TransformationFactory transformationFactory = getTransformationFactory(build);
+			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
+			final boolean createLegacyIds = configuration.isCreateLegacyIds();
+			final boolean isBeta = configuration.isBetaRelease();
 
-		LOGGER.info("Transforming files in build {}, workbench data fixes {}.", build.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
+			LOGGER.info("Transforming files in build {}, workbench data fixes {}.", build.getUniqueId(), workbenchDataFixesRequired ? "enabled" : "disabled");
 
-		// Iterate each build input file
-		final List<String> buildInputFileNames = dao.listInputFileNames(build);
-		LOGGER.info("Found {} files to process", buildInputFileNames.size());
-		if (workbenchDataFixesRequired) {
-			// Phase 0
-			// Get list of conceptIds which should be in the model module.
+			// Iterate each build input file
+			final List<String> buildInputFileNames = dao.listInputFileNames(build);
+			LOGGER.info("Found {} files to process", buildInputFileNames.size());
+			if (workbenchDataFixesRequired) {
+				// Phase 0
+				// Get list of conceptIds which should be in the model module.
 
-			if (!configuration.isFirstTimeRelease()) {
-				final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
-				try {
-					final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
-					if (statedRelationshipSnapshotStream != null) {
-						final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
+				if (!configuration.isFirstTimeRelease()) {
+					final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
+					try {
+						final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						if (statedRelationshipSnapshotStream != null) {
+							final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
-						String inputStatedRelationshipFilename = null;
-						for (final String inputFileName : buildInputFileNames) {
-							if (inputFileName.startsWith("rel2_StatedRelationship_Delta")) {
-								inputStatedRelationshipFilename = inputFileName;
+							String inputStatedRelationshipFilename = null;
+							for (final String inputFileName : buildInputFileNames) {
+								if (inputFileName.startsWith("rel2_StatedRelationship_Delta")) {
+									inputStatedRelationshipFilename = inputFileName;
+								}
 							}
-						}
-						if (inputStatedRelationshipFilename != null) {
-							final InputStream inputStatedRelationshipStream = dao.getInputFileStream(build, inputStatedRelationshipFilename);
-							moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
+							if (inputStatedRelationshipFilename != null) {
+								final InputStream inputStatedRelationshipStream = dao.getInputFileStream(build, inputStatedRelationshipFilename);
+								moduleResolverService.addNewModelConceptIds(modelConceptIds, inputStatedRelationshipStream);
 
-							transformationFactory.setModelConceptIdsForModuleIdFix(modelConceptIds);
+								transformationFactory.setModelConceptIdsForModuleIdFix(modelConceptIds);
 
-						} else {
-							// TODO: Add to build report?
-							LOGGER.error("No stated relationship input file found.");
-						}
-					} else {
-						LOGGER.error("No previous stated relationship file found.");
-					}
-				} catch (BadInputFileException | IOException e) {
-					// TODO: Add to build report?
-					LOGGER.error("Exception occurred during moduleId workbench data fix.", e);
-				}
-			}
-		}
-
-		// Phase 1
-		// Process just the id and moduleId columns of any Concept and Description files.
-		Map<String, List<UUID>> moduleIdAndNewConceptUUids = null;
-		boolean isSimpeRefsetMapDeltaPresent = false;
-		for (final String filename : buildInputFileNames) {
-			if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
-				isSimpeRefsetMapDeltaPresent = true;
-				break;
-			}
-		}
-		
-		for (final String inputFileName : buildInputFileNames) {
-			try{
-				LOGGER.info("Processing file: {}", inputFileName);
-				final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
-				if (tableSchema == null) {
-					LOGGER.warn("No table schema found in map for file: {}", inputFileName);
-				} else {
-					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
-					final ComponentType componentType = tableSchema.getComponentType();
-					if (isPreProcessType(componentType)) {
-						final InputStream buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
-						final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(build, inputFileName);
-
-						final StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
-
-						// Apply transformations
-						steamingFileTransformation.transformFile(buildInputFileInputStream, transformedOutputStream, inputFileName, report);
-						if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && createLegacyIds) {
-							moduleIdAndNewConceptUUids = getNewConceptUUIDs(build, inputFileName);
-						}
-					}
-				}
-			} catch (TransformationException | IOException e) {
-				// Catch blocks just log and let the next file get processed.
-				LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
-			}
-		}
-		// Phase 2
-		// Process all files
-		final List<Future> concurrentTasks = new ArrayList<>();
-		for (final String inputFileName : buildInputFileNames) {
-			// Transform all txt files
-			final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
-			if (tableSchema != null) {
-				// Recognised RF2 file
-
-				checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
-				final String outputFilename = isBeta ? BuildConfiguration.BETA_PREFIX + tableSchema.getFilename() : tableSchema.getFilename();
-				final Future<?> future = executorService.submit(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							InputStream buildInputFileInputStream;
-							if (isPreProcessType(tableSchema.getComponentType())) {
-								buildInputFileInputStream = dao.getLocalInputFileStream(build, inputFileName);
 							} else {
-								buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
+								// TODO: Add to build report?
+								LOGGER.error("No stated relationship input file found.");
 							}
-							final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
-							final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
-
-							// Get appropriate transformations for this file.
-							final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
-
-							// Get the report to output to
-							// Apply transformations
-							steamingFileTransformation.transformFile(buildInputFileInputStream, buildTransformedOutputStream,
-									outputFilename, report);
-
-							// Wait for upload of transformed file to finish
-							asyncPipedStreamBean.waitForFinish();
-						} catch (final FileRecognitionException e) {
-							LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
-						} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
-							// Catch blocks just log and let the next file get processed.
-							LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
-						} catch (ExecutionException | InterruptedException e) {
-							dao.renameTransformedFile(build, outputFilename, outputFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
-							LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
+						} else {
+							LOGGER.error("No previous stated relationship file found.");
 						}
+					} catch (BadInputFileException | IOException e) {
+						// TODO: Add to build report?
+						LOGGER.error("Exception occurred during moduleId workbench data fix.", e);
 					}
-				});
-				concurrentTasks.add(future);
-			} else {
-				// Not recognised as an RF2 file, copy across without transform
-				dao.copyInputFileToOutputFile(build, inputFileName);
-			}
-
-			// Wait for all concurrent tasks to finish
-			for (final Future concurrentTask : concurrentTasks) {
-				try {
-					concurrentTask.get();
-				} catch (ExecutionException | InterruptedException e) {
-					LOGGER.error("Thread interrupted while waiting for future result.", e);
 				}
 			}
-		}
 
-		if (createLegacyIds && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
-			try {
-				legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, build, idRestClient);
-			} catch (final TransformationException e) {
-				throw new BusinessServiceException("Failed to create legacy identifiers.", e);
+			// Phase 1
+			// Process just the id and moduleId columns of any Concept and Description files.
+			Map<String, List<UUID>> moduleIdAndNewConceptUUids = null;
+			boolean isSimpeRefsetMapDeltaPresent = false;
+			for (final String filename : buildInputFileNames) {
+				if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
+					isSimpeRefsetMapDeltaPresent = true;
+					break;
+				}
 			}
+
+			for (final String inputFileName : buildInputFileNames) {
+				try{
+					LOGGER.info("Processing file: {}", inputFileName);
+					final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
+					if (tableSchema == null) {
+						LOGGER.warn("No table schema found in map for file: {}", inputFileName);
+					} else {
+						checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
+						final ComponentType componentType = tableSchema.getComponentType();
+						if (isPreProcessType(componentType)) {
+							final InputStream buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
+							final OutputStream transformedOutputStream = dao.getLocalTransformedFileOutputStream(build, inputFileName);
+
+							final StreamingFileTransformation steamingFileTransformation = transformationFactory.getPreProcessFileTransformation(componentType);
+
+							// Apply transformations
+							steamingFileTransformation.transformFile(buildInputFileInputStream, transformedOutputStream, inputFileName, report);
+							if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && createLegacyIds) {
+								moduleIdAndNewConceptUUids = getNewConceptUUIDs(build, inputFileName);
+							}
+						}
+					}
+				} catch (TransformationException | IOException e) {
+					// Catch blocks just log and let the next file get processed.
+					LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
+				}
+			}
+			// Phase 2
+			// Process all files
+			final List<Future> concurrentTasks = new ArrayList<>();
+			for (final String inputFileName : buildInputFileNames) {
+				// Transform all txt files
+				final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
+				if (tableSchema != null) {
+					// Recognised RF2 file
+
+					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
+					final String outputFilename = isBeta ? BuildConfiguration.BETA_PREFIX + tableSchema.getFilename() : tableSchema.getFilename();
+					final Future<?> future = executorService.submit(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								InputStream buildInputFileInputStream;
+								if (isPreProcessType(tableSchema.getComponentType())) {
+									buildInputFileInputStream = dao.getLocalInputFileStream(build, inputFileName);
+								} else {
+									buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
+								}
+								final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
+								final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+
+								// Get appropriate transformations for this file.
+								final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
+
+								// Get the report to output to
+								// Apply transformations
+								steamingFileTransformation.transformFile(buildInputFileInputStream, buildTransformedOutputStream,
+										outputFilename, report);
+
+								// Wait for upload of transformed file to finish
+								asyncPipedStreamBean.waitForFinish();
+							} catch (final FileRecognitionException e) {
+								LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
+							} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
+								// Catch blocks just log and let the next file get processed.
+								LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
+							} catch (ExecutionException | InterruptedException e) {
+								dao.renameTransformedFile(build, outputFilename, outputFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
+								LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
+							}
+						}
+					});
+					concurrentTasks.add(future);
+				} else {
+					// Not recognised as an RF2 file, copy across without transform
+					dao.copyInputFileToOutputFile(build, inputFileName);
+				}
+
+				// Wait for all concurrent tasks to finish
+				for (final Future concurrentTask : concurrentTasks) {
+					try {
+						concurrentTask.get();
+					} catch (ExecutionException | InterruptedException e) {
+						LOGGER.error("Thread interrupted while waiting for future result.", e);
+					}
+				}
+			}
+
+			if (createLegacyIds && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+				try {
+					legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, build, idRestClient);
+				} catch (final TransformationException e) {
+					throw new BusinessServiceException("Failed to create legacy identifiers.", e);
+				}
+			}
+		} finally {
+			
+			logOutIdServiceClient();
 		}
-		idServiceClientLogOut();
 	}
 
-	private void idServiceClientLogOut() {
+	private void logOutIdServiceClient() {
 		try {
 			idRestClient.logOut();
 		} catch (RestClientException e) {
@@ -261,7 +266,7 @@ public class TransformationService {
 		}
 	}
 
-	private void idServiceRestClientLogIn() throws BusinessServiceException {
+	private void logInIdServiceRestClient() throws BusinessServiceException {
 		try {
 			idRestClient.logIn();
 		} catch (RestClientException e) {
@@ -302,25 +307,27 @@ public class TransformationService {
 
 	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
 			Map<String, String> existingUuidToSctidMap) throws BusinessServiceException {
+		try {
+			logInIdServiceRestClient();
+			final TransformationFactory transformationFactory = getTransformationFactory(build);
+			transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
 
-		idServiceRestClientLogIn();
-		final TransformationFactory transformationFactory = getTransformationFactory(build);
-		transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
-
-		try (AsyncPipedStreamBean outputFileOutputStream = dao.getTransformedFileOutputStream(build, relationshipFilename)) {
-			final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
-					new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));
-			final BuildReport report = build.getBuildReport();
-			fileTransformation.transformFile(
-					localClassifierResultInputStream,
-					outputFileOutputStream.getOutputStream(),
-					relationshipFilename,
-					report);
-		} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
-			dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
-			LOGGER.error("Failed to transform inferred relationship file.", e);
+			try (AsyncPipedStreamBean outputFileOutputStream = dao.getTransformedFileOutputStream(build, relationshipFilename)) {
+				final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
+						new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));
+				final BuildReport report = build.getBuildReport();
+				fileTransformation.transformFile(
+						localClassifierResultInputStream,
+						outputFileOutputStream.getOutputStream(),
+						relationshipFilename,
+						report);
+			} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
+				dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
+				LOGGER.error("Failed to transform inferred relationship file.", e);
+			}
+		} finally {
+			logOutIdServiceClient();
 		}
-		idServiceClientLogOut();
 	}
 
 	public TransformationFactory getTransformationFactory(Build build) {

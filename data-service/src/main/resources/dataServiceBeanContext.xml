@@ -217,7 +217,7 @@
 
 	<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientFactory" name="idServiceClientFactory">
 		<constructor-arg>
-			<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl" scope="prototype">
+			<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl">
 				<constructor-arg value="${idGenerator.url}" />
 				<constructor-arg value="${idGenerator.userName}" />
 				<constructor-arg value="${idGenerator.password}" />

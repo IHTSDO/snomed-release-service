@@ -93,4 +93,8 @@ public class IdServiceRestUrlHelper {
 	public String getTestServiceUrl() {
 		return rootApiUrl + "/testService";
 	}
+
+	public String getTokenAuthenticationUrl() {
+		return rootApiUrl + "/authenticate";
+	}
 }
