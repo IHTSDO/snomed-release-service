@@ -264,7 +264,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			String message = "Bulk getOrCreateSctds job failed.";
+			String message = "Bulk getOrCreateSctIds job failed.";
 			LOGGER.error(message, e);
 			throw new RestClientException(message,e);
 		}

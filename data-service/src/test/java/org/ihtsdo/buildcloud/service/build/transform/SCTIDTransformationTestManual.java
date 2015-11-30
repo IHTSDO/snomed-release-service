@@ -24,7 +24,7 @@ public class SCTIDTransformationTestManual {
 	public void setUp() throws Exception {
 		idRestClient = new IdServiceRestClientImpl(url, userName, password);
 		idRestClient.logIn();
-		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient);
+		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient, 3, 10);
 		sctidTransformation = new SCTIDTransformation(0, 3, "00", cachedSctidFactory);
 	}
 
