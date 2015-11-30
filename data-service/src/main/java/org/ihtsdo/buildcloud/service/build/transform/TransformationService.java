@@ -333,7 +333,7 @@ public class TransformationService {
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String buildId =  build.getId();
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient);
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
 
 		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);

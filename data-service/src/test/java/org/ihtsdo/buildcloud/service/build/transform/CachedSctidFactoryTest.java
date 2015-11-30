@@ -23,7 +23,7 @@ public class CachedSctidFactoryTest {
 	public void setUp() throws Exception {
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		mockIdRestClient = mocksControl.createMock(IdServiceRestClient.class);
-		cachedSctidFactory = new CachedSctidFactory(1, "123", "456", mockIdRestClient);
+		cachedSctidFactory = new CachedSctidFactory(1, "123", "456", mockIdRestClient,1,20);
 	}
 
 	@Test
