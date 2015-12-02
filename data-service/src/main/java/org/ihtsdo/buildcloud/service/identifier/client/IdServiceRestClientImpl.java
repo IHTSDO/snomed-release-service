@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import us.monoid.json.JSONArray;
+import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import us.monoid.web.JSONResource;
 
@@ -138,7 +139,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	}
 
 	@Override
-	public Map<Long,String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
+	public Map<Long,String> getStatusForSctIds(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,String> result = new HashMap<>();
 		if (sctIds == null || sctIds.isEmpty()) {
 			return result;
@@ -317,8 +318,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 
 	private String getFailureMessage(JSONResource response) throws Exception {
-		String message = "Received Http status from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
-		return message;
+		return "Received Http status from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
 	}
 	
 	
@@ -482,7 +482,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	
 	@Override
-	public Map<String, String> getSchemeIdStatusMap(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
+	public Map<String, String> getStatusForSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
 		
 		Map<String,String> result = new HashMap<>();
 		if (legacyIds == null || legacyIds.isEmpty()) {
@@ -511,7 +511,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						try {
 							Thread.sleep(retryDelaySeconds * 1000);
 						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry dealy interrupted.",e);
+							LOGGER.warn("Retry delay interrupted.",e);
 						}
 					} else {
 						throw new RestClientException("Failed to get scheme Ids for batch size:" + legacyIds.size(), e);
@@ -521,8 +521,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		return result;
 	}
 	
-	
-	public Map<Long,JSONObject> getSctids(Collection<Long> sctIds) throws RestClientException {
+	public Map<Long,JSONObject> getSctIdRecords(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,JSONObject> result = new HashMap<>();
 		if (sctIds == null || sctIds.isEmpty()) {
 			return result;
@@ -550,7 +549,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						try {
 							Thread.sleep(retryDelaySeconds * 1000);
 						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry dealy interrupted.",e);
+							LOGGER.warn("Retry delay interrupted.",e);
 						}
 					} else {
 						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
@@ -588,7 +587,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						try {
 							Thread.sleep(retryDelaySeconds * 1000);
 						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry dealy interrupted.",e);
+							LOGGER.warn("Retry delay interrupted.",e);
 						}
 					} else {
 						throw new RestClientException("Failed to get sctIds for batch size:" + legacyIds.size(), e);
@@ -596,5 +595,20 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				}
 		}
 		return result;
+	}
+
+	@Override
+	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
+		Map<Long,JSONObject> sctIdRecords = getSctIdRecords(sctIds);
+		Map<Long, UUID> sctIdUuidMap = new HashMap<>();
+		for (Long id : sctIdRecords.keySet()) {
+			try {
+				sctIdUuidMap.put(id, UUID.fromString((String)sctIdRecords.get(id).get(SYSTEM_ID)));
+			} catch (JSONException e) {
+				throw new RestClientException("Error when fetching system id for sctId:" + id, e);
+			}
+		}
+		return sctIdUuidMap;
+			
 	}
 }
