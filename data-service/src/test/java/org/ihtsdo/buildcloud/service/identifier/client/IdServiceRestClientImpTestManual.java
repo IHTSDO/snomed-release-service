@@ -111,7 +111,7 @@ public class IdServiceRestClientImpTestManual {
 		List<Long> sctids = new ArrayList<>();
 		sctids.add(new Long("714141004"));
 		sctids.add(new Long("714139000"));
-		Map<Long, String> result = client.getSctidStatusMap(sctids);
+		Map<Long, String> result = client.getStatusForSctIds(sctids);
 		assertEquals(sctids.size(), result.keySet().size());
 		assertTrue(result.keySet().containsAll(sctids));
 		for (Long key : result.keySet()) {
@@ -124,7 +124,7 @@ public class IdServiceRestClientImpTestManual {
 		List<String> snomedIds = new ArrayList<>();
 		snomedIds.add("R-FF605");
 		snomedIds.add("R-FF609");
-		Map<String, String> result = client.getSchemeIdStatusMap(SchemeIdType.SNOMEDID, snomedIds);
+		Map<String, String> result = client.getStatusForSchemeIds(SchemeIdType.SNOMEDID, snomedIds);
 		assertEquals(snomedIds.size(), result.keySet().size());
 		assertTrue(result.keySet().containsAll(snomedIds));
 		for (String id : result.keySet()) {
@@ -137,7 +137,7 @@ public class IdServiceRestClientImpTestManual {
 		List<String> ctv3Ids = new ArrayList<>();
 		ctv3Ids.add("XUsHT");
 		ctv3Ids.add("XUsfV");
-		Map<String, String> result = client.getSchemeIdStatusMap(SchemeIdType.CTV3ID, ctv3Ids);
+		Map<String, String> result = client.getStatusForSchemeIds(SchemeIdType.CTV3ID, ctv3Ids);
 		assertEquals(ctv3Ids.size(), result.keySet().size());
 		assertTrue(result.keySet().containsAll(ctv3Ids));
 		for (String id : result.keySet()) {
