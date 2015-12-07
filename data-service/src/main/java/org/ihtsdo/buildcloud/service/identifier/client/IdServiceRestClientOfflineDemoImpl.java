@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	//Only for test purpose
@@ -24,6 +26,8 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	private int ctv3IdChar;
 	
 	private String idStatus;
+	@Autowired	
+	private UUIDGenerator uuidGenerator;
 
 	public IdServiceRestClientOfflineDemoImpl() {
 		reset();
@@ -118,7 +122,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	}
 
 	@Override
-	public Map<Long, String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException {
+	public Map<Long, String> getStatusForSctIds(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,String> result = new HashMap<>();
 		for (Long sctId : sctIds) {
 			result.put(sctId, idStatus);
@@ -127,7 +131,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	}
 
 	@Override
-	public Map<String, String> getSchemeIdStatusMap(SchemeIdType schemeType, Collection<String> legacyIds) {
+	public Map<String, String> getStatusForSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) {
 		Map<String,String> result = new HashMap<>();
 		for (String id : legacyIds) {
 			result.put(id, idStatus);
@@ -142,6 +146,17 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	public void setIdStatus(String idStatus) {
 		this.idStatus = idStatus;
 	}
+
+
+	@Override
+	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
+		Map<Long, UUID> result = new HashMap<>();
 	
+		for (Long sctId : sctIds) {
+			
+			result.put(sctId, UUID.fromString(uuidGenerator.uuid()));
+		}
+		return result;
+	}
 	
 }

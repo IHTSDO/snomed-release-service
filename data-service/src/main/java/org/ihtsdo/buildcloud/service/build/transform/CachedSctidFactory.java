@@ -19,12 +19,16 @@ public class CachedSctidFactory {
 	private final IdServiceRestClient idServiceRestClient;
 	private final Map<String, Long> uuidToSctidCache;
 	private String comment;
+	private int maxTries;
+	private int retryDelaySeconds;
 
-	public CachedSctidFactory(final Integer namespaceId, final String releaseId, final String buildId, final IdServiceRestClient idRestClient) {
+	public CachedSctidFactory(final Integer namespaceId, final String releaseId, final String buildId, final IdServiceRestClient idRestClient, final int maxtries, final int retryDelayDeconds) {
 		this.namespaceId = namespaceId;
 		this.idServiceRestClient = idRestClient;
 		comment = "ReleaseId:" + releaseId + " BuildId:" + buildId;
 		uuidToSctidCache = new ConcurrentHashMap<>();
+		this.maxTries = maxtries;
+		this.retryDelaySeconds = retryDelayDeconds;
 	}
 
 	public Long getSCTID(final String componentUuid, final String partitionId, final String moduleId) throws Exception{
@@ -42,15 +46,33 @@ public class CachedSctidFactory {
 		if (componentUuidStrings == null || componentUuidStrings.isEmpty()) {
 			return uuidStringToSctidMapResults;
 		}
-		Map<UUID, Long> uuidToSctidMap =  new HashMap<>();
+		Map<UUID, Long> uuidToSctidMap = null;
 		// Convert uuid strings to UUID objects
 		final List<UUID> componentUuids = new ArrayList<>();
 		for (final String componentUuidString : componentUuidStrings) {
 			componentUuids.add(UUID.fromString(componentUuidString));
 		}
-		LOGGER.info("Batch ID service request, batch size {}.", componentUuids.size());
-		if ( !componentUuids.isEmpty()) {
-			uuidToSctidMap = idServiceRestClient.getOrCreateSctIds(componentUuids, namespaceId, partitionId, comment);
+		// Lookup with retries
+		int attempt = 1;
+		while (uuidToSctidMap == null) {
+			try {
+				LOGGER.info("Batch ID service request, batch size {}.", componentUuids.size());
+				if ( !componentUuids.isEmpty()) {
+					uuidToSctidMap = idServiceRestClient.getOrCreateSctIds(componentUuids, namespaceId, partitionId, comment);
+				}
+			} catch (RestClientException e) {
+				if (attempt < maxTries) {
+					LOGGER.warn("Batch ID service lookup failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+					attempt++;
+					try {
+						Thread.sleep(retryDelaySeconds * 1000);
+					} catch (InterruptedException ie) {
+						throw new RestClientException("id service retry interupted", ie);
+					}
+				} else {
+					throw e;
+				}
+			}
 		}
 		
 		// Store results in cache

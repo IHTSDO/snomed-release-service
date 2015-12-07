@@ -58,8 +58,10 @@ public interface IdServiceRestClient {
 
 	boolean publishSchemeIds(List<String> schemeIds, SchemeIdType schemeType, String comment) throws RestClientException;
 
-	Map<Long, String> getSctidStatusMap(Collection<Long> sctIds) throws RestClientException;
+	Map<Long, String> getStatusForSctIds(Collection<Long> sctIds) throws RestClientException;
 
-	Map<String, String> getSchemeIdStatusMap(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException;
+	Map<String, String> getStatusForSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException;
+
+	Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException;
 
 }
