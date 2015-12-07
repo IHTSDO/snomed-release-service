@@ -8,11 +8,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,6 +25,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.ReleaseFileGenerationException;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -44,6 +46,8 @@ public class TransformationService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
 	private static final String SIMPLE_REFSET_MAP_DELTA = "sRefset_SimpleMapDelta_INT";
+	
+	private static final String CONCEPT_DELTA = "sct2_Concept_Delta_INT";
 
 	private final ExecutorService executorService;
 
@@ -148,14 +152,6 @@ public class TransformationService {
 
 			// Phase 1
 			// Process just the id and moduleId columns of any Concept and Description files.
-			Map<String, List<UUID>> moduleIdAndNewConceptUUids = null;
-			boolean isSimpeRefsetMapDeltaPresent = false;
-			for (final String filename : buildInputFileNames) {
-				if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
-					isSimpeRefsetMapDeltaPresent = true;
-					break;
-				}
-			}
 
 			for (final String inputFileName : buildInputFileNames) {
 				try{
@@ -174,9 +170,6 @@ public class TransformationService {
 
 							// Apply transformations
 							steamingFileTransformation.transformFile(buildInputFileInputStream, transformedOutputStream, inputFileName, report);
-							if ( componentType == ComponentType.CONCEPT && isSimpeRefsetMapDeltaPresent && createLegacyIds) {
-								moduleIdAndNewConceptUUids = getNewConceptUUIDs(build, inputFileName);
-							}
 						}
 					}
 				} catch (TransformationException | IOException e) {
@@ -244,11 +237,19 @@ public class TransformationService {
 					}
 				}
 			}
-
-			if (createLegacyIds && isSimpeRefsetMapDeltaPresent && moduleIdAndNewConceptUUids != null && !moduleIdAndNewConceptUUids.isEmpty()) {
+			// Add legacy ids for new concepts in the simple map file
+			List<String> transformedFileNames = getTransformedDeltaFiles(build);
+			if (createLegacyIds && getTransformedDeltaFileName(transformedFileNames, SIMPLE_REFSET_MAP_DELTA) != null) {
+				Map<String,Collection<Long>> moduleIdAndNewConceptIds = null;
 				try {
-					legacyIdTransformation.transformLegacyIds(transformationFactory.getCachedSctidFactory(), moduleIdAndNewConceptUUids, build, idRestClient);
-				} catch (final TransformationException e) {
+					//retrieving the transformed concept delta file
+					moduleIdAndNewConceptIds = getNewConcepIds(build, getTransformedDeltaFileName(transformedFileNames, CONCEPT_DELTA));
+					if (moduleIdAndNewConceptIds != null && !moduleIdAndNewConceptIds.isEmpty()) {
+						legacyIdTransformation.transformLegacyIds( moduleIdAndNewConceptIds, build, idRestClient);
+					} else {
+						LOGGER.info("No new concepts found and no legacy ids will be generated.");
+					}
+				} catch (final TransformationException | IOException e) {
 					throw new BusinessServiceException("Failed to create legacy identifiers.", e);
 				}
 			}
@@ -256,6 +257,42 @@ public class TransformationService {
 			
 			logOutIdServiceClient();
 		}
+	}
+
+	private boolean isSimpleRefsetMapDeltaPresent(final List<String> buildInputFileNames) {
+		for (final String filename : buildInputFileNames) {
+			if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
+				 return true;
+			}
+		}
+		return false;
+	}
+	
+	private String getTransformedDeltaFileName( List<String> transformedFileNames, String partOfFileName) {
+		for (final String filename : transformedFileNames) {
+			if ( filename.contains(partOfFileName)) {
+				 return filename;
+			}
+		}
+		return null;
+	}
+	
+	private List<String> getTransformedDeltaFiles(Build build) throws ReleaseFileGenerationException {
+		final List<String> transformedFilePaths = dao.listTransformedFilePaths(build);
+		final List<String> validFiles = new ArrayList<>();
+		if (transformedFilePaths.size() < 1) {
+			throw new ReleaseFileGenerationException("Failed to find any transformed files to convert to output delta files.");
+		}
+		for (final String fileName : transformedFilePaths) {
+			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
+					&& fileName.contains(RF2Constants.DELTA)) {
+				validFiles.add(fileName);
+			}
+		}
+		if (validFiles.size() == 0) {
+			throw new ReleaseFileGenerationException("Failed to find any files of type *Delta*.txt transformed in build:" + build.getUniqueId());
+		}
+		return validFiles;
 	}
 
 	private void logOutIdServiceClient() {
@@ -275,34 +312,62 @@ public class TransformationService {
 		}
 	}
 	
-	private Map<String,List<UUID>> getNewConceptUUIDs(final Build build, final String inputFileName) throws IOException {
-		final InputStream inputStream = dao.getInputFileStream(build, inputFileName);
+	private Map<String, Collection<Long>> getNewConcepIds(final Build build, final String conceptDelta) throws IOException {
+		//load previous concept snapshot 
+		Collection<Long> conceptsInPreviousSnapshot = new ArrayList<>();
+		if (!build.getConfiguration().isFirstTimeRelease()) {
+			String conceptSnapshot = conceptDelta.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), 
+					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
+				conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
+			}
+		}
+		Map<String,Collection<Long>> moduleIdAndConceptMap = new HashMap<>();
+		try (InputStream inputStream = dao.getTransformedFileAsInputStream(build, conceptDelta);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
+				String line;
+				boolean firstLine = true;
+				while ((line = reader.readLine()) != null) {
+					if (firstLine) {
+						firstLine = false;
+					} else {
+						// Split column values
+						final String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+						
+						Long conceptId = new Long(columnValues[0]);
+						String moduleId = columnValues[3];
+						if (!conceptsInPreviousSnapshot.contains(conceptId)) {
+							if(moduleIdAndConceptMap.containsKey(moduleId)) {
+								moduleIdAndConceptMap.get(moduleId).add(conceptId);
+							} else {
+								HashSet<Long> conceptSet = new HashSet<>();
+								conceptSet.add(conceptId);
+								moduleIdAndConceptMap.put(moduleId, conceptSet);
+							}
+						}
+							
+					}
+				}
+			}
+			return moduleIdAndConceptMap;
+		}
 		
-		final Map<String,List<UUID>> moduleIdAndUuidMap = new HashMap<>();
-		try (BufferedReader conceptDeltaFileReader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
+	private Collection<Long> getIdsFromFile(InputStream inputStream) throws IOException {
+		Set<Long> result = new HashSet<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
 			String line;
 			boolean firstLine = true;
-
-			while ((line = conceptDeltaFileReader.readLine()) != null) {
+			while ((line = reader.readLine()) != null) {
 				if (firstLine) {
 					firstLine = false;
 				} else {
 					// Split column values
 					final String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
-					if (columnValues[0].contains("-")) {
-						final String uuidStr = columnValues[0];
-						final String moduleId = columnValues[3];
-						List<UUID> uuids = moduleIdAndUuidMap.get(moduleId);
-						if (uuids == null) {
-							uuids = new ArrayList<>();
-							moduleIdAndUuidMap.put(moduleId, uuids);
-						}
-						uuids.add(UUID.fromString(uuidStr));
-					}
+					result.add(new Long(columnValues[0]));
 				}
 			}
 		}
-		return moduleIdAndUuidMap;
+		return result;
 	}
 
 	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
@@ -333,7 +398,7 @@ public class TransformationService {
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String buildId =  build.getId();
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient);
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
 
 		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);

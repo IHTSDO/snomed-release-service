@@ -182,7 +182,7 @@ public class PublishServiceImpl implements PublishService {
 			synchronized (fileLock) {
 				//Does a published file already exist for this product?
 				if (exists(releaseCenter, originalFilename)) {
-					throw new EntityAlreadyExistsException(originalFilename + " has already been published for " + releaseCenter.getName() );
+					throw new EntityAlreadyExistsException(originalFilename + " has already been published for " + releaseCenter.getName());
 				}
 				
 				LOGGER.debug("Reading stream to temp file");
@@ -297,7 +297,7 @@ public class PublishServiceImpl implements PublishService {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
 			String line = null;
 			boolean isFirstLine = true;
-			while (( line = reader.readLine()) != null) {
+			while ((line = reader.readLine()) != null) {
 				if (isFirstLine) {
 					isFirstLine = false;
 					continue;
@@ -309,7 +309,7 @@ public class PublishServiceImpl implements PublishService {
 					LOGGER.warn("Found map target is null or empty for refsetId:" + refSetId);
 					continue;
 				}
-				if (RF2Constants.CTV3_ID_REFSET_ID.equals(refSetId) ) {
+				if (RF2Constants.CTV3_ID_REFSET_ID.equals(refSetId)) {
 					result.get(SchemeIdType.CTV3ID).add(mapTarget);
 				} else if (RF2Constants.SNOMED_ID_REFSET_ID.equals(refSetId)) {
 					result.get(SchemeIdType.SNOMEDID).add(mapTarget);
@@ -323,7 +323,7 @@ public class PublishServiceImpl implements PublishService {
 		Map<SchemeIdType, Collection<String>> result = getLegacyIdsFromFile(inputFileStream);
 		for (SchemeIdType type : result.keySet()) {
 			int publishedIdCounter = 0;
-			Map<String,String> idStatusMap = idRestClient.getSchemeIdStatusMap(type, result.get(type));
+			Map<String,String> idStatusMap = idRestClient.getStatusForSchemeIds(type, result.get(type));
 			List<String> idsAssigned = new ArrayList<>();
 			for (String id : idStatusMap.keySet()) {
 				String status = idStatusMap.get(id);
@@ -355,8 +355,8 @@ public class PublishServiceImpl implements PublishService {
 			batchJob.add(id);
 			counter++;
 			if (counter % BATCH_SIZE == 0 || counter == sctIds.size()) {
-				Map<Long,String> sctIdStatusMap = idRestClient.getSctidStatusMap(batchJob);
-				if ( batchJob.size() != sctIdStatusMap.size()) {
+				Map<Long,String> sctIdStatusMap = idRestClient.getStatusForSctIds(batchJob);
+				if (batchJob.size() != sctIdStatusMap.size()) {
 					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
 				}
 				List<Long> assignedIds = new ArrayList<>();
@@ -366,7 +366,7 @@ public class PublishServiceImpl implements PublishService {
 						assignedStatusCounter++;
 						assignedIds.add(sctId);
 					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
-						publishedAlreadyCounter ++;
+						publishedAlreadyCounter++;
 					} else {
 						otherStatusIds.add(sctId);
 					}
@@ -409,15 +409,13 @@ public class PublishServiceImpl implements PublishService {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFileStream, RF2Constants.UTF_8))) {
 			String line = null;
 			boolean isFirstLine = true;
-			while (( line = reader.readLine()) != null) {
+			while ((line = reader.readLine()) != null) {
 				if (isFirstLine) {
 					isFirstLine = false;
 					continue;
 				}
 				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
-//				if (RF2Constants.BOOLEAN_TRUE.equals(columnValues[1])) {
-					sctIds.add( new Long(columnValues[0]));
-//				}
+				sctIds.add(new Long(columnValues[0]));
 			}
 		} 
 		return sctIds;

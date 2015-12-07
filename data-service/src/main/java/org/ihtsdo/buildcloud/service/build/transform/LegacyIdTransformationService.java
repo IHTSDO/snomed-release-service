@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,18 +37,27 @@ public class LegacyIdTransformationService {
 	@Autowired
 	private BuildDAO buildDAO;
 	
-	public void transformLegacyIds(final CachedSctidFactory cachedSctidFactory, final Map<String, List<UUID>> moduleIdAndUuidMap, 
-			final Build build, IdServiceRestClient idRestClient) throws TransformationException {
-		final List<UUID> newConceptUuids   = new ArrayList<>();
-		for (final String moduleId : moduleIdAndUuidMap.keySet()) {
-			newConceptUuids.addAll(moduleIdAndUuidMap.get(moduleId));
+	public void transformLegacyIds(final Map<String,Collection<Long>> moduleIdAndNewConceptsMap, final Build build, IdServiceRestClient idRestClient) throws TransformationException {
+		
+		List<Long> conceptIds = new ArrayList<>();
+		for (String moduelId : moduleIdAndNewConceptsMap.keySet()) {
+			conceptIds.addAll(moduleIdAndNewConceptsMap.get(moduelId));
 		}
-		LOGGER.info("Total new concepts:" + newConceptUuids.size());
+		LOGGER.info("Total new concepts:" + conceptIds.size());
+		
+		Map<Long,UUID> sctIdAndUuidMap = new HashMap<>();
+		try {
+			sctIdAndUuidMap =idRestClient.getUuidsForSctIds(conceptIds);
+		} catch ( RestClientException e) {
+			throw new TransformationException("Failed to get uuids for sctids", e);
+		}
+		
 		//Generate CTV3 ID
 		LOGGER.info("Start CTV3ID generation");
 		Map<UUID, String> uuidCtv3IdMap = new HashMap<>();
+		List<UUID> uuids = new ArrayList<>(sctIdAndUuidMap.values());
 		try {
-			uuidCtv3IdMap = idRestClient.getOrCreateSchemeIds(newConceptUuids,SchemeIdType.CTV3ID, build.getUniqueId());
+			uuidCtv3IdMap = idRestClient.getOrCreateSchemeIds(uuids,SchemeIdType.CTV3ID, build.getUniqueId());
 		} catch (RestClientException e) {
 			throw new TransformationException("Failed to generate CTV3 IDs", e);
 		}
@@ -55,11 +65,11 @@ public class LegacyIdTransformationService {
 		//generate snomed id
 		Map<UUID, String> uuidAndSnomedIdMap = new HashMap<>();
 		try {
-			uuidAndSnomedIdMap = idRestClient.getOrCreateSchemeIds(newConceptUuids, SchemeIdType.SNOMEDID, build.getUniqueId());
+			uuidAndSnomedIdMap = idRestClient.getOrCreateSchemeIds(uuids, SchemeIdType.SNOMEDID, build.getUniqueId());
 		} catch (RestClientException e) {
 			throw new TransformationException("Failed to generate Snomed IDs", e);
 		}
-		LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.keySet().size());
+		LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.size());
 		
 		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
@@ -85,19 +95,12 @@ public class LegacyIdTransformationService {
 						}
 				}
 				//appending additional legacy data.
-				if (!moduleIdAndUuidMap.isEmpty()) {
-					for (final String moduleId : moduleIdAndUuidMap.keySet()) {
+				if (!moduleIdAndNewConceptsMap.isEmpty()) {
+					for (final String moduleId : moduleIdAndNewConceptsMap.keySet()) {
 						String moduleIdSctId = moduleId;
-						if (moduleId.contains("-")) {
-							final Long mSctId = cachedSctidFactory.getSCTIDFromCache(moduleId);
-							if (mSctId == null) {
-								LOGGER.warn("No module id sctID found from cache for uuid: " + moduleId);
-							} else {
-								moduleIdSctId =  mSctId.toString();
-							}
-						}
-						for (final UUID uuid : moduleIdAndUuidMap.get(moduleId)) {
-							final Long sctId = cachedSctidFactory.getSCTIDFromCache(uuid.toString());
+						
+						for (final Long sctId : moduleIdAndNewConceptsMap.get(moduleId)) {
+							UUID uuid = sctIdAndUuidMap.get(sctId);
 							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
 							final String snomedId = uuidAndSnomedIdMap.get(uuid);
