@@ -86,4 +86,8 @@ public interface BuildDAO {
 	void renameTransformedFile(Build build, String sourceFileName, String targetFileName, boolean deleteOriginal);
 
 	void loadQaTestConfig(Build build) throws IOException;
+
+	String getOutputFilePath(Build build, String filename);
+
+	String getManifestFilePath(Build build);
 }
