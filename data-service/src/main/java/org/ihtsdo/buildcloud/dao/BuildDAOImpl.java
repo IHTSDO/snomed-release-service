@@ -506,7 +506,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public String getOutputFilePath(Build build, String filename) {
-		return pathHelper.getOutputFilesPath(build) + "/" + filename;
+		return pathHelper.getOutputFilesPath(build) + filename;
 	}
 
 	@Override
