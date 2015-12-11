@@ -147,7 +147,7 @@ public class RVFClient implements Closeable {
 						foundFailureCount = true;
 					}
 				}
-				if (line.isEmpty()) {
+				if(line.isEmpty()) {
 					endOfValuesReached = true;
 				}
 				logWriter.write(line);
@@ -171,51 +171,14 @@ public class RVFClient implements Closeable {
 		httpClient.close();
 	}
 
-	public String checkOutputPackage(final File zipPackage, final QATestConfig qaTestConfig, InputStream manifestInputStream, Integer failureExportMax) throws FileNotFoundException {
-
-		final String runId = Long.toString(System.currentTimeMillis());
-		final String zipFileName = zipPackage.getName();
-		final String targetUrl = "/run-post";
-		
-		final HttpPost post = createHttpPostRequest(zipPackage, qaTestConfig, runId, targetUrl, manifestInputStream,failureExportMax);
-		LOGGER.info("Posting input file {} to RVF at {} with run id {}.", zipFileName, post.getURI(), runId);
-		String rvfResponse = "No result recovered from RVF";
-		try (CloseableHttpResponse response = httpClient.execute(post)) {
-			final int statusCode = response.getStatusLine().getStatusCode();
-			try (InputStream content = response.getEntity().getContent()) {
-				rvfResponse = IOUtils.toString(content);
-				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
-				if (200 == statusCode) {
-					// If all is good, expecting to find URL in the response
-					int urlStart = rvfResponse.indexOf("http");
-					if (urlStart != -1) {
-						int urlEnd = rvfResponse.indexOf("\"", urlStart);
-						rvfResponse = rvfResponse.substring(urlStart, urlEnd);
-					}
-					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
-							zipFileName, rvfResponse);
-				} else {
-					rvfResponse = " Received RVF response HTTP status code: " + statusCode + 
-							" with body: " + rvfResponse;
-					LOGGER.info("RVF Service failure: {}", rvfResponse);
-				}
-			}
-		} catch (Exception e) {
-			rvfResponse = "Exception detected while initiating RVF at: " + targetUrl + 
-					" to test: " + zipFileName + " which said: " + e.getMessage();
-			LOGGER.error (rvfResponse, e);
-		}
-		return rvfResponse;
-	}
-
-	private HttpPost createHttpPostRequest(final File zipPackage,
-			final QATestConfig qaTestConfig, final String runId, final String targetUrl, InputStream manifestInputStream, Integer failureExportMax)
+	private HttpPost createHttpPostRequest(final String s3ZipFilePath,
+			final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax)
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		multiPartBuilder.addPart("file", new InputStreamBody(new FileInputStream(zipPackage), zipPackage.getName()));
-		multiPartBuilder.addPart("manifest", new InputStreamBody(manifestInputStream, "manifest.xml"));
+		multiPartBuilder.addTextBody("releaseFileS3Path", s3ZipFilePath);
+		multiPartBuilder.addTextBody("manifestFileS3Path", manifestFileS3Path);
 		
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
 		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
@@ -275,5 +238,40 @@ public class RVFClient implements Closeable {
 			return JSONObject.toJSONString(msg);
 		}
 		return null;
+	}
+
+	public String validateOutputPackageFromS3(String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax) throws FileNotFoundException {
+		final String runId = Long.toString(System.currentTimeMillis());
+		final String targetUrl = "/run-post-via-s3";
+		
+		final HttpPost post = createHttpPostRequest(s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax);
+		LOGGER.info("Posting file {} to RVF at {} with run id {}.", s3ZipFilePath, post.getURI(), runId);
+		String rvfResponse = "No result recovered from RVF";
+		try (CloseableHttpResponse response = httpClient.execute(post)) {
+			final int statusCode = response.getStatusLine().getStatusCode();
+			try (InputStream content = response.getEntity().getContent()) {
+				rvfResponse = IOUtils.toString(content);
+				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
+				if (200 == statusCode) {
+					// If all is good, expecting to find URL in the response
+					int urlStart = rvfResponse.indexOf("http");
+					if (urlStart != -1) {
+						int urlEnd = rvfResponse.indexOf("\"", urlStart);
+						rvfResponse = rvfResponse.substring(urlStart, urlEnd);
+					}
+					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
+							s3ZipFilePath, rvfResponse);
+				} else {
+					rvfResponse = " Received RVF response HTTP status code: " + statusCode + 
+							" with body: " + rvfResponse;
+					LOGGER.info("RVF Service failure: {}", rvfResponse);
+				}
+			}
+		} catch (Exception e) {
+			rvfResponse = "Exception detected while initiating RVF at: " + targetUrl + 
+					" to test: " + s3ZipFilePath + " which said: " + e.getMessage();
+			LOGGER.error(rvfResponse, e);
+		}
+		return rvfResponse;
 	}
 }

@@ -307,11 +307,8 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getManifestStream(final Build build) {
-		final String directoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-		final List<String> files = buildFileHelper.listFiles(directoryPath);
-		//The first file in the manifest directory we'll call our manifest
-		if (!files.isEmpty()) {
-			final String manifestFilePath = directoryPath + files.iterator().next();
+		String manifestFilePath = getManifestFilePath(build);
+		if (manifestFilePath != null) {
 			LOGGER.info("Opening manifest file found at " + manifestFilePath);
 			return buildFileHelper.getFileStream(manifestFilePath);
 		} else {
@@ -505,5 +502,23 @@ public class BuildDAOImpl implements BuildDAO {
 	public void loadConfiguration(final Build build) throws IOException {
 		loadBuildConfiguration(build);
 		loadQaTestConfig(build);
+	}
+
+	@Override
+	public String getOutputFilePath(Build build, String filename) {
+		return pathHelper.getOutputFilesPath(build) + "/" + filename;
+	}
+
+	@Override
+	public String getManifestFilePath(Build build) {
+		final String directoryPath = pathHelper.getBuildManifestDirectoryPath(build);
+		final List<String> files = buildFileHelper.listFiles(directoryPath);
+		//The first file in the manifest directory we'll call our manifest
+		if (!files.isEmpty()) {
+			final String manifestFilePath = directoryPath + files.iterator().next();
+			LOGGER.info("manifest file found at " + manifestFilePath);
+			return manifestFilePath;
+	}
+	 return null;
 	}
 }
