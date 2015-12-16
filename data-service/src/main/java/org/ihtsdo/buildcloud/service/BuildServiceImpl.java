@@ -363,7 +363,7 @@ public class BuildServiceImpl implements BuildService {
 			generator.generateReleaseFiles();
 			
 			//filter out additional relationships from the transformed delta
-			String inferedDelta = getInferredDeltaFromInput( inputFileSchemaMap);
+			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
 			if (inferedDelta != null) {
 				 String transformedDelta = inferedDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2);
 				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
@@ -399,7 +399,8 @@ public class BuildServiceImpl implements BuildService {
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode || localRvf) {
 				try {
-					rvfResultMsg = runRVFPostConditionCheck(build, zipPackage, dao.getManifestStream(build), failureExportMax);
+					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
+					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax);
 					if (rvfResultMsg == null) {
 						rvfStatus = "Completed without errors.";
 					} else {
@@ -415,13 +416,12 @@ public class BuildServiceImpl implements BuildService {
 			report.add("post_validation_status", rvfStatus);
 			report.add("rvf_response", rvfResultMsg);
 			LOGGER.info("End of running build {}", build.getUniqueId());
-		}
-		finally {
+		} finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
 	}
 
-	private void retrieveAdditionalRelationshipsFromTransformedDelta(Build build, String inferedDelta) throws BusinessServiceException {
+	private void retrieveAdditionalRelationshipsFromTransformedDelta(final Build build, String inferedDelta) throws BusinessServiceException {
 		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
 		String originalDelta = inferedDelta + "_original";
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
@@ -433,7 +433,7 @@ public class BuildServiceImpl implements BuildService {
 				String line;
 				boolean isFirstLine = true;
 				while ((line = reader.readLine()) != null) {
-					if ( isFirstLine) {
+					if (isFirstLine){
 						writer.write(line);
 						writer.write(RF2Constants.LINE_ENDING);
 						isFirstLine = false;
@@ -451,7 +451,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String getInferredDeltaFromInput(Map<String, TableSchema> inputFileSchemaMap) {
+	private String getInferredDeltaFromInput(final Map<String, TableSchema> inputFileSchemaMap) {
 		for (final String inputFilename : inputFileSchemaMap.keySet()) {
 			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
 
@@ -479,9 +479,9 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final File zipPackage, InputStream manifestInputStream, Integer failureExportMax) throws IOException,
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) throws IOException,
 			PostConditionException, ConfigurationException {
-		LOGGER.info("Initiating RVF post-condition check for zip file {}", zipPackage.getName());
+		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath,  failureExportMax);
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
@@ -492,25 +492,24 @@ public class BuildServiceImpl implements BuildService {
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
 			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
-			
-			return rvfClient.checkOutputPackage(zipPackage, qaTestConfig, manifestInputStream, failureExportMax);
+			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax);
 		}
 	}
 
-	private void validateQaTestConfig(final QATestConfig qaTestConfig , boolean isFirstTimeRelease) throws ConfigurationException {
+	private void validateQaTestConfig(final QATestConfig qaTestConfig, boolean isFirstTimeRelease) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
-			throw new ConfigurationException ("No QA test configured. Please check the assertion group name is specifield.");
+			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specifield.");
 		}
 		if (!isFirstTimeRelease) {
 			if (qaTestConfig.getPreviousInternationalRelease() == null) {
-				throw new ConfigurationException ("No previous international release is configured for non-first time release.");
+				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
 			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
-				throw new ConfigurationException ("No extention dependency release is configured for extension testing.");
+				throw new ConfigurationException("No extention dependency release is configured for extension testing.");
 			}
 			
 			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
-				throw new ConfigurationException ("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
+				throw new ConfigurationException("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
 			}
 		}
 	}

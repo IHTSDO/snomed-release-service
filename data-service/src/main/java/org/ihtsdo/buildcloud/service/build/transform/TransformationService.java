@@ -243,7 +243,10 @@ public class TransformationService {
 				Map<String,Collection<Long>> moduleIdAndNewConceptIds = null;
 				try {
 					//retrieving the transformed concept delta file
-					moduleIdAndNewConceptIds = getNewConcepIds(build, getTransformedDeltaFileName(transformedFileNames, CONCEPT_DELTA));
+					String conceptDeltaFilename = getTransformedDeltaFileName(transformedFileNames, CONCEPT_DELTA);
+					if (conceptDeltaFilename != null) {
+						moduleIdAndNewConceptIds = getNewConcepIds(build, conceptDeltaFilename);
+					}
 					if (moduleIdAndNewConceptIds != null && !moduleIdAndNewConceptIds.isEmpty()) {
 						legacyIdTransformation.transformLegacyIds( moduleIdAndNewConceptIds, build, idRestClient);
 					} else {
@@ -259,15 +262,6 @@ public class TransformationService {
 		}
 	}
 
-	private boolean isSimpleRefsetMapDeltaPresent(final List<String> buildInputFileNames) {
-		for (final String filename : buildInputFileNames) {
-			if ( filename.contains(SIMPLE_REFSET_MAP_DELTA)) {
-				 return true;
-			}
-		}
-		return false;
-	}
-	
 	private String getTransformedDeltaFileName( List<String> transformedFileNames, String partOfFileName) {
 		for (final String filename : transformedFileNames) {
 			if ( filename.contains(partOfFileName)) {
@@ -317,6 +311,9 @@ public class TransformationService {
 		Collection<Long> conceptsInPreviousSnapshot = new ArrayList<>();
 		if (!build.getConfiguration().isFirstTimeRelease()) {
 			String conceptSnapshot = conceptDelta.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			if (build.getConfiguration().isBetaRelease()) {
+				conceptSnapshot = conceptSnapshot.replaceAll(RF2Constants.BETA_RELEASE_PREFIX, "");
+			}
 			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), 
 					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
 				conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
