@@ -43,6 +43,7 @@ public class RF2Constants {
 	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
 	public static final String SNOMED_ID_REFSET_ID = "900000000000498005";
 	public static final String CTV3_ID_REFSET_ID = "900000000000497000";
+	public static final String BETA_RELEASE_PREFIX = "x";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED
