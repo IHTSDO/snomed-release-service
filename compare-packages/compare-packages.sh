@@ -17,6 +17,21 @@ function createLists {
 	find . -type f > ${home}/target/${listName}_file_list.txt
 	cd - > /dev/null
 }
+
+function stripBetaPrefix() {
+	targetDir=$1
+	tempDir=`pwd`
+	cd ${targetDir}
+	for thisFile in * ; do
+		if [[ ${thisFile} == x* ]]; then
+			nonBetaName=`echo ${thisFile} | cut -c2-`
+			echo "Stripping beta prefix from ${targetDir}\${thisFile}"
+			mv ${thisFile} ${nonBetaName}
+		fi
+	done
+	cd ${tempDir}
+}
+
 rm -rf target || true
 mkdir -p target
 
@@ -69,6 +84,10 @@ if [ "${normaliseDates}" == true ]; then
 	done
 fi
 
+#Strip any Beta archive prefix
+stripBetaPrefix target/a
+stripBetaPrefix target/b
+
 createLists ${leftName} "target/a"
 createLists ${rightName} "target/b"
 
@@ -79,6 +98,7 @@ echo
 mkdir -p target/c
 echo "_File content differences_"
 echo "Line count diff is ${leftName} minus ${rightName}"
+echo "File size diff is ${leftName} minus ${rightName}"
 echo
 processOrderFile="_process_order.txt"
 find target/a -type f | sed "s/target\/a\///" | grep "sct2_" | sort > ${processOrderFile}
@@ -87,48 +107,59 @@ find target/a -type f | sed "s/target\/a\///" | grep "der2_" | sort >> ${process
 find target/a -type f | sed "s/target\/a\///" | grep "sct1_" | sort >> ${processOrderFile}
 find target/a -type f | sed "s/target\/a\///" | grep "der1_" | sort >> ${processOrderFile}
 find target/a -type f | sed "s/target\/a\///" | grep "res1_" | sort >> ${processOrderFile}
+#Now we'll just do a file size comparison of any other file
+find target/a -type f | sed "s/target\/a\///" | egrep -v "sct2_|der2|sct1|der1|res1"  | sort >> ${processOrderFile}
+
 for file in `cat ${processOrderFile}`; do
 	leftFile="target/a/${file}"
 	rightFile="target/b/${file}"
 	if [ -f "${rightFile}" ]
 	then 
 		echo "Comparing ${file}"
-
-		leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
-		echo "${leftName} line count: $leftFileCount"
-
-		rightFileCount=`wc -l ${rightFile} | awk '{print $1}'`
-		echo "${rightName} line count: $rightFileCount"
-
-		echo "Line count diff: $[$leftFileCount-$rightFileCount]"
-
-		echo -n "Content differences count (x2): "
-		sort ${leftFile} > tmp.txt
-		mv tmp.txt ${leftFile}
-		sort ${rightFile} > tmp.txt 
-		mv tmp.txt ${rightFile}
-		diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
-
-		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]]
+		
+		if [[ $file == *.txt ]]
 		then
-			echo -n "Content without id column differences count (x2): "
-			leftFileTrim="${leftFile}_no_first_col.txt"
-			rightFileTrim="${rightFile}_no_first_col.txt"
-			cut -f2- ${leftFile} | sort > ${leftFileTrim}
-			cut -f2- ${rightFile} | sort > ${rightFileTrim}
-			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
+			leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
+			echo "${leftName} line count: $leftFileCount"
+	
+			rightFileCount=`wc -l ${rightFile} | awk '{print $1}'`
+			echo "${rightName} line count: $rightFileCount"
+	
+			echo "Line count diff: $[$leftFileCount-$rightFileCount]"
+
+			echo -n "Content differences count (x2): "
+			sort ${leftFile} > tmp.txt
+			mv tmp.txt ${leftFile}
+			sort ${rightFile} > tmp.txt 
+			mv tmp.txt ${rightFile}
+			diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
+	
+			if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]]
+			then
+				echo -n "Content without id column differences count (x2): "
+				leftFileTrim="${leftFile}_no_first_col.txt"
+				rightFileTrim="${rightFile}_no_first_col.txt"
+				cut -f2- ${leftFile} | sort > ${leftFileTrim}
+				cut -f2- ${rightFile} | sort > ${rightFileTrim}
+				diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
+			fi
+			
+			if [[ ${leftFile} == *sct2_Relationship* ]]
+			then
+				echo -n "Content without id or group column differences count (x2): "
+				leftFileTrim2="${leftFile}_no_1_7_col.txt"
+				rightFileTrim2="${rightFile}_no_1_7_col.txt"
+				#Ideally I'd use cut's --complement here but it doesn't exist for mac
+				cut -f2,3,4,5,6,8,9,10 ${leftFile} | sort > ${leftFileTrim2}
+				cut -f2,3,4,5,6,8,9,10 ${rightFile} | sort > ${rightFileTrim2}
+				diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${file}_no_1_7_col.txt | wc -l
+			fi
 		fi
 		
-		if [[ ${leftFile} == *sct2_Relationship* ]]
-		then
-			echo -n "Content without id or group column differences count (x2): "
-			leftFileTrim2="${leftFile}_no_1_7_col.txt"
-			rightFileTrim2="${rightFile}_no_1_7_col.txt"
-			#Ideally I'd use cut's --complement here but it doesn't exist for mac
-			cut -f2,3,4,5,6,8,9,10 ${leftFile} | sort > ${leftFileTrim2}
-			cut -f2,3,4,5,6,8,9,10 ${rightFile} | sort > ${rightFileTrim2}
-			diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${file}_no_1_7_col.txt | wc -l
-		fi
+		echo -n "File size difference (bytes): "
+		leftSize=`stat -f%z ${leftFile}`
+		rightSize=`stat -f%z ${rightFile}`
+		echo "${leftSize} - ${rightSize}" | bc
 		echo
 	else
 		echo "Skipping ${file} - no counterpart in ${rightName}"
