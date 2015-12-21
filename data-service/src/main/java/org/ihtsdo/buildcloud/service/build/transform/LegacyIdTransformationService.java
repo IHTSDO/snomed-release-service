@@ -31,6 +31,7 @@ public class LegacyIdTransformationService {
 	private static final String REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX = "der2_sRefset_SimpleMapDelta_INT_";
 	private static final String TAB = "\t";
 	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
+	private static final String CORE_MODULE_ID = "900000000000207008";
 
 	@Autowired
 	private UUIDGenerator uuidGenerator;
@@ -97,15 +98,14 @@ public class LegacyIdTransformationService {
 				//appending additional legacy data.
 				if (!moduleIdAndNewConceptsMap.isEmpty()) {
 					for (final String moduleId : moduleIdAndNewConceptsMap.keySet()) {
-						String moduleIdSctId = moduleId;
-						
 						for (final Long sctId : moduleIdAndNewConceptsMap.get(moduleId)) {
 							UUID uuid = sctIdAndUuidMap.get(sctId);
-							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
+							//historical reason that the module id is always set to be the core module id since 2011
+							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
 							final String snomedId = uuidAndSnomedIdMap.get(uuid);
 							if (snomedId != null && !snomedId.equals("")) {
-								writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, moduleIdSctId, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
+								writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
 								writer.write(RF2Constants.LINE_ENDING);
 							} else {
 								LOGGER.warn("No SnomedID was generated for UUID:" + uuid);
