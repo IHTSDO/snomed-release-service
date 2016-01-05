@@ -209,7 +209,7 @@ public class PublishServiceImpl implements PublishService {
 				// publish component ids
 				if (publishComponentIds) {
 					boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
-					String publishFileExtractedDir = publishFilePath.replace(".zip", "");
+					String publishFileExtractedDir = publishFilePath.replace(".zip", "/");
 					LOGGER.info("Start publishing component ids for published file {} ", originalFilename);
 					publishComponentIds(publishedFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename);
 					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
