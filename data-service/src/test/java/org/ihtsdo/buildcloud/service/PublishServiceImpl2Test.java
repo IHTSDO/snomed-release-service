@@ -1,5 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -22,12 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
@@ -94,7 +94,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			publishService.publishBuild(build);
+			publishService.publishBuild(build, true);
 		} catch (EntityAlreadyExistsException eaee) {
 			expectedExceptionThrown = true;
 		}
@@ -109,7 +109,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			@Override
 			public void run() {
 				try {
-					service.publishBuild(build);
+					service.publishBuild(build, true);
 					LOGGER.info("Publishing complete in thread " +threadName );
 				} catch (Exception e) {
 					if (expectedExceptionClass == null) {

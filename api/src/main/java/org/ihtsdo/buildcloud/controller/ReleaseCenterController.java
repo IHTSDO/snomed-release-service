@@ -1,5 +1,13 @@
 package org.ihtsdo.buildcloud.controller;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.PublishService;
@@ -12,20 +20,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mangofactory.swagger.annotations.ApiIgnore;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
-import com.mangofactory.swagger.annotations.ApiIgnore;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/centers")
@@ -115,12 +120,12 @@ public class ReleaseCenterController {
 	@ResponseBody
 	@ApiIgnore
 	public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterBusinessKey,
-			@RequestParam(value = "file") final MultipartFile file) throws BusinessServiceException, IOException {
+			@RequestParam(value = "file") final MultipartFile file, @RequestParam(value = "isComponentIdPublishingRequired", defaultValue ="true") boolean publishComponentIds ) throws BusinessServiceException, IOException {
 
 		ReleaseCenter center = getReleaseCenterRequired(releaseCenterBusinessKey);
 
 		try (InputStream inputStream = file.getInputStream()) {
-			publishService.publishAdHocFile(center, inputStream, file.getOriginalFilename(), file.getSize());
+			publishService.publishAdHocFile(center, inputStream, file.getOriginalFilename(), file.getSize(), publishComponentIds);
 		}
 
 		return new ResponseEntity<>(HttpStatus.CREATED);
