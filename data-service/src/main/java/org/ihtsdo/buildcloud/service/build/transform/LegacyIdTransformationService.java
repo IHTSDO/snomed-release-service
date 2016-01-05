@@ -38,7 +38,7 @@ public class LegacyIdTransformationService {
 	@Autowired
 	private BuildDAO buildDAO;
 	
-	public void transformLegacyIds(final Map<String,Collection<Long>> moduleIdAndNewConceptsMap, final Build build, IdServiceRestClient idRestClient) throws TransformationException {
+	public void transformLegacyIds(final Map<String,Collection<Long>> moduleIdAndNewConceptsMap, final Build build, final IdServiceRestClient idRestClient) throws TransformationException {
 		
 		List<Long> conceptIds = new ArrayList<>();
 		for (String moduelId : moduleIdAndNewConceptsMap.keySet()) {
@@ -48,8 +48,8 @@ public class LegacyIdTransformationService {
 		
 		Map<Long,UUID> sctIdAndUuidMap = new HashMap<>();
 		try {
-			sctIdAndUuidMap =idRestClient.getUuidsForSctIds(conceptIds);
-		} catch ( RestClientException e) {
+			sctIdAndUuidMap = idRestClient.getUuidsForSctIds(conceptIds);
+		} catch (RestClientException e) {
 			throw new TransformationException("Failed to get uuids for sctids", e);
 		}
 		
