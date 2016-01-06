@@ -23,7 +23,6 @@ import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
@@ -275,8 +274,8 @@ public class PublishServiceImpl implements PublishService {
 			LOGGER.info("Total files found {} from file path {}", filesFound.size(), fileRootPath);
 			LOGGER.info("isBetaRelease flag is set to {}", isBetaRelease);
 			for (String fileName : filesFound) {
-				String filenameToCheck = isBetaRelease ? fileName.replace(BuildConfiguration.BETA_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
-					if (filenameToCheck.endsWith(RF2Constants.TXT_FILE_EXTENSION) && filenameToCheck.contains(RF2Constants.DELTA)) {
+					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
+						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
 								publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
