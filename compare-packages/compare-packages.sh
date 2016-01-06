@@ -25,7 +25,7 @@ function stripBetaPrefix() {
 	for thisFile in * ; do
 		if [[ ${thisFile} == x* ]]; then
 			nonBetaName=`echo ${thisFile} | cut -c2-`
-			echo "Stripping beta prefix from ${targetDir}\${thisFile}"
+			echo "Stripping beta prefix from ${targetDir}/${thisFile}"
 			mv ${thisFile} ${nonBetaName}
 		fi
 	done
