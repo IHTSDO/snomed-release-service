@@ -234,7 +234,7 @@ public class PublishServiceImpl implements PublishService {
 
 	// Publish extracted entries in a directory of the same name
 	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
-		String zipExtractPath = publishFilePath.replace(".zip", "/");
+		String zipExtractPath = publishFilePath.replace(".zip", SEPARATOR);
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
 			ZipEntry entry;
@@ -276,6 +276,12 @@ public class PublishServiceImpl implements PublishService {
 			for (String fileName : filesFound) {
 					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
 						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
+						// file name might contain parent folder
+						if (fileName.contains(SEPARATOR)) {
+							String[] splits = fileName.split(SEPARATOR);
+							filenameToCheck = splits[splits.length-1];
+							filenameToCheck = isBetaRelease ? filenameToCheck.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : filenameToCheck ;
+						}
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
 								publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
