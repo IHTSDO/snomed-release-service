@@ -272,6 +272,8 @@ public class PublishServiceImpl implements PublishService {
 				throw new BusinessServiceException("Failed to logIn to the id service",e);
 			}
 			List<String> filesFound = fileHelper.listFiles(fileRootPath);
+			LOGGER.info("Total files found {} from file path {}", filesFound.size(), fileRootPath);
+			LOGGER.info("isBetaRelease flag is set to {}", isBetaRelease);
 			for (String fileName : filesFound) {
 				String filenameToCheck = isBetaRelease ? fileName.replace(BuildConfiguration.BETA_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
 					if (filenameToCheck.endsWith(RF2Constants.TXT_FILE_EXTENSION) && filenameToCheck.contains(RF2Constants.DELTA)) {
