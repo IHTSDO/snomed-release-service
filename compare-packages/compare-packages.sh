@@ -134,7 +134,7 @@ for file in `cat ${processOrderFile}`; do
 			mv tmp.txt ${rightFile}
 			diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
 	
-			if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]]
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]]
 			then
 				echo -n "Content without id column differences count (x2): "
 				leftFileTrim="${leftFile}_no_first_col.txt"
