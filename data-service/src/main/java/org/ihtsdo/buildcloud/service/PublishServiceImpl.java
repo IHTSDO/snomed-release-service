@@ -23,7 +23,6 @@ import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
@@ -102,7 +101,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishBuild(final Build build) throws BusinessServiceException {
+	public void publishBuild(final Build build, boolean publishComponentIds) throws BusinessServiceException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		try {
 			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
@@ -126,6 +125,14 @@ public class PublishServiceImpl implements PublishService {
 			} else {
 				String fileLock = releaseFileName.intern();
 				synchronized (fileLock) {
+					//publish component ids
+					if (publishComponentIds) {
+						LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+						String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
+						boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
+						publishComponentIds(buildFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
+						LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+					}
 					//Does a published file already exist for this product?
 					if (exists(releaseCenter, releaseFileName)) {
 						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")");
@@ -168,7 +175,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 	
 	@Override
-	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException {
+	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException {
 		//We're expecting a zip file only
 		if (!FileUtils.isZip(originalFilename)) {
 			throw new BadRequestException("File " + originalFilename + " is not named as a zip archive");
@@ -197,6 +204,15 @@ public class PublishServiceImpl implements PublishService {
 				publishedFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
 				//Also upload the extracted version of the archive for random access performance improvements
 				publishExtractedVersionOfPackage(publishFilePath, new FileInputStream(tempZipFile));
+				
+				// publish component ids
+				if (publishComponentIds) {
+					boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
+					String publishFileExtractedDir = publishFilePath.replace(".zip", "/");
+					LOGGER.info("Start publishing component ids for published file {} ", originalFilename);
+					publishComponentIds(publishedFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename);
+					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
+				}
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish ad-hoc file.", e);
@@ -218,7 +234,7 @@ public class PublishServiceImpl implements PublishService {
 
 	// Publish extracted entries in a directory of the same name
 	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
-		String zipExtractPath = publishFilePath.replace(".zip", "/");
+		String zipExtractPath = publishFilePath.replace(".zip", SEPARATOR);
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
 			ZipEntry entry;
@@ -246,33 +262,36 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.info("Finish: Upload extracted package to {}", zipExtractPath);
 	}
 
-	@Override
-	public void publishComponentIds(Build build) throws BusinessServiceException {
-		LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
-		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
+	
+	private void publishComponentIds(FileHelper fileHelper, String fileRootPath, boolean isBetaRelease, String releaseFileName) throws BusinessServiceException {
 		try {
 			try {
 				idRestClient.logIn();
 			} catch (RestClientException e) {
 				throw new BusinessServiceException("Failed to logIn to the id service",e);
 			}
-			String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
-			List<String> filesFound = buildFileHelper.listFiles(buildOutputDir);
-			boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
+			List<String> filesFound = fileHelper.listFiles(fileRootPath);
+			LOGGER.info("Total files found {} from file path {}", filesFound.size(), fileRootPath);
+			LOGGER.info("isBetaRelease flag is set to {}", isBetaRelease);
 			for (String fileName : filesFound) {
-				String filenameToCheck = isBetaRelease ? fileName.replace(BuildConfiguration.BETA_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
-					if (filenameToCheck.endsWith(RF2Constants.TXT_FILE_EXTENSION) && filenameToCheck.contains(RF2Constants.DELTA)) {
+					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
+						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
+						// file name might contain parent folder
+						if (fileName.contains(SEPARATOR)) {
+							String[] splits = fileName.split(SEPARATOR);
+							filenameToCheck = splits[splits.length-1];
+							filenameToCheck = isBetaRelease ? filenameToCheck.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : filenameToCheck ;
+						}
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
-								publishSctIds(buildDao.getOutputFileInputStream(build, fileName), fileName, build.getId());
+								publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
 							} catch (IOException | RestClientException e) {
 								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
 							}
 						}
-						
 						if (filenameToCheck.startsWith(RF2Constants.DER2) && filenameToCheck.contains(RF2Constants.SIMPLE_MAP_FILE_IDENTIFIER)) {
 							try {
-								publishLegacyIds(buildDao.getOutputFileInputStream(build, fileName), fileName, build.getId());
+								publishLegacyIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
 							} catch (IOException | RestClientException e) {
 								throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName, e);
 							}
@@ -280,17 +299,15 @@ public class PublishServiceImpl implements PublishService {
 					}
 			}
 		} finally {
-			MDC.remove(BuildService.MDC_BUILD_KEY);
 			try {
 				idRestClient.logOut();
 			} catch (RestClientException e) {
 				LOGGER.warn("Failed to log out the id service", e);
 			}
 		}
-		LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
 	}
 
-	private Map<SchemeIdType, Collection<String>> getLegacyIdsFromFile(InputStream inputStream) throws IOException {
+	private Map<SchemeIdType, Collection<String>> getLegacyIdsFromFile(final InputStream inputStream) throws IOException {
 		Map<SchemeIdType, Collection<String>> result = new HashMap<SchemeIdType, Collection<String>>();
 		result.put(SchemeIdType.CTV3ID, new HashSet<String>());
 		result.put(SchemeIdType.SNOMEDID, new HashSet<String>());
@@ -319,7 +336,7 @@ public class PublishServiceImpl implements PublishService {
 		return result;
 	}
 	
-	private void publishLegacyIds(InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
+	private void publishLegacyIds(final InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
 		Map<SchemeIdType, Collection<String>> result = getLegacyIdsFromFile(inputFileStream);
 		for (SchemeIdType type : result.keySet()) {
 			int publishedIdCounter = 0;

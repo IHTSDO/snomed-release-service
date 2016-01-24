@@ -1,9 +1,17 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.List;
+
 import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
@@ -22,12 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
@@ -57,12 +59,15 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	Build build = null;
 
 	private static final String TEST_FILENAME = "test.zip";
+	
+	private static final String BETA_TEST_FILENAME = "xBetaTest.zip";
+	private String releaseCenterName;
 
 	@Before
 	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
 		TestUtils.setTestUser();
 
-		String releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
+		releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 
 		//Tidyup in case we've run this test already today
 		((TestS3Client)s3Client).freshBucketStore();
@@ -94,7 +99,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			publishService.publishBuild(build);
+			publishService.publishBuild(build, true);
 		} catch (EntityAlreadyExistsException eaee) {
 			expectedExceptionThrown = true;
 		}
@@ -109,7 +114,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			@Override
 			public void run() {
 				try {
-					service.publishBuild(build);
+					service.publishBuild(build, true);
 					LOGGER.info("Publishing complete in thread " +threadName );
 				} catch (Exception e) {
 					if (expectedExceptionClass == null) {
@@ -124,5 +129,19 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		};
 		thread.start();
 		return thread;
+	}
+	
+	@Test
+	public void testPublishingAdhocFile() {
+		InputStream inputStream = ClassLoader.getSystemResourceAsStream(BETA_TEST_FILENAME);
+		long size =1000;
+		ReleaseCenter releaseCenter = new ReleaseCenter();
+		releaseCenter.setShortName(releaseCenterName);
+		try {
+			publishService.publishAdHocFile(releaseCenter, inputStream, BETA_TEST_FILENAME, size, true);
+		} catch (BusinessServiceException e) {
+			e.printStackTrace();
+			Assert.fail("Should not result in exception");
+		}
 	}
 }

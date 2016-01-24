@@ -15,12 +15,9 @@ public interface PublishService {
 
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
-	void publishBuild(Build build) throws BusinessServiceException;
+	void publishBuild(Build build, boolean publishComponentIds) throws BusinessServiceException;
 
-	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size) throws BusinessServiceException;
+	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 
 	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
-	
-	void publishComponentIds(Build build) throws BusinessServiceException;
-
 }
