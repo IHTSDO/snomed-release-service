@@ -40,6 +40,14 @@ if [ $# -lt 4 ]; then
 	exit 1
 fi
 
+#Check if parallel is installed
+parallelInstalled=`parallel -? 2>/dev/null | grep GNU`
+if [ -z "${parallelInstalled}" ]
+then
+	echo "Could not detect the GNU Program 'Parallel'  if MAC, do brew install parallel"
+	exit -2
+fi
+
 leftName=$1
 leftArchive=$2
 rightName=$3
@@ -110,59 +118,11 @@ find target/a -type f | sed "s/target\/a\///" | grep "res1_" | sort >> ${process
 #Now we'll just do a file size comparison of any other file
 find target/a -type f | sed "s/target\/a\///" | egrep -v "sct2_|der2|sct1|der1|res1"  | sort >> ${processOrderFile}
 
+parallelFeed="ParallelFeed_${RANDOM}.txt"
 for file in `cat ${processOrderFile}`; do
 	leftFile="target/a/${file}"
 	rightFile="target/b/${file}"
-	if [ -f "${rightFile}" ]
-	then 
-		echo "Comparing ${file}"
-		
-		if [[ $file == *.txt ]]
-		then
-			leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
-			echo "${leftName} line count: $leftFileCount"
-	
-			rightFileCount=`wc -l ${rightFile} | awk '{print $1}'`
-			echo "${rightName} line count: $rightFileCount"
-	
-			echo "Line count diff: $[$leftFileCount-$rightFileCount]"
-
-			echo -n "Content differences count (x2): "
-			sort ${leftFile} > tmp.txt
-			mv tmp.txt ${leftFile}
-			sort ${rightFile} > tmp.txt 
-			mv tmp.txt ${rightFile}
-			diff ${leftFile} ${rightFile} | tee target/c/diff_${file} | wc -l
-	
-		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]]
-			then
-				echo -n "Content without id column differences count (x2): "
-				leftFileTrim="${leftFile}_no_first_col.txt"
-				rightFileTrim="${rightFile}_no_first_col.txt"
-				cut -f2- ${leftFile} | sort > ${leftFileTrim}
-				cut -f2- ${rightFile} | sort > ${rightFileTrim}
-				diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${file}_no_first_col.txt | wc -l
-			fi
-			
-			if [[ ${leftFile} == *sct2_Relationship* ]]
-			then
-				echo -n "Content without id or group column differences count (x2): "
-				leftFileTrim2="${leftFile}_no_1_7_col.txt"
-				rightFileTrim2="${rightFile}_no_1_7_col.txt"
-				#Ideally I'd use cut's --complement here but it doesn't exist for mac
-				cut -f2,3,4,5,6,8,9,10 ${leftFile} | sort > ${leftFileTrim2}
-				cut -f2,3,4,5,6,8,9,10 ${rightFile} | sort > ${rightFileTrim2}
-				diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${file}_no_1_7_col.txt | wc -l
-			fi
-		fi
-		
-		echo -n "File size difference (bytes): "
-		leftSize=`stat -f%z ${leftFile}`
-		rightSize=`stat -f%z ${rightFile}`
-		echo "${leftSize} - ${rightSize}" | bc
-		echo
-	else
-		echo "Skipping ${file} - no counterpart in ${rightName}"
-		echo
-	fi
+echo "${leftFile} ${rightFile} ${file} ${leftName} ${rightName}" >> ${parallelFeed}
 done
+
+parallel -j 6 --no-notice --ungroup --colsep ' ' -a ${parallelFeed} ./compare-files.sh

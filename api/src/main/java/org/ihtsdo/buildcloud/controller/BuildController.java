@@ -175,8 +175,7 @@ public class BuildController {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		publishService.publishComponentIds(build);
-		publishService.publishBuild(build);
+		publishService.publishBuild(build, true);
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
