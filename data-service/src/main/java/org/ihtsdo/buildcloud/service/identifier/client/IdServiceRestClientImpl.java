@@ -389,6 +389,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						jsonObject.put(TOKEN, this.token);
 						resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
 						LOGGER.info("Id service rest client logs out successfully with token:" + this.token );
+						token = null;
 					} catch (Exception e) {
 						throw new RestClientException("Failed to login out " + this.userName, e);
 					}
