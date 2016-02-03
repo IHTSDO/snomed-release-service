@@ -34,7 +34,7 @@ then
 		mv ${tmpFile} ${rightFile}
 		diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
 
-	if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]]
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]
 		then
 			echo -n "Content without id column differences count (x2): " >> ${tmpOutput}
 			leftFileTrim="${leftFile}_no_first_col.txt"
