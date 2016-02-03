@@ -126,3 +126,5 @@ echo "${leftFile} ${rightFile} ${file} ${leftName} ${rightName}" >> ${parallelFe
 done
 
 parallel -j 6 --no-notice --ungroup --colsep ' ' -a ${parallelFeed} ./compare-files.sh
+
+rm ${parallelFeed}
