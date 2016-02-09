@@ -11,6 +11,16 @@ tmpOutput="target/${fileName}_comparison_details_${RANDOM}.txt"
 
 echo "Started Comparison of ${rightFile}"
 
+function prepRF1RelFile() {
+	thisFile=$1
+	targetColumn=5 # Remove any rows with a 'Qualifier' characteristic
+	stripValue=1
+	#We also need to cut out column 6 because calculating the refinability is out of scope
+	tmpFile="tmp_${RANDOM}.txt"
+	cat ${thisFile} | awk -v col="${targetColumn}" -v val="${stripValue}" '$col!=val' | cut -f1-5,7 > ${tmpFile}
+	mv ${tmpFile} ${thisFile}
+}
+
 if [ -f "${rightFile}" ] && [ -f "${leftFile}" ]
 then 
 
@@ -18,6 +28,14 @@ then
 	
 	if [[ ${rightFile} == *.txt ]]
 	then
+		
+		#RF1 Relationshipfiles should be compared without Qualifier values, so strip rows where col5 == "1"
+		if [[ ${leftFile} == *sct1_Relationships* ]]
+		then
+			prepRF1RelFile "${leftFile}" 5 1
+			prepRF1RelFile "${rightFile}" 5 1
+		fi		
+		
 		leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
 		echo "${leftName} line count: $leftFileCount" >> ${tmpOutput}
 
@@ -34,8 +52,9 @@ then
 		mv ${tmpFile} ${rightFile}
 		diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
 
-		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]]
 		then
+			
 			echo -n "Content without id column differences count (x2): " >> ${tmpOutput}
 			leftFileTrim="${leftFile}_no_first_col.txt"
 			rightFileTrim="${rightFile}_no_first_col.txt"
