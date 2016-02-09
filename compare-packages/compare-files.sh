@@ -21,6 +21,14 @@ function prepRF1RelFile() {
 	mv ${tmpFile} ${thisFile}
 }
 
+function prepRF1HistoryFile() {
+	thisFile=$1
+	#Any historic values of 19940101 need to become 20020131
+	tmpFile="tmp_${RANDOM}.txt"
+	cat ${thisFile} | sed 's/19940101/20020131/' > ${tmpFile}
+	mv ${tmpFile} ${thisFile}
+}
+
 if [ -f "${rightFile}" ] && [ -f "${leftFile}" ]
 then 
 
@@ -32,9 +40,16 @@ then
 		#RF1 Relationshipfiles should be compared without Qualifier values, so strip rows where col5 == "1"
 		if [[ ${leftFile} == *sct1_Relationships* ]]
 		then
-			prepRF1RelFile "${leftFile}" 5 1
-			prepRF1RelFile "${rightFile}" 5 1
-		fi		
+			prepRF1RelFile "${leftFile}"
+			prepRF1RelFile "${rightFile}"
+		fi
+		
+		#RF1 ComponentHistory should use RF2 like values so 20020131 rather than 19940101
+		if [[ ${leftFile} == *sct1_ComponentHistory* ]]
+		then
+			prepRF1HistoryFile "${leftFile}"
+			prepRF1HistoryFile "${rightFile}"
+		fi	
 		
 		leftFileCount=`wc -l ${leftFile} | awk '{print $1}'`
 		echo "${leftName} line count: $leftFileCount" >> ${tmpOutput}
