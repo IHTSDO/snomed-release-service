@@ -24,8 +24,13 @@ function prepRF1RelFile() {
 function prepRF1HistoryFile() {
 	thisFile=$1
 	#Any historic values of 19940101 need to become 20020131
+	#Also filter out anything that happens in 20020131 that isn't 
+	#Also make it all upper case
+	#Also standardise comma space for multiple event reasons
 	tmpFile="tmp_${RANDOM}.txt"
-	cat ${thisFile} | sed 's/19940101/20020131/' > ${tmpFile}
+	cat ${thisFile} | sed 's/199.0101/20020131/' | sed 's/20001101/20020131/' | \
+	awk '$2 != 20020131 || ($3 != 2 && $3 != 1)' | tr "[a-z]" "[A-Z]" | \
+	sed 's/;/,/' | sed 's/,I/, I/' | sed 's/,L/, L/' > ${tmpFile}
 	mv ${tmpFile} ${thisFile}
 }
 
@@ -38,7 +43,7 @@ then
 	then
 		
 		#RF1 Relationshipfiles should be compared without Qualifier values, so strip rows where col5 == "1"
-		if [[ ${leftFile} == *sct1_Relationships* ]]
+		if [[ ${leftFile} == *1_*Relationships* ]]
 		then
 			prepRF1RelFile "${leftFile}"
 			prepRF1RelFile "${rightFile}"
@@ -59,25 +64,26 @@ then
 
 		echo "Line count diff: $[$leftFileCount-$rightFileCount]" >> ${tmpOutput}
 
-		echo -n "Content differences count (x2): " >> ${tmpOutput}
-		tmpFile="tmp_${RANDOM}.txt"
-		sort ${leftFile} > ${tmpFile}
-		mv ${tmpFile} ${leftFile}
-		sort ${rightFile} > ${tmpFile} 
-		mv ${tmpFile} ${rightFile}
-		diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
-
-		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *sct2_Relationship* ]] || [[ ${leftFile} == *sct1_Relationships* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]]
+		#No point in doing a content difference if we know we need to do that without id column
+		#so make this logic either/or
+		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *Relationship* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]]
 		then
-			
 			echo -n "Content without id column differences count (x2): " >> ${tmpOutput}
 			leftFileTrim="${leftFile}_no_first_col.txt"
 			rightFileTrim="${rightFile}_no_first_col.txt"
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${fileName}_no_first_col.txt | wc -l >> ${tmpOutput}
+		else
+			echo -n "Content differences count (x2): " >> ${tmpOutput}
+			tmpFile="tmp_${RANDOM}.txt"
+			sort ${leftFile} > ${tmpFile}
+			mv ${tmpFile} ${leftFile}
+			sort ${rightFile} > ${tmpFile} 
+			mv ${tmpFile} ${rightFile}
+			diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
 		fi
-		
+
 		if [[ ${leftFile} == *sct2_Relationship* ]]
 		then
 			echo -n "Content without id or group column differences count (x2): " >> ${tmpOutput}
