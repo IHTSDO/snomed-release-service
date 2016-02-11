@@ -28,9 +28,13 @@ function prepRF1HistoryFile() {
 	#Also make it all upper case
 	#Also standardise comma space for multiple event reasons
 	tmpFile="tmp_${RANDOM}.txt"
-	cat ${thisFile} | sed 's/199.0101/20020131/' | sed 's/20001101/20020131/' | \
+	cat ${thisFile} | sed 's/	199...../	20020131/' | sed 's/	2000..../	20020131/' | \
+	sed 's/	2001..../	20020131/' | \
+	sed 's/	200201../	20020131/' | \
 	awk '$2 != 20020131 || ($3 != 2 && $3 != 1)' | tr "[a-z]" "[A-Z]" | \
-	sed 's/;/,/' | sed 's/,I/, I/' | sed 's/,L/, L/' > ${tmpFile}
+	sed 's/;/,/' | sed 's/,I/, I/' | sed 's/,L/, L/' | \
+	sed 's/LANGUAGECODE CHANGE, DESCRIPTIONTYPE CHANGE/DESCRIPTIONTYPE CHANGE, LANGUAGECODE CHANGE/' | \
+	sed 's/INITIALCAPITALSTATUS CHANGE, DESCRIPTIONTYPE CHANGE/DESCRIPTIONTYPE CHANGE, INITIALCAPITALSTATUS CHANGE/' > ${tmpFile}
 	mv ${tmpFile} ${thisFile}
 }
 
