@@ -491,16 +491,16 @@ public class BuildServiceImpl implements BuildService {
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			validateQaTestConfig(qaTestConfig, build.getConfiguration().isFirstTimeRelease());
+			validateQaTestConfig(qaTestConfig, build.getConfiguration());
 			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax);
 		}
 	}
 
-	private void validateQaTestConfig(final QATestConfig qaTestConfig, boolean isFirstTimeRelease) throws ConfigurationException {
+	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
 			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specifield.");
 		}
-		if (!isFirstTimeRelease) {
+		if (!buildConfig.isJustPackage() && !buildConfig.isFirstTimeRelease()) {
 			if (qaTestConfig.getPreviousInternationalRelease() == null) {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
