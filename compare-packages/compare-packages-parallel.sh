@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -e;
 
 function extractZip {
 	zipName=$1
@@ -41,7 +41,7 @@ if [ $# -lt 4 ]; then
 fi
 
 #Check if parallel is installed
-parallelInstalled=`parallel -? 2>/dev/null | grep GNU`
+parallelInstalled=`parallel -? 2>/dev/null | grep GNU || true`
 if [ -z "${parallelInstalled}" ]
 then
 	echo "Could not detect the GNU Program 'Parallel'  if MAC, do brew install parallel"
@@ -126,3 +126,5 @@ echo "${leftFile} ${rightFile} ${file} ${leftName} ${rightName}" >> ${parallelFe
 done
 
 parallel -j 6 --no-notice --ungroup --colsep ' ' -a ${parallelFeed} ./compare-files.sh
+
+rm ${parallelFeed}
