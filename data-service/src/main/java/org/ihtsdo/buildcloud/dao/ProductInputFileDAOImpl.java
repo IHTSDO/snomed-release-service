@@ -53,10 +53,13 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 				//Expecting just one manifest file but more than one file is found in the manifest folder.
 				LOGGER.warn("Expecting just one manifest file but more than one is found in the manifest folder: " + manifestDirectoryPath);
 			}
-			return manifestDirectoryPath + files.iterator().next();
-		} else {
-			return null;
-		}
+			for (String fileName : files) {
+				if (fileName.endsWith(".xml")) {
+					return manifestDirectoryPath + fileName;
+				}
+			}
+		} 
+		return null;
 	}
 
 	@Override

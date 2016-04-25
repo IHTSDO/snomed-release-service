@@ -52,7 +52,7 @@ public class ManifestCheck extends PreconditionCheck {
 			}
 			pass();
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
-			LOGGER.error("Exception thrown when validating manifest file for build:{}", build);
+			LOGGER.error("Exception thrown when validating manifest file for build:{}", build.getId());
 			e.printStackTrace();
 			fatalError("Build manifest is missing or invalid: " + e.getMessage());
 		}
