@@ -316,6 +316,9 @@ public class TransformationService {
 			}
 			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), 
 					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
+				if (prevousSnapshot == null) {
+					throw new IOException("No equivalent file found in the previous published release:" + conceptSnapshot);
+				}
 				conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
 			}
 		}
