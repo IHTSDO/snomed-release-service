@@ -15,6 +15,8 @@ import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ManifestCheck extends PreconditionCheck {
@@ -28,6 +30,7 @@ public class ManifestCheck extends PreconditionCheck {
 	private static final String DER1 = "der1";
 	private static final String SCT1 = "sct1";
 	private static final String EMPTY_FILE_NAME_MSG = "Total number of files with no file name specified: %d";
+	private static final Logger LOGGER = LoggerFactory.getLogger(ManifestCheck.class);
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -49,6 +52,8 @@ public class ManifestCheck extends PreconditionCheck {
 			}
 			pass();
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
+			LOGGER.error("Exception thrown when validating manifest file for build:{}", build.getId());
+			e.printStackTrace();
 			fatalError("Build manifest is missing or invalid: " + e.getMessage());
 		}
 	}

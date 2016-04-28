@@ -341,7 +341,7 @@ public class BuildServiceImpl implements BuildService {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
 				build.setStatus(Status.FAILED_PRE_CONDITIONS);
-				LOGGER.warn("Fatal error occurred during pre-condition checks, build {} will be halted.", build.getId());
+				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report.toString(), build.getId());
 				break;
 			}
 		}
