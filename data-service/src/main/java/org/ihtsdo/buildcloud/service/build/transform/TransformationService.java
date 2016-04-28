@@ -312,10 +312,13 @@ public class TransformationService {
 		if (!build.getConfiguration().isFirstTimeRelease()) {
 			String conceptSnapshot = conceptDelta.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			if (build.getConfiguration().isBetaRelease()) {
-				conceptSnapshot = conceptSnapshot.replaceAll(RF2Constants.BETA_RELEASE_PREFIX, "");
+				conceptSnapshot = conceptSnapshot.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
 			}
 			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), 
 					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
+				if (prevousSnapshot == null) {
+					throw new IOException("No equivalent file found in the previous published release:" + conceptSnapshot);
+				}
 				conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
 			}
 		}

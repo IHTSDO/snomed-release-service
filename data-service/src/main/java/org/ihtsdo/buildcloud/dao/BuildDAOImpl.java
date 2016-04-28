@@ -394,6 +394,7 @@ public class BuildDAOImpl implements BuildDAO {
 				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
 			}
 		}
+		LOGGER.warn("No file found in the previous published pakcage {} containing {}", previousPublishedPackage, targetFileNameStripped);
 		return null;
 	}
 

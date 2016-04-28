@@ -28,7 +28,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		Assert.assertEquals(State.FATAL, actualResult);
 	}
 
-	
+	@Test
 	public final void checkValidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("valid_manifest.xml");
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
