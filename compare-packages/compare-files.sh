@@ -17,21 +17,21 @@ function prepRF1RelFile() {
 	stripValue=1
 	#We also need to cut out column 6 because calculating the refinability is out of scope
 	tmpFile="tmp_${RANDOM}.txt"
-	cat ${thisFile} | awk -v col="${targetColumn}" -v val="${stripValue}" '$col!=val' | cut -f1-5,7 > ${tmpFile}
+	cat ${thisFile} | awk -F $"\t" -v col="${targetColumn}" -v val="${stripValue}" '$col!=val' | cut -f1-5,7 > ${tmpFile}
+	lateralityAttribute="272741003"
+	#Copy the laterality qualifying relationships back in
+	#AWK is losing our tab separators but only in the Termmed file? Be explicify about Output Field Separator
+	cat ${thisFile} | awk  -v col="${targetColumn}" -v val="${stripValue}" -v type="${lateralityAttribute}" \
+	-F "\t" 'BEGIN {OFS=FS} $col=val && $3==type' | cut -f1-5,7 >> ${tmpFile}
 	mv ${tmpFile} ${thisFile}
 }
 
 function prepRF1HistoryFile() {
 	thisFile=$1
-	#Any historic values of 19940101 need to become 20020131
-	#Also filter out anything that happens in 20020131 that isn't 
-	#Also make it all upper case
+	#Make it all upper case
 	#Also standardise comma space for multiple event reasons
 	tmpFile="tmp_${RANDOM}.txt"
-	cat ${thisFile} | sed 's/	199...../	20020131/' | sed 's/	2000..../	20020131/' | \
-	sed 's/	2001..../	20020131/' | \
-	sed 's/	200201../	20020131/' | \
-	awk '$2 != 20020131 || ($3 != 2 && $3 != 1)' | tr "[a-z]" "[A-Z]" | \
+	cat ${thisFile} | tr "[a-z]" "[A-Z]" | \
 	sed 's/;/,/' | sed 's/,I/, I/' | sed 's/,L/, L/' | \
 	sed 's/LANGUAGECODE CHANGE, DESCRIPTIONTYPE CHANGE/DESCRIPTIONTYPE CHANGE, LANGUAGECODE CHANGE/' | \
 	sed 's/INITIALCAPITALSTATUS CHANGE, DESCRIPTIONTYPE CHANGE/DESCRIPTIONTYPE CHANGE, INITIALCAPITALSTATUS CHANGE/' > ${tmpFile}
@@ -53,7 +53,7 @@ then
 			prepRF1RelFile "${rightFile}"
 		fi
 		
-		#RF1 ComponentHistory should use RF2 like values so 20020131 rather than 19940101
+		#RF1 ComponentHistory needs some further normalisation
 		if [[ ${leftFile} == *sct1_ComponentHistory* ]]
 		then
 			prepRF1HistoryFile "${leftFile}"
