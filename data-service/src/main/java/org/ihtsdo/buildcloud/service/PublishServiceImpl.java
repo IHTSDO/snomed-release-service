@@ -389,10 +389,15 @@ public class PublishServiceImpl implements PublishService {
 					}
 				}
 				if (!assignedIds.isEmpty()) {
-					boolean isSuccessful = idRestClient.publishSctIds(assignedIds, RF2Constants.INTERNATIONAL_NAMESPACE_ID, buildId);
-					if (!isSuccessful) {
-						LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
+					//publishing sctId grouped in batch by namespace id
+					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(assignedIds);
+					for ( String namespace : sctIdsByNamespaceMap.keySet()) {
+						boolean isSuccessful = idRestClient.publishSctIds(sctIdsByNamespaceMap.get(namespace), new Integer(namespace), buildId);
+						if (!isSuccessful) {
+							LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
+						}
 					}
+					
 				}
 				batchJob = null;
 			}
@@ -421,6 +426,34 @@ public class PublishServiceImpl implements PublishService {
 		
 	}
 	
+	private Map<String, List<Long>> groupSctIdsByNamespace(List<Long> assignedIds) {
+		Map<String, List<Long>> result = new HashMap<String, List<Long>>();
+		for (Long sctId : assignedIds) {
+			int total = String.valueOf(sctId).length();
+			String partitionId = String.valueOf(sctId).substring(total-3,total-1);
+			String namespaceId = null;
+			if (partitionId.substring(0,1).equals("0")) {
+				namespaceId = "0";
+			} else if (partitionId.substring(0,1).equals("1")) {
+				namespaceId = String.valueOf(sctId).substring(total-10,total-3);
+			} else {
+				LOGGER.error("Invalid partition id:" + partitionId + " for sctId:" + sctId);
+			}
+			if (namespaceId != null) {
+				List<Long> existing = result.get(namespaceId);
+				if (existing != null) {
+					existing.add(sctId);
+					
+				} else {
+					existing = new ArrayList<>();
+					existing.add(sctId);
+					result.put(namespaceId, existing);
+				}
+			}
+		}
+		return result;
+	}
+
 	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {
 		Set<Long> sctIds = new HashSet<>();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFileStream, RF2Constants.UTF_8))) {
