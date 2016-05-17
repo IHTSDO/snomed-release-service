@@ -448,7 +448,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public boolean publishSchemeIds(List<String> schemeIds, SchemeIdType schemeType, String comment) throws RestClientException {
-		LOGGER.debug("Start publishing sctIds with batch size {} for namespace {}", schemeIds.size());
+		LOGGER.debug("Start publishing scheme ids with batch size {} for scheme type {}", schemeIds.size(), schemeType);
 		if (schemeIds == null || schemeIds.isEmpty()) {
 			return true;
 		}
@@ -462,7 +462,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONResource response = resty.put(urlHelper.getSchemeIdBulkPublishingUrl(schemeType,token), requestData, APPLICATION_JSON);
 			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
 				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + schemeIds.size());
+				LOGGER.info("Bulk job id:" + jobId + " for publishing scheme ids with batch size:" + schemeIds.size());
 				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())){
 					isPublished = true;
 				}
@@ -472,11 +472,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			String message = "Bulk publishSctIds job failed.";
+			String message = "Bulk publish scheme ids job failed.";
 			LOGGER.error(message, e);
 			throw new RestClientException(message, e);
 		}
-		LOGGER.debug("End publishing sctIds with batch size {}", schemeIds.size());
+		LOGGER.debug("End publishing scheme ids with batch size {}", schemeIds.size());
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
 		return isPublished;
 	}
