@@ -90,4 +90,6 @@ public interface BuildDAO {
 	String getOutputFilePath(Build build, String filename);
 
 	String getManifestFilePath(Build build);
+
+	InputStream getBuildReportFileStream(Build build);
 }

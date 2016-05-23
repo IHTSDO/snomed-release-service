@@ -608,4 +608,10 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
+	@Override
+	public InputStream getBuildReportFile(String releaseCenterKey,String productKey, String buildId) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildReportFileStream(build);
+	}
+
 }
