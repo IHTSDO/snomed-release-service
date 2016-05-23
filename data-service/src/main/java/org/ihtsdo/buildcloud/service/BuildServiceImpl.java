@@ -226,22 +226,21 @@ public class BuildServiceImpl implements BuildService {
 			String resultMessage = "Process completed successfully";
 			try {
 				executeBuild(build, failureExportMax);
-			} catch (final BusinessServiceException | NoSuchAlgorithmException e) {
+			} catch (final Exception e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
 						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-				LOGGER.warn(resultMessage, e);
+				LOGGER.error(resultMessage, e);
 			}
 			report.add("Progress Status", resultStatus);
 			report.add("Message", resultMessage);
-			dao.persistReport(build); // TODO: Does this work?
+			dao.persistReport(build);
 
 			updateStatusWithChecks(build, Status.BUILT);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
 		}
-
 		return build;
 	}
 
