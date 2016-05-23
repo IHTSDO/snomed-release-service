@@ -110,7 +110,7 @@ public class BuildController {
 	}
 	
 	
-	@RequestMapping(value = "/{buildId}/qaTestconfig", produces = "application/json", method = RequestMethod.GET)
+	@RequestMapping(value = "/{buildId}/qaTestConfig", produces = "application/json", method = RequestMethod.GET)
 	@ResponseBody
 	@ApiOperation( value = "Retrieves QA test configuration details",
 		notes = "Retrieves configuration details for given product key, release center key, and build id" )
