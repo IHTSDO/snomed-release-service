@@ -601,10 +601,10 @@ public class BuildServiceImpl implements BuildService {
 	public QATestConfig loadQATestConfig(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
-			dao.loadBuildConfiguration(build);
+			dao.loadQaTestConfig(build);
 			return build.getQaTestConfig();
 		} catch (final IOException e) {
-			throw new BusinessServiceException("Failed to load configuration.", e);
+			throw new BusinessServiceException("Failed to load QA test configuration.", e);
 		}
 	}
 
