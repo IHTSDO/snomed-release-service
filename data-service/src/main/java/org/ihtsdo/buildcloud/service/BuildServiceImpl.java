@@ -401,9 +401,9 @@ public class BuildServiceImpl implements BuildService {
 					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
 					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax);
 					if (rvfResultMsg == null) {
-						rvfStatus = "Completed without errors.";
+						rvfStatus = "Failed to run";
 					} else {
-						rvfStatus = "Completed, errors detected.";
+						rvfStatus = "Completed";
 					}
 				} catch (final Exception e) {
 					LOGGER.error("Failure during RVF Post Condition Testing", e);
