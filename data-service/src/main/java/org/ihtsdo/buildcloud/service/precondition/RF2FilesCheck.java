@@ -27,7 +27,7 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 	public void runCheck(final Build build) {
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			for (String inputFile : buildDAO.listInputFileNames(build)) {
-				if (inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+				if (inputFile.startsWith(RF2Constants.INPUT_FILE_PREFIX) && inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				    	LOGGER.info("Run pre-condition RF2FilesCheck for input file:{}", inputFile);
 					InputStream inputFileStream = buildDAO.getInputFileStream(build, inputFile);
 					AsyncPipedStreamBean logFileOutputStream = buildDAO.getLogFileOutputStream(build, "precheck-rvf-" + inputFile + ".log");

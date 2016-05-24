@@ -100,11 +100,7 @@ public class BuildController {
 		final BuildConfiguration buildConfiguration = buildService.loadBuildConfiguration(releaseCenterKey, productKey, buildId);
 		final Map<String,Object> result = new HashMap<>();
 		if (buildConfiguration != null ) {
-			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, false, request));
-		}
-		final QATestConfig qaTestConfig = buildService.loadQATestConfig(releaseCenterKey, productKey, buildId);
-		if( qaTestConfig != null) {
-			result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, true, request));
+			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request));
 		}
 		return result;
 	}
@@ -119,7 +115,7 @@ public class BuildController {
 		final Map<String,Object> result = new HashMap<>();
 		final QATestConfig qaTestConfig = buildService.loadQATestConfig(releaseCenterKey, productKey, buildId);
 		if( qaTestConfig != null) {
-			result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, false, request));
+			result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, true, request));
 		}
 		return result;
 	}
