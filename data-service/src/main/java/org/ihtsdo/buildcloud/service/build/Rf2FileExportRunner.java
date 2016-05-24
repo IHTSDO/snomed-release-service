@@ -71,7 +71,7 @@ public class Rf2FileExportRunner {
 					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
 					success = true;
-				} catch (final ReleaseFileGenerationException e) {
+				} catch (final Exception e) {
 					failureCount = handleException(e, thisFile, failureCount);
 				}
 			}
@@ -85,7 +85,7 @@ public class Rf2FileExportRunner {
 			try {
 				generateInferredRelationshipFiles(transformedSnapshotFilename);
 				success = true;
-			} catch (final ReleaseFileGenerationException e) {
+			} catch (final Exception e) {
 				failureCount = handleException(e, transformedSnapshotFilename, failureCount);
 			}
 		}
@@ -280,12 +280,11 @@ public class Rf2FileExportRunner {
 		results = rf2TableDAO.selectAllOrdered(tableSchema);
 		try (AsyncPipedStreamBean fullFileAsyncPipe = buildDao.getOutputFileOutputStream(build, fullFilename);
 			AsyncPipedStreamBean snapshotFileAsyncPipe = buildDao.getOutputFileOutputStream(build, snapshotOutputFilename)) {
-//			rf2FileWriter.exportFull(results, tableSchema, snapshotOutputStream.getOutputStream());
 			rf2FileWriter.exportFullAndSnapshot(results, tableSchema,
 					build.getConfiguration().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
 					snapshotFileAsyncPipe.getOutputStream());
 		} catch (IOException | SQLException e) {
-			throw new ReleaseFileGenerationException("Failed to export previous full " + fullFilename, e);
+			throw new ReleaseFileGenerationException("Failed to export " + fullFilename + " and " + snapshotOutputFilename, e);
 		}
 	}
 
@@ -299,19 +298,18 @@ public class Rf2FileExportRunner {
 		return previousFileStream;
 	}
 
-	private int handleException(final ReleaseFileGenerationException e, final String thisFile, int failureCount) throws ReleaseFileGenerationException {
-		failureCount++;
+	private int handleException(final Exception e, final String thisFile, int failureCount) throws ReleaseFileGenerationException {
 		// Is this an error that it's worth retrying eg root cause IOException or AWS Related?
 		final Throwable cause = e.getCause();
+		failureCount++;
 		if (failureCount > maxRetries) {
 			throw new ReleaseFileGenerationException("Maximum failure recount of " + maxRetries + " exceeeded. Last error: "
 					+ e.getMessage(), e);
-		} else if (!isNetworkRelated(cause)) {
-			// If this isn't something we think we might recover from by retrying, then just re-throw the existing error without
-			// modification
-			throw e; // TODO: Why are we rethrowing? Should use a subclass of ReleaseFileGenerationException to mark recoverable and only catch those.
-		} else {
+		} else if (isNetworkRelated(cause)) {
 			LOGGER.warn("Failure while processing {} due to: {}. Retrying ({})...", thisFile, e.getMessage(), failureCount);
+		} else {
+			// If this isn't something we think we might recover from by retrying, then just re-throw the existing error
+			throw new ReleaseFileGenerationException("Failed to generate release file:" + thisFile, e);
 		}
 		return failureCount;
 	}

@@ -524,4 +524,10 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 	 return null;
 	}
+
+	@Override
+	public InputStream getBuildReportFileStream(Build build) {
+		final String reportFilePath = pathHelper.getReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
 }
