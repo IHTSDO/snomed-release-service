@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration", "inputfiles", "outputfiles", "logs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles", "outputfiles","buildReport","logs" };
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -102,11 +102,39 @@ public class BuildController {
 		if (buildConfiguration != null ) {
 			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request));
 		}
+		return result;
+	}
+	
+	
+	@RequestMapping(value = "/{buildId}/qaTestConfig", produces = "application/json", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves QA test configuration details",
+		notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public Map<String, Object> getQqTestConfig(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
+			final HttpServletRequest request) throws IOException, BusinessServiceException {
+		final Map<String,Object> result = new HashMap<>();
 		final QATestConfig qaTestConfig = buildService.loadQATestConfig(releaseCenterKey, productKey, buildId);
 		if( qaTestConfig != null) {
 			result.putAll(hypermediaGenerator.getEntityHypermedia(qaTestConfig, true, request));
 		}
 		return result;
+	}
+	
+	
+	@RequestMapping(value = "/{buildId}/buildReport", produces = "application/json", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves build report details",
+		notes = "Retrieves buildReport details for given product key, release center key, and build id" )
+	public void getBuildReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
+			final HttpServletRequest request, final HttpServletResponse response) throws IOException, BusinessServiceException {
+		
+		try (InputStream outputFileStream = buildService.getBuildReportFile(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No build_report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
 	}
 
 	@RequestMapping(value = "/{buildId}/inputfiles", method = RequestMethod.GET)

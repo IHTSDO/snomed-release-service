@@ -26,8 +26,9 @@ public class Build {
 	private final String productBusinessKey;
 
 	private List<PreConditionCheckReport> preConditionCheckReports;
-
-	BuildReport buildReport;
+	
+	private BuildReport buildReport;
+	
 	@Transient
 	private Product product;
 
@@ -115,7 +116,8 @@ public class Build {
 	public void setProduct(final Product product) {
 		this.product = product;
 	}
-
+	
+	@JsonIgnore
 	public QATestConfig getQaTestConfig() {
 		return qaTestConfig;
 	}

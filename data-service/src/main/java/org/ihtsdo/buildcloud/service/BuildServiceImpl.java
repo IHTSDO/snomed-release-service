@@ -226,22 +226,21 @@ public class BuildServiceImpl implements BuildService {
 			String resultMessage = "Process completed successfully";
 			try {
 				executeBuild(build, failureExportMax);
-			} catch (final BusinessServiceException | NoSuchAlgorithmException e) {
+			} catch (final Exception e) {
 				resultStatus = "fail";
 				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
 						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-				LOGGER.warn(resultMessage, e);
+				LOGGER.error(resultMessage, e);
 			}
 			report.add("Progress Status", resultStatus);
 			report.add("Message", resultMessage);
-			dao.persistReport(build); // TODO: Does this work?
+			dao.persistReport(build);
 
 			updateStatusWithChecks(build, Status.BUILT);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
 		}
-
 		return build;
 	}
 
@@ -402,9 +401,9 @@ public class BuildServiceImpl implements BuildService {
 					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
 					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax);
 					if (rvfResultMsg == null) {
-						rvfStatus = "Completed without errors.";
+						rvfStatus = "Failed to run";
 					} else {
-						rvfStatus = "Completed, errors detected.";
+						rvfStatus = "Completed";
 					}
 				} catch (final Exception e) {
 					LOGGER.error("Failure during RVF Post Condition Testing", e);
@@ -602,11 +601,17 @@ public class BuildServiceImpl implements BuildService {
 	public QATestConfig loadQATestConfig(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
-			dao.loadBuildConfiguration(build);
+			dao.loadQaTestConfig(build);
 			return build.getQaTestConfig();
 		} catch (final IOException e) {
-			throw new BusinessServiceException("Failed to load configuration.", e);
+			throw new BusinessServiceException("Failed to load QA test configuration.", e);
 		}
+	}
+
+	@Override
+	public InputStream getBuildReportFile(String releaseCenterKey,String productKey, String buildId) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildReportFileStream(build);
 	}
 
 }
