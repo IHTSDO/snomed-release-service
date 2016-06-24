@@ -6,7 +6,7 @@ function extractZip {
 	dirName=$2
 	echo "Extracting $zipName to $dirName"
 	mkdir -p $dirName
-	unzip $zipName -d $dirName
+	unzip "$zipName" -d $dirName
 }
 
 function createLists {
@@ -60,14 +60,14 @@ if [ "${flags}" == "-normaliseDates" ]; then
 fi
 
 leftLocation="target/left_archive"
-extractZip ${leftArchive} ${leftLocation}
+extractZip "${leftArchive}" ${leftLocation}
 
 #Did we in fact get passed two zip files for comparison?  Extract if so
 if [[ $rightArchive =~ \.zip$ ]]
 then 
 	rightDir="target/right_archive" 
 	echo "2nd archive detected instead of directory, resolving to ${rightDir}"
-	unzip $rightArchive -d ${rightDir}
+	unzip "$rightArchive" -d ${rightDir}
 else
 	rightDir=${rightArchive}
 fi
