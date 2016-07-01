@@ -101,6 +101,16 @@ then
 			mv ${tmpFile} ${rightFile}
 			diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
 		fi
+		
+		if [[ ${rightFile} == *1_Relationship* ]]
+		then
+			echo -n "Content without group column differences count (x2): " >> ${tmpOutput}
+			leftFileTrim2="${leftFile}_no_6_col.txt"
+			rightFileTrim2="${rightFile}_no_6_col.txt"
+			cut -f1-5 ${leftFile} | sort > ${leftFileTrim2}
+			cut -f1-5 ${rightFile} | sort > ${rightFileTrim2}
+			diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${fileName}_no_6_col.txt | wc -l >> ${tmpOutput}
+		fi
 
 		if [[ ${leftFile} == *sct2_Relationship* ]]
 		then
