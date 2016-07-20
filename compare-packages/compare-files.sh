@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+#Switch this off to do comparisons both with and without ids.
+optimiseFlag=true
+
 leftFile=$1
 rightFile=$2
 fileName=$3
@@ -8,8 +11,6 @@ leftName=$4
 rightName=$5
 
 tmpOutput="target/${fileName}_comparison_details_${RANDOM}.txt"
-
-echo "Started Comparison of ${rightFile}"
 
 function prepRF1RelFile() {
 	thisFile=$1
@@ -82,8 +83,7 @@ then
 			fi
 		fi
 
-		#No point in doing a content difference if we know we need to do that without id column
-		#so make this logic either/or
+		comparisonComplete=false
 		if [[ ${leftFile} == *Refset_* || ( ${leftFile} == *Relationship* && -n "$stripRelIds" ) || ${leftFile} == *der1_SubsetMembers* ]]
 		then
 			echo -n "Content without id column differences count (x2): " >> ${tmpOutput}
@@ -92,7 +92,11 @@ then
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${fileName}_no_first_col.txt | wc -l >> ${tmpOutput}
-		else
+			comparisonComplete=true;
+		fi
+		
+		if [ ${comparisonComplete} = false ] || [ ${optimiseFlag} = false ]
+		then
 			echo -n "Content differences count (x2): " >> ${tmpOutput}
 			tmpFile="tmp_${RANDOM}.txt"
 			sort ${leftFile} > ${tmpFile}
