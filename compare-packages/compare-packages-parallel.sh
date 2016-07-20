@@ -106,7 +106,9 @@ echo
 mkdir -p target/c
 echo "_File content differences_"
 echo "Between $leftName $leftArchive"
+echo `md5 "$leftArchive"`
 echo "and $rightName $rightArchive"
+echo `md5 "$rightArchive"`
 echo "Line count diff is ${leftName} minus ${rightName}"
 echo "File size diff is ${leftName} minus ${rightName}"
 echo
