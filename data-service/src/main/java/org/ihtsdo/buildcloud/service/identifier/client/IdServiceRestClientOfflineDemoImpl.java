@@ -158,5 +158,11 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 		}
 		return result;
 	}
+
+	@Override
+	public List<Long> registerSctIds(List<Long> sctIdsToRegister,
+			Integer namespaceId, String comment) throws RestClientException {
+		throw NOT_IMPLEMENTED_EXCEPTION;
+	}
 	
 }
