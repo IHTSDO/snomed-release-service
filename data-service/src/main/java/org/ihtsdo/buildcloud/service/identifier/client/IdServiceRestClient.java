@@ -64,4 +64,5 @@ public interface IdServiceRestClient {
 
 	Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException;
 
+	List<Long> registerSctIds(List<Long> sctIdsToRegister, Integer namespaceId, String comment) throws RestClientException;
 }
