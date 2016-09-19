@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -87,7 +88,7 @@ public class BuildConfiguration {
 	@CollectionTable(name="refset_composite_key", joinColumns=@JoinColumn(name="build_config_id"))
 	private Set<RefsetCompositeKey> refsetCompositeKeys;
 	
-	@OneToOne (mappedBy="buildConfiguration")
+	@OneToOne (mappedBy="buildConfiguration", cascade=CascadeType.ALL)
 	private ExtensionConfig extensionConfig;
 	
 	
