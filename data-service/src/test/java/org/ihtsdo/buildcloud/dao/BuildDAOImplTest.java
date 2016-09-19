@@ -104,6 +104,7 @@ public class BuildDAOImplTest {
 			"\"inputFilesFixesRequired\":false," +
 			"\"createInferredRelationships\":false," +
 			"\"createLegacyIds\":false," +
+			"\"extensionConfig\":null," +
 			"\"customRefsetCompositeKeys\":{}," +
 			"\"effectiveTime\":null" +
 				"}", configJson);

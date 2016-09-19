@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    
+    <changeSet author="mchu (generated)" id="1473943984237-1">
+        <insert tableName="release_center">
+            <column name="business_key" value="dk"/>
+            <column name="name" value="Denmark Release Center"/>
+            <column name="removed" value="N"/>
+            <column name="short_name" value="DK"/>
+        </insert>
+        <insert tableName="release_center">
+            <column name="business_key" value="se"/>
+            <column name="name" value="Sweden Release Center"/>
+            <column name="removed" value="N"/>
+            <column name="short_name" value="SE"/>
+        </insert>
+    </changeSet>
+    
+    <changeSet author="mchu (generated)" id="1473943984237-2">
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='DK')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='manager')"/>
+        </insert>
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='SE')"/>
+            <column name="user_id" valueComputed="(select id from user where user_name='manager')"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
