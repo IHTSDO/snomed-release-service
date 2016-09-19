@@ -28,4 +28,16 @@
             <column name="user_id" valueComputed="(select id from user where user_name='manager')"/>
         </insert>
     </changeSet>
+        <changeSet author="mchu (generated)" id="1473943984237-3">
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='DK')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='anonymous_user')"/>
+        </insert>
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='SE')"/>
+            <column name="user_id" valueComputed="(select id from user where user_name='anonymous_user')"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>
