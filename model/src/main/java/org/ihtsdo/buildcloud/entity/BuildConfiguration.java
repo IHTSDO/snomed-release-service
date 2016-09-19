@@ -87,6 +87,10 @@ public class BuildConfiguration {
 	@CollectionTable(name="refset_composite_key", joinColumns=@JoinColumn(name="build_config_id"))
 	private Set<RefsetCompositeKey> refsetCompositeKeys;
 	
+	@OneToOne (mappedBy="buildConfiguration")
+	private ExtensionConfig extensionConfig;
+	
+	
 	public BuildConfiguration() {
 	}
 
@@ -241,8 +245,15 @@ public class BuildConfiguration {
 	public void setProduct(final Product product) {
 		this.product = product;
 	}
-
 	
+	public ExtensionConfig getExtensionConfig() {
+		return this.extensionConfig;
+	}
+
+	public void setExtensionConfig(ExtensionConfig extensionConfig) {
+		this.extensionConfig = extensionConfig;
+	}
+
 	@Override
 	public String toString() {
 		return "BuildConfiguration [id=" + id + ", effectiveTime="
@@ -255,9 +266,8 @@ public class BuildConfiguration {
 				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
-				+ createLegacyIds + "]";
-	}
-
+				+ createLegacyIds  + "]";
+	}	
 
 	@Embeddable
 	public static class RefsetCompositeKey {

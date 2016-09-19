@@ -24,6 +24,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.ReleaseFileGenerationException;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
@@ -40,8 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class TransformationService {
-
-	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
 
@@ -398,10 +397,18 @@ public class TransformationService {
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		final String buildId =  build.getId();
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(INTERNATIONAL_NAMESPACE_ID, effectiveDateInSnomedFormat, buildId, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
+		Integer namespaceId = RF2Constants.INTERNATIONAL_NAMESPACE_ID;
+		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
+		String moduleId = coreModuleSctid;
+		if (extConfig != null) {
+			namespaceId = new Integer(extConfig.getNamespaceId());
+			moduleId = extConfig.getModuleId();
+		}
+		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, buildId, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
 
-		return new TransformationFactory(effectiveDateInSnomedFormat, cachedSctidFactory,
-				uuidGenerator, coreModuleSctid, modelModuleSctid, transformBufferSize);
+		return new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
+				uuidGenerator, moduleId, modelModuleSctid, transformBufferSize);
 	}
 	
 	private boolean isPreProcessType(final ComponentType componentType) {
