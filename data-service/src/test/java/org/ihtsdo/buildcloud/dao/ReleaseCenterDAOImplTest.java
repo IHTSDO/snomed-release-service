@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
+import java.util.List;
+
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
@@ -9,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
@@ -24,7 +24,7 @@ public class ReleaseCenterDAOImplTest {
 	public void testFindAll() {
 		Assert.assertNotNull(dao);
 		List<ReleaseCenter> centers = dao.findAll(TestUtils.TEST_USER);
-		Assert.assertEquals(1, centers.size());
+		Assert.assertEquals(3, centers.size());
 		ReleaseCenter internationalReleaseCenter = centers.get(0);
 		Assert.assertEquals("International Release Center", internationalReleaseCenter.getName());
 		Assert.assertEquals("International", internationalReleaseCenter.getShortName());
