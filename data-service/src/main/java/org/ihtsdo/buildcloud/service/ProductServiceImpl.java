@@ -53,7 +53,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Override
 	public List<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions) throws AuthenticationException {
-		return productDAO.findAll(filterOptions, SecurityHelper.getRequiredUser());
+		return productDAO.findAll(releaseCenterKey, filterOptions, SecurityHelper.getRequiredUser());
 	}
 
 	@Override
