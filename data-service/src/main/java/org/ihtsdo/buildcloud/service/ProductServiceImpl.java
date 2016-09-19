@@ -12,6 +12,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
@@ -182,6 +183,52 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
 			}
 		}
+		
+		if (newPropertyValues.containsKey(ProductService.DEPENDENCY_RELEASE_PACKAGE)) {
+			final ReleaseCenter releaseCenter = new ReleaseCenter();
+			releaseCenter.setShortName("International");
+			final String dependencyReleasePackage = newPropertyValues.get(ProductService.DEPENDENCY_RELEASE_PACKAGE);
+			//Validate that a file of that name actually exists
+			boolean pppExists = false;
+			Exception rootCause = new Exception("No further information");
+			try {
+				pppExists = publishService.exists(releaseCenter, dependencyReleasePackage);
+			} catch (final Exception e) {
+				rootCause = e;
+			}
+			
+			if (pppExists) {
+				if (configuration.getExtensionConfig() == null) {
+				ExtensionConfig extConfig = new ExtensionConfig();
+				configuration.setExtensionConfig(extConfig);
+				extConfig.setBuildConfiguration(configuration);
+				}
+				configuration.getExtensionConfig().setDependencyRelease(dependencyReleasePackage);
+			} else {
+				throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyReleasePackage, rootCause);
+			}
+		}
+		
+		if (newPropertyValues.containsKey(ProductService.MODULE_ID)) {
+			if (configuration.getExtensionConfig() == null) {
+				ExtensionConfig extConfig = new ExtensionConfig();
+				configuration.setExtensionConfig(extConfig);
+				extConfig.setBuildConfiguration(configuration);
+			}
+			configuration.getExtensionConfig().setModuleId(newPropertyValues.get(ProductService.MODULE_ID));
+			
+		}
+		
+		if (newPropertyValues.containsKey(ProductService.NAMESPACE_ID)) {
+			if (configuration.getExtensionConfig() == null) {
+				ExtensionConfig extConfig = new ExtensionConfig();
+				configuration.setExtensionConfig(extConfig);
+				extConfig.setBuildConfiguration(configuration);
+			}
+			configuration.getExtensionConfig().setNamespaceId(newPropertyValues.get(ProductService.NAMESPACE_ID));
+			
+		}
+		
 
 		if (newPropertyValues.containsKey(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
 			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();

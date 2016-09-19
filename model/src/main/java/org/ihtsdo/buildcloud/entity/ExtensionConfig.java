@@ -56,4 +56,13 @@ public class ExtensionConfig implements Serializable {
 		this.namespaceId = namespaceId;
 	}
 
+	public BuildConfiguration getBuildConfiguration() {
+		return buildConfiguration;
+	}
+
+	public void setBuildConfiguration(BuildConfiguration buildConfiguration) {
+		this.buildConfiguration = buildConfiguration;
+	}
+	
+
 }
