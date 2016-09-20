@@ -223,9 +223,13 @@ public class TransformationFactory {
 
 	private StreamingFileTransformation getInferredRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
-		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
+		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation();
+			 	 if( !RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
+			 		// replace international module id
+			 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0,3, coreModuleSctid));
+			 	 }
 				// id
-				.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
+			 	streamingFileTransformation.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
 		if (existingUuidToSctidMap != null) {
 			streamingFileTransformation.addTransformation(new ReplaceStringTransform(0, existingUuidToSctidMap));
 		}

@@ -47,6 +47,8 @@ public class RF2Constants {
 	public static final String SNOMED_ID_REFSET_ID = "900000000000498005";
 	public static final String CTV3_ID_REFSET_ID = "900000000000497000";
 	public static final String BETA_RELEASE_PREFIX = "x";
+	public static final String INTERNATIONAL_CORE_MODULE_ID ="900000000000207008";
+	public static final String INTERNATIONAL_MODEL_COMPONENT_ID ="900000000000012004";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED
