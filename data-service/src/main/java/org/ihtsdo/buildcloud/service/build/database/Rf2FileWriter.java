@@ -66,12 +66,14 @@ public class Rf2FileWriter {
 				fullWriter.append(RF2Constants.LINE_ENDING);
 
 				// Parse out id and effectiveTime
-				String[] lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+				String[] lineParts = null;
 				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 4);
 					// effective time is on the third column
 					currentId = lineParts[0] + lineParts[1];
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
 				} else {
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
 					currentId = lineParts[0];
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
 				}
