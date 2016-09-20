@@ -164,14 +164,24 @@ public class RF2ClassifierService {
 	}
 
 
+	private String getReleaseDateFromReleasePackage(String dependencyReleasePackage) {
+		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
+			String [] splits = dependencyReleasePackage.replace(RF2Constants.ZIP_FILE_EXTENSION, "").split(RF2Constants.FILE_NAME_SEPARATOR);
+			String releaseDate = splits[splits.length - 1];
+			return releaseDate;
+		}
+		return null;
+	}
 
 	private String downloadDependencyInferredRelationshipSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
 		//SnomedCT_Release_INT_20160131.zip
-		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-			String [] splits = dependencyReleasePackage.split(RF2Constants.FILE_NAME_SEPARATOR);
-			String releaseDate = splits[splits.length - 1];
-			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, RF2Constants.RELATIONSHIP_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION);
+		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		logger.debug("Extension dependency release date:" + releaseDate);
+		if (releaseDate != null) {
+			String inferredRelationshipSnapshot = RF2Constants.RELATIONSHIP_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION;
+			logger.debug("dependency inferred relationship snapshot file name:" + inferredRelationshipSnapshot);
+			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, inferredRelationshipSnapshot);
 		}
 		return null;
 	}
@@ -180,9 +190,8 @@ public class RF2ClassifierService {
 
 	private String downloadDependencyConceptSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
-		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-			String [] splits = dependencyReleasePackage.split(RF2Constants.FILE_NAME_SEPARATOR);
-			String releaseDate = splits[splits.length - 1];
+		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		if (releaseDate != null) {
 			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, RF2Constants.CONCEPT_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION);
 		}
 		return null;
@@ -210,9 +219,8 @@ public class RF2ClassifierService {
 	private String downloadDependencyStatedRelationshipSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
 		//SnomedCT_Release_INT_20160131.zip
-		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-			String [] splits = dependencyReleasePackage.split(RF2Constants.FILE_NAME_SEPARATOR);
-			String releaseDate = splits[splits.length - 1];
+		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		if (releaseDate != null) {
 			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, RF2Constants.STATED_RELATIONSHIP_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION);
 		}
 		return null;
