@@ -105,13 +105,16 @@ public class RF2ClassifierService {
 
 					final String effectiveTimeSnomedFormat = configuration.getEffectiveTimeSnomedFormat();
 					final List<String> previousInferredRelationshipFilePaths = new ArrayList<>();
-					if (extConfig != null) {
-						previousInferredRelationshipFilePaths.add(downloadDependencyInferredRelationshipSnapshot(tempDir,build));
-					}
-					String previousInferredRelationshipFilePath = null;
-
 					// Generate inferred relationship ids using transform looking up previous IDs where available
 					Map<String, String> uuidToSctidMap = null;
+					if (extConfig != null) {
+						String dependencyReleaseInferredSnapshot = downloadDependencyInferredRelationshipSnapshot(tempDir,build);
+						previousInferredRelationshipFilePaths.add(dependencyReleaseInferredSnapshot);
+						uuidToSctidMap = RelationshipHelper
+								.buildUuidSctidMapFromPreviousRelationshipFile(dependencyReleaseInferredSnapshot,
+										RF2Constants.RelationshipFileType.INFERRED);
+					}
+					String previousInferredRelationshipFilePath = null;
 					if (!configuration.isFirstTimeRelease()) {
 						final String currentRelationshipFilename = classifierFiles.getStatedRelationshipSnapshotFilenames().get(0);
 						previousInferredRelationshipFilePath = getPreviousRelationshipFilePath(build, currentRelationshipFilename,
@@ -119,9 +122,16 @@ public class RF2ClassifierService {
 								Relationship.INFERRED);
 						if (previousInferredRelationshipFilePath != null) {
 							previousInferredRelationshipFilePaths.add(previousInferredRelationshipFilePath);
-							uuidToSctidMap = RelationshipHelper
-									.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath,
-											RF2Constants.RelationshipFileType.INFERRED);
+							if (uuidToSctidMap == null) {
+								uuidToSctidMap = RelationshipHelper
+										.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath,
+												RF2Constants.RelationshipFileType.INFERRED);
+							} else {
+								uuidToSctidMap.putAll(RelationshipHelper
+										.buildUuidSctidMapFromPreviousRelationshipFile(previousInferredRelationshipFilePath,
+												RF2Constants.RelationshipFileType.INFERRED));
+							}
+							
 							logger.debug("Successfully build map of previously allocated inferred relationship SCTIDs");
 						} else {
 							logger.info(RF2Constants.DATA_PROBLEM + "No previous inferred relationship file found - unable to reconcile prior allocated SCTIDs.");
