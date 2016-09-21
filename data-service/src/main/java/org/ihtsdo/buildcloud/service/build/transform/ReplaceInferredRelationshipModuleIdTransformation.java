@@ -5,6 +5,7 @@ package org.ihtsdo.buildcloud.service.build.transform;
  *
  */
 public class ReplaceInferredRelationshipModuleIdTransformation implements LineTransformation {
+	private static final String NULL = "null";
 	private int checkColumn;
 	private int column;
 	private String value;
@@ -18,7 +19,7 @@ public class ReplaceInferredRelationshipModuleIdTransformation implements LineTr
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
 		if (columnValues != null && columnValues.length > column && columnValues.length > checkColumn) {
-			if (columnValues[checkColumn] == null || columnValues[checkColumn].isEmpty()) {
+			if (columnValues[checkColumn] == null || columnValues[checkColumn].isEmpty() || NULL.equals(columnValues[checkColumn])) {
 				columnValues[column] = value;
 			} 
 		}
