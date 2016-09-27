@@ -1,12 +1,5 @@
 package org.ihtsdo.buildcloud.entity;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -14,6 +7,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class BuildConfigurationTest {
 
@@ -40,6 +40,11 @@ public class BuildConfigurationTest {
 		refsetCompositeKeys.add(new BuildConfiguration.RefsetCompositeKey("100", "5, 6"));
 		refsetCompositeKeys.add(new BuildConfiguration.RefsetCompositeKey("200", "5, 8"));
 		configuration.setRefsetCompositeKeys(refsetCompositeKeys);
+		ExtensionConfig extensionConfig = new ExtensionConfig();
+		extensionConfig.setDependencyRelease("SnomedCT_Release_INT_20160131.zip");
+		extensionConfig.setModuleId("554471000005108");
+		extensionConfig.setNamespaceId("1000005");
+		configuration.setExtensionConfig(extensionConfig);
 
 		jsonGenerator.writeObject(configuration);
 		String actual = stringWriter.toString();
@@ -56,5 +61,10 @@ public class BuildConfigurationTest {
 		BuildConfiguration.RefsetCompositeKey key2 = iterator.next();
 		Assert.assertEquals("100", key2.getRefsetId());
 		Assert.assertEquals("5, 6", key2.getFieldIndexes());
+		ExtensionConfig extConfig = buildConfigurationFromJson.getExtensionConfig();
+		Assert.assertNotNull(extConfig);
+		Assert.assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
+		Assert.assertEquals("554471000005108", extConfig.getModuleId());
+		Assert.assertEquals("1000005", extConfig.getNamespaceId());
 	}
 }

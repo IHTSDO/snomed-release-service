@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.build.transform;
 
 import java.util.Date;
 
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl;
 import org.junit.Assert;
@@ -20,7 +21,7 @@ public class CachedSctidFactoryTestManual {
 	public void setUp() throws Exception {
 		idRestClient = new IdServiceRestClientImpl(url, userName, password);
 		idRestClient.logIn();
-		cachedSctidFactory = new CachedSctidFactory(TransformationService.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient,1, 10);
+		cachedSctidFactory = new CachedSctidFactory(RF2Constants.INTERNATIONAL_NAMESPACE_ID, "20150131", new Date().toString(), idRestClient,1, 10);
 	}
 
 	@Test

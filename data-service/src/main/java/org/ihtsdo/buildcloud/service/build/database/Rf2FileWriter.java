@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.service.build.database;
 
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,6 +8,11 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
 public class Rf2FileWriter {
 
@@ -65,10 +66,17 @@ public class Rf2FileWriter {
 				fullWriter.append(RF2Constants.LINE_ENDING);
 
 				// Parse out id and effectiveTime
-				String[] lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
-				currentId = lineParts[0];
-				currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
-
+				String[] lineParts = null;
+				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 4);
+					// effective time is on the third column
+					currentId = lineParts[0] + lineParts[1];
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
+				} else {
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					currentId = lineParts[0];
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
+				}
 				// If moved to new member or passed target effectiveTime write any previous valid line
 				movedToNewMember = lastId != null && !lastId.equals(currentId);
 				passedTargetEffectiveTime = currentEffectiveTimeInt > targetEffectiveTimeInt;
