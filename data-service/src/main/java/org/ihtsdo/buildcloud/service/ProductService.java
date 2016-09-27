@@ -30,6 +30,9 @@ public interface ProductService extends EntityService<Product> {
 	String PREVIOUS_EXTENSION_RELEASE = "previousExtensionRelease";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
 	String EXTENSION_DEPENDENCY_RELEASE = "extensionDependencyRelease";
+	String DEPENDENCY_RELEASE_PACKAGE = "dependencyReleasePackage";
+	String NAMESPACE_ID = "namespaceId";
+	String MODULE_ID = "moduleId";
 
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

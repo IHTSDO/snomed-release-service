@@ -385,6 +385,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String publishedZipPath = pathHelper.getPublishedFilePath(releaseCenter, previousPublishedPackage);
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		final String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
+		LOGGER.debug("targetFileName" + targetFileName);
 		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
 		for (final String filePath : filePaths) {
 			final String filename = FileUtils.getFilenameFromPath(filePath);

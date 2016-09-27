@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.database.LongFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.build.database.ShortFormatSCTIDPartitionIdentifier;
 import org.ihtsdo.buildcloud.service.build.transform.conditional.ConditionalTransformation;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
@@ -25,9 +26,16 @@ public class TransformationFactory {
 	private final Integer transformBufferSize;
 	private Set<String> modelConceptIdsForModuleIdFix;
 	private Map<String, String> existingUuidToSctidMap;
+	private final String namespaceId;
+	enum PARTITION_ID_TYPE {
+		CONCEPT,
+		DESCRIPTION,
+		RELATIONSHIP
+	}
 
-	public TransformationFactory(final String effectiveTimeInSnomedFormat, final CachedSctidFactory cachedSctidFactory, final UUIDGenerator uuidGenerator,
+	public TransformationFactory(final String namespaceId, final String effectiveTimeInSnomedFormat, final CachedSctidFactory cachedSctidFactory, final UUIDGenerator uuidGenerator,
 			final String coreModuleSctid, final String modelModuleSctid, final Integer transformBufferSize) {
+		this.namespaceId = namespaceId;
 		this.effectiveTimeInSnomedFormat = effectiveTimeInSnomedFormat;
 		this.cachedSctidFactory = cachedSctidFactory;
 		this.coreModuleSctid = coreModuleSctid;
@@ -86,7 +94,7 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory));
+				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.CONCEPT), cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If id is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
@@ -106,7 +114,7 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_cpt
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory));
+				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.DESCRIPTION), cachedSctidFactory));
 
 		if (modelConceptIdsForModuleIdFix != null) {
 			// If conceptId is a model concept and active set moduleId to modelModuleSctid, otherwise set moduleId to coreModuleSctid
@@ -153,7 +161,7 @@ public class TransformationFactory {
 	private StreamingFileTransformation getTextDefinitionFileTransformation() {
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.DESCRIPTION, cachedSctidFactory))
+				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.DESCRIPTION), cachedSctidFactory))
 				// effectiveTime
 				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
@@ -183,7 +191,7 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// id
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
+				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP), cachedSctidFactory))
 				// effectiveTime
 				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
 				// moduleId
@@ -215,15 +223,19 @@ public class TransformationFactory {
 
 	private StreamingFileTransformation getInferredRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
-		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
+		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation();
+			 	 if( !RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
+			 		// replace international module id
+			 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0,3, coreModuleSctid));
+			 	 }
 				// id
-				.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
+			 	streamingFileTransformation.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
 		if (existingUuidToSctidMap != null) {
 			streamingFileTransformation.addTransformation(new ReplaceStringTransform(0, existingUuidToSctidMap));
 		}
 		
 		streamingFileTransformation
-			.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP, cachedSctidFactory))
+			.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP), cachedSctidFactory))
 		// effectiveTime
 		.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true));
 
@@ -234,7 +246,7 @@ public class TransformationFactory {
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation().addTransformation(
 				new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.STATED));
 
-		streamingFileTransformation.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP,
+		streamingFileTransformation.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP),
 				cachedSctidFactory));
 
 		return streamingFileTransformation;
@@ -244,7 +256,7 @@ public class TransformationFactory {
 		// TIG - www.snomed.org/tig?t=trg2main_format_idfile
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation()
 				// identifierSchemeId
-				.addTransformation(new SCTIDTransformation(0, 3, ShortFormatSCTIDPartitionIdentifier.CONCEPT, cachedSctidFactory))
+				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.CONCEPT ), cachedSctidFactory))
 				// effectiveTime
 				.addTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, false))
 				// moduleId
@@ -323,5 +335,26 @@ public class TransformationFactory {
 	public void setExistingUuidToSctidMap(Map<String, String> existingUuidToSctidMap) {
 		this.existingUuidToSctidMap = existingUuidToSctidMap;
 	}
-
+	
+	private String getPartionId(String namespaceId, PARTITION_ID_TYPE idType) {
+		String result = null;
+		boolean isShort = false;
+		if (String.valueOf(RF2Constants.INTERNATIONAL_NAMESPACE_ID).equals(namespaceId)) {
+			isShort = true;
+		}
+		switch (idType) {
+		case CONCEPT :
+			result = isShort ? ShortFormatSCTIDPartitionIdentifier.CONCEPT : LongFormatSCTIDPartitionIdentifier.CONCEPT;
+			break;
+		case DESCRIPTION :
+			result = isShort ? ShortFormatSCTIDPartitionIdentifier.DESCRIPTION : LongFormatSCTIDPartitionIdentifier.DESCRIPTION;
+			break;
+		case RELATIONSHIP :
+			result = isShort ? ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP : LongFormatSCTIDPartitionIdentifier.RELATIONSHIP;
+			break;
+		default : result = null;
+		break;
+		}
+		return result;
+	}
 }

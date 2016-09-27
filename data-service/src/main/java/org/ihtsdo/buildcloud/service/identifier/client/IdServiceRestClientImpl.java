@@ -612,4 +612,64 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		return sctIdUuidMap;
 			
 	}
+
+
+	@Override
+	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Integer namespaceId, String comment) throws RestClientException {
+		
+		LOGGER.debug("Start registering sctIds with batch size {} for namespace {} and partitionId {}", sctIdsToRegister.size(), namespaceId);
+		List<Long> result = new ArrayList<>();
+		if (sctIdsToRegister == null || sctIdsToRegister.isEmpty()) {
+			LOGGER.warn("No sctIds submitted for requesting sctIds");
+			return result;
+		}
+		
+		long startTime = new Date().getTime();
+		
+		List<JSONObject> records = new ArrayList<>();
+		for (Long sctId : sctIdsToRegister) {
+
+			JSONObject jsonObj = new JSONObject();
+			try {
+				jsonObj.put("sctid", sctId.toString());
+				jsonObj.put("systemId",UUID.randomUUID().toString().toLowerCase());
+				records.add(jsonObj);
+			} catch (JSONException e) {
+				String msg = "Failed to create json object";
+				LOGGER.error(msg,e);
+				throw new RestClientException(msg,e);
+				
+			}
+		}
+		try {
+			JSONObject requestData = new JSONObject();
+			requestData.put(NAMESPACE, namespaceId.intValue());
+			requestData.put("records", records.toArray());
+			requestData.put(SOFTWARE, SRS);
+			requestData.put(COMMENT, comment);
+			JSONResource response = resty.json(urlHelper.getSctIdBulkRegisterUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
+			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+				String jobId =  response.get("id").toString();
+				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + sctIdsToRegister.size());
+				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
+					for (int i =0;i < items.length();i++) {
+						result.add(new Long((String)items.getJSONObject(i).get(SCTID)));
+					}
+				}
+			} else {
+				String statusMsg = getFailureMessage(response);
+				LOGGER.error(statusMsg);
+				throw new RestClientException(statusMsg);
+			}
+		} catch (Exception e) {
+			String message = "Bulk register sctIds job failed.";
+			LOGGER.error(message, e);
+			throw new RestClientException(message,e);
+		}
+		LOGGER.debug("End registering sctIds with batch size {} for namespace {}", sctIdsToRegister.size(), namespaceId);
+		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		return result;
+		
+	}
 }

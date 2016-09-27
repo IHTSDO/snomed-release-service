@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+#Switch this off to do comparisons both with and without ids.
+optimiseFlag=true
+
 leftFile=$1
 rightFile=$2
 fileName=$3
@@ -8,8 +11,6 @@ leftName=$4
 rightName=$5
 
 tmpOutput="target/${fileName}_comparison_details_${RANDOM}.txt"
-
-echo "Started Comparison of ${rightFile}"
 
 function prepRF1RelFile() {
 	thisFile=$1
@@ -20,7 +21,7 @@ function prepRF1RelFile() {
 	cat ${thisFile} | awk -F $"\t" -v col="${targetColumn}" -v val="${stripValue}" '$col!=val' | cut -f1-5,7 > ${tmpFile}
 	lateralityAttribute="272741003"
 	#Copy the laterality qualifying relationships back in
-	#AWK is losing our tab separators but only in the Termmed file? Be explicify about Output Field Separator
+	#AWK is losing our tab separators but only in the Termmed file? Be explicit about Output Field Separator
 	cat ${thisFile} | awk  -v col="${targetColumn}" -v val="${stripValue}" -v type="${lateralityAttribute}" \
 	-F "\t" 'BEGIN {OFS=FS} $col=val && $3==type' | cut -f1-5,7 >> ${tmpFile}
 	mv ${tmpFile} ${thisFile}
@@ -67,10 +68,23 @@ then
 		echo "${rightName} line count: $rightFileCount" >> ${tmpOutput}
 
 		echo "Line count diff: $[$leftFileCount-$rightFileCount]" >> ${tmpOutput}
+		
+		#If RF1 Relationship file, check if right file has sctids.  Do comparison including ids if so
+		stripRelIds="true"
+		if [[ ${rightFile} == *1*Relationship* ]]
+		then
+			col1=`head ${rightFile} | tail -1 | cut -f 1`
+			if [[ -n "$col1" ]]
+			then
+				echo "*** Right Relationship file has SCTIDs, including in comparison: ${rightFile}"
+				stripRelIds=""
+			else
+				echo "*** Right Relationship file has no SCTIDs, excluding from comparison: ${rightFile}"
+			fi
+		fi
 
-		#No point in doing a content difference if we know we need to do that without id column
-		#so make this logic either/or
-		if [[ ${leftFile} == *Refset_* ]] || [[ ${leftFile} == *Relationship* ]] || [[ ${leftFile} == *der1_SubsetMembers* ]]
+		comparisonComplete=false
+		if [[ ${leftFile} == *Refset_* || ( ${leftFile} == *Relationship* && -n "$stripRelIds" ) || ${leftFile} == *der1_SubsetMembers* ]]
 		then
 			echo -n "Content without id column differences count (x2): " >> ${tmpOutput}
 			leftFileTrim="${leftFile}_no_first_col.txt"
@@ -78,7 +92,11 @@ then
 			cut -f2- ${leftFile} | sort > ${leftFileTrim}
 			cut -f2- ${rightFile} | sort > ${rightFileTrim}
 			diff ${leftFileTrim} ${rightFileTrim} | tee target/c/diff_${fileName}_no_first_col.txt | wc -l >> ${tmpOutput}
-		else
+			comparisonComplete=true;
+		fi
+		
+		if [ ${comparisonComplete} = false ] || [ ${optimiseFlag} = false ]
+		then
 			echo -n "Content differences count (x2): " >> ${tmpOutput}
 			tmpFile="tmp_${RANDOM}.txt"
 			sort ${leftFile} > ${tmpFile}
@@ -86,6 +104,16 @@ then
 			sort ${rightFile} > ${tmpFile} 
 			mv ${tmpFile} ${rightFile}
 			diff ${leftFile} ${rightFile} | tee target/c/diff_${fileName} | wc -l >> ${tmpOutput}
+		fi
+		
+		if [[ ${rightFile} == *1_Relationship* ]]
+		then
+			echo -n "Content without group column differences count (x2): " >> ${tmpOutput}
+			leftFileTrim2="${leftFile}_no_6_col.txt"
+			rightFileTrim2="${rightFile}_no_6_col.txt"
+			cut -f1-5 ${leftFile} | sort > ${leftFileTrim2}
+			cut -f1-5 ${rightFile} | sort > ${rightFileTrim2}
+			diff ${leftFileTrim2} ${rightFileTrim2} | tee target/c/diff_${fileName}_no_6_col.txt | wc -l >> ${tmpOutput}
 		fi
 
 		if [[ ${leftFile} == *sct2_Relationship* ]]

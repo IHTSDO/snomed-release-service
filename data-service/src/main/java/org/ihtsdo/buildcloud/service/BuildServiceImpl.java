@@ -500,7 +500,7 @@ public class BuildServiceImpl implements BuildService {
 			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specifield.");
 		}
 		if (!buildConfig.isJustPackage() && !buildConfig.isFirstTimeRelease()) {
-			if (qaTestConfig.getPreviousInternationalRelease() == null) {
+			if (buildConfig.getExtensionConfig() == null && qaTestConfig.getPreviousInternationalRelease() == null) {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
 			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
