@@ -224,9 +224,9 @@ public class TransformationFactory {
 	private StreamingFileTransformation getInferredRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation();
-			 	 if( !RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
+			 	 if (!RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
 			 		// replace international module id
-			 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0,3, coreModuleSctid));
+			 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0,"null",3, coreModuleSctid));
 			 	 }
 				// id
 			 	streamingFileTransformation.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
@@ -238,6 +238,11 @@ public class TransformationFactory {
 			.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP), cachedSctidFactory))
 		// effectiveTime
 		.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true));
+		
+		if (!RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
+	 		// replace international module id for all effective time with the effectiveTimeInSnomedFormat
+	 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(1,effectiveTimeInSnomedFormat,3, coreModuleSctid));
+	 	 }
 
 		return streamingFileTransformation;
 	}
