@@ -5,21 +5,23 @@ package org.ihtsdo.buildcloud.service.build.transform;
  *
  */
 public class ReplaceInferredRelationshipModuleIdTransformation implements LineTransformation {
-	private static final String NULL = "null";
 	private int checkColumn;
+	private String checkColumnValue;
 	private int column;
 	private String value;
 
-	public ReplaceInferredRelationshipModuleIdTransformation(int checkColumn, int column, String value) {
+	public ReplaceInferredRelationshipModuleIdTransformation(int checkColumn, String checkColumnValue, int column, String value) {
 		this.checkColumn = checkColumn;
+		this.checkColumnValue = checkColumnValue;
 		this.column = column;
 		this.value = value;
+		
 	}
 
 	@Override
 	public void transformLine(String[] columnValues) throws TransformationException {
 		if (columnValues != null && columnValues.length > column && columnValues.length > checkColumn) {
-			if (columnValues[checkColumn] == null || columnValues[checkColumn].isEmpty() || NULL.equals(columnValues[checkColumn])) {
+			if (columnValues[checkColumn] == null || columnValues[checkColumn].isEmpty() || checkColumnValue.equals(columnValues[checkColumn])) {
 				columnValues[column] = value;
 			} 
 		}
