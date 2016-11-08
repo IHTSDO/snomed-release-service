@@ -1,16 +1,25 @@
 package org.ihtsdo.buildcloud.service;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -35,6 +44,10 @@ import org.springframework.util.StreamUtils;
 import com.google.common.io.Files;
 
 public class RF2ClassifierService {
+
+	private static final String RECONCILED = "_reconciled.txt";
+
+	private static final String INTERNATIONAL = "International";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -145,7 +158,11 @@ public class RF2ClassifierService {
 
 					final File classifierInferredRelationshipResultOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename.replace(RF2Constants.TXT_FILE_EXTENSION,  "_classifier_result.txt"));
 					final File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
-				
+					
+					//Add relationship id reconciliation fixes when extension overwrites international relationships
+					if (extConfig != null) {
+						reconcileRelationships(localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths);
+					}
 					final ClassificationRunner classificationRunner = new ClassificationRunner(moduleId, effectiveTimeSnomedFormat,
 							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
 							classifierInferredRelationshipResultOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
@@ -173,6 +190,90 @@ public class RF2ClassifierService {
 			}
 	}
 
+
+	/** Fix relationship ids are re-used in the extension
+	 * @param localStatedRelationshipFilePaths
+	 * @param previousInferredRelationshipFilePaths
+	 * @throws BusinessServiceException 
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 * @throws ParseException 
+	 */
+	private void reconcileRelationships(List<String> localStatedRelationshipFilePaths, List<String> previousInferredRelationshipFilePaths) throws BusinessServiceException {
+		//only fix when there are at least two stated relationships
+		if (localStatedRelationshipFilePaths.size() > 1) {
+			String reconciledStatedSnapshot = localStatedRelationshipFilePaths.get(1).replace(RF2Constants.TXT_FILE_EXTENSION, RECONCILED);
+			try {
+				reconcileSnapshotFilesByRelationshipId(localStatedRelationshipFilePaths.get(0), localStatedRelationshipFilePaths.get(1),reconciledStatedSnapshot);
+			} catch (IOException | ParseException e) {
+				throw new BusinessServiceException("Error during stated relationships reconciliation", e);
+			}
+			localStatedRelationshipFilePaths.clear();
+			localStatedRelationshipFilePaths.add(reconciledStatedSnapshot);
+		}
+		
+		if (previousInferredRelationshipFilePaths.size() > 1) {
+			String reconciledInferredSnapshot = previousInferredRelationshipFilePaths.get(1).replace(RF2Constants.TXT_FILE_EXTENSION, RECONCILED);
+			try {
+				reconcileSnapshotFilesByRelationshipId(previousInferredRelationshipFilePaths.get(0), previousInferredRelationshipFilePaths.get(1), reconciledInferredSnapshot);
+			} catch (IOException | ParseException e) {
+				throw new BusinessServiceException("Error during inferred relationships reconciliation", e);
+			}
+			previousInferredRelationshipFilePaths.clear();
+			previousInferredRelationshipFilePaths.add(reconciledInferredSnapshot);
+		}
+	}
+
+	private void reconcileSnapshotFilesByRelationshipId(String internationalSnapshot, String extensionSnapshot, String reconciledSnapshot) throws FileNotFoundException, IOException, ParseException {
+		//load the extension file into map as it is smaller
+		Map<String,String> extensionSnapshotFileInMap = loadSnapshotFileIntoMap(new File(extensionSnapshot));
+		FastDateFormat formater = RF2Constants.DATE_FORMAT;
+		try (BufferedReader reader = new BufferedReader(new FileReader(new File(internationalSnapshot)));
+				BufferedWriter writer = new BufferedWriter(new FileWriter(new File(reconciledSnapshot)))) {
+			String line = reader.readLine();
+			writer.append(line);
+			writer.append(RF2Constants.LINE_ENDING);
+			String key = null;
+			while ((line = reader.readLine()) != null ) {
+				key = line.split(RF2Constants.COLUMN_SEPARATOR)[0];
+				if (!extensionSnapshotFileInMap.containsKey(key)) {
+					writer.append(line);
+					writer.append(RF2Constants.LINE_ENDING);			
+				} else {
+					String lineFromExtension = extensionSnapshotFileInMap.get(key);
+					String effectTimeStrExt = lineFromExtension.split(RF2Constants.COLUMN_SEPARATOR)[1];
+					String effectTimeStrInt = line.split(RF2Constants.COLUMN_SEPARATOR) [1];
+					if (formater.parse(effectTimeStrExt).after(formater.parse(effectTimeStrInt))) {
+						writer.append(lineFromExtension);
+						writer.append(RF2Constants.LINE_ENDING);
+						extensionSnapshotFileInMap.remove(key);
+					} else {
+						writer.append(line);
+						writer.append(RF2Constants.LINE_ENDING);
+					}		
+				}
+				key = null;
+			}
+			for (String extensionOnly : extensionSnapshotFileInMap.values()) {
+				writer.append(extensionOnly);
+				writer.append(RF2Constants.LINE_ENDING);
+			}
+		}
+	} 
+	
+	private Map<String, String> loadSnapshotFileIntoMap(File file) throws FileNotFoundException, IOException{
+		Map<String,String> resultMap = new HashMap<>();
+		try ( BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), RF2Constants.UTF_8))) {
+			String line = reader.readLine();
+			while ( (line = reader.readLine() ) != null ) {
+				if (!line.isEmpty()) {
+					String[] splits = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+					resultMap.put(splits[0],line);
+				}
+			}
+		}
+		return resultMap;
+	}
 
 	private String getReleaseDateFromReleasePackage(String dependencyReleasePackage) {
 		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
@@ -211,7 +312,7 @@ public class RF2ClassifierService {
 
 	private String downloadDependencySnapshot( File tempDir,String dependencyReleasePackage, String dependencySnapshotFilename) throws IOException {
 		final File localFile = new File(tempDir, dependencySnapshotFilename);
-		ReleaseCenter intReleaseCenter = new ReleaseCenter("International Release Center", "International");
+		ReleaseCenter intReleaseCenter = new ReleaseCenter("International Release Center", INTERNATIONAL);
 		try (InputStream publishedFileArchiveEntry = buildDAO.getPublishedFileArchiveEntry(intReleaseCenter ,
 				dependencySnapshotFilename, dependencyReleasePackage);
 			 FileOutputStream out = new FileOutputStream(localFile)) {
