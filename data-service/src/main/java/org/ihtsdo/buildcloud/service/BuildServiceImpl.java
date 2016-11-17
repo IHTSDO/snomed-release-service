@@ -13,10 +13,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.naming.ConfigurationException;
@@ -50,6 +52,8 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
@@ -419,6 +423,34 @@ public class BuildServiceImpl implements BuildService {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
 	}
+	
+	private List<String> rf2DeltaFilesSpecifiedInManifest(Build build) {
+		List<String> result =  new ArrayList<>();
+		try (InputStream manifestInputSteam = dao.getManifestStream(build)) {
+			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			final ListingType listingType = parser.parse(manifestInputSteam);
+			for ( String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
+				if (fileName != null && fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+					if (fileName.contains(RF2Constants.DELTA + RF2Constants.FILE_NAME_SEPARATOR) || fileName.contains(RF2Constants.DELTA + "-") ) {
+						//only delta files required
+						String[] splits = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+						splits[0] = RF2Constants.INPUT_FILE_PREFIX;
+						StringBuilder relFileBuilder = new StringBuilder();
+						for (int i=0; i< splits.length; i++ ) {
+							if (i > 0) {
+								relFileBuilder.append(RF2Constants.FILE_NAME_SEPARATOR);
+							}
+							relFileBuilder.append(splits[i]);
+						}
+						result.add(relFileBuilder.toString());
+					}
+				}
+			}
+		} catch (ResourceNotFoundException | JAXBException | IOException e) {
+			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
+		} 
+		return result;
+	}
 
 	private void retrieveAdditionalRelationshipsFromTransformedDelta(final Build build, String inferedDelta) throws BusinessServiceException {
 		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
@@ -525,15 +557,22 @@ public class BuildServiceImpl implements BuildService {
 
 	private Map<String, TableSchema> getInputFileSchemaMap(final Build build) throws BusinessServiceException {
 		final List<String> buildInputFilePaths = dao.listInputFileNames(build);
+		//Filtered out any files not required by Manifest.xml
+		List<String> rf2DeltaFilesFromManifest = rf2DeltaFilesSpecifiedInManifest(build);
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String buildInputFilePath : buildInputFilePaths) {
 			final TableSchema schemaBean;
 			try {
-				schemaBean = schemaFactory.createSchemaBean(FileUtils.getFilenameFromPath(buildInputFilePath));
+				String filename = FileUtils.getFilenameFromPath(buildInputFilePath);
+				if (rf2DeltaFilesFromManifest.contains(filename)) {
+					schemaBean = schemaFactory.createSchemaBean(filename);
+					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+				} else {
+					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
+				}
 			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
 			}
-			inputFileSchemaMap.put(buildInputFilePath, schemaBean);
 		}
 		return inputFileSchemaMap;
 	}
