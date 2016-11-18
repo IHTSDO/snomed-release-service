@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.build;
 
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +35,7 @@ import com.amazonaws.AmazonServiceException;
 
 public class Rf2FileExportRunner {
 
+	private static final String HYPHEN = "-";
 	private final Build build;
 	private final ReleaseCenter releaseCenter;
 	private final BuildDAO buildDao;
@@ -55,7 +58,7 @@ public class Rf2FileExportRunner {
 		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION) || thisFile.startsWith(RF2Constants.RELASHIONSHIP_DELTA_PREFIX)) {
+			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 				continue;
 			}
 			int failureCount = 0;
@@ -67,7 +70,7 @@ public class Rf2FileExportRunner {
 					if (configuration.isBetaRelease()) {
 						cleanFileName = thisFile.substring(1);
 					}
-					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX));
 					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
 					success = true;
@@ -112,9 +115,9 @@ public class Rf2FileExportRunner {
 			timer.split();
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
+			//Replace Delta_ to Snapshot_ add file name separator due to some extension refsets have the word "delta" as part of the refset name
 
-			final String currentSnapshotFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-
+			final String currentSnapshotFileName = constructFullOrSnapshotFilename(transformedDeltaDataFile, SNAPSHOT);
 			String cleanCurrentSnapshotFileName = currentSnapshotFileName;
 			if (configuration.isBetaRelease() && currentSnapshotFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
 				cleanCurrentSnapshotFileName = currentSnapshotFileName.substring(1); // Previous file will not be a beta release
@@ -131,7 +134,7 @@ public class Rf2FileExportRunner {
 
 					//Workbench workaround for dealing Attribute Value File with empty valueId
 					//ideally we should combine all workbench workaround together so that don't read snapshot file twice
-					if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
+					if (transformedDeltaDataFile.contains(ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
 						rf2TableDAO.resolveEmptyValueId(getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName),
 								effectiveTime);
 					}
@@ -170,7 +173,7 @@ public class Rf2FileExportRunner {
 			deltaFileAsyncPipe.waitForFinish();
 			LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
 
-			final String currentFullFileName = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.FULL);
+			final String currentFullFileName = constructFullOrSnapshotFilename(transformedDeltaDataFile, FULL);
 			if (!fileFirstTimeRelease) {
 				String cleanFullFileName = currentFullFileName;
 				if (configuration.isBetaRelease() && currentFullFileName.startsWith(BuildConfiguration.BETA_PREFIX)) {
@@ -189,7 +192,7 @@ public class Rf2FileExportRunner {
 			// Export Full and Snapshot files
 			final AsyncPipedStreamBean fullFileAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, currentFullFileName);
-			final String snapshotOutputFilePath = transformedDeltaDataFile.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+			final String snapshotOutputFilePath = constructFullOrSnapshotFilename(transformedDeltaDataFile, SNAPSHOT);
 			final AsyncPipedStreamBean snapshotAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, snapshotOutputFilePath);
 
@@ -221,8 +224,8 @@ public class Rf2FileExportRunner {
 
 	private void generateInferredRelationshipFiles(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
 
-		final String deltaFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA);
-		final String fullFilename = snapshotOutputFilename.replace(RF2Constants.SNAPSHOT, RF2Constants.FULL);
+		final String deltaFilename = snapshotOutputFilename.replace(SNAPSHOT, DELTA);
+		final String fullFilename = snapshotOutputFilename.replace(SNAPSHOT, FULL);
 
 		// Import snapshot
 		final InputStream snapshotInputStream = buildDao.getTransformedFileAsInputStream(build, snapshotOutputFilename);
@@ -341,8 +344,8 @@ public class Rf2FileExportRunner {
 		}
 
 		for (final String fileName : transformedFilePaths) {
-			if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION)
-					&& fileName.contains(RF2Constants.DELTA)) {
+			if (fileName.endsWith(TXT_FILE_EXTENSION)
+					&& fileName.contains(DELTA)) {
 				validFiles.add(fileName);
 			}
 		}
@@ -351,5 +354,15 @@ public class Rf2FileExportRunner {
 					"Failed to find any files of type *Delta*.txt transformed in build:" + build.getUniqueId());
 		}
 		return validFiles;
+	}
+	
+	/** To handle when extension refset name has got "delta" as part of the file name. 
+	 * e.g rel2_Refset_UrvalDeltagandetyperHälso-OchSjukvårdSimpleRefsetDelta_SE1000052_20161130.txt
+	 * @param deltaFilename
+	 * @param fullOrSnapshot
+	 * @return
+	 */
+	private String constructFullOrSnapshotFilename(String deltaFilename, String fullOrSnapshot) {
+		return deltaFilename.replace(DELTA + FILE_NAME_SEPARATOR, fullOrSnapshot + FILE_NAME_SEPARATOR).replace(DELTA + HYPHEN, fullOrSnapshot + HYPHEN);
 	}
 }

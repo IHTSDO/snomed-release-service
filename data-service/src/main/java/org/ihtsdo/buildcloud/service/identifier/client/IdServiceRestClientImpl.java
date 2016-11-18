@@ -21,9 +21,6 @@ import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import us.monoid.web.JSONResource;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final String TOKEN = "token";
 	private static final String MESSAGE = "message";
@@ -46,7 +43,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private String idServiceUrl;
 	private RestyHelper resty;
 	private IdServiceRestUrlHelper urlHelper;
-	private Gson gson;
 	private static String token;
 	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
@@ -63,7 +59,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
-		gson = new GsonBuilder().setPrettyPrinting().create();
 		this.userName = username;
 		this.password = password;
 		
@@ -602,15 +597,18 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
 		Map<Long,JSONObject> sctIdRecords = getSctIdRecords(sctIds);
 		Map<Long, UUID> sctIdUuidMap = new HashMap<>();
+		String uuidStr = "";
+		String jsonStr = "";
 		for (Long id : sctIdRecords.keySet()) {
 			try {
-				sctIdUuidMap.put(id, UUID.fromString((String)sctIdRecords.get(id).get(SYSTEM_ID)));
-			} catch (JSONException e) {
-				throw new RestClientException("Error when fetching system id for sctId:" + id, e);
+				jsonStr = sctIdRecords.get(id).toString();
+				uuidStr = (String)sctIdRecords.get(id).get(SYSTEM_ID);
+				sctIdUuidMap.put(id, UUID.fromString(uuidStr));
+			} catch (IllegalArgumentException|JSONException e) {
+				throw new RestClientException("Error when fetching system id for sctId: " + id + " using UUID '" + uuidStr + "'.  Received JSON: " + jsonStr, e);
 			}
 		}
 		return sctIdUuidMap;
-			
 	}
 
 
