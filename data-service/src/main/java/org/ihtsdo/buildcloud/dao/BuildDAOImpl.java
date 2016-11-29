@@ -389,6 +389,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
 		for (final String filePath : filePaths) {
 			final String filename = FileUtils.getFilenameFromPath(filePath);
+			LOGGER.debug("Found previous published file:" + filename);
 			// use contains rather that startsWith so that we can have candidate release (with x prefix in the filename) 
 			// as previous published release.
 			if (filename.contains(targetFileNameStripped)) {
