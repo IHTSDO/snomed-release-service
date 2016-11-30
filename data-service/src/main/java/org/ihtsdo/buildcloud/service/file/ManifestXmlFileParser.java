@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.file;
 
 import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 import javax.xml.bind.JAXBContext;
@@ -9,6 +10,7 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.MANIFEST_CONTEXT_PATH;
 
@@ -28,7 +30,7 @@ public class ManifestXmlFileParser {
 		//Load the manifest file xml into a java object hierarchy
 		JAXBContext jc = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH);
 		Unmarshaller um = jc.createUnmarshaller();
-		ListingType manifestListing = um.unmarshal(new StreamSource(manifestInputSteam), ListingType.class).getValue();
+		ListingType manifestListing = um.unmarshal(new StreamSource(new InputStreamReader(manifestInputSteam,RF2Constants.UTF_8)), ListingType.class).getValue();
 
 		if (manifestListing.getFolder() == null) {
 			throw new ResourceNotFoundException("Failed to recover root folder from manifest.  Ensure the root element is named 'listing' "
