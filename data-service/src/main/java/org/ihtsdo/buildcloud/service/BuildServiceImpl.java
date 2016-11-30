@@ -574,6 +574,9 @@ public class BuildServiceImpl implements BuildService {
 	private Map<String, TableSchema> getInputFileSchemaMap(final Build build) throws BusinessServiceException {
 		final List<String> buildInputFilePaths = dao.listInputFileNames(build);
 		List<String> rf2DeltaFilesFromManifest = rf2DeltaFilesSpecifiedByManifest(build);
+		for (String fileInManifest : rf2DeltaFilesFromManifest) {
+			LOGGER.debug(fileInManifest);
+		}
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String buildInputFilePath : buildInputFilePaths) {
 			final TableSchema schemaBean;
