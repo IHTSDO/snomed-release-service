@@ -582,13 +582,12 @@ public class BuildServiceImpl implements BuildService {
 			final TableSchema schemaBean;
 			try {
 				String filename = new String(FileUtils.getFilenameFromPath(buildInputFilePath).getBytes(),UTF_8);
+				schemaBean = schemaFactory.createSchemaBean(filename);
+				inputFileSchemaMap.put(buildInputFilePath, schemaBean);
 				//Filtered out any files not required by Manifest.xml
-				if (rf2DeltaFilesFromManifest.contains(filename)) {
-					schemaBean = schemaFactory.createSchemaBean(filename);
-					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
-				} else {
+				if (!rf2DeltaFilesFromManifest.contains(filename)) {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
-				}
+				} 
 			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
 			}

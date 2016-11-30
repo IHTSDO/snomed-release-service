@@ -94,8 +94,9 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
-
+		LOGGER.debug("uploading input file:" + file.getOriginalFilename());
 		productInputFileService.putInputFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
+		
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
