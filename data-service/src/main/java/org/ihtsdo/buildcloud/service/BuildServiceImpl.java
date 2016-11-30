@@ -581,7 +581,7 @@ public class BuildServiceImpl implements BuildService {
 		for (final String buildInputFilePath : buildInputFilePaths) {
 			final TableSchema schemaBean;
 			try {
-				String filename = FileUtils.getFilenameFromPath(buildInputFilePath);
+				String filename = new String(FileUtils.getFilenameFromPath(buildInputFilePath).getBytes(),UTF_8);
 				//Filtered out any files not required by Manifest.xml
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
