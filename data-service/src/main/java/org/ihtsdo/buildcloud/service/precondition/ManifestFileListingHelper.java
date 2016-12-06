@@ -21,7 +21,7 @@ public class ManifestFileListingHelper {
 		if (folder != null) {
 			if (folder.getFile() != null) {
 				for (FileType fileType : folder.getFile()) {
-					filesList.add(new String(fileType.getName().getBytes(),RF2Constants.UTF_8));
+					filesList.add(fileType.getName());
 				}
 			}
 			if (folder.getFolder() != null) {
