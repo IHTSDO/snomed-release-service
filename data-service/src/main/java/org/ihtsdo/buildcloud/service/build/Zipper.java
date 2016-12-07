@@ -95,7 +95,7 @@ public class Zipper {
 			String filename = file.getName();
 			if (!Normalizer.isNormalized(filename,Form.NFC)) {
 				filename = Normalizer.normalize(filename, Form.NFC);
-				LOGGER.debug("Normalized file name from manifest" + filename);
+				LOGGER.debug("NFC Normalized file name from manifest" + filename);
 			}
 			try (InputStream is = buildDAO.getOutputFileInputStream(build, filename)) {
 				if (is != null) {
