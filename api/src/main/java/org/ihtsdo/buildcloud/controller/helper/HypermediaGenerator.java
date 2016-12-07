@@ -4,6 +4,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -83,8 +86,9 @@ public class HypermediaGenerator {
 		return entityMap;
 	}
 
-	private String getUrl(HttpServletRequest request) {
+	private String getUrl(HttpServletRequest request) throws UnsupportedEncodingException {
 		String requestUrl = request.getRequestURL().toString();
+		requestUrl = URLDecoder.decode(requestUrl, "UTF-8");
 		// Remove any trailing slash
 		if (requestUrl.lastIndexOf('/') == requestUrl.length() - 1) {
 			requestUrl = requestUrl.substring(0, requestUrl.length() - 1);
