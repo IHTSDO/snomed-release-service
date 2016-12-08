@@ -131,6 +131,18 @@ public class IntegrationTestHelper {
 				.andDo(print())
 				.andExpect(status().is(expectedStatus.value()));
 	}
+	
+	
+	public void getInputFile(String inputFileName) throws Exception {
+		
+		System.out.println("input file name:" + inputFileName);
+		mockMvc.perform(
+				request(HttpMethod.GET, getProductUrl() + "/inputfiles/" + inputFileName)
+						.header("Authorization", getBasicDigestHeaderValue())
+		)
+				.andDo(print())
+				.andExpect(status().isOk());
+	}
 
 	public void deletePreviousTxtInputFiles() throws Exception {
 		mockMvc.perform(
