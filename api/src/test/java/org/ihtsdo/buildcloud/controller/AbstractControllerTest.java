@@ -1,6 +1,14 @@
 package org.ihtsdo.buildcloud.controller;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
@@ -18,8 +26,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.filter.CharacterEncodingFilter;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/testDispatcherServletContext.xml"})
@@ -55,7 +65,10 @@ public abstract class AbstractControllerTest {
 
 	@Before
 	public void setup() throws Exception {
-		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+		CharacterEncodingFilter filter = new CharacterEncodingFilter();
+		filter.setEncoding("UTF-8");
+		filter.setForceEncoding(true);
+		mockMvc = MockMvcBuilders.webAppContextSetup(wac).addFilter(filter, "/*").build();
 		Assert.assertNotNull(mockMvc);
 		if (uuidGenerator instanceof PesudoUUIDGenerator) {
 			((PesudoUUIDGenerator)uuidGenerator).reset();
