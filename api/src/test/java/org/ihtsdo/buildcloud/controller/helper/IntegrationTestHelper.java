@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -134,10 +135,10 @@ public class IntegrationTestHelper {
 	
 	
 	public void getInputFile(String inputFileName) throws Exception {
-		
-		System.out.println("input file name:" + inputFileName);
+		String getInputFileUrl = getProductUrl() + "/inputfiles/" + inputFileName;
+		System.out.println(getInputFileUrl);
 		mockMvc.perform(
-				request(HttpMethod.GET, getProductUrl() + "/inputfiles/" + inputFileName)
+				request(HttpMethod.GET, getInputFileUrl)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
 				.andDo(print())
