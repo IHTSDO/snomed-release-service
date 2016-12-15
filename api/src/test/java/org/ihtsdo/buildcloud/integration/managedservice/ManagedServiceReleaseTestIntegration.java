@@ -26,6 +26,7 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 	}
 
 	@Test
+	@Ignore
 	public void testFirstRelease() throws Exception {
 		
 		integrationTestHelper.loginAsManager();
