@@ -18,6 +18,8 @@ import com.wordnik.swagger.annotations.ApiOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,8 +96,12 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
-
-		productInputFileService.putInputFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
+		String inputFileName = file.getOriginalFilename();
+		LOGGER.debug("uploading input file:" + inputFileName);
+		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
+			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+		}
+		productInputFileService.putInputFile(releaseCenterKey, productKey, file.getInputStream(),inputFileName,file.getSize());
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 

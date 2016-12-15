@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -459,7 +461,9 @@ public class BuildServiceImpl implements BuildService {
 					}
 					relFileBuilder.append(splits[i]);
 				}
-				result.add(relFileBuilder.toString());
+				if (!Normalizer.isNormalized(relFileBuilder.toString(),Form.NFC)) {
+					result.add(Normalizer.normalize(relFileBuilder.toString(),Form.NFC));
+				}
 			}
 			
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
@@ -574,18 +578,24 @@ public class BuildServiceImpl implements BuildService {
 	private Map<String, TableSchema> getInputFileSchemaMap(final Build build) throws BusinessServiceException {
 		final List<String> buildInputFilePaths = dao.listInputFileNames(build);
 		List<String> rf2DeltaFilesFromManifest = rf2DeltaFilesSpecifiedByManifest(build);
+		for (String fileInManifest : rf2DeltaFilesFromManifest) {
+			LOGGER.debug(fileInManifest);
+		}
 		final Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		for (final String buildInputFilePath : buildInputFilePaths) {
 			final TableSchema schemaBean;
 			try {
 				String filename = FileUtils.getFilenameFromPath(buildInputFilePath);
+				schemaBean = schemaFactory.createSchemaBean(filename);
+				inputFileSchemaMap.put(buildInputFilePath, schemaBean);
 				//Filtered out any files not required by Manifest.xml
-				if (rf2DeltaFilesFromManifest.contains(filename)) {
-					schemaBean = schemaFactory.createSchemaBean(filename);
-					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
-				} else {
-					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
+				if (!Normalizer.isNormalized(filename,Form.NFC)) {
+					filename = Normalizer.normalize(filename,Form.NFC);
+					if (!rf2DeltaFilesFromManifest.contains(filename)) {
+						LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
+					} 
 				}
+				
 			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
 			}
