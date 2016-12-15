@@ -1,14 +1,9 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.servlet.http.HttpServletRequest;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,8 +13,6 @@ public class HypermediaGenerator {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
-	private static final Logger LOGGER =  LoggerFactory.getLogger(HypermediaGenerator.class);
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<?> entities, HttpServletRequest request, String[] entityLinks) {
 		return getEntityCollectionHypermedia(entities, request, entityLinks, null);
@@ -92,11 +85,6 @@ public class HypermediaGenerator {
 
 	private String getUrl(HttpServletRequest request) {
 		String requestUrl = request.getRequestURL().toString();
-		try {
-			requestUrl = URLDecoder.decode(requestUrl, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			LOGGER.error("request Url can't be decoded", e);
-		}
 		// Remove any trailing slash
 		if (requestUrl.lastIndexOf('/') == requestUrl.length() - 1) {
 			requestUrl = requestUrl.substring(0, requestUrl.length() - 1);
