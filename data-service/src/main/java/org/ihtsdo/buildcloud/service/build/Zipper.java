@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -90,19 +92,23 @@ public class Zipper {
 
 		//Pull down and compress any child files
 		for (FileType file : f.getFile()) {
-			try (InputStream is = buildDAO.getOutputFileInputStream(build, file.getName())) {
+			String filename = file.getName();
+			if (!Normalizer.isNormalized(filename,Form.NFC)) {
+				filename = Normalizer.normalize(filename, Form.NFC);
+				LOGGER.debug("NFC Normalized file name from manifest" + filename);
+			}
+			try (InputStream is = buildDAO.getOutputFileInputStream(build, filename)) {
 				if (is != null) {
 				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
 					try {
-
-						zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
+						zos.putNextEntry(new ZipEntry(thisFolder + filename));
 						IOUtils.copy(bis, zos);
 					} finally {
 						zos.closeEntry();
 						is.close();
 					}
 				} else {
-					LOGGER.info(RF2Constants.DATA_PROBLEM + "Failed to find output file listed in manifest: " + file.getName());
+					LOGGER.info(RF2Constants.DATA_PROBLEM + "Failed to find output file listed in manifest: " + filename);
 				}
 			}
 		}

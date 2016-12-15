@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -130,6 +131,18 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().is(expectedStatus.value()));
+	}
+	
+	
+	public void getInputFile(String inputFileName) throws Exception {
+		String getInputFileUrl = getProductUrl() + "/inputfiles/" + inputFileName;
+		System.out.println(getInputFileUrl);
+		mockMvc.perform(
+				request(HttpMethod.GET, getInputFileUrl)
+						.header("Authorization", getBasicDigestHeaderValue())
+		)
+				.andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	public void deletePreviousTxtInputFiles() throws Exception {
