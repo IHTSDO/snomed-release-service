@@ -461,11 +461,12 @@ public class BuildServiceImpl implements BuildService {
 					}
 					relFileBuilder.append(splits[i]);
 				}
-				if (!Normalizer.isNormalized(relFileBuilder.toString(),Form.NFC)) {
-					result.add(Normalizer.normalize(relFileBuilder.toString(),Form.NFC));
+				String relFileName = relFileBuilder.toString();
+				if (!Normalizer.isNormalized(relFileName,Form.NFC)) {
+					relFileName = Normalizer.normalize(relFileBuilder.toString(),Form.NFC);
 				}
+				result.add(relFileName);
 			}
-			
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
 			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
 		} 
@@ -586,17 +587,16 @@ public class BuildServiceImpl implements BuildService {
 			final TableSchema schemaBean;
 			try {
 				String filename = FileUtils.getFilenameFromPath(buildInputFilePath);
-				//Filtered out any files not required by Manifest.xml
 				if (!Normalizer.isNormalized(filename,Form.NFC)) {
 					filename = Normalizer.normalize(filename,Form.NFC);
 				}
-				if (!rf2DeltaFilesFromManifest.contains(filename)) {
-					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
-				} else {
+				//Filtered out any files not required by Manifest.xml
+				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+				} else {
+					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}
-				
 			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
 			}
