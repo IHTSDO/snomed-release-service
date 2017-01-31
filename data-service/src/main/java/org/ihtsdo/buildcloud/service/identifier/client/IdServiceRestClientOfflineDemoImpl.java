@@ -161,8 +161,8 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 
 	@Override
 	public List<Long> registerSctIds(List<Long> sctIdsToRegister,
-			Integer namespaceId, String comment) throws RestClientException {
+			Map<Long, UUID> sctIdSystemIdMap, Integer namespaceId,
+			String comment) throws RestClientException {
 		throw NOT_IMPLEMENTED_EXCEPTION;
 	}
-	
 }
