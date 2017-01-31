@@ -613,7 +613,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 
 	@Override
-	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Integer namespaceId, String comment) throws RestClientException {
+	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Map<Long,UUID> sctIdSystemIdMap, Integer namespaceId, String comment) throws RestClientException {
 		
 		LOGGER.debug("Start registering sctIds with batch size {} for namespace {} and partitionId {}", sctIdsToRegister.size(), namespaceId);
 		List<Long> result = new ArrayList<>();
@@ -630,7 +630,12 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JSONObject jsonObj = new JSONObject();
 			try {
 				jsonObj.put("sctid", sctId.toString());
-				jsonObj.put("systemId",UUID.randomUUID().toString().toLowerCase());
+				UUID systemId = null;
+				if (sctIdSystemIdMap != null ) {
+					systemId = sctIdSystemIdMap.get(sctId);
+				}
+				systemId = (systemId == null) ? UUID.randomUUID() : systemId;
+				jsonObj.put("systemId", systemId.toString().toLowerCase());
 				records.add(jsonObj);
 			} catch (JSONException e) {
 				String msg = "Failed to create json object";
