@@ -149,7 +149,7 @@ public class IdServiceRestClientImpTestManual {
 		List<Long> sctids = new ArrayList<>();
 		sctids.add(new Long("1484571000005112"));
 		sctids.add(new Long("4893241000005115"));
-		List<Long> result = client.registerSctIds(sctids, new Integer("1000005"), "testing");
+		List<Long> result = client.registerSctIds(sctids, null,new Integer("1000005"), "testing");
 		assertEquals(sctids.size(), result.size());
 		assertTrue(result.containsAll(sctids));
 	}
