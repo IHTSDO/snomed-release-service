@@ -26,12 +26,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class LegacyIdTransformationService {
 
-	private static final String BETA_PREFIX = "x";
-	private static final String STATED_RELATIONSHIP_DELTA_FILE_PREFIX = "sct2_StatedRelationship_Delta_INT_";
 	private static final String REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX = "der2_sRefset_SimpleMapDelta_INT_";
 	private static final String TAB = "\t";
 	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
 	private static final String CORE_MODULE_ID = "900000000000207008";
+	//suppress the generation of SNOMED RT as it is deprecated from the international 20170731 release onwards.
+	private static final boolean SUPPRESS_SNOMED_ID = true;
 
 	@Autowired
 	private UUIDGenerator uuidGenerator;
@@ -65,15 +65,17 @@ public class LegacyIdTransformationService {
 		LOGGER.info("Created ctv3Ids for new concept ids found: " + uuidCtv3IdMap.size());
 		//generate snomed id
 		Map<UUID, String> uuidAndSnomedIdMap = new HashMap<>();
-		try {
-			uuidAndSnomedIdMap = idRestClient.getOrCreateSchemeIds(uuids, SchemeIdType.SNOMEDID, build.getUniqueId());
-		} catch (RestClientException e) {
-			throw new TransformationException("Failed to generate Snomed IDs", e);
+		if (!SUPPRESS_SNOMED_ID) {
+			try {
+				uuidAndSnomedIdMap = idRestClient.getOrCreateSchemeIds(uuids, SchemeIdType.SNOMEDID, build.getUniqueId());
+			} catch (RestClientException e) {
+				throw new TransformationException("Failed to generate Snomed IDs", e);
+			}
+			LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.size());
 		}
-		LOGGER.info("Generated SnomedIds:" + uuidAndSnomedIdMap.size());
 		
 		final String effectiveDate = build.getConfiguration().getEffectiveTimeSnomedFormat();
-		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? BETA_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
+		String fileNamePrefix = build.getConfiguration().isBetaRelease() ? RF2Constants.BETA_RELEASE_PREFIX + REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX  : REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX;
 		final String simpleRefsetMapDelta = fileNamePrefix + effectiveDate + RF2Constants.TXT_FILE_EXTENSION;
 		final String orignalTransformedDelta = simpleRefsetMapDelta.replace(RF2Constants.TXT_FILE_EXTENSION, ".tmp");
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
@@ -103,12 +105,14 @@ public class LegacyIdTransformationService {
 							//historical reason that the module id is always set to be the core module id since 2011
 							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
-							final String snomedId = uuidAndSnomedIdMap.get(uuid);
-							if (snomedId != null && !snomedId.equals("")) {
-								writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
-								writer.write(RF2Constants.LINE_ENDING);
-							} else {
-								LOGGER.warn("No SnomedID was generated for UUID:" + uuid);
+							if (!SUPPRESS_SNOMED_ID) {
+								final String snomedId = uuidAndSnomedIdMap.get(uuid);
+								if (snomedId != null && !snomedId.equals("")) {
+									writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
+									writer.write(RF2Constants.LINE_ENDING);
+								} else {
+									LOGGER.warn("No SnomedID was generated for UUID:" + uuid);
+								}
 							}
 						}
 					}
