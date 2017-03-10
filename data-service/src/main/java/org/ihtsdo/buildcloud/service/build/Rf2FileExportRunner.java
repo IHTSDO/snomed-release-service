@@ -15,6 +15,7 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
@@ -115,6 +116,13 @@ public class Rf2FileExportRunner {
 			timer.split();
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
+			//add the international delta for extension edition release.
+			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaAsAnEdition()) {
+				InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),transformedDeltaDataFile);
+				if (intDeltaInputStream != null) {
+					rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
+				}
+			}
 			//Replace Delta_ to Snapshot_ add file name separator due to some extension refsets have the word "delta" as part of the refset name
 
 			final String currentSnapshotFileName = constructFullOrSnapshotFilename(transformedDeltaDataFile, SNAPSHOT);
@@ -155,7 +163,7 @@ public class Rf2FileExportRunner {
 			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
 			final AsyncPipedStreamBean deltaFileAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, transformedDeltaDataFile);
-
+			
 			RF2TableResults deltaResultSet;
 			timer.split();
 			if (fileFirstTimeRelease) {
@@ -165,7 +173,6 @@ public class Rf2FileExportRunner {
 				deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
 				timer.logTimeTaken("Select all ordered");
 			}
-
 			timer.split();
 			rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream());
 			LOGGER.debug("Completed processing delta file for {}, waiting for network", tableSchema.getTableName());
@@ -220,6 +227,23 @@ public class Rf2FileExportRunner {
 				}
 			}
 		}
+	}
+	
+
+
+	private InputStream getEquivalentInternationalDelta(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
+		//der2_cRefset_AttributeValueDelta_US1000124_20160901.txt
+		String[] splits = transformedDeltaDataFile.split(FILE_NAME_SEPARATOR);
+		StringBuilder equivalentBuilder = new StringBuilder(); 
+		for (int i=0;i<3;i++) {
+			equivalentBuilder.append(splits[i]);
+			equivalentBuilder.append(FILE_NAME_SEPARATOR);
+		}
+		equivalentBuilder.append("INT");
+		equivalentBuilder.append(FILE_NAME_SEPARATOR);
+		equivalentBuilder.append(RF2BuildUtils.getReleaseDateFromReleasePackage(extensionConfig.getDependencyRelease()));
+		equivalentBuilder.append(TXT_FILE_EXTENSION);
+		return buildDao.getPublishedFileArchiveEntry(RF2Constants.INT_RELEASE_CENTER, equivalentBuilder.toString(), extensionConfig.getDependencyRelease());
 	}
 
 	private void generateInferredRelationshipFiles(final String snapshotOutputFilename) throws ReleaseFileGenerationException {

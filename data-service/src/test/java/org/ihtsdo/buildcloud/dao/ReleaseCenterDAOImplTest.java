@@ -24,7 +24,7 @@ public class ReleaseCenterDAOImplTest {
 	public void testFindAll() {
 		Assert.assertNotNull(dao);
 		List<ReleaseCenter> centers = dao.findAll(TestUtils.TEST_USER);
-		Assert.assertEquals(3, centers.size());
+		Assert.assertEquals(4, centers.size());
 		ReleaseCenter internationalReleaseCenter = centers.get(0);
 		Assert.assertEquals("International Release Center", internationalReleaseCenter.getName());
 		Assert.assertEquals("International", internationalReleaseCenter.getShortName());
