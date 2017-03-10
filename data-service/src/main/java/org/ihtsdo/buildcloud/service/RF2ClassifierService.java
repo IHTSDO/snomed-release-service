@@ -26,6 +26,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.build.RF2BuildUtils;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.classifier.ClassificationException;
@@ -46,8 +47,6 @@ import com.google.common.io.Files;
 public class RF2ClassifierService {
 
 	private static final String RECONCILED = "_reconciled.txt";
-
-	private static final String INTERNATIONAL = "International";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -275,27 +274,10 @@ public class RF2ClassifierService {
 		return resultMap;
 	}
 
-	/**Release package name is updated e.g SnomedCT_InternationalRF2_Production_20170131T120000.zip
-	 * instead of SnomedCT_Release_INT_20170131.zip
-	 * @param dependencyReleasePackage
-	 * @return
-	 */
-	private String getReleaseDateFromReleasePackage(String dependencyReleasePackage) {
-		if (dependencyReleasePackage != null && dependencyReleasePackage.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-			String [] splits = dependencyReleasePackage.split(RF2Constants.FILE_NAME_SEPARATOR);
-			String releaseDate = splits[splits.length - 1];
-			if (releaseDate.length() > 8) {
-				releaseDate = releaseDate.substring(0, 8);
-			}
-			return releaseDate;
-		}
-		return null;
-	}
-
 	private String downloadDependencyInferredRelationshipSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
 		//SnomedCT_Release_INT_20160131.zip
-		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		String releaseDate = RF2BuildUtils.getReleaseDateFromReleasePackage(dependencyReleasePackage);
 		logger.debug("Extension dependency release date:" + releaseDate);
 		if (releaseDate != null) {
 			String inferredRelationshipSnapshot = RF2Constants.RELATIONSHIP_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION;
@@ -309,7 +291,7 @@ public class RF2ClassifierService {
 
 	private String downloadDependencyConceptSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
-		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		String releaseDate = RF2BuildUtils.getReleaseDateFromReleasePackage(dependencyReleasePackage);
 		if (releaseDate != null) {
 			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, RF2Constants.CONCEPT_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION);
 		}
@@ -320,8 +302,7 @@ public class RF2ClassifierService {
 
 	private String downloadDependencySnapshot( File tempDir,String dependencyReleasePackage, String dependencySnapshotFilename) throws IOException {
 		final File localFile = new File(tempDir, dependencySnapshotFilename);
-		ReleaseCenter intReleaseCenter = new ReleaseCenter("International Release Center", INTERNATIONAL);
-		try (InputStream publishedFileArchiveEntry = buildDAO.getPublishedFileArchiveEntry(intReleaseCenter ,
+		try (InputStream publishedFileArchiveEntry = buildDAO.getPublishedFileArchiveEntry(RF2Constants.INT_RELEASE_CENTER ,
 				dependencySnapshotFilename, dependencyReleasePackage);
 			 FileOutputStream out = new FileOutputStream(localFile)) {
 			if (publishedFileArchiveEntry != null) {
@@ -338,7 +319,7 @@ public class RF2ClassifierService {
 	private String downloadDependencyStatedRelationshipSnapshot(File tempDir, Build build) throws IOException {
 		String dependencyReleasePackage = build.getConfiguration().getExtensionConfig().getDependencyRelease();
 		//SnomedCT_Release_INT_20160131.zip
-		String releaseDate = getReleaseDateFromReleasePackage(dependencyReleasePackage);
+		String releaseDate = RF2BuildUtils.getReleaseDateFromReleasePackage(dependencyReleasePackage);
 		if (releaseDate != null) {
 			return downloadDependencySnapshot(tempDir, dependencyReleasePackage, RF2Constants.STATED_RELATIONSHIP_SNAPSHOT_PREFIX + releaseDate + RF2Constants.TXT_FILE_EXTENSION);
 		}
