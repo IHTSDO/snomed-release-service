@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="2017031001" author="mchu">
+   <addColumn tableName="extension_config">
+			<column name="release_as_edition" type="CHAR(1)" defaultValue="N"/>
+		</addColumn>
+	</changeSet>
+	<changeSet author="mchu" id="2017031002">
+        <insert tableName="release_center">
+            <column name="business_key" value="us"/>
+            <column name="name" value="US Release Center"/>
+            <column name="removed" value="N"/>
+            <column name="short_name" value="US"/>
+        </insert>
+    </changeSet>
+    
+    <changeSet author="mchu (generated)" id="2017031003">
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='US')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='manager')"/>
+        </insert>
+    </changeSet>
+    <changeSet author="mchu (generated)" id="2017031004">
+        <insert tableName="membership">
+            <column name="role" valueNumeric="0"/>
+            <column name="release_center_id" valueComputed="(select id from release_center where short_name ='US')"/>
+            <column name="user_id"  valueComputed="(select id from user where user_name='anonymous_user')"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

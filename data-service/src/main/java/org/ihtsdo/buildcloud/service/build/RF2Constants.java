@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.build;
 import java.nio.charset.Charset;
 
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class RF2Constants {
 
@@ -49,6 +50,7 @@ public class RF2Constants {
 	public static final String BETA_RELEASE_PREFIX = "x";
 	public static final String INTERNATIONAL_CORE_MODULE_ID ="900000000000207008";
 	public static final String INTERNATIONAL_MODEL_COMPONENT_ID ="900000000000012004";
+	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 
 	public enum RelationshipFileType {
 		STATED, INFERRED
