@@ -229,6 +229,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			
 		}
 		
+		if (newPropertyValues.containsKey(ProductService.RELEASE_AS_AN_EDITION)) {
+			if (configuration.getExtensionConfig() == null) {
+				ExtensionConfig extConfig = new ExtensionConfig();
+				configuration.setExtensionConfig(extConfig);
+				extConfig.setBuildConfiguration(configuration);
+			}
+			configuration.getExtensionConfig().setReleaAsAnEdiiton(TRUE.equals(newPropertyValues.get(ProductService.RELEASE_AS_AN_EDITION)));
+		}
 
 		if (newPropertyValues.containsKey(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
 			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
