@@ -229,7 +229,7 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
 		String path = getPublishDirPath(releaseCenter) + targetFileName;
-		LOGGER.info("Check published file exists or not" + path);
+		LOGGER.info("Check published file exists or not for path:" + path + " in bucket:" + publishedBucketName);
 		return publishedFileHelper.exists(path);
 	}
 
