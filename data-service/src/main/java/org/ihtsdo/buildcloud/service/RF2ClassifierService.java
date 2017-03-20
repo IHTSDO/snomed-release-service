@@ -101,12 +101,13 @@ public class RF2ClassifierService {
 				String moduleId = coreModuleSctid;
 				if (extConfig != null) {
 					moduleId = extConfig.getModuleId();
-					// add extension dependency concept snapshot file
-					String dependencyConceptSnapshotFileName = downloadDependencyConceptSnapshot(tempDir,build);
-					localConceptFilePaths.add(dependencyConceptSnapshotFileName);
-					String dependencyStatedRelationshipFilename = downloadDependencyStatedRelationshipSnapshot(tempDir,build);
-					localStatedRelationshipFilePaths.add(dependencyStatedRelationshipFilename);
-					
+					if (!extConfig.isReleaseAsAnEdition()) {
+						// add extension dependency concept snapshot file
+						String dependencyConceptSnapshotFileName = downloadDependencyConceptSnapshot(tempDir,build);
+						localConceptFilePaths.add(dependencyConceptSnapshotFileName);
+						String dependencyStatedRelationshipFilename = downloadDependencyStatedRelationshipSnapshot(tempDir,build);
+						localStatedRelationshipFilePaths.add(dependencyStatedRelationshipFilename);
+					}
 				}
 
 				final File cycleFile = new File(tempDir, RF2Constants.CONCEPTS_WITH_CYCLES_TXT);

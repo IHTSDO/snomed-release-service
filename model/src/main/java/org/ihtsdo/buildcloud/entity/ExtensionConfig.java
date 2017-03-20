@@ -35,7 +35,7 @@ public class ExtensionConfig implements Serializable {
 	
 	@Type(type="yes_no")
 	@Column(name="release_as_edition")
-	private boolean releaAsAnEdition;
+	private boolean releaseAsAnEdition;
 
 	public String getDependencyRelease() {
 		return dependencyRelease;
@@ -69,12 +69,12 @@ public class ExtensionConfig implements Serializable {
 		this.buildConfiguration = buildConfiguration;
 	}
 	
-	public boolean isReleaAsAnEdition() {
-		return releaAsAnEdition;
+	public boolean isReleaseAsAnEdition() {
+		return releaseAsAnEdition;
 	}
 	
 	public void setReleaAsAnEdiiton(boolean releaseExtensionAsAnEdition) {
-		this.releaAsAnEdition = releaseExtensionAsAnEdition;
+		this.releaseAsAnEdition = releaseExtensionAsAnEdition;
 	}
 
 }
