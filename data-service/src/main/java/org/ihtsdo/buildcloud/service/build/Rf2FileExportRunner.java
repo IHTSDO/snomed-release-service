@@ -117,10 +117,12 @@ public class Rf2FileExportRunner {
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 			//add the international delta for extension edition release.
-			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaAsAnEdition()) {
+			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaseAsAnEdition()) {
 				InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),transformedDeltaDataFile);
 				if (intDeltaInputStream != null) {
 					rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
+				} else {
+					LOGGER.info("No equivalent file found in the international realse for delta file:" + transformedDeltaDataFile);
 				}
 			}
 			//Replace Delta_ to Snapshot_ add file name separator due to some extension refsets have the word "delta" as part of the refset name

@@ -19,7 +19,7 @@ public class IdServiceRestClientImpTestManual {
 	private static final String UUID_TWO = "ae4de89d-65ce-475c-80e1-a4f92212cd57";
 	private static final String UUID_ONE = "72bc1612-a773-4be9-8eab-b6d48b2ffc9f";
 	private static IdServiceRestClient client;
-	private static final String idServiceApiUrl = "http://dev-cis.ihtsdotools.org:3000/api";
+	private static final String idServiceApiUrl = "http://dev-cis.ihtsdotools.org/api";
 	private static final String userName ="username";
 	private static final String password ="username";
 	
