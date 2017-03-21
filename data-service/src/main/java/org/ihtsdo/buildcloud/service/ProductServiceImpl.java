@@ -235,7 +235,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				configuration.setExtensionConfig(extConfig);
 				extConfig.setBuildConfiguration(configuration);
 			}
-			configuration.getExtensionConfig().setReleaAsAnEdiiton(TRUE.equals(newPropertyValues.get(ProductService.RELEASE_AS_AN_EDITION)));
+			configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(newPropertyValues.get(ProductService.RELEASE_AS_AN_EDITION)));
 		}
 
 		if (newPropertyValues.containsKey(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
