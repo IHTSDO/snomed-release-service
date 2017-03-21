@@ -122,7 +122,7 @@ public class Rf2FileExportRunner {
 				if (intDeltaInputStream != null) {
 					rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
 				} else {
-					LOGGER.info("No equivalent file found in the international realse for delta file:" + transformedDeltaDataFile);
+					LOGGER.info("No equivalent file found in the international release for delta file:" + transformedDeltaDataFile);
 				}
 			}
 			//Replace Delta_ to Snapshot_ add file name separator due to some extension refsets have the word "delta" as part of the refset name
