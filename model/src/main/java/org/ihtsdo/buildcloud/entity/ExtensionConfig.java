@@ -70,10 +70,10 @@ public class ExtensionConfig implements Serializable {
 	}
 	
 	public boolean isReleaseAsAnEdition() {
-		return releaseAsAnEdition;
+		return this.releaseAsAnEdition;
 	}
 	
-	public void setReleaAsAnEdiiton(boolean releaseExtensionAsAnEdition) {
+	public void setReleaseAsAnEdition(boolean releaseExtensionAsAnEdition) {
 		this.releaseAsAnEdition = releaseExtensionAsAnEdition;
 	}
 

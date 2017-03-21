@@ -103,6 +103,7 @@ public class RF2ClassifierService {
 					moduleId = extConfig.getModuleId();
 					if (!extConfig.isReleaseAsAnEdition()) {
 						// add extension dependency concept snapshot file
+						logger.info("Downloading concepts and stated relationships from the dependency release for extension release.");
 						String dependencyConceptSnapshotFileName = downloadDependencyConceptSnapshot(tempDir,build);
 						localConceptFilePaths.add(dependencyConceptSnapshotFileName);
 						String dependencyStatedRelationshipFilename = downloadDependencyStatedRelationshipSnapshot(tempDir,build);
