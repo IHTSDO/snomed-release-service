@@ -32,6 +32,14 @@ public class RF2ClassifierServiceTestHarness {
 	
 	@Test
 	public void testClassifierWrapper() throws BusinessServiceException, ParseException {
+		Build build = createBuild();
+		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
+		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_US1000124_20170301"));
+		inputFileSchemaMap.put("rel2_Concept_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Snapshot_US1000124_20170301"));
+		classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+	}
+
+	private Build createBuild() throws ParseException {
 		Date releaseDate = DateUtils.parseDate("20170301", "yyyyMMdd");
 		Product testProduct = new Product("snomed_ct_us_edition_20170301_testing");
 		testProduct.setReleaseCenter(new ReleaseCenter("US release center", "us"));
@@ -49,10 +57,7 @@ public class RF2ClassifierServiceTestHarness {
 		configuration.setFirstTimeRelease(false);
 		configuration.setPreviousPublishedPackage("SnomedCT_RF2Release_US1000124_20160901.zip");
 		build.setConfiguration(configuration);
-		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
-		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_US1000124_20170301"));
-		inputFileSchemaMap.put("rel2_Concept_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Snapshot_US1000124_20170301"));
-		classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+		return build;
 	}
 
 }

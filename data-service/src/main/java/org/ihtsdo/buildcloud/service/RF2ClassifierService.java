@@ -155,8 +155,9 @@ public class RF2ClassifierService {
 					final String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
 							.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
 							.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
-
-					final File classifierInferredRelationshipResultOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename.replace(RF2Constants.TXT_FILE_EXTENSION,  "_classifier_result.txt"));
+					
+					//Save the classifier result before transforming for debugging purpose.
+					final File classifierResultOutputFile = new File(tempDir, inferredRelationshipSnapshotFilename.replace(RF2Constants.TXT_FILE_EXTENSION,  "_classifier_result.txt"));
 					final File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
 					
 					//Add relationship id reconciliation fixes when extension overwrites international relationships
@@ -166,21 +167,21 @@ public class RF2ClassifierService {
 					}
 					final ClassificationRunner classificationRunner = new ClassificationRunner(moduleId, effectiveTimeSnomedFormat,
 							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
-							classifierInferredRelationshipResultOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
+							classifierResultOutputFile.getAbsolutePath(), equivalencyReportOutputFile.getAbsolutePath());
 					classificationRunner.execute();
 
 					logger.info("Classification finished.");
 
 					uploadLog(build, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
-
+					
 					// Upload inferred relationships file with null ids
-					buildDAO.putTransformedFile(build, classifierInferredRelationshipResultOutputFile);
+					buildDAO.putTransformedFile(build, classifierResultOutputFile);
 
-					transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierInferredRelationshipResultOutputFile), inferredRelationshipSnapshotFilename, uuidToSctidMap);
+					transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierResultOutputFile), inferredRelationshipSnapshotFilename, uuidToSctidMap);
 
 					return inferredRelationshipSnapshotFilename;
 				} else {
-					logger.info(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
+					logger.error(RF2Constants.DATA_PROBLEM + "Cycles detected in stated relationship snapshot file. " +
 							"See " + RF2Constants.CONCEPTS_WITH_CYCLES_TXT + " in build package logs for more details.");
 					return null;
 				}
