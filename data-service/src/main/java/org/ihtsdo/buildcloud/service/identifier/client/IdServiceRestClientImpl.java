@@ -46,6 +46,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static String token;
 	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
+	private static final int BATCH_SIZE = 5000;
 	
 	private static AtomicInteger currentSessions = new AtomicInteger();
 	
@@ -157,7 +158,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					JSONObject requestData = new JSONObject();
 					requestData.put(SCTIDS, scdStrList.toString());
 					JSONResource response = resty.json(urlHelper.getSctIdBulkUrl(token),RestyHelper.content(requestData, APPLICATION_JSON));
-					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0; i < items.length();i++) {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
@@ -479,7 +480,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	
 	@Override
 	public Map<String, String> getStatusForSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
-		
 		Map<String,String> result = new HashMap<>();
 		if (legacyIds == null || legacyIds.isEmpty()) {
 			return result;
@@ -490,13 +490,14 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				JSONResource response = null;
 				try {
 					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
-					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0;i < items.length();i++) {
 							result.put((String)items.getJSONObject(i).get(SCHEME_ID), (String)items.getJSONObject(i).get(STATUS));
 						}
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE));
+						String errorMsg = (response != null) ? ("http status code is:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE)) : "No response received!";
+						throw new RestClientException(errorMsg);
 					}
 					isDone = true;
 				} catch (Exception e) {
@@ -528,7 +529,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				JSONResource response = null;
 				try {
 					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
-					if ( response !=null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0;i < items.length();i++) {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
@@ -566,7 +567,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				JSONResource response = null;
 				try {
 					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
-					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0;i < items.length();i++) {
 							result.put((String)items.getJSONObject(i).get(SCHEME_ID), items.getJSONObject(i));
@@ -595,17 +596,29 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
-		Map<Long,JSONObject> sctIdRecords = getSctIdRecords(sctIds);
 		Map<Long, UUID> sctIdUuidMap = new HashMap<>();
-		String uuidStr = "";
-		String jsonStr = "";
-		for (Long id : sctIdRecords.keySet()) {
-			try {
-				jsonStr = sctIdRecords.get(id).toString();
-				uuidStr = (String)sctIdRecords.get(id).get(SYSTEM_ID);
-				sctIdUuidMap.put(id, UUID.fromString(uuidStr));
-			} catch (IllegalArgumentException|JSONException e) {
-				throw new RestClientException("Error when fetching system id for sctId: " + id + " using UUID '" + uuidStr + "'.  Received JSON: " + jsonStr, e);
+		List<Long> batchJob = null;
+		int counter=0;
+		for (Long sctId : sctIds) {
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
+			}
+			batchJob.add(sctId);
+			counter++;
+			if (counter % BATCH_SIZE == 0 || counter == sctIds.size()) {
+				Map<Long,JSONObject> sctIdRecords = getSctIdRecords(batchJob);
+				String uuidStr = "";
+				String jsonStr = "";
+				for (Long id : sctIdRecords.keySet()) {
+					try {
+						jsonStr = sctIdRecords.get(id).toString();
+						uuidStr = (String)sctIdRecords.get(id).get(SYSTEM_ID);
+						sctIdUuidMap.put(id, UUID.fromString(uuidStr));
+					} catch (IllegalArgumentException|JSONException e) {
+						throw new RestClientException("Error when fetching system id for sctId: " + id + " using UUID '" + uuidStr + "'.  Received JSON: " + jsonStr, e);
+					}
+				}
+				batchJob = null;
 			}
 		}
 		return sctIdUuidMap;
@@ -614,19 +627,15 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Map<Long,UUID> sctIdSystemIdMap, Integer namespaceId, String comment) throws RestClientException {
-		
 		LOGGER.debug("Start registering sctIds with batch size {} for namespace {} and partitionId {}", sctIdsToRegister.size(), namespaceId);
 		List<Long> result = new ArrayList<>();
 		if (sctIdsToRegister == null || sctIdsToRegister.isEmpty()) {
 			LOGGER.warn("No sctIds submitted for requesting sctIds");
 			return result;
 		}
-		
 		long startTime = new Date().getTime();
-		
 		List<JSONObject> records = new ArrayList<>();
 		for (Long sctId : sctIdsToRegister) {
-
 			JSONObject jsonObj = new JSONObject();
 			try {
 				jsonObj.put("sctid", sctId.toString());
@@ -641,7 +650,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				String msg = "Failed to create json object";
 				LOGGER.error(msg,e);
 				throw new RestClientException(msg,e);
-				
 			}
 		}
 		try {
