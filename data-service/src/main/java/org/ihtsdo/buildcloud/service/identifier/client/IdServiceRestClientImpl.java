@@ -528,17 +528,17 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				JSONResource response = null;
 				try {
 					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
-					if ( HttpStatus.SC_OK == (response.getHTTPStatus()) ){
+					if ( response !=null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0;i < items.length();i++) {
 							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
 						}
 					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
+						String errorMsg = (response != null) ? "http status code is:" + response.getHTTPStatus() : "No response received.";
+						throw new RestClientException(errorMsg);
 					}
 					isDone = true;
 				} catch (Exception e) {
-					
 					if (attempt < maxTries) {
 						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
 						attempt++;
