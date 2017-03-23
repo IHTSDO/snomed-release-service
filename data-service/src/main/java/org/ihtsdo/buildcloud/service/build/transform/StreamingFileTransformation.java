@@ -34,7 +34,7 @@ public class StreamingFileTransformation {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8));
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8));
 		try {
-			LOGGER.info("Start: Transform file {}.", fileName);
+			LOGGER.info("Start: Transform file {} with buffer size {}", fileName, transformBufferSize);
 			// Iterate input lines
 			String line;
 			StringBuilder stringBuilder = new StringBuilder();
