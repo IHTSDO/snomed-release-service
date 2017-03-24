@@ -224,6 +224,7 @@
 				<property name="timeOutInSeconds" value="${idGenerator.timeoutInSeconds}"/>
 				<property name="maxTries" ref = "idGenMaxTries" />
 				<property name="retryDelaySeconds" ref = "idGenRetryDelaySeconds" />
+				<property name="batchSize" value="${idGenerator.batchSize}"/>
 			</bean>
 		</constructor-arg>
 		<constructor-arg>
