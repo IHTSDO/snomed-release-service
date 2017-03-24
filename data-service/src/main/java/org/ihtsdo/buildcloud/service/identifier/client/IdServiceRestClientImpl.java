@@ -46,7 +46,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static String token;
 	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
-	private static final int BATCH_SIZE = 5000;
 	
 	private static AtomicInteger currentSessions = new AtomicInteger();
 	
@@ -55,6 +54,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private int retryDelaySeconds;
 	private String userName;
 	private String password;
+	private int batchSize = 2000;
 	
 	public IdServiceRestClientImpl(String idServiceUrl, String username, String password) {
 		this.idServiceUrl = idServiceUrl;
@@ -232,38 +232,46 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			return result;
 		}
 		long startTime = new Date().getTime();
-		List<String> uuidStrings = new ArrayList<>();
+		List<String> batchJob = null;
+		int counter=0;
 		for (UUID uuid : uuids) {
-			uuidStrings.add(uuid.toString());
-		}
-		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(NAMESPACE, namespaceId.intValue());
-			requestData.put(PARTITION_ID, partitionId);
-			requestData.put(QUANTITY,uuids.size());
-			requestData.put(SYSTEM_IDS, uuidStrings.toArray());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(GENERATE_LEGACY_IDS, "false");
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + uuids.size());
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-					for (int i =0;i < items.length();i++) {
-						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), new Long((String)items.getJSONObject(i).get(SCTID)));
-					}
-				}
-			} else {
-				String statusMsg = getFailureMessage(response);
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
 			}
-		} catch (Exception e) {
-			String message = "Bulk getOrCreateSctIds job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message,e);
+			batchJob.add(uuid.toString());
+			counter++;
+			if (counter % batchSize == 0 || counter == uuids.size()) {
+				try {
+					JSONObject requestData = new JSONObject();
+					requestData.put(NAMESPACE, namespaceId.intValue());
+					requestData.put(PARTITION_ID, partitionId);
+					requestData.put(QUANTITY,batchJob.size());
+					requestData.put(SYSTEM_IDS, batchJob.toArray());
+					requestData.put(SOFTWARE, SRS);
+					requestData.put(GENERATE_LEGACY_IDS, "false");
+					requestData.put(COMMENT, comment);
+					JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
+					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+						String jobId =  response.get("id").toString();
+						LOGGER.info("Bulk job id:" + jobId + " with batch size:" + batchJob.size());
+						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+							JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
+							for (int i =0;i < items.length();i++) {
+								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), new Long((String)items.getJSONObject(i).get(SCTID)));
+							}
+						}
+					} else {
+						String statusMsg = getFailureMessage(response);
+						LOGGER.error(statusMsg);
+						throw new RestClientException(statusMsg);
+					}
+				} catch (Exception e) {
+					String message = "Bulk getOrCreateSctIds job failed.";
+					LOGGER.error(message, e);
+					throw new RestClientException(message,e);
+				}
+				batchJob = null;
+			}
 		}
 		LOGGER.debug("End creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
@@ -279,33 +287,42 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			return result;
 		}
 		long startTime = new Date().getTime();
-		List<String> uuidStrings = new ArrayList<>();
+		List<String> batchJob = null;
+		int counter=0;
 		for (UUID uuid : uuids) {
-			uuidStrings.add(uuid.toString());
-		}
-		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(QUANTITY,uuids.size());
-			requestData.put(SYSTEM_IDS, uuidStrings.toArray());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Scheme ids bulk job id:" + jobId + " with batch size:" + uuids.size());
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-					for (int i =0;i < items.length();i++) {
-						result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get(SCHEME_ID));
-					}
-				}
-			} else {
-				throw new RestClientException(getFailureMessage(response));
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
 			}
-		} catch (Exception e) {
-			String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
-			LOGGER.error(message, e);
-			throw new RestClientException(message, e);
+			batchJob.add(uuid.toString());
+			counter++;
+			if (counter % batchSize == 0 || counter == uuids.size()) {
+				//processing batch
+				try {
+					JSONObject requestData = new JSONObject();
+					requestData.put(QUANTITY,batchJob.size());
+					requestData.put(SYSTEM_IDS, batchJob.toArray());
+					requestData.put(SOFTWARE, SRS);
+					requestData.put(COMMENT, comment);
+					JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
+					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+						String jobId =  response.get("id").toString();
+						LOGGER.info("Scheme ids bulk job id:" + jobId + " with batch size:" + batchJob.size());
+						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+							JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
+							for (int i =0;i < items.length();i++) {
+								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get(SCHEME_ID));
+							}
+						}
+					} else {
+						throw new RestClientException(getFailureMessage(response));
+					}
+				} catch (Exception e) {
+					String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
+					LOGGER.error(message, e);
+					throw new RestClientException(message, e);
+				}
+				batchJob = null;
+			}
 		}
 		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
@@ -401,6 +418,14 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	public void setTimeOutInSeconds(int timeOutInSeconds) {
 		this.timeOutInSeconds = timeOutInSeconds;
 	}
+	
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
 
 	@Override
 	public boolean publishSctIds(List<Long> sctIds, Integer namespaceId, String comment) throws RestClientException {
@@ -410,32 +435,41 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		}
 		boolean isPublished = false;
 		long startTime = new Date().getTime();
-		List<String> sctIdStringList = new ArrayList<>();
+		List<String> batchJob = null;
+		int counter=0;
 		for (Long sctId : sctIds) {
-			sctIdStringList.add(String.valueOf(sctId));
-		}
-		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(SCTIDS, sctIdStringList.toArray());
-			requestData.put(NAMESPACE, namespaceId.intValue());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.put(urlHelper.getSctIdBulkPublishingUrl(token), requestData, APPLICATION_JSON);
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + sctIds.size());
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					isPublished = true;
-				}
-			} else {
-				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
 			}
-		} catch (Exception e) {
-			String message = "Bulk publishSctIds job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message, e);
+			batchJob.add(String.valueOf(sctId));
+			counter++;
+			if (counter % batchSize == 0 || counter == sctIds.size()) {
+				//processing batch
+				try {
+					JSONObject requestData = new JSONObject();
+					requestData.put(SCTIDS, batchJob.toArray());
+					requestData.put(NAMESPACE, namespaceId.intValue());
+					requestData.put(SOFTWARE, SRS);
+					requestData.put(COMMENT, comment);
+					JSONResource response = resty.put(urlHelper.getSctIdBulkPublishingUrl(token), requestData, APPLICATION_JSON);
+					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+						String jobId =  response.get("id").toString();
+						LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + batchJob.size());
+						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+							isPublished = true;
+						}
+					} else {
+						String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
+						LOGGER.error(statusMsg);
+						throw new RestClientException(statusMsg);
+					}
+				} catch (Exception e) {
+					String message = "Bulk publishSctIds job failed.";
+					LOGGER.error(message, e);
+					throw new RestClientException(message, e);
+				}
+				batchJob = null;
+			}
 		}
 		LOGGER.debug("End publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
@@ -450,27 +484,40 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		}
 		boolean isPublished = false;
 		long startTime = new Date().getTime();
-		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(SCHEME_IDS, schemeIds.toArray());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.put(urlHelper.getSchemeIdBulkPublishingUrl(schemeType,token), requestData, APPLICATION_JSON);
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " for publishing scheme ids with batch size:" + schemeIds.size());
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())){
-					isPublished = true;
-				}
-			} else {
-				String statusMsg = "Received http status code from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
+		List<String> batchJob = null;
+		int counter=0;
+		for (String schemeId : schemeIds) {
+			if (batchJob == null) {
+				batchJob = new ArrayList<>();
 			}
-		} catch (Exception e) {
-			String message = "Bulk publish scheme ids job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message, e);
+			batchJob.add(schemeId);
+			counter++;
+			if (counter % batchSize == 0 || counter == schemeIds.size()) {
+				//processing batch
+				try {
+					JSONObject requestData = new JSONObject();
+					requestData.put(SCHEME_IDS, batchJob.toArray());
+					requestData.put(SOFTWARE, SRS);
+					requestData.put(COMMENT, comment);
+					JSONResource response = resty.put(urlHelper.getSchemeIdBulkPublishingUrl(schemeType,token), requestData, APPLICATION_JSON);
+					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
+						String jobId =  response.get("id").toString();
+						LOGGER.info("Bulk job id:" + jobId + " for publishing scheme ids with batch size:" + batchJob.size());
+						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())){
+							isPublished = true;
+						}
+					} else {
+						String statusMsg = "Received http status code from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
+						LOGGER.error(statusMsg);
+						throw new RestClientException(statusMsg);
+					}
+				} catch (Exception e) {
+					String message = "Bulk publish scheme ids job failed.";
+					LOGGER.error(message, e);
+					throw new RestClientException(message, e);
+				}
+				batchJob = null;
+			}
 		}
 		LOGGER.debug("End publishing scheme ids with batch size {}", schemeIds.size());
 		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
@@ -605,7 +652,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			}
 			batchJob.add(sctId);
 			counter++;
-			if (counter % BATCH_SIZE == 0 || counter == sctIds.size()) {
+			if (counter % batchSize == 0 || counter == sctIds.size()) {
 				Map<Long,JSONObject> sctIdRecords = getSctIdRecords(batchJob);
 				String uuidStr = "";
 				String jsonStr = "";
