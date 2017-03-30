@@ -20,8 +20,8 @@ public class IdServiceRestClientImpTestManual {
 	private static final String UUID_ONE = "72bc1612-a773-4be9-8eab-b6d48b2ffc9f";
 	private static IdServiceRestClient client;
 	private static final String idServiceApiUrl = "https://dev-cis.ihtsdotools.org/api";
-	private static final String userName ="userName";
-	private static final String password ="password";
+	private static final String userName ="username";
+	private static final String password ="username";
 	
 	@BeforeClass
 	public static void  setUp() throws Exception {
@@ -35,7 +35,6 @@ public class IdServiceRestClientImpTestManual {
 	}
 	@Test
 	public void testCreateSctId() throws Exception {
-		
 		Long sctId = client.getOrCreateSctId(UUID.fromString("E2F7B688-396E-4E84-A78B-6802698EB309"), new Integer("0"), "00","testing");
 		assertNotNull(sctId);
 		System.out.println("Sctid:" + sctId);
