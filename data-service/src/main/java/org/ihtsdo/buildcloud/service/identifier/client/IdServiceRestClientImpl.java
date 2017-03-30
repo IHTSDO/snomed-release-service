@@ -50,11 +50,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static AtomicInteger currentSessions = new AtomicInteger();
 	
 	private int timeOutInSeconds = 300;
-	private int maxTries;
-	private int retryDelaySeconds;
+	private int maxTries=3;
+	private int retryDelaySeconds=30;
 	private String userName;
 	private String password;
-	private int batchSize = 2000;
+	private int batchSize = 500;
 	
 	public IdServiceRestClientImpl(String idServiceUrl, String username, String password) {
 		this.idServiceUrl = idServiceUrl;
@@ -80,16 +80,36 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	
 	@Override
 	public String logIn() throws RestClientException {
-		synchronized (LOCK) {
-			if ( token != null) {
-				LOGGER.info("ID service rest client is already logged in with token:" + token);
-			} 
-			//validate token
-			if ( !isTokenValid(token) ) {
-				//get a new token;
-				token = accquireToken();
+		int attempt = 1;
+		boolean isDone = false;
+			while (!isDone) {
+			 try {
+				 synchronized (LOCK) {
+					 if ( token != null) {
+						 LOGGER.info("ID service rest client is already logged in with token:" + token);
+					 } 
+					 //validate token
+
+					 if ( !isTokenValid(token) ) {
+						 //get a new token;
+						 token = accquireToken();
+					 }
+					 currentSessions.getAndIncrement();
+					 isDone = true;
+				}
+			} catch (Exception e) {
+				if (attempt < maxTries) {
+					LOGGER.warn("Failed to log into the IdService on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
+					attempt++;
+					try {
+						Thread.sleep(retryDelaySeconds * 1000);
+					} catch (InterruptedException ie) {
+						LOGGER.warn("Retry delay interrupted.",e);
+					}
+				} else {
+					throw new RestClientException("Still failed to log into the IdService after " + attempt + " attempts", e);
+				}
 			}
-			currentSessions.getAndIncrement();
 		}
 		return token;
 	}
