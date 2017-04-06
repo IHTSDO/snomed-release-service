@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.build;
 import java.nio.charset.Charset;
 
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 
 public class RF2Constants {
 
@@ -39,16 +40,17 @@ public class RF2Constants {
 	public static final CharSequence REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER = "RefsetDescriptor";
 	public static final CharSequence MODULE_DEPENDENCY_FILE_IDENTIFIER = "ModuleDependency";
 	public static final CharSequence COMPLEX_MAP_FILE_IDENTIFIER = "ComplexMap";
-	public static final String  RELASHIONSHIP_DELTA_PREFIX = "sct2_Relationship_Delta_INT_";
+	public static final String  RELASHIONSHIP_DELTA_PREFIX = "sct2_Relationship_Delta_";
 	public static final String CONCEPT_SNAPSHOT_PREFIX= "sct2_Concept_Snapshot_INT_";
-	public static final String STATED_RELATIONSHIP_SNAPSHOT_PREFIX = "sct2_StatedRelationship_Snapshot_INT_";
-	public static final String RELATIONSHIP_SNAPSHOT_PREFIX = "sct2_Relationship_Snapshot_INT_";
+	public static final String INT_STATED_RELATIONSHIP_SNAPSHOT_PREFIX = "sct2_StatedRelationship_Snapshot_INT_";
+	public static final String INT_RELATIONSHIP_SNAPSHOT_PREFIX = "sct2_Relationship_Snapshot_INT_";
 	public static final int INTERNATIONAL_NAMESPACE_ID = 0;
 	public static final String SNOMED_ID_REFSET_ID = "900000000000498005";
 	public static final String CTV3_ID_REFSET_ID = "900000000000497000";
 	public static final String BETA_RELEASE_PREFIX = "x";
 	public static final String INTERNATIONAL_CORE_MODULE_ID ="900000000000207008";
 	public static final String INTERNATIONAL_MODEL_COMPONENT_ID ="900000000000012004";
+	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 
 	public enum RelationshipFileType {
 		STATED, INFERRED

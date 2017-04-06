@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -33,7 +34,7 @@ public interface ProductService extends EntityService<Product> {
 	String DEPENDENCY_RELEASE_PACKAGE = "dependencyReleasePackage";
 	String NAMESPACE_ID = "namespaceId";
 	String MODULE_ID = "moduleId";
-
+	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
 	Product find(String releaseCenterKey, String productKey) throws BusinessServiceException;
