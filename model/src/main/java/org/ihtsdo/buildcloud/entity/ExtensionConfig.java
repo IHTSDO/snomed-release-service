@@ -10,6 +10,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Table(name="extension_config")
@@ -31,6 +32,10 @@ public class ExtensionConfig implements Serializable {
 	
 	@Column(name="dependency_release")
 	private String dependencyRelease;
+	
+	@Type(type="yes_no")
+	@Column(name="release_as_edition")
+	private boolean releaseAsAnEdition;
 
 	public String getDependencyRelease() {
 		return dependencyRelease;
@@ -64,5 +69,12 @@ public class ExtensionConfig implements Serializable {
 		this.buildConfiguration = buildConfiguration;
 	}
 	
+	public boolean isReleaseAsAnEdition() {
+		return this.releaseAsAnEdition;
+	}
+	
+	public void setReleaseAsAnEdition(boolean releaseExtensionAsAnEdition) {
+		this.releaseAsAnEdition = releaseExtensionAsAnEdition;
+	}
 
 }

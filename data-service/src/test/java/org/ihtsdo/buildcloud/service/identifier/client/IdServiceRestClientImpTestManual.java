@@ -23,7 +23,6 @@ public class IdServiceRestClientImpTestManual {
 	private static final String userName ="username";
 	private static final String password ="username";
 	
-	
 	@BeforeClass
 	public static void  setUp() throws Exception {
 		client = new IdServiceRestClientImpl(idServiceApiUrl, userName, password);
