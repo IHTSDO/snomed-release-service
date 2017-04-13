@@ -3,10 +3,7 @@ package org.ihtsdo.buildcloud.entity;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -54,17 +51,28 @@ public class BuildConfigurationTest {
 
 		Assert.assertEquals(2, buildConfigurationFromJson.getRefsetCompositeKeys().size());
 		Assert.assertEquals(effectiveTime, buildConfigurationFromJson.getEffectiveTime());
-		Iterator<BuildConfiguration.RefsetCompositeKey> iterator = buildConfigurationFromJson.getRefsetCompositeKeys().iterator();
+		Iterator<BuildConfiguration.RefsetCompositeKey> iterator = getSortedKeys(buildConfigurationFromJson).iterator();
 		BuildConfiguration.RefsetCompositeKey key1 = iterator.next();
-		Assert.assertEquals("200", key1.getRefsetId());
-		Assert.assertEquals("5, 8", key1.getFieldIndexes());
+		Assert.assertEquals("100", key1.getRefsetId());
+		Assert.assertEquals("5, 6", key1.getFieldIndexes());
 		BuildConfiguration.RefsetCompositeKey key2 = iterator.next();
-		Assert.assertEquals("100", key2.getRefsetId());
-		Assert.assertEquals("5, 6", key2.getFieldIndexes());
+		Assert.assertEquals("200", key2.getRefsetId());
+		Assert.assertEquals("5, 8", key2.getFieldIndexes());
 		ExtensionConfig extConfig = buildConfigurationFromJson.getExtensionConfig();
 		Assert.assertNotNull(extConfig);
 		Assert.assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
 		Assert.assertEquals("554471000005108", extConfig.getModuleId());
 		Assert.assertEquals("1000005", extConfig.getNamespaceId());
+	}
+
+	private TreeSet<BuildConfiguration.RefsetCompositeKey> getSortedKeys(BuildConfiguration buildConfigurationFromJson) {
+		TreeSet<BuildConfiguration.RefsetCompositeKey> refsetCompositeKeys1 = new TreeSet<>(new Comparator<BuildConfiguration.RefsetCompositeKey>() {
+			@Override
+			public int compare(BuildConfiguration.RefsetCompositeKey o1, BuildConfiguration.RefsetCompositeKey o2) {
+				return o1.getRefsetId().compareTo(o2.getRefsetId());
+			}
+		});
+		refsetCompositeKeys1.addAll(buildConfigurationFromJson.getRefsetCompositeKeys());
+		return refsetCompositeKeys1;
 	}
 }
