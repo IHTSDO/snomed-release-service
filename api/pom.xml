@@ -177,8 +177,8 @@
 									<signPackage>false</signPackage>
 									<dataSet>
 										<data>
-											<src>${project.build.directory}/api.war</src>
-											<dst>app.jar</dst>
+											<src>${project.build.directory}/${project.artifactId}.${project.packaging}</src>
+											<dst>app.war</dst>
 											<type>file</type>
 											<mapper>
 												<type>perm</type>
