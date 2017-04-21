@@ -14,6 +14,7 @@
 
 	<properties>
 		<packageName>${project.parent.artifactId}-${project.artifactId}</packageName>
+		<webapp-runner.version>8.5.11.3</webapp-runner.version>
 	</properties>
 
 	<dependencies>
@@ -141,7 +142,7 @@
 								<artifactItem>
 									<groupId>com.github.jsimone</groupId>
 									<artifactId>webapp-runner-main</artifactId>
-									<version>8.5.11.3</version>
+									<version>${webapp-runner.version}</version>
 									<destFileName>webapp-runner.jar</destFileName>
 								</artifactItem>
 							</artifactItems>
