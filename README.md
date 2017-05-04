@@ -11,7 +11,7 @@ Build the project using maven:
 
 Start the application using the standalone executable jar which includes an embedded tomcat:
 
-`java -jar api/target/exec-api.jar`
+`java -Xms512m -Xmx4g -jar api/target/dependency/webapp-runner.jar api/target/api.war --path /api --port 8080`
 
 # Development process
 
