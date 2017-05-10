@@ -8,3 +8,5 @@ target
 rebel.xml
 tmp
 activemq-data
+# Whitelist some files
+!.gitattributes
