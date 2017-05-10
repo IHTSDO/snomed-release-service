@@ -166,15 +166,9 @@ public class Rf2FileExportRunner {
 			final AsyncPipedStreamBean deltaFileAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, transformedDeltaDataFile);
 			
-			RF2TableResults deltaResultSet;
 			timer.split();
-			if (fileFirstTimeRelease) {
-				deltaResultSet = rf2TableDAO.selectNone(tableSchema);
-				timer.logTimeTaken("Select none");
-			} else {
-				deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
-				timer.logTimeTaken("Select all ordered");
-			}
+			RF2TableResults deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+			timer.logTimeTaken("Select all ordered");
 			timer.split();
 			rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream());
 			LOGGER.debug("Completed processing delta file for {}, waiting for network", tableSchema.getTableName());
@@ -338,15 +332,6 @@ public class Rf2FileExportRunner {
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export " + fullFilename + " and " + snapshotOutputFilename, e);
 		}
-		//overwrites delta when it is first time release.
-		if (configuration.isFirstTimeRelease()) {
-			results = rf2TableDAO.selectNone(tableSchema);
-			try (AsyncPipedStreamBean deltaOutputStream = buildDao.getOutputFileOutputStream(build, deltaFilename)) {
-				rf2FileWriter.exportDelta(results, tableSchema, deltaOutputStream.getOutputStream());
-			} catch (IOException | SQLException e) {
-				throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
-			} 
-		} 
 	}
 
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
