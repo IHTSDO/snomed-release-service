@@ -49,12 +49,14 @@
 	<!-- File Combine -->
 	<xs:complexType name="fileCombineActionType">
 		<xs:sequence>
-			<xs:element type="folderType" name="fileCombineSource" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="fileType" name="sourceName" maxOccurs="unbounded" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute name="targetName" type="xs:string"/>
 	</xs:complexType>
-
-
-
-
+	<!-- File Suppressed -->
+	<xs:complexType name="fileSuppressedActionType">
+		<xs:sequence>
+			<xs:element type="fileType" name="fileSuppressed" maxOccurs="unbounded" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
 </xs:schema>

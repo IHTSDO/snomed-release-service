@@ -42,6 +42,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link FileSuppressedActionType }
+     * 
+     */
+    public FileSuppressedActionType createFileSuppressedActionType() {
+        return new FileSuppressedActionType();
+    }
+
+    /**
      * Create an instance of {@link FileCombineActionType }
      * 
      */
