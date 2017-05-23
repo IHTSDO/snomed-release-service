@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="fileCombineSource" type="{http://release.ihtsdo.org/manifest/1.0.0}folderType" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="sourceName" type="{http://release.ihtsdo.org/manifest/1.0.0}fileType" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *       &lt;attribute name="targetName" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
@@ -31,41 +31,41 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "fileCombineActionType", propOrder = {
-    "fileCombineSource"
+    "sourceName"
 })
 public class FileCombineActionType {
 
-    protected List<FolderType> fileCombineSource;
+    protected List<FileType> sourceName;
     @XmlAttribute(name = "targetName")
     protected String targetName;
 
     /**
-     * Gets the value of the fileCombineSource property.
+     * Gets the value of the sourceName property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the fileCombineSource property.
+     * This is why there is not a <CODE>set</CODE> method for the sourceName property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getFileCombineSource().add(newItem);
+     *    getSourceName().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link FolderType }
+     * {@link FileType }
      * 
      * 
      */
-    public List<FolderType> getFileCombineSource() {
-        if (fileCombineSource == null) {
-            fileCombineSource = new ArrayList<FolderType>();
+    public List<FileType> getSourceName() {
+        if (sourceName == null) {
+            sourceName = new ArrayList<FileType>();
         }
-        return this.fileCombineSource;
+        return this.sourceName;
     }
 
     /**
