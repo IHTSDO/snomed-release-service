@@ -42,14 +42,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link FileCombineSourceType }
-     * 
-     */
-    public FileCombineSourceType createFileCombineSourceType() {
-        return new FileCombineSourceType();
-    }
-
-    /**
      * Create an instance of {@link FileCombineActionType }
      * 
      */

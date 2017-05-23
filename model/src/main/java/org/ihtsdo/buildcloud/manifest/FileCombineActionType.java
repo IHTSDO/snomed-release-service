@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="fileCombineSourceType" type="{http://release.ihtsdo.org/manifest/1.0.0}fileCombineSourceType" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="fileCombineSource" type="{http://release.ihtsdo.org/manifest/1.0.0}folderType" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *       &lt;attribute name="targetName" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
@@ -31,41 +31,41 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "fileCombineActionType", propOrder = {
-    "fileCombineSourceType"
+    "fileCombineSource"
 })
 public class FileCombineActionType {
 
-    protected List<FileCombineSourceType> fileCombineSourceType;
+    protected List<FolderType> fileCombineSource;
     @XmlAttribute(name = "targetName")
     protected String targetName;
 
     /**
-     * Gets the value of the fileCombineSourceType property.
+     * Gets the value of the fileCombineSource property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the fileCombineSourceType property.
+     * This is why there is not a <CODE>set</CODE> method for the fileCombineSource property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getFileCombineSourceType().add(newItem);
+     *    getFileCombineSource().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link FileCombineSourceType }
+     * {@link FolderType }
      * 
      * 
      */
-    public List<FileCombineSourceType> getFileCombineSourceType() {
-        if (fileCombineSourceType == null) {
-            fileCombineSourceType = new ArrayList<FileCombineSourceType>();
+    public List<FolderType> getFileCombineSource() {
+        if (fileCombineSource == null) {
+            fileCombineSource = new ArrayList<FolderType>();
         }
-        return this.fileCombineSourceType;
+        return this.fileCombineSource;
     }
 
     /**

@@ -1,14 +1,15 @@
-<?xml version='1.0' encoding='utf-8'?> 
+<?xml version='1.0' encoding='utf-8'?>
 
 <xs:schema	targetNamespace="http://release.ihtsdo.org/manifest/1.0.0"
-			xmlns="http://release.ihtsdo.org/manifest/1.0.0"
-			attributeFormDefault="unqualified" 
-			elementFormDefault="qualified" 
-			xmlns:xs="http://www.w3.org/2001/XMLSchema">
+				 xmlns="http://release.ihtsdo.org/manifest/1.0.0"
+				 attributeFormDefault="unqualified"
+				 elementFormDefault="qualified"
+				 xmlns:xs="http://www.w3.org/2001/XMLSchema">
 	<xs:element name="listing" type="listingType"/>
 	<xs:complexType name="listingType">
 		<xs:sequence>
 			<xs:element type="folderType" name="folder"/>
+			<xs:element type="fileActionGroupType" name="fileActions"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="folderType">
@@ -34,9 +35,11 @@
 	<!-- File Split -->
 	<xs:complexType name="fileSplitActionType">
 		<xs:sequence>
-			<xs:element type="fileSplitTargetType" name="ileSplitTarget"/>
+			<xs:element type="fileSplitTargetType" name="fileSplitTarget"/>
 		</xs:sequence>
 		<xs:attribute name="sourceName" type="xs:string"/>
+		<xs:attribute name="removeFromOriginal" type="xs:boolean"/>
+		<xs:attribute name="removeId" type="xs:boolean"/>
 	</xs:complexType>
 	<xs:complexType name="fileSplitTargetType">
 		<xs:attribute name="targetName" type="xs:string"/>
@@ -46,12 +49,9 @@
 	<!-- File Combine -->
 	<xs:complexType name="fileCombineActionType">
 		<xs:sequence>
-			<xs:element type="fileCombineSourceType" name="fileCombineSourceType" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="folderType" name="fileCombineSource" maxOccurs="unbounded" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute name="targetName" type="xs:string"/>
-	</xs:complexType>
-	<xs:complexType name="fileCombineSourceType">
-		<xs:attribute name="sourceName" type="xs:string"/>
 	</xs:complexType>
 
 
