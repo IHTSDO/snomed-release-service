@@ -25,4 +25,36 @@
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
+	<xs:complexType name="fileActionGroupType">
+		<xs:sequence>
+			<xs:element type="fileSplitActionType" name="fileSplitAction" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="fileCombineActionType" name="fileCombineAction" maxOccurs="unbounded" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- File Split -->
+	<xs:complexType name="fileSplitActionType">
+		<xs:sequence>
+			<xs:element type="fileSplitTargetType" name="ileSplitTarget"/>
+		</xs:sequence>
+		<xs:attribute name="sourceName" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="fileSplitTargetType">
+		<xs:attribute name="targetName" type="xs:string"/>
+		<xs:attribute name="column" type="xs:integer"/>
+		<xs:attribute name="matchingValue" type="xs:string"/>
+	</xs:complexType>
+	<!-- File Combine -->
+	<xs:complexType name="fileCombineActionType">
+		<xs:sequence>
+			<xs:element type="fileCombineSourceType" name="fileCombineSourceType" maxOccurs="unbounded" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="targetName" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="fileCombineSourceType">
+		<xs:attribute name="sourceName" type="xs:string"/>
+	</xs:complexType>
+
+
+
+
 </xs:schema>
