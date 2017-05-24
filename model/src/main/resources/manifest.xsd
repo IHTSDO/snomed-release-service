@@ -9,7 +9,6 @@
 	<xs:complexType name="listingType">
 		<xs:sequence>
 			<xs:element type="folderType" name="folder"/>
-			<xs:element type="fileActionGroupType" name="fileActions"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="folderType">
@@ -20,43 +19,47 @@
 		<xs:attribute type="xs:string" name="Name" use="optional"/>
 	</xs:complexType>
 	<xs:complexType name="fileType">
-		<xs:simpleContent>
-			<xs:extension base="xs:string">
-				<xs:attribute type="xs:string" name="Name" use="optional"/>
-			</xs:extension>
-		</xs:simpleContent>
+		<xs:all>
+			<xs:element type="containsReferenceSetsType" name="contains-reference-sets"/>
+			<xs:element type="containsLanguageCodesType" name="contains-language-codes"/>
+			<xs:element type="sourcesType" name="sources"/>
+		</xs:all>
+		<xs:attribute type="xs:string" name="Name" use="optional"/>
 	</xs:complexType>
-	<xs:complexType name="fileActionGroupType">
+	<xs:complexType name="containsReferenceSetsType">
 		<xs:sequence>
-			<xs:element type="fileSplitActionType" name="fileSplitAction" maxOccurs="unbounded" minOccurs="0"/>
-			<xs:element type="fileCombineActionType" name="fileCombineAction" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="refsetType" name="refset" maxOccurs="unbounded" minOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
-	<!-- File Split -->
-	<xs:complexType name="fileSplitActionType">
-		<xs:sequence>
-			<xs:element type="fileSplitTargetType" name="fileSplitTarget"/>
-		</xs:sequence>
-		<xs:attribute name="sourceName" type="xs:string"/>
-		<xs:attribute name="removeFromOriginal" type="xs:boolean"/>
-		<xs:attribute name="removeId" type="xs:boolean"/>
+	<xs:complexType name="refsetType">
+		<xs:attribute name="id" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:integer">
+					<xs:pattern value="[0-9]{6,20}"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="label" type="xs:string"/>
 	</xs:complexType>
-	<xs:complexType name="fileSplitTargetType">
-		<xs:attribute name="targetName" type="xs:string"/>
-		<xs:attribute name="column" type="xs:integer"/>
-		<xs:attribute name="matchingValue" type="xs:string"/>
-	</xs:complexType>
-	<!-- File Combine -->
-	<xs:complexType name="fileCombineActionType">
+	<xs:complexType name="containsLanguageCodesType">
 		<xs:sequence>
-			<xs:element type="fileType" name="sourceName" maxOccurs="unbounded" minOccurs="0"/>
-		</xs:sequence>
-		<xs:attribute name="targetName" type="xs:string"/>
-	</xs:complexType>
-	<!-- File Suppressed -->
-	<xs:complexType name="fileSuppressedActionType">
-		<xs:sequence>
-			<xs:element type="fileType" name="fileSuppressed" maxOccurs="unbounded" minOccurs="0"/>
+			<xs:element type="languageCodeType" name="code" maxOccurs="unbounded" minOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:simpleType name="languageCodeType">
+			<xs:restriction base="xs:string">
+				<xs:pattern value="[a-z]{2}"/>
+			</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="sourcesType">
+		<xs:sequence>
+			<xs:element type="sourceType" name="source" maxOccurs="unbounded" minOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="sourceType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="manual"/>
+			<xs:enumeration value="mapping-tool"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>
