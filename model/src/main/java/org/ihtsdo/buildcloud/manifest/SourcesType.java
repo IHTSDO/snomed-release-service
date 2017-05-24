@@ -6,7 +6,6 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -20,7 +19,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="source" type="{http://release.ihtsdo.org/manifest/1.0.0}sourceType" maxOccurs="unbounded"/>
+ *         &lt;element name="source" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -36,8 +35,7 @@ import javax.xml.bind.annotation.XmlType;
 public class SourcesType {
 
     @XmlElement(required = true)
-    @XmlSchemaType(name = "string")
-    protected List<SourceType> source;
+    protected List<String> source;
 
     /**
      * Gets the value of the source property.
@@ -57,13 +55,13 @@ public class SourcesType {
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link SourceType }
+     * {@link String }
      * 
      * 
      */
-    public List<SourceType> getSource() {
+    public List<String> getSource() {
         if (source == null) {
-            source = new ArrayList<SourceType>();
+            source = new ArrayList<String>();
         }
         return this.source;
     }
