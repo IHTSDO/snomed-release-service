@@ -53,13 +53,7 @@
 	</xs:simpleType>
 	<xs:complexType name="sourcesType">
 		<xs:sequence>
-			<xs:element type="sourceType" name="source" maxOccurs="unbounded" minOccurs="1"/>
+			<xs:element type="xs:string" name="source" maxOccurs="unbounded" minOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:simpleType name="sourceType">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="manual"/>
-			<xs:enumeration value="mapping-tool"/>
-		</xs:restriction>
-	</xs:simpleType>
 </xs:schema>
