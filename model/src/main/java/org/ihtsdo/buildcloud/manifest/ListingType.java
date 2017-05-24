@@ -18,7 +18,6 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="folder" type="{http://release.ihtsdo.org/manifest/1.0.0}folderType"/>
- *         &lt;element name="fileActions" type="{http://release.ihtsdo.org/manifest/1.0.0}fileActionGroupType"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -29,15 +28,12 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "listingType", propOrder = {
-    "folder",
-    "fileActions"
+    "folder"
 })
 public class ListingType {
 
     @XmlElement(required = true)
     protected FolderType folder;
-    @XmlElement(required = true)
-    protected FileActionGroupType fileActions;
 
     /**
      * Gets the value of the folder property.
@@ -61,30 +57,6 @@ public class ListingType {
      */
     public void setFolder(FolderType value) {
         this.folder = value;
-    }
-
-    /**
-     * Gets the value of the fileActions property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link FileActionGroupType }
-     *     
-     */
-    public FileActionGroupType getFileActions() {
-        return fileActions;
-    }
-
-    /**
-     * Sets the value of the fileActions property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link FileActionGroupType }
-     *     
-     */
-    public void setFileActions(FileActionGroupType value) {
-        this.fileActions = value;
     }
 
 }

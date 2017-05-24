@@ -42,43 +42,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link FileSuppressedActionType }
+     * Create an instance of {@link SourcesType }
      * 
      */
-    public FileSuppressedActionType createFileSuppressedActionType() {
-        return new FileSuppressedActionType();
+    public SourcesType createSourcesType() {
+        return new SourcesType();
     }
 
     /**
-     * Create an instance of {@link FileCombineActionType }
+     * Create an instance of {@link RefsetType }
      * 
      */
-    public FileCombineActionType createFileCombineActionType() {
-        return new FileCombineActionType();
+    public RefsetType createRefsetType() {
+        return new RefsetType();
     }
 
     /**
-     * Create an instance of {@link FileSplitTargetType }
+     * Create an instance of {@link ContainsLanguageCodesType }
      * 
      */
-    public FileSplitTargetType createFileSplitTargetType() {
-        return new FileSplitTargetType();
-    }
-
-    /**
-     * Create an instance of {@link FileActionGroupType }
-     * 
-     */
-    public FileActionGroupType createFileActionGroupType() {
-        return new FileActionGroupType();
-    }
-
-    /**
-     * Create an instance of {@link FileSplitActionType }
-     * 
-     */
-    public FileSplitActionType createFileSplitActionType() {
-        return new FileSplitActionType();
+    public ContainsLanguageCodesType createContainsLanguageCodesType() {
+        return new ContainsLanguageCodesType();
     }
 
     /**
@@ -87,6 +71,14 @@ public class ObjectFactory {
      */
     public FolderType createFolderType() {
         return new FolderType();
+    }
+
+    /**
+     * Create an instance of {@link ContainsReferenceSetsType }
+     * 
+     */
+    public ContainsReferenceSetsType createContainsReferenceSetsType() {
+        return new ContainsReferenceSetsType();
     }
 
     /**
