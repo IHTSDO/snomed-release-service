@@ -12,6 +12,7 @@ public class BuildS3PathHelper {
 	private static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String BUILD_FILES = "product-files";
+	private static final String SOURCES_FILES = "sources";
 	private static final String MANIFEST = "manifest";
 	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
@@ -110,6 +111,10 @@ public class BuildS3PathHelper {
 
 	public String getBuildManifestDirectoryPath(final Build build) {
 		return getBuildPath(build).append(MANIFEST).append(SEPARATOR).toString();
+	}
+
+	public String getProductSourcePath(final Product product) {
+		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR).toString();
 	}
 
 }

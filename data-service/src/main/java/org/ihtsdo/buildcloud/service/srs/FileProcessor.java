@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.srs;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.CharEncoding;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -11,11 +12,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.xml.bind.JAXBException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * User: huyle
@@ -57,7 +66,7 @@ public class FileProcessor {
 
 
     private void processFiles(File extractDir, String sourceFileName, String matchingValue, String targetFileName, String fileType) throws IOException {
-        if(sourceFileName.endsWith(FILE_EXTENSION_TXT)) {
+        if(!sourceFileName.equalsIgnoreCase(targetFileName) &&sourceFileName.endsWith(FILE_EXTENSION_TXT)) {
             File sourceFile = new File(extractDir, sourceFileName);
             List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
             if(lines.get(0).equalsIgnoreCase(fileTypesHeaders.get(fileType).getHeader())) {
@@ -79,6 +88,37 @@ public class FileProcessor {
                 FileUtils.writeLines(targetFile, copiedLines, CharEncoding.UTF_8);
             }
         }
+    }
+
+    public void unzip(File archive, File targetDir) throws IOException, ProcessWorkflowException {
+        if (!targetDir.exists() || !targetDir.isDirectory()) {
+            throw new ProcessWorkflowException(targetDir + " is not a viable directory in which to extract archive");
+        }
+        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(archive));
+        ZipEntry entry = zipIn.getNextEntry();
+        // iterates over entries in the zip file
+        while (entry != null) {
+            String filePath = targetDir.getAbsolutePath() + File.separator + entry.getName();
+            if (!entry.isDirectory()) {
+                // if the entry is a file, extracts it
+                extractFile(zipIn, filePath);
+            } else {
+                // if the entry is a directory, make the directory
+                File dir = new File(filePath);
+                dir.mkdir();
+            }
+            zipIn.closeEntry();
+            entry = zipIn.getNextEntry();
+        }
+        zipIn.close();
+
+    }
+
+    private void extractFile(ZipInputStream zis, String filePath) throws IOException {
+        File extractedFile = new File(filePath);
+        OutputStream out = new FileOutputStream(extractedFile);
+        IOUtils.copy(zis, out);
+        IOUtils.closeQuietly(out);
     }
 
 

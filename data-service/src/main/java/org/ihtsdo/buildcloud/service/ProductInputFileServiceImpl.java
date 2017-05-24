@@ -144,4 +144,30 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		return product;
 	}
 
+	@Override
+	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
+		Product product = getProduct(centerKey, productKey);
+
+		String sourceFilesPath = s3PathHelper.getProductSourcePath(product);
+		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
+			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
+			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+				ZipEntry entry;
+				while ((entry = zipInputStream.getNextEntry()) != null) {
+					String fileDestinationPath = sourceFilesPath + FileUtils.getFilenameFromPath(entry.getName());
+					Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+					try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
+						fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), fileDestinationPath);
+					}
+				}
+			} finally {
+				if (!tempFile.toFile().delete()) {
+					LOGGER.warn("Failed to delete temp file {}", tempFile.toFile().getAbsolutePath());
+				}
+			}
+		} else {
+			String fileDestinationPath = sourceFilesPath + filename;
+			fileHelper.putFile(inputStream, fileSize, fileDestinationPath);
+		}
+	}
 }

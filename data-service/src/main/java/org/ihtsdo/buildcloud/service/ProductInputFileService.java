@@ -24,4 +24,6 @@ public interface ProductInputFileService {
 
 	void deleteFilesByPattern(String centerKey, String productKey, String inputFileNamePattern) throws ResourceNotFoundException;
 
+	void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException;
+
 }
