@@ -17,6 +17,9 @@ import javax.xml.bind.annotation.XmlType;
  * &lt;complexType name="refsetType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *       &lt;sequence>
+ *         &lt;element name="sources" type="{http://release.ihtsdo.org/manifest/1.0.0}sourcesType" minOccurs="0"/>
+ *       &lt;/sequence>
  *       &lt;attribute name="id" use="required">
  *         &lt;simpleType>
  *           &lt;restriction base="{http://www.w3.org/2001/XMLSchema}integer">
@@ -33,13 +36,40 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "refsetType")
+@XmlType(name = "refsetType", propOrder = {
+    "sources"
+})
 public class RefsetType {
 
+    protected SourcesType sources;
     @XmlAttribute(name = "id", required = true)
     protected BigInteger id;
     @XmlAttribute(name = "label")
     protected String label;
+
+    /**
+     * Gets the value of the sources property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link SourcesType }
+     *     
+     */
+    public SourcesType getSources() {
+        return sources;
+    }
+
+    /**
+     * Sets the value of the sources property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link SourcesType }
+     *     
+     */
+    public void setSources(SourcesType value) {
+        this.sources = value;
+    }
 
     /**
      * Gets the value of the id property.

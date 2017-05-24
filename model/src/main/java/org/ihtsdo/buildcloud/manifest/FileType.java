@@ -17,11 +17,10 @@ import javax.xml.bind.annotation.XmlType;
  * &lt;complexType name="fileType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;all>
- *         &lt;element name="contains-reference-sets" type="{http://release.ihtsdo.org/manifest/1.0.0}containsReferenceSetsType"/>
- *         &lt;element name="contains-language-codes" type="{http://release.ihtsdo.org/manifest/1.0.0}containsLanguageCodesType"/>
- *         &lt;element name="sources" type="{http://release.ihtsdo.org/manifest/1.0.0}sourcesType"/>
- *       &lt;/all>
+ *       &lt;sequence>
+ *         &lt;element name="contains-reference-sets" type="{http://release.ihtsdo.org/manifest/1.0.0}containsReferenceSetsType" minOccurs="0"/>
+ *         &lt;element name="contains-language-codes" type="{http://release.ihtsdo.org/manifest/1.0.0}containsLanguageCodesType" minOccurs="0"/>
+ *       &lt;/sequence>
  *       &lt;attribute name="Name" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -32,16 +31,15 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "fileType", propOrder = {
-
+    "containsReferenceSets",
+    "containsLanguageCodes"
 })
 public class FileType {
 
-    @XmlElement(name = "contains-reference-sets", required = true)
+    @XmlElement(name = "contains-reference-sets")
     protected ContainsReferenceSetsType containsReferenceSets;
-    @XmlElement(name = "contains-language-codes", required = true)
+    @XmlElement(name = "contains-language-codes")
     protected ContainsLanguageCodesType containsLanguageCodes;
-    @XmlElement(required = true)
-    protected SourcesType sources;
     @XmlAttribute(name = "Name")
     protected String name;
 
@@ -91,30 +89,6 @@ public class FileType {
      */
     public void setContainsLanguageCodes(ContainsLanguageCodesType value) {
         this.containsLanguageCodes = value;
-    }
-
-    /**
-     * Gets the value of the sources property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link SourcesType }
-     *     
-     */
-    public SourcesType getSources() {
-        return sources;
-    }
-
-    /**
-     * Sets the value of the sources property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link SourcesType }
-     *     
-     */
-    public void setSources(SourcesType value) {
-        this.sources = value;
     }
 
     /**
