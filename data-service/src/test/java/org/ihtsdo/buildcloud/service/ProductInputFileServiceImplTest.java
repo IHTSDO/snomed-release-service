@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
@@ -17,7 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,9 +45,12 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     protected ProductDAO productDAO;
     @Autowired
     private ProductInputFileService productInputFileService;
+    @Autowired
+    private ProductInputFileDAO productInputFileDAO;
 
     protected Product product;
     protected File testArchive;
+    protected File testManifest;
     protected Set<String> subDirectories;
 
     private static final String JULY_RELEASE = "20140731";
@@ -50,7 +58,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private static final String SRC_MAPPING_TOOL = "mapping-tools";
     private static final String SRC_TERM_SERVER = "terminology-server";
     private static final String SRC_REFSET_TOOL = "reference-set-tool";
-    private static final String TEST_ARCHIVE_FILE = "test.zip";
+    private static final String TEST_ARCHIVE_FILE = "RF2Release.zip";
+    private static final String TEST_MANIFEST_FILE = "manifest_file_process.xml";
     
 
 
@@ -58,6 +67,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     public void setup() throws Exception {
         String testFile = getClass().getResource("/" + TEST_ARCHIVE_FILE).getFile();
         testArchive = new File(testFile);
+        String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE).getFile();
+        testManifest = new File(testManifestFile);
         SecurityHelper.setUser(TestUtils.TEST_USER);
         product = productDAO.find(1L, TestUtils.TEST_USER);
         if(product.getBuildConfiguration() == null) {
@@ -75,7 +86,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
 
     @After
     public void tearDown() throws ResourceNotFoundException {
-        productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt",subDirectories);
+        //productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt",subDirectories);
     }
 
 
@@ -109,6 +120,13 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         subs.add(SRC_MAPPING_TOOL);
         List<String> fileList = productInputFileService.listSourceFilePathsFromSubDirectories(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), subs);
         Assert.assertEquals(3, fileList.size());
+    }
+
+    @Test
+    public void testPrepareInputFiles() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException {
+        addTestArchiveFileToSourceDirectory(SRC_MANUAL);
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
     }
 
     protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException {
