@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 
 public interface ProductInputFileDAO {
 
@@ -19,5 +20,9 @@ public interface ProductInputFileDAO {
 	void deleteManifest(Product product);
 
 	String getKnownManifestPath(Product product, String filename);
+
+	List<String> listRelativeSourceFilePaths(Product product);
+
+	List<String> listRelativeSourceFilePaths(Product product, Set<String> subDirectories);
 
 }

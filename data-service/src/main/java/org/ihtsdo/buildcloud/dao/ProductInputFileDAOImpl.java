@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.dao;
 
-import java.io.InputStream;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -11,6 +8,11 @@ import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 
@@ -86,4 +88,21 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 		return s3PathHelper.getProductManifestDirectoryPath(product).append(filename).toString();
 	}
 
+	@Override
+	public List<String> listRelativeSourceFilePaths(final Product product) {
+		String sourcesPath = s3PathHelper.getProductSourcesPath(product).toString();
+		return fileHelper.listFiles(sourcesPath);
+	}
+
+	@Override
+	public List<String> listRelativeSourceFilePaths(final Product product, final Set<String> subDirectories) {
+		List<String> filesPath = new ArrayList<>();
+		if(subDirectories != null && !subDirectories.isEmpty()) {
+			for (String subDirectory : subDirectories) {
+				String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
+				filesPath.addAll(fileHelper.listFiles(sourcePath));
+			}
+		}
+		return filesPath;
+	}
 }

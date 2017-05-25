@@ -49,21 +49,6 @@ public class FileProcessor {
         fileTypesHeaders.put(INPUT_FILE_TYPE_DESCRIPTION, new InputFileConfig(INPUT_FILE_TYPE_DESCRIPTION, HEADER_TERM_DESCRIPTION, DESCRIPTION_COL));
     }
 
-    @Autowired
-    SRSFileDAO srsFileDAO;
-
-
-    public File extractAndConvertExportWithRF2FileNameFormat(File archive, File manifestFile, String releaseCenter, String releaseDate) throws ProcessWorkflowException, IOException, JAXBException, ResourceNotFoundException {
-        // We're going to create release files in a temp directory
-        File extractDir = Files.createTempDir();
-        srsFileDAO.unzipFlat(archive, extractDir);
-        logger.debug("Unzipped files to {}", extractDir.getAbsolutePath());
-        
-        
-
-        return extractDir;
-    }
-
 
     private void processFiles(File extractDir, String sourceFileName, String matchingValue, String targetFileName, String fileType) throws IOException {
         if(!sourceFileName.equalsIgnoreCase(targetFileName) &&sourceFileName.endsWith(FILE_EXTENSION_TXT)) {
@@ -89,37 +74,7 @@ public class FileProcessor {
             }
         }
     }
-
-    public void unzip(File archive, File targetDir) throws IOException, ProcessWorkflowException {
-        if (!targetDir.exists() || !targetDir.isDirectory()) {
-            throw new ProcessWorkflowException(targetDir + " is not a viable directory in which to extract archive");
-        }
-        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(archive));
-        ZipEntry entry = zipIn.getNextEntry();
-        // iterates over entries in the zip file
-        while (entry != null) {
-            String filePath = targetDir.getAbsolutePath() + File.separator + entry.getName();
-            if (!entry.isDirectory()) {
-                // if the entry is a file, extracts it
-                extractFile(zipIn, filePath);
-            } else {
-                // if the entry is a directory, make the directory
-                File dir = new File(filePath);
-                dir.mkdir();
-            }
-            zipIn.closeEntry();
-            entry = zipIn.getNextEntry();
-        }
-        zipIn.close();
-
-    }
-
-    private void extractFile(ZipInputStream zis, String filePath) throws IOException {
-        File extractedFile = new File(filePath);
-        OutputStream out = new FileOutputStream(extractedFile);
-        IOUtils.copy(zis, out);
-        IOUtils.closeQuietly(out);
-    }
+    
 
 
 
