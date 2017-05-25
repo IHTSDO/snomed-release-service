@@ -1,7 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -34,5 +38,7 @@ public interface ProductInputFileService {
 	void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException;
 
 	void deleteSourceFilesByPattern(String centerKey, String productKey, String inputFileNamePattern, Set<String> subDirectories) throws ResourceNotFoundException;
+
+	void prepareInputFiles(String centerKey, String productKey) throws ResourceNotFoundException, IOException, JAXBException;
 
 }

@@ -1,0 +1,79 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+   <folder Name="SnomedCT_Release_INT_20140131">
+      <folder Name="RF2Release">
+         <folder Name="Terminology">
+            <file Name="sct2_Concept_Delta_DK_20170731.txt"/>
+            <file Name="sct2_Description_Delta-en_DK_20170731.txt">
+               <contains-language-codes>
+                  <code>en</code>
+               </contains-language-codes>
+            </file>
+            <file Name="sct2_Description_Delta-dk_DK_20170731.txt">
+               <contains-language-codes>
+                  <code>dk</code>
+               </contains-language-codes>
+            </file>
+            <file Name="sct2_StatedRelationship_Delta_DK_20170731.txt"/>
+            <file Name="sct2_Relationship_Delta_DK_20170731.txt"/>
+            <file Name="sct2_Identifier_Delta_DK_20170731.txt"/>
+            <file Name="sct2_TextDefinition_Delta-en_DK_20170731.txt"/>
+         </folder>
+         <folder Name="Full">
+            <folder Name="Refset">
+               <folder Name="Content">
+                  <file Name="der2_cRefset_AssociationReferenceDelta_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+                        <refset id="900000000000524003" label="MOVED TO"/>
+                        <refset id="900000000000525002" label="MOVED FROM"/>
+                        <refset id="900000000000526001" label="REPLACED BY"/>
+                        <refset id="900000000000527005" label="SAME AS"/>
+                        <refset id="900000000000528000" label="WAS A"/>
+                        <refset id="900000000000530003" label="ALTERNATIVE"/>
+                        <refset id="900000000000531004" label="REFERS TO"/>
+                     </contains-reference-sets>
+                  </file>
+                  <file Name="der2_cRefset_AttributeValueDelta_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="900000000000489007" label="Concept inactivation indicator"/>
+                        <refset id="900000000000490003" label="Description inactivation indicator"/>
+                     </contains-reference-sets>
+                  </file>
+                  <file Name="der2_Refset_SimpleDelta_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="723264001" label="Lateralizable body structure"/>
+                     </contains-reference-sets>
+                  </file>
+               </folder>
+               <folder Name="Map">
+                  <file Name="der2_sRefset_SimpleMapDelta_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="446608001" label="ICD-O simple map"/>
+                        <refset id="900000000000497000" label="CTV3 simple map"/>
+                     </contains-reference-sets>
+                  </file>
+                  <file Name="der2_iisssccRefset_ExtendedMapDelta_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="447562003" label="ICD-10 complex map">
+                           <sources>
+                              <source>manual</source>
+                              <source>mapping-tool</source>
+                           </sources>
+                        </refset>
+                     </contains-reference-sets>
+                  </file>
+               </folder>
+               <folder Name="Language">
+                  <file Name="der2_cRefset_LanguageDelta-en_INT_20170731.txt">
+                     <contains-reference-sets>
+                        <refset id="900000000000508004" label="Great Britain English language reference set"/>
+                        <refset id="900000000000509007"
+                                label="United States of America English language reference set"/>
+                     </contains-reference-sets>
+                  </file>
+               </folder>
+            </folder>
+         </folder>
+      </folder>
+   </folder>
+</listing>

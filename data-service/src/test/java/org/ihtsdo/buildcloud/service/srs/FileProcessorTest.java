@@ -26,12 +26,8 @@ public class FileProcessorTest {
         if (!testArchive.exists()) {
             throw new Exception("Unable to load test resource: " + TEST_ARCHIVE);
         }
-        fileProcessor = new FileProcessor();
     }
 
-    @Test
-    public void testUnzip() {
-        
-    }
+ 
 
 }

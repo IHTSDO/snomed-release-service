@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.srs.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -17,7 +18,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -165,6 +170,14 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void prepareInputFiles(String centerKey, String productKey) throws ResourceNotFoundException, IOException, JAXBException {
+		Product product = getProduct(centerKey, productKey);
+		InputStream manifestStream = dao.getManifestStream(product);
+		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product);
+		fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
 	}
 
 	private InputStream getFileInputStream(final Product product, final String filename) {
