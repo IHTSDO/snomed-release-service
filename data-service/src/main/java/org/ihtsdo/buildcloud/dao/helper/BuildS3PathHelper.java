@@ -113,8 +113,12 @@ public class BuildS3PathHelper {
 		return getBuildPath(build).append(MANIFEST).append(SEPARATOR).toString();
 	}
 
-	public String getProductSourcePath(final Product product) {
-		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR).toString();
+	public StringBuilder getProductSourcesPath(final Product product) {
+		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
+	}
+
+	public StringBuilder getProductSourceSubDirectoryPath(final Product product, final String sourceName) {
+		return getProductSourcesPath(product).append(sourceName).append(SEPARATOR);
 	}
 
 }

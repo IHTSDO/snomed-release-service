@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
@@ -23,7 +24,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -75,28 +78,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public void putInputFile(String centerKey, final String productKey, final InputStream inputStream, final String filename, final long fileSize) throws ResourceNotFoundException, IOException {
 		Product product = getProduct(centerKey, productKey);
-
 		String productInputFilesPath = s3PathHelper.getProductInputFilesPath(product);
-		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
-			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
-				ZipEntry entry;
-				while ((entry = zipInputStream.getNextEntry()) != null) {
-					String fileDestinationPath = productInputFilesPath + FileUtils.getFilenameFromPath(entry.getName());
-					Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-					try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
-						fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), fileDestinationPath);
-					}
-				}
-			} finally {
-				if (!tempFile.toFile().delete()) {
-					LOGGER.warn("Failed to delete temp file {}", tempFile.toFile().getAbsolutePath());
-				}
-			}
-		} else {
-			String fileDestinationPath = productInputFilesPath + filename;
-			fileHelper.putFile(inputStream, fileSize, fileDestinationPath);
-		}
+		putFile(filename, inputStream, productInputFilesPath, fileSize);
+
 	}
 
 	@Override
@@ -132,6 +116,57 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		}
 	}
 
+	@Override
+	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
+		Product product = getProduct(centerKey, productKey);
+		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
+		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
+		putFile(filename, inputStream, sourceFilesPath, fileSize);
+
+	}
+
+	@Override
+	public List<String> listSourceFilePaths(String centerKey, String productKey) throws ResourceNotFoundException {
+		Product product = getProduct(centerKey, productKey);
+		return dao.listRelativeSourceFilePaths(product);
+	}
+
+	@Override
+	public List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, Set<String> subDirectories) throws ResourceNotFoundException {
+		Product product = getProduct(centerKey, productKey);
+		return dao.listRelativeSourceFilePaths(product, subDirectories);
+	}
+
+	@Override
+	public void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException {
+		Product product = getProduct(centerKey, productKey);
+		String filePath;
+		if(StringUtils.isBlank(subDirectory)) {
+			filePath = s3PathHelper.getProductSourcesPath(product) + fileName;
+		} else {
+			filePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).append(fileName).toString();
+		}
+		fileHelper.deleteFile(filePath);
+	}
+
+	@Override
+	public void deleteSourceFilesByPattern(String centerKey, String productKey, String inputFileNamePattern, Set<String> subDirectories) throws ResourceNotFoundException {
+		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
+		Pattern pattern = Pattern.compile(regexPattern);
+		if (subDirectories != null && !subDirectories.isEmpty()) {
+			for (String subDirectory : subDirectories) {
+				Set<String> subs = new HashSet<>();
+				subs.add(subDirectory);
+				List<String> filesFound = listSourceFilePathsFromSubDirectories(centerKey, productKey, subs);
+				for (String inputFileName : filesFound) {
+					if (pattern.matcher(inputFileName).matches()) {
+						deleteSourceFile(centerKey, productKey, inputFileName, subDirectory);
+					}
+				}
+			}
+		}
+	}
+
 	private InputStream getFileInputStream(final Product product, final String filename) {
 		return fileHelper.getFileStream(s3PathHelper.getProductInputFilesPath(product) + filename);
 	}
@@ -144,17 +179,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		return product;
 	}
 
-	@Override
-	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
-		Product product = getProduct(centerKey, productKey);
-
-		String sourceFilesPath = s3PathHelper.getProductSourcePath(product);
+	private void putFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException {
 		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
 			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
 			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
 				ZipEntry entry;
 				while ((entry = zipInputStream.getNextEntry()) != null) {
-					String fileDestinationPath = sourceFilesPath + FileUtils.getFilenameFromPath(entry.getName());
+					String fileDestinationPath = filePath + FileUtils.getFilenameFromPath(entry.getName());
 					Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
 						fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), fileDestinationPath);
@@ -166,8 +197,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				}
 			}
 		} else {
-			String fileDestinationPath = sourceFilesPath + filename;
+			String fileDestinationPath = filePath + filename;
 			fileHelper.putFile(inputStream, fileSize, fileDestinationPath);
 		}
 	}
+
 }
