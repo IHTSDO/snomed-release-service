@@ -23,7 +23,11 @@
                <folder Name="Content">
                   <file Name="der2_cRefset_AssociationReferenceDelta_INT_20170731.txt">
                      <contains-reference-sets>
-                        <refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+                        <refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO">
+                           <sources>
+                              <source>reference-set-tool</source>
+                           </sources>
+                        </refset>
                         <refset id="900000000000524003" label="MOVED TO"/>
                         <refset id="900000000000525002" label="MOVED FROM"/>
                         <refset id="900000000000526001" label="REPLACED BY"/>
