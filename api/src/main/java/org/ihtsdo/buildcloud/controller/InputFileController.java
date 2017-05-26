@@ -209,7 +209,7 @@ public class InputFileController {
 			notes = "Deletes the files with specified pattern in specified sources, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFileByPattern(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-															@PathVariable final Set<String> sources, @RequestParam final String pattern) throws IOException, ResourceNotFoundException {
+															@RequestParam final Set<String> sources, @RequestParam final String pattern) throws IOException, ResourceNotFoundException {
 		productInputFileService.deleteSourceFilesByPattern(releaseCenterKey, productKey, pattern, sources);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
