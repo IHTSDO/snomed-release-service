@@ -1,6 +1,7 @@
-package org.ihtsdo.buildcloud.service.srs;
+package org.ihtsdo.buildcloud.service.fileprocessing;
 
 import com.google.common.io.Files;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -23,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,12 +46,15 @@ public class FileProcessor {
     private BuildS3PathHelper buildS3PathHelper;
     private Product product;
     private File localDir;
+    private File outDir;
     private boolean foundTextDefinitionFile = false;
+    private boolean copyFilesDefinedInManifest = true;
 
     private Set<String> availableSources;
     private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
     private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
+    private Map<String, String> filesToCopy;
 
     private Map<String, List<String>> sourceFilesMap;
 
@@ -67,7 +72,7 @@ public class FileProcessor {
     private static final int DESCRIPTION_TYPE_COL = 6;
     private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
 
-    public FileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper, Product product) {
+    public FileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper, Product product, boolean copyFilesDefinedInManifest) {
         this.manifestStream = manifestStream;
         this.fileHelper = fileHelper;
         this.buildS3PathHelper = buildS3PathHelper;
@@ -77,22 +82,37 @@ public class FileProcessor {
         this.descriptionFileProcessingConfigs = new HashMap<>();
         this.textDefinitionFileProcessingConfigs = new HashMap<>();
         this.availableSources = new HashSet<>();
+        this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
+        if(copyFilesDefinedInManifest) {
+            this.filesToCopy = new HashMap<>();
+        }
     }
 
-    public void processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException {
+    public void processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
         try {
+            initLocalDirs();
             copySourceFilesToLocal(sourceFileLists);
             loadFileProcessConfigsFromManifest();
             processFiles();
+            if(this.copyFilesDefinedInManifest) {
+                copyFilesToOutputDir();
+                uploadOutFilesToProductInputFiles();
+            }
         } finally {
-            if (!FileUtils.deleteQuietly(localDir)) {
+           if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
             }
         }
     }
 
-    private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
+    private void initLocalDirs() {
         localDir = Files.createTempDir();
+        outDir = new File(localDir, OUT_DIR);
+        outDir.mkdir();
+    }
+
+    private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
+
         for (String sourceFilePath : sourceFileLists) {
             if (FilenameUtils.getExtension(sourceFilePath).equalsIgnoreCase(FILE_EXTENSION_TXT)) {
                 //Copy files from S3 to local for processing
@@ -123,14 +143,12 @@ public class FileProcessor {
         loadProcessConfig(listingType);
     }
 
-    private List<String> loadProcessConfig(ListingType listingType) {
+    private void loadProcessConfig(ListingType listingType) {
         FolderType rootFolder = listingType.getFolder();
-        List<String> result = new ArrayList<>();
-        getFilesFromCurrentAndSubFolders(rootFolder, result);
-        return result;
+        getFilesFromCurrentAndSubFolders(rootFolder);
     }
 
-    private void getFilesFromCurrentAndSubFolders(FolderType folder, List<String> filesList) {
+    private void getFilesFromCurrentAndSubFolders(FolderType folder) {
         if (folder != null) {
             if (folder.getFile() != null) {
                 for (FileType fileType : folder.getFile()) {
@@ -194,14 +212,17 @@ public class FileProcessor {
                             fileProcessingConfig = descriptionFileProcessingConfigs.get(languageCode);
                             fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
                         }
-
+                    } else {
+                        if(this.copyFilesDefinedInManifest) {
+                            this.filesToCopy.put(fileType.getName(), fileType.getName());
+                        }
                     }
-                    filesList.add(fileType.getName());
+
                 }
             }
             if (folder.getFolder() != null) {
                 for (FolderType subFolder : folder.getFolder()) {
-                    getFilesFromCurrentAndSubFolders(subFolder, filesList);
+                    getFilesFromCurrentAndSubFolders(subFolder);
                 }
             }
         }
@@ -215,8 +236,6 @@ public class FileProcessor {
                 File sourceFile = new File(fileName);
                 List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
                 if (lines != null && !lines.isEmpty()) {
-                    File outDir = new File(localDir, OUT_DIR);
-                    if (!outDir.exists()) outDir.mkdirs();
                     String header = lines.get(0);
                     //remove header before processing
                     lines.remove(0);
@@ -224,7 +243,7 @@ public class FileProcessor {
                         processFile(lines, source, outDir, header, REFSETID_COL, refsetFileProcessingConfigs);
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
                         if (foundTextDefinitionFile) {
-                            processDescriptionAndTextDefinition(lines, source, outDir, header);
+                            processDescriptionsAndTextDefinitions(lines, source, outDir, header);
                         } else {
                             processFile(lines, source, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
@@ -250,26 +269,10 @@ public class FileProcessor {
         for (String comparisonValue : rows.keySet()) {
             FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
             writeToFile(outDir, header, sourceName, rows.get(comparisonValue), fileProcessingConfig);
-            /*if (fileProcessingConfig != null) {
-                Set<String> outFileList = fileProcessingConfig.getTargetFiles().get(sourceName);
-                if (outFileList != null) {
-                    for (String outFileName : outFileList) {
-                        File outFile = new File(outDir, outFileName);
-                        if (!outFile.exists()) {
-                            outFile.createNewFile();
-                            List<String> headers = new ArrayList<>();
-                            headers.add(header);
-                            FileUtils.writeLines(outFile, headers);
-                        }
-                        FileUtils.writeLines(outFile, rows.get(comparisonValue), true);
-                        logger.info("Copied {} lines with key value = {} to {}", rows.get(comparisonValue).size(), comparisonValue, outFile.getAbsolutePath());
-                    }
-                }
-            }*/
         }
     }
 
-    private void processDescriptionAndTextDefinition(List<String> lines, String sourceName, File outDir, String header) throws IOException {
+    private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
         textDefinitionRows.put(TEXT_DEFINITION_ALL_LANGUAGE_CODE, new ArrayList<String>());
@@ -278,7 +281,7 @@ public class FileProcessor {
             String[] splits = line.split("\t");
             String comparisonValue = splits[DESCRIPTION_LANGUAGE_CODE_COL];
             String descriptionTypeValue = splits[DESCRIPTION_TYPE_COL];
-            if (descriptionTypeValue.equals(TEXT_DEFINITION_TYPE_ID)) {
+            if (TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
                 if (!textDefinitionRows.containsKey(comparisonValue)) {
                     textDefinitionRows.put(comparisonValue, new ArrayList<String>());
                 }
@@ -297,15 +300,15 @@ public class FileProcessor {
             writeToFile(outDir, header, sourceName, descriptionRows.get(comparisonValue), fileProcessingConfig);
         }
         FileProcessingConfig allLanguagesConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-        //writeToFile(outDir, header, sourceName, textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE), allLanguagesConfig);
+        writeToFile(outDir, header, sourceName, textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE), allLanguagesConfig);
         for (String comparisonValue : textDefinitionRows.keySet()) {
-            FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
+            FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
             writeToFile(outDir, header, sourceName, textDefinitionRows.get(comparisonValue), fileProcessingConfig);
         }
     }
 
     private void writeToFile(File outDir, String header, String sourceName, List<String> lines, FileProcessingConfig fileProcessingConfig) throws IOException {
-        if (fileProcessingConfig != null) {
+        if (fileProcessingConfig != null && lines != null && !lines.isEmpty()) {
             Set<String> outFileList = fileProcessingConfig.getTargetFiles().get(sourceName);
             if (outFileList != null) {
                 for (String outFileName : outFileList) {
@@ -320,6 +323,51 @@ public class FileProcessor {
                     logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
                 }
             }
+        }
+    }
+
+    private void copyFilesToOutputDir() throws IOException {
+        Map<String, Integer> fileCountMap = new HashMap<>();
+        for (String source : sourceFilesMap.keySet()) {
+            List<String> sourceFiles = sourceFilesMap.get(source);
+            for (String sourceFilePath : sourceFiles) {
+                String sourceFileName = FilenameUtils.getName(sourceFilePath);
+                String file = filesToCopy.get(sourceFileName);
+                if(file != null) {
+                    if(!fileCountMap.containsKey(file)) {
+                        fileCountMap.put(file, 0);
+                    }
+                    fileCountMap.put(file, fileCountMap.get(file) + 1);
+                }
+            }
+        }
+        for (String source : sourceFilesMap.keySet()) {
+            List<String> sourceFiles = sourceFilesMap.get(source);
+            for (String sourceFilePath : sourceFiles) {
+                String sourceFileName = FilenameUtils.getName(sourceFilePath);
+                Integer fileCount = fileCountMap.get(sourceFileName);
+                if(fileCount != null) {
+                    if(fileCount > 1) {
+                        logger.warn("Found file with name {} in multiple sources. Skip copying file to output directory", sourceFileName);
+                    } else if(fileCount <=0){
+                        logger.warn("Could not find file with name {} in any source. Skip copying file to output directory", sourceFileName);
+                    } else {
+                        File inFile = new File(sourceFilePath);
+                        File outFile = new File(outDir, sourceFileName);
+                        FileUtils.copyFile(inFile, outFile);
+                        logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+                    }
+                }
+            }
+        }
+    }
+
+    private void uploadOutFilesToProductInputFiles() throws NoSuchAlgorithmException, IOException, DecoderException {
+        File[] files = outDir.listFiles();
+        for (File file : files) {
+            String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + file.getName();
+            fileHelper.putFile(file,filePath);
+            logger.info("Uploaded {} to product input files path", file.getName());
         }
     }
 

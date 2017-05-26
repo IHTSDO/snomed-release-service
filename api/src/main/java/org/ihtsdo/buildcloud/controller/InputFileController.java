@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -18,15 +19,18 @@ import com.wordnik.swagger.annotations.ApiOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBException;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
@@ -157,5 +161,68 @@ public class InputFileController {
 		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
+
+	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.POST)
+	@ApiOperation( value = "Store or Replace a file in specified source",
+			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL" )
+	@ResponseBody
+	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
+													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+		String inputFileName = file.getOriginalFilename();
+		LOGGER.debug("uploading source file:" + inputFileName);
+		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
+			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+		}
+		productInputFileService.putSourceFile(source, releaseCenterKey, productKey, file.getInputStream(),inputFileName,file.getSize());
+		return new ResponseEntity<>(HttpStatus.CREATED);
+	}
+
+	@RequestMapping(value = "/sourcefiles", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a list of file names in source directories",
+			notes = "Returns a list of file names for the package specified in the URL" )
+	@ResponseBody
+	public List<Map<String, Object>> listSourceFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+													final HttpServletRequest request) throws ResourceNotFoundException {
+		List<String> filePaths = productInputFileService.listSourceFilePaths(releaseCenterKey, productKey);
+		List<Map<String, String>> files = new ArrayList<>();
+		for (String filePath : filePaths) {
+			Map<String, String> file = new HashMap<>();
+			file.put(ControllerConstants.ID, filePath);
+			files.add(file);
+		}
+		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
+	}
+
+
+	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.DELETE)
+	@ApiOperation( value = "Returns a specified file",
+			notes = "Deletes the specified file, if found. "
+					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
+	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+												  @PathVariable final String source, @RequestParam final String fileName) throws IOException, ResourceNotFoundException {
+		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, fileName, source);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
+
+	@RequestMapping(value = "/sourcefiles", method = RequestMethod.DELETE)
+	@ApiOperation( value = "Returns a specified file",
+			notes = "Deletes the files with specified pattern in specified sources, if found. "
+					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
+	public ResponseEntity<Object> deleteSourceFileByPattern(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+															@PathVariable final Set<String> sources, @RequestParam final String pattern) throws IOException, ResourceNotFoundException {
+		productInputFileService.deleteSourceFilesByPattern(releaseCenterKey, productKey, pattern, sources);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
+
+	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
+	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
+			notes = "Create or replace files in input file directories, also copy files (if exists) specified in Manifest from source directories to input file directory if copiedFileDefinedInManifest is true" )
+	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+												   @RequestParam Boolean copiedFileDefinedInManifest) throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
+		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copiedFileDefinedInManifest);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
+
+	
 
 }

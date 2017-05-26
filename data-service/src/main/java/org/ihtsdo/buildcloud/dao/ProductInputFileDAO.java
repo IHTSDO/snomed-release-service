@@ -25,4 +25,6 @@ public interface ProductInputFileDAO {
 
 	List<String> listRelativeSourceFilePaths(Product product, Set<String> subDirectories);
 
+	List<String> listRelativeSourceFilePaths(Product product, String subDirectory);
+
 }
