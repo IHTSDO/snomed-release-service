@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
@@ -7,7 +8,7 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.srs.FileProcessor;
+import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -18,17 +19,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -143,6 +142,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
+	public List<String> listSourceFilePathsFromSubDirectory(String centerKey, String productKey, String subDirectory) throws ResourceNotFoundException {
+		Product product = getProduct(centerKey, productKey);
+		return dao.listRelativeSourceFilePaths(product, subDirectory);
+	}
+
+	@Override
 	public void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
 		String filePath;
@@ -160,9 +165,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Pattern pattern = Pattern.compile(regexPattern);
 		if (subDirectories != null && !subDirectories.isEmpty()) {
 			for (String subDirectory : subDirectories) {
-				Set<String> subs = new HashSet<>();
-				subs.add(subDirectory);
-				List<String> filesFound = listSourceFilePathsFromSubDirectories(centerKey, productKey, subs);
+				List<String> filesFound = listSourceFilePathsFromSubDirectory(centerKey, productKey, subDirectory);
 				for (String inputFileName : filesFound) {
 					if (pattern.matcher(inputFileName).matches()) {
 						deleteSourceFile(centerKey, productKey, inputFileName, subDirectory);
@@ -173,10 +176,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public void prepareInputFiles(String centerKey, String productKey) throws ResourceNotFoundException, IOException, JAXBException {
+	public void prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
-		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product);
+		if(manifestStream == null) {
+			throw new ResourceNotFoundException("Unable to find manifest file for product key " + productKey + " and center key "+ centerKey);
+		}
+		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
 		fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
 	}
 

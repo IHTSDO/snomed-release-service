@@ -105,4 +105,12 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 		}
 		return filesPath;
 	}
+
+	@Override
+	public List<String> listRelativeSourceFilePaths(Product product, String subDirectory) {
+		List<String> filesPath = new ArrayList<>();
+		String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
+		filesPath.addAll(fileHelper.listFiles(sourcePath));
+		return filesPath;
+	}
 }
