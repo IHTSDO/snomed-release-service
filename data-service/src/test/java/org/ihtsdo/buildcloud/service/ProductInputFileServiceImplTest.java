@@ -1,8 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
@@ -55,7 +53,6 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
 
     protected Product product;
     protected File testArchive;
-    protected File testManifest;
     protected Set<String> subDirectories;
 
     private static final String JULY_RELEASE = "20140731";
@@ -63,16 +60,15 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private static final String SRC_MAPPING_TOOL = "mapping-tools";
     private static final String SRC_TERM_SERVER = "terminology-server";
     private static final String SRC_REFSET_TOOL = "reference-set-tool";
-    private static final String TEST_ARCHIVE_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/file_processing_1.zip";
-    private static final String TEST_MANIFEST_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest.xml";
+    private static final String TEST_ARCHIVE_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/file_processing.zip";
+    private static final String TEST_MANIFEST_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_all_sources.xml";
+    private static final String TEST_MANIFEST_FILE_RESTRICTED = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_restricted_sources.xml";
 
 
     @Before
     public void setup() throws Exception {
         String testFile = getClass().getResource("/" + TEST_ARCHIVE_FILE).getFile();
         testArchive = new File(testFile);
-        String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE).getFile();
-        testManifest = new File(testManifestFile);
         SecurityHelper.setUser(TestUtils.TEST_USER);
         product = productDAO.find(1L, TestUtils.TEST_USER);
         if(product.getBuildConfiguration() == null) {
@@ -88,7 +84,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         subDirectories.add(SRC_REFSET_TOOL);
     }
 
-    //@After
+    @After
     public void tearDown() throws ResourceNotFoundException {
         productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt", null);
     }
@@ -127,29 +123,56 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFiles() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesInAllSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+        String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE).getFile();
+        File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_MANUAL);
+        addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
-        doAssertionForFileProcessing();
+        doAssertionForFileProcessingInAllSources();
+    }
+
+    @Test
+    public void testPrepareInputFilesInRestrictedSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+        String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE_RESTRICTED).getFile();
+        File testManifest = new File(testManifestFile);
+        addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
+        addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
+        doAssertionForFileProcessingInRestrictedSources();
     }
 
 
-    private void doAssertionForFileProcessing() throws ResourceNotFoundException, IOException {
-        List<String> inputFiles = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
-        Assert.assertEquals(4, inputFiles.size());
+    private void doAssertionForFileProcessingInAllSources() throws ResourceNotFoundException, IOException {
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(9, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(17, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(5, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
+    }
+
+    private void doAssertionForFileProcessingInRestrictedSources() throws ResourceNotFoundException, IOException {
+        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20180731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(9, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20180731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20180731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20180731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
     }
 
     protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException {
@@ -165,6 +188,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         InputStream inputStream = new FileInputStream(testArchive);
         productInputFileService.putSourceFile(sourceName, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, TEST_ARCHIVE_FILE, 0L);
     }
+
 
 
 
