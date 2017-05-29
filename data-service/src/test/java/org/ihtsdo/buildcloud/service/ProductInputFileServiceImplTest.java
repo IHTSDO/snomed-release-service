@@ -88,20 +88,20 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         subDirectories.add(SRC_REFSET_TOOL);
     }
 
-    //@After
+    @After
     public void tearDown() throws ResourceNotFoundException {
-        productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt",subDirectories);
+        productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt", null);
     }
 
 
-    //@Test
+    @Test
     public void testPutSourceFile() throws IOException, ResourceNotFoundException {
         addTestArchiveFileToSourceDirectory(SRC_MANUAL);
         List<String> fileList = productInputFileService.listSourceFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         Assert.assertTrue(fileList.size() > 0);
     }
 
-    //@Test
+    @Test
     public void listSourceFilePaths() throws ResourceNotFoundException, IOException {
         addEmptyFileToSourceDirectory(SRC_MANUAL, "test1.txt");
         addEmptyFileToSourceDirectory(SRC_MANUAL, "test2.txt");
@@ -112,7 +112,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         Assert.assertEquals(5, fileList.size());
     }
 
-    //@Test
+    @Test
     public void listSourceFilePathsInSubDirectories() throws ResourceNotFoundException, IOException {
         addEmptyFileToSourceDirectory(SRC_MANUAL, "test1.txt");
         addEmptyFileToSourceDirectory(SRC_MANUAL, "test2.txt");
@@ -130,29 +130,23 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     public void testPrepareInputFiles() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
         addTestArchiveFileToSourceDirectory(SRC_MANUAL);
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
-        productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
+        productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
         doAssertionForFileProcessing();
     }
 
 
     private void doAssertionForFileProcessing() throws ResourceNotFoundException, IOException {
         List<String> inputFiles = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
-        Assert.assertEquals(6, inputFiles.size());
+        Assert.assertEquals(4, inputFiles.size());
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "der2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Concept_Delta_DK_20170731.txt");
-        Assert.assertNotNull(inputStream);
-        Assert.assertEquals(1, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Description_Delta-dk_DK_20170731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Description_Delta-en_DK_20170731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(11, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Relationship_Delta_DK_20170731.txt");
-        Assert.assertNotNull(inputStream);
-        Assert.assertEquals(1, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_TextDefinition_Delta-en_DK_20170731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(7, IOUtils.readLines(inputStream).size());

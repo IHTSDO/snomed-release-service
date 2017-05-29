@@ -216,10 +216,9 @@ public class InputFileController {
 
 	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
-			notes = "Create or replace files in input file directories, also copy files (if exists) specified in Manifest from source directories to input file directory if copiedFileDefinedInManifest is true" )
-	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												   @RequestParam Boolean copiedFileDefinedInManifest) throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
-		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copiedFileDefinedInManifest);
+			notes = "Create or replace files in input file directories. Return warnings or errors if there are any")
+	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
+		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, false);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 

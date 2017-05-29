@@ -1,17 +1,21 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
@@ -21,11 +25,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
@@ -152,11 +160,23 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		String filePath;
 		if(StringUtils.isBlank(subDirectory)) {
-			filePath = s3PathHelper.getProductSourcesPath(product) + fileName;
+			List<String> paths = listSourceFilePaths(centerKey, productKey);
+			for (String path : paths) {
+				if(FilenameUtils.getName(path).equals(fileName)) {
+					filePath = s3PathHelper.getProductSourcesPath(product).append(path).toString();
+					fileHelper.deleteFile(filePath);
+					LOGGER.info("Deleted {} from source directory", filePath);
+				}
+			}
 		} else {
 			filePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).append(fileName).toString();
+			if(fileHelper.exists(filePath)) {
+				fileHelper.deleteFile(filePath);
+			} else {
+				LOGGER.warn("Could not find {} to delete", filePath);
+			}
 		}
-		fileHelper.deleteFile(filePath);
+
 	}
 
 	@Override
@@ -172,18 +192,28 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 					}
 				}
 			}
+		} else {
+			List<String> paths = listSourceFilePaths(centerKey, productKey);
+			Product product = getProduct(centerKey, productKey);
+			for (String path : paths) {
+				if(pattern.matcher(FilenameUtils.getName(path)).matches()) {
+					String filePath = s3PathHelper.getProductSourcesPath(product).append(path).toString();
+					fileHelper.deleteFile(filePath);
+					LOGGER.info("Deleted {} from source directory", filePath);
+				}
+			}
 		}
 	}
 
 	@Override
-	public void prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
+	public FileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
 		if(manifestStream == null) {
 			throw new ResourceNotFoundException("Unable to find manifest file for product key " + productKey + " and center key "+ centerKey);
 		}
 		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
-		fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
+		return fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
 	}
 
 	private InputStream getFileInputStream(final Product product, final String filename) {

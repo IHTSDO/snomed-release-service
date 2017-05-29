@@ -48,15 +48,15 @@ public class FileProcessor {
     private File localDir;
     private File outDir;
     private boolean foundTextDefinitionFile = false;
-    private boolean copyFilesDefinedInManifest = true;
+    private boolean copyFilesDefinedInManifest = false;
 
     private Set<String> availableSources;
     private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
     private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
     private Map<String, String> filesToCopy;
-
     private Map<String, List<String>> sourceFilesMap;
+    private FileProcessingReport fileProcessingReport;
 
     private static final String FILE_EXTENSION_TXT = "txt";
     private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
@@ -67,7 +67,6 @@ public class FileProcessor {
     private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description";
     private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
     private static final String OUT_DIR = "out";
-    private static final String TEXT_DEFINITON = "TextDefinition";
     private static final String TEXT_DEFINITION_ALL_LANGUAGE_CODE = "*";
     private static final int DESCRIPTION_TYPE_COL = 6;
     private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
@@ -83,21 +82,24 @@ public class FileProcessor {
         this.textDefinitionFileProcessingConfigs = new HashMap<>();
         this.availableSources = new HashSet<>();
         this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
+        this.fileProcessingReport = new FileProcessingReport();
         if(copyFilesDefinedInManifest) {
             this.filesToCopy = new HashMap<>();
         }
     }
 
-    public void processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
+    public FileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
         try {
             initLocalDirs();
             copySourceFilesToLocal(sourceFileLists);
             loadFileProcessConfigsFromManifest();
             processFiles();
-            if(this.copyFilesDefinedInManifest) {
+            /*if(this.copyFilesDefinedInManifest) {
                 copyFilesToOutputDir();
-                uploadOutFilesToProductInputFiles();
-            }
+            }*/
+            uploadOutFilesToProductInputFiles();
+            return fileProcessingReport;
+
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
@@ -124,9 +126,7 @@ public class FileProcessor {
                 if (!sourceDir.exists()) sourceDir.mkdir();
                 String fileName = FilenameUtils.getName(sourceFilePath);
                 File outFile = new File(localDir + "/" + sourceName, fileName);
-                OutputStream outputStream = new FileOutputStream(outFile);
-                IOUtils.copy(sourceFileStream, outputStream);
-                IOUtils.closeQuietly(outputStream);
+                FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
                 logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
                 if (!sourceFilesMap.containsKey(sourceName)) {
                     sourceFilesMap.put(sourceName, new ArrayList<String>());
@@ -152,7 +152,7 @@ public class FileProcessor {
         if (folder != null) {
             if (folder.getFile() != null) {
                 for (FileType fileType : folder.getFile()) {
-                    if (fileType.getName().contains(TEXT_DEFINITON)) {
+                    if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
                         foundTextDefinitionFile = true;
                         if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
                             for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
@@ -240,12 +240,12 @@ public class FileProcessor {
                     //remove header before processing
                     lines.remove(0);
                     if (header.startsWith(HEADER_REFSETS)) {
-                        processFile(lines, source, outDir, header, REFSETID_COL, refsetFileProcessingConfigs);
+                        processFile(lines, source, fileName, outDir, header, REFSETID_COL, refsetFileProcessingConfigs, INPUT_FILE_TYPE_REFSET);
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
                         if (foundTextDefinitionFile) {
                             processDescriptionsAndTextDefinitions(lines, source, outDir, header);
                         } else {
-                            processFile(lines, source, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
+                            processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs, INPUT_FILE_TYPE_DESCRIPTION);
                         }
                     }
                 }
@@ -254,8 +254,8 @@ public class FileProcessor {
         }
     }
 
-    private void processFile(List<String> lines, String sourceName, File outDir, String header, int comparisonColumn, Map<String,
-            FileProcessingConfig> fileProcessingConfigs) throws IOException {
+    private void processFile(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
+            FileProcessingConfig> fileProcessingConfigs, String fileType) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
         if (lines == null || lines.isEmpty()) logger.info("There is no row to process");
         for (String line : lines) {
@@ -268,6 +268,16 @@ public class FileProcessor {
         }
         for (String comparisonValue : rows.keySet()) {
             FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
+            //Log warning if refset id is found in source files but is not configured in manifest
+            if(INPUT_FILE_TYPE_REFSET.equals(fileType)) {
+                if(fileProcessingConfig != null) {
+                    String warningMessage = new StringBuilder("Found refset id ").append(comparisonValue)
+                            .append( "in ").append(sourceName+"/"+inFileName).append(" but is not used in manifest configuration").toString();
+                    FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.WARN, warningMessage);
+                    fileProcessingReport.add(fileProcessingReportDetail);
+                    logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", comparisonValue, sourceName, inFileName);
+                }
+            }
             writeToFile(outDir, header, sourceName, rows.get(comparisonValue), fileProcessingConfig);
         }
     }
@@ -299,8 +309,11 @@ public class FileProcessor {
             FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
             writeToFile(outDir, header, sourceName, descriptionRows.get(comparisonValue), fileProcessingConfig);
         }
+        // If text definition configuration does not specify languages, copy all text definitions regardless of language code
         FileProcessingConfig allLanguagesConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
         writeToFile(outDir, header, sourceName, textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE), allLanguagesConfig);
+
+        // If text definition configuration specifies languages, copy all text definitions that have specified language code
         for (String comparisonValue : textDefinitionRows.keySet()) {
             FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
             writeToFile(outDir, header, sourceName, textDefinitionRows.get(comparisonValue), fileProcessingConfig);
@@ -325,6 +338,7 @@ public class FileProcessor {
             }
         }
     }
+    
 
     private void copyFilesToOutputDir() throws IOException {
         Map<String, Integer> fileCountMap = new HashMap<>();
@@ -366,8 +380,11 @@ public class FileProcessor {
         File[] files = outDir.listFiles();
         for (File file : files) {
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + file.getName();
+            FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.INFO,
+                    new StringBuilder("Uploaded ").append(file.getName()).append(" to product input files directory").toString());
+            fileProcessingReport.add(fileProcessingReportDetail);
             fileHelper.putFile(file,filePath);
-            logger.info("Uploaded {} to product input files path", file.getName());
+            logger.info("Uploaded {} to product input files directory", file.getName());
         }
     }
 
