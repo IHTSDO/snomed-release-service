@@ -133,7 +133,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
-		putFile(filename, inputStream, sourceFilesPath, fileSize);
+		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 
 	}
 
@@ -238,6 +238,31 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 					Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
 					try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
 						fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), fileDestinationPath);
+					}
+				}
+			} finally {
+				if (!tempFile.toFile().delete()) {
+					LOGGER.warn("Failed to delete temp file {}", tempFile.toFile().getAbsolutePath());
+				}
+			}
+		} else {
+			String fileDestinationPath = filePath + filename;
+			fileHelper.putFile(inputStream, fileSize, fileDestinationPath);
+		}
+	}
+
+	private void putSourceFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException {
+		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
+			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
+			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+				ZipEntry entry;
+				while ((entry = zipInputStream.getNextEntry()) != null) {
+					if(!entry.isDirectory()) {
+						String fileDestinationPath = filePath + FileUtils.getFilenameFromPath(entry.getName());
+						Files.copy(zipInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+						try (FileInputStream tempFileInputStream = new FileInputStream(tempFile.toFile())) {
+							fileHelper.putFile(tempFileInputStream, tempFile.toFile().length(), fileDestinationPath);
+						}
 					}
 				}
 			} finally {
