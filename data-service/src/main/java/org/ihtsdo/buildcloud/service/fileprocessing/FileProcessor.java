@@ -240,12 +240,12 @@ public class FileProcessor {
                     //remove header before processing
                     lines.remove(0);
                     if (header.startsWith(HEADER_REFSETS)) {
-                        processFile(lines, source, fileName, outDir, header, REFSETID_COL, refsetFileProcessingConfigs, INPUT_FILE_TYPE_REFSET);
+                        processRefsetFiles(lines, source, fileName, outDir, header);
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
                         if (foundTextDefinitionFile) {
                             processDescriptionsAndTextDefinitions(lines, source, outDir, header);
                         } else {
-                            processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs, INPUT_FILE_TYPE_DESCRIPTION);
+                            processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
                     }
                 }
@@ -254,70 +254,88 @@ public class FileProcessor {
         }
     }
 
+    private void processRefsetFiles(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
+        if (lines == null || lines.isEmpty()) {
+            logger.info("There is no row to process");
+        }
+         else {
+            String[] splits = lines.get(0).split("\t");
+            String refsetId = splits[REFSETID_COL];
+            FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+            writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
+            if(fileProcessingConfig != null) {
+                String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
+                        .append( "in ").append(sourceName+"/"+inFileName).append(" but is not used in manifest configuration").toString();
+                FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.WARN, warningMessage);
+                fileProcessingReport.add(fileProcessingReportDetail);
+                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
+            }
+        }
+    }
+
     private void processFile(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
-            FileProcessingConfig> fileProcessingConfigs, String fileType) throws IOException {
+            FileProcessingConfig> fileProcessingConfigs) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
-        if (lines == null || lines.isEmpty()) logger.info("There is no row to process");
-        for (String line : lines) {
-            String[] splits = line.split("\t");
-            String comparisonValue = splits[comparisonColumn];
-            if (!rows.containsKey(comparisonValue)) {
-                rows.put(comparisonValue, new ArrayList<String>());
-            }
-            rows.get(comparisonValue).add(line);
-        }
-        for (String comparisonValue : rows.keySet()) {
-            FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
-            //Log warning if refset id is found in source files but is not configured in manifest
-            if(INPUT_FILE_TYPE_REFSET.equals(fileType)) {
-                if(fileProcessingConfig != null) {
-                    String warningMessage = new StringBuilder("Found refset id ").append(comparisonValue)
-                            .append( "in ").append(sourceName+"/"+inFileName).append(" but is not used in manifest configuration").toString();
-                    FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.WARN, warningMessage);
-                    fileProcessingReport.add(fileProcessingReportDetail);
-                    logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", comparisonValue, sourceName, inFileName);
+        if (lines == null || lines.isEmpty())  {
+            logger.info("There is no row to process");
+        } else {
+            for (String line : lines) {
+                String[] splits = line.split("\t");
+                String comparisonValue = splits[comparisonColumn];
+                if (!rows.containsKey(comparisonValue)) {
+                    rows.put(comparisonValue, new ArrayList<String>());
                 }
+                rows.get(comparisonValue).add(line);
             }
-            writeToFile(outDir, header, sourceName, rows.get(comparisonValue), fileProcessingConfig);
+            for (String comparisonValue : rows.keySet()) {
+                FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
+                writeToFile(outDir, header, sourceName, rows.get(comparisonValue), fileProcessingConfig);
+            }
         }
+
     }
 
     private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
         textDefinitionRows.put(TEXT_DEFINITION_ALL_LANGUAGE_CODE, new ArrayList<String>());
-        if (lines == null || lines.isEmpty()) logger.info("There is no row to process");
-        for (String line : lines) {
-            String[] splits = line.split("\t");
-            String comparisonValue = splits[DESCRIPTION_LANGUAGE_CODE_COL];
-            String descriptionTypeValue = splits[DESCRIPTION_TYPE_COL];
-            if (TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
-                if (!textDefinitionRows.containsKey(comparisonValue)) {
-                    textDefinitionRows.put(comparisonValue, new ArrayList<String>());
+        if (lines == null || lines.isEmpty()) {
+            logger.info("There is no row to process");
+        } else {
+            for (String line : lines) {
+                String[] splits = line.split("\t");
+                String comparisonValue = splits[DESCRIPTION_LANGUAGE_CODE_COL];
+                String descriptionTypeValue = splits[DESCRIPTION_TYPE_COL];
+                if (TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
+                    if (!textDefinitionRows.containsKey(comparisonValue)) {
+                        textDefinitionRows.put(comparisonValue, new ArrayList<String>());
+                    }
+                    textDefinitionRows.get(comparisonValue).add(line);
+                    textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE).add(line);
+                } else {
+                    if (!descriptionRows.containsKey(comparisonValue)) {
+                        descriptionRows.put(comparisonValue, new ArrayList<String>());
+                    }
+                    descriptionRows.get(comparisonValue).add(line);
                 }
-                textDefinitionRows.get(comparisonValue).add(line);
-                textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE).add(line);
-            } else {
-                if (!descriptionRows.containsKey(comparisonValue)) {
-                    descriptionRows.put(comparisonValue, new ArrayList<String>());
-                }
-                descriptionRows.get(comparisonValue).add(line);
+
             }
+            for (String comparisonValue : descriptionRows.keySet()) {
+                FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
+                writeToFile(outDir, header, sourceName, descriptionRows.get(comparisonValue), fileProcessingConfig);
+            }
+            // If text definition configuration does not specify languages, copy all text definitions regardless of language code
+            FileProcessingConfig allLanguagesConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
+            // If text definition configuration specifies languages, copy all text definitions that have specified language code
+            for (String comparisonValue : textDefinitionRows.keySet()) {
+                FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
+                if(fileProcessingConfig != null && allLanguagesConfig != null) {
+                    fileProcessingConfig.getTargetFiles().get(sourceName).addAll(allLanguagesConfig.getTargetFiles().get(sourceName));
+                }
+                writeToFile(outDir, header, sourceName, textDefinitionRows.get(comparisonValue), fileProcessingConfig);
+            }
+        }
 
-        }
-        for (String comparisonValue : descriptionRows.keySet()) {
-            FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
-            writeToFile(outDir, header, sourceName, descriptionRows.get(comparisonValue), fileProcessingConfig);
-        }
-        // If text definition configuration does not specify languages, copy all text definitions regardless of language code
-        FileProcessingConfig allLanguagesConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-        writeToFile(outDir, header, sourceName, textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE), allLanguagesConfig);
-
-        // If text definition configuration specifies languages, copy all text definitions that have specified language code
-        for (String comparisonValue : textDefinitionRows.keySet()) {
-            FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
-            writeToFile(outDir, header, sourceName, textDefinitionRows.get(comparisonValue), fileProcessingConfig);
-        }
     }
 
     private void writeToFile(File outDir, String header, String sourceName, List<String> lines, FileProcessingConfig fileProcessingConfig) throws IOException {

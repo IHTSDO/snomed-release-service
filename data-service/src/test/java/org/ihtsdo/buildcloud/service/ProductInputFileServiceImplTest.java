@@ -63,8 +63,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private static final String SRC_MAPPING_TOOL = "mapping-tools";
     private static final String SRC_TERM_SERVER = "terminology-server";
     private static final String SRC_REFSET_TOOL = "reference-set-tool";
-    private static final String TEST_ARCHIVE_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/RF2Release.zip";
-    private static final String TEST_MANIFEST_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/manifest_file_process.xml";
+    private static final String TEST_ARCHIVE_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/file_processing_1.zip";
+    private static final String TEST_MANIFEST_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest.xml";
 
 
     @Before
@@ -88,7 +88,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         subDirectories.add(SRC_REFSET_TOOL);
     }
 
-    @After
+    //@After
     public void tearDown() throws ResourceNotFoundException {
         productInputFileService.deleteSourceFilesByPattern(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "*.txt", null);
     }
@@ -138,18 +138,18 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private void doAssertionForFileProcessing() throws ResourceNotFoundException, IOException {
         List<String> inputFiles = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         Assert.assertEquals(4, inputFiles.size());
-        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "der2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
+        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(9, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Description_Delta-dk_DK_20170731.txt");
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_Description_Delta-en_DK_20170731.txt");
+        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20170731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(11, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "sct2_TextDefinition_Delta-en_DK_20170731.txt");
-        Assert.assertNotNull(inputStream);
-        Assert.assertEquals(7, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
     }
 
     protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException {
