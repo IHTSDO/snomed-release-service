@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
@@ -15,7 +14,6 @@ import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
-import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
@@ -25,18 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -213,7 +206,15 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			throw new ResourceNotFoundException("Unable to find manifest file for product key " + productKey + " and center key "+ centerKey);
 		}
 		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
-		return fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
+		FileProcessingReport report = fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
+		dao.persistInputPrepareReport(product, report);
+		return report;
+	}
+
+	@Override
+	public InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException {
+		Product product = getProduct(centerKey, productKey);
+		return dao.getInputPrepareReport(product);
 	}
 
 	private InputStream getFileInputStream(final Product product, final String filename) {
