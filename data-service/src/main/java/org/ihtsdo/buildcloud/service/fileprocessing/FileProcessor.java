@@ -262,11 +262,11 @@ public class FileProcessor {
             String[] splits = lines.get(0).split("\t");
             String refsetId = splits[REFSETID_COL];
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+            //Show warning if refset id is found in sources but not used in manifest configuration
             if(fileProcessingConfig == null) {
                 String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
                         .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.WARN, warningMessage);
-                fileProcessingReport.add(fileProcessingReportDetail);
+                fileProcessingReport.add(FileProcessingReportType.WARN, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
             } else {
                 writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
@@ -349,9 +349,9 @@ public class FileProcessor {
                         outFile.createNewFile();
                         List<String> headers = new ArrayList<>();
                         headers.add(header);
-                        FileUtils.writeLines(outFile, headers);
+                        FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers);
                     }
-                    FileUtils.writeLines(outFile, lines, true);
+                    FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, true);
                     logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
                 }
             }
@@ -399,9 +399,7 @@ public class FileProcessor {
         File[] files = outDir.listFiles();
         for (File file : files) {
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + file.getName();
-            FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.INFO,
-                    new StringBuilder("Uploaded ").append(file.getName()).append(" to product input files directory").toString());
-            fileProcessingReport.add(fileProcessingReportDetail);
+            fileProcessingReport.add(FileProcessingReportType.INFO, new StringBuilder("Uploaded ").append(file.getName()).append(" to product input files directory").toString());
             fileHelper.putFile(file,filePath);
             logger.info("Uploaded {} to product input files directory", file.getName());
         }

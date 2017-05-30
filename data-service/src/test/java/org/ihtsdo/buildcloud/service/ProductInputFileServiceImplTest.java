@@ -207,6 +207,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
             }
         }
         Assert.assertEquals(3, countMissingRefset);
+        System.out.println(fileProcessingReport);
     }
 
     protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException {

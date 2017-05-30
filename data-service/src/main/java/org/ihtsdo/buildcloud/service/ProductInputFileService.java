@@ -3,11 +3,8 @@ package org.ihtsdo.buildcloud.service;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -45,5 +42,7 @@ public interface ProductInputFileService {
 	void deleteSourceFilesByPattern(String centerKey, String productKey, String inputFileNamePattern, Set<String> subDirectories) throws ResourceNotFoundException;
 
 	FileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException;
+
+	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
 
 }

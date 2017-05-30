@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,11 +217,28 @@ public class InputFileController {
 
 	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
-			notes = "Create or replace files in input file directories. Return warnings or errors if there are any")
+			notes = "Create or replace files in input file directories")
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
 		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, false);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
+	
+	@RequestMapping(value = "/inputfiles/prepareReport", produces = "application/json", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves latest report of input files preparation process",
+			notes = "Retrieves input preparation report details for given product key, release center key" )
+	public void getBuildReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+							   final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = productInputFileService.getInputPrepareReport(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No report file found");
+			}
+		}
+	}
+
 
 	
 
