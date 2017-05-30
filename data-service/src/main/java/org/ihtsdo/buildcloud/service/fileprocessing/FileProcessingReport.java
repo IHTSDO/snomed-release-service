@@ -38,6 +38,14 @@ public class FileProcessingReport {
         return executionTime;
     }
 
+    public void setExecutionTime(String executionTime) {
+        this.executionTime = executionTime;
+    }
+
+    public void setDetails(List<FileProcessingReportDetail> details) {
+        this.details = details;
+    }
+
     public String toString() {
         ObjectMapper mapper = new ObjectMapper();
         try {

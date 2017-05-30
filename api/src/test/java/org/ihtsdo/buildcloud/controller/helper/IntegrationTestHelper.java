@@ -156,6 +156,13 @@ public class IntegrationTestHelper {
 		).andDo(print()).andExpect(status().isOk()).andReturn();
 		return mvcResult.getResponse().getContentAsString();
 	}
+
+	public String getInputPrepareReport() throws Exception {
+		MvcResult mvcResult = mockMvc.perform(
+				get(getProductUrl() + "/inputfiles/prepareReport")
+		).andDo(print()).andExpect(status().isOk()).andReturn();
+		return mvcResult.getResponse().getContentAsString();
+	}
 	
 	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
 		final MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
