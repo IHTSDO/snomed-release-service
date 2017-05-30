@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -202,11 +203,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public FileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
+		FileProcessingReport report = new FileProcessingReport();
 		if(manifestStream == null) {
-			throw new ResourceNotFoundException("Unable to find manifest file for product key " + productKey + " and center key "+ centerKey);
+			report.add(FileProcessingReportType.ERROR, "Failed to load manifest");
+		} else {
+			FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, report, copyFilesInManifest);
+			fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
 		}
-		FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
-		FileProcessingReport report = fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
 		dao.persistInputPrepareReport(product, report);
 		return report;
 	}

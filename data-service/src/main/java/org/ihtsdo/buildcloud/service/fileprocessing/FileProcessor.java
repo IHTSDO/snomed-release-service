@@ -4,7 +4,6 @@ import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.CharEncoding;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -20,10 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,7 +68,8 @@ public class FileProcessor {
     private static final int DESCRIPTION_TYPE_COL = 6;
     private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
 
-    public FileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper, Product product, boolean copyFilesDefinedInManifest) {
+    public FileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
+                         Product product, FileProcessingReport fileProcessingReport, boolean copyFilesDefinedInManifest) {
         this.manifestStream = manifestStream;
         this.fileHelper = fileHelper;
         this.buildS3PathHelper = buildS3PathHelper;
@@ -82,7 +80,7 @@ public class FileProcessor {
         this.textDefinitionFileProcessingConfigs = new HashMap<>();
         this.availableSources = new HashSet<>();
         this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
-        this.fileProcessingReport = new FileProcessingReport();
+        this.fileProcessingReport = fileProcessingReport;
         if(copyFilesDefinedInManifest) {
             this.filesToCopy = new HashMap<>();
         }
@@ -98,13 +96,14 @@ public class FileProcessor {
                 copyFilesToOutputDir();
             }*/
             uploadOutFilesToProductInputFiles();
-            return fileProcessingReport;
-
+        } catch (Exception e) {
+            fileProcessingReport.add(FileProcessingReportType.ERROR, e.getLocalizedMessage());
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
             }
         }
+        return fileProcessingReport;
     }
 
     private void initLocalDirs() {
@@ -139,6 +138,10 @@ public class FileProcessor {
 
     private void loadFileProcessConfigsFromManifest() throws JAXBException, ResourceNotFoundException {
         ManifestXmlFileParser manifestXmlFileParser = new ManifestXmlFileParser();
+        if(manifestStream == null) {
+            fileProcessingReport.add(FileProcessingReportType.ERROR, "Failed to load manifest find");
+            throw new ResourceNotFoundException("Failed to load manifest find");
+        }
         ListingType listingType = manifestXmlFileParser.parse(manifestStream);
         loadProcessConfig(listingType);
     }
@@ -357,7 +360,7 @@ public class FileProcessor {
             }
         }
     }
-    
+
 
     private void copyFilesToOutputDir() throws IOException {
         Map<String, Integer> fileCountMap = new HashMap<>();
