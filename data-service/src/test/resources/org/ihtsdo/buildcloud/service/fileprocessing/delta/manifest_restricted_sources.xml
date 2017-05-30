@@ -20,11 +20,13 @@
 							<refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO">
 								<sources>
 									<source>mapping-tools</source>
+									<source>reference-set-tool</source>
 								</sources>
 							</refset>
 							<refset id="900000000000524003" label="MOVED TO">
 								<sources>
 									<source>mapping-tools</source>
+									<source>terminology-server</source>
 								</sources>
 							</refset>
 							<refset id="900000000000525002" label="MOVED FROM">

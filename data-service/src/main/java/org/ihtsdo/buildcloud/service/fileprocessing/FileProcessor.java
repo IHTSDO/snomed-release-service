@@ -262,13 +262,14 @@ public class FileProcessor {
             String[] splits = lines.get(0).split("\t");
             String refsetId = splits[REFSETID_COL];
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-            writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
-            if(fileProcessingConfig != null) {
+            if(fileProcessingConfig == null) {
                 String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
-                        .append( "in ").append(sourceName+"/"+inFileName).append(" but is not used in manifest configuration").toString();
+                        .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
                 FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail(FileProcessingReportType.WARN, warningMessage);
                 fileProcessingReport.add(fileProcessingReportDetail);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
+            } else {
+                writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
             }
         }
     }
