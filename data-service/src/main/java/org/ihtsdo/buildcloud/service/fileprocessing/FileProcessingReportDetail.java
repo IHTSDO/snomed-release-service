@@ -11,6 +11,8 @@ public class FileProcessingReportDetail {
 
     private String message;
 
+    public FileProcessingReportDetail(){}
+
     public FileProcessingReportDetail(FileProcessingReportType type, String message) {
         this.type = type;
         this.message = message;

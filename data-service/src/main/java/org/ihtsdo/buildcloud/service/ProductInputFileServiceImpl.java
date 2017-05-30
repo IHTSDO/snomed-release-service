@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -208,7 +209,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			report.add(FileProcessingReportType.ERROR, "Failed to load manifest");
 		} else {
 			FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, report, copyFilesInManifest);
-			fileProcessor.processFiles(listSourceFilePaths(centerKey, productKey));
+			List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
+			if(sourceFiles != null && !sourceFiles.isEmpty()) {
+				fileProcessor.processFiles(sourceFiles);
+			} else {
+				report.add(FileProcessingReportType.ERROR, "Failed to load files from source directory");
+			}
 		}
 		dao.persistInputPrepareReport(product, report);
 		return report;
