@@ -16,11 +16,11 @@ public class FileProcessingReportDetail {
         this.message = message;
     }
 
-    public FileProcessingReportType getFileProcessingReportStatus() {
+    public FileProcessingReportType getType() {
         return type;
     }
 
-    public void setFileProcessingReportStatus(FileProcessingReportType type) {
+    public void setType(FileProcessingReportType type) {
         this.type = type;
     }
 
