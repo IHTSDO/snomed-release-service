@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -120,6 +119,42 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isCreated());
+	}
+
+	public void uploadSourceFile(final String sourceFileName, final String sourceName, final Class classpathResourceOwner) throws Exception {
+		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(sourceFileName);
+		Assert.assertNotNull(sourceFileName + " stream is null.", resourceAsStream);
+		final MockMultipartFile deltaFile = new MockMultipartFile("file", sourceFileName, "text/plain", resourceAsStream);
+		mockMvc.perform(
+				fileUpload(getProductUrl() + "/sourcefiles/" + sourceName)
+						.file(deltaFile)
+						.header("Authorization", getBasicDigestHeaderValue())
+		)
+				.andDo(print())
+				.andExpect(status().isCreated());
+	}
+
+	public void prepareSourceFile() throws Exception {
+		mockMvc.perform(
+				post(getProductUrl() + "/inputfiles/prepare")
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+		).andDo(print()).andExpect(status().isNoContent());
+	}
+
+	public void deleteTxtSourceFiles() throws Exception {
+		mockMvc.perform(
+				request(HttpMethod.DELETE, getProductUrl() + "/sourcefiles")
+						.param("pattern", "*.txt")
+						.header("Authorization", getBasicDigestHeaderValue())
+		).andDo(print()).andExpect(status().isNoContent());
+	}
+
+	public String listSourceFiles() throws Exception {
+		MvcResult mvcResult = mockMvc.perform(
+				get(getProductUrl() + "/sourcefiles")
+		).andDo(print()).andExpect(status().isOk()).andReturn();
+		return mvcResult.getResponse().getContentAsString();
 	}
 	
 	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
