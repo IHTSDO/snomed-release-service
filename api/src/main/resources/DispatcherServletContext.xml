@@ -22,6 +22,6 @@
 	<import resource="jms-api-context.xml"/>
 	<import resource="telemetry-jms-broker.xml"/>
 	<import resource="classpath*:dataServiceContext.xml"/>
-	<!--<import resource="security-context.xml"/>-->
+	<import resource="security-context.xml"/>
 
 </beans>
