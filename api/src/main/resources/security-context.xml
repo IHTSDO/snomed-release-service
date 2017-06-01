@@ -7,19 +7,21 @@
       xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
  	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-   <http pattern="/**/api-doc.html"  auto-config="false" security="none"/>
+<http pattern="/**/api-doc.html"  auto-config="false" security="none"/>
    <http pattern="/**/api-docs/**"  auto-config="false" security="none"/>
    <http pattern="/**/static/**"  auto-config="false" security="none"/>
+   <http pattern="/**/webjars/**"  auto-config="false" security="none"/>
    <http pattern="/"  auto-config="false" security="none"/>
 
    <!-- REST should have no state, each request is re-authenticated -->
    <http create-session="stateless" auto-config="false">
       <!-- All other endpoint secured -->
-     <!-- <intercept-url pattern="/**/api-doc.html" access="IS_AUTHENTICATED_ANONYMOUSLY" />
+<!--     <intercept-url pattern="/**/api-doc.html" access="IS_AUTHENTICATED_ANONYMOUSLY" />
       <intercept-url pattern="/**/api-docs/**" access="IS_AUTHENTICATED_ANONYMOUSLY" />
       <intercept-url pattern="/**/static/**" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
+      <intercept-url pattern="/**/webjars/**" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
       <intercept-url pattern="/" access="IS_AUTHENTICATED_ANONYMOUSLY" />-->
-      <intercept-url pattern="/**" access="ROLE_ihtsdo-sca-author" />
+      <intercept-url pattern="/**" method="POST" access="ROLE_ihtsdo-sca-author" />
       <http-basic />
       <custom-filter ref="authenticationDecorator" after="BASIC_AUTH_FILTER" />
    </http>
