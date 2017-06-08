@@ -25,7 +25,7 @@
 		<dependency>
 			<groupId>org.ihtsdo</groupId>
 			<artifactId>rf2-classification-snorocket</artifactId>
-			<version>1.0.6</version>
+			<version>1.0.7-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
