@@ -11,6 +11,7 @@ import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.manifest.RefsetType;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -352,9 +353,9 @@ public class FileProcessor {
                         outFile.createNewFile();
                         List<String> headers = new ArrayList<>();
                         headers.add(header);
-                        FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers);
+                        FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers, RF2Constants.LINE_ENDING);
                     }
-                    FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, true);
+                    FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
                     logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
                 }
             }
