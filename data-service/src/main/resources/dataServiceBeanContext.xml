@@ -1,8 +1,8 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
-	   xmlns:context="http://www.springframework.org/schema/context"
-	   xmlns:tx="http://www.springframework.org/schema/tx"
-	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	   xsi:schemaLocation="
+		 xmlns:context="http://www.springframework.org/schema/context"
+		 xmlns:tx="http://www.springframework.org/schema/tx"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
@@ -19,7 +19,7 @@
 				<!-- Default path to override properties file -->
 				<prop key="dataServicePropertiesPath">classpath:data-service.properties</prop>
 			</props>
-		</property> 
+		</property>
 		<property name="ignoreUnresolvablePlaceholders" value="true"/>
 	</bean>
 
@@ -76,11 +76,11 @@
 		<property name="password" value="${srs.jdbc.password}" />
 	</bean>
 	<bean id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
-      <property name="dataSource" ref="dataSource" />
-      <property name="changeLog" value="classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml" />
-      <!--contexts specifies the runtime contexts to use.-->
-       <property name="contexts" value="${srs.environment.shortname}"/>
- 	</bean> 
+		<property name="dataSource" ref="dataSource" />
+		<property name="changeLog" value="classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml" />
+		<!--contexts specifies the runtime contexts to use.-->
+		<property name="contexts" value="${srs.environment.shortname}"/>
+	</bean>
 
 	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
@@ -134,7 +134,7 @@
 	<bean class="java.lang.String" id="buildBucketName">
 		<constructor-arg value="${buildBucketName}" />
 	</bean>
-	
+
 	<bean class="java.lang.String" id="publishedBucketName">
 		<constructor-arg value="${publishedBucketName}" />
 	</bean>
@@ -197,7 +197,7 @@
 	<bean class="org.ihtsdo.snomed.util.rf2.schema.SchemaFactory"/>
 	<bean class="org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService"/>
 	<bean class="org.ihtsdo.buildcloud.service.build.transform.TransformationService"/>
-	
+
 
 	<bean class="org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService">
 		<constructor-arg value="${snomed.modelModuleSctid}"/>
