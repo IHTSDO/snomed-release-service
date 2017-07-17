@@ -164,6 +164,10 @@ public class RF2ClassifierService {
 					if (extConfig != null) {
 						logger.info("Reconcile extension relationship ids with the dependency international release.");
 						reconcileRelationships(localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths);
+						if (!extConfig.isReleaseAsAnEdition()) {
+							//reconcile concept ids
+							reconcileConcepts(localConceptFilePaths);
+						}
 					}
 					final ClassificationRunner classificationRunner = new ClassificationRunner(moduleId, effectiveTimeSnomedFormat,
 							localConceptFilePaths, localStatedRelationshipFilePaths, previousInferredRelationshipFilePaths,
@@ -190,11 +194,20 @@ public class RF2ClassifierService {
 			} finally {
 				FileUtils.deleteQuietly(tempDir);
 			}
-		
 	}
-	
-	
 
+	private void reconcileConcepts(List<String> localConceptFilePaths) throws BusinessServiceException {
+		if (localConceptFilePaths.size() == 2) {
+			String reconciledConceptSnapshot = localConceptFilePaths.get(0).replace(RF2Constants.TXT_FILE_EXTENSION, RECONCILED);
+			try {
+				reconcileSnapshotFilesById(localConceptFilePaths.get(1), localConceptFilePaths.get(0), reconciledConceptSnapshot);
+			} catch (IOException | ParseException e) {
+				throw new BusinessServiceException("Error during concept snapshot files reconciliation", e);
+			}
+			localConceptFilePaths.clear();
+			localConceptFilePaths.add(reconciledConceptSnapshot);
+		}
+	}
 
 	/** Fix relationship ids are re-used in the extension
 	 * @param localStatedRelationshipFilePaths
@@ -209,7 +222,7 @@ public class RF2ClassifierService {
 		if (localStatedRelationshipFilePaths.size() > 1) {
 			String reconciledStatedSnapshot = localStatedRelationshipFilePaths.get(1).replace(RF2Constants.TXT_FILE_EXTENSION, RECONCILED);
 			try {
-				reconcileSnapshotFilesByRelationshipId(localStatedRelationshipFilePaths.get(0), localStatedRelationshipFilePaths.get(1),reconciledStatedSnapshot);
+				reconcileSnapshotFilesById(localStatedRelationshipFilePaths.get(0), localStatedRelationshipFilePaths.get(1),reconciledStatedSnapshot);
 			} catch (IOException | ParseException e) {
 				throw new BusinessServiceException("Error during stated relationships reconciliation", e);
 			}
@@ -220,7 +233,7 @@ public class RF2ClassifierService {
 		if (previousInferredRelationshipFilePaths.size() > 1) {
 			String reconciledInferredSnapshot = previousInferredRelationshipFilePaths.get(1).replace(RF2Constants.TXT_FILE_EXTENSION, RECONCILED);
 			try {
-				reconcileSnapshotFilesByRelationshipId(previousInferredRelationshipFilePaths.get(0), previousInferredRelationshipFilePaths.get(1), reconciledInferredSnapshot);
+				reconcileSnapshotFilesById(previousInferredRelationshipFilePaths.get(0), previousInferredRelationshipFilePaths.get(1), reconciledInferredSnapshot);
 				logger.info("Previous inferred relationships reconciled and saved in the temp file:" + reconciledInferredSnapshot);
 			} catch (IOException | ParseException e) {
 				throw new BusinessServiceException("Error during inferred relationships reconciliation", e);
@@ -230,7 +243,15 @@ public class RF2ClassifierService {
 		}
 	}
 
-	private void reconcileSnapshotFilesByRelationshipId(String internationalSnapshot, String extensionSnapshot, String reconciledSnapshot) throws FileNotFoundException, IOException, ParseException {
+	/** Reconcile snapshot files with the most recent effective time for the same id.
+	 * @param internationalSnapshot
+	 * @param extensionSnapshot
+	 * @param reconciledSnapshot
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	private void reconcileSnapshotFilesById(String internationalSnapshot, String extensionSnapshot, String reconciledSnapshot) throws FileNotFoundException, IOException, ParseException {
 		//load the extension file into map as it is smaller
 		Map<String,String> extensionSnapshotFileInMap = loadSnapshotFileIntoMap(new File(extensionSnapshot));
 		FastDateFormat formater = RF2Constants.DATE_FORMAT;
