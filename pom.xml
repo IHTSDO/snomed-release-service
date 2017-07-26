@@ -18,7 +18,7 @@
 		<jackson.version>2.3.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
-		<otf-common.version>0.0.20</otf-common.version>
+		<otf-common.version>1.5.0-SNAPSHOT</otf-common.version>
 		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -161,6 +161,11 @@
 				<version>2.4</version>
 			</dependency>
 			<dependency>
+    			<groupId>joda-time</groupId>
+    			<artifactId>joda-time</artifactId>
+   			 	<version>2.8.1</version>
+			</dependency>	
+			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
 				<version>16.0.1</version>
@@ -186,8 +191,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.5.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>
