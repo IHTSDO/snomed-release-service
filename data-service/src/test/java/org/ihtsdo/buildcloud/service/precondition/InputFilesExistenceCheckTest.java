@@ -97,9 +97,6 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
-		final String expectedMsg ="The input files directory doesn't contain the following files required by the manifest.xml: der1_SubsetMembers_es_INT_20140731.txt,der1_Subsets_es_INT_20140731.txt,"
-				+ "sct1_Relationships_Core_INT_20140731.txt,sct1_descriptions_es_INT_20140731.txt,sct1_Concepts_Core_INT_20140731.txt,zres_SctLoincTechnologyPreview_INT_20140731.owl.";
-		assertEquals(expectedMsg, report.getMessage());
 	}
 
 	@Test

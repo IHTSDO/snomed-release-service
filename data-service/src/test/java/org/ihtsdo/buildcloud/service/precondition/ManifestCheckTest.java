@@ -46,7 +46,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	public final void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		Assert.assertEquals(State.FAIL, actualResult);
 	}
 	
 	@Test
