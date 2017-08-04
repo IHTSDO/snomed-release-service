@@ -23,12 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: huyle
@@ -54,6 +49,7 @@ public class FileProcessor {
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
     private Map<String, String> filesToCopy;
     private Map<String, List<String>> sourceFilesMap;
+    private Map<String, Map<String, List<String>>> refSetConfigFromManifest;
     private FileProcessingReport fileProcessingReport;
 
     private static final String FILE_EXTENSION_TXT = "txt";
@@ -82,6 +78,7 @@ public class FileProcessor {
         this.availableSources = new HashSet<>();
         this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
         this.fileProcessingReport = fileProcessingReport;
+        this.refSetConfigFromManifest = new HashMap<>();
         if(copyFilesDefinedInManifest) {
             this.filesToCopy = new HashMap<>();
         }
@@ -192,7 +189,12 @@ public class FileProcessor {
                                 refsetFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
                             }
                             fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+                            Map<String, List<String>> fileNameAndSourceMaps = new HashMap<>();
+                            List<String> sourceFromManifest = new ArrayList<>();
+
                             if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
+                                fileNameAndSourceMaps.put(fileType.getName(), refsetType.getSources().getSource());
+                                refSetConfigFromManifest.put(refsetId, fileNameAndSourceMaps);
                                 for (String s : refsetType.getSources().getSource()) {
                                     if (fileProcessingConfig.getTargetFiles().containsKey(s)) {
                                         fileProcessingConfig.addTargetFileToSource(s, fileType.getName());
@@ -233,6 +235,7 @@ public class FileProcessor {
     }
 
     private void processFiles() throws IOException {
+        List<FileProcessingReportDetail> fileProcessingReportDetails = new ArrayList<>();
         for (String source : sourceFilesMap.keySet()) {
             List<String> fileList = sourceFilesMap.get(source);
             for (String fileName : fileList) {
@@ -244,7 +247,7 @@ public class FileProcessor {
                     //remove header before processing
                     lines.remove(0);
                     if (header.startsWith(HEADER_REFSETS)) {
-                        processRefsetFiles(lines, source, fileName, outDir, header);
+                        processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
                         if (foundTextDefinitionFile) {
                             processDescriptionsAndTextDefinitions(lines, source, outDir, header);
@@ -256,9 +259,17 @@ public class FileProcessor {
                 logger.info("Finish processing file {}", fileName);
             }
         }
+        if(fileProcessingReportDetails.size() > 0){
+            if(fileProcessingReport.getDetails().containsKey(fileProcessingReportDetails.get(0).getType())){
+                fileProcessingReport.getDetails().get(fileProcessingReportDetails.get(0).getType()).addAll(fileProcessingReportDetails);
+            }else{
+                fileProcessingReport.getDetails().put(fileProcessingReportDetails.get(0).getType().name(), fileProcessingReportDetails);
+            }
+        }
     }
 
-    private void processRefsetFiles(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
+    private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
+
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
         }
@@ -270,11 +281,37 @@ public class FileProcessor {
             if(fileProcessingConfig == null) {
                 String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
                         .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                fileProcessingReport.add(FileProcessingReportType.WARN, warningMessage);
+                fileProcessingReport.add(FileProcessingReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
             } else {
-                writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
+                if(fileProcessingConfig.getTargetFiles() != null){
+                    Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);
+                    String exactSourceName = "";
+                    String outputFileName = "";
+                    if(targetFiles != null && targetFiles.size() > 0){
+                        writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
+                        String infoMessage = new StringBuilder("Found refset id ").append(refsetId)
+                                .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
+                        fileProcessingReportDetails.add(new FileProcessingReportDetail(FileProcessingReportType.INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
+                    }else{
+                        Map<String, List<String>> fileNameAccordingSources = refSetConfigFromManifest.get(refsetId);
+                        if(fileNameAccordingSources != null ){
+
+                            for(Map.Entry<String, List<String>> entry : fileNameAccordingSources.entrySet()){
+                                    outputFileName = entry.getKey();
+                                    exactSourceName = entry.getValue().toString();
+                            }
+                            String warningMessage = new StringBuilder("The Manifest states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
+                            fileProcessingReport.add(FileProcessingReportType.WARNING, outputFileName , refsetId, sourceName, warningMessage);
+                            logger.warn(warningMessage);
+                        }
+
+                    }
+
+                }
+
             }
+
         }
     }
 

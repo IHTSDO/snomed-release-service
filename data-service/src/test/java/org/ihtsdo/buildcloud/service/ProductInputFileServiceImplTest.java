@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
@@ -28,13 +29,11 @@ import org.xml.sax.SAXException;
 import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -143,10 +142,16 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE_RESTRICTED).getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
-        addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
+        //addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
+        InputStream report = productInputFileDAO.getInputPrepareReport(product);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(report, writer, "UTF-8");
+        String theString = writer.toString();
+        ObjectMapper objectMapper = new ObjectMapper();
+        FileProcessingReport fileProcessingReport = objectMapper.readValue(theString, FileProcessingReport.class);
         doAssertionForFileProcessingInRestrictedSources();
     }
 
@@ -179,33 +184,35 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private void doAssertionForFileProcessingInRestrictedSources() throws ResourceNotFoundException, IOException {
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20180731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(11, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(7, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20180731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(5, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20180731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20180731.txt");
         Assert.assertNotNull(inputStream);
-        Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
     }
 
     private void doAssertionForFileProcessingMissingRefsets(FileProcessingReport fileProcessingReport) {
         String[] missingRefsets = {"900000000000523009","900000000000531004","900000000000489007"};
         int countMissingRefset = 0;
-        List<FileProcessingReportDetail> reportDetails = fileProcessingReport.getDetails();
-        for (FileProcessingReportDetail reportDetail : reportDetails) {
-            if(reportDetail.getType().equals(FileProcessingReportType.WARN)) {
-                String message = reportDetail.getMessage();
-                for (String missingRefset : missingRefsets) {
-                    if(message.contains(missingRefset)) {
-                        countMissingRefset++;
-                        break;
+        Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+        //for (FileProcessingReportDetail reportDetail : reportDetails) {
+            if(reportDetails.containsKey(FileProcessingReportType.WARNING)) {
+                for (FileProcessingReportDetail reportDetail : reportDetails.get(FileProcessingReportType.WARNING)) {
+                    String message = reportDetail.getMessage();
+                    for (String missingRefset : missingRefsets) {
+                        if (message.contains(missingRefset)) {
+                            countMissingRefset++;
+                            break;
+                        }
                     }
                 }
             }
-        }
+        //}
         Assert.assertEquals(3, countMissingRefset);
         System.out.println(fileProcessingReport);
     }
