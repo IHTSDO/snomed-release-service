@@ -15,12 +15,13 @@
 		<spring.version>4.1.3.RELEASE</spring.version>
 		<spring-security.version>3.2.5.RELEASE</spring-security.version>
 		<hazelcast.version>3.1.6</hazelcast.version>
-		<jackson.version>2.3.0</jackson.version>
+		<jackson.version>2.9.0</jackson.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
-		<otf-common.version>1.5.0-SNAPSHOT</otf-common.version>
+		<otf-common.version>1.4.3</otf-common.version>
 		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<junit.version>4.11</junit.version>
 	</properties>
 
 	<modules>
@@ -70,10 +71,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 		</dependency>
@@ -89,6 +86,11 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -174,12 +176,6 @@
 				<groupId>javassist</groupId>
 				<artifactId>javassist</artifactId>
 				<version>3.12.1.GA</version>
-			</dependency>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.11</version>
-				<scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
