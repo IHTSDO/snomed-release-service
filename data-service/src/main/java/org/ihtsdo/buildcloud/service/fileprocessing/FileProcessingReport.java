@@ -7,7 +7,9 @@ import org.joda.time.format.DateTimeFormatter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: huyle
@@ -17,21 +19,39 @@ import java.util.List;
 public class FileProcessingReport {
 
     private String executionTime;
-    private List<FileProcessingReportDetail> details;
+    private Map<String,List<FileProcessingReportDetail>> details;
+    private List<FileProcessingReportDetail> fileProcessingReportDetails ;
 
 
     public FileProcessingReport() {
-        this.details = new ArrayList<>();
+        this.details = new HashMap<>();
         executionTime = new DateTime().toDateTime(DateTimeZone.UTC).toString();
+        this.fileProcessingReportDetails =  new ArrayList<>();
     }
 
-    public List<FileProcessingReportDetail> getDetails() {
+    public Map<String,List<FileProcessingReportDetail>> getDetails() {
         return details;
     }
 
     public void add(FileProcessingReportType type, String message) {
         FileProcessingReportDetail detail = new FileProcessingReportDetail(type, message);
-        this.details.add(detail);
+        addItemToListFileProcessingReportDetail(type, detail);
+
+    }
+
+    public void add(FileProcessingReportType type,  String fileName, String refsetId, String source, String message) {
+        FileProcessingReportDetail detail = new FileProcessingReportDetail(type, fileName, refsetId, source, message);
+        addItemToListFileProcessingReportDetail(type, detail);
+    }
+
+    private void addItemToListFileProcessingReportDetail(FileProcessingReportType type, FileProcessingReportDetail detail) {
+        if(this.details.get(type.name()) != null){
+            this.fileProcessingReportDetails = this.details.get(type.name());
+            this.fileProcessingReportDetails.add(detail);
+        }else {
+            this.fileProcessingReportDetails.add(detail);
+            this.details.put(type.name(), this.fileProcessingReportDetails);
+        }
     }
 
     public String getExecutionTime() {
@@ -42,7 +62,7 @@ public class FileProcessingReport {
         this.executionTime = executionTime;
     }
 
-    public void setDetails(List<FileProcessingReportDetail> details) {
+    public void setDetails(Map<String,List<FileProcessingReportDetail>> details) {
         this.details = details;
     }
 

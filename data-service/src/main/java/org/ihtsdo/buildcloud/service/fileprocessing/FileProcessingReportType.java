@@ -7,6 +7,6 @@ package org.ihtsdo.buildcloud.service.fileprocessing;
  */
 public enum FileProcessingReportType {
 
-    INFO, WARN, ERROR;
+    INFO, WARNING, ERROR;
 
 }
