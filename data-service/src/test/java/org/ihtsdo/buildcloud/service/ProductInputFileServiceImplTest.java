@@ -201,8 +201,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         int countMissingRefset = 0;
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         //for (FileProcessingReportDetail reportDetail : reportDetails) {
-            if(reportDetails.containsKey(FileProcessingReportType.WARNING)) {
-                for (FileProcessingReportDetail reportDetail : reportDetails.get(FileProcessingReportType.WARNING)) {
+            if(reportDetails.containsKey(FileProcessingReportType.WARNING.name())) {
+                for (FileProcessingReportDetail reportDetail : reportDetails.get(FileProcessingReportType.WARNING.name())) {
                     String message = reportDetail.getMessage();
                     for (String missingRefset : missingRefsets) {
                         if (message.contains(missingRefset)) {
