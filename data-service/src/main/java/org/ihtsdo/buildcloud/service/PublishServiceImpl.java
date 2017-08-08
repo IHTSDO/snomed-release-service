@@ -341,21 +341,35 @@ public class PublishServiceImpl implements PublishService {
 		Map<SchemeIdType, Collection<String>> result = getLegacyIdsFromFile(inputFileStream);
 		for (SchemeIdType type : result.keySet()) {
 			int publishedIdCounter = 0;
-			Map<String,String> idStatusMap = idRestClient.getStatusForSchemeIds(type, result.get(type));
-			List<String> idsAssigned = new ArrayList<>();
-			for (String id : idStatusMap.keySet()) {
-				String status = idStatusMap.get(id);
-				if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
-					idsAssigned.add(id);
-				} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
-					publishedIdCounter++;
+			int assignedIdCounter = 0;
+			List<String> batchJob = null;
+			int counter = 0;
+			for (String legacyId : result.get(type)) {
+				if (batchJob == null) {
+					batchJob = new ArrayList<>();
+				}
+				batchJob.add(legacyId);
+				counter++;
+				if (counter % BATCH_SIZE == 0 || counter == result.get(type).size()) {
+					Map<String,String> idStatusMap = idRestClient.getStatusForSchemeIds(type, batchJob);
+					List<String> idsAssigned = new ArrayList<>();
+					for (String id : idStatusMap.keySet()) {
+						String status = idStatusMap.get(id);
+						if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+							idsAssigned.add(id);
+						} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+							publishedIdCounter++;
+						}
+					}
+					if (!idsAssigned.isEmpty()) {
+						assignedIdCounter += idsAssigned.size();
+						idRestClient.publishSchemeIds(idsAssigned, type, buildId);
+					}
+					batchJob = null;
 				}
 			}
 			LOGGER.info("Found total {} ids {} in file {} with assigned status: {} and published status: {}", 
-					type, idStatusMap.size(), filename, idsAssigned.size(), publishedIdCounter);
-			if (!idsAssigned.isEmpty()) {
-				idRestClient.publishSchemeIds(idsAssigned, type, buildId);
-			}
+					type, result.get(type).size(), filename, assignedIdCounter, publishedIdCounter);
 		}
 	}
 
