@@ -65,10 +65,10 @@
 						<contains-reference-sets>
 							<refset id="900000000000489007" label="Concept inactivation indicator">
 								<sources>
-									<source>reference-set-tool</source>
+									<source>mapping-tools</source>
 								</sources>
 							</refset>
-							<refset id="900000000000490003" label="Description inactivation indicator"/>
+							<!--<refset id="900000000000490003" label="Description inactivation indicator"/>-->
 						</contains-reference-sets>
 					</file>
 					<file Name="xder2_Refset_SimpleDelta_INT_20180731.txt">
