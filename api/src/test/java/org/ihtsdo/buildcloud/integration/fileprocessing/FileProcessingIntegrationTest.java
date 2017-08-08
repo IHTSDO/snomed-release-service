@@ -74,8 +74,8 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertEquals(1, reportDetails.size());
-        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR));
-        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR);
+        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR.name()));
+        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR.name());
         Assert.assertEquals("Failed to load files from source directory", fileProcessingReportDetails.get(0).getMessage());
     }
 
@@ -87,8 +87,8 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertEquals(1, reportDetails.size());
-        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR));
-        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR);
+        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR.name()));
+        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR.name());
         Assert.assertEquals("Failed to load manifest", fileProcessingReportDetails.get(0).getMessage());
         integrationTestHelper.deleteTxtSourceFiles();
     }
@@ -102,9 +102,9 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         String report = integrationTestHelper.getInputPrepareReport();
         FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        Assert.assertEquals(24, reportDetails.get(FileProcessingReportType.INFO).size());
+        Assert.assertEquals(24, reportDetails.get(FileProcessingReportType.INFO.name()).size());
         for (Map.Entry<String,List<FileProcessingReportDetail>>  reportDetail : reportDetails.entrySet()) {
-            Assert.assertEquals(FileProcessingReportType.INFO, reportDetail.getKey());
+            Assert.assertEquals(FileProcessingReportType.INFO.name(), reportDetail.getKey());
         }
         integrationTestHelper.getInputFile("xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
         integrationTestHelper.getInputFile("xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
@@ -128,8 +128,8 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
                 countWarning++;
             }
         }*/
-        if(reportDetails.containsKey(FileProcessingReportType.WARNING)){
-            countWarning = reportDetails.get(FileProcessingReportType.WARNING).size();
+        if(reportDetails.containsKey(FileProcessingReportType.WARNING.name())){
+            countWarning = reportDetails.get(FileProcessingReportType.WARNING.name()).size();
         }
         Assert.assertEquals(3, countWarning);
         integrationTestHelper.deleteTxtSourceFiles();
