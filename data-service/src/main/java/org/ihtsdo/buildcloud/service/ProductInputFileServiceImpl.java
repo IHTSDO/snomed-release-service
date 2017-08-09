@@ -157,7 +157,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		if(StringUtils.isBlank(subDirectory)) {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
 			for (String path : paths) {
-				if(FilenameUtils.getName(path).equals(fileName)) {
+				if(fileName == null || fileName.isEmpty() || FilenameUtils.getName(path).equals(fileName)) {
 					filePath = s3PathHelper.getProductSourcesPath(product).append(path).toString();
 					fileHelper.deleteFile(filePath);
 					LOGGER.info("Deleted {} from source directory", filePath);

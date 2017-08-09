@@ -200,8 +200,8 @@ public class InputFileController {
 			notes = "Deletes the specified file, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												  @PathVariable final String source, @RequestParam final String fileName) throws IOException, ResourceNotFoundException {
-		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, fileName, source);
+												  @PathVariable final String source) throws IOException, ResourceNotFoundException {
+		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, null, source);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
