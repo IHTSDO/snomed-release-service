@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
+import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -58,12 +59,13 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     protected Set<String> subDirectories;
 
     private static final String JULY_RELEASE = "20140731";
-    private static final String SRC_MANUAL = "manual";
-    private static final String SRC_MAPPING_TOOL = "mapping-tools";
-    private static final String SRC_TERM_SERVER = "terminology-server";
-    private static final String SRC_REFSET_TOOL = "reference-set-tool";
+    private static final String SRC_MANUAL = InputSources.MANUAL.getSourceName();
+    private static final String SRC_MAPPING_TOOL = InputSources.MAPPING_TOOLS.getSourceName();
+    private static final String SRC_TERM_SERVER = InputSources.TERM_SERVER.getSourceName();
+    private static final String SRC_REFSET_TOOL = InputSources.REFSET_TOOL.getSourceName();
     private static final String TEST_ARCHIVE_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/file_processing.zip";
     private static final String TEST_MANIFEST_FILE = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_all_sources.xml";
+    private static final String TEST_MANIFEST_FILE_WITH_UNPROCESSED = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_with_unprocessed.xml";
     private static final String TEST_MANIFEST_FILE_RESTRICTED = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_restricted_sources.xml";
     private static final String TEST_MANIFEST_FILE_MISSING_REFSETS = "org/ihtsdo/buildcloud/service/fileprocessing/delta/manifest_missing_refsets.xml";
 
@@ -98,6 +100,11 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         addTestArchiveFileToSourceDirectory(SRC_MANUAL);
         List<String> fileList = productInputFileService.listSourceFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         Assert.assertTrue(fileList.size() > 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutWrongSource() throws ResourceNotFoundException, IOException {
+        addEmptyFileToSourceDirectory("wrongSourceValue", "test1.txt");
     }
 
     @Test
@@ -142,16 +149,12 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE_RESTRICTED).getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
-        //addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
         InputStream report = productInputFileDAO.getInputPrepareReport(product);
         StringWriter writer = new StringWriter();
         IOUtils.copy(report, writer, "UTF-8");
-        String theString = writer.toString();
-        ObjectMapper objectMapper = new ObjectMapper();
-        FileProcessingReport fileProcessingReport = objectMapper.readValue(theString, FileProcessingReport.class);
         doAssertionForFileProcessingInRestrictedSources();
     }
 
@@ -165,18 +168,28 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         doAssertionForFileProcessingMissingRefsets(fileProcessingReport);
     }
 
+    @Test
+    public void testPrepareInputFilesWithUnprocessedFiles() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
+        String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE_WITH_UNPROCESSED).getFile();
+        File testManifest = new File(testManifestFile);
+        addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
+        doAssertionWithUnprocessedFiles();
+    }
+
 
     private void doAssertionForFileProcessingInAllSources() throws ResourceNotFoundException, IOException {
-        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
+        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20140731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(25, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20140731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(7, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20170731.txt");
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20140731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
-        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20170731.txt");
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20140731.txt");
         Assert.assertNotNull(inputStream);
         Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
     }
@@ -196,13 +209,39 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
     }
 
+    private void doAssertionWithUnprocessedFiles() throws ResourceNotFoundException, IOException {
+        List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
+        Assert.assertEquals(6, inputFileList.size());
+        InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(9, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(3, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_TextDefinition_Delta-en_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Description_Delta-en_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(2, IOUtils.readLines(inputStream).size());
+        
+        //Unprocessed files
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Concept_Delta_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(4, IOUtils.readLines(inputStream).size());
+        inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "xsct2_Relationship_Delta_INT_20170731.txt");
+        Assert.assertNotNull(inputStream);
+        Assert.assertEquals(5, IOUtils.readLines(inputStream).size());
+    }
+
+
     private void doAssertionForFileProcessingMissingRefsets(FileProcessingReport fileProcessingReport) {
         String[] missingRefsets = {"900000000000523009","900000000000531004","900000000000489007"};
         int countMissingRefset = 0;
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         //for (FileProcessingReportDetail reportDetail : reportDetails) {
-            if(reportDetails.containsKey(FileProcessingReportType.WARNING)) {
-                for (FileProcessingReportDetail reportDetail : reportDetails.get(FileProcessingReportType.WARNING)) {
+            if(reportDetails.containsKey(FileProcessingReportType.WARNING.name())) {
+                for (FileProcessingReportDetail reportDetail : reportDetails.get(FileProcessingReportType.WARNING.name())) {
                     String message = reportDetail.getMessage();
                     for (String missingRefset : missingRefsets) {
                         if (message.contains(missingRefset)) {

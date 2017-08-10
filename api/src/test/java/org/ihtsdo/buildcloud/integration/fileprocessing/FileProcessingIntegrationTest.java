@@ -6,6 +6,7 @@ import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
+import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,9 +22,9 @@ import java.util.Map;
 public class FileProcessingIntegrationTest extends AbstractControllerTest {
 
     private IntegrationTestHelper integrationTestHelper;
-    private static final String REFSET_TOOL = "reference-set-tool";
-    private static final String MAPPING_TOOLS = "mapping-tools";
-    private static final String MANUAL = "manual";
+    private static final String REFSET_TOOL = InputSources.REFSET_TOOL.getSourceName();
+    private static final String MAPPING_TOOLS = InputSources.MAPPING_TOOLS.getSourceName();
+    private static final String MANUAL = InputSources.MANUAL.getSourceName();
     private static final String MANIFEST_DIR = "manifest/";
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -106,10 +107,6 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         for (Map.Entry<String,List<FileProcessingReportDetail>>  reportDetail : reportDetails.entrySet()) {
             Assert.assertEquals(FileProcessingReportType.INFO.name(), reportDetail.getKey());
         }
-        integrationTestHelper.getInputFile("xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
-        integrationTestHelper.getInputFile("xder2_cRefset_AttributeValueDelta_INT_20170731.txt");
-        integrationTestHelper.getInputFile("xsct2_Description_Delta-en_INT_20170731.txt");
-        integrationTestHelper.getInputFile("xsct2_TextDefinition_Delta-en_INT_20170731.txt");
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }
@@ -123,11 +120,6 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         int countWarning = 0;
-        /*for (FileProcessingReportDetail reportDetail : reportDetails) {
-            if (reportDetail.getType().equals(FileProcessingReportType.WARN)) {
-                countWarning++;
-            }
-        }*/
         if(reportDetails.containsKey(FileProcessingReportType.WARNING.name())){
             countWarning = reportDetails.get(FileProcessingReportType.WARNING.name()).size();
         }
