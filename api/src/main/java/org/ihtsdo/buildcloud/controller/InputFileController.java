@@ -165,7 +165,7 @@ public class InputFileController {
 
 	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.POST)
 	@ApiOperation( value = "Store or Replace a file in specified source",
-			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL" )
+			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {

@@ -90,9 +90,9 @@ public class FileProcessor {
             copySourceFilesToLocal(sourceFileLists);
             loadFileProcessConfigsFromManifest();
             processFiles();
-            /*if(this.copyFilesDefinedInManifest) {
+            if(this.copyFilesDefinedInManifest) {
                 copyFilesToOutputDir();
-            }*/
+            }
             uploadOutFilesToProductInputFiles();
         } catch (Exception e) {
             fileProcessingReport.add(FileProcessingReportType.ERROR, e.getLocalizedMessage());
@@ -421,9 +421,10 @@ public class FileProcessor {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 Integer fileCount = fileCountMap.get(sourceFileName);
                 if(fileCount != null) {
-                    if(fileCount > 1) {
+
+                    if(fileCount > 1) { //If we find duplication in multiple sources, skip file copying since we don't know which one to copy
                         logger.warn("Found file with name {} in multiple sources. Skip copying file to output directory", sourceFileName);
-                    } else if(fileCount <=0){
+                    } else if(fileCount <=0){ // Skip if cannot find matching file
                         logger.warn("Could not find file with name {} in any source. Skip copying file to output directory", sourceFileName);
                     } else {
                         File inFile = new File(sourceFilePath);
