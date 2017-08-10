@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
+import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
@@ -165,7 +166,7 @@ public class InputFileController {
 
 	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.POST)
 	@ApiOperation( value = "Store or Replace a file in specified source",
-			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL" )
+			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
@@ -218,8 +219,10 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
 			notes = "Create or replace files in input file directories")
-	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
-		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, false);
+	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
+												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
+		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 	

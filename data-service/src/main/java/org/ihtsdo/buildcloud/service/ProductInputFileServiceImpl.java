@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
+import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -31,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -127,6 +127,8 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
 		Product product = getProduct(centerKey, productKey);
 		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
+		if(InputSources.getSource(sourceName) == null) throw new IllegalArgumentException("Invalid sourceName. " +
+				"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual");
 		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 
