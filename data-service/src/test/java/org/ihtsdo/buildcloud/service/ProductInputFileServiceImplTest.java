@@ -173,6 +173,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         String testManifestFile = getClass().getResource("/" + TEST_MANIFEST_FILE_WITH_UNPROCESSED).getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
+        addEmptyFileToSourceDirectory(SRC_MANUAL,"sct2_Concept_Delta_INT_20170731.txt");
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
         doAssertionWithUnprocessedFiles();

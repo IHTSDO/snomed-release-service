@@ -441,7 +441,11 @@ public class FileProcessor {
         File[] files = outDir.listFiles();
     	logger.debug("Found {} prepared files in directory {} to upload to the input-files folder in S3", files.length, outDir.getAbsolutePath());
         for (File file : files) {
-        	String inputFileName = file.getName().replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "").replace("der2", "rel2").replace("sct2", "rel2");
+        	String inputFileName = file.getName();
+        	if (file.getName().startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
+        		inputFileName = file.getName().replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
+        	}
+        	inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + inputFileName;
             fileProcessingReport.add(FileProcessingReportType.INFO, new StringBuilder("Uploaded ").append(inputFileName).append(" to product input files directory").toString());
             fileHelper.putFile(file,filePath);
