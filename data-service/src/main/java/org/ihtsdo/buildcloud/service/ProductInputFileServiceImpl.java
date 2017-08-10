@@ -128,7 +128,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 		if(InputSources.getSource(sourceName) == null) throw new IllegalArgumentException("Invalid sourceName. " +
-				"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual");
+				"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual,externally-maintained");
 		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 
