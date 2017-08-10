@@ -159,21 +159,29 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		if(StringUtils.isBlank(subDirectory)) {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
 			for (String path : paths) {
-				if(fileName == null || fileName.isEmpty() || FilenameUtils.getName(path).equals(fileName)) {
+				if(StringUtils.isBlank(fileName) || FilenameUtils.getName(path).equals(fileName)) {
 					filePath = s3PathHelper.getProductSourcesPath(product).append(path).toString();
 					fileHelper.deleteFile(filePath);
 					LOGGER.info("Deleted {} from source directory", filePath);
 				}
 			}
 		} else {
-			filePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).append(fileName).toString();
-			if(fileHelper.exists(filePath)) {
-				fileHelper.deleteFile(filePath);
-			} else {
-				LOGGER.warn("Could not find {} to delete", filePath);
+			if (!StringUtils.isBlank(fileName)) {
+				filePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).append(fileName).toString();
+				if (fileHelper.exists(filePath)) {
+					fileHelper.deleteFile(filePath);
+				} else {
+					LOGGER.warn("Could not find {} to delete", filePath);
+				}
+			}  else {
+				
+				List<String> toDelete = dao.listRelativeSourceFilePaths(product,subDirectory);
+				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(),subDirectory, productKey);
+				for (String path : toDelete) {
+					fileHelper.deleteFile(path);
+				}
 			}
 		}
-
 	}
 
 	@Override
