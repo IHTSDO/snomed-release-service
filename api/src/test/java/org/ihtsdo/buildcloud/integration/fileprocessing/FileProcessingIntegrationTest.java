@@ -104,9 +104,7 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
         Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertEquals(24, reportDetails.get(FileProcessingReportType.INFO.name()).size());
-        for (Map.Entry<String,List<FileProcessingReportDetail>>  reportDetail : reportDetails.entrySet()) {
-            Assert.assertEquals(FileProcessingReportType.INFO.name(), reportDetail.getKey());
-        }
+        Assert.assertEquals(2, reportDetails.get(FileProcessingReportType.WARNING.name()).size());
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }

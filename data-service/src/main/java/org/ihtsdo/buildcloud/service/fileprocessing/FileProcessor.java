@@ -269,27 +269,33 @@ public class FileProcessor {
     }
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
-
+        List<String> warnings = new ArrayList<>();
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
         }
          else {
-            String[] splits = lines.get(0).split("\t");
-            String refsetId = splits[REFSETID_COL];
-            FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-            //Show warning if refset id is found in sources but not used in manifest configuration
-            if(fileProcessingConfig == null) {
-                String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
-                        .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                fileProcessingReport.add(FileProcessingReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
-                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
-            } else {
+            Map<String, List<String>> rowsGroupedByRefsetId = new HashMap<>();
+            for (String line : lines) {
+                String[] splits = line.split("\t");
+                String refsetId = splits[REFSETID_COL];
+                FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+                if(fileProcessingConfig == null) {
+                    warnings.add(refsetId+":"+sourceName+"/"+inFileName);
+                } else {
+                    if(!rowsGroupedByRefsetId.containsKey(refsetId)) {
+                        rowsGroupedByRefsetId.put(refsetId, new ArrayList<String>());
+                    }
+                    rowsGroupedByRefsetId.get(refsetId).add(line);
+                }
+            }
+            for (String refsetId : rowsGroupedByRefsetId.keySet()) {
+                FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
                 if(fileProcessingConfig.getTargetFiles() != null){
                     Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);
                     String exactSourceName = "";
                     String outputFileName = "";
                     if(targetFiles != null && targetFiles.size() > 0){
-                        writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
+                        writeToFile(outDir, header, sourceName, rowsGroupedByRefsetId.get(refsetId), fileProcessingConfig);
                         String infoMessage = new StringBuilder("Found refset id ").append(refsetId)
                                 .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
                         fileProcessingReportDetails.add(new FileProcessingReportDetail(FileProcessingReportType.INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
@@ -298,8 +304,8 @@ public class FileProcessor {
                         if(fileNameAccordingSources != null ){
 
                             for(Map.Entry<String, List<String>> entry : fileNameAccordingSources.entrySet()){
-                                    outputFileName = entry.getKey();
-                                    exactSourceName = entry.getValue().toString();
+                                outputFileName = entry.getKey();
+                                exactSourceName = entry.getValue().toString();
                             }
                             String warningMessage = new StringBuilder("The Manifest states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
                             fileProcessingReport.add(FileProcessingReportType.WARNING, outputFileName , refsetId, sourceName, warningMessage);
@@ -309,7 +315,13 @@ public class FileProcessor {
                     }
 
                 }
-
+            }
+            for (String warning : warnings) {
+                String[] warningSplits = warning.split(":");
+                String warningMessage = new StringBuilder("Found refset id ").append(warningSplits[0])
+                        .append(" in ").append(warningSplits[1]).append(" but is not used in manifest configuration").toString();
+                fileProcessingReport.add(FileProcessingReportType.WARNING,  FilenameUtils.getName(inFileName) , warningSplits[0], sourceName, warningMessage);
+                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", warningSplits[0], sourceName, inFileName);
             }
 
         }
@@ -401,40 +413,62 @@ public class FileProcessor {
 
 
     private void copyFilesToOutputDir() throws IOException {
-        Map<String, Integer> fileCountMap = new HashMap<>();
+        Map<String, List<String>> fileToCopyWithSourceList = new HashMap<>();
         for (String source : sourceFilesMap.keySet()) {
             List<String> sourceFiles = sourceFilesMap.get(source);
             for (String sourceFilePath : sourceFiles) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 String file = filesToCopy.get(sourceFileName);
                 if(file != null) {
-                    if(!fileCountMap.containsKey(file)) {
-                        fileCountMap.put(file, 0);
+                    if(!fileToCopyWithSourceList.containsKey(file)) {
+                        List<String> sources = new ArrayList<>();
+                        fileToCopyWithSourceList.put(file, sources);
                     }
-                    fileCountMap.put(file, fileCountMap.get(file) + 1);
+                    fileToCopyWithSourceList.get(file).add(source + "::" + sourceFilePath);
                 }
             }
         }
-        for (String source : sourceFilesMap.keySet()) {
-            List<String> sourceFiles = sourceFilesMap.get(source);
-            for (String sourceFilePath : sourceFiles) {
-                String sourceFileName = FilenameUtils.getName(sourceFilePath);
-                Integer fileCount = fileCountMap.get(sourceFileName);
-                if(fileCount != null) {
+        for (String fileName : fileToCopyWithSourceList.keySet()) {
+            List<String> sources = fileToCopyWithSourceList.get(fileName);
+            int fileCount = sources.size();
+            if(fileCount > 1) {
+                StringBuilder warningMessageBuilder = new StringBuilder("Found file with name ").append(fileName).append( " in multiple sources:");
+                for (String sourceName : sources) {
+                    String src = sourceName.split("::")[0];
+                    warningMessageBuilder.append(" ").append(src).append(",");
+                }
+                warningMessageBuilder.deleteCharAt(warningMessageBuilder.length()-1);
+                warningMessageBuilder.append(". Skip copying file.");
+                fileProcessingReport.add(FileProcessingReportType.WARNING, fileName, null, null, warningMessageBuilder.toString());
+            } else if (fileCount == 0) {
+                logger.warn("Could not find file with name {} in any source. Skip copying file", fileName);
+                StringBuilder warningMessageBuilder = new StringBuilder("Could not find file with name ").append(fileName).append(" in any source");
+                fileProcessingReport.add(FileProcessingReportType.WARNING, fileName, null, null, warningMessageBuilder.toString());
+            } else {
+                    String path = sources.get(0).split("::")[1];
+                    File inFile = new File(path);
+                    File outFile = new File(outDir, fileName);
+                    FileUtils.copyFile(inFile, outFile);
+                    logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+            }
+        }
+    }
 
-                    if(fileCount > 1) { //If we find duplication in multiple sources, skip file copying since we don't know which one to copy
-                        logger.warn("Found file with name {} in multiple sources. Skip copying file to output directory", sourceFileName);
-                    } else if(fileCount <=0){ // Skip if cannot find matching file
-                        logger.warn("Could not find file with name {} in any source. Skip copying file to output directory", sourceFileName);
-                    } else {
-                        File inFile = new File(sourceFilePath);
-                        File outFile = new File(outDir, sourceFileName);
-                        FileUtils.copyFile(inFile, outFile);
-                        logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                    }
-                }
+    private void mergeUnspecfiedFile(String fileName, List<String> sourceFileMap) throws IOException {
+        File outFile = new File(outDir, fileName);
+        boolean isFirstFile = true;
+        for (String sourcePath : sourceFileMap) {
+            List<String> lines = FileUtils.readLines(new File(sourcePath), CharEncoding.UTF_8);
+            if(isFirstFile) {
+                FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING);
+                isFirstFile = false;
+            } else {
+                lines.remove(0); //Remove header line
+                FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
             }
         }
+        System.out.println(FileUtils.readLines(outFile, CharEncoding.UTF_8).size());
+
     }
 
     private void uploadOutFilesToProductInputFiles() throws NoSuchAlgorithmException, IOException, DecoderException {

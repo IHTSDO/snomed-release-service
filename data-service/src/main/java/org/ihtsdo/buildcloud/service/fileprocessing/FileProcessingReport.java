@@ -20,13 +20,11 @@ public class FileProcessingReport {
 
     private String executionTime;
     private Map<String,List<FileProcessingReportDetail>> details;
-    private List<FileProcessingReportDetail> fileProcessingReportDetails ;
 
 
     public FileProcessingReport() {
         this.details = new HashMap<>();
         executionTime = new DateTime().toDateTime(DateTimeZone.UTC).toString();
-        this.fileProcessingReportDetails =  new ArrayList<>();
     }
 
     public Map<String,List<FileProcessingReportDetail>> getDetails() {
@@ -45,13 +43,10 @@ public class FileProcessingReport {
     }
 
     private void addItemToListFileProcessingReportDetail(FileProcessingReportType type, FileProcessingReportDetail detail) {
-        if(this.details.get(type.name()) != null){
-            this.fileProcessingReportDetails = this.details.get(type.name());
-            this.fileProcessingReportDetails.add(detail);
-        }else {
-            this.fileProcessingReportDetails.add(detail);
-            this.details.put(type.name(), this.fileProcessingReportDetails);
+        if(this.details.get(type.name()) == null) {
+            this.details.put(type.name(), new ArrayList<FileProcessingReportDetail>());
         }
+        this.details.get(type.name()).add(detail);
     }
 
     public String getExecutionTime() {
