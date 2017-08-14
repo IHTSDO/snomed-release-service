@@ -4,7 +4,7 @@ import org.apache.commons.codec.CharEncoding;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -119,7 +119,7 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public void persistInputPrepareReport(final Product product, final FileProcessingReport fileProcessingReport) throws IOException {
+	public void persistInputPrepareReport(final Product product, final SourceFileProcessingReport fileProcessingReport) throws IOException {
 		String reportPath = s3PathHelper.getInputFilePrepareLogPath(product);
 		fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
 	}

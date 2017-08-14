@@ -1,10 +1,11 @@
-package org.ihtsdo.buildcloud.service.fileprocessing;
+package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
 import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.manifest.FileType;
@@ -17,22 +18,35 @@ import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.xml.bind.JAXBException;
+
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-/**
- * User: huyle
- * Date: 5/24/2017
- * Time: 10:56 AM
- */
-public class FileProcessor {
+public class InputSourceFileProcessor {
 
-    private final Logger logger = LoggerFactory.getLogger(FileProcessor.class);
+    private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
+    
+    private static final String FILE_EXTENSION_TXT = "txt";
+    private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
+    private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
+    private static final int REFSETID_COL = 4;
+    private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
+    private static final String INPUT_FILE_TYPE_REFSET = "Refset";
+    private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description";
+    private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
+    private static final String OUT_DIR = "out";
+    private static final String TEXT_DEFINITION_ALL_LANGUAGE_CODE = "*";
+    private static final int DESCRIPTION_TYPE_COL = 6;
+    private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
 
     private InputStream manifestStream;
     private FileHelper fileHelper;
@@ -47,26 +61,15 @@ public class FileProcessor {
     private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
     private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
-    private Map<String, String> filesToCopy;
+    private MultiValueMap<String, String> filesToCopy;
     private Map<String, List<String>> sourceFilesMap;
     private Map<String, Map<String, List<String>>> refSetConfigFromManifest;
-    private FileProcessingReport fileProcessingReport;
+    private SourceFileProcessingReport fileProcessingReport;
 
-    private static final String FILE_EXTENSION_TXT = "txt";
-    private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
-    private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
-    private static final int REFSETID_COL = 4;
-    private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
-    private static final String INPUT_FILE_TYPE_REFSET = "Refset";
-    private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description";
-    private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
-    private static final String OUT_DIR = "out";
-    private static final String TEXT_DEFINITION_ALL_LANGUAGE_CODE = "*";
-    private static final int DESCRIPTION_TYPE_COL = 6;
-    private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
+    private Map<String,List<String>> skippedSourceFiles;
 
-    public FileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
-                         Product product, FileProcessingReport fileProcessingReport, boolean copyFilesDefinedInManifest) {
+    public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
+                         Product product, SourceFileProcessingReport fileProcessingReport, boolean copyFilesDefinedInManifest) {
         this.manifestStream = manifestStream;
         this.fileHelper = fileHelper;
         this.buildS3PathHelper = buildS3PathHelper;
@@ -79,23 +82,24 @@ public class FileProcessor {
         this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
         this.fileProcessingReport = fileProcessingReport;
         this.refSetConfigFromManifest = new HashMap<>();
-        if(copyFilesDefinedInManifest) {
-            this.filesToCopy = new HashMap<>();
-        }
+        this.skippedSourceFiles = new HashMap<>();
+        this.filesToCopy = new LinkedMultiValueMap<>();
+      
     }
 
-    public FileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
+    public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
         try {
             initLocalDirs();
             copySourceFilesToLocal(sourceFileLists);
             loadFileProcessConfigsFromManifest();
             processFiles();
             if (this.copyFilesDefinedInManifest) {
-                copyFilesToOutputDir();
+               fileProcessingReport.addReportDetails(copyFilesToOutputDir());
             }
             uploadOutFilesToProductInputFiles();
         } catch (Exception e) {
-            fileProcessingReport.add(FileProcessingReportType.ERROR, e.getLocalizedMessage());
+            fileProcessingReport.add(ReportType.ERROR, e.getLocalizedMessage());
+            logger.error("Error encountered when preparing input files.", e);
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
@@ -111,7 +115,6 @@ public class FileProcessor {
     }
 
     private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
-
         for (String sourceFilePath : sourceFileLists) {
             if (FilenameUtils.getExtension(sourceFilePath).equalsIgnoreCase(FILE_EXTENSION_TXT)) {
                 //Copy files from S3 to local for processing
@@ -131,13 +134,14 @@ public class FileProcessor {
                 sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
             }
         }
+        fileProcessingReport.setSoureFiles(sourceFilesMap);
         return localDir;
     }
 
     private void loadFileProcessConfigsFromManifest() throws JAXBException, ResourceNotFoundException {
         ManifestXmlFileParser manifestXmlFileParser = new ManifestXmlFileParser();
         if(manifestStream == null) {
-            fileProcessingReport.add(FileProcessingReportType.ERROR, "Failed to load manifest find");
+            fileProcessingReport.add(ReportType.ERROR, "Failed to load manifest find");
             throw new ResourceNotFoundException("Failed to load manifest find");
         }
         ListingType listingType = manifestXmlFileParser.parse(manifestStream);
@@ -146,13 +150,16 @@ public class FileProcessor {
 
     private void loadProcessConfig(ListingType listingType) {
         FolderType rootFolder = listingType.getFolder();
-        getFilesFromCurrentAndSubFolders(rootFolder);
+        getDeltaFilesFromFolder(rootFolder);
     }
 
-    private void getFilesFromCurrentAndSubFolders(FolderType folder) {
+    private void getDeltaFilesFromFolder(FolderType folder) {
         if (folder != null) {
-            if (folder.getFile() != null) {
+            if (folder.getFile() != null ) {
                 for (FileType fileType : folder.getFile()) {
+                	if (fileType.getName().contains(RF2Constants.SNAPSHOT) || fileType.getName().contains(RF2Constants.FULL)) {
+                		continue;
+                	}
                     if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
                         foundTextDefinitionFile = true;
                         if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
@@ -190,8 +197,6 @@ public class FileProcessor {
                             }
                             fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
                             Map<String, List<String>> fileNameAndSourceMaps = new HashMap<>();
-                            List<String> sourceFromManifest = new ArrayList<>();
-
                             if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
                                 fileNameAndSourceMaps.put(fileType.getName(), refsetType.getSources().getSource());
                                 refSetConfigFromManifest.put(refsetId, fileNameAndSourceMaps);
@@ -199,7 +204,7 @@ public class FileProcessor {
                                     if (fileProcessingConfig.getTargetFiles().containsKey(s)) {
                                         fileProcessingConfig.addTargetFileToSource(s, fileType.getName());
                                     } else {
-                                        logger.error("Failed to find source {}", s);
+                                        logger.error("Failed to find source {}" + s);
                                     }
                                 }
                             } else {
@@ -220,15 +225,21 @@ public class FileProcessor {
                         }
                     } else {
                         if(this.copyFilesDefinedInManifest) {
-                            this.filesToCopy.put(fileType.getName(), fileType.getName());
+                        	String deltaFileName = fileType.getName();
+                        	logger.debug("Add file to copy:" + deltaFileName);
+                        	deltaFileName = (deltaFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? deltaFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : deltaFileName;
+                            if (fileType.getSources() != null) {
+                            		this.filesToCopy.put(deltaFileName, fileType.getSources().getSource());
+                            } else {
+                            		this.filesToCopy.put(deltaFileName, Collections.emptyList());
+                            	}
                         }
                     }
-
                 }
             }
             if (folder.getFolder() != null) {
                 for (FolderType subFolder : folder.getFolder()) {
-                    getFilesFromCurrentAndSubFolders(subFolder);
+                	getDeltaFilesFromFolder(subFolder);
                 }
             }
         }
@@ -254,22 +265,20 @@ public class FileProcessor {
                         } else {
                             processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
+                    } else {
+                    	addFileToSkippedList(source, fileName);
                     }
-                }
+                } 
                 logger.info("Finish processing file {}", fileName);
             }
         }
-        if(fileProcessingReportDetails.size() > 0){
-            if(fileProcessingReport.getDetails().containsKey(fileProcessingReportDetails.get(0).getType())){
-                fileProcessingReport.getDetails().get(fileProcessingReportDetails.get(0).getType()).addAll(fileProcessingReportDetails);
-            }else{
-                fileProcessingReport.getDetails().put(fileProcessingReportDetails.get(0).getType().name(), fileProcessingReportDetails);
-            }
+        for (FileProcessingReportDetail detail : fileProcessingReportDetails) {
+        	fileProcessingReport.addReportDetail(detail);
+        	
         }
     }
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
-
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
         }
@@ -278,10 +287,10 @@ public class FileProcessor {
             String refsetId = splits[REFSETID_COL];
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
             //Show warning if refset id is found in sources but not used in manifest configuration
-            if(fileProcessingConfig == null) {
+            if (fileProcessingConfig == null) {
                 String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
                         .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                fileProcessingReport.add(FileProcessingReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
+                fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
             } else {
                 if(fileProcessingConfig.getTargetFiles() != null){
@@ -292,30 +301,36 @@ public class FileProcessor {
                         writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
                         String infoMessage = new StringBuilder("Found refset id ").append(refsetId)
                                 .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
-                        fileProcessingReportDetails.add(new FileProcessingReportDetail(FileProcessingReportType.INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
-                    }else{
+                        fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
+                    } else {
                         Map<String, List<String>> fileNameAccordingSources = refSetConfigFromManifest.get(refsetId);
-                        if(fileNameAccordingSources != null ){
-
+                        if (fileNameAccordingSources != null ){
                             for(Map.Entry<String, List<String>> entry : fileNameAccordingSources.entrySet()){
                                     outputFileName = entry.getKey();
                                     exactSourceName = entry.getValue().toString();
                             }
-                            String warningMessage = new StringBuilder("The Manifest states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
-                            fileProcessingReport.add(FileProcessingReportType.WARNING, outputFileName , refsetId, sourceName, warningMessage);
+                            String warningMessage = new StringBuilder("The manifest.xml states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
+                            fileProcessingReport.add(WARNING, outputFileName , refsetId, sourceName, warningMessage);
                             logger.warn(warningMessage);
                         }
 
                     }
-
                 }
-
             }
-
         }
     }
 
-    private void processFile(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
+    private void addFileToSkippedList(String sourceName, String filename) {
+    	if (skippedSourceFiles.get(sourceName) == null) {
+    		List<String> files = new ArrayList<String>();
+    		files.add(filename);
+    		skippedSourceFiles.put(sourceName, files );
+    	} else {
+    		skippedSourceFiles.get(sourceName).add(filename);
+    	}
+	}
+
+	private void processFile(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
             FileProcessingConfig> fileProcessingConfigs) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
         if (lines == null || lines.isEmpty())  {
@@ -360,7 +375,6 @@ public class FileProcessor {
                     }
                     descriptionRows.get(comparisonValue).add(line);
                 }
-
             }
             for (String comparisonValue : descriptionRows.keySet()) {
                 FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
@@ -400,57 +414,129 @@ public class FileProcessor {
     }
 
 
-    private void copyFilesToOutputDir() throws IOException {
+    private List<FileProcessingReportDetail> copyFilesToOutputDir() throws IOException {
+    	//check files specified in the manifest file but not present in the out dir.
+    	List<FileProcessingReportDetail> reportDetails = new ArrayList<>();
+    	List<String> copyFileList = new ArrayList<>(filesToCopy.keySet());
         Map<String, Integer> fileCountMap = new HashMap<>();
-        for (String source : sourceFilesMap.keySet()) {
-            List<String> sourceFiles = sourceFilesMap.get(source);
+        for (String source : skippedSourceFiles.keySet()) {
+            List<String> sourceFiles = skippedSourceFiles.get(source);
             for (String sourceFilePath : sourceFiles) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
-                String file = filesToCopy.get(sourceFileName);
-                if(file != null) {
-                    if(!fileCountMap.containsKey(file)) {
-                        fileCountMap.put(file, 0);
+                if (copyFileList.contains(sourceFileName)) {
+                    if(!fileCountMap.containsKey(sourceFileName)) {
+                        fileCountMap.put(sourceFileName, 0);
                     }
-                    fileCountMap.put(file, fileCountMap.get(file) + 1);
+                    fileCountMap.put(sourceFileName, fileCountMap.get(sourceFileName) + 1);
                 }
             }
         }
-        for (String source : sourceFilesMap.keySet()) {
-            List<String> sourceFiles = sourceFilesMap.get(source);
-            for (String sourceFilePath : sourceFiles) {
+        Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
+        for (String source : skippedSourceFiles.keySet()) {
+        	List<String> filesProcessed = new ArrayList<>();
+            for (String sourceFilePath : skippedSourceFiles.get(source)) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
+                sourceFileName = sourceFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? sourceFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : sourceFileName;
+                filesProcessed.add(sourceFilePath);
                 Integer fileCount = fileCountMap.get(sourceFileName);
-                if(fileCount != null) {
-
-                    if(fileCount > 1) { //If we find duplication in multiple sources, skip file copying since we don't know which one to copy
-                        logger.warn("Found file with name {} in multiple sources. Skip copying file to output directory", sourceFileName);
-                    } else if(fileCount <=0){ // Skip if cannot find matching file
-                        logger.warn("Could not find file with name {} in any source. Skip copying file to output directory", sourceFileName);
+                if (fileCount != null) {
+                    if (fileCount > 1) { 
+                    	//If we find duplication in multiple sources, skip file copying since we don't know which one to copy
+                    	String msg = "Found file with name " + sourceFileName + "in multiple sources. Skip copying source file to output directory";
+                        logger.warn(msg);
+                        reportDetails.add(new FileProcessingReportDetail(WARNING, msg));
+                    } else if (fileCount <=0 ){ 
+                    	String msg = "Could not find any file matched exactly in any source with name:" + sourceFileName;
+                        logger.warn(msg);
+                        reportDetails.add(new FileProcessingReportDetail(WARNING, sourceFileName, source, null, msg));
                     } else {
                         File inFile = new File(sourceFilePath);
                         File outFile = new File(outDir, sourceFileName);
                         FileUtils.copyFile(inFile, outFile);
                         logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+                        reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, " file name matched exactly and copied"));
+                    }
+                } else {
+                	String fileNameSpecifiedByManifest = fileNameMap.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
+                    if (fileNameSpecifiedByManifest != null) {
+                    	if (!filesToCopy.containsKey(fileNameSpecifiedByManifest) || (!filesToCopy.get(fileNameSpecifiedByManifest).isEmpty() && !filesToCopy.get(fileNameSpecifiedByManifest).contains(source))) {
+                        	//source file is not required by the manifest
+                        	String msg = "File is skipped as not required by the manifest:" +  sourceFileName;
+                        	logger.info(msg);
+                        	reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, msg));
+                        } else {
+                        	File inFile = new File(sourceFilePath);
+                            File outFile = new File(outDir, fileNameSpecifiedByManifest);
+                            FileUtils.copyFile(inFile, outFile);
+                            logger.info("Renamed {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+                            reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Renamed to:" + fileNameSpecifiedByManifest));
+                        }
+                    	 
+                    } else {
+                    	String msg = "File is skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
+                    	logger.warn(msg);
+                    	reportDetails.add(new FileProcessingReportDetail(WARNING, sourceFileName, source, null, msg));
                     }
                 }
             }
+            skippedSourceFiles.get(source).removeAll(filesProcessed);
         }
+        return reportDetails;
     }
-
+    
+    private String getFileNameWithoutCountryNameSpaceToken(String rf2FileName) {
+    	rf2FileName = rf2FileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? rf2FileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : rf2FileName;
+    	String[] splits = rf2FileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+		StringBuilder key = new StringBuilder();
+		for (int i=0; i < splits.length ;i++) {
+			if (i == 3) {
+				continue;
+			}
+			if ( i > 0) {
+				key.append(RF2Constants.FILE_NAME_SEPARATOR);
+			}
+			key.append(splits[i]);
+		}
+		return key.toString();
+    }
+    
+    private Map<String, String> getFileNameMapWithoutNamespaceToken() {
+    	Map<String, String> result = new HashMap<>();
+    	for (String fileName : filesToCopy.keySet()) {
+    		result.put(getFileNameWithoutCountryNameSpaceToken(fileName), fileName);
+    	}
+    	return result;
+    }
+    
     private void uploadOutFilesToProductInputFiles() throws NoSuchAlgorithmException, IOException, DecoderException {
         File[] files = outDir.listFiles();
+        List<String> filesPrepared = new ArrayList<>();
     	logger.debug("Found {} prepared files in directory {} to upload to the input-files folder in S3", files.length, outDir.getAbsolutePath());
         for (File file : files) {
         	String inputFileName = file.getName();
+        	filesPrepared.add(inputFileName);
         	if (file.getName().startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
         		inputFileName = file.getName().replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
         	}
         	inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + inputFileName;
-            fileProcessingReport.add(FileProcessingReportType.INFO, new StringBuilder("Uploaded ").append(inputFileName).append(" to product input files directory").toString());
+            fileProcessingReport.add(ReportType.INFO, new StringBuilder("Uploaded ").append(inputFileName).append(" to product input files directory").toString());
             fileHelper.putFile(file,filePath);
             logger.info("Uploaded {} to product input files directory with name {}", file.getName(), inputFileName);
         }
+        List<String> requiredFileList = new ArrayList<String>(filesToCopy.keySet());
+        for (String filename : requiredFileList) {
+        	if (!filesPrepared.contains(filename)) {
+        		 String message = "Required by manifest but not found in source:" + filename;
+            	 logger.warn(message);
+    			fileProcessingReport.add(WARNING, message);
+        	}
+        	
+        }
     }
 
+	public Map<String, List<String>> getSkippedSourceFiles() {
+		return skippedSourceFiles;
+	}
+    
 }

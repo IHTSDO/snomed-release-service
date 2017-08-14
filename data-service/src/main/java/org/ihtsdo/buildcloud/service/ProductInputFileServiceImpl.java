@@ -8,11 +8,9 @@ import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
-import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -25,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -127,8 +128,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
 		Product product = getProduct(centerKey, productKey);
 		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
-		if(InputSources.getSource(sourceName) == null) throw new IllegalArgumentException("Invalid sourceName. " +
-				"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual,externally-maintained");
 		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 
@@ -211,19 +210,24 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public FileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
+	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
-		FileProcessingReport report = new FileProcessingReport();
+		SourceFileProcessingReport report = new SourceFileProcessingReport();
 		if(manifestStream == null) {
-			report.add(FileProcessingReportType.ERROR, "Failed to load manifest");
+			report.add(ERROR, "Failed to load manifest");
 		} else {
-			FileProcessor fileProcessor = new FileProcessor(manifestStream, fileHelper, s3PathHelper, product, report, copyFilesInManifest);
+			InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, report, copyFilesInManifest);
 			List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
 			if(sourceFiles != null && !sourceFiles.isEmpty()) {
 				fileProcessor.processFiles(sourceFiles);
 			} else {
-				report.add(FileProcessingReportType.ERROR, "Failed to load files from source directory");
+				report.add(ERROR, "Failed to load files from source directory");
+			}
+			for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
+				for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
+					report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+				}
 			}
 		}
 		dao.persistInputPrepareReport(product, report);
