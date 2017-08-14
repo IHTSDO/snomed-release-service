@@ -17,16 +17,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for containsLanguageCodesType complex type.
+ * <p>Java class for containsAdditionalFieldsType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="containsLanguageCodesType">
+ * &lt;complexType name="containsAdditionalFieldsType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="code" type="{http://release.ihtsdo.org/manifest/1.0.0}languageCodeType" maxOccurs="unbounded"/>
+ *         &lt;element name="field" type="{http://release.ihtsdo.org/manifest/1.0.0}fieldType" maxOccurs="unbounded"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -36,41 +36,41 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "containsLanguageCodesType", propOrder = {
-    "code"
+@XmlType(name = "containsAdditionalFieldsType", propOrder = {
+    "field"
 })
-public class ContainsLanguageCodesType {
+public class ContainsAdditionalFieldsType {
 
     @XmlElement(required = true)
-    protected List<String> code;
+    protected List<FieldType> field;
 
     /**
-     * Gets the value of the code property.
+     * Gets the value of the field property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the code property.
+     * This is why there is not a <CODE>set</CODE> method for the field property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getCode().add(newItem);
+     *    getField().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link String }
+     * {@link FieldType }
      * 
      * 
      */
-    public List<String> getCode() {
-        if (code == null) {
-            code = new ArrayList<String>();
+    public List<FieldType> getField() {
+        if (field == null) {
+            field = new ArrayList<FieldType>();
         }
-        return this.code;
+        return this.field;
     }
 
 }
