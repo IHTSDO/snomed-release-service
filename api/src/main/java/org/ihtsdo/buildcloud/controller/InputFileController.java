@@ -4,7 +4,7 @@ import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

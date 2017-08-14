@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +29,7 @@ public interface ProductInputFileDAO {
 
 	List<String> listRelativeSourceFilePaths(Product product, String subDirectory);
 
-	void persistInputPrepareReport(Product product, FileProcessingReport fileProcessingReport) throws IOException;
+	void persistInputPrepareReport(Product product, SourceFileProcessingReport fileProcessingReport) throws IOException;
 
 	InputStream getInputPrepareReport(Product product);
 
