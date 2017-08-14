@@ -13,9 +13,12 @@ import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
 import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessor;
+import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
@@ -25,7 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -54,6 +59,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
+
+	@Autowired
+	private TermServerService termServerService;
 
 	@Autowired
 	public ProductInputFileServiceImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -288,4 +296,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		}
 	}
 
+	@Override
+	public void gatherInputFileFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException {
+		File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
+				requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
+		FileInputStream fileInputStream = new FileInputStream(exportFile);
+		putSourceFile(InputSources.TERM_SERVER.getSourceName(), centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+
+	}
 }
