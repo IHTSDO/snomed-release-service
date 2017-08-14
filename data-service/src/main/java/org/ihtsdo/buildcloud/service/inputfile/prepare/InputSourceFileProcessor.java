@@ -8,6 +8,7 @@ import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.manifest.FieldType;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
@@ -25,7 +26,9 @@ import javax.xml.bind.JAXBException;
 
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -65,8 +68,8 @@ public class InputSourceFileProcessor {
     private Map<String, List<String>> sourceFilesMap;
     private Map<String, Map<String, List<String>>> refSetConfigFromManifest;
     private SourceFileProcessingReport fileProcessingReport;
-
     private Map<String,List<String>> skippedSourceFiles;
+    private MultiValueMap<String, String> refsetWithAdditionalFields;
 
     public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
                          Product product, SourceFileProcessingReport fileProcessingReport, boolean copyFilesDefinedInManifest) {
@@ -84,6 +87,7 @@ public class InputSourceFileProcessor {
         this.refSetConfigFromManifest = new HashMap<>();
         this.skippedSourceFiles = new HashMap<>();
         this.filesToCopy = new LinkedMultiValueMap<>();
+        this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
       
     }
 
@@ -96,6 +100,7 @@ public class InputSourceFileProcessor {
             if (this.copyFilesDefinedInManifest) {
                fileProcessingReport.addReportDetails(copyFilesToOutputDir());
             }
+            verifyRefsetsWithAdditionalField();
             uploadOutFilesToProductInputFiles();
         } catch (Exception e) {
             fileProcessingReport.add(ReportType.ERROR, e.getLocalizedMessage());
@@ -108,7 +113,53 @@ public class InputSourceFileProcessor {
         return fileProcessingReport;
     }
 
-    private void initLocalDirs() {
+    private void verifyRefsetsWithAdditionalField() throws IOException {
+    	File[] filesPrepared = outDir.listFiles();
+		for (String refsetFileName : refsetWithAdditionalFields.keySet()) {
+			boolean isRefsetFilePrepared = false;
+			StringBuilder headerLine = new StringBuilder();
+			headerLine.append(HEADER_REFSETS);
+			int counter = 0;
+			for (String fieldName : refsetWithAdditionalFields.get(refsetFileName)) {
+				 if (counter++ > 1) {
+					 headerLine.append("\t");
+				 }
+				 headerLine.append(fieldName);
+			}
+			for (File file : filesPrepared) {
+				String fileName = file.getName();
+				fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : fileName;
+	    		 if (fileName.equals(refsetFileName)) {
+	    			 isRefsetFilePrepared = true;
+	    			 //check refset contains additional fields
+	    			 String header = getHeaderLine(file);
+	    			 if (header == null || !header.equals(headerLine.toString())) {
+	    				fileProcessingReport.add(ReportType.ERROR, refsetFileName, null, null, 
+	    						"Refset file does not contain a valid header. Actual:" + header + " while expecting:" + headerLine.toString());
+	    			 }
+	    			 break;
+	    		  }
+	    	}
+			if (!isRefsetFilePrepared) {
+				//create empty delta and add warning message
+				File refsetDeltFile = new File(outDir,refsetFileName);
+				if (!refsetDeltFile .exists()) {
+					refsetDeltFile.createNewFile();
+					FileUtils.writeLines(refsetDeltFile, CharEncoding.UTF_8, Arrays.asList(headerLine.toString()), RF2Constants.LINE_ENDING);
+					fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
+							"No refset data found in source therefore an empty delta file with header line only is created instead.");
+				}
+			}
+		}
+	}
+    
+    private String getHeaderLine(File preparedFile) throws IOException {
+    	try ( BufferedReader reader = new BufferedReader(new FileReader(preparedFile))) {
+    		 return reader.readLine();
+    	 }
+    }
+    
+	private void initLocalDirs() {
         localDir = Files.createTempDir();
         outDir = new File(localDir, OUT_DIR);
         outDir.mkdir();
@@ -186,6 +237,15 @@ public class InputSourceFileProcessor {
                             fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
                         }
                     } else if (fileType.getContainsReferenceSets() != null && fileType.getContainsReferenceSets().getRefset() != null) {
+                    	
+                    	if (fileType.getContainsAdditionalFields() != null && fileType.getContainsAdditionalFields().getField() != null ) {
+                        	for (FieldType field : fileType.getContainsAdditionalFields().getField()) {
+                        		String refsetFileName = fileType.getName();
+                        		refsetFileName = (refsetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? 
+                        				refsetFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : refsetFileName;
+                        		refsetWithAdditionalFields.add(refsetFileName, field.getName());
+                        	}
+                        }
                         for (RefsetType refsetType : fileType.getContainsReferenceSets().getRefset()) {
                             String refsetId = refsetType.getId().toString();
                             FileProcessingConfig fileProcessingConfig;
@@ -255,7 +315,7 @@ public class InputSourceFileProcessor {
                 List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
                 if (lines != null && !lines.isEmpty()) {
                     String header = lines.get(0);
-                    //remove header before processing
+               	 	//remove header before processing
                     lines.remove(0);
                     if (header.startsWith(HEADER_REFSETS)) {
                         processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
@@ -293,7 +353,7 @@ public class InputSourceFileProcessor {
                 fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
             } else {
-                if(fileProcessingConfig.getTargetFiles() != null){
+                if (fileProcessingConfig.getTargetFiles() != null){
                     Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);
                     String exactSourceName = "";
                     String outputFileName = "";
@@ -313,14 +373,29 @@ public class InputSourceFileProcessor {
                             fileProcessingReport.add(WARNING, outputFileName , refsetId, sourceName, warningMessage);
                             logger.warn(warningMessage);
                         }
-
                     }
                 }
             }
         }
     }
 
-    private void addFileToSkippedList(String sourceName, String filename) {
+    private void checkAndWriterHeaderToFile(String sourceName, File outDir, String header, FileProcessingConfig fileProcessingConfig) throws IOException {
+    	Set<String> outFileList = fileProcessingConfig.getTargetFiles().get(sourceName);
+        if (outFileList != null) {
+            for (String outFileName : outFileList) {
+                File outFile = new File(outDir, outFileName);
+                if (!outFile.exists()) {
+                    outFile.createNewFile();
+                    List<String> headers = new ArrayList<>();
+                    headers.add(header);
+                    FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers, RF2Constants.LINE_ENDING);
+                }
+                logger.info("Witer header lines to {}",outFile.getAbsolutePath());
+            }
+        }
+	}
+
+	private void addFileToSkippedList(String sourceName, String filename) {
     	if (skippedSourceFiles.get(sourceName) == null) {
     		List<String> files = new ArrayList<String>();
     		files.add(filename);
@@ -454,7 +529,7 @@ public class InputSourceFileProcessor {
                         File outFile = new File(outDir, sourceFileName);
                         FileUtils.copyFile(inFile, outFile);
                         logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                        reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, " file name matched exactly and copied"));
+                        reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "File name matched exactly and copied"));
                     }
                 } else {
                 	String fileNameSpecifiedByManifest = fileNameMap.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
@@ -520,16 +595,16 @@ public class InputSourceFileProcessor {
         	}
         	inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + inputFileName;
-            fileProcessingReport.add(ReportType.INFO, new StringBuilder("Uploaded ").append(inputFileName).append(" to product input files directory").toString());
+            fileProcessingReport.add(ReportType.INFO,inputFileName, null, null, "Uploaded to product input files directory");
             fileHelper.putFile(file,filePath);
             logger.info("Uploaded {} to product input files directory with name {}", file.getName(), inputFileName);
         }
         List<String> requiredFileList = new ArrayList<String>(filesToCopy.keySet());
         for (String filename : requiredFileList) {
         	if (!filesPrepared.contains(filename)) {
-        		 String message = "Required by manifest but not found in source:" + filename;
-            	 logger.warn(message);
-    			fileProcessingReport.add(WARNING, message);
+        		 String message = "Required by manifest but not found in source.";
+            	 logger.warn(filename + "" + message);
+    			fileProcessingReport.add(WARNING, filename,null,null, message);
         	}
         	
         }
