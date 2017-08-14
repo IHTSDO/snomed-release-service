@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.fileprocessing;
+package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
 import java.util.HashMap;
 import java.util.HashSet;
