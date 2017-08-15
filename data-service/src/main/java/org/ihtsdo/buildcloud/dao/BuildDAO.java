@@ -92,4 +92,10 @@ public interface BuildDAO {
 	String getManifestFilePath(Build build);
 
 	InputStream getBuildReportFileStream(Build build);
+
+	boolean isBuildCancelRequested(Build build);
+
+	void deleteOutputFiles(Build build);
+
+	
 }
