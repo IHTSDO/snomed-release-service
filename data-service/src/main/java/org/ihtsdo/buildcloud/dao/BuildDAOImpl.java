@@ -531,4 +531,17 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
+
+	@Override
+	public boolean isBuildCancelRequested(final Build build) {
+		return build.getStatus().equals(Build.Status.CANCEL_REQUESTED);
+	}
+
+	@Override
+	public void deleteOutputFiles(Build build) {
+		List<String> outputFiles = listOutputFilePaths(build);
+		for (String outputFile : outputFiles) {
+			buildFileHelper.deleteFile(outputFile);
+		}
+	}
 }
