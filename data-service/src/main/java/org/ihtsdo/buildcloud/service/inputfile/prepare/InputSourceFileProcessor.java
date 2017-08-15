@@ -120,33 +120,38 @@ public class InputSourceFileProcessor {
     	Collection<FileProcessingConfig> configs = refsetFileProcessingConfigs.values();
 		Set<String> refSetFilesToCreate = new HashSet<>();
     	for (FileProcessingConfig config : configs) {
-			config.getTargetFiles().values().parallelStream().forEach(c -> refSetFilesToCreate.addAll(c));
+			config.getTargetFiles().values().forEach(c -> refSetFilesToCreate.addAll(c));
 		}
 		for (String refsetFileName : refSetFilesToCreate) {
 			refsetFileName = refsetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? refsetFileName.substring(1) : refsetFileName;
 			boolean isRefsetFilePrepared = false;
 			StringBuilder headerLine = new StringBuilder();
 			headerLine.append(HEADER_REFSETS);
-			if (refsetWithAdditionalFields.get(refsetFileName) != null) {
+			boolean checkAdditionalFields = false;
+			if (refsetWithAdditionalFields.get(refsetFileName) != null 
+					&& !refsetWithAdditionalFields.get(refsetFileName).isEmpty()) {
+				checkAdditionalFields = true;
 				for (String fieldName : refsetWithAdditionalFields.get(refsetFileName)) {
 					 headerLine.append("\t");
 					 headerLine.append(fieldName);
 				}
-				for (File file : filesPrepared) {
-					String fileName = file.getName();
-					fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
-		    		 if (fileName.equals(refsetFileName)) {
-		    			 isRefsetFilePrepared = true;
-		    			 //check refset contains additional fields
-		    			 String header = getHeaderLine(file);
-		    			 if (header == null || !header.equals(headerLine.toString())) {
-		    				fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
-		    						"Refset file does not contain a valid header. Actual:" + header + " while expecting:" + headerLine.toString());
-		    			 }
-		    			 break;
-		    		  }
-		    	}
 			}
+			for (File file : filesPrepared) {
+				String fileName = file.getName();
+				fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
+				if (fileName.equals(refsetFileName)) {
+					isRefsetFilePrepared = true;
+					//check refset contains additional fields
+					if (checkAdditionalFields) {
+						String header = getHeaderLine(file);
+						if (header == null || !header.equals(headerLine.toString())) {
+							fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
+									"Refset file does not contain a valid header. Actual:" + header + " while expecting:" + headerLine.toString());
+						}
+					}
+					break;
+				}
+		    }
 			if (!isRefsetFilePrepared) {
 				//create empty delta and add warning message
 				File refsetDeltFile = new File(outDir,refsetFileName);
