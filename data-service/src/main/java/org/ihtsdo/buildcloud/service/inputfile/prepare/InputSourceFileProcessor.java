@@ -558,9 +558,12 @@ public class InputSourceFileProcessor {
         	if (!lines.isEmpty() && lines.size() > 0) {
         		lines.remove(0);
             	FileUtils.writeLines(destinationFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
+            	logger.debug("Appending " + sourceFile.getName() + " to " + destinationFile.getAbsolutePath());
         	}
         } else {
+        	destinationFile.createNewFile();
         	FileUtils.copyFile(sourceFile, destinationFile);
+        	logger.debug("Copying " + sourceFile.getName() + " to " + destinationFile.getAbsolutePath());
         }
     }
     

@@ -166,7 +166,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesWithUnprocessedFiles() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
+    public void testPrepareInputFilesWithTerminologyFiles() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
         String testManifestFile = getClass().getResource(TEST_MANIFEST_FILE_WITH_UNPROCESSED).getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
@@ -174,7 +174,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
         System.out.println(report);
-        verifyWithUnprocessedFiles();
+        verifyResults();
     }
     
     @Test
@@ -319,7 +319,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertEquals(3, IOUtils.readLines(inputStream).size());
     }
 
-    private void verifyWithUnprocessedFiles() throws ResourceNotFoundException, IOException {
+    private void verifyResults() throws ResourceNotFoundException, IOException {
         List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         assertEquals(7, inputFileList.size());
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
