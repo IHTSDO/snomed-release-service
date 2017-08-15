@@ -52,9 +52,6 @@
 				</folder>
 				<folder Name="Language">
 					<file Name="der2_cRefset_LanguageDelta-en_SE1000052_20170531.txt">
-						<contains-language-codes>
-							<code>en</code>
-						</contains-language-codes>
 						<source>terminology-server</source>
 					</file>
 					<file Name="der2_cRefset_LanguageDelta-sv_SE1000052_20170531.txt">
@@ -77,10 +74,11 @@
 				<file Name="sct2_Concept_Delta_SE1000052_20170531.txt">
 					<source>terminology-server</source>
 				</file>
-				<file Name="sct2_Description_Delta-en_SE1000052_20170531.txt">
-					<source>terminology-server</source>
-				</file>
+				<file Name="sct2_Description_Delta-en_SE1000052_20170531.txt"/>
 				<file Name="sct2_Description_Delta-sv_SE1000052_20170531.txt">
+					<contains-language-codes>
+						<code>sv</code>
+					</contains-language-codes>
 					<source>terminology-server</source>
 				</file>
 				<file Name="sct2_Identifier_Delta_SE1000052_20170531.txt">

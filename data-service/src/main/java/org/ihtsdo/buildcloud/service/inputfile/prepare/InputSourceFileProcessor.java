@@ -36,7 +36,9 @@ import java.util.*;
 
 public class InputSourceFileProcessor {
 
-    private static final String README_HEADER_FILE_NAME = "readme-header.txt";
+    private static final String DEFAULT_LANGUAGE_CODE = "en";
+
+	private static final String README_HEADER_FILE_NAME = "readme-header.txt";
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
     
@@ -46,7 +48,7 @@ public class InputSourceFileProcessor {
     private static final int REFSETID_COL = 4;
     private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
     private static final String INPUT_FILE_TYPE_REFSET = "Refset";
-    private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description";
+    private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
     private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
     private static final String OUT_DIR = "out";
     private static final String TEXT_DEFINITION_ALL_LANGUAGE_CODE = "*";
@@ -224,77 +226,11 @@ public class InputSourceFileProcessor {
                 		continue;
                 	}
                     if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
-                        foundTextDefinitionFile = true;
-                        if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
-                            for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-                                FileProcessingConfig fileProcessingConfig;
-                                if (!textDefinitionFileProcessingConfigs.containsKey(languageCode)) {
-                                    fileProcessingConfig = FileProcessingConfig.init(availableSources);
-                                    fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
-                                    fileProcessingConfig.setValue(languageCode);
-                                    textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-                                }
-                                fileProcessingConfig = textDefinitionFileProcessingConfigs.get(languageCode);
-                                fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
-                            }
-                        } else {
-                            FileProcessingConfig fileProcessingConfig;
-                            if (!textDefinitionFileProcessingConfigs.containsKey(TEXT_DEFINITION_ALL_LANGUAGE_CODE)) {
-                                fileProcessingConfig = FileProcessingConfig.init(availableSources);
-                                fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
-                                fileProcessingConfig.setValue(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-                                textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-                            }
-                            fileProcessingConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-                            fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
-                        }
+                        initTextDefinitionProcessingConfig(fileType);
                     } else if (fileType.getContainsReferenceSets() != null && fileType.getContainsReferenceSets().getRefset() != null) {
-                    	
-                    	if (fileType.getContainsAdditionalFields() != null && fileType.getContainsAdditionalFields().getField() != null ) {
-                        	for (FieldType field : fileType.getContainsAdditionalFields().getField()) {
-                        		String refsetFileName = fileType.getName();
-                        		refsetFileName = (refsetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? 
-                        				refsetFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : refsetFileName;
-                        		refsetWithAdditionalFields.add(refsetFileName, field.getName());
-                        	}
-                        }
-                        for (RefsetType refsetType : fileType.getContainsReferenceSets().getRefset()) {
-                            String refsetId = refsetType.getId().toString();
-                            FileProcessingConfig fileProcessingConfig;
-                            if (!refsetFileProcessingConfigs.containsKey(refsetId)) {
-                                fileProcessingConfig = FileProcessingConfig.init(availableSources);
-                                fileProcessingConfig.setFileType(INPUT_FILE_TYPE_REFSET);
-                                fileProcessingConfig.setValue(refsetType.getId().toString());
-                                refsetFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-                            }
-                            fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-                            Map<String, List<String>> fileNameAndSourceMaps = new HashMap<>();
-                            if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
-                                fileNameAndSourceMaps.put(fileType.getName(), refsetType.getSources().getSource());
-                                refSetConfigFromManifest.put(refsetId, fileNameAndSourceMaps);
-                                for (String s : refsetType.getSources().getSource()) {
-                                    if (fileProcessingConfig.getTargetFiles().containsKey(s)) {
-                                        fileProcessingConfig.addTargetFileToSource(s, fileType.getName());
-                                    } else {
-                                        logger.error("Failed to find source {}" + s);
-                                    }
-                                }
-                            } else {
-                                fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
-                            }
-                        }
-                    } else if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
-                        for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-                            FileProcessingConfig fileProcessingConfig;
-                            if (!descriptionFileProcessingConfigs.containsKey(languageCode)) {
-                                fileProcessingConfig = FileProcessingConfig.init(availableSources);
-                                fileProcessingConfig.setFileType(INPUT_FILE_TYPE_DESCRIPTION);
-                                fileProcessingConfig.setValue(languageCode);
-                                descriptionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-                            }
-                            fileProcessingConfig = descriptionFileProcessingConfigs.get(languageCode);
-                            fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
-                        }
+                    	initRefsetProcessingConfig(fileType);
+                    } else if (fileType.getName().contains(INPUT_FILE_TYPE_DESCRIPTION)) {
+                    	initDescripionProcessingConfig(fileType);
                     } else {
                         if(this.copyFilesDefinedInManifest) {
                         	String deltaFileName = fileType.getName();
@@ -304,7 +240,7 @@ public class InputSourceFileProcessor {
                             		this.filesToCopyFromSource.put(deltaFileName, fileType.getSources().getSource());
                             } else {
                             		this.filesToCopyFromSource.put(deltaFileName, Collections.emptyList());
-                            	}
+                            }
                         }
                     }
                 }
@@ -316,6 +252,96 @@ public class InputSourceFileProcessor {
             }
         }
     }
+
+	private void initDescripionProcessingConfig(FileType fileType) {
+		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
+			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
+		        FileProcessingConfig fileProcessingConfig;
+		        if (!descriptionFileProcessingConfigs.containsKey(languageCode)) {
+		            fileProcessingConfig = FileProcessingConfig.init(availableSources);
+		            fileProcessingConfig.setFileType(INPUT_FILE_TYPE_DESCRIPTION);
+		            fileProcessingConfig.setValue(languageCode);
+		            descriptionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		        }
+		        fileProcessingConfig = descriptionFileProcessingConfigs.get(languageCode);
+		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		    }
+		} else {
+			//set en as default
+			 FileProcessingConfig fileProcessingConfig;
+		     if (!descriptionFileProcessingConfigs.containsKey(DEFAULT_LANGUAGE_CODE)) {
+		         fileProcessingConfig = FileProcessingConfig.init(availableSources);
+		         fileProcessingConfig.setFileType(INPUT_FILE_TYPE_DESCRIPTION);
+		         fileProcessingConfig.setValue(DEFAULT_LANGUAGE_CODE);
+		         descriptionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		     }
+		     fileProcessingConfig = descriptionFileProcessingConfigs.get(DEFAULT_LANGUAGE_CODE);
+		     fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		}
+	}
+
+	private void initRefsetProcessingConfig(FileType fileType) {
+		if (fileType.getContainsAdditionalFields() != null && fileType.getContainsAdditionalFields().getField() != null ) {
+			for (FieldType field : fileType.getContainsAdditionalFields().getField()) {
+				String refsetFileName = fileType.getName();
+				refsetFileName = (refsetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? 
+						refsetFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : refsetFileName;
+				refsetWithAdditionalFields.add(refsetFileName, field.getName());
+			}
+		}
+		for (RefsetType refsetType : fileType.getContainsReferenceSets().getRefset()) {
+		    String refsetId = refsetType.getId().toString();
+		    FileProcessingConfig fileProcessingConfig;
+		    if (!refsetFileProcessingConfigs.containsKey(refsetId)) {
+		        fileProcessingConfig = FileProcessingConfig.init(availableSources);
+		        fileProcessingConfig.setFileType(INPUT_FILE_TYPE_REFSET);
+		        fileProcessingConfig.setValue(refsetType.getId().toString());
+		        refsetFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		    }
+		    fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+		    Map<String, List<String>> fileNameAndSourceMaps = new HashMap<>();
+		    if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
+		        fileNameAndSourceMaps.put(fileType.getName(), refsetType.getSources().getSource());
+		        refSetConfigFromManifest.put(refsetId, fileNameAndSourceMaps);
+		        for (String s : refsetType.getSources().getSource()) {
+		            if (fileProcessingConfig.getTargetFiles().containsKey(s)) {
+		                fileProcessingConfig.addTargetFileToSource(s, fileType.getName());
+		            } else {
+		                logger.error("Failed to find source {}" + s);
+		            }
+		        }
+		    } else {
+		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		    }
+		}
+	}
+
+	private void initTextDefinitionProcessingConfig(FileType fileType) {
+		foundTextDefinitionFile = true;
+		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
+		    for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
+		        FileProcessingConfig fileProcessingConfig;
+		        if (!textDefinitionFileProcessingConfigs.containsKey(languageCode)) {
+		            fileProcessingConfig = FileProcessingConfig.init(availableSources);
+		            fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
+		            fileProcessingConfig.setValue(languageCode);
+		            textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		        }
+		        fileProcessingConfig = textDefinitionFileProcessingConfigs.get(languageCode);
+		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		    }
+		} else {
+		    FileProcessingConfig fileProcessingConfig;
+		    if (!textDefinitionFileProcessingConfigs.containsKey(TEXT_DEFINITION_ALL_LANGUAGE_CODE)) {
+		        fileProcessingConfig = FileProcessingConfig.init(availableSources);
+		        fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
+		        fileProcessingConfig.setValue(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
+		        textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		    }
+		    fileProcessingConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
+		    fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		}
+	}
 
     private void processFiles() throws IOException {
         List<FileProcessingReportDetail> fileProcessingReportDetails = new ArrayList<>();
@@ -332,7 +358,10 @@ public class InputSourceFileProcessor {
                     if (header.startsWith(HEADER_REFSETS)) {
                         processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
+                    	//create delta file with header
+                    	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
                         if (foundTextDefinitionFile) {
+                        	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
                             processDescriptionsAndTextDefinitions(lines, source, outDir, header);
                         } else {
                             processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
@@ -404,7 +433,6 @@ public class InputSourceFileProcessor {
             FileProcessingConfig> fileProcessingConfigs) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
         if (lines == null || lines.isEmpty())  {
-        	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
             logger.info("There is no row to process");
         } else {
             for (String line : lines) {
@@ -428,9 +456,6 @@ public class InputSourceFileProcessor {
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
         textDefinitionRows.put(TEXT_DEFINITION_ALL_LANGUAGE_CODE, new ArrayList<String>());
         if (lines == null || lines.isEmpty()) {
-        	//create delta file with header
-        	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
-        	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
             logger.info("There is no row to process");
         } else {
             for (String line : lines) {

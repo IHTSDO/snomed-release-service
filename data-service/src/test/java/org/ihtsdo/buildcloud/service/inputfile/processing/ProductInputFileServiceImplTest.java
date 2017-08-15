@@ -199,9 +199,14 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
          SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
          List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
-         assertEquals(5, inputFileList.size());
          System.out.println(report);
-         assertEquals(24, report.getDetails().get(ReportType.WARNING).size());
+         assertTrue(inputFileList.contains("rel2_TextDefinition_Delta-sv_SE1000052_20170531.txt"));
+         assertTrue(inputFileList.contains("rel2_TextDefinition_Delta-en_SE1000052_20170531.txt"));
+         assertTrue(inputFileList.contains("rel2_Description_Delta-sv_SE1000052_20170531.txt"));
+         assertTrue(inputFileList.contains("rel2_Description_Delta-en_SE1000052_20170531.txt"));
+         assertTrue(inputFileList.contains("rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt"));
+         assertTrue(inputFileList.contains("rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt"));
+         assertEquals(23, report.getDetails().get(ReportType.WARNING).size());
          
     }
     
@@ -216,12 +221,12 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         SourceFileProcessingReport report =  productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
         List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         System.out.println(report);
-        assertEquals(5, inputFileList.size());
         assertTrue(inputFileList.contains("rel2_cRefset_AttributeValueDelta_INT_20140731.txt"));
         assertTrue(inputFileList.contains("rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt"));
         assertTrue(inputFileList.contains("rel2_Description_Delta-en_INT_20140731.txt"));
         assertTrue(inputFileList.contains("rel2_TextDefinition_Delta-en_INT_20140731.txt"));
         assertTrue(inputFileList.contains("rel2_Refset_SimpleDelta_INT_20140731.txt"));
+        assertEquals(5, inputFileList.size());
         assertEquals(13, report.getDetails().get(ReportType.WARNING).size());
         assertEquals(8, report.getDetails().get(ReportType.INFO).size());
         assertNull(report.getDetails().get(ReportType.ERROR));
