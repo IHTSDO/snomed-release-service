@@ -199,7 +199,9 @@ public class InputSourceFileProcessor {
                 sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
             }
         }
-        fileProcessingReport.setSoureFiles(sourceFilesMap);
+        for (String sourceName : sourceFilesMap.keySet()) {
+        	 fileProcessingReport.addSoureFiles(sourceName, sourceFilesMap.get(sourceName));
+        }
         return localDir;
     }
 
@@ -393,6 +395,7 @@ public class InputSourceFileProcessor {
                         .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
                 fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
+                addFileToSkippedList(sourceName, inFileName);
             } else {
                 if (fileProcessingConfig.getTargetFiles() != null){
                     Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);

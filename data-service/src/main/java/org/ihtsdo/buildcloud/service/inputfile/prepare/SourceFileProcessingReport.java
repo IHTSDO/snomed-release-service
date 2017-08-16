@@ -71,17 +71,17 @@ public class SourceFileProcessingReport {
     public Map<String, List<String>> getSoureFiles() {
 		return soureFiles;
 	}
-
-	public void setSoureFiles(Map<String, List<String>> soureFiles) {
-		Map<String, List<String>> result = new HashMap<>();
-		for (String key : soureFiles.keySet()) {
-			List<String> fileNames = new ArrayList<>();
-			for (String filename : soureFiles.get(key)) {
-				fileNames.add(FilenameUtils.getName(filename));
-			}
-			result.put(key, fileNames);
+	
+	public void addSoureFiles(String sourceName, List<String> fileList) {
+		List<String> fileNameWithoutPath = new ArrayList<>();
+		for (String filename : fileList) {
+			fileNameWithoutPath.add(FilenameUtils.getName(filename));
 		}
-		this.soureFiles = result;;
+		if (this.soureFiles.containsKey(sourceName)) {
+			this.soureFiles.get(sourceName).addAll(fileNameWithoutPath);
+		} else {
+			this.soureFiles.put(sourceName,fileNameWithoutPath);
+		}
 	}
 
     public String toString() {
