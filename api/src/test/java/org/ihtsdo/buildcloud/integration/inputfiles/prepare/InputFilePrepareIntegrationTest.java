@@ -116,11 +116,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
         String report = integrationTestHelper.getInputPrepareReport();
         SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
         Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        int countWarning = 0;
-        if(reportDetails.containsKey(ReportType.WARNING)){
-            countWarning = reportDetails.get(ReportType.WARNING).size();
-        }
-        Assert.assertEquals(5, countWarning);
+        Assert.assertEquals(null, reportDetails.get(ReportType.ERROR));
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }
