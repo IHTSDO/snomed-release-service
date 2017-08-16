@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles", "outputfiles","buildReport","logs" };
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles", "outputfiles","buildReport","logs", "prepareReport" };
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
