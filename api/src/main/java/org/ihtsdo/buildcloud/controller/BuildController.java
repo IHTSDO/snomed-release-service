@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles", "outputfiles","buildReport","logs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -147,6 +147,23 @@ public class BuildController {
 		final List<String> relativeFilePaths = buildService.getInputFilePaths(releaseCenterKey, productKey, buildId);
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
+	
+	@RequestMapping(value = "/{buildId}/inputPrepareReport", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves the report for preparing input source files.",
+		notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
+	public void getInputPrepareReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+			@PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getBuildInputFilesPrepareReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+	
 
 	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
 	@ApiOperation( value = "Download a specific file",

@@ -32,5 +32,4 @@ public interface ProductInputFileDAO {
 	void persistInputPrepareReport(Product product, SourceFileProcessingReport fileProcessingReport) throws IOException;
 
 	InputStream getInputPrepareReport(Product product);
-
 }
