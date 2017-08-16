@@ -36,7 +36,7 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","prepareReport","builds"};
+	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds"};
 
 	@RequestMapping( method = RequestMethod.GET )
 	@ApiOperation( value = "Returns a list of products",
