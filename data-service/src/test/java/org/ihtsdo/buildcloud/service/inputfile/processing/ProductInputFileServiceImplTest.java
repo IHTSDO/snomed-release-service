@@ -263,6 +263,21 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
     
     @Test
+    public void testPrepareInputFilesWithInvalidManifest() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+        String testManifestFile = getClass().getResource("invalid_manifest.xml").getFile();
+        File testManifest = new File(testManifestFile);
+        String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
+        File testArchive = new File(testFile);
+        addTestFileToSourceDirectory(SRC_TERM_SERVER, testArchive);
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        SourceFileProcessingReport report =  productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
+        System.out.println(report);
+        assertNotNull(report.getDetails().get(ReportType.ERROR));
+        assertNotNull(report.getDetails().get(ReportType.ERROR).get(0).getMessage());
+        assertTrue(report.getDetails().get(ReportType.ERROR).get(0).getMessage().contains("Cause:The element type \"refset\" must be terminated by the matching end-tag"));
+    }
+    
+    @Test
     public void testPrepareInputFilesWithMultipleSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
         String testManifestFile = getClass().getResource("manifest_with_multiple_sources.xml").getFile();
         File testManifest = new File(testManifestFile);

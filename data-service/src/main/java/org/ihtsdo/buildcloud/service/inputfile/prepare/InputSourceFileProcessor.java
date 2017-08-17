@@ -107,9 +107,16 @@ public class InputSourceFileProcessor {
             verifyRefsetFiles();
             uploadOutFilesToProductInputFiles();
         } catch (Exception e) {
-        	String msg = "Error encountered when preparing input files.";
-            fileProcessingReport.add(ReportType.ERROR, msg + e.getMessage());
-            logger.error(msg, e);
+        	StringBuilder msgBuilder = new StringBuilder();
+        	msgBuilder.append("Error encountered when preparing input files.");
+        	if (e.getCause() != null) {
+        		msgBuilder.append("Cause:" + e.getCause().getMessage());
+        	} else {
+        		msgBuilder.append("Failure message:" + e.getMessage());
+        	}
+        	logger.error(msgBuilder.toString(), e);
+            fileProcessingReport.add(ReportType.ERROR, msgBuilder.toString() );
+          
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
