@@ -23,7 +23,7 @@
 							<refset id="900000000000531004" label="REFERS TO"/>
 						</contains-reference-sets>
 						<contains-additional-fields>
-							<field name ="targetComponent"/>
+							<field name ="targetComponentId"/>
 						</contains-additional-fields>
 					</file>
 					<file Name="xder2_cRefset_AttributeValueDelta_INT_20140731.txt">
