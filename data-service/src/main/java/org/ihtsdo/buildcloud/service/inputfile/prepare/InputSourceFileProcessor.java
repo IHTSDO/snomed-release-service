@@ -107,8 +107,9 @@ public class InputSourceFileProcessor {
             verifyRefsetFiles();
             uploadOutFilesToProductInputFiles();
         } catch (Exception e) {
-            fileProcessingReport.add(ReportType.ERROR, e.getLocalizedMessage());
-            logger.error("Error encountered when preparing input files.", e);
+        	String msg = "Error encountered when preparing input files.";
+            fileProcessingReport.add(ReportType.ERROR, msg + e.getMessage());
+            logger.error(msg, e);
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
@@ -148,7 +149,7 @@ public class InputSourceFileProcessor {
 						String header = getHeaderLine(file);
 						if (header == null || !header.equals(headerLine.toString())) {
 							fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
-									"Refset file does not contain a valid header. Actual:" + header + " while expecting:" + headerLine.toString());
+									"Refset file does not contain a valid header according to the manifest. Actual:" + header + " while expecting:" + headerLine.toString());
 						}
 					}
 					break;
