@@ -128,7 +128,7 @@ public class BuildS3PathHelper {
 	}
 
 	public String getBuildInputFilePrepareReportPath(Build build) {
-		return getBuildPath(build).append(SEPARATOR).append(INPUT_PREPARE_REPORT_JSON).toString();
+		return getBuildPath(build).append(INPUT_PREPARE_REPORT_JSON).toString();
 	}
 
 }
