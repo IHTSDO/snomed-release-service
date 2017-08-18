@@ -680,4 +680,10 @@ public class BuildServiceImpl implements BuildService {
 		return dao.getBuildReportFileStream(build);
 	}
 
+	@Override
+	public InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildInputFilesPrepareReportStream(build);
+	}
+
 }

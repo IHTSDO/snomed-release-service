@@ -92,4 +92,6 @@ public interface BuildDAO {
 	String getManifestFilePath(Build build);
 
 	InputStream getBuildReportFileStream(Build build);
+
+	InputStream getBuildInputFilesPrepareReportStream(Build build);
 }
