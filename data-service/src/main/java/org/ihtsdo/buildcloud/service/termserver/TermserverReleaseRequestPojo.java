@@ -6,22 +6,12 @@ import java.util.Set;
 
 public class TermserverReleaseRequestPojo {
 
-	private String productName;
 	private String effectiveDate;
 	private SnowOwlRestClient.ExportCategory exportCategory;
 	private String branchPath;
-	private String releaseCenter;
 	private Set<String> excludedModuleIds;
 
 	public TermserverReleaseRequestPojo() {
-	}
-
-	public String getProductName() {
-		return productName;
-	}
-
-	public void setProductName(String productName) {
-		this.productName = productName;
 	}
 
 	public String getEffectiveDate() {
@@ -48,14 +38,6 @@ public class TermserverReleaseRequestPojo {
 		this.branchPath = branchPath;
 	}
 
-	public String getReleaseCenter() {
-		return releaseCenter;
-	}
-
-	public void setReleaseCenter(String releaseCenter) {
-		this.releaseCenter = releaseCenter;
-	}
-
 	public Set<String> getExcludedModuleIds() {
 		return excludedModuleIds;
 	}
@@ -67,11 +49,9 @@ public class TermserverReleaseRequestPojo {
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
-				"productName='" + productName + '\'' +
 				", effectiveDate='" + effectiveDate + '\'' +
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
-				", releaseCenter='" + releaseCenter + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
 				'}';
 	}
