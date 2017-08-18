@@ -1,12 +1,11 @@
-package org.ihtsdo.buildcloud.integration.fileprocessing;
+package org.ihtsdo.buildcloud.integration.inputfiles.prepare;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportDetail;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReportType;
-import org.ihtsdo.buildcloud.service.fileprocessing.InputSources;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,12 +18,13 @@ import java.util.Map;
  * Date: 5/30/2017
  * Time: 3:10 PM
  */
-public class FileProcessingIntegrationTest extends AbstractControllerTest {
+public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
-    private IntegrationTestHelper integrationTestHelper;
-    private static final String REFSET_TOOL = InputSources.REFSET_TOOL.getSourceName();
-    private static final String MAPPING_TOOLS = InputSources.MAPPING_TOOLS.getSourceName();
-    private static final String MANUAL = InputSources.MANUAL.getSourceName();
+    private static final String TEST_DATA = "test_input_files.zip";
+	private IntegrationTestHelper integrationTestHelper;
+    private static final String REFSET_TOOL = "reference-set-tool";
+    private static final String MAPPING_TOOLS = "mapping-tools";
+    private static final String MANUAL = "manual";
     private static final String MANIFEST_DIR = "manifest/";
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,11 +72,11 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
         integrationTestHelper.prepareSourceFile();
         String report = integrationTestHelper.getInputPrepareReport();
-        FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
-        Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+        SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
+        Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertEquals(1, reportDetails.size());
-        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR.name()));
-        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR.name());
+        Assert.assertTrue(reportDetails.containsKey(ReportType.ERROR));
+        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(ReportType.ERROR);
         Assert.assertEquals("Failed to load files from source directory", fileProcessingReportDetails.get(0).getMessage());
     }
 
@@ -85,11 +85,11 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
         integrationTestHelper.uploadSourceFile("der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt", REFSET_TOOL, this.getClass());
         integrationTestHelper.prepareSourceFile();
         String report = integrationTestHelper.getInputPrepareReport();
-        FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
-        Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+        SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
+        Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertEquals(1, reportDetails.size());
-        Assert.assertTrue(reportDetails.containsKey(FileProcessingReportType.ERROR.name()));
-        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(FileProcessingReportType.ERROR.name());
+        Assert.assertTrue(reportDetails.containsKey(ReportType.ERROR));
+        List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(ReportType.ERROR);
         Assert.assertEquals("Failed to load manifest", fileProcessingReportDetails.get(0).getMessage());
         integrationTestHelper.deleteTxtSourceFiles();
     }
@@ -97,14 +97,13 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
     @Test
     public void testProcessSourceFile() throws Exception {
         integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
-        integrationTestHelper.uploadSourceFile("file_processing.zip", MANUAL, this.getClass());
-        integrationTestHelper.uploadSourceFile("file_processing.zip", REFSET_TOOL, this.getClass());
+        integrationTestHelper.uploadSourceFile(TEST_DATA, MANUAL, this.getClass());
+        integrationTestHelper.uploadSourceFile(TEST_DATA, REFSET_TOOL, this.getClass());
         integrationTestHelper.prepareSourceFile();
         String report = integrationTestHelper.getInputPrepareReport();
-        FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
-        Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        Assert.assertEquals(24, reportDetails.get(FileProcessingReportType.INFO.name()).size());
-        Assert.assertEquals(2, reportDetails.get(FileProcessingReportType.WARNING.name()).size());
+        SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
+        Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+        Assert.assertEquals(null, reportDetails.get(ReportType.ERROR));
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }
@@ -112,16 +111,12 @@ public class FileProcessingIntegrationTest extends AbstractControllerTest {
     @Test
     public void testProcessSourceFileRefsetNotUsed() throws Exception {
         integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_missing_refsets.xml", this.getClass());
-        integrationTestHelper.uploadSourceFile("file_processing.zip", MANUAL, this.getClass());
+        integrationTestHelper.uploadSourceFile(TEST_DATA, MANUAL, this.getClass());
         integrationTestHelper.prepareSourceFile();
         String report = integrationTestHelper.getInputPrepareReport();
-        FileProcessingReport fileProcessingReport = objectMapper.readValue(report, FileProcessingReport.class);
-        Map<String,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        int countWarning = 0;
-        if(reportDetails.containsKey(FileProcessingReportType.WARNING.name())){
-            countWarning = reportDetails.get(FileProcessingReportType.WARNING.name()).size();
-        }
-        Assert.assertEquals(3, countWarning);
+        SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
+        Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+        Assert.assertEquals(null, reportDetails.get(ReportType.ERROR));
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }

@@ -1,4 +1,4 @@
-package org.ihtsdo.buildcloud.service.fileprocessing;
+package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
 /**
  * User: huyle
@@ -7,7 +7,7 @@ package org.ihtsdo.buildcloud.service.fileprocessing;
  */
 public class FileProcessingReportDetail {
 
-    private FileProcessingReportType type;
+    private ReportType type;
 
     private String fileName;
 
@@ -21,12 +21,12 @@ public class FileProcessingReportDetail {
 
     public FileProcessingReportDetail(){}
 
-    public FileProcessingReportDetail(FileProcessingReportType type, String message) {
+    public FileProcessingReportDetail(ReportType type, String message) {
         this.type = type;
         this.message = message;
     }
 
-    public FileProcessingReportDetail(FileProcessingReportType type, String fileName, String refsetId, String source, String message) {
+    public FileProcessingReportDetail(ReportType type, String fileName, String refsetId, String source, String message) {
         this.type = type;
         this.fileName = fileName;
         this.refsetId = refsetId;
@@ -35,11 +35,11 @@ public class FileProcessingReportDetail {
 
     }
 
-    public FileProcessingReportType getType() {
+    public ReportType getType() {
         return type;
     }
 
-    public void setType(FileProcessingReportType type) {
+    public void setType(ReportType type) {
         this.type = type;
     }
 
