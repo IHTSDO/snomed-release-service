@@ -258,6 +258,11 @@ public class BuildDAOImpl implements BuildDAO {
 			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
 			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
 		}
+		//copy input-prepare-report.json if exists
+		InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(productSource);
+		if (inputReportStream != null) {
+			buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
+		}
 	}
 
 	@Override
@@ -529,6 +534,12 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getBuildReportFileStream(Build build) {
 		final String reportFilePath = pathHelper.getReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
+
+	@Override
+	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
+		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
 }

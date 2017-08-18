@@ -4,7 +4,7 @@ import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,8 +201,8 @@ public class InputFileController {
 			notes = "Deletes the specified file, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												  @PathVariable final String source, @RequestParam final String fileName) throws IOException, ResourceNotFoundException {
-		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, fileName, source);
+												  @PathVariable final String source) throws IOException, ResourceNotFoundException {
+		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, null, source);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
