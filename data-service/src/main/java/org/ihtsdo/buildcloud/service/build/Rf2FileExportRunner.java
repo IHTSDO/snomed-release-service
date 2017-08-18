@@ -224,18 +224,19 @@ public class Rf2FileExportRunner {
 			}
 		}
 	}
-	
-
 
 	private InputStream getEquivalentInternationalDelta(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
 		//der2_cRefset_AttributeValueDelta_US1000124_20160901.txt
+		if (configuration.isBetaRelease() && transformedDeltaDataFile.startsWith(BuildConfiguration.BETA_PREFIX)) {
+			transformedDeltaDataFile = transformedDeltaDataFile.substring(1);
+		}
 		String[] splits = transformedDeltaDataFile.split(FILE_NAME_SEPARATOR);
 		StringBuilder equivalentBuilder = new StringBuilder(); 
-		for (int i=0;i<3;i++) {
+		for (int i=0; i<3; i++) {
 			equivalentBuilder.append(splits[i]);
 			equivalentBuilder.append(FILE_NAME_SEPARATOR);
 		}
-		equivalentBuilder.append("INT");
+		equivalentBuilder.append(INT);
 		equivalentBuilder.append(FILE_NAME_SEPARATOR);
 		equivalentBuilder.append(RF2BuildUtils.getReleaseDateFromReleasePackage(extensionConfig.getDependencyRelease()));
 		equivalentBuilder.append(TXT_FILE_EXTENSION);
