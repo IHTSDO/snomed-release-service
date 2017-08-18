@@ -302,6 +302,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
 		FileInputStream fileInputStream = new FileInputStream(exportFile);
 		putSourceFile(InputSources.TERM_SERVER.getSourceName(), centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+		LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
 
 	}
 }

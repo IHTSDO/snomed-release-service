@@ -14,21 +14,12 @@ import java.util.Set;
 public class TermServerServiceImpl implements TermServerService{
 
     @Autowired
-    private SnowOwlRestClientFactory snowOwlRestClientFactory;
+    private SnowOwlRestClient snowOwlRestClient;
 
 
     public File export(String branchPath, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
                        SnowOwlRestClient.ExportType exportType) throws BusinessServiceException, FileNotFoundException {
-        //SnowOwlRestClient snowOwlRestClient = snowOwlRestClientFactory.getClient();
-        SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://dev-ms-authoring.ihtsdotools.org/snowowl","dev-ims-ihtsdo=iQd00pFHmuw7a2qlS08NoA00");
-        snowOwlRestClient.setFlatIndexExportStyle(false);
-        /*SnowOwlRestClient.ExportConfigurationBuilder exportConfigurationBuilder = new SnowOwlRestClient.ExportConfigurationBuilder();
-        exportConfigurationBuilder.setType(exportType).setBranchPath(branchPath)
-                .setTransientEffectiveTime(effectiveDate)
-                .setStartEffectiveTime(effectiveDate)
-                .setEndEffectiveTime(effectiveDate);*/
         return  snowOwlRestClient.export(branchPath, effectiveDate, moduleIds, exportCategory, exportType);
-        //return snowOwlRestClient.export(exportConfigurationBuilder);
     }
 
 }
