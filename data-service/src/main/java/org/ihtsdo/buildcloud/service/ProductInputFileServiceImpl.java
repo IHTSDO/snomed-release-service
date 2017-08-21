@@ -8,12 +8,15 @@ import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
@@ -23,9 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
-
-import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
-
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.ERROR;
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.WARNING;
+
+
 
 @Service
 @Transactional
@@ -55,6 +61,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
+
+	@Autowired
+	private TermServerService termServerService;
 
 	@Autowired
 	public ProductInputFileServiceImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -300,4 +309,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		}
 	}
 
+	@Override
+	public void gatherInputFileFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException {
+		File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
+				requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
+		FileInputStream fileInputStream = new FileInputStream(exportFile);
+		putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+		LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+
+	}
 }

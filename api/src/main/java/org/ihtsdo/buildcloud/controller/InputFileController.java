@@ -4,7 +4,8 @@ import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -240,6 +241,14 @@ public class InputFileController {
 				throw new ResourceNotFoundException("No report file found");
 			}
 		}
+	}
+
+	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
+	@ApiOperation(value = "Gather input file from multiple sources and upload to source directories")
+	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								 @RequestBody TermserverReleaseRequestPojo request, HttpServletResponse response) throws BusinessServiceException, IOException {
+		productInputFileService.gatherInputFileFromTermServer(releaseCenterKey, productKey, request);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
 
