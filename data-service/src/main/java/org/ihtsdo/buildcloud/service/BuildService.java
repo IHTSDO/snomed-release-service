@@ -49,5 +49,7 @@ public interface BuildService {
 	InputStream getBuildReportFile(String releaseCenterKey, String productKey,String buildId) throws ResourceNotFoundException;
 
 	InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId);
+	
+	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
 }
