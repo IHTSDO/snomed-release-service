@@ -278,7 +278,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.POST)
 	@ApiOperation(value = "Cancel a running build job")
 	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId) throws ResourceNotFoundException {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
