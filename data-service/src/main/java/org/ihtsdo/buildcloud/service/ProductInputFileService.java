@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 import javax.xml.bind.JAXBException;
@@ -44,5 +46,7 @@ public interface ProductInputFileService {
 	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException;
 
 	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
+
+	void gatherInputFileFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException;
 
 }
