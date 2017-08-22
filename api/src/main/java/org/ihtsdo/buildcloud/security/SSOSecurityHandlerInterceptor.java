@@ -28,9 +28,9 @@ public class SSOSecurityHandlerInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
         String pathInfo = httpServletRequest.getPathInfo();
         LOGGER.debug("pathInfo: '{}' from {}", pathInfo, httpServletRequest.getRemoteAddr());
-        User validUser = null;
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if("GET".equals(httpServletRequest.getMethod()) || "HEAD".equals(httpServletRequest.getMethod()) ||authentication != null) {
+        User validUser = null;
+        if("GET".equals(httpServletRequest.getMethod()) || "HEAD".equals(httpServletRequest.getMethod()) || authentication != null ) {
             validUser = authenticationService.getAnonymousSubject();
         }
         if (validUser != null) {

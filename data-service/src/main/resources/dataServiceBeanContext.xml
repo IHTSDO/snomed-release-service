@@ -244,7 +244,7 @@
 			<bean class="org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator"/>
 		</constructor-arg>
 	</bean>
-	<bean class="org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient">
+	<!--<bean class="org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient">
 		<constructor-arg value="${snowowl.url}"/>
 		<constructor-arg value="${snowowl.username}"/>
 		<constructor-arg value="${snowowl.password}"/>
@@ -254,5 +254,9 @@
 		<property name="importTimeoutMinutes" value="${snowowl.import.timeout}"/>
 		<property name="classificationTimeoutMinutes" value="${snowowl.classification.timeout}"/>
 		<property name="flatIndexExportStyle" value="${snowowl.flatIndexExportStyle:true}"/>
+	</bean>-->
+	<bean class="org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClientFactory">
+		<constructor-arg value="${snowowl.url}"/>
+		<constructor-arg value="${snowowl.reasonerId}"/>
 	</bean>
 </beans>
