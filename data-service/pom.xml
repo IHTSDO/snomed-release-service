@@ -33,6 +33,10 @@
 			<version>${otf-common.version}</version>
 			<exclusions>
 				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+				<exclusion>
 					<artifactId>spring-beans</artifactId>
 					<groupId>org.springframework</groupId>
 				</exclusion>
