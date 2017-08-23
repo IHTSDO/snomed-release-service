@@ -389,44 +389,64 @@ public class InputSourceFileProcessor {
         }
     }
 
+
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
+        List<String> warnings = new ArrayList<>();
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
         }
         else {
-            String[] splits = lines.get(0).split("\t");
-            String refsetId = splits[REFSETID_COL];
-            FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-            //Show warning if refset id is found in sources but not used in manifest configuration
-            if (fileProcessingConfig == null) {
-                String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
-                        .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
-                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
-                addFileToSkippedList(sourceName, inFileName);
-            } else {
-                if (fileProcessingConfig.getTargetFiles() != null){
+            Map<String, List<String>> rowsGroupedByRefsetId = new HashMap<>();
+            for (String line : lines) {
+                String[] splits = line.split("\t");
+                String refsetId = splits[REFSETID_COL];
+                FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+                if(fileProcessingConfig == null) {
+                    warnings.add(refsetId+":"+sourceName+"/"+inFileName);
+                } else {
+                    if(!rowsGroupedByRefsetId.containsKey(refsetId)) {
+                        rowsGroupedByRefsetId.put(refsetId, new ArrayList<String>());
+                    }
+                    rowsGroupedByRefsetId.get(refsetId).add(line);
+                }
+            }
+            for (String refsetId : rowsGroupedByRefsetId.keySet()) {
+                FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+                if(fileProcessingConfig.getTargetFiles() != null){
                     Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);
                     String exactSourceName = "";
                     String outputFileName = "";
                     if(targetFiles != null && targetFiles.size() > 0){
-                        writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
-                        String infoMessage = new StringBuilder("Found in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
-                        fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
-                    } else {
+                        writeToFile(outDir, header, sourceName, rowsGroupedByRefsetId.get(refsetId), fileProcessingConfig);
+                        String infoMessage = new StringBuilder("Found refset id ").append(refsetId)
+                                .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
+                        fileProcessingReportDetails.add(new FileProcessingReportDetail(ReportType.INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
+                    }else{
                         Map<String, List<String>> fileNameAccordingSources = refSetConfigFromManifest.get(refsetId);
-                        if (fileNameAccordingSources != null ){
+                        if(fileNameAccordingSources != null ){
+
                             for(Map.Entry<String, List<String>> entry : fileNameAccordingSources.entrySet()){
                                 outputFileName = entry.getKey();
                                 exactSourceName = entry.getValue().toString();
                             }
-                            String warningMessage = new StringBuilder("The manifest.xml states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
-                            fileProcessingReport.add(WARNING, outputFileName , refsetId, sourceName, warningMessage);
+                            String warningMessage = new StringBuilder("The Manifest states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
+                            fileProcessingReport.add(ReportType.WARNING, outputFileName , refsetId, sourceName, warningMessage);
                             logger.warn(warningMessage);
                         }
+
                     }
+
                 }
             }
+            for (String warning : warnings) {
+                String[] warningSplits = warning.split(":");
+                String warningMessage = new StringBuilder("Found refset id ").append(warningSplits[0])
+                        .append(" in ").append(warningSplits[1]).append(" but is not used in manifest configuration").toString();
+                fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , warningSplits[0], sourceName, warningMessage);
+                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", warningSplits[0], sourceName, inFileName);
+                addFileToSkippedList(sourceName, inFileName);
+            }
+
         }
     }
 
