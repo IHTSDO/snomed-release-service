@@ -99,5 +99,5 @@ public interface BuildDAO {
 
 	void deleteOutputFiles(Build build);
 
-	
+	InputStream getBuildInputGatherReportStream(Build build);
 }

@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
@@ -310,12 +311,28 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public void gatherInputFileFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException {
-		File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
-				requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
-		FileInputStream fileInputStream = new FileInputStream(exportFile);
-		putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
-		LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+	public InputGatherReport gatherSourceFilesFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException {
+		InputGatherReport inputGatherReport = new InputGatherReport();
+		Product product = getProduct(centerKey, productKey);
+		dao.persistSourcesGatherReport(product, inputGatherReport);
+		try {
+			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
+					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
+			FileInputStream fileInputStream = new FileInputStream(exportFile);
+			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server", "Gather input successfully");
+			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
+			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+		} catch (Exception ex) {
+			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
+		}
+		dao.persistSourcesGatherReport(product, inputGatherReport);
+		return inputGatherReport;
+	}
 
+	@Override
+	public InputStream getInputGatherReport(String centerKey, String productKey) {
+		Product product = getProduct(centerKey, productKey);
+		return dao.getInputGatherReport(product);
 	}
 }

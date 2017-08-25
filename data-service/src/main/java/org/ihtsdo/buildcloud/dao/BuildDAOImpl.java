@@ -262,6 +262,12 @@ public class BuildDAOImpl implements BuildDAO {
 		if (inputReportStream != null) {
 			buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
 		}
+
+		//copy sources-gather-report.json if exists
+		InputStream sourcesGatherStream = productInputFileDAO.getInputGatherReport(productSource);
+		if(sourcesGatherStream != null) {
+			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build));
+		}
 	}
 
 	@Override
@@ -553,5 +559,11 @@ public class BuildDAOImpl implements BuildDAO {
 		for (String outputFile : outputFiles) {
 			buildFileHelper.deleteFile(outputFile);
 		}
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReportStream(Build build) {
+		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
 	}
 }

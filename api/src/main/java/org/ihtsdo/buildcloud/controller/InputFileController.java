@@ -244,14 +244,25 @@ public class InputFileController {
 	}
 
 	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
-	@ApiOperation(value = "Gather input file from multiple sources and upload to source directories")
+	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
 	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-								 @RequestBody TermserverReleaseRequestPojo request, HttpServletResponse response) throws BusinessServiceException, IOException {
-		productInputFileService.gatherInputFileFromTermServer(releaseCenterKey, productKey, request);
+								 @RequestBody TermserverReleaseRequestPojo request) throws BusinessServiceException, IOException {
+		productInputFileService.gatherSourceFilesFromTermServer(releaseCenterKey, productKey, request);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
+	@RequestMapping(value = "/inputfiles/gatherReport", method = RequestMethod.GET)
+	@ApiOperation(value = "Return report of input files gather")
+	public void  getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, final HttpServletResponse response) throws IOException {
+		try (InputStream outputFileStream = productInputFileService.getInputGatherReport(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No report file found");
+			}
+		}
+	}
 
-	
+
 
 }

@@ -391,7 +391,7 @@ public class InputSourceFileProcessor {
 
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
-        List<String> warnings = new ArrayList<>();
+        Set<String> warnings = new HashSet<>();
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
         }
