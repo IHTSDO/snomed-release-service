@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -160,6 +160,22 @@ public class BuildController {
 				StreamUtils.copy(outputFileStream, response.getOutputStream());
 			} else {
 				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/inputGatherReport", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves the report for gathering input source files.",
+			notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
+	public void getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+									  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getBuildInputGatherReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file gather report json file found for build: " + productKey + "/" + buildId + "/");
 			}
 		}
 	}

@@ -52,4 +52,6 @@ public interface BuildService {
 	
 	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
+	InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId);
+
 }

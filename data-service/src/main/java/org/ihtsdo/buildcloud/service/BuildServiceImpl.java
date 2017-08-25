@@ -626,7 +626,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuild(final Product product, final Date creationTime) {
-		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime).replace(":","'"));
+		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime));
 	}
 
 	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
@@ -703,5 +703,11 @@ public class BuildServiceImpl implements BuildService {
 	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		dao.updateStatus(build, Status.CANCEL_REQUESTED);
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildInputGatherReportStream(build);
 	}
 }

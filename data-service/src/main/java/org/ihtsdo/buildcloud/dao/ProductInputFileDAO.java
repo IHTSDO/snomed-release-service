@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 
 import java.io.IOException;
@@ -32,4 +33,8 @@ public interface ProductInputFileDAO {
 	void persistInputPrepareReport(Product product, SourceFileProcessingReport fileProcessingReport) throws IOException;
 
 	InputStream getInputPrepareReport(Product product);
+
+	void persistSourcesGatherReport(Product product, InputGatherReport inputGatherReport) throws IOException;
+
+	InputStream getInputGatherReport(Product product);
 }
