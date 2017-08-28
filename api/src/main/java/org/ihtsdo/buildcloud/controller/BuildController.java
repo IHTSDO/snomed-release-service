@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -296,8 +297,10 @@ public class BuildController {
 
 	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.POST)
 	@ApiOperation(value = "Cancel a running build job")
-	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId) throws ResourceNotFoundException {
+	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
+		response.setStatus(HttpStatus.OK.value());
 	}
 
 }
