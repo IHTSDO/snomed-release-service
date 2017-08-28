@@ -694,8 +694,10 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
+	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		//Only cancel build if the status is "BUILDING"
+		dao.assertStatus(build, Status.BUILDING);
 		dao.updateStatus(build, Status.CANCEL_REQUESTED);
 	}
 }
