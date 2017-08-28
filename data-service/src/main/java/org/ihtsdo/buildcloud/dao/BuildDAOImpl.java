@@ -534,7 +534,17 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public boolean isBuildCancelRequested(final Build build) {
-		return build.getStatus().equals(Build.Status.CANCEL_REQUESTED);
+		String cancelledRequestedPath = pathHelper.getStatusFilePath(build, Build.Status.CANCEL_REQUESTED);
+		try {
+			if(s3Client.getObject(buildBucketName, cancelledRequestedPath) != null) {
+				build.setStatus(Build.Status.CANCEL_REQUESTED);
+				return true;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return false;
+
 	}
 
 	@Override
