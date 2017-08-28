@@ -6,6 +6,7 @@ import java.util.List;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
@@ -48,6 +49,6 @@ public interface BuildService {
 
 	InputStream getBuildReportFile(String releaseCenterKey, String productKey,String buildId) throws ResourceNotFoundException;
 
-	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
+	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException;
 
 }
