@@ -23,7 +23,7 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
     }
 
     @Test
-    public void testMultipleReleases() throws Exception {
+    public void testCancelBuild() throws Exception {
         integrationTestHelper.loginAsManager();
         integrationTestHelper.createTestProductStructure();
 
@@ -61,7 +61,7 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
             }
         });
         thread.start();
-        integrationTestHelper.triggerBuild(buildURL1);
+        integrationTestHelper.triggerBuildAndGotCancelled(buildURL1);
     }
 
 
