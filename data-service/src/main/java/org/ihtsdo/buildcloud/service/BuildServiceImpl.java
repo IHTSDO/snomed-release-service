@@ -240,19 +240,22 @@ public class BuildServiceImpl implements BuildService {
 						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 				LOGGER.error(resultMessage, e);
 			}
-			report.add("Progress Status", resultStatus);
-			report.add("Message", resultMessage);
-			dao.persistReport(build);
+
 			if(!dao.isBuildCancelRequested(build)) {
+				report.add("Progress Status", resultStatus);
+				report.add("Message", resultMessage);
+				dao.persistReport(build);
 				updateStatusWithChecks(build, Status.BUILT);
+			} else {
+				report.add("Progress Status", "cancelled");
+				report.add("Message", "Build was cancelled");
+				dao.persistReport(build);
+				updateStatusWithChecks(build, Status.CANCELLED);
+				dao.deleteOutputFiles(build);
 			}
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
-			if(dao.isBuildCancelRequested(build)) {
-				dao.updateStatus(build, Status.CANCELLED);
-				dao.deleteOutputFiles(build);
-			}
 		}
 		return build;
 	}
@@ -302,6 +305,9 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case BUILT :
 				dao.assertStatus(build, Status.BUILDING);
+				break;
+			case CANCELLED:
+				dao.assertStatus(build, Status.CANCEL_REQUESTED);
 				break;
 		}
 
