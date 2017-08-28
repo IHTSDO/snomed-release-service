@@ -557,7 +557,9 @@ public class BuildDAOImpl implements BuildDAO {
 	public void deleteOutputFiles(Build build) {
 		List<String> outputFiles = listOutputFilePaths(build);
 		for (String outputFile : outputFiles) {
-			buildFileHelper.deleteFile(outputFile);
+			if(buildFileHelper.exists(outputFile)) {
+				buildFileHelper.deleteFile(outputFile);
+			}
 		}
 	}
 

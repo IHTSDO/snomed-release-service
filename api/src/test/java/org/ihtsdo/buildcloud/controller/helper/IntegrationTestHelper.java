@@ -473,4 +473,15 @@ public class IntegrationTestHelper {
 		}
 	}
 
+	public int cancelBuild(String buildURL) throws Exception {
+		final MvcResult cancelBuildResult = mockMvc.perform(
+				post(buildURL + "/cancel")
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andReturn();
+		return cancelBuildResult.getResponse().getStatus();
+	}
+
 }
