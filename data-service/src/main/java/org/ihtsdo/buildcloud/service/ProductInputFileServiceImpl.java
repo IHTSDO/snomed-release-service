@@ -320,10 +320,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
 			FileInputStream fileInputStream = new FileInputStream(exportFile);
 			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
-			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server", "Gather input successfully");
+			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
+					"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
 			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
 		} catch (Exception ex) {
+			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
 		}
 		dao.persistSourcesGatherReport(product, inputGatherReport);
