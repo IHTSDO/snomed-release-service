@@ -170,7 +170,7 @@ public class PublishServiceImpl implements PublishService {
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
-		} catch (BusinessServiceException | JAXBException e) {
+		} catch (JAXBException e) {
 			throw new BusinessServiceException("Failed to mark this package as previous published package for future builds {}", e);
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
