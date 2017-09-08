@@ -24,7 +24,10 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.manifest.FolderType;
+import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -34,6 +37,7 @@ import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +45,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
+
+import javax.xml.bind.JAXBException;
 
 @Service
 @Transactional
@@ -63,6 +69,9 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private IdServiceRestClient idRestClient;
+
+	@Autowired
+	private ProductService productService;
 
 	@Autowired
 	private BuildDAO buildDao;
@@ -101,7 +110,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishBuild(final Build build, boolean publishComponentIds) throws BusinessServiceException {
+	public void publishBuild(final Build build, boolean publishComponentIds, String releaseCenterKey, String productKey) throws BusinessServiceException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		try {
 			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
@@ -155,9 +164,14 @@ public class PublishServiceImpl implements PublishService {
 				//copy build info to published bucket
 				backupPublishedBuild(build,publishedBucketName);
 				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
+
+				//mark this as previous published package for future builds
+				markAsPreviousPublishedPackage(build, releaseCenterKey, productKey);
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
+		} catch (BusinessServiceException | JAXBException e) {
+			throw new BusinessServiceException("Failed to mark this package as previous published package for future builds {}", e);
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
@@ -172,6 +186,27 @@ public class PublishServiceImpl implements PublishService {
 		for (String filename : buildFiles) {
 			buildFileHelper.copyFile(orginalBuildPath + filename , publishedBucketName, buildBckUpPath  + filename);
 		}
+	}
+
+	/**
+	 * Update this newly published package as the "previous published package" for all future SRS builds.
+	 * @param build
+	 * @param releaseCenterKey
+	 * @param productKey
+	 * @throws JAXBException
+	 * @throws BusinessServiceException
+	 */
+	private void markAsPreviousPublishedPackage(Build build, String releaseCenterKey, String productKey) throws JAXBException, BusinessServiceException {
+		final InputStream manifestStream = buildDao.getManifestStream(build);
+		//Get the manifest file as an input stream
+		ManifestXmlFileParser parser = new ManifestXmlFileParser();
+		ListingType manifestListing = parser.parse(manifestStream);
+
+		//Zip file name is the same as the root folder defined in manifest, with .zip appended
+		FolderType rootFolder = manifestListing.getFolder();
+		Map<String, String> json = new HashMap<>();
+		json.put(ProductService.PREVIOUS_PUBLISHED_PACKAGE, rootFolder.getName() + ".zip");
+		productService.update(releaseCenterKey, productKey, json);
 	}
 	
 	@Override
