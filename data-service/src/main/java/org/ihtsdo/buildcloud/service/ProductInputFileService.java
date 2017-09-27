@@ -45,4 +45,6 @@ public interface ProductInputFileService {
 
 	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
 
+	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
+
 }

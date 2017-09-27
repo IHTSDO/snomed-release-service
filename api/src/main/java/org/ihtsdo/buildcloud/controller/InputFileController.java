@@ -4,6 +4,7 @@ import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.amazonaws.services.elasticbeanstalk.model.transform.SolutionStackDescriptionStaxUnmarshaller;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 
@@ -195,6 +197,25 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
+	@RequestMapping(value = "/sourcefiles/{source}/{sourceFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a specified file",
+		notes = "Returns the content of the specified file." )
+	public void getSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, 
+			@PathVariable String source, @PathVariable final String sourceFileName,
+			final HttpServletResponse response) throws ResourceNotFoundException {
+
+		try (InputStream fileStream = productInputFileService.getSourceFileStream(releaseCenterKey, productKey, source, sourceFileName)) {
+			if (fileStream != null) {
+				StreamUtils.copy(fileStream, response.getOutputStream());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		} catch (IOException e) {
+			LOGGER.error("Failed to stream source file from storage.", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+	
 
 	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.DELETE)
 	@ApiOperation( value = "Returns a specified file",
@@ -222,7 +243,10 @@ public class InputFileController {
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
 												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
-		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
+		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
+		if (!report.getDetails().isEmpty() && report.getDetails().get(ReportType.ERROR) != null) {
+			
+		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 	

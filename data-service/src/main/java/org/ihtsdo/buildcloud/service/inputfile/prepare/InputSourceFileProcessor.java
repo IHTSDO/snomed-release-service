@@ -5,7 +5,6 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.CharEncoding;
-import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.manifest.FieldType;
@@ -36,8 +35,6 @@ import java.util.*;
 
 public class InputSourceFileProcessor {
 
-    private static final String DEFAULT_LANGUAGE_CODE = "en";
-
 	private static final String README_HEADER_FILE_NAME = "readme-header.txt";
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
@@ -51,7 +48,6 @@ public class InputSourceFileProcessor {
     private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
     private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
     private static final String OUT_DIR = "out";
-    private static final String TEXT_DEFINITION_ALL_LANGUAGE_CODE = "*";
     private static final int DESCRIPTION_TYPE_COL = 6;
     private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
 
@@ -70,13 +66,12 @@ public class InputSourceFileProcessor {
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
     private MultiValueMap<String, String> filesToCopyFromSource;
     private Map<String, List<String>> sourceFilesMap;
-    private Map<String, Map<String, List<String>>> refSetConfigFromManifest;
     private SourceFileProcessingReport fileProcessingReport;
     private Map<String,List<String>> skippedSourceFiles;
     private MultiValueMap<String, String> refsetWithAdditionalFields;
 
     public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
-                         Product product, SourceFileProcessingReport fileProcessingReport, boolean copyFilesDefinedInManifest) {
+                         Product product, boolean copyFilesDefinedInManifest) {
         this.manifestStream = manifestStream;
         this.fileHelper = fileHelper;
         this.buildS3PathHelper = buildS3PathHelper;
@@ -87,11 +82,10 @@ public class InputSourceFileProcessor {
         this.textDefinitionFileProcessingConfigs = new HashMap<>();
         this.availableSources = new HashSet<>();
         this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
-        this.fileProcessingReport = fileProcessingReport;
-        this.refSetConfigFromManifest = new HashMap<>();
         this.skippedSourceFiles = new HashMap<>();
         this.filesToCopyFromSource = new LinkedMultiValueMap<>();
         this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
+        this.fileProcessingReport = new SourceFileProcessingReport();
       
     }
 
@@ -130,7 +124,7 @@ public class InputSourceFileProcessor {
     	Collection<FileProcessingConfig> configs = refsetFileProcessingConfigs.values();
 		Set<String> refSetFilesToCreate = new HashSet<>();
     	for (FileProcessingConfig config : configs) {
-			config.getTargetFiles().values().forEach(c -> refSetFilesToCreate.addAll(c));
+    		refSetFilesToCreate.add(config.getTargetFileName());
 		}
 		for (String refsetFileName : refSetFilesToCreate) {
 			refsetFileName = refsetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? refsetFileName.substring(1) : refsetFileName;
@@ -155,7 +149,7 @@ public class InputSourceFileProcessor {
 					if (checkAdditionalFields) {
 						String header = getHeaderLine(file);
 						if (header == null || !header.equals(headerLine.toString())) {
-							fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
+							fileProcessingReport.add(ReportType.ERROR, refsetFileName, null, null, 
 									"Refset file does not contain a valid header according to the manifest. Actual:" + header + " while expecting:" + headerLine.toString());
 						}
 					}
@@ -168,8 +162,8 @@ public class InputSourceFileProcessor {
 				if (!refsetDeltFile .exists()) {
 					refsetDeltFile.createNewFile();
 					FileUtils.writeLines(refsetDeltFile, CharEncoding.UTF_8, Arrays.asList(headerLine.toString()), RF2Constants.LINE_ENDING);
-					fileProcessingReport.add(ReportType.INFO, refsetFileName, null, null, 
-							"No refset data found in source therefore an empty delta file with header line only is created instead.");
+					fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null, 
+							"No refset data found in any source therefore an empty delta file with header line only is created instead.");
 				}
 			}
 		}
@@ -213,14 +207,14 @@ public class InputSourceFileProcessor {
         return localDir;
     }
 
-    private void loadFileProcessConfigsFromManifest() throws JAXBException, ResourceNotFoundException {
-        ManifestXmlFileParser manifestXmlFileParser = new ManifestXmlFileParser();
-        if(manifestStream == null) {
-            fileProcessingReport.add(ReportType.ERROR, "Failed to load manifest find");
-            throw new ResourceNotFoundException("Failed to load manifest find");
+     void loadFileProcessConfigsFromManifest() throws JAXBException, ResourceNotFoundException, IOException {
+        if (manifestStream == null) {
+            fileProcessingReport.add(ReportType.ERROR, "Failed to load manifest");
+            throw new ResourceNotFoundException("Failed to load manifest");
         }
-        ListingType listingType = manifestXmlFileParser.parse(manifestStream);
-        loadProcessConfig(listingType);
+    	ManifestXmlFileParser manifestXmlFileParser = new ManifestXmlFileParser();
+    	ListingType listingType = manifestXmlFileParser.parse(manifestStream);
+    	loadProcessConfig(listingType);
     }
 
     private void loadProcessConfig(ListingType listingType) {
@@ -263,34 +257,24 @@ public class InputSourceFileProcessor {
         }
     }
 
-	private void initDescripionProcessingConfig(FileType fileType) {
+	void initDescripionProcessingConfig(FileType fileType) {
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-		        FileProcessingConfig fileProcessingConfig;
+				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_DESCRIPTION, languageCode, fileType.getName());
 		        if (!descriptionFileProcessingConfigs.containsKey(languageCode)) {
-		            fileProcessingConfig = FileProcessingConfig.init(availableSources);
-		            fileProcessingConfig.setFileType(INPUT_FILE_TYPE_DESCRIPTION);
-		            fileProcessingConfig.setValue(languageCode);
-		            descriptionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		            descriptionFileProcessingConfigs.put(config.getValue(), config);
 		        }
-		        fileProcessingConfig = descriptionFileProcessingConfigs.get(languageCode);
-		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		        if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
+		    		config.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+				}
 		    }
 		} else {
-			//set en as default
-			 FileProcessingConfig fileProcessingConfig;
-		     if (!descriptionFileProcessingConfigs.containsKey(DEFAULT_LANGUAGE_CODE)) {
-		         fileProcessingConfig = FileProcessingConfig.init(availableSources);
-		         fileProcessingConfig.setFileType(INPUT_FILE_TYPE_DESCRIPTION);
-		         fileProcessingConfig.setValue(DEFAULT_LANGUAGE_CODE);
-		         descriptionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-		     }
-		     fileProcessingConfig = descriptionFileProcessingConfigs.get(DEFAULT_LANGUAGE_CODE);
-		     fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+			//add error reporting manifest.xml is not configured properly
+			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, "No language code is configured in the manifest.xml for description file.");
 		}
 	}
 
-	private void initRefsetProcessingConfig(FileType fileType) {
+	void initRefsetProcessingConfig(FileType fileType) {
 		if (fileType.getContainsAdditionalFields() != null && fileType.getContainsAdditionalFields().getField() != null ) {
 			for (FieldType field : fileType.getContainsAdditionalFields().getField()) {
 				String refsetFileName = fileType.getName();
@@ -301,55 +285,35 @@ public class InputSourceFileProcessor {
 		}
 		for (RefsetType refsetType : fileType.getContainsReferenceSets().getRefset()) {
 		    String refsetId = refsetType.getId().toString();
-		    FileProcessingConfig fileProcessingConfig;
+		    FileProcessingConfig fileProcessingConfig = new FileProcessingConfig(INPUT_FILE_TYPE_REFSET, refsetType.getId().toString(), fileType.getName());
 		    if (!refsetFileProcessingConfigs.containsKey(refsetId)) {
-		        fileProcessingConfig = FileProcessingConfig.init(availableSources);
-		        fileProcessingConfig.setFileType(INPUT_FILE_TYPE_REFSET);
-		        fileProcessingConfig.setValue(refsetType.getId().toString());
 		        refsetFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
 		    }
-		    fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-		    Map<String, List<String>> fileNameAndSourceMaps = new HashMap<>();
 		    if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
-		        fileNameAndSourceMaps.put(fileType.getName(), refsetType.getSources().getSource());
-		        refSetConfigFromManifest.put(refsetId, fileNameAndSourceMaps);
-		        for (String s : refsetType.getSources().getSource()) {
-		            if (fileProcessingConfig.getTargetFiles().containsKey(s)) {
-		                fileProcessingConfig.addTargetFileToSource(s, fileType.getName());
-		            } else {
-		                logger.error("Failed to find source {}" + s);
-		            }
-		        }
+		    	fileProcessingConfig.setSpecifiedSources(new HashSet<String>(refsetType.getSources().getSource()));
 		    } else {
-		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+		    	if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
+		    		fileProcessingConfig.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+				} 
 		    }
 		}
 	}
 
-	private void initTextDefinitionProcessingConfig(FileType fileType) {
+	 void initTextDefinitionProcessingConfig(FileType fileType) {
 		foundTextDefinitionFile = true;
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
 		    for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-		        FileProcessingConfig fileProcessingConfig;
+		        FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_TEXT_DEFINITON, languageCode, fileType.getName());
+		        if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
+		    		config.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+				}
 		        if (!textDefinitionFileProcessingConfigs.containsKey(languageCode)) {
-		            fileProcessingConfig = FileProcessingConfig.init(availableSources);
-		            fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
-		            fileProcessingConfig.setValue(languageCode);
-		            textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		            textDefinitionFileProcessingConfigs.put(config.getValue(), config);
 		        }
-		        fileProcessingConfig = textDefinitionFileProcessingConfigs.get(languageCode);
-		        fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
 		    }
 		} else {
-		    FileProcessingConfig fileProcessingConfig;
-		    if (!textDefinitionFileProcessingConfigs.containsKey(TEXT_DEFINITION_ALL_LANGUAGE_CODE)) {
-		        fileProcessingConfig = FileProcessingConfig.init(availableSources);
-		        fileProcessingConfig.setFileType(INPUT_FILE_TYPE_TEXT_DEFINITON);
-		        fileProcessingConfig.setValue(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-		        textDefinitionFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
-		    }
-		    fileProcessingConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-		    fileProcessingConfig.addTargetFileToAllSources(fileType.getName());
+			//add error reporting manifest.xml is not configured properly
+			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, "No language code is configured in the manifest.xml for textDefinition file.");
 		}
 	}
 
@@ -372,7 +336,7 @@ public class InputSourceFileProcessor {
                     	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
                         if (foundTextDefinitionFile) {
                         	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
-                            processDescriptionsAndTextDefinitions(lines, source, outDir, header);
+                            processDescriptionsAndTextDefinitions(lines, source, fileName, outDir, header);
                         } else {
                             processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
@@ -397,37 +361,27 @@ public class InputSourceFileProcessor {
             String[] splits = lines.get(0).split("\t");
             String refsetId = splits[REFSETID_COL];
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-            //Show warning if refset id is found in sources but not used in manifest configuration
             if (fileProcessingConfig == null) {
-                String warningMessage = new StringBuilder("Found refset id ").append(refsetId)
-                        .append(" in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).append(" but is not used in manifest configuration").toString();
-                fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
-                logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", refsetId, sourceName, inFileName);
+            	 //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
+                String inputFilename = FilenameUtils.getName(inFileName);
+            	if (!filesToCopyFromSource.containsKey(inputFilename)) {
+            	    String errorMsg = String.format("Found refset id %s in source file %s/%s but is not used by the manifest configuration", refsetId, sourceName,inFileName);
+                    fileProcessingReport.add(ReportType.ERROR, inputFilename, refsetId, sourceName, errorMsg);
+            	}
                 addFileToSkippedList(sourceName, inFileName);
             } else {
-                if (fileProcessingConfig.getTargetFiles() != null){
-                    Set<String> targetFiles = fileProcessingConfig.getTargetFiles().get(sourceName);
-                    String exactSourceName = "";
-                    String outputFileName = "";
-                    if(targetFiles != null && targetFiles.size() > 0){
-                        writeToFile(outDir, header, sourceName, lines, fileProcessingConfig);
-                        String infoMessage = new StringBuilder("Found in ").append(sourceName+"/"+FilenameUtils.getName(inFileName)).toString();
-                        fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
-                    } else {
-                        Map<String, List<String>> fileNameAccordingSources = refSetConfigFromManifest.get(refsetId);
-                        if (fileNameAccordingSources != null ){
-                            for(Map.Entry<String, List<String>> entry : fileNameAccordingSources.entrySet()){
-                                    outputFileName = entry.getKey();
-                                    exactSourceName = entry.getValue().toString();
-                            }
-                            String warningMessage = new StringBuilder("The manifest.xml states that this Reference Set content should come from the following sources: ").append(exactSourceName).toString();
-                            fileProcessingReport.add(WARNING, outputFileName , refsetId, sourceName, warningMessage);
-                            logger.warn(warningMessage);
-                        }
-                    }
+                if (fileProcessingConfig.getSpecifiedSources().isEmpty() || fileProcessingConfig.getSpecifiedSources().contains(sourceName) ){
+                	//not specified
+                	 writeToFile(outDir, header, lines, fileProcessingConfig.getTargetFileName());
+                     String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
+                     fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
+                } else {
+                	String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
+                    fileProcessingReport.add(WARNING, FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
+                    logger.warn(warningMessage);
                 }
             }
-        }
+         }
     }
 
 	private void addFileToSkippedList(String sourceName, String filename) {
@@ -456,18 +410,23 @@ public class InputSourceFileProcessor {
             }
             for (String comparisonValue : rows.keySet()) {
                 FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
-                writeToFile(outDir, header, sourceName, rows.get(comparisonValue), fileProcessingConfig);
+                if (fileProcessingConfig != null) {
+                	writeToFile(outDir, header, rows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
+                } else {
+                	String msg = String.format("Found language code: %s in source file but not specified in the manifest.xml", comparisonValue);
+                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
+                }
             }
         }
 
     }
 
-    private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, File outDir, String header) throws IOException {
+    private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
-        textDefinitionRows.put(TEXT_DEFINITION_ALL_LANGUAGE_CODE, new ArrayList<String>());
         if (lines == null || lines.isEmpty()) {
             logger.info("There is no row to process");
+            
         } else {
             for (String line : lines) {
                 String[] splits = line.split("\t");
@@ -478,7 +437,6 @@ public class InputSourceFileProcessor {
                         textDefinitionRows.put(comparisonValue, new ArrayList<String>());
                     }
                     textDefinitionRows.get(comparisonValue).add(line);
-                    textDefinitionRows.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE).add(line);
                 } else {
                     if (!descriptionRows.containsKey(comparisonValue)) {
                         descriptionRows.put(comparisonValue, new ArrayList<String>());
@@ -488,20 +446,23 @@ public class InputSourceFileProcessor {
             }
             for (String comparisonValue : descriptionRows.keySet()) {
                 FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
-                writeToFile(outDir, header, sourceName, descriptionRows.get(comparisonValue), fileProcessingConfig);
+                if (fileProcessingConfig != null) {
+                	writeToFile(outDir, header, descriptionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
+                } else {
+                	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
+                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
+                }
             }
-            // If text definition configuration does not specify languages, copy all text definitions regardless of language code
-            FileProcessingConfig allLanguagesConfig = textDefinitionFileProcessingConfigs.get(TEXT_DEFINITION_ALL_LANGUAGE_CODE);
-            // If text definition configuration specifies languages, copy all text definitions that have specified language code
             for (String comparisonValue : textDefinitionRows.keySet()) {
                 FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
-                if(fileProcessingConfig != null && allLanguagesConfig != null) {
-                    fileProcessingConfig.getTargetFiles().get(sourceName).addAll(allLanguagesConfig.getTargetFiles().get(sourceName));
+                if (fileProcessingConfig != null) {
+                	writeToFile(outDir, header, textDefinitionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
+                } else {
+                	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
+                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
                 }
-                writeToFile(outDir, header, sourceName, textDefinitionRows.get(comparisonValue), fileProcessingConfig);
             }
         }
-
     }
 
     
@@ -509,7 +470,7 @@ public class InputSourceFileProcessor {
     	if (configs != null) {
     		Set<String> fileNamesToCreate = new HashSet<>();
     		for (FileProcessingConfig config : configs) {
-    			config.getTargetFiles().values().parallelStream().forEach(c -> fileNamesToCreate.addAll(c));
+    			fileNamesToCreate.add(config.getTargetFileName());
     		}
     		for (String fileName : fileNamesToCreate) {
     			File file = new File(outDir, fileName);
@@ -522,22 +483,17 @@ public class InputSourceFileProcessor {
     	
 	}
 
-	private void writeToFile(File outDir, String header, String sourceName, List<String> lines, FileProcessingConfig fileProcessingConfig) throws IOException {
-        if (fileProcessingConfig != null && lines != null && !lines.isEmpty()) {
-            Set<String> outFileList = fileProcessingConfig.getTargetFiles().get(sourceName);
-            if (outFileList != null) {
-                for (String outFileName : outFileList) {
-                    File outFile = new File(outDir, outFileName);
-                    if (!outFile.exists()) {
-                        outFile.createNewFile();
-                        List<String> headers = new ArrayList<>();
-                        headers.add(header);
-                        FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers, RF2Constants.LINE_ENDING);
-                    }
-                    FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
-                    logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
-                }
-            }
+	private void writeToFile(File outDir, String header, List<String> lines, String targetOutputFileName) throws IOException {
+        if (targetOutputFileName != null && lines != null && !lines.isEmpty()) {
+        	 File outFile = new File(outDir, targetOutputFileName);
+             if (!outFile.exists()) {
+                 outFile.createNewFile();
+                 List<String> headers = new ArrayList<>();
+                 headers.add(header);
+                 FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers, RF2Constants.LINE_ENDING);
+             }
+             FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
+             logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
         }
     }
 
@@ -581,8 +537,8 @@ public class InputSourceFileProcessor {
                     } else {
                     	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
                     		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
-                        	logger.warn(msg);
-                    		reportDetails.add(new FileProcessingReportDetail(WARNING, sourceFileName, source, null, msg));
+                        	logger.error(msg);
+                    		reportDetails.add(new FileProcessingReportDetail(ERROR, sourceFileName, null, source, msg));
                     	}
                     }
                 }             
@@ -651,16 +607,48 @@ public class InputSourceFileProcessor {
         List<String> requiredFileList = new ArrayList<String>(filesToCopyFromSource.keySet());
         for (String filename : requiredFileList) {
         	if (!filesPrepared.contains(filename)) {
-        		 String message = "Required by manifest but not found in source.";
-            	 logger.warn(filename + " " + message);
-    			fileProcessingReport.add(WARNING, filename,null,null, message);
+        		String message = null;
+        		 if (filesToCopyFromSource.get(filename).isEmpty()) {
+        			 message = String.format("Required by manifest but not found in any source.");
+        		 } else {
+        			 message = String.format("Required by manifest but not found in source %s", filesToCopyFromSource.get(filename));
+        		 }
+            	 logger.error(filename + " " + message);
+    			fileProcessingReport.add(ERROR, filename, null, null, message);
         	}
-        	
         }
     }
-
+    
 	public Map<String, List<String>> getSkippedSourceFiles() {
 		return skippedSourceFiles;
+	}
+
+	public Set<String> getAvailableSources() {
+		return availableSources;
+	}
+
+	public Map<String, FileProcessingConfig> getRefsetFileProcessingConfigs() {
+		return refsetFileProcessingConfigs;
+	}
+
+	public Map<String, FileProcessingConfig> getDescriptionFileProcessingConfigs() {
+		return descriptionFileProcessingConfigs;
+	}
+
+	public Map<String, FileProcessingConfig> getTextDefinitionFileProcessingConfigs() {
+		return textDefinitionFileProcessingConfigs;
+	}
+
+	public MultiValueMap<String, String> getFilesToCopyFromSource() {
+		return filesToCopyFromSource;
+	}
+
+	public Map<String, List<String>> getSourceFilesMap() {
+		return sourceFilesMap;
+	}
+
+	public MultiValueMap<String, String> getRefsetWithAdditionalFields() {
+		return refsetWithAdditionalFields;
 	}
     
 }

@@ -7,7 +7,11 @@
 						<code>en</code>
 					</contains-language-codes>
 				</file>
-				<file Name="xsct2_TextDefinition_Delta-en_INT_20140731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20140731.txt">
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
 			</folder>
 			<folder Name="Refset">
 				<folder Name="Content">
