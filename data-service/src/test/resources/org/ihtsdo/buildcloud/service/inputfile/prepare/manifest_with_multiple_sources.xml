@@ -7,7 +7,11 @@
 						<code>en</code>
 					</contains-language-codes>
 				</file>
-				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt">
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
 				<file Name="xsct2_Concept_Delta_INT_20170731.txt"/>
 				<file Name="xsct2_StatedRelationship_Delta_INT_20170731.txt"/>
 				<file Name="xsct2_Relationship_Delta_INT_20170731.txt">
@@ -21,7 +25,6 @@
 					<source>terminology-server</source>
 				</sources>
 				</file>
-				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt"/>
 			</folder>
 			<folder Name="Refset">
 				<folder Name="Content">
@@ -51,15 +54,21 @@
 					</file>
 					<file Name="xder2_Refset_SimpleDelta_INT_20170731.txt">
 						<contains-reference-sets>
-							<refset id="723264001" label="Lateralizable body structure"/>
-							<source>externally-maintained</source>
+							<refset id="723264001" label="Lateralizable body structure">
+								<sources>
+									<source>externally-maintained</source>
+								</sources>
+							</refset>
 						</contains-reference-sets>
 					</file>
 				</folder>
 				<folder Name="Map">
 					<file Name="xder2_sRefset_SimpleMapDelta_INT_20170731.txt"/>
 					<file Name="xder2_iisssccRefset_ExtendedMapDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
+						
 					</file>
 				</folder>
 				<folder Name="Language">
@@ -67,16 +76,24 @@
 				</folder>
 				<folder Name="Metadata">
 					<file Name="xder2_cciRefset_RefsetDescriptorDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_ssRefset_ModuleDependencyDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_ciRefset_DescriptionTypeDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt">
 						<contains-reference-sets>
@@ -91,17 +108,22 @@
 							<field name ="domainTemplateForPostcoordination"/>
 							<field name ="guideUrl"/>
 						</contains-additional-fields>
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_ssccRefset_MRCMAttributeRangeDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 					<file Name="xder2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt">
-						<source>externally-maintained</source>
+						<sources>
+							<source>externally-maintained</source>
+						</sources>
 					</file>
 				</folder>
 			</folder>
 		</folder> <!-- Delta -->
 	</folder> <!-- SnomedCT_Release_INT_20170731 -->
 </listing>
-
