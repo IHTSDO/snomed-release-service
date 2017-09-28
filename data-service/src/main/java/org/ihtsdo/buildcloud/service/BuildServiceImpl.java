@@ -226,6 +226,7 @@ public class BuildServiceImpl implements BuildService {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 		LOGGER.info("Trigger product", productKey, buildId);
+		boolean isAbandoned = false;
 		try {
 			//check source file prepare report
 			InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build);
@@ -234,36 +235,38 @@ public class BuildServiceImpl implements BuildService {
 				try {
 					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
 					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
+						isAbandoned = true;
 						updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
 						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
-								+ "Please see detailed logs via the inputPrepareReport_url link listed.");
-						dao.persistReport(build);
+								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
 					}
 				} catch (IOException e) {
 					updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
 					LOGGER.error("Failed to read source file processing report", e);
+					isAbandoned = true;
 				}
 			} else {
 				LOGGER.warn("No source file prepare report found.");
 			}
 			// Run product
-			final BuildReport report = build.getBuildReport();
-			String resultStatus = "completed";
-			String resultMessage = "Process completed successfully";
-			try {
-				updateStatusWithChecks(build, Status.BUILDING);
-				executeBuild(build, failureExportMax);
-			} catch (final Exception e) {
-				resultStatus = "fail";
-				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
-						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-				LOGGER.error(resultMessage, e);
+			if (!isAbandoned) {
+				final BuildReport report = build.getBuildReport();
+				String resultStatus = "completed";
+				String resultMessage = "Process completed successfully";
+				try {
+					updateStatusWithChecks(build, Status.BUILDING);
+					executeBuild(build, failureExportMax);
+				} catch (final Exception e) {
+					resultStatus = "fail";
+					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+					LOGGER.error(resultMessage, e);
+				}
+				report.add("Progress Status", resultStatus);
+				report.add("Message", resultMessage);
+				dao.persistReport(build);
+				updateStatusWithChecks(build, Status.BUILT);
 			}
-			report.add("Progress Status", resultStatus);
-			report.add("Message", resultMessage);
-			dao.persistReport(build);
-			updateStatusWithChecks(build, Status.BUILT);
-			
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);

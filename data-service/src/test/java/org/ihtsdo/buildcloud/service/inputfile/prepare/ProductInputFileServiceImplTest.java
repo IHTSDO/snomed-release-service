@@ -205,8 +205,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          assertFileNameExist(inputFileList,"rel2_Description_Delta-en_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
-         assertEquals(23, report.getDetails().get(ReportType.ERROR).size());
-         assertEquals(10, report.getDetails().get(ReportType.WARNING).size());
+         assertEquals(18, report.getDetails().get(ReportType.ERROR).size());
+         assertEquals(14, report.getDetails().get(ReportType.WARNING).size());
          
     }
     
@@ -228,9 +228,9 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertFileNameExist(inputFileList,"rel2_Refset_SimpleDelta_INT_20140731.txt");
         assertEquals(5, inputFileList.size());
         assertNotNull(report.getDetails().get(ReportType.ERROR));
-        assertEquals(13, report.getDetails().get(ReportType.ERROR).size());
-        assertEquals(3, report.getDetails().get(ReportType.WARNING).size());
-        assertEquals(20, report.getDetails().get(ReportType.INFO).size());
+        assertEquals(10, report.getDetails().get(ReportType.ERROR).size());
+        assertEquals(7, report.getDetails().get(ReportType.WARNING).size());
+        assertEquals(19, report.getDetails().get(ReportType.INFO).size());
     }
     
     
@@ -262,7 +262,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertNotNull(report.getDetails().get(ReportType.ERROR));
         assertEquals(8,report.getDetails().get(ReportType.ERROR).size());
         assertNotNull(report.getDetails().get(ReportType.WARNING));
-        assertEquals(4,report.getDetails().get(ReportType.WARNING).size());
+        assertEquals(5,report.getDetails().get(ReportType.WARNING).size());
     }
     
     @Test
@@ -379,8 +379,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         int countMissingRefset = 0;
         Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         //for (FileProcessingReportDetail reportDetail : reportDetails) {
-            if(reportDetails.containsKey(ReportType.ERROR)) {
-                for (FileProcessingReportDetail reportDetail : reportDetails.get(ReportType.ERROR)) {
+            if(reportDetails.containsKey(ReportType.WARNING)) {
+                for (FileProcessingReportDetail reportDetail : reportDetails.get(ReportType.WARNING)) {
                     String message = reportDetail.getMessage();
                     for (String missingRefset : missingRefsets) {
                         if (message.contains(missingRefset)) {
