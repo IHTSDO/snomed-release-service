@@ -368,8 +368,8 @@ public class InputSourceFileProcessor {
             if (fileProcessingConfig == null) {
             	 //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
             	if (!filesToCopyFromSource.containsKey(inputFilename)) {
-            	    String errorMsg = String.format("Found refset id %s in source file %s/%s but is not used by the manifest configuration", refsetId, sourceName, inputFilename);
-                    fileProcessingReport.add(ReportType.ERROR, inputFilename, refsetId, sourceName, errorMsg);
+            	    String errorMsg = String.format("Found refset id %s in source file but is not used by the manifest configuration", refsetId);
+                    fileProcessingReport.add(ReportType.WARNING, inputFilename, refsetId, sourceName, errorMsg);
             	}
                 addFileToSkippedList(sourceName, inFileName);
             } else {
@@ -380,7 +380,6 @@ public class InputSourceFileProcessor {
                 } else {
                 	String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
                     fileProcessingReport.add(WARNING, inputFilename , refsetId, sourceName, warningMessage);
-                    logger.warn(warningMessage);
                 }
             }
          }
@@ -401,7 +400,7 @@ public class InputSourceFileProcessor {
         Map<String, List<String>> rows = new HashMap<>();
         String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
-            fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
+            fileProcessingReport.add(WARNING, inputFilename, null, sourceName, NO_DATA_FOUND);
         } else {
             for (String line : lines) {
                 String[] splits = line.split("\t");
@@ -429,7 +428,7 @@ public class InputSourceFileProcessor {
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
         String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
-            fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
+            fileProcessingReport.add(WARNING, inputFilename, null, sourceName, NO_DATA_FOUND);
         } else {
             for (String line : lines) {
                 String[] splits = line.split("\t");
@@ -540,8 +539,7 @@ public class InputSourceFileProcessor {
                     } else {
                     	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
                     		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
-                        	logger.error(msg);
-                    		reportDetails.add(new FileProcessingReportDetail(ERROR, sourceFileName, null, source, msg));
+                    		reportDetails.add(new FileProcessingReportDetail(ReportType.WARNING, sourceFileName, null, source, msg));
                     	}
                     }
                 }             
@@ -609,14 +607,13 @@ public class InputSourceFileProcessor {
         }
         List<String> requiredFileList = new ArrayList<String>(filesToCopyFromSource.keySet());
         for (String filename : requiredFileList) {
-        	if (!filesPrepared.contains(filename)) {
+        	if (!filesPrepared.contains(filename) && !filename.startsWith("Readme")) {
         		String message = null;
         		 if (filesToCopyFromSource.get(filename).isEmpty()) {
         			 message = String.format("Required by manifest but not found in any source.");
         		 } else {
         			 message = String.format("Required by manifest but not found in source %s", filesToCopyFromSource.get(filename));
         		 }
-            	 logger.error(filename + " " + message);
     			fileProcessingReport.add(ERROR, filename, null, null, message);
         	}
         }
