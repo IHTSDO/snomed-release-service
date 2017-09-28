@@ -35,6 +35,10 @@ import java.util.*;
 
 public class InputSourceFileProcessor {
 
+	private static final String NO_LANGUAGE_CODE_IS_CONFIGURED_MSG = "No language code is configured in the manifest.xml.";
+
+	private static final String NO_DATA_FOUND = "No data found apart from header line.";
+
 	private static final String README_HEADER_FILE_NAME = "readme-header.txt";
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
@@ -86,7 +90,6 @@ public class InputSourceFileProcessor {
         this.filesToCopyFromSource = new LinkedMultiValueMap<>();
         this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
         this.fileProcessingReport = new SourceFileProcessingReport();
-      
     }
 
     public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
@@ -262,15 +265,15 @@ public class InputSourceFileProcessor {
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_DESCRIPTION, languageCode, fileType.getName());
 		        if (!descriptionFileProcessingConfigs.containsKey(languageCode)) {
-		            descriptionFileProcessingConfigs.put(config.getValue(), config);
+		            descriptionFileProcessingConfigs.put(config.getKey(), config);
 		        }
 		        if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
-		    		config.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+		    		config.setSpecificSources(new HashSet<String>(fileType.getSources().getSource()));
 				}
 		    }
 		} else {
 			//add error reporting manifest.xml is not configured properly
-			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, "No language code is configured in the manifest.xml for description file.");
+			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, NO_LANGUAGE_CODE_IS_CONFIGURED_MSG);
 		}
 	}
 
@@ -287,13 +290,13 @@ public class InputSourceFileProcessor {
 		    String refsetId = refsetType.getId().toString();
 		    FileProcessingConfig fileProcessingConfig = new FileProcessingConfig(INPUT_FILE_TYPE_REFSET, refsetType.getId().toString(), fileType.getName());
 		    if (!refsetFileProcessingConfigs.containsKey(refsetId)) {
-		        refsetFileProcessingConfigs.put(fileProcessingConfig.getValue(), fileProcessingConfig);
+		        refsetFileProcessingConfigs.put(fileProcessingConfig.getKey(), fileProcessingConfig);
 		    }
 		    if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
-		    	fileProcessingConfig.setSpecifiedSources(new HashSet<String>(refsetType.getSources().getSource()));
+		    	fileProcessingConfig.setSpecificSources(new HashSet<String>(refsetType.getSources().getSource()));
 		    } else {
 		    	if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
-		    		fileProcessingConfig.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+		    		fileProcessingConfig.setSpecificSources(new HashSet<String>(fileType.getSources().getSource()));
 				} 
 		    }
 		}
@@ -305,15 +308,15 @@ public class InputSourceFileProcessor {
 		    for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 		        FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_TEXT_DEFINITON, languageCode, fileType.getName());
 		        if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
-		    		config.setSpecifiedSources(new HashSet<String>(fileType.getSources().getSource()));
+		    		config.setSpecificSources(new HashSet<String>(fileType.getSources().getSource()));
 				}
 		        if (!textDefinitionFileProcessingConfigs.containsKey(languageCode)) {
-		            textDefinitionFileProcessingConfigs.put(config.getValue(), config);
+		            textDefinitionFileProcessingConfigs.put(config.getKey(), config);
 		        }
 		    }
 		} else {
 			//add error reporting manifest.xml is not configured properly
-			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, "No language code is configured in the manifest.xml for textDefinition file.");
+			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, NO_LANGUAGE_CODE_IS_CONFIGURED_MSG);
 		}
 	}
 
@@ -338,7 +341,7 @@ public class InputSourceFileProcessor {
                         	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
                             processDescriptionsAndTextDefinitions(lines, source, fileName, outDir, header);
                         } else {
-                            processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
+                            processDescriptionFileOnly(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
                     } else {
                     	addFileToSkippedList(source, fileName);
@@ -354,8 +357,9 @@ public class InputSourceFileProcessor {
     }
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
+    	 String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
-            logger.info("There is no row to process");
+            fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
         }
          else {
             String[] splits = lines.get(0).split("\t");
@@ -363,21 +367,19 @@ public class InputSourceFileProcessor {
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
             if (fileProcessingConfig == null) {
             	 //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
-                String inputFilename = FilenameUtils.getName(inFileName);
             	if (!filesToCopyFromSource.containsKey(inputFilename)) {
-            	    String errorMsg = String.format("Found refset id %s in source file %s/%s but is not used by the manifest configuration", refsetId, sourceName,inFileName);
+            	    String errorMsg = String.format("Found refset id %s in source file %s/%s but is not used by the manifest configuration", refsetId, sourceName, inputFilename);
                     fileProcessingReport.add(ReportType.ERROR, inputFilename, refsetId, sourceName, errorMsg);
             	}
                 addFileToSkippedList(sourceName, inFileName);
             } else {
-                if (fileProcessingConfig.getSpecifiedSources().isEmpty() || fileProcessingConfig.getSpecifiedSources().contains(sourceName) ){
-                	//not specified
+                if (fileProcessingConfig.getSpecificSources().isEmpty() || fileProcessingConfig.getSpecificSources().contains(sourceName) ){
                 	 writeToFile(outDir, header, lines, fileProcessingConfig.getTargetFileName());
                      String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
-                     fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, FilenameUtils.getName(inFileName) , refsetId, sourceName, infoMessage));
+                     fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, fileProcessingConfig.getTargetFileName(), refsetId, sourceName, infoMessage));
                 } else {
                 	String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
-                    fileProcessingReport.add(WARNING, FilenameUtils.getName(inFileName) , refsetId, sourceName, warningMessage);
+                    fileProcessingReport.add(WARNING, inputFilename , refsetId, sourceName, warningMessage);
                     logger.warn(warningMessage);
                 }
             }
@@ -394,11 +396,12 @@ public class InputSourceFileProcessor {
     	}
 	}
 
-	private void processFile(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
+	private void processDescriptionFileOnly(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
             FileProcessingConfig> fileProcessingConfigs) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
-        if (lines == null || lines.isEmpty())  {
-            logger.info("There is no row to process");
+        String inputFilename = FilenameUtils.getName(inFileName);
+        if (lines == null || lines.isEmpty()) {
+            fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
         } else {
             for (String line : lines) {
                 String[] splits = line.split("\t");
@@ -414,7 +417,7 @@ public class InputSourceFileProcessor {
                 	writeToFile(outDir, header, rows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
                 } else {
                 	String msg = String.format("Found language code: %s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
+                	fileProcessingReport.add(ERROR, inputFilename , null, sourceName, msg);
                 }
             }
         }
@@ -424,9 +427,9 @@ public class InputSourceFileProcessor {
     private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
         Map<String, List<String>> textDefinitionRows = new HashMap<>();
+        String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
-            logger.info("There is no row to process");
-            
+            fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
         } else {
             for (String line : lines) {
                 String[] splits = line.split("\t");
@@ -450,7 +453,7 @@ public class InputSourceFileProcessor {
                 	writeToFile(outDir, header, descriptionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
                 } else {
                 	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
+                	fileProcessingReport.add(ERROR, inputFilename , null, sourceName, msg);
                 }
             }
             for (String comparisonValue : textDefinitionRows.keySet()) {
@@ -459,7 +462,7 @@ public class InputSourceFileProcessor {
                 	writeToFile(outDir, header, textDefinitionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
                 } else {
                 	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, FilenameUtils.getName(inFileName) , null, sourceName, msg);
+                	fileProcessingReport.add(ERROR, inputFilename, null, sourceName, msg);
                 }
             }
         }

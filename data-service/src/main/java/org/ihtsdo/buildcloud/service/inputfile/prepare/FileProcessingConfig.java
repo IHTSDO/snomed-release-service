@@ -4,41 +4,41 @@ import java.util.Set;
 
 public class FileProcessingConfig {
     private String fileType;
-    private String value;
+    private String key;
     private String targetFileName;
-    private Set<String> specifiedSources;
+    private Set<String> specificSources;
     
     public FileProcessingConfig(String fileType, String value, String targetFilename) {
     	this.fileType = fileType;
-    	this.value = value;
+    	this.key = value;
     	this.targetFileName = targetFilename;
-    	this.specifiedSources = new HashSet<>();
+    	this.specificSources = new HashSet<>();
     }
 
     public String getFileType() {
         return fileType;
     }
 
-    public String getValue() {
-        return value;
+    public String getKey() {
+        return key;
     }
 
 	public String getTargetFileName() {
 		return targetFileName;
 	}
 	
-	public void setSpecifiedSources(Set<String> specifiedSources) {
-		this.specifiedSources = specifiedSources;
+	public void setSpecificSources(Set<String> specificSources) {
+		this.specificSources = specificSources;
 	}
 
-	public Set<String> getSpecifiedSources() {
-		return specifiedSources;
+	public Set<String> getSpecificSources() {
+		return specificSources;
 	}
 
 	@Override
 	public String toString() {
-		return "FileProcessingConfig [fileType=" + fileType + ", value=" + value + ", targetFileName=" + targetFileName
-				+ ", specifiedSources=" + specifiedSources + "]";
+		return "FileProcessingConfig [fileType=" + fileType + ", key=" + key + ", targetFileName=" + targetFileName
+				+ ", specifiedSources=" + specificSources + "]";
 	}
 
 	

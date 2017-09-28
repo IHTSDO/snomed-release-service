@@ -35,6 +35,10 @@ import org.springframework.util.MultiValueMap;
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 public class InputSourceFileProcessorTest {
 	
+	private static final String DA = "da";
+	private static final String EN = "en";
+	private static final String EXTERNALLY_MAINTAINED = "externally-maintained";
+	private static final String TERMINOLOGY_SERVER = "terminology-server";
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
 	@Autowired
@@ -57,43 +61,100 @@ public class InputSourceFileProcessorTest {
 		ReleaseCenter releaseCenter = new ReleaseCenter("International", "int");
 		product.setReleaseCenter(releaseCenter);
 	}
-
-	@Test
-	public void testLoadingManifestWithoutSpecifyingSources() throws Exception {
-		validateManifest("manifest_with_mixed_sources.xml");
-		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_mixed_sources.xml");
-		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		processor.loadFileProcessConfigsFromManifest();
-		Map<String, FileProcessingConfig>  descriptionProcessingConfig = processor.getDescriptionFileProcessingConfigs();
-		for (String descritionFile : descriptionProcessingConfig.keySet()) {
-			System.out.println(descriptionProcessingConfig.get(descritionFile));
-		}
-		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
-		for (String fileName : filesToCopy.keySet()) {
-			System.out.println("File name to copy:" + fileName);
-			System.out.println(filesToCopy.get(fileName));
-		}
-		processor.getTextDefinitionFileProcessingConfigs();
-		
-	}
 	
 	@Test
 	public void testLoadingDKManifest() throws Exception {
-		validateManifest("manifest_dk.xml");
-		InputStream manifestStream = getClass().getResourceAsStream("manifest_dk.xml");
+		validateManifest("manifest_ms_dk.xml");
+		InputStream manifestStream = getClass().getResourceAsStream("manifest_ms_dk.xml");
 		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
 		processor.loadFileProcessConfigsFromManifest();
-		Map<String, FileProcessingConfig>  descriptionProcessingConfig = processor.getDescriptionFileProcessingConfigs();
-		for (String descritionFile : descriptionProcessingConfig.keySet()) {
-			System.out.println(descriptionProcessingConfig.get(descritionFile));
-		}
-		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
-		for (String fileName : filesToCopy.keySet()) {
-			System.out.println("File name to copy:" + fileName);
-			System.out.println(filesToCopy.get(fileName));
-		}
-		processor.getTextDefinitionFileProcessingConfigs();
+		//description configs
+		Map<String, FileProcessingConfig>  descriptionProcessingConfigs = processor.getDescriptionFileProcessingConfigs();
+		assertEquals(2,descriptionProcessingConfigs.keySet().size());
+		assertTrue(descriptionProcessingConfigs.containsKey(EN));
+		assertTrue(descriptionProcessingConfigs.containsKey(DA));
+		FileProcessingConfig enDescriptionConfig = descriptionProcessingConfigs.get(EN);
+		assertEquals(EN,enDescriptionConfig.getKey());
+		assertEquals("xsct2_Description_Delta-en_DK1000005_20170731.txt", enDescriptionConfig.getTargetFileName());
+		assertEquals(1, enDescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, enDescriptionConfig.getSpecificSources().iterator().next());
 		
+		FileProcessingConfig daDescriptionConfig = descriptionProcessingConfigs.get(DA);
+		assertEquals(DA,daDescriptionConfig.getKey());
+		assertEquals("xsct2_Description_Delta-da_DK1000005_20170731.txt", daDescriptionConfig.getTargetFileName());
+		assertEquals(1, daDescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, daDescriptionConfig.getSpecificSources().iterator().next());
+
+		//text definition configs
+		Map<String, FileProcessingConfig>  textDefinitionConfigs = processor.getTextDefinitionFileProcessingConfigs();
+		assertEquals(2,textDefinitionConfigs.keySet().size());
+		assertEquals(2,textDefinitionConfigs.keySet().size());
+		assertTrue(textDefinitionConfigs.containsKey(EN));
+		assertTrue(textDefinitionConfigs.containsKey(DA));
+		FileProcessingConfig enTextDefinitionConfig = textDefinitionConfigs.get(EN);
+		assertEquals(EN,enTextDefinitionConfig.getKey());
+		assertEquals("xsct2_TextDefinition_Delta-en_DK1000005_20170731.txt", enTextDefinitionConfig.getTargetFileName());
+		assertEquals(1, enTextDefinitionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, enTextDefinitionConfig.getSpecificSources().iterator().next());
+		
+		FileProcessingConfig daTextDefinitionConfig = textDefinitionConfigs.get(DA);
+		assertEquals(DA,daTextDefinitionConfig.getKey());
+		assertEquals("xsct2_TextDefinition_Delta-da_DK1000005_20170731.txt", daTextDefinitionConfig.getTargetFileName());
+		assertEquals(1, daTextDefinitionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, daTextDefinitionConfig.getSpecificSources().iterator().next());
+		
+		
+		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
+		assertEquals(3, filesToCopy.keySet().size());
+		String [] filesFromTermServerOnly = {"sct2_Concept_Delta_DK1000005_20170731.txt",
+				"sct2_StatedRelationship_Delta_DK1000005_20170731.txt"};
+		String [] filesWithoutSourcesSpecified = {"sct2_Relationship_Delta_DK1000005_20170731.txt"};
+		
+		for (String fileName : filesToCopy.keySet()) {
+			if (Arrays.asList(filesFromTermServerOnly).contains(fileName)) {
+				assertEquals(1, filesToCopy.get(fileName).size());
+				assertEquals(TERMINOLOGY_SERVER,filesToCopy.get(fileName).get(0));
+			} else if (Arrays.asList(filesWithoutSourcesSpecified).contains(fileName)) {
+				assertEquals(0, filesToCopy.get(fileName).size());
+			} 
+		}		
+		Map<String, FileProcessingConfig> refsetConfigs = processor.getRefsetFileProcessingConfigs();
+		assertEquals(11,refsetConfigs.size());
+		System.out.println("total" + refsetConfigs.size());
+		String [] associcaitionRefsetIds = {"900000000000523009","900000000000524003","900000000000525002","900000000000526001",
+				"900000000000527005","900000000000528000","900000000000530003","900000000000531004"};
+		String[] refsetsFromTermServer = {"900000000000523009","900000000000524003","900000000000525002",
+				"900000000000526001","900000000000527005","900000000000528000","900000000000530003","900000000000489007"};
+		String [] refsetIdsFromExternal = {"900000000000531004","900000000000490003"};
+		String [] refsetIdsWithoutSourceSepcified = {"723264001"};
+		
+		for (String refsetId : associcaitionRefsetIds) {
+			assertTrue("must contain refsetId " + refsetId , refsetConfigs.keySet().contains(refsetId));
+		}
+		
+		for (String refsetId : refsetsFromTermServer) {
+			assertTrue("must contain refsetId " + refsetId , refsetConfigs.keySet().contains(refsetId));
+		}
+		
+		for (String refsetId : refsetIdsWithoutSourceSepcified) {
+			assertTrue("must contain refsetId " + refsetId , refsetConfigs.keySet().contains(refsetId));
+		}
+	
+		for (String refsetid : refsetConfigs.keySet()) {
+			if (Arrays.asList(associcaitionRefsetIds).contains(refsetid)) {
+				assertEquals("xder2_cRefset_AssociationReferenceDelta_DK1000005_20170731.txt", refsetConfigs.get(refsetid).getTargetFileName());
+			}
+			if (Arrays.asList(refsetsFromTermServer).contains(refsetid)) {
+				assertEquals(TERMINOLOGY_SERVER, refsetConfigs.get(refsetid).getSpecificSources().iterator().next());
+			}
+			if (Arrays.asList(refsetIdsFromExternal).contains(refsetid)) {
+				assertEquals(EXTERNALLY_MAINTAINED, refsetConfigs.get(refsetid).getSpecificSources().iterator().next());
+			}
+			if (Arrays.asList(refsetIdsWithoutSourceSepcified).contains(refsetid)) {
+				assertEquals(0, refsetConfigs.get(refsetid).getSpecificSources().size());
+			}
+		}
+		assertEquals(0, processor.getRefsetWithAdditionalFields().size());
 	}
 	
 	@Test
@@ -133,30 +194,28 @@ public class InputSourceFileProcessorTest {
 		manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
 		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
 		SourceFileProcessingReport report = processor.processFiles(Collections.emptyList());
-		System.out.println(report);
 		assertNotNull(report);
 		assertNull(report.getDetails().get(ReportType.ERROR));
 		Map<String,FileProcessingConfig> refsetProcessingConfig = processor.getRefsetFileProcessingConfigs();
 		assertEquals(6,refsetProcessingConfig.keySet().size());
-		assertTrue("must contain 900000000000525002", refsetProcessingConfig.keySet().contains("900000000000525002"));
-		assertTrue("must contain 900000000000527005", refsetProcessingConfig.keySet().contains("900000000000527005"));
-		assertTrue("must contain 900000000000524003", refsetProcessingConfig.keySet().contains("900000000000524003"));
-		assertTrue("must contain 900000000000530003", refsetProcessingConfig.keySet().contains("900000000000530003"));
-		assertTrue("must contain 900000000000526001", refsetProcessingConfig.keySet().contains("900000000000526001"));
-		assertTrue("must contain 900000000000528000", refsetProcessingConfig.keySet().contains("900000000000528000"));
+		String [] refsetIds = {"900000000000525002","900000000000524003","900000000000530003","900000000000526001","900000000000528000"};
+		for (String refsetId : refsetIds) {
+			assertTrue("must contain " + refsetId, refsetProcessingConfig.keySet().contains(refsetId));
+		}
 		for (FileProcessingConfig config : refsetProcessingConfig.values()) {
 			assertEquals("xder2_cRefset_AssociationReferenceDelta_INT_20190731.txt" , config.getTargetFileName());
-			assertEquals(1, config.getSpecifiedSources().size());
-			if ("900000000000530003".equals(config.getValue())) {
-				assertEquals("externally-maintained",config.getSpecifiedSources().iterator().next());
+			assertEquals(1, config.getSpecificSources().size());
+			if ("900000000000530003".equals(config.getKey())) {
+				assertEquals(EXTERNALLY_MAINTAINED,config.getSpecificSources().iterator().next());
 			} else {
-				assertEquals("terminology-server",config.getSpecifiedSources().iterator().next());
+				assertEquals(TERMINOLOGY_SERVER,config.getSpecificSources().iterator().next());
 			}
 		}
 	}
 	
 	@Test
 	public void testLoadingManifestProcessingConfigWithMixedSources() throws Exception {
+		validateManifest("manifest_with_mixed_sources.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_mixed_sources.xml");
 		Product product = new Product();
 		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
@@ -165,45 +224,45 @@ public class InputSourceFileProcessorTest {
 		Map<String, FileProcessingConfig>  descriptionProcessingConfig = processor.getDescriptionFileProcessingConfigs();
 		assertEquals(1,descriptionProcessingConfig.keySet().size());
 		FileProcessingConfig descriptionConfig = descriptionProcessingConfig.values().iterator().next();
-		assertEquals("en",descriptionConfig.getValue());
+		assertEquals(EN,descriptionConfig.getKey());
 		assertEquals("xsct2_Description_Delta-en_INT_20170731.txt", descriptionConfig.getTargetFileName());
-		assertEquals(1, descriptionConfig.getSpecifiedSources().size());
-		assertEquals("terminology-server", descriptionConfig.getSpecifiedSources().iterator().next());
+		assertEquals(1, descriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, descriptionConfig.getSpecificSources().iterator().next());
 		
 		Map<String, FileProcessingConfig>  testDefinitionConfigs = processor.getTextDefinitionFileProcessingConfigs();
 		assertEquals(1,testDefinitionConfigs.keySet().size());
 		FileProcessingConfig definitionConfig = testDefinitionConfigs.values().iterator().next();
-		assertEquals("en",definitionConfig.getValue());
+		assertEquals(EN,definitionConfig.getKey());
 		assertEquals("xsct2_TextDefinition_Delta-en_INT_20170731.txt", definitionConfig.getTargetFileName());
-		assertEquals(1, definitionConfig.getSpecifiedSources().size());
-		assertEquals("terminology-server", descriptionConfig.getSpecifiedSources().iterator().next());
+		assertEquals(1, definitionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, descriptionConfig.getSpecificSources().iterator().next());
 		
 		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
 		assertEquals(13, filesToCopy.keySet().size());
-		String [] filesFromTermServerSource = {"sct2_Concept_Delta_INT_20170731.txt",
+		String [] filesFromTermServerOnly = {"sct2_Concept_Delta_INT_20170731.txt",
 				"sct2_StatedRelationship_Delta_INT_20170731.txt",
 				"sct2_Relationship_Delta_INT_20170731.txt"};
 	
-		String [] filesFromExternalource = {"der2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt",
+		String [] filesFromExternalOnly = {"der2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt",
 				"der2_ssccRefset_MRCMAttributeRangeDelta_INT_20170731.txt",
 				"der2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt"};
 		String [] filesWithBothSources = {"sct2_Identifier_Delta_INT_20170731.txt"};
 		
 		for (String fileName : filesToCopy.keySet()) {
-			if (Arrays.asList(filesFromTermServerSource).contains(fileName)) {
+			if (Arrays.asList(filesFromTermServerOnly).contains(fileName)) {
 				assertEquals(1, filesToCopy.get(fileName).size());
-				assertEquals("terminology-server",filesToCopy.get(fileName).get(0));
-			} else if (Arrays.asList(filesFromExternalource).contains(fileName)) {
+				assertEquals(TERMINOLOGY_SERVER,filesToCopy.get(fileName).get(0));
+			} else if (Arrays.asList(filesFromExternalOnly).contains(fileName)) {
 				assertEquals(1, filesToCopy.get(fileName).size());
-				assertEquals("externally-maintained",filesToCopy.get(fileName).get(0));
+				assertEquals(EXTERNALLY_MAINTAINED,filesToCopy.get(fileName).get(0));
 			} else if (Arrays.asList(filesWithBothSources).contains(fileName)) {
 				assertEquals(2, filesToCopy.get(fileName).size());
-				assertTrue(filesToCopy.get(fileName).contains("externally-maintained"));
-				assertTrue(filesToCopy.get(fileName).contains("terminology-server"));
+				assertTrue(filesToCopy.get(fileName).contains(EXTERNALLY_MAINTAINED));
+				assertTrue(filesToCopy.get(fileName).contains(TERMINOLOGY_SERVER));
 			} else {
 				assertEquals(0,filesToCopy.get(fileName).size());
 			}
-		}
+		}		
 	}
 
 	private void validateManifest(String manifestFileName) {
