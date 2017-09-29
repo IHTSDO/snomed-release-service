@@ -205,7 +205,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          assertFileNameExist(inputFileList,"rel2_Description_Delta-en_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
-         assertEquals(18, report.getDetails().get(ReportType.ERROR).size());
+         assertEquals(19, report.getDetails().get(ReportType.ERROR).size());
          assertEquals(14, report.getDetails().get(ReportType.WARNING).size());
          
     }
@@ -262,7 +262,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertNotNull(report.getDetails().get(ReportType.ERROR));
         assertEquals(8,report.getDetails().get(ReportType.ERROR).size());
         assertNotNull(report.getDetails().get(ReportType.WARNING));
-        assertEquals(5,report.getDetails().get(ReportType.WARNING).size());
+        assertEquals(6,report.getDetails().get(ReportType.WARNING).size());
     }
     
     @Test

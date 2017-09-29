@@ -97,7 +97,7 @@ public class InputSourceFileProcessor {
             initLocalDirs();
             copySourceFilesToLocal(sourceFileLists);
             loadFileProcessConfigsFromManifest();
-            processFiles();
+            prepareSourceFiles();
             if (this.copyFilesDefinedInManifest) {
                fileProcessingReport.addReportDetails(copyFilesToOutputDir());
             }
@@ -186,23 +186,21 @@ public class InputSourceFileProcessor {
 
     private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
         for (String sourceFilePath : sourceFileLists) {
-            if (FilenameUtils.getExtension(sourceFilePath).equalsIgnoreCase(FILE_EXTENSION_TXT)) {
-                //Copy files from S3 to local for processing
-                InputStream sourceFileStream = fileHelper.getFileStream(buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString());
-                String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
-                //Keep track of the sources directories that are used
-                availableSources.add(sourceName);
-                File sourceDir = new File(localDir, sourceName);
-                if (!sourceDir.exists()) sourceDir.mkdir();
-                String fileName = FilenameUtils.getName(sourceFilePath);
-                File outFile = new File(localDir + "/" + sourceName, fileName);
-                FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
-                logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
-                if (!sourceFilesMap.containsKey(sourceName)) {
-                    sourceFilesMap.put(sourceName, new ArrayList<String>());
-                }
-                sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
+        	 //Copy files from S3 to local for processing
+            InputStream sourceFileStream = fileHelper.getFileStream(buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString());
+            String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
+            //Keep track of the sources directories that are used
+            availableSources.add(sourceName);
+            File sourceDir = new File(localDir, sourceName);
+            if (!sourceDir.exists()) sourceDir.mkdir();
+            String fileName = FilenameUtils.getName(sourceFilePath);
+            File outFile = new File(localDir + "/" + sourceName, fileName);
+            FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
+            logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
+            if (!sourceFilesMap.containsKey(sourceName)) {
+                sourceFilesMap.put(sourceName, new ArrayList<String>());
             }
+            sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
         }
         for (String sourceName : sourceFilesMap.keySet()) {
         	 fileProcessingReport.addSoureFiles(sourceName, sourceFilesMap.get(sourceName));
@@ -320,7 +318,7 @@ public class InputSourceFileProcessor {
 		}
 	}
 
-    private void processFiles() throws IOException {
+    private void prepareSourceFiles() throws IOException {
         List<FileProcessingReportDetail> fileProcessingReportDetails = new ArrayList<>();
         for (String source : sourceFilesMap.keySet()) {
             List<String> fileList = sourceFilesMap.get(source);
@@ -360,6 +358,10 @@ public class InputSourceFileProcessor {
     	 String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
             fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
+            if (filesToCopyFromSource.containsKey(inputFilename) && 
+            		(filesToCopyFromSource.get(inputFilename).isEmpty() || filesToCopyFromSource.get(inputFilename).contains(sourceName))) {
+            	 writeToFile(outDir, header, lines, inputFilename);
+            }
         }
          else {
             String[] splits = lines.get(0).split("\t");
@@ -605,9 +607,8 @@ public class InputSourceFileProcessor {
             fileHelper.putFile(file,filePath);
             logger.info("Uploaded {} to product input files directory with name {}", file.getName(), inputFileName);
         }
-        List<String> requiredFileList = new ArrayList<String>(filesToCopyFromSource.keySet());
-        for (String filename : requiredFileList) {
-        	if (!filesPrepared.contains(filename) && !filename.startsWith("Readme")) {
+        for (String filename : filesToCopyFromSource.keySet()) {
+        	if (!filesPrepared.contains(filename) && !filename.startsWith("readme-header")) {
         		String message = null;
         		 if (filesToCopyFromSource.get(filename).isEmpty()) {
         			 message = String.format("Required by manifest but not found in any source.");
