@@ -4,6 +4,7 @@
 			<folder Name="Refset">
 				<folder Name="Content">
 					<file Name="xder2_cRefset_AssociationReferenceDelta_INT_20190731.txt">
+						<source>terminology-server</source>
 						<contains-reference-sets>
 							<refset id="900000000000524003" label="MOVED TO"/>
 							<refset id="900000000000525002" label="MOVED FROM"/>
@@ -16,7 +17,6 @@
 								</sources>
 							</refset>
 						</contains-reference-sets>
-						<source>terminology-server</source>
 					</file>
 				</folder>
 			</folder>

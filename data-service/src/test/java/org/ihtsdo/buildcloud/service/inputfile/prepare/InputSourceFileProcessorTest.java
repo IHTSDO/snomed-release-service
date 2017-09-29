@@ -159,7 +159,7 @@ public class InputSourceFileProcessorTest {
 	
 	@Test
 	public void testLoadingManifestMissingRefsets() throws Exception {
-		validateManifest("manifest_all_sources.xml");
+		validateManifest("manifest_with_mixed_sources.xml");
 	}
 	
 	@Test
