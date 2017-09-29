@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -55,12 +56,18 @@ public class InputFileController {
 	@ApiOperation( value = "Stores a manifest file",
 		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
 	@ResponseBody
-	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String releaseCenterKey,
+	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey, @RequestParam(value = "file") final MultipartFile file)
 			throws IOException, ResourceNotFoundException {
 
 		productInputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
-		return new ResponseEntity<>(HttpStatus.CREATED);
+		InputStream manifestInputStream = productInputFileService.getManifestStream(releaseCenterKey, productKey);
+		String validationStatus = ManifestValidator.validate(manifestInputStream);
+		if (validationStatus == null) {
+			return new ResponseEntity<>(HttpStatus.CREATED);
+		} else {
+			return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_ENTITY);
+		}
 	}
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.GET)
