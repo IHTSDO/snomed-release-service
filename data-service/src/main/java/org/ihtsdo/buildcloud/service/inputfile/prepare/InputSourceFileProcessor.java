@@ -358,8 +358,10 @@ public class InputSourceFileProcessor {
     	 String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
             fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
-            if (filesToCopyFromSource.containsKey(inputFilename) && 
-            		(filesToCopyFromSource.get(inputFilename).isEmpty() || filesToCopyFromSource.get(inputFilename).contains(sourceName))) {
+            if (inputFilename.equals("der2_cRefset_LanguageDelta-en_INT_20170731.txt")) {
+            	System.out.println("Found file:");
+            }
+            if (filesToCopyFromSource.containsKey(inputFilename) && (filesToCopyFromSource.get(inputFilename).isEmpty() || filesToCopyFromSource.get(inputFilename).contains(sourceName))) {
             	 writeToFile(outDir, header, lines, inputFilename);
             }
         }
@@ -488,7 +490,7 @@ public class InputSourceFileProcessor {
 	}
 
 	private void writeToFile(File outDir, String header, List<String> lines, String targetOutputFileName) throws IOException {
-        if (targetOutputFileName != null && lines != null && !lines.isEmpty()) {
+        if (targetOutputFileName != null && header != null) {
         	 File outFile = new File(outDir, targetOutputFileName);
              if (!outFile.exists()) {
                  outFile.createNewFile();
@@ -496,8 +498,10 @@ public class InputSourceFileProcessor {
                  headers.add(header);
                  FileUtils.writeLines(outFile, CharEncoding.UTF_8, headers, RF2Constants.LINE_ENDING);
              }
-             FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
-             logger.info("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
+             if (lines != null && !lines.isEmpty()) {
+            	 FileUtils.writeLines(outFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
+                 logger.debug("Copied {} lines to {}", lines.size(), outFile.getAbsolutePath());
+             }
         }
     }
 
@@ -608,7 +612,7 @@ public class InputSourceFileProcessor {
             logger.info("Uploaded {} to product input files directory with name {}", file.getName(), inputFileName);
         }
         for (String filename : filesToCopyFromSource.keySet()) {
-        	if (!filesPrepared.contains(filename) && !filename.startsWith("readme-header")) {
+        	if (!filesPrepared.contains(filename) && !filename.startsWith("Readme")) {
         		String message = null;
         		 if (filesToCopyFromSource.get(filename).isEmpty()) {
         			 message = String.format("Required by manifest but not found in any source.");

@@ -32,6 +32,7 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     protected Product product;
     protected File testArchive;
     protected Set<String> subDirectories;
-	private boolean isDebugRun = false;
+	private boolean isDebugRun = true;
 
     private static final String JULY_RELEASE = "20140731";
     private static final String SRC_EXERTNALLY_MAINTAINED = "externally-maintained";
@@ -205,7 +206,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          assertFileNameExist(inputFileList,"rel2_Description_Delta-en_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
-         assertEquals(19, report.getDetails().get(ReportType.ERROR).size());
+         assertEquals(18, report.getDetails().get(ReportType.ERROR).size());
          assertEquals(14, report.getDetails().get(ReportType.WARNING).size());
          
     }
@@ -221,16 +222,32 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         SourceFileProcessingReport report =  productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
         List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         printReport(report);
-        assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_INT_20140731.txt");
-        assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt");
-        assertFileNameExist(inputFileList,"rel2_Description_Delta-en_INT_20140731.txt");
-        assertFileNameExist(inputFileList,"rel2_TextDefinition_Delta-en_INT_20140731.txt");
-        assertFileNameExist(inputFileList,"rel2_Refset_SimpleDelta_INT_20140731.txt");
-        assertEquals(5, inputFileList.size());
+        assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_INT_20170731.txt");
+        assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
+        assertFileNameExist(inputFileList,"rel2_Description_Delta-en_INT_20170731.txt");
+        assertFileNameExist(inputFileList,"rel2_TextDefinition_Delta-en_INT_20170731.txt");
+        assertFileNameExist(inputFileList,"rel2_Refset_SimpleDelta_INT_20170731.txt");
+        assertFileNameExist(inputFileList, "rel2_cRefset_LanguageDelta-en_INT_20170731.txt");
+        assertEquals(6, inputFileList.size());
         assertNotNull(report.getDetails().get(ReportType.ERROR));
         assertEquals(10, report.getDetails().get(ReportType.ERROR).size());
+        String [] filesReportedAsError = {"doc_Icd10MapTechnicalGuideExemplars_Current-en-US_INT_20170731.xlsx",
+        		"der2_sRefset_SimpleMapDelta_INT_20170731.txt",
+        		"der2_iisssccRefset_ExtendedMapDelta_INT_20170731.txt",
+        		"der2_cciRefset_RefsetDescriptorDelta_INT_20170731.txt",
+        		"der2_ssRefset_ModuleDependencyDelta_INT_20170731.txt",
+        		"der2_ciRefset_DescriptionTypeDelta_INT_20170731.txt",
+        		"der2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt",
+        		"der2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt",
+        		"der2_ssccRefset_MRCMAttributeRangeDelta_INT_20170731.txt",
+        		"der2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt"};
+        for (FileProcessingReportDetail reportDetail :report.getDetails().get(ReportType.ERROR)) {
+        	assertEquals("Required by manifest but not found in any source.", reportDetail.getMessage());
+        	assertTrue("must contain" + reportDetail.getFileName(), 
+        			Arrays.asList(filesReportedAsError).contains(reportDetail.getFileName()));
+        }
         assertEquals(7, report.getDetails().get(ReportType.WARNING).size());
-        assertEquals(19, report.getDetails().get(ReportType.INFO).size());
+        assertEquals(20, report.getDetails().get(ReportType.INFO).size());
     }
     
     
@@ -247,20 +264,28 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         SourceFileProcessingReport report =  productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
         List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
         printReport(report);
-        String [] fileNames = {"rel2_cRefset_AttributeValueDelta_INT_20170731.txt",
+        String [] fileNames = {"rel2_Concept_Delta_INT_20170731.txt",
         		"rel2_Description_Delta-en_INT_20170731.txt",
-        		"rel2_TextDefinition_Delta-en_INT_20170731.txt",
-        		"rel2_Concept_Delta_INT_20170731.txt",
-        		"rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt",
         		"rel2_Identifier_Delta_INT_20170731.txt",
-        		"rel2_TextDefinition_Delta-en_INT_20170731.txt",
         		"rel2_Refset_SimpleDelta_INT_20170731.txt",
+        		"rel2_Relationship_Delta_INT_20170731.txt",
         		"rel2_StatedRelationship_Delta_INT_20170731.txt",
+        		"rel2_TextDefinition_Delta-en_INT_20170731.txt",
+        		"rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt",
+        		"rel2_cRefset_AttributeValueDelta_INT_20170731.txt",
+        		"rel2_cRefset_LanguageDelta-en_INT_20170731.txt",
+        		"rel2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt",
+        		"rel2_cciRefset_RefsetDescriptorDelta_INT_20170731.txt",
+        		"rel2_ciRefset_DescriptionTypeDelta_INT_20170731.txt",
+        		"rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt",
+        		"rel2_iisssccRefset_ExtendedMapDelta_INT_20170731.txt",
+        		"rel2_sRefset_SimpleMapDelta_INT_20170731.txt",
         		"rel2_ssRefset_ModuleDependencyDelta_INT_20170731.txt",
-        		"rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt"};
+        		"rel2_ssccRefset_MRCMAttributeRangeDelta_INT_20170731.txt",
+        		"rel2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt"};
+        assertEquals(fileNames.length, inputFileList.size());
         assertFileNameExist(inputFileList,fileNames);
-        assertNotNull(report.getDetails().get(ReportType.ERROR));
-        assertEquals(8,report.getDetails().get(ReportType.ERROR).size());
+        assertNull(report.getDetails().get(ReportType.ERROR));
         assertNotNull(report.getDetails().get(ReportType.WARNING));
         assertEquals(6,report.getDetails().get(ReportType.WARNING).size());
     }
