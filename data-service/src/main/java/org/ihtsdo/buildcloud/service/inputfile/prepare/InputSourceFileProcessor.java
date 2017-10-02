@@ -43,7 +43,6 @@ public class InputSourceFileProcessor {
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
     
-    private static final String FILE_EXTENSION_TXT = "txt";
     private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
     private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
     private static final int REFSETID_COL = 4;
@@ -504,58 +503,100 @@ public class InputSourceFileProcessor {
              }
         }
     }
-
+	
+	private FileProcessingReportDetail copyFilesWhenIgnoringCountryAndNamespace(String sourceFileName, String source, String sourceFilePath, Map<String,String>  fileNameMapWithoutNamespace) throws IOException {
+		// ignores country and name space token check
+		FileProcessingReportDetail reportDetail = null;
+    	String fileNameSpecifiedByManifest = fileNameMapWithoutNamespace.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
+        if (fileNameSpecifiedByManifest != null) {
+        	if (filesToCopyFromSource.containsKey(fileNameSpecifiedByManifest) && filesToCopyFromSource.get(fileNameSpecifiedByManifest).contains(source)) {
+        		File inFile = new File(sourceFilePath);
+                File outFile = new File(outDir, fileNameSpecifiedByManifest);
+                copyOrAppend(inFile, outFile);
+                logger.info("Renamed {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+                reportDetail = new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied to:" + fileNameSpecifiedByManifest);
+            } else {
+            	//source file is not required by the manifest
+            	String msg = "Skipped as not required by the manifest:" +  sourceFileName;
+            	logger.info(msg);
+            	reportDetail = new FileProcessingReportDetail(INFO, sourceFileName, source, null, msg);
+            }
+        } else {
+        	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
+        		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
+        		reportDetail = new FileProcessingReportDetail(ReportType.WARNING, sourceFileName, null, source, msg);
+        	}
+        }
+        return reportDetail;
+	}
     private List<FileProcessingReportDetail> copyFilesToOutputDir() throws IOException {
     	List<FileProcessingReportDetail> reportDetails = new ArrayList<>();
-        Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
+    	List<String> filenameInMultipleSources = getFileNamesExistInMultipleSources(skippedSourceFiles);
+    	Map<String,String> fileNameMapWithoutNamespace = getFileNameMapWithoutNamespaceToken();
         for (String source : skippedSourceFiles.keySet()) {
-        	List<String> filesProcessed = new ArrayList<>();
             for (String sourceFilePath : skippedSourceFiles.get(source)) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 sourceFileName = sourceFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? sourceFileName.substring(1) : sourceFileName;
-                filesProcessed.add(sourceFilePath);
-                if (filesToCopyFromSource.containsKey(sourceFileName)) {
-                	if (filesToCopyFromSource.get(sourceFileName).isEmpty() || filesToCopyFromSource.get(sourceFileName).contains(source)) {
-                		//copy as specified by manifest 
-                		File inFile = new File(sourceFilePath);
-                		File outFile = new File(outDir, sourceFileName);
-                		copyOrAppend(inFile, outFile);
-                		logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied as file name and source matched with the manifest exactly."));
-                	} else {
-                		// skip it as is not from the given source specified by the manifest 
-                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Skipped as only the file name matched with the manifest but not the source."));
+                if (!filesToCopyFromSource.containsKey(sourceFileName)) {
+                	FileProcessingReportDetail reportDetail = copyFilesWhenIgnoringCountryAndNamespace(sourceFileName, source, sourceFilePath, fileNameMapWithoutNamespace);
+                	if (reportDetail != null) {
+                		reportDetails.add(reportDetail);
                 	}
                 } else {
-                	// ignores country and name space token check
-                	String fileNameSpecifiedByManifest = fileNameMap.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
-                    if (fileNameSpecifiedByManifest != null) {
-                    	if (!filesToCopyFromSource.containsKey(fileNameSpecifiedByManifest) || (!filesToCopyFromSource.get(fileNameSpecifiedByManifest).isEmpty() && !filesToCopyFromSource.get(fileNameSpecifiedByManifest).contains(source))) {
-                        	//source file is not required by the manifest
-                        	String msg = "Skipped as not required by the manifest:" +  sourceFileName;
-                        	logger.info(msg);
-                        	reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, msg));
-                        } else {
-                        	File inFile = new File(sourceFilePath);
-                            File outFile = new File(outDir, fileNameSpecifiedByManifest);
-                            copyOrAppend(inFile, outFile);
-                            logger.info("Renamed {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                            reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied to:" + fileNameSpecifiedByManifest));
-                        }
-                    } else {
-                    	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
-                    		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
-                    		reportDetails.add(new FileProcessingReportDetail(ReportType.WARNING, sourceFileName, null, source, msg));
-                    	}
+                	 boolean toCopy = false;
+                	if (filesToCopyFromSource.get(sourceFileName).contains(source)) {
+                		//copy as specified by manifest 
+                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied as file name and source matched with the manifest exactly."));
+                		toCopy = true;
+                	} else {
+                		if (filesToCopyFromSource.get(sourceFileName).isEmpty()) {
+                			if (filenameInMultipleSources.contains(sourceFileName)) {
+                				//source is not specified. To check whether the same file exists in multiple sources.
+                    			reportDetails.add(new FileProcessingReportDetail(ERROR, sourceFileName, source, null, "Can't be processed as the file name appears in multiple sources and no source is configured in the manifest.xml."));
+                			} else {
+                				//copy only one source 
+                				toCopy = true;
+                				reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied as the file name matched even though no source is specfied in the manifest.xml as it appears only in one source."));
+                			}
+                		} else {
+                			// skip it as is not from the given source specified by the manifest 
+                    		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Skipped as only the file name matched with the manifest but not the source."));
+                		}
+                	}
+                	if (toCopy) {
+                     	File inFile = new File(sourceFilePath);
+                 		File outFile = new File(outDir, sourceFileName);
+                 		copyOrAppend(inFile, outFile);
+                 		logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
                     }
-                }             
+                }
             }
-            skippedSourceFiles.get(source).removeAll(filesProcessed);
+            skippedSourceFiles.get(source).clear();
         }
         return reportDetails;
     }
     
-    private void copyOrAppend(File sourceFile, File destinationFile) throws IOException {
+    private List<String> getFileNamesExistInMultipleSources(Map<String, List<String>> skippedSourceFiles) {
+    	List<String> filesWithMultipleSources = new ArrayList<>();
+    	Set<String> fileSet = new HashSet<>();
+    	if (skippedSourceFiles.keySet().size() == 1) {
+    		return filesWithMultipleSources;
+    	}
+    	for (String source : skippedSourceFiles.keySet()) {
+    		for (String fullPath : skippedSourceFiles.get(source)) {
+    			String filename = FilenameUtils.getName(fullPath);
+    			filename = filename.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? filename.substring(1) : filename;
+    			if (fileSet.contains(filename)) {
+    				filesWithMultipleSources.add(filename);
+    			} else {
+    				fileSet.add(filename);
+    			}
+    		}
+    	}
+		return filesWithMultipleSources;
+	}
+
+	private void copyOrAppend(File sourceFile, File destinationFile) throws IOException {
       if (destinationFile.exists()) {
         	//remove header line and append
         	List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
