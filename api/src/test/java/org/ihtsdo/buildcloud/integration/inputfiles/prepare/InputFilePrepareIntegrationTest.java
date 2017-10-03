@@ -99,7 +99,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
         SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
         Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
         Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
-        Assert.assertEquals(12, reportDetails.get(ReportType.ERROR).size());
+        Assert.assertEquals(30, reportDetails.get(ReportType.ERROR).size());
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }

@@ -31,7 +31,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +52,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     protected Product product;
     protected File testArchive;
     protected Set<String> subDirectories;
-	private boolean isDebugRun = true;
+	private boolean isDebugRun = false;
 
     private static final String JULY_RELEASE = "20140731";
     private static final String SRC_EXERTNALLY_MAINTAINED = "externally-maintained";
@@ -135,9 +134,34 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
         printReport(report);
+        assertNotNull(report.getDetails().get(ReportType.ERROR));
+        assertEquals(24, report.getDetails().get(ReportType.ERROR).size());
         verifyFileProcessingInAllSources();
     }
 
+    
+    @Test
+    public void testPrepareInputFilesForOneSource() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+        String testManifestFile = getClass().getResource("manifest_without_sources_specified.xml").getFile();
+        File testManifest = new File(testManifestFile);
+        addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
+        printReport(report);
+        assertNull(report.getDetails().get(ReportType.ERROR));
+        List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
+        printReport(report);
+        String [] inputFileCreated = {
+        "rel2_Description_Delta-en_INT_20140731.txt",
+        "rel2_Refset_SimpleDelta_INT_20140731.txt",
+        "rel2_TextDefinition_Delta-en_INT_20140731.txt",
+        "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt",
+        "rel2_cRefset_AttributeValueDelta_INT_20140731.txt"};
+        for (String filename : inputFileList) {
+        	assertTrue("must contain " + filename, Arrays.asList(inputFileCreated).contains(filename));
+        }
+    }
+    
     @Test
     public void testPrepareInputFilesInRestrictedSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
         String testManifestFile = getClass().getResource("manifest_restricted_sources.xml").getFile();
@@ -147,7 +171,10 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
         printReport(report);
+   
+        assertEquals(2, report.getDetails().get(ReportType.ERROR).size());
         verifyForFileProcessingInRestrictedSources();
+        
     }
 
     @Test
@@ -182,11 +209,15 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          printReport(report);
          List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
          assertNotNull(report.getDetails().get(ReportType.ERROR));
-         assertEquals(1,report.getDetails().get(ReportType.ERROR).size());
-         FileProcessingReportDetail detail = report.getDetails().get(ReportType.ERROR).iterator().next();
-         assertEquals("sct2_StatedRelationship_Delta_DK1000005_20170731.txt", detail.getFileName());
-         assertEquals("Required by manifest but not found in any source.", detail.getMessage());
-         assertEquals(7, inputFileList.size());
+         assertEquals(3,report.getDetails().get(ReportType.ERROR).size());
+         String [] fileNameReportedWithError = {"sct2_Concept_Delta_DK1000005_20170731.txt", 
+        		 "sct2_Relationship_Delta_DK1000005_20170731.txt",
+        		 "sct2_StatedRelationship_Delta_DK1000005_20170731.txt"};
+         for (FileProcessingReportDetail detail : report.getDetails().get(ReportType.ERROR)) {
+        	 assertTrue("must contain" + detail.getFileName(),  Arrays.asList(fileNameReportedWithError).contains(detail.getFileName()));
+             assertEquals("Required by manifest but not found in any source.", detail.getMessage());
+         }
+         assertEquals(5, inputFileList.size());
     }
     
     
@@ -207,7 +238,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt");
          assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
          assertEquals(18, report.getDetails().get(ReportType.ERROR).size());
-         assertEquals(14, report.getDetails().get(ReportType.WARNING).size());
+         assertEquals(16, report.getDetails().get(ReportType.WARNING).size());
          
     }
     
@@ -250,6 +281,34 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertEquals(20, report.getDetails().get(ReportType.INFO).size());
     }
     
+    
+    @Test
+    public void testPrepareInputFileWithMultipleLanguageCodes() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+        String testManifestFile = getClass().getResource("manifest_with_multiple_language_codes.xml").getFile();
+        File testManifest = new File(testManifestFile);
+        String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
+        File testArchive = new File(testFile);
+        addTestFileToSourceDirectory(SRC_TERM_SERVER, testArchive);
+        addTestFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, new File(getClass().getResource("externally-maintained-empty-delta.zip").getFile()));
+        productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+        SourceFileProcessingReport report =  productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
+        List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
+        printReport(report);
+        String [] fileNames = {"rel2_Concept_Delta_DK1000005_20170731.txt",
+        		"rel2_Description_Delta_DK1000005_20170731.txt",
+        		"rel2_Refset_SimpleDelta_DK1000005_20170731.txt",
+        		"rel2_StatedRelationship_Delta_DK1000005_20170731.txt",
+        		"rel2_TextDefinition_Delta-da_DK1000005_20170731.txt",
+        		"rel2_TextDefinition_Delta-en_DK1000005_20170731.txt",
+        		"rel2_cRefset_AssociationReferenceDelta_DK1000005_20170731.txt",
+        		"rel2_cRefset_AttributeValueDelta_DK1000005_20170731.txt"};
+        assertEquals(fileNames.length, inputFileList.size());
+        assertFileNameExist(inputFileList,fileNames);
+        assertNotNull(report.getDetails().get(ReportType.ERROR));
+        assertEquals(1,report.getDetails().get(ReportType.ERROR).size());
+        assertNotNull(report.getDetails().get(ReportType.WARNING));
+        assertEquals(8,report.getDetails().get(ReportType.WARNING).size());
+    }
     
     
     @Test
@@ -320,23 +379,19 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
         assertFileNameExist(inputFileList,"rel2_Description_Delta-en_INT_20170731.txt");
         assertFileNameExist(inputFileList,"rel2_TextDefinition_Delta-en_INT_20170731.txt");
-        assertFileNameExist(inputFileList,"rel2_Concept_Delta_INT_20170731.txt");
         assertFileNameExist(inputFileList,"rel2_Refset_SimpleDelta_INT_20170731.txt");
         assertFileNameExist(inputFileList,"rel2_TextDefinition_Delta-en_INT_20170731.txt");
         assertFileNameExist(inputFileList,"rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt");
-        assertEquals(8, inputFileList.size());
+        assertEquals(7, inputFileList.size());
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Concept_Delta_INT_20170731.txt");
-        assertNotNull(inputStream);
-        assertEquals(7, IOUtils.readLines(inputStream).size());
+        assertNull(inputStream);
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Relationship_Delta_INT_20170731.txt");
         assertNotNull(inputStream);
         assertEquals(5, IOUtils.readLines(inputStream).size());
         assertNotNull(report.getDetails().get(ReportType.ERROR));
-        assertEquals(12, report.getDetails().get(ReportType.ERROR).size());
+        assertEquals(27, report.getDetails().get(ReportType.ERROR).size());
         assertNotNull(report.getDetails().get(ReportType.WARNING));
         assertEquals(2, report.getDetails().get(ReportType.WARNING).size());
-        assertEquals(38, report.getDetails().get(ReportType.INFO).size());
-        
     }
     
 
@@ -344,16 +399,16 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     private void verifyFileProcessingInAllSources() throws ResourceNotFoundException, IOException {
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt");
         assertNotNull(inputStream);
-        assertEquals(25, IOUtils.readLines(inputStream).size());
+        assertEquals(9, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_cRefset_AttributeValueDelta_INT_20140731.txt");
         assertNotNull(inputStream);
-        assertEquals(7, IOUtils.readLines(inputStream).size());
+        assertEquals(3, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_TextDefinition_Delta-en_INT_20140731.txt");
         assertNotNull(inputStream);
-        assertEquals(4, IOUtils.readLines(inputStream).size());
+        assertEquals(2, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Description_Delta-en_INT_20140731.txt");
         assertNotNull(inputStream);
-        assertEquals(4, IOUtils.readLines(inputStream).size());
+        assertEquals(2, IOUtils.readLines(inputStream).size());
     }
 
     private void verifyForFileProcessingInRestrictedSources() throws ResourceNotFoundException, IOException {
@@ -365,15 +420,15 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertEquals(2, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_TextDefinition_Delta-en_INT_20180731.txt");
         assertNotNull(inputStream);
-        assertEquals(3, IOUtils.readLines(inputStream).size());
+        assertEquals(2, IOUtils.readLines(inputStream).size());
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Description_Delta-en_INT_20180731.txt");
         assertNotNull(inputStream);
-        assertEquals(3, IOUtils.readLines(inputStream).size());
+        assertEquals(2, IOUtils.readLines(inputStream).size());
     }
 
     private void verifyResults() throws ResourceNotFoundException, IOException {
         List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
-        assertEquals(7, inputFileList.size());
+        assertEquals(6, inputFileList.size());
         InputStream inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
         assertNotNull(inputStream);
         assertEquals(9, IOUtils.readLines(inputStream).size());
@@ -389,8 +444,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         
         //Unprocessed files
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Concept_Delta_INT_20170731.txt");
-        assertNotNull(inputStream);
-        assertEquals(4, IOUtils.readLines(inputStream).size());
+        assertNull(inputStream);
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Relationship_Delta_INT_20170731.txt");
         assertNotNull(inputStream);
         assertEquals(5, IOUtils.readLines(inputStream).size());
