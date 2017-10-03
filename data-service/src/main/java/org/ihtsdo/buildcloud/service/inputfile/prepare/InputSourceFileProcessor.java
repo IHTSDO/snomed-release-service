@@ -425,29 +425,6 @@ public class InputSourceFileProcessor {
         }
 	}
 
-	private void processDescriptionFileOnly(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
-            FileProcessingConfig> fileProcessingConfigs) throws IOException {
-        Map<String, List<String>> rows = new HashMap<>();
-        String inputFilename = FilenameUtils.getName(inFileName);
-        if (lines == null || lines.isEmpty()) {
-            fileProcessingReport.add(WARNING, inputFilename, null, sourceName, NO_DATA_FOUND);
-        } else {
-            for (String line : lines) {
-                String[] splits = line.split(TAB);
-                String comparisonValue = splits[comparisonColumn];
-                if (!fileOrKeyWithMultipleSources.containsKey(comparisonValue) || !fileOrKeyWithMultipleSources.get(comparisonValue).contains(sourceName)) {
-                	fileOrKeyWithMultipleSources.add(comparisonValue, sourceName);
-                }
-                if (!rows.containsKey(comparisonValue)) {
-                    rows.put(comparisonValue, new ArrayList<String>());
-                }
-                rows.get(comparisonValue).add(line);
-            }
-            processDataByLanguageCode(fileProcessingConfigs, sourceName, rows, inputFilename, header, false);
-        }
-
-    }
-
     private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
         Map<String, List<String>> textDefinitionRows = new HashMap<>();

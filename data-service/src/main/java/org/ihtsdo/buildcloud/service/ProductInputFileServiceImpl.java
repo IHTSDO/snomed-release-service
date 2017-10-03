@@ -158,7 +158,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
 		String filePath;
-		if(StringUtils.isBlank(subDirectory)) {
+		if (StringUtils.isBlank(subDirectory)) {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
 			for (String path : paths) {
 				if(StringUtils.isBlank(fileName) || FilenameUtils.getName(path).equals(fileName)) {
@@ -175,12 +175,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				} else {
 					LOGGER.warn("Could not find {} to delete", filePath);
 				}
-			}  else {
-				
+			} else {
 				List<String> toDelete = dao.listRelativeSourceFilePaths(product,subDirectory);
-				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(),subDirectory, productKey);
-				for (String path : toDelete) {
-					fileHelper.deleteFile(path);
+				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(), subDirectory, productKey);
+				String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
+				for (String filename : toDelete) {
+					LOGGER.debug("Deleting file:" + filename);
+					fileHelper.deleteFile(sourcePath + filename);
 				}
 			}
 		}
