@@ -35,15 +35,18 @@ import java.util.*;
 
 public class InputSourceFileProcessor {
 
+	private static final String TAB = "\t";
+
 	private static final String NO_LANGUAGE_CODE_IS_CONFIGURED_MSG = "No language code is configured in the manifest.xml.";
 
 	private static final String NO_DATA_FOUND = "No data found apart from header line.";
 
 	private static final String README_HEADER_FILE_NAME = "readme-header.txt";
 
+	private static final String UNPROCESSABLE_MSG = "Can't be processed as the %s appears in multiple sources and no source is configured in the manifest.xml.";
+	
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
     
-    private static final String FILE_EXTENSION_TXT = "txt";
     private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
     private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
     private static final int REFSETID_COL = 4;
@@ -63,17 +66,18 @@ public class InputSourceFileProcessor {
     private File outDir;
     private boolean foundTextDefinitionFile = false;
     private boolean copyFilesDefinedInManifest = false;
-
     private Set<String> availableSources;
+    private Map<String, List<String>> sourceFilesMap;
+    private SourceFileProcessingReport fileProcessingReport;
+    private Map<String,List<String>> skippedSourceFiles;
+    private MultiValueMap<String, String> fileOrKeyWithMultipleSources;
+    //processing instructions from the manifest.xml
     private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
     private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
     private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
     private MultiValueMap<String, String> filesToCopyFromSource;
-    private Map<String, List<String>> sourceFilesMap;
-    private SourceFileProcessingReport fileProcessingReport;
-    private Map<String,List<String>> skippedSourceFiles;
     private MultiValueMap<String, String> refsetWithAdditionalFields;
-
+  
     public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
                          Product product, boolean copyFilesDefinedInManifest) {
         this.manifestStream = manifestStream;
@@ -90,6 +94,7 @@ public class InputSourceFileProcessor {
         this.filesToCopyFromSource = new LinkedMultiValueMap<>();
         this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
         this.fileProcessingReport = new SourceFileProcessingReport();
+        this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
     }
 
     public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
@@ -139,7 +144,7 @@ public class InputSourceFileProcessor {
 					&& !refsetWithAdditionalFields.get(refsetFileName).isEmpty()) {
 				checkAdditionalFields = true;
 				for (String fieldName : refsetWithAdditionalFields.get(refsetFileName)) {
-					 headerLine.append("\t");
+					 headerLine.append(TAB);
 					 headerLine.append(fieldName);
 				}
 			}
@@ -194,6 +199,7 @@ public class InputSourceFileProcessor {
             File sourceDir = new File(localDir, sourceName);
             if (!sourceDir.exists()) sourceDir.mkdir();
             String fileName = FilenameUtils.getName(sourceFilePath);
+            fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
             File outFile = new File(localDir + "/" + sourceName, fileName);
             FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
             logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
@@ -201,6 +207,7 @@ public class InputSourceFileProcessor {
                 sourceFilesMap.put(sourceName, new ArrayList<String>());
             }
             sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
+            fileOrKeyWithMultipleSources.add(fileName, sourceName);
         }
         for (String sourceName : sourceFilesMap.keySet()) {
         	 fileProcessingReport.addSoureFiles(sourceName, sourceFilesMap.get(sourceName));
@@ -337,10 +344,8 @@ public class InputSourceFileProcessor {
                     	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
                         if (foundTextDefinitionFile) {
                         	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
-                            processDescriptionsAndTextDefinitions(lines, source, fileName, outDir, header);
-                        } else {
-                            processDescriptionFileOnly(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
-                        }
+                        } 
+                        processDescriptionsAndTextDefinitions(lines, source, fileName, outDir, header);
                     } else {
                     	addFileToSkippedList(source, fileName);
                     }
@@ -348,26 +353,20 @@ public class InputSourceFileProcessor {
                 logger.info("Finish processing file {}", fileName);
             }
         }
-        for (FileProcessingReportDetail detail : fileProcessingReportDetails) {
-        	fileProcessingReport.addReportDetail(detail);
-        	
-        }
+        fileProcessingReport.addReportDetails(fileProcessingReportDetails);
     }
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
     	 String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
             fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
-            if (inputFilename.equals("der2_cRefset_LanguageDelta-en_INT_20170731.txt")) {
-            	System.out.println("Found file:");
-            }
             if (filesToCopyFromSource.containsKey(inputFilename) && (filesToCopyFromSource.get(inputFilename).isEmpty() || filesToCopyFromSource.get(inputFilename).contains(sourceName))) {
             	 writeToFile(outDir, header, lines, inputFilename);
             }
-        }
-         else {
-            String[] splits = lines.get(0).split("\t");
+        } else {
+            String[] splits = lines.get(0).split(TAB);
             String refsetId = splits[REFSETID_COL];
+            fileOrKeyWithMultipleSources.add(refsetId, sourceName);
             FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
             if (fileProcessingConfig == null) {
             	 //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
@@ -377,10 +376,14 @@ public class InputSourceFileProcessor {
             	}
                 addFileToSkippedList(sourceName, inFileName);
             } else {
-                if (fileProcessingConfig.getSpecificSources().isEmpty() || fileProcessingConfig.getSpecificSources().contains(sourceName) ){
+                if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
+                		(fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() == 1)) {
                 	 writeToFile(outDir, header, lines, fileProcessingConfig.getTargetFileName());
                      String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
                      fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, fileProcessingConfig.getTargetFileName(), refsetId, sourceName, infoMessage));
+                } else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() > 1) {
+                	String errorMsg = String.format(UNPROCESSABLE_MSG, "refset id");
+                    fileProcessingReport.add(ERROR, inputFilename , refsetId, sourceName, errorMsg);
                 } else {
                 	String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
                     fileProcessingReport.add(WARNING, inputFilename , refsetId, sourceName, warningMessage);
@@ -398,34 +401,29 @@ public class InputSourceFileProcessor {
     		skippedSourceFiles.get(sourceName).add(filename);
     	}
 	}
-
-	private void processDescriptionFileOnly(List<String> lines, String sourceName, String inFileName, File outDir, String header, int comparisonColumn, Map<String,
-            FileProcessingConfig> fileProcessingConfigs) throws IOException {
-        Map<String, List<String>> rows = new HashMap<>();
-        String inputFilename = FilenameUtils.getName(inFileName);
-        if (lines == null || lines.isEmpty()) {
-            fileProcessingReport.add(WARNING, inputFilename, null, sourceName, NO_DATA_FOUND);
-        } else {
-            for (String line : lines) {
-                String[] splits = line.split("\t");
-                String comparisonValue = splits[comparisonColumn];
-                if (!rows.containsKey(comparisonValue)) {
-                    rows.put(comparisonValue, new ArrayList<String>());
-                }
-                rows.get(comparisonValue).add(line);
-            }
-            for (String comparisonValue : rows.keySet()) {
-                FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(comparisonValue);
-                if (fileProcessingConfig != null) {
-                	writeToFile(outDir, header, rows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
-                } else {
-                	String msg = String.format("Found language code: %s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, inputFilename , null, sourceName, msg);
-                }
+	
+	
+	private void processDataByLanguageCode(Map<String,FileProcessingConfig> fileProcessingConfigs, String sourceName, Map<String, List<String>> rows, String inputFilename, String header, boolean isTextDefinition) throws IOException {
+		for (String languageCode : rows.keySet()) {
+            FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(languageCode);
+            if (fileProcessingConfig != null) {
+            	String key = isTextDefinition ? INPUT_FILE_TYPE_TEXT_DEFINITON + languageCode : INPUT_FILE_TYPE_DESCRIPTION + languageCode;
+            	if (fileProcessingConfig.getSpecificSources().contains(sourceName) || 
+            			(fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() == 1)) {
+            		writeToFile(outDir, header, rows.get(languageCode), fileProcessingConfig.getTargetFileName());
+            	} else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() > 1) {
+            		String errorMsg = String.format(UNPROCESSABLE_MSG, "language code " + languageCode);
+            		fileProcessingReport.add(ERROR, inputFilename, null, sourceName, errorMsg);
+            	} else {
+            		String warningMsg = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
+					fileProcessingReport.add(WARNING, inputFilename , null, sourceName, warningMsg);
+            	}
+            } else {
+            	String msg = String.format("Found language code: %s in source file but not specified in the manifest.xml", languageCode);
+            	fileProcessingReport.add(ERROR, inputFilename , null, sourceName, msg);
             }
         }
-
-    }
+	}
 
     private void processDescriptionsAndTextDefinitions(List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
         Map<String, List<String>> descriptionRows = new HashMap<>();
@@ -435,42 +433,33 @@ public class InputSourceFileProcessor {
             fileProcessingReport.add(WARNING, inputFilename, null, sourceName, NO_DATA_FOUND);
         } else {
             for (String line : lines) {
-                String[] splits = line.split("\t");
-                String comparisonValue = splits[DESCRIPTION_LANGUAGE_CODE_COL];
+                String[] splits = line.split(TAB);
+                String languageCode = splits[DESCRIPTION_LANGUAGE_CODE_COL];
                 String descriptionTypeValue = splits[DESCRIPTION_TYPE_COL];
-                if (TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
-                    if (!textDefinitionRows.containsKey(comparisonValue)) {
-                        textDefinitionRows.put(comparisonValue, new ArrayList<String>());
+                boolean isTextDefinition = false;
+                if (foundTextDefinitionFile && TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
+                	isTextDefinition = true;
+                    if (!textDefinitionRows.containsKey(languageCode)) {
+                        textDefinitionRows.put(languageCode, new ArrayList<String>());
                     }
-                    textDefinitionRows.get(comparisonValue).add(line);
+                    textDefinitionRows.get(languageCode).add(line);
                 } else {
-                    if (!descriptionRows.containsKey(comparisonValue)) {
-                        descriptionRows.put(comparisonValue, new ArrayList<String>());
+                    if (!descriptionRows.containsKey(languageCode)) {
+                        descriptionRows.put(languageCode, new ArrayList<String>());
                     }
-                    descriptionRows.get(comparisonValue).add(line);
+                    descriptionRows.get(languageCode).add(line);
+                }
+                String key = isTextDefinition ? INPUT_FILE_TYPE_TEXT_DEFINITON + languageCode : INPUT_FILE_TYPE_DESCRIPTION + languageCode;
+                if (!fileOrKeyWithMultipleSources.containsKey(key) || !fileOrKeyWithMultipleSources.get(key).contains(sourceName)) {
+                	fileOrKeyWithMultipleSources.add(key, sourceName);
                 }
             }
-            for (String comparisonValue : descriptionRows.keySet()) {
-                FileProcessingConfig fileProcessingConfig = descriptionFileProcessingConfigs.get(comparisonValue);
-                if (fileProcessingConfig != null) {
-                	writeToFile(outDir, header, descriptionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
-                } else {
-                	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, inputFilename , null, sourceName, msg);
-                }
-            }
-            for (String comparisonValue : textDefinitionRows.keySet()) {
-                FileProcessingConfig fileProcessingConfig = textDefinitionFileProcessingConfigs.get(comparisonValue);
-                if (fileProcessingConfig != null) {
-                	writeToFile(outDir, header, textDefinitionRows.get(comparisonValue), fileProcessingConfig.getTargetFileName());
-                } else {
-                	String msg = String.format("Found language code:%s in source file but not specified in the manifest.xml", comparisonValue);
-                	fileProcessingReport.add(ERROR, inputFilename, null, sourceName, msg);
-                }
+            processDataByLanguageCode(descriptionFileProcessingConfigs, sourceName, descriptionRows, inputFilename, header, false);
+            if (foundTextDefinitionFile) {
+            	 processDataByLanguageCode(textDefinitionFileProcessingConfigs, sourceName, textDefinitionRows, inputFilename, header, true);
             }
         }
     }
-
     
     private void writeHeaderToFile(File outDir, String headerLine, Collection<FileProcessingConfig> configs) throws IOException {
     	if (configs != null) {
@@ -504,58 +493,80 @@ public class InputSourceFileProcessor {
              }
         }
     }
-
+	
+	private FileProcessingReportDetail copyFilesWhenIgnoringCountryAndNamespace(String sourceFileName, String source, String sourceFilePath, Map<String,String>  fileNameMapWithoutNamespace) throws IOException {
+		// ignores country and name space token check
+		FileProcessingReportDetail reportDetail = null;
+    	String fileNameSpecifiedByManifest = fileNameMapWithoutNamespace.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
+        if (fileNameSpecifiedByManifest != null) {
+        	if (filesToCopyFromSource.containsKey(fileNameSpecifiedByManifest) && filesToCopyFromSource.get(fileNameSpecifiedByManifest).contains(source)) {
+        		File inFile = new File(sourceFilePath);
+                File outFile = new File(outDir, fileNameSpecifiedByManifest);
+                copyOrAppend(inFile, outFile);
+                logger.info("Renamed {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
+                reportDetail = new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied to:" + fileNameSpecifiedByManifest);
+            } else {
+            	//source file is not required by the manifest
+            	String msg = "Skipped as not required by the manifest:" +  sourceFileName;
+            	logger.info(msg);
+            	reportDetail = new FileProcessingReportDetail(INFO, sourceFileName, source, null, msg);
+            }
+        } else {
+        	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
+        		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
+        		reportDetail = new FileProcessingReportDetail(ReportType.WARNING, sourceFileName, null, source, msg);
+        	}
+        }
+        return reportDetail;
+	}
     private List<FileProcessingReportDetail> copyFilesToOutputDir() throws IOException {
     	List<FileProcessingReportDetail> reportDetails = new ArrayList<>();
-        Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
+    	Map<String,String> fileNameMapWithoutNamespace = getFileNameMapWithoutNamespaceToken();
         for (String source : skippedSourceFiles.keySet()) {
-        	List<String> filesProcessed = new ArrayList<>();
             for (String sourceFilePath : skippedSourceFiles.get(source)) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 sourceFileName = sourceFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? sourceFileName.substring(1) : sourceFileName;
-                filesProcessed.add(sourceFilePath);
-                if (filesToCopyFromSource.containsKey(sourceFileName)) {
-                	if (filesToCopyFromSource.get(sourceFileName).isEmpty() || filesToCopyFromSource.get(sourceFileName).contains(source)) {
-                		//copy as specified by manifest 
-                		File inFile = new File(sourceFilePath);
-                		File outFile = new File(outDir, sourceFileName);
-                		copyOrAppend(inFile, outFile);
-                		logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied as file name and source matched with the manifest exactly."));
-                	} else {
-                		// skip it as is not from the given source specified by the manifest 
-                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Skipped as only the file name matched with the manifest but not the source."));
+                if (!filesToCopyFromSource.containsKey(sourceFileName)) {
+                	FileProcessingReportDetail reportDetail = copyFilesWhenIgnoringCountryAndNamespace(sourceFileName, source, sourceFilePath, fileNameMapWithoutNamespace);
+                	if (reportDetail != null) {
+                		reportDetails.add(reportDetail);
                 	}
                 } else {
-                	// ignores country and name space token check
-                	String fileNameSpecifiedByManifest = fileNameMap.get(getFileNameWithoutCountryNameSpaceToken(sourceFileName));
-                    if (fileNameSpecifiedByManifest != null) {
-                    	if (!filesToCopyFromSource.containsKey(fileNameSpecifiedByManifest) || (!filesToCopyFromSource.get(fileNameSpecifiedByManifest).isEmpty() && !filesToCopyFromSource.get(fileNameSpecifiedByManifest).contains(source))) {
-                        	//source file is not required by the manifest
-                        	String msg = "Skipped as not required by the manifest:" +  sourceFileName;
-                        	logger.info(msg);
-                        	reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, msg));
-                        } else {
-                        	File inFile = new File(sourceFilePath);
-                            File outFile = new File(outDir, fileNameSpecifiedByManifest);
-                            copyOrAppend(inFile, outFile);
-                            logger.info("Renamed {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
-                            reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, source, null, "Copied to:" + fileNameSpecifiedByManifest));
-                        }
-                    } else {
-                    	if (!sourceFileName.equals(README_HEADER_FILE_NAME)) {
-                    		String msg = "Skipped as can't find any match in the manifest. Please check the file name is specified in the manifest and has the same release date as the source file.";
-                    		reportDetails.add(new FileProcessingReportDetail(ReportType.WARNING, sourceFileName, null, source, msg));
-                    	}
+                	 boolean toCopy = false;
+                	if (filesToCopyFromSource.get(sourceFileName).contains(source)) {
+                		//copy as specified by manifest 
+                		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, null, source, "Copied as file name and source matched with the manifest exactly."));
+                		toCopy = true;
+                	} else {
+                		if (filesToCopyFromSource.get(sourceFileName).isEmpty()) {
+                			if (fileOrKeyWithMultipleSources.containsKey(sourceFileName) && fileOrKeyWithMultipleSources.get(sourceFileName).size() > 1) {
+                				//source is not specified. To check whether the same file exists in multiple sources.
+                				String errorMsg = String.format(UNPROCESSABLE_MSG, "file name");
+                    			reportDetails.add(new FileProcessingReportDetail(ERROR, sourceFileName, null, source, errorMsg ));
+                			} else {
+                				//copy only one source 
+                				toCopy = true;
+                				reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, null, source, "Copied as the file name matched even though no source is specfied in the manifest.xml as it appears only in one source."));
+                			}
+                		} else {
+                			// skip it as is not from the given source specified by the manifest 
+                    		reportDetails.add(new FileProcessingReportDetail(INFO, sourceFileName, null, source , "Skipped as only the file name matched with the manifest but not the source."));
+                		}
+                	}
+                	if (toCopy) {
+                     	File inFile = new File(sourceFilePath);
+                 		File outFile = new File(outDir, sourceFileName);
+                 		copyOrAppend(inFile, outFile);
+                 		logger.info("Copied {} to {}", inFile.getAbsolutePath(), outFile.getAbsolutePath());
                     }
-                }             
+                }
             }
-            skippedSourceFiles.get(source).removeAll(filesProcessed);
+            skippedSourceFiles.get(source).clear();
         }
         return reportDetails;
     }
-    
-    private void copyOrAppend(File sourceFile, File destinationFile) throws IOException {
+
+	private void copyOrAppend(File sourceFile, File destinationFile) throws IOException {
       if (destinationFile.exists()) {
         	//remove header line and append
         	List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);

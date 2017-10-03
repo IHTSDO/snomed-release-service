@@ -62,6 +62,33 @@ public class InputSourceFileProcessorTest {
 		product.setReleaseCenter(releaseCenter);
 	}
 	
+	
+	
+	
+	@Test
+	public void testLoadingDKManifestWithMultipleLanguageCodesInDescriptionFile() throws Exception {
+		validateManifest("manifest_with_multiple_language_codes.xml");
+		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_multiple_language_codes.xml");
+		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
+		processor.loadFileProcessConfigsFromManifest();
+		//description configs
+		Map<String, FileProcessingConfig>  descriptionProcessingConfigs = processor.getDescriptionFileProcessingConfigs();
+		assertEquals(2,descriptionProcessingConfigs.keySet().size());
+		assertTrue(descriptionProcessingConfigs.containsKey(EN));
+		assertTrue(descriptionProcessingConfigs.containsKey(DA));
+		FileProcessingConfig enDescriptionConfig = descriptionProcessingConfigs.get(EN);
+		assertEquals(EN,enDescriptionConfig.getKey());
+		assertEquals("xsct2_Description_Delta_DK1000005_20170731.txt", enDescriptionConfig.getTargetFileName());
+		assertEquals(1, enDescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, enDescriptionConfig.getSpecificSources().iterator().next());
+		
+		FileProcessingConfig daDescriptionConfig = descriptionProcessingConfigs.get(DA);
+		assertEquals(DA,daDescriptionConfig.getKey());
+		assertEquals("xsct2_Description_Delta_DK1000005_20170731.txt", daDescriptionConfig.getTargetFileName());
+		assertEquals(1, daDescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, daDescriptionConfig.getSpecificSources().iterator().next());
+	}
+	
 	@Test
 	public void testLoadingDKManifest() throws Exception {
 		validateManifest("manifest_ms_dk.xml");
@@ -264,7 +291,7 @@ public class InputSourceFileProcessorTest {
 			}
 		}		
 	}
-
+	
 	private void validateManifest(String manifestFileName) {
 		InputStream manifestStream = getClass().getResourceAsStream(manifestFileName);
 		String validationMsg = ManifestValidator.validate(manifestStream);
