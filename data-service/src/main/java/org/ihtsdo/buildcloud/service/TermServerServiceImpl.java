@@ -22,10 +22,23 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     public File export(String branchPath, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
-                       SnowOwlRestClient.ExportType exportType) throws BusinessServiceException, FileNotFoundException {
+                       SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished ) throws BusinessServiceException, FileNotFoundException {
         SnowOwlRestClient snowOwlRestClient =  snowOwlRestClientFactory.getClient();
+        /*SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://dev-ms-authoring.ihtsdotools.org/snowowl"
+                , "dev-ims-ihtsdo=76D0z0XJD00Y0QYIwoFYjg00");*/
         snowOwlRestClient.setFlatIndexExportStyle(exportFlatType != null ? exportFlatType : true);
-        return snowOwlRestClient.export(branchPath, effectiveDate, moduleIds, exportCategory, exportType);
+        SnowOwlRestClient.ExportConfigurationBuilder configurationBuilder = new SnowOwlRestClient.ExportConfigurationBuilder();
+        configurationBuilder.setStartEffectiveTime(effectiveDate);
+        configurationBuilder.setEndEffectiveTime(effectiveDate);
+        configurationBuilder.setTransientEffectiveTime(effectiveDate);
+        configurationBuilder.setBranchPath(branchPath);
+        configurationBuilder.setType(exportType);
+        configurationBuilder.setNamespaceId(namespaceId);
+        configurationBuilder.setIncludeUnpublished(includeUnpublished != null ? includeUnpublished : true);
+        if(moduleIds != null) {
+            configurationBuilder.addModuleIds(moduleIds);
+        }
+        return snowOwlRestClient.export(configurationBuilder);
     }
 
 }

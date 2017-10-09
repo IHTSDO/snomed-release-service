@@ -12,7 +12,7 @@ import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -54,6 +54,8 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	private final FileHelper fileHelper;
 
+	private final FileHelper externallyMaintainedFileHelper;
+
 	@Autowired
 	private ProductDAO productDAO;
 
@@ -66,9 +68,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	private TermServerService termServerService;
 
+	private String buildBucketName;
+
 	@Autowired
-	public ProductInputFileServiceImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+	public ProductInputFileServiceImpl(final String buildBucketName, final String externallyMaintainedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
+		this.buildBucketName = buildBucketName;
+		externallyMaintainedFileHelper = new FileHelper(externallyMaintainedBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -311,26 +317,62 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFilesFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException {
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException {
+		if(!requestConfig.isLoadTermServerData() && !requestConfig.isLoadExternalRefsetData()) {
+			throw new BusinessServiceException("Either loadTermServerData or loadExternalRefsetData must be true");
+		}
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		Product product = getProduct(centerKey, productKey);
 		dao.persistSourcesGatherReport(product, inputGatherReport);
 		try {
-			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
-					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA);
-			FileInputStream fileInputStream = new FileInputStream(exportFile);
-			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
-			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
-					"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
+			if(requestConfig.isLoadTermServerData()) gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
+			if(requestConfig.isLoadExternalRefsetData()) gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
 		} catch (Exception ex) {
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
-			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
 		}
 		dao.persistSourcesGatherReport(product, inputGatherReport);
 		return inputGatherReport;
 	}
+
+	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
+			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException {
+		try {
+			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
+					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished());
+			FileInputStream fileInputStream = new FileInputStream(exportFile);
+			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
+					"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
+			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+		} catch (Exception ex) {
+			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
+			throw ex;
+		}
+	}
+
+	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
+			, InputGatherReport inputGatherReport) throws IOException {
+		String dirPath = centerKey + "/" + effectiveDate;
+		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
+		LOGGER.info("Found {} files at {} in external refsets bucket", externalFiles.size(), dirPath);
+		for (String externalFile : externalFiles) {
+			// The current directory is also listed
+			if (externalFile != null && externalFile.equals("/"))
+				continue;
+			try {
+				Product product = getProduct(centerKey, productKey);
+				String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, "externally-maintained").toString();
+				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
+				LOGGER.info("Successfully export file " + externalFile + " from Externally Maintained bucket and uploaded to source \"externally-maintained\"");
+			} catch (Exception ex) {
+				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, effectiveDate, externalFile, ex);
+				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "externally-maintained", ex.getMessage());
+				throw ex;
+			}
+		}
+	}
+
 
 	@Override
 	public InputStream getInputGatherReport(String centerKey, String productKey) {

@@ -9,7 +9,7 @@ import org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.TermServerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -21,7 +21,6 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -72,10 +71,13 @@ public class ProductInputFileGatheringTest {
     @Test
     public void testGatherInputFiles() throws BusinessServiceException, IOException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
-                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class))).thenReturn(testArchive);
+                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
+                Matchers.anyString(), Matchers.anyBoolean())).thenReturn(testArchive);
+        GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
+        requestPojo.setLoadTermServerData(true);
         FileInputStream fileInputStream = new FileInputStream(testArchive);
-        InputGatherReport inputGatherReport = productInputFileService.gatherSourceFilesFromTermServer
-                ("centerkey", "productkey", new TermserverReleaseRequestPojo());
+        InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
+                ("centerkey", "productkey", requestPojo);
         verify(productInputFileService, times(1))
                 .putSourceFile(eq(TERMINOLOGY_SERVER), eq("centerkey"), eq("productkey"),
                         argThat(new InputStreamMatcher(fileInputStream)), eq(INPUT_SOURCE_TEST_DATA_ZIP), eq(testArchive.length()));
@@ -88,10 +90,13 @@ public class ProductInputFileGatheringTest {
     @Test
     public void testGatherInputFilesFailed() throws BusinessServiceException, IOException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
-                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class)))
+                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
+                Matchers.anyString(), Matchers.anyBoolean()))
                 .thenThrow(new BusinessServiceException("Failed to gather files from term server"));
-        InputGatherReport inputGatherReport = productInputFileService.gatherSourceFilesFromTermServer
-                ("centerkey", "productkey", new TermserverReleaseRequestPojo());
+        GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
+        requestPojo.setLoadTermServerData(true);
+        InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
+                ("centerkey", "productkey", requestPojo);
         verify(productInputFileService, times(0)).putSourceFile(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(),
                 Matchers.any(InputStream.class), Matchers.anyString(), Matchers.anyLong());
         Assert.assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());

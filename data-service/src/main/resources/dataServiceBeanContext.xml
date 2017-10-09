@@ -140,6 +140,10 @@
 		<constructor-arg value="${publishedBucketName}" />
 	</bean>
 
+	<bean class="java.lang.String" id="externallyMaintainedBucketName">
+		<constructor-arg value="${externallyMaintainedBucketName}" />
+	</bean>
+
 	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">
 		<constructor-arg value="${fileProcessing.failureMaxRetry}"/>
 	</bean>
