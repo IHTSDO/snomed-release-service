@@ -4,7 +4,7 @@ import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -246,8 +246,8 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
 	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
 	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-								 @RequestBody TermserverReleaseRequestPojo request) throws BusinessServiceException, IOException {
-		productInputFileService.gatherSourceFilesFromTermServer(releaseCenterKey, productKey, request);
+								 @RequestBody GatherInputRequestPojo request) throws BusinessServiceException, IOException {
+		productInputFileService.gatherSourceFiles(releaseCenterKey, productKey, request);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 

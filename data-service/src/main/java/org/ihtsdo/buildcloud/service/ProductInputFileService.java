@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.termserver.TermserverReleaseRequestPojo;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
@@ -48,10 +48,12 @@ public interface ProductInputFileService {
 
 	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
 
-	InputGatherReport gatherSourceFilesFromTermServer(String centerKey, String productKey, TermserverReleaseRequestPojo requestConfig) throws BusinessServiceException, IOException;
+	InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException;
 
 	InputStream getInputGatherReport(String centerKey, String productKey);
 
+	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
+			, InputGatherReport inputGatherReport) throws IOException;
 
 
 }

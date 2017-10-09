@@ -10,6 +10,6 @@ import java.util.Set;
 public interface TermServerService {
 
     File export(String branchPath, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
-                SnowOwlRestClient.ExportType exportType) throws BusinessServiceException, FileNotFoundException;
+                SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished ) throws BusinessServiceException, FileNotFoundException;
 
 }
