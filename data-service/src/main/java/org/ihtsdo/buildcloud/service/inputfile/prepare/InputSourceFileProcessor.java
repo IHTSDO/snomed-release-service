@@ -189,23 +189,22 @@ public class InputSourceFileProcessor {
 
     private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
         for (String sourceFilePath : sourceFileLists) {
-            if (FilenameUtils.getExtension(sourceFilePath).equalsIgnoreCase(FILE_EXTENSION_TXT)) {
-                //Copy files from S3 to local for processing
-                InputStream sourceFileStream = fileHelper.getFileStream(buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString());
-                String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
-                //Keep track of the sources directories that are used
-                availableSources.add(sourceName);
-                File sourceDir = new File(localDir, sourceName);
-                if (!sourceDir.exists()) sourceDir.mkdir();
-                String fileName = FilenameUtils.getName(sourceFilePath);
-                File outFile = new File(localDir + "/" + sourceName, fileName);
-                FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
-                logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
-                if (!sourceFilesMap.containsKey(sourceName)) {
-                    sourceFilesMap.put(sourceName, new ArrayList<String>());
-                }
-                sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
+
+            //Copy files from S3 to local for processing
+            InputStream sourceFileStream = fileHelper.getFileStream(buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString());
+            String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
+            //Keep track of the sources directories that are used
+            availableSources.add(sourceName);
+            File sourceDir = new File(localDir, sourceName);
+            if (!sourceDir.exists()) sourceDir.mkdir();
+            String fileName = FilenameUtils.getName(sourceFilePath);
+            File outFile = new File(localDir + "/" + sourceName, fileName);
+            FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
+            logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
+            if (!sourceFilesMap.containsKey(sourceName)) {
+                sourceFilesMap.put(sourceName, new ArrayList<String>());
             }
+            sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
         }
         for (String sourceName : sourceFilesMap.keySet()) {
             fileProcessingReport.addSoureFiles(sourceName, sourceFilesMap.get(sourceName));
