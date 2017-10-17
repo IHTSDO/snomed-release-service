@@ -72,7 +72,7 @@ public class InputSourceFileProcessor {
     private Map<String, List<String>> sourceFilesMap;
     private Map<String, Map<String, List<String>>> refSetConfigFromManifest;
     private SourceFileProcessingReport fileProcessingReport;
-    private Map<String,List<String>> skippedSourceFiles;
+    private Map<String,Set<String>> skippedSourceFiles;
     private MultiValueMap<String, String> refsetWithAdditionalFields;
 
     public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
@@ -443,7 +443,6 @@ public class InputSourceFileProcessor {
                         .append(" in ").append(warningSplits[1]).append(" but is not used in manifest configuration").toString();
                 fileProcessingReport.add(ReportType.WARNING,  FilenameUtils.getName(inFileName) , warningSplits[0], sourceName, warningMessage);
                 logger.warn("Found refset id {} in source file {}/{} but is not used in manifest configuration", warningSplits[0], sourceName, inFileName);
-                addFileToSkippedList(sourceName, inFileName);
             }
 
         }
@@ -451,7 +450,7 @@ public class InputSourceFileProcessor {
 
     private void addFileToSkippedList(String sourceName, String filename) {
         if (skippedSourceFiles.get(sourceName) == null) {
-            List<String> files = new ArrayList<String>();
+            Set<String> files = new HashSet<String>();
             files.add(filename);
             skippedSourceFiles.put(sourceName, files );
         } else {
@@ -563,9 +562,9 @@ public class InputSourceFileProcessor {
     private List<FileProcessingReportDetail> copyFilesToOutputDir() throws IOException {
         List<FileProcessingReportDetail> reportDetails = new ArrayList<>();
         Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
-        for (String source : skippedSourceFiles.keySet()) {
+        for (String source : sourceFilesMap.keySet()) {
             List<String> filesProcessed = new ArrayList<>();
-            for (String sourceFilePath : skippedSourceFiles.get(source)) {
+            for (String sourceFilePath : sourceFilesMap.get(source)) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 sourceFileName = sourceFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? sourceFileName.substring(1) : sourceFileName;
                 filesProcessed.add(sourceFilePath);
@@ -678,7 +677,7 @@ public class InputSourceFileProcessor {
         }
     }
 
-    public Map<String, List<String>> getSkippedSourceFiles() {
+    public Map<String, Set<String>> getSkippedSourceFiles() {
         return skippedSourceFiles;
     }
 
