@@ -55,5 +55,7 @@ public interface ProductInputFileService {
 	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
 			, InputGatherReport inputGatherReport) throws IOException;
 
+	InputStream getSourceFileInputStream(String centerKey, String productKey, String sourceName, String fileName);
+
 
 }

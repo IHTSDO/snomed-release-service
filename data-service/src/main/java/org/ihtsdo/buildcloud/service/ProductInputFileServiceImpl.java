@@ -379,4 +379,10 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		return dao.getInputGatherReport(product);
 	}
+
+	@Override
+	public InputStream getSourceFileInputStream(String centerKey, String productKey, String sourceName, String fileName) {
+		Product product = getProduct(centerKey, productKey);
+		return fileHelper.getFileStream(s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName) + fileName);
+	}
 }
