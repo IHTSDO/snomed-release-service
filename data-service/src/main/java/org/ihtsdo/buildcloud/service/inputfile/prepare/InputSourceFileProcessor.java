@@ -354,7 +354,6 @@ public class InputSourceFileProcessor {
 
     private void processFiles() throws IOException {
         List<FileProcessingReportDetail> fileProcessingReportDetails = new ArrayList<>();
-        Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
         for (String source : sourceFilesMap.keySet()) {
             List<String> fileList = sourceFilesMap.get(source);
             for (String fileName : fileList) {
@@ -619,9 +618,10 @@ public class InputSourceFileProcessor {
     private void copyOrAppend(File sourceFile, File destinationFile) throws IOException {
         if (destinationFile.exists()) {
             //remove header line and append
+            boolean isExistingFileEmpty = FileUtils.readLines(destinationFile, CharEncoding.UTF_8).isEmpty();
             List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
             if (!lines.isEmpty() && lines.size() > 0) {
-                lines.remove(0);
+                if(!isExistingFileEmpty) lines.remove(0);
                 FileUtils.writeLines(destinationFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
                 logger.debug("Appending " + sourceFile.getName() + " to " + destinationFile.getAbsolutePath());
             }
