@@ -354,6 +354,7 @@ public class InputSourceFileProcessor {
 
     private void processFiles() throws IOException {
         List<FileProcessingReportDetail> fileProcessingReportDetails = new ArrayList<>();
+        Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
         for (String source : sourceFilesMap.keySet()) {
             List<String> fileList = sourceFilesMap.get(source);
             for (String fileName : fileList) {
@@ -375,9 +376,14 @@ public class InputSourceFileProcessor {
                         } else {
                             processFile(lines, source, fileName, outDir, header, DESCRIPTION_LANGUAGE_CODE_COL, descriptionFileProcessingConfigs);
                         }
-                    } else {
-                        addFileToSkippedList(source, fileName);
                     }
+                }
+                String fileNameSpecifiedByManifest = FilenameUtils.getName(fileName);
+                fileNameSpecifiedByManifest = fileNameSpecifiedByManifest.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileNameSpecifiedByManifest.substring(1) : fileNameSpecifiedByManifest;
+                if(filesToCopyFromSource.containsKey(fileNameSpecifiedByManifest)
+                        && (filesToCopyFromSource.get(fileNameSpecifiedByManifest).contains(source)
+                        || filesToCopyFromSource.get(fileNameSpecifiedByManifest).isEmpty())) {
+                    addFileToSkippedList(source, fileName);
                 }
                 logger.info("Finish processing file {}", fileName);
             }
@@ -562,9 +568,9 @@ public class InputSourceFileProcessor {
     private List<FileProcessingReportDetail> copyFilesToOutputDir() throws IOException {
         List<FileProcessingReportDetail> reportDetails = new ArrayList<>();
         Map<String,String> fileNameMap = getFileNameMapWithoutNamespaceToken();
-        for (String source : sourceFilesMap.keySet()) {
+        for (String source : skippedSourceFiles.keySet()) {
             List<String> filesProcessed = new ArrayList<>();
-            for (String sourceFilePath : sourceFilesMap.get(source)) {
+            for (String sourceFilePath : skippedSourceFiles.get(source)) {
                 String sourceFileName = FilenameUtils.getName(sourceFilePath);
                 sourceFileName = sourceFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? sourceFileName.substring(1) : sourceFileName;
                 filesProcessed.add(sourceFilePath);
