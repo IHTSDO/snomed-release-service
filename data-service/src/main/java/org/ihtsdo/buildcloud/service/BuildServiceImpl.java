@@ -30,6 +30,7 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.log4j.MDC;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -55,6 +56,8 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
@@ -220,39 +223,59 @@ public class BuildServiceImpl implements BuildService {
 		} catch (final IOException e) {
 			throw new BusinessServiceException("Failed to load build configuration.", e);
 		}
-
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 		LOGGER.info("Trigger product", productKey, buildId);
-
+		boolean isAbandoned = false;
 		try {
-			updateStatusWithChecks(build, Status.BUILDING);
-
-			// Run product
-			final BuildReport report = build.getBuildReport();
-			String resultStatus = "completed";
-			String resultMessage = "Process completed successfully";
-			try {
-				executeBuild(build, failureExportMax);
-			} catch (final Exception e) {
-				resultStatus = "fail";
-				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
-						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-				LOGGER.error(resultMessage, e);
-			}
-
-			if(!dao.isBuildCancelRequested(build)) {
-				report.add("Progress Status", resultStatus);
-				report.add("Message", resultMessage);
-				dao.persistReport(build);
-				updateStatusWithChecks(build, Status.BUILT);
+			//check source file prepare report
+			InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build);
+			if (reportStream != null) {
+				ObjectMapper objectMapper = new ObjectMapper();
+				try {
+					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
+					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
+						isAbandoned = true;
+						updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
+								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
+					}
+				} catch (IOException e) {
+					updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+					LOGGER.error("Failed to read source file processing report", e);
+					isAbandoned = true;
+				}
 			} else {
-				report.add("Progress Status", "cancelled");
-				report.add("Message", "Build was cancelled");
-				dao.persistReport(build);
-				dao.updateStatus(build, Status.CANCELLED);
-				dao.deleteOutputFiles(build);
+				LOGGER.warn("No source file prepare report found.");
 			}
+			// Run product
+			if (!isAbandoned) {
+				final BuildReport report = build.getBuildReport();
+				String resultStatus = "completed";
+				String resultMessage = "Process completed successfully";
+				try {
+					updateStatusWithChecks(build, Status.BUILDING);
+					executeBuild(build, failureExportMax);
+				} catch (final Exception e) {
+					resultStatus = "fail";
+					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
+							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+					LOGGER.error(resultMessage, e);
+				}
+				if(!dao.isBuildCancelRequested(build)) {
+					report.add("Progress Status", resultStatus);
+					report.add("Message", resultMessage);
+					dao.persistReport(build);
+					updateStatusWithChecks(build, Status.BUILT);
+				} else {
+					report.add("Progress Status", "cancelled");
+					report.add("Message", "Build was cancelled");
+					dao.persistReport(build);
+					dao.updateStatus(build, Status.CANCELLED);
+					dao.deleteOutputFiles(build);
+				}
+			}
+
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
@@ -705,6 +728,7 @@ public class BuildServiceImpl implements BuildService {
 		return dao.getBuildInputFilesPrepareReportStream(build);
 	}
 
+
 	@Override
 	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
@@ -718,4 +742,5 @@ public class BuildServiceImpl implements BuildService {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputGatherReportStream(build);
 	}
+
 }

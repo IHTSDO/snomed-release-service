@@ -1,0 +1,34 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="xSnomedCT_InternationalRF2_ALPHA_20140731T120000Z">
+		<folder Name="Delta">
+			<folder Name="Terminology">
+				<file Name="xsct2_Description_Delta-en_INT_20140731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20140731.txt"/>
+			</folder>
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="xder2_cRefset_AssociationReferenceDelta_INT_20140731.txt"/>
+					<file Name="xder2_cRefset_AttributeValueDelta_INT_20140731.txt"/>
+					<file Name="xder2_Refset_SimpleDelta_INT_20140731.txt"/>
+				</folder>
+				<folder Name="Map">
+					<file Name="xder2_sRefset_SimpleMapDelta_INT_20140731.txt"/>
+					<file Name="xder2_iisssccRefset_ExtendedMapDelta_INT_20140731.txt"/>
+				</folder>
+				<folder Name="Language">
+					<file Name="xder2_cRefset_LanguageDelta-en_INT_20140731.txt"/>	
+				</folder>
+				<folder Name="Metadata">
+					<file Name="xder2_cciRefset_RefsetDescriptorDelta_INT_20140731.txt"/>
+					<file Name="xder2_ssRefset_ModuleDependencyDelta_INT_20140731.txt"/>
+					<file Name="xder2_ciRefset_DescriptionTypeDelta_INT_20140731.txt"/>
+					<file Name="xder2_sssssssRefset_MRCMDomainDelta_INT_20140731.txt"/>
+					<file Name="xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20140731.txt"/>
+					<file Name="xder2_ssccRefset_MRCMAttributeRangeDelta_INT_20140731.txt"/>
+					<file Name="xder2_cRefset_MRCMModuleScopeDelta_INT_20140731.txt"/>
+				</folder>
+			</folder>
+		</folder> <!-- Delta -->
+	</folder> <!-- SnomedCT_Release_INT_20140731 -->
+</listing>
+

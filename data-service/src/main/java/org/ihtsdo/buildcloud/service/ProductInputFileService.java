@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 import javax.xml.bind.JAXBException;
@@ -55,7 +56,6 @@ public interface ProductInputFileService {
 	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
 			, InputGatherReport inputGatherReport) throws IOException;
 
-	InputStream getSourceFileInputStream(String centerKey, String productKey, String sourceName, String fileName);
-
+	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 
 }
