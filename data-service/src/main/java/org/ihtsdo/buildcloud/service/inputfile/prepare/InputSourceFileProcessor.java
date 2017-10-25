@@ -405,7 +405,7 @@ public class InputSourceFileProcessor {
                 } else {
                     if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
                             (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() == 1)) {
-                        writeToFile(outDir, header, lines, fileProcessingConfig.getTargetFileName());
+                        writeToFile(outDir, header, rowsGroupedByRefsetId.get(refsetId), fileProcessingConfig.getTargetFileName());
                         String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
                         fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, fileProcessingConfig.getTargetFileName(), refsetId, sourceName, infoMessage));
                     } else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() > 1) {
