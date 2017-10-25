@@ -295,25 +295,6 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/sourcefiles/{source}/{sourceFileName:.*}", method = RequestMethod.GET)
-	@ApiOperation( value = "Returns a specified file",
-			notes = "Returns the content of the specified file." )
-	public void getInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-								 @PathVariable final String source, @PathVariable final String sourceFileName,
-								 final HttpServletResponse response) throws ResourceNotFoundException {
-
-		try (InputStream fileStream = productInputFileService.getSourceFileInputStream(releaseCenterKey, productKey, source, sourceFileName)) {
-			if (fileStream != null) {
-				StreamUtils.copy(fileStream, response.getOutputStream());
-			} else {
-				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			}
-		} catch (IOException e) {
-			LOGGER.error("Failed to stream input file from storage.", e);
-			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		}
-	}
-
 
 
 }

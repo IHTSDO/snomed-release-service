@@ -1,66 +1,45 @@
 package org.ihtsdo.buildcloud.service.inputfile.prepare;
-
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-/**
- * User: huyle
- * Date: 5/25/2017
- * Time: 9:11 PM
- */
 public class FileProcessingConfig {
-
     private String fileType;
-    private String value;
-    private Map<String, Set<String>> targetFiles;
+    private String key;
+    private String targetFileName;
+    private Set<String> specificSources;
 
-    private FileProcessingConfig() {}
+    public FileProcessingConfig(String fileType, String value, String targetFilename) {
+        this.fileType = fileType;
+        this.key = value;
+        this.targetFileName = targetFilename;
+        this.specificSources = new HashSet<>();
+    }
 
     public String getFileType() {
         return fileType;
     }
 
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
+    public String getKey() {
+        return key;
     }
 
-    public String getValue() {
-        return value;
+    public String getTargetFileName() {
+        return targetFileName;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setSpecificSources(Set<String> specificSources) {
+        this.specificSources = specificSources;
     }
 
-    public Map<String, Set<String>> getTargetFiles() {
-        return targetFiles;
+    public Set<String> getSpecificSources() {
+        return specificSources;
     }
 
-    public void setTargetFiles(Map<String, Set<String>> targetFiles) {
-        this.targetFiles = targetFiles;
+    @Override
+    public String toString() {
+        return "FileProcessingConfig [fileType=" + fileType + ", key=" + key + ", targetFileName=" + targetFileName
+                + ", specifiedSources=" + specificSources + "]";
     }
 
-    public void addTargetFileToSource(String source, String fileName) {
-        getTargetFiles().get(source).add(fileName);
-    }
 
-    public void addTargetFileToAllSources(String fileName) {
-        for (Set<String> fileList : targetFiles.values()) {
-            fileList.add(fileName);
-        }
-    }
-
-    public static FileProcessingConfig init(Set<String> availableSources) {
-        FileProcessingConfig fileProcessingConfig = new FileProcessingConfig();
-        Map<String, Set<String>> defaultTargetFiles = new HashMap<>();
-        for (String availableSource : availableSources) {
-            defaultTargetFiles.put(availableSource, new HashSet<String>());
-        }
-        fileProcessingConfig.setTargetFiles(defaultTargetFiles);
-        return fileProcessingConfig;
-    }
-
- 
 }
