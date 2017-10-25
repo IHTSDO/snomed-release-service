@@ -1,9 +1,12 @@
 package org.ihtsdo.buildcloud.controller;
 
+import com.wordnik.swagger.annotations.ApiParam;
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.fileprocessing.FileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.amazonaws.services.elasticbeanstalk.model.transform.SolutionStackDescriptionStaxUnmarshaller;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 
@@ -52,12 +56,18 @@ public class InputFileController {
 	@ApiOperation( value = "Stores a manifest file",
 		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
 	@ResponseBody
-	public ResponseEntity<Void> uploadManifestFile(@PathVariable final String releaseCenterKey,
+	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey, @RequestParam(value = "file") final MultipartFile file)
 			throws IOException, ResourceNotFoundException {
 
 		productInputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
-		return new ResponseEntity<>(HttpStatus.CREATED);
+		InputStream manifestInputStream = productInputFileService.getManifestStream(releaseCenterKey, productKey);
+		String validationStatus = ManifestValidator.validate(manifestInputStream);
+		if (validationStatus == null) {
+			return new ResponseEntity<>(HttpStatus.CREATED);
+		} else {
+			return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_ENTITY);
+		}
 	}
 
 	@RequestMapping(value = "/manifest", method = RequestMethod.GET)
@@ -165,7 +175,7 @@ public class InputFileController {
 
 	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.POST)
 	@ApiOperation( value = "Store or Replace a file in specified source",
-			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL" )
+			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
@@ -194,14 +204,33 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
+	@RequestMapping(value = "/sourcefiles/{source}/{sourceFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Returns a specified file",
+		notes = "Returns the content of the specified file." )
+	public void getSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, 
+			@PathVariable String source, @PathVariable final String sourceFileName,
+			final HttpServletResponse response) throws ResourceNotFoundException {
+
+		try (InputStream fileStream = productInputFileService.getSourceFileStream(releaseCenterKey, productKey, source, sourceFileName)) {
+			if (fileStream != null) {
+				StreamUtils.copy(fileStream, response.getOutputStream());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		} catch (IOException e) {
+			LOGGER.error("Failed to stream source file from storage.", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+	
 
 	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.DELETE)
 	@ApiOperation( value = "Returns a specified file",
 			notes = "Deletes the specified file, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												  @PathVariable final String source, @RequestParam final String fileName) throws IOException, ResourceNotFoundException {
-		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, fileName, source);
+												  @PathVariable final String source) throws IOException, ResourceNotFoundException {
+		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, null, source);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
@@ -218,8 +247,13 @@ public class InputFileController {
 	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
 			notes = "Create or replace files in input file directories")
-	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
-		productInputFileService.prepareInputFiles(releaseCenterKey, productKey, false);
+	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
+												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
+		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
+		if (!report.getDetails().isEmpty() && report.getDetails().get(ReportType.ERROR) != null) {
+			
+		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 	
