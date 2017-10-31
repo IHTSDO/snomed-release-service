@@ -19,11 +19,12 @@
 		<xs:attribute type="xs:string" name="Name" use="optional"/>
 	</xs:complexType>
 	<xs:complexType name="fileType">
-		<xs:sequence>
+		<xs:all>
 			<xs:element type="containsReferenceSetsType" name="contains-reference-sets" maxOccurs="1" minOccurs="0"/>
 			<xs:element type="containsLanguageCodesType" name="contains-language-codes" maxOccurs="1" minOccurs="0"/>
+			<xs:element type="containsAdditionalFieldsType" name="contains-additional-fields" maxOccurs="1" minOccurs="0"/>
 			<xs:element type="sourcesType" name="sources" maxOccurs="1" minOccurs="0"/>
-		</xs:sequence>
+		</xs:all>
 		<xs:attribute type="xs:string" name="Name" use="optional"/>
 	</xs:complexType>
 	<xs:complexType name="containsReferenceSetsType">
@@ -31,6 +32,7 @@
 			<xs:element type="refsetType" name="refset" maxOccurs="unbounded" minOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
+	
 	<xs:complexType name="refsetType">
 		<xs:sequence>
 			<xs:element type="sourcesType" name="sources" maxOccurs="1" minOccurs="0"/>
@@ -43,6 +45,16 @@
 			</xs:simpleType>
 		</xs:attribute>
 		<xs:attribute name="label" type="xs:string"/>
+	</xs:complexType>
+	
+	<xs:complexType name="containsAdditionalFieldsType">
+		<xs:sequence>
+			<xs:element type="fieldType" name="field" maxOccurs="unbounded" minOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="fieldType">
+		<xs:attribute name="name" use="required" type="xs:string"/>
 	</xs:complexType>
 	<xs:complexType name="containsLanguageCodesType">
 		<xs:sequence>

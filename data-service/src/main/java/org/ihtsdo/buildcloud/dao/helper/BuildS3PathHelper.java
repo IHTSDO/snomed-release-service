@@ -18,7 +18,7 @@ public class BuildS3PathHelper {
 	public static final String LOG = "log";
 	public static final String BUILD_LOG_TXT = "build_log.txt";
 	private static final String QA_CONFIG_JSON = "qa-test-config.json";
-	private static final String INPUT_PREPARE_REPORT_TXT = "input-prepare-report.txt";
+	private static final String INPUT_PREPARE_REPORT_JSON = "input-prepare-report.json";
 	private static final String INPUT_PREPARE_REPORT_DIR = "input-prepare-report";
 
 	public StringBuilder getProductPath(final Product product) {
@@ -124,7 +124,11 @@ public class BuildS3PathHelper {
 	}
 
 	public String getInputFilePrepareLogPath(final Product product) {
-		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(INPUT_PREPARE_REPORT_DIR).append(SEPARATOR).append(INPUT_PREPARE_REPORT_TXT).toString();
+		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(INPUT_PREPARE_REPORT_DIR).append(SEPARATOR).append(INPUT_PREPARE_REPORT_JSON).toString();
+	}
+
+	public String getBuildInputFilePrepareReportPath(Build build) {
+		return getBuildPath(build).append(INPUT_PREPARE_REPORT_JSON).toString();
 	}
 
 }

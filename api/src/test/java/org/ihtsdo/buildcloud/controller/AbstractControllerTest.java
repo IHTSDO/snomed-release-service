@@ -87,7 +87,6 @@ public abstract class AbstractControllerTest {
 
 	@After
 	public void tearDown() {
-		
 		if (uuidGenerator instanceof PesudoUUIDGenerator) {
 			((PesudoUUIDGenerator)uuidGenerator).reset();
 		}

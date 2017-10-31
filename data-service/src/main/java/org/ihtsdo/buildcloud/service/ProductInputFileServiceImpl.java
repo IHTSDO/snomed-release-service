@@ -2,14 +2,17 @@ package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
@@ -155,7 +158,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
 		String filePath;
-		if(StringUtils.isBlank(subDirectory)) {
+		if (StringUtils.isBlank(subDirectory)) {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
 			for (String path : paths) {
 				if(StringUtils.isBlank(fileName) || FilenameUtils.getName(path).equals(fileName)) {
@@ -172,12 +175,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				} else {
 					LOGGER.warn("Could not find {} to delete", filePath);
 				}
-			}  else {
-				
+			} else {
 				List<String> toDelete = dao.listRelativeSourceFilePaths(product,subDirectory);
-				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(),subDirectory, productKey);
-				for (String path : toDelete) {
-					fileHelper.deleteFile(path);
+				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(), subDirectory, productKey);
+				String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
+				for (String filename : toDelete) {
+					LOGGER.debug("Deleting file:" + filename);
+					fileHelper.deleteFile(sourcePath + filename);
 				}
 			}
 		}
@@ -217,18 +221,25 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		if(manifestStream == null) {
 			report.add(ERROR, "Failed to load manifest");
 		} else {
-			InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, report, copyFilesInManifest);
-			List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
-			if(sourceFiles != null && !sourceFiles.isEmpty()) {
-				fileProcessor.processFiles(sourceFiles);
-			} else {
-				report.add(ERROR, "Failed to load files from source directory");
-			}
-			for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
-				for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
-					report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+			//validate manifest.xml
+	    	String validationMsg = ManifestValidator.validate(manifestStream);
+	    	if (validationMsg != null) {
+	    		report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
+	    	} else {
+	    		manifestStream = dao.getManifestStream(product);
+	    		InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
+				List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
+				if(sourceFiles != null && !sourceFiles.isEmpty()) {
+					report = fileProcessor.processFiles(sourceFiles);
+				} else {
+					report.add(ERROR, "Failed to load files from source directory");
 				}
-			}
+				for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
+					for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
+						report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+					}
+				}
+	    	}
 		}
 		dao.persistInputPrepareReport(product, report);
 		return report;
@@ -300,4 +311,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		}
 	}
 
+	@Override
+	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
+		Product product = getProduct(releaseCenterKey, productKey);
+		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
+	}
 }

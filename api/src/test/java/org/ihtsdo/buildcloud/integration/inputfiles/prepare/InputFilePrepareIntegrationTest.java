@@ -13,11 +13,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: huyle
- * Date: 5/30/2017
- * Time: 3:10 PM
- */
 public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
     private static final String TEST_DATA = "test_input_files.zip";
@@ -103,9 +98,8 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
         String report = integrationTestHelper.getInputPrepareReport();
         SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
         Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        Assert.assertEquals(30, reportDetails.get(ReportType.INFO).size());
-        Assert.assertEquals(12, reportDetails.get(ReportType.WARNING).size());
-        Assert.assertEquals(null, reportDetails.get(ReportType.ERROR));
+        Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
+        Assert.assertEquals(30, reportDetails.get(ReportType.ERROR).size());
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }
@@ -118,11 +112,8 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
         String report = integrationTestHelper.getInputPrepareReport();
         SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
         Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-        int countWarning = 0;
-        if(reportDetails.containsKey(ReportType.WARNING)){
-            countWarning = reportDetails.get(ReportType.WARNING).size();
-        }
-        Assert.assertEquals(5, countWarning);
+        Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
+        Assert.assertEquals(1, reportDetails.get(ReportType.ERROR).size());
         integrationTestHelper.deleteTxtSourceFiles();
         integrationTestHelper.deletePreviousTxtInputFiles();
     }
