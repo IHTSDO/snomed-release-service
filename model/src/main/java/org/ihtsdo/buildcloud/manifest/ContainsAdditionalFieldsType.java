@@ -17,16 +17,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for containsReferenceSetsType complex type.
+ * <p>Java class for containsAdditionalFieldsType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="containsReferenceSetsType">
+ * &lt;complexType name="containsAdditionalFieldsType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="refset" type="{http://release.ihtsdo.org/manifest/1.0.0}refsetType" maxOccurs="unbounded"/>
+ *         &lt;element name="field" type="{http://release.ihtsdo.org/manifest/1.0.0}fieldType" maxOccurs="unbounded"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -36,41 +36,41 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "containsReferenceSetsType", propOrder = {
-    "refset"
+@XmlType(name = "containsAdditionalFieldsType", propOrder = {
+    "field"
 })
-public class ContainsReferenceSetsType {
+public class ContainsAdditionalFieldsType {
 
     @XmlElement(required = true)
-    protected List<RefsetType> refset;
+    protected List<FieldType> field;
 
     /**
-     * Gets the value of the refset property.
+     * Gets the value of the field property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the refset property.
+     * This is why there is not a <CODE>set</CODE> method for the field property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getRefset().add(newItem);
+     *    getField().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link RefsetType }
+     * {@link FieldType }
      * 
      * 
      */
-    public List<RefsetType> getRefset() {
-        if (refset == null) {
-            refset = new ArrayList<RefsetType>();
+    public List<FieldType> getField() {
+        if (field == null) {
+            field = new ArrayList<FieldType>();
         }
-        return this.refset;
+        return this.field;
     }
 
 }

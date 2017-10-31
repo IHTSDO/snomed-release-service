@@ -10,22 +10,20 @@ package org.ihtsdo.buildcloud.manifest;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for listingType complex type.
+ * <p>Java class for fieldType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="listingType">
+ * &lt;complexType name="fieldType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;sequence>
- *         &lt;element name="folder" type="{http://release.ihtsdo.org/manifest/1.0.0}folderType"/>
- *       &lt;/sequence>
+ *       &lt;attribute name="name" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -34,36 +32,34 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "listingType", propOrder = {
-    "folder"
-})
-public class ListingType {
+@XmlType(name = "fieldType")
+public class FieldType {
 
-    @XmlElement(required = true)
-    protected FolderType folder;
+    @XmlAttribute(name = "name", required = true)
+    protected String name;
 
     /**
-     * Gets the value of the folder property.
+     * Gets the value of the name property.
      * 
      * @return
      *     possible object is
-     *     {@link FolderType }
+     *     {@link String }
      *     
      */
-    public FolderType getFolder() {
-        return folder;
+    public String getName() {
+        return name;
     }
 
     /**
-     * Sets the value of the folder property.
+     * Sets the value of the name property.
      * 
      * @param value
      *     allowed object is
-     *     {@link FolderType }
+     *     {@link String }
      *     
      */
-    public void setFolder(FolderType value) {
-        this.folder = value;
+    public void setName(String value) {
+        this.name = value;
     }
 
 }

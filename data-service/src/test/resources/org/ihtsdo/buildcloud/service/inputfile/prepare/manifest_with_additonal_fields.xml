@@ -1,15 +1,21 @@
 <listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
 	<folder Name="xSnomedCT_InternationalRF2_ALPHA_20170731T120000Z">
+		<file Name="Readme_en_20170731.txt"/>
+		<folder Name="Documentation">
+			<file Name="doc_Icd10MapTechnicalGuideExemplars_Current-en-US_INT_20170731.xlsx" />
+		</folder>
 		<folder Name="Delta">
 			<folder Name="Terminology">
-				<file Name="xsct2_Concept_Delta_INT_20170731.txt"/>
 				<file Name="xsct2_Description_Delta-en_INT_20170731.txt">
 					<contains-language-codes>
 						<code>en</code>
 					</contains-language-codes>
 				</file>
-				<file Name="xsct2_Relationship_Delta_INT_20170731.txt"/>
-				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt">
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
 			</folder>
 			<folder Name="Refset">
 				<folder Name="Content">
@@ -24,12 +30,18 @@
 							<refset id="900000000000530003" label="ALTERNATIVE"/>
 							<refset id="900000000000531004" label="REFERS TO"/>
 						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="targetComponentId"/>
+						</contains-additional-fields>
 					</file>
 					<file Name="xder2_cRefset_AttributeValueDelta_INT_20170731.txt">
 						<contains-reference-sets>
 							<refset id="900000000000489007" label="Concept inactivation indicator"/>
 							<refset id="900000000000490003" label="Description inactivation indicator"/>
 						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="valueid"/>
+						</contains-additional-fields>
 					</file>
 					<file Name="xder2_Refset_SimpleDelta_INT_20170731.txt">
 						<contains-reference-sets>
