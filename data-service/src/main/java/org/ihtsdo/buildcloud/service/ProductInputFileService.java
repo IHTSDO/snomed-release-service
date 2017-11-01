@@ -1,6 +1,10 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
@@ -44,6 +48,13 @@ public interface ProductInputFileService {
 	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException;
 
 	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
+
+	InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException;
+
+	InputStream getInputGatherReport(String centerKey, String productKey);
+
+	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
+			, InputGatherReport inputGatherReport) throws IOException;
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 
