@@ -13,6 +13,8 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -389,18 +391,30 @@ public class BuildDAOImpl implements BuildDAO {
 	public InputStream getPublishedFileArchiveEntry(final ReleaseCenter releaseCenter, final String targetFileName, final String previousPublishedPackage) throws IOException {
 		final String publishedZipPath = pathHelper.getPublishedFilePath(releaseCenter, previousPublishedPackage);
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
-		final String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 		LOGGER.debug("targetFileName:" + targetFileName);
+		String targetFileNameStripped = targetFileName;
+		if (!Normalizer.isNormalized(targetFileNameStripped, Form.NFC)) {
+			targetFileNameStripped = Normalizer.normalize(targetFileNameStripped, Form.NFC);
+		}
+		targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
+		
 		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
 		for (final String filePath : filePaths) {
-			final String filename = FileUtils.getFilenameFromPath(filePath);
+			 String filename = FileUtils.getFilenameFromPath(filePath);
 			// use contains rather that startsWith so that we can have candidate release (with x prefix in the filename) 
 			// as previous published release.
+			if (!Normalizer.isNormalized(filename, Form.NFC)) {
+				filename = Normalizer.normalize(filename, Form.NFC);
+			}
 			if (filename.contains(targetFileNameStripped)) {
 				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
 			}
 		}
-		LOGGER.warn("No file found in the previous published pakcage {} containing {}", previousPublishedPackage, targetFileNameStripped);
+		if (filePaths.isEmpty()) {
+			LOGGER.error("No files found in the previous published pakcage", previousPublishedPackage);
+		} else {
+			LOGGER.warn("No file found in the previous published pakcage {} containing {}", previousPublishedPackage, targetFileNameStripped);
+		}
 		return null;
 	}
 
