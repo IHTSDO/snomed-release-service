@@ -31,6 +31,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.*;
 
 public class InputSourceFileProcessor {
@@ -617,6 +619,9 @@ public class InputSourceFileProcessor {
         		inputFileName = file.getName().replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
         	}
         	inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
+        	if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
+    			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+    		}
             String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + inputFileName;
             fileProcessingReport.add(ReportType.INFO,inputFileName, null, null, "Uploaded to product input files directory");
             fileHelper.putFile(file,filePath);
