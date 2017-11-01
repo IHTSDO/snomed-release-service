@@ -69,7 +69,7 @@ public class InputSourceFileProcessor {
     private Set<String> availableSources;
     private Map<String, List<String>> sourceFilesMap;
     private SourceFileProcessingReport fileProcessingReport;
-    private Map<String,List<String>> skippedSourceFiles;
+    private Map<String,Set<String>> skippedSourceFiles;
     private MultiValueMap<String, String> fileOrKeyWithMultipleSources;
     //processing instructions from the manifest.xml
     private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
@@ -339,6 +339,15 @@ public class InputSourceFileProcessor {
                     lines.remove(0);
                     if (header.startsWith(HEADER_REFSETS)) {
                         processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
+
+                        //Handle in case this refset file is only meant for copying
+                        String baseFileName = FilenameUtils.getName(fileName);
+                        baseFileName = (baseFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? baseFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : baseFileName;
+                        if(filesToCopyFromSource.containsKey(baseFileName)
+                                && (filesToCopyFromSource.get(baseFileName).contains(source)
+                                || filesToCopyFromSource.get(baseFileName).isEmpty())) {
+                            addFileToSkippedList(source, fileName);
+                        }
                     } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
                     	//create delta file with header
                     	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
@@ -346,6 +355,15 @@ public class InputSourceFileProcessor {
                         	writeHeaderToFile(outDir,header, textDefinitionFileProcessingConfigs.values());
                         } 
                         processDescriptionsAndTextDefinitions(lines, source, fileName, outDir, header);
+
+                        //Handle in case this description file is only meant for copying
+                        String baseFileName = FilenameUtils.getName(fileName);
+                        baseFileName = (baseFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? baseFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : baseFileName;
+                        if(filesToCopyFromSource.containsKey(baseFileName)
+                                && (filesToCopyFromSource.get(baseFileName).contains(source)
+                                || filesToCopyFromSource.get(baseFileName).isEmpty())) {
+                            addFileToSkippedList(source, fileName);
+                        }
                     } else {
                     	addFileToSkippedList(source, fileName);
                     }
@@ -357,44 +375,55 @@ public class InputSourceFileProcessor {
     }
 
     private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName, String inFileName, File outDir, String header) throws IOException {
-    	 String inputFilename = FilenameUtils.getName(inFileName);
+        String inputFilename = FilenameUtils.getName(inFileName);
         if (lines == null || lines.isEmpty()) {
             fileProcessingReport.add(INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
             if (filesToCopyFromSource.containsKey(inputFilename) && (filesToCopyFromSource.get(inputFilename).isEmpty() || filesToCopyFromSource.get(inputFilename).contains(sourceName))) {
-            	 writeToFile(outDir, header, lines, inputFilename);
+                writeToFile(outDir, header, lines, inputFilename);
             }
         } else {
-            String[] splits = lines.get(0).split(TAB);
-            String refsetId = splits[REFSETID_COL];
-            fileOrKeyWithMultipleSources.add(refsetId, sourceName);
-            FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
-            if (fileProcessingConfig == null) {
-            	 //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
-            	if (!filesToCopyFromSource.containsKey(inputFilename)) {
-            	    String errorMsg = String.format("Found refset id %s in source file but is not used by the manifest configuration", refsetId);
-                    fileProcessingReport.add(ReportType.WARNING, inputFilename, refsetId, sourceName, errorMsg);
-            	}
-                addFileToSkippedList(sourceName, inFileName);
-            } else {
-                if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
-                		(fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() == 1)) {
-                	 writeToFile(outDir, header, lines, fileProcessingConfig.getTargetFileName());
-                     String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
-                     fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, fileProcessingConfig.getTargetFileName(), refsetId, sourceName, infoMessage));
-                } else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() > 1) {
-                	String errorMsg = String.format(UNPROCESSABLE_MSG, "refset id");
-                    fileProcessingReport.add(ERROR, inputFilename , refsetId, sourceName, errorMsg);
-                } else {
-                	String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
-                    fileProcessingReport.add(WARNING, inputFilename , refsetId, sourceName, warningMessage);
-                }
+            Map<String, List<String>> rowsGroupedByRefsetId = new HashMap<>();
+            for (String line : lines) {
+                String[] splits = line.split("\t");
+                String refsetId = splits[REFSETID_COL];
+                if (!rowsGroupedByRefsetId.containsKey(refsetId)) {
+                        rowsGroupedByRefsetId.put(refsetId, new ArrayList<String>());
+                    }
+                    rowsGroupedByRefsetId.get(refsetId).add(line);
             }
-         }
+            for (String refsetId : rowsGroupedByRefsetId.keySet()) {
+                FileProcessingConfig fileProcessingConfig = refsetFileProcessingConfigs.get(refsetId);
+                if(fileOrKeyWithMultipleSources.get(refsetId) == null || !fileOrKeyWithMultipleSources.get(refsetId).contains(sourceName)) {
+                    fileOrKeyWithMultipleSources.add(refsetId, sourceName);
+                }
+                if (fileProcessingConfig == null) {
+                    //Report as error if refset id is found in sources but not used in manifest configuration when file name is not listed for file copy
+                    if (!filesToCopyFromSource.containsKey(inputFilename)) {
+                        String errorMsg = String.format("Found refset id %s in source file but is not used by the manifest configuration", refsetId);
+                        fileProcessingReport.add(ReportType.WARNING, inputFilename, refsetId, sourceName, errorMsg);
+                    }
+                } else {
+                    if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
+                            (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() == 1)) {
+                        writeToFile(outDir, header, rowsGroupedByRefsetId.get(refsetId), fileProcessingConfig.getTargetFileName());
+                        String infoMessage = String.format("Added source %s/%s", sourceName, FilenameUtils.getName(inFileName));
+                        fileProcessingReportDetails.add(new FileProcessingReportDetail(INFO, fileProcessingConfig.getTargetFileName(), refsetId, sourceName, infoMessage));
+                    } else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(refsetId).size() > 1) {
+                        String errorMsg = String.format(UNPROCESSABLE_MSG, "refset id");
+                        fileProcessingReport.add(ERROR, inputFilename, refsetId, sourceName, errorMsg);
+                    } else {
+                        String warningMessage = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
+                        fileProcessingReport.add(WARNING, inputFilename, refsetId, sourceName, warningMessage);
+                    }
+                }
+
+            }
+        }
     }
 
 	private void addFileToSkippedList(String sourceName, String filename) {
     	if (skippedSourceFiles.get(sourceName) == null) {
-    		List<String> files = new ArrayList<String>();
+    		Set<String> files = new HashSet<>();
     		files.add(filename);
     		skippedSourceFiles.put(sourceName, files );
     	} else {
@@ -571,7 +600,10 @@ public class InputSourceFileProcessor {
         	//remove header line and append
         	List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
         	if (!lines.isEmpty() && lines.size() > 0) {
-        		lines.remove(0);
+        	    //Check whether the destination file is empty, if is not empty, remove header line
+                if(destinationFile.length() > 0) {
+                    lines.remove(0);
+                }
             	FileUtils.writeLines(destinationFile, CharEncoding.UTF_8, lines, RF2Constants.LINE_ENDING, true);
             	logger.debug("Appending " + sourceFile.getName() + " to " + destinationFile.getAbsolutePath());
         	}
@@ -635,7 +667,7 @@ public class InputSourceFileProcessor {
         }
     }
     
-	public Map<String, List<String>> getSkippedSourceFiles() {
+	public Map<String, Set<String>> getSkippedSourceFiles() {
 		return skippedSourceFiles;
 	}
 

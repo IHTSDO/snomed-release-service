@@ -68,6 +68,7 @@
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
 	</bean>
 	<bean class="org.ihtsdo.buildcloud.service.RelationshipHelper"/>
+	<bean class="org.ihtsdo.buildcloud.service.TermServerServiceImpl"/>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="${srs.jdbc.driverClassName}" />
@@ -137,6 +138,10 @@
 
 	<bean class="java.lang.String" id="publishedBucketName">
 		<constructor-arg value="${publishedBucketName}" />
+	</bean>
+
+	<bean class="java.lang.String" id="externallyMaintainedBucketName">
+		<constructor-arg value="${externallyMaintainedBucketName}" />
 	</bean>
 
 	<bean class="java.lang.Integer" id="fileProcessingFailureMaxRetry">
@@ -242,5 +247,20 @@
 		<constructor-arg>
 			<bean class="org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator"/>
 		</constructor-arg>
+	</bean>
+	<!--<bean class="org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient">
+		<constructor-arg value="${snowowl.url}"/>
+		<constructor-arg value="${snowowl.username}"/>
+		<constructor-arg value="${snowowl.password}"/>
+		<property name="reasonerId" value="${snowowl.reasonerId}"/>
+		<property name="logPath" value="${snowowl.log.path}"/>
+		<property name="rolloverLogPath" value="${snowowl.rolloverLog.path}"/>
+		<property name="importTimeoutMinutes" value="${snowowl.import.timeout}"/>
+		<property name="classificationTimeoutMinutes" value="${snowowl.classification.timeout}"/>
+		<property name="flatIndexExportStyle" value="${snowowl.flatIndexExportStyle:true}"/>
+	</bean>-->
+	<bean class="org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClientFactory">
+		<constructor-arg value="${snowowl.url}"/>
+		<constructor-arg value="${snowowl.reasonerId}"/>
 	</bean>
 </beans>

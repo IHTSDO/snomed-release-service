@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -163,7 +164,23 @@ public class BuildController {
 			}
 		}
 	}
-	
+
+	@RequestMapping(value = "/{buildId}/inputGatherReport", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves the report for gathering input source files.",
+			notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
+	public void getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+									  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getBuildInputGatherReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file gather report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+
 
 	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
 	@ApiOperation( value = "Download a specific file",
@@ -219,7 +236,7 @@ public class BuildController {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		publishService.publishBuild(build, true);
+		publishService.publishBuild(build, true, releaseCenterKey, productKey);
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
@@ -275,6 +292,14 @@ public class BuildController {
 			files.add(file);
 		}
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
+	}
+
+	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.POST)
+	@ApiOperation(value = "Cancel a running build job")
+	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
+		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
+		response.setStatus(HttpStatus.OK.value());
 	}
 
 }

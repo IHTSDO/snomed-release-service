@@ -1,26 +1,13 @@
 package org.ihtsdo.buildcloud.dao;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonEncoding;
@@ -49,14 +36,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.FileCopyUtils;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.io.Files;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class BuildDAOImpl implements BuildDAO {
 
@@ -262,6 +261,12 @@ public class BuildDAOImpl implements BuildDAO {
 		InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(productSource);
 		if (inputReportStream != null) {
 			buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
+		}
+
+		//copy sources-gather-report.json if exists
+		InputStream sourcesGatherStream = productInputFileDAO.getInputGatherReport(productSource);
+		if(sourcesGatherStream != null) {
+			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build));
 		}
 	}
 
@@ -540,6 +545,37 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
+
+	@Override
+	public boolean isBuildCancelRequested(final Build build) {
+		String cancelledRequestedPath = pathHelper.getStatusFilePath(build, Build.Status.CANCEL_REQUESTED);
+		try {
+			if(s3Client.getObject(buildBucketName, cancelledRequestedPath) != null) {
+				build.setStatus(Build.Status.CANCEL_REQUESTED);
+				return true;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return false;
+
+	}
+
+	@Override
+	public void deleteOutputFiles(Build build) {
+		List<String> outputFiles = listOutputFilePaths(build);
+		for (String outputFile : outputFiles) {
+			if(buildFileHelper.exists(outputFile)) {
+				buildFileHelper.deleteFile(outputFile);
+			}
+		}
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReportStream(Build build) {
+		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
 }

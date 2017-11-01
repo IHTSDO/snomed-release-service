@@ -22,7 +22,7 @@ public class EntityHelper {
 	}
 
 	public static String formatAsIsoDateTimeURLCompatible(Date date) {
-		return formatAsIsoDateTime(date).replace(":", "-");
+		return formatAsIsoDateTime(date);
 	}
 
 }
