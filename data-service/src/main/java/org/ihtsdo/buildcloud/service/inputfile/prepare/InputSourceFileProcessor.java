@@ -15,6 +15,7 @@ import org.ihtsdo.buildcloud.manifest.RefsetType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +100,7 @@ public class InputSourceFileProcessor {
         this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
     }
 
-    public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws IOException, JAXBException, ResourceNotFoundException, DecoderException, NoSuchAlgorithmException {
+    public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws BusinessServiceException {
         try {
             initLocalDirs();
             copySourceFilesToLocal(sourceFileLists);
@@ -120,7 +121,7 @@ public class InputSourceFileProcessor {
         	}
         	logger.error(msgBuilder.toString(), e);
             fileProcessingReport.add(ReportType.ERROR, msgBuilder.toString() );
-          
+            throw new BusinessServiceException(msgBuilder.toString(), e);
         } finally {
            if (!FileUtils.deleteQuietly(localDir)) {
                 logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
@@ -191,19 +192,29 @@ public class InputSourceFileProcessor {
         outDir.mkdir();
     }
 
-    private File copySourceFilesToLocal(List<String> sourceFileLists) throws IOException {
+    private File copySourceFilesToLocal(List<String> sourceFileLists) throws BusinessServiceException {
         for (String sourceFilePath : sourceFileLists) {
         	 //Copy files from S3 to local for processing
             InputStream sourceFileStream = fileHelper.getFileStream(buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString());
+            if (sourceFileStream == null) {
+            	throw new BusinessServiceException("Source file not found:" + sourceFilePath);
+            }
             String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
             //Keep track of the sources directories that are used
             availableSources.add(sourceName);
             File sourceDir = new File(localDir, sourceName);
-            if (!sourceDir.exists()) sourceDir.mkdir();
+            if (!sourceDir.exists()) {
+            	sourceDir.mkdir();
+            }
             String fileName = FilenameUtils.getName(sourceFilePath);
             fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
             File outFile = new File(localDir + "/" + sourceName, fileName);
-            FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
+            try {
+				FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
+			} catch (IOException e) {
+				String errorMsg = String.format("Failed to copy source file {} to local disk {}", sourceFilePath, outFile);
+				throw new BusinessServiceException(errorMsg, e);
+			}
             logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
             if (!sourceFilesMap.containsKey(sourceName)) {
                 sourceFilesMap.put(sourceName, new ArrayList<String>());
