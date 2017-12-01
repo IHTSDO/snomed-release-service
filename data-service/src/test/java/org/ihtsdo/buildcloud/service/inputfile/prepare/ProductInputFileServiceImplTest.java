@@ -14,6 +14,7 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingRepor
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.junit.After;
 import static org.junit.Assert.*;
@@ -125,7 +126,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesInAllSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesInAllSources() throws Exception {
         String testManifestFile = getClass().getResource("manifest_without_sources_specified.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED);
@@ -141,7 +142,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
 
     
     @Test
-    public void testPrepareInputFilesForOneSource() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesForOneSource() throws Exception {
         String testManifestFile = getClass().getResource("manifest_without_sources_specified.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
@@ -163,7 +164,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
     
     @Test
-    public void testPrepareInputFilesInRestrictedSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesInRestrictedSources() throws Exception {
         String testManifestFile = getClass().getResource("manifest_restricted_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
@@ -178,7 +179,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesMissingRefsets() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
+    public void testPrepareInputFilesMissingRefsets() throws Exception {
         String testManifestFile = getClass().getResource("manifest_missing_refsets.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
@@ -188,7 +189,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesWithTerminologyFiles() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
+    public void testPrepareInputFilesWithTerminologyFiles() throws Exception {
         String testManifestFile = getClass().getResource("manifest_with_unprocessed.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
@@ -243,7 +244,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
     
     @Test
-    public void testPrepareInputFilesWithEmptyData() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesWithEmptyData() throws Exception {
         String testManifestFile = getClass().getResource("manifest_with_additonal_fields.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -283,7 +284,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     
     
     @Test
-    public void testPrepareInputFileWithMultipleLanguageCodes() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFileWithMultipleLanguageCodes() throws Exception {
         String testManifestFile = getClass().getResource("manifest_with_multiple_language_codes.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -312,7 +313,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     
     
     @Test
-    public void testPrepareInputFilesWithEmptyDataInTwoSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesWithEmptyDataInTwoSources() throws Exception {
         String testManifestFile = getClass().getResource("manifest_with_multiple_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -350,7 +351,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
     
     @Test
-    public void testPrepareInputFilesWithInvalidManifest() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesWithInvalidManifest() throws Exception {
         String testManifestFile = getClass().getResource("invalid_manifest.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -366,7 +367,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
     
     @Test
-    public void testPrepareInputFilesWithMultipleSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException {
+    public void testPrepareInputFilesWithMultipleSources() throws Exception {
         String testManifestFile = getClass().getResource("manifest_with_multiple_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestFileToSourceDirectory(SRC_TERM_SERVER, new File(getClass().getResource(TEST_ARCHIVE_FILE).getFile()));

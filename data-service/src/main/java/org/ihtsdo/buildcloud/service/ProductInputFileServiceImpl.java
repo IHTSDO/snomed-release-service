@@ -17,11 +17,13 @@ import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scripting.bsh.BshScriptUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -214,7 +216,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
+	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws BusinessServiceException{
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
@@ -241,7 +243,11 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				}
 	    	}
 		}
-		dao.persistInputPrepareReport(product, report);
+		try {
+			dao.persistInputPrepareReport(product, report);
+		} catch (IOException e) {
+			throw new BusinessServiceException("Failed to persist input file preparation report!", e);
+		}
 		return report;
 	}
 
