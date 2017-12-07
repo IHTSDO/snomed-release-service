@@ -27,6 +27,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -42,7 +43,8 @@ import static org.mockito.Mockito.*;
 public class ProductInputFileGatheringTest {
 
     private static final String TERMINOLOGY_SERVER = "terminology-server";
-    public static final String INPUT_SOURCE_TEST_DATA_ZIP = "input_source_test_data.zip";
+    private static final String INPUT_SOURCE_TEST_DATA_ZIP = "input_source_test_data.zip";
+    private static final String FAILED_EXPORT_DATA_ZIP = "failedExport.zip";
     @Mock
     TermServerService termServerService;
 
@@ -58,19 +60,23 @@ public class ProductInputFileGatheringTest {
 
     File testArchive;
 
+    File failedExportArchive;
+
     @Before
     public void setup() throws InvocationTargetException, IllegalAccessException, IOException {
         SecurityHelper.setUser(TestUtils.TEST_USER);
         MockitoAnnotations.initMocks(this);
         String testFile = getClass().getResource(INPUT_SOURCE_TEST_DATA_ZIP).getFile();
+        String failedExportFile = getClass().getResource(FAILED_EXPORT_DATA_ZIP).getFile();
         testArchive = new File(testFile);
+        failedExportArchive = new File(failedExportFile);
         when(productDAO.find(Matchers.anyString(), Matchers.anyString(), Matchers.any(User.class))).thenReturn(new Product());
         doNothing().when(productInputFileService).putSourceFile(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.any(InputStream.class), Matchers.anyString(), Matchers.anyLong());
     }
 
     @Test
-    public void testGatherInputFiles() throws BusinessServiceException, IOException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
+    public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
                 Matchers.anyString(), Matchers.anyBoolean())).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
@@ -88,11 +94,10 @@ public class ProductInputFileGatheringTest {
     }
 
     @Test
-    public void testGatherInputFilesFailed() throws BusinessServiceException, IOException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
+    public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
-                Matchers.anyString(), Matchers.anyBoolean()))
-                .thenThrow(new BusinessServiceException("Failed to gather files from term server"));
+                Matchers.anyString(), Matchers.anyBoolean())).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
@@ -101,7 +106,7 @@ public class ProductInputFileGatheringTest {
                 Matchers.any(InputStream.class), Matchers.anyString(), Matchers.anyLong());
         Assert.assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());
         Assert.assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getStatus());
-        Assert.assertEquals("Failed to gather files from term server", inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getMessage());
+        Assert.assertEquals("Failed export data from term server. Term server returned error:{\"status\":500,\"code\":0,\"message\":\"Something went wrong during the processing of your request.\"}", inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getMessage());
     }
 
     private class InputStreamMatcher extends ArgumentMatcher<InputStream> {

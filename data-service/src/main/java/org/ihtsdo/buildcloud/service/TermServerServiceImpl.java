@@ -21,20 +21,20 @@ public class TermServerServiceImpl implements TermServerService{
     private Boolean exportFlatType;
 
 
-    public File export(String branchPath, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
+    public File export(String branchPath, String startEffectiveDate, String endEffectiveDate, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
                        SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished ) throws BusinessServiceException, FileNotFoundException {
         SnowOwlRestClient snowOwlRestClient =  snowOwlRestClientFactory.getClient();
         /*SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://dev-ms-authoring.ihtsdotools.org/snowowl"
                 , "dev-ims-ihtsdo=76D0z0XJD00Y0QYIwoFYjg00");*/
         snowOwlRestClient.setFlatIndexExportStyle(exportFlatType != null ? exportFlatType : true);
         SnowOwlRestClient.ExportConfigurationBuilder configurationBuilder = new SnowOwlRestClient.ExportConfigurationBuilder();
-        configurationBuilder.setStartEffectiveTime(effectiveDate);
-        configurationBuilder.setEndEffectiveTime(effectiveDate);
+        configurationBuilder.setStartEffectiveTime(startEffectiveDate);
+        configurationBuilder.setEndEffectiveTime(endEffectiveDate);
         configurationBuilder.setTransientEffectiveTime(effectiveDate);
         configurationBuilder.setBranchPath(branchPath);
         configurationBuilder.setType(exportType);
         configurationBuilder.setNamespaceId(namespaceId);
-        configurationBuilder.setIncludeUnpublished(includeUnpublished != null ? includeUnpublished : true);
+        configurationBuilder.setIncludeUnpublished(includeUnpublished != null ? includeUnpublished : false);
         if(moduleIds != null) {
             configurationBuilder.addModuleIds(moduleIds);
         }
