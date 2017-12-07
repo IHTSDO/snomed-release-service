@@ -359,7 +359,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		try {
 			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
 					requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory(),
-					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished());
+					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished(), requestConfig.getCodeSystemShortName());
 			try {
 				ZipFile zipFile = new ZipFile(exportFile);
 				FileInputStream fileInputStream = new FileInputStream(exportFile);
