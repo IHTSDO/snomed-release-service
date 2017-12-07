@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClientFactory;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -26,14 +27,14 @@ public class TermServerServiceImpl implements TermServerService{
         SnowOwlRestClient snowOwlRestClient =  snowOwlRestClientFactory.getClient();
         snowOwlRestClient.setFlatIndexExportStyle(exportFlatType != null ? exportFlatType : true);
         ExportConfigurationExtensionBuilder configurationBuilder = new ExportConfigurationExtensionBuilder();
-        configurationBuilder.setStartEffectiveTime(startEffectiveDate);
-        configurationBuilder.setEndEffectiveTime(endEffectiveDate);
+        configurationBuilder.setStartEffectiveTime(StringUtils.isNotBlank(startEffectiveDate) ? startEffectiveDate : effectiveDate);
+        configurationBuilder.setEndEffectiveTime(StringUtils.isNotBlank(endEffectiveDate) ? endEffectiveDate : endEffectiveDate);
         configurationBuilder.setTransientEffectiveTime(effectiveDate);
         configurationBuilder.setBranchPath(branchPath);
         configurationBuilder.setType(exportType);
         configurationBuilder.setNamespaceId(namespaceId);
         configurationBuilder.setIncludeUnpublished(includeUnpublished != null ? includeUnpublished : false);
-        configurationBuilder.setCodeSystemShortName(codeSystemShortName);
+        if(StringUtils.isNotBlank(codeSystemShortName)) configurationBuilder.setCodeSystemShortName(codeSystemShortName);
         if(moduleIds != null) {
             configurationBuilder.addModuleIds(moduleIds);
         }
