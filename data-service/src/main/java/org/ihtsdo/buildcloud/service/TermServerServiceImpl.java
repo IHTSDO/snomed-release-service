@@ -24,8 +24,6 @@ public class TermServerServiceImpl implements TermServerService{
     public File export(String branchPath, String startEffectiveDate, String endEffectiveDate, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
                        SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished ) throws BusinessServiceException, FileNotFoundException {
         SnowOwlRestClient snowOwlRestClient =  snowOwlRestClientFactory.getClient();
-        /*SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://dev-ms-authoring.ihtsdotools.org/snowowl"
-                , "dev-ims-ihtsdo=76D0z0XJD00Y0QYIwoFYjg00");*/
         snowOwlRestClient.setFlatIndexExportStyle(exportFlatType != null ? exportFlatType : true);
         SnowOwlRestClient.ExportConfigurationBuilder configurationBuilder = new SnowOwlRestClient.ExportConfigurationBuilder();
         configurationBuilder.setStartEffectiveTime(startEffectiveDate);
