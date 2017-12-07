@@ -11,7 +11,9 @@ public class GatherInputRequestPojo {
 	private String branchPath;
 	private Set<String> excludedModuleIds;
 	private String namespaceId;
-	private boolean includeUnpublished = true;
+	private String startEffectiveDate;
+	private String endEffectiveDate;
+	private boolean includeUnpublished = false;
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
 
@@ -82,10 +84,28 @@ public class GatherInputRequestPojo {
 		this.loadExternalRefsetData = loadExternalRefsetData;
 	}
 
+	public String getStartEffectiveDate() {
+		return startEffectiveDate;
+	}
+
+	public void setStartEffectiveDate(String startEffectiveDate) {
+		this.startEffectiveDate = startEffectiveDate;
+	}
+
+	public String getEndEffectiveDate() {
+		return endEffectiveDate;
+	}
+
+	public void setEndEffectiveDate(String endEffectiveDate) {
+		this.endEffectiveDate = endEffectiveDate;
+	}
+
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
 				", effectiveDate='" + effectiveDate + '\'' +
+				", startEffectiveDate='" + startEffectiveDate + '\'' +
+				", EndEffectiveDate='" + endEffectiveDate + '\'' +
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
@@ -95,4 +115,5 @@ public class GatherInputRequestPojo {
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				'}';
 	}
+
 }

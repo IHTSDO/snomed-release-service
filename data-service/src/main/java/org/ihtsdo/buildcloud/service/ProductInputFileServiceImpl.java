@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.ERROR;
@@ -355,13 +357,21 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
 			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException {
 		try {
-			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
-					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished());
-			FileInputStream fileInputStream = new FileInputStream(exportFile);
-			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
-			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
-					"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
-			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
+					requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory(),
+					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished());
+			try {
+				ZipFile zipFile = new ZipFile(exportFile);
+				FileInputStream fileInputStream = new FileInputStream(exportFile);
+				putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
+						"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
+				LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+			} catch (ZipException ex) {
+				String returnedError = org.apache.commons.io.FileUtils.readFileToString(exportFile);
+				LOGGER.error("Failed export data from term server. Term server returned error: {}", returnedError);
+				throw new BusinessServiceException("Failed export data from term server. Term server returned error:" + returnedError);
+			}
 		} catch (Exception ex) {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
 			throw ex;
