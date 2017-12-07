@@ -22,10 +22,10 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     public File export(String branchPath, String startEffectiveDate, String endEffectiveDate, String effectiveDate, Set<String> moduleIds, SnowOwlRestClient.ExportCategory exportCategory,
-                       SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished ) throws BusinessServiceException, FileNotFoundException {
+                       SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished, String codeSystemShortName ) throws BusinessServiceException, FileNotFoundException {
         SnowOwlRestClient snowOwlRestClient =  snowOwlRestClientFactory.getClient();
         snowOwlRestClient.setFlatIndexExportStyle(exportFlatType != null ? exportFlatType : true);
-        SnowOwlRestClient.ExportConfigurationBuilder configurationBuilder = new SnowOwlRestClient.ExportConfigurationBuilder();
+        ExportConfigurationExtensionBuilder configurationBuilder = new ExportConfigurationExtensionBuilder();
         configurationBuilder.setStartEffectiveTime(startEffectiveDate);
         configurationBuilder.setEndEffectiveTime(endEffectiveDate);
         configurationBuilder.setTransientEffectiveTime(effectiveDate);
@@ -33,10 +33,24 @@ public class TermServerServiceImpl implements TermServerService{
         configurationBuilder.setType(exportType);
         configurationBuilder.setNamespaceId(namespaceId);
         configurationBuilder.setIncludeUnpublished(includeUnpublished != null ? includeUnpublished : false);
+        configurationBuilder.setCodeSystemShortName(codeSystemShortName);
         if(moduleIds != null) {
             configurationBuilder.addModuleIds(moduleIds);
         }
         return snowOwlRestClient.export(configurationBuilder);
+    }
+
+    public static class ExportConfigurationExtensionBuilder extends SnowOwlRestClient.ExportConfigurationBuilder {
+
+        private String codeSystemShortName;
+
+        public String getCodeSystemShortName() {
+            return codeSystemShortName;
+        }
+
+        public void setCodeSystemShortName(String codeSystemShortName) {
+            this.codeSystemShortName = codeSystemShortName;
+        }
     }
 
 }

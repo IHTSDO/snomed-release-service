@@ -78,7 +78,7 @@ public class ProductInputFileGatheringTest {
     public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
-                Matchers.anyString(), Matchers.anyBoolean())).thenReturn(testArchive);
+                Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         FileInputStream fileInputStream = new FileInputStream(testArchive);
@@ -97,7 +97,7 @@ public class ProductInputFileGatheringTest {
     public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
-                Matchers.anyString(), Matchers.anyBoolean())).thenReturn(failedExportArchive);
+                Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles

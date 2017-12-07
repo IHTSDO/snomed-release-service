@@ -16,6 +16,7 @@ public class GatherInputRequestPojo {
 	private boolean includeUnpublished = false;
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
+	private String codeSystemShortName;
 
 	public GatherInputRequestPojo() {
 	}
@@ -98,6 +99,14 @@ public class GatherInputRequestPojo {
 
 	public void setEndEffectiveDate(String endEffectiveDate) {
 		this.endEffectiveDate = endEffectiveDate;
+	}
+
+	public String getCodeSystemShortName() {
+		return codeSystemShortName;
+	}
+
+	public void setCodeSystemShortName(String codeSystemShortName) {
+		this.codeSystemShortName = codeSystemShortName;
 	}
 
 	@Override
