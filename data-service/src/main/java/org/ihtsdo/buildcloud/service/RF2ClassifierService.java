@@ -71,6 +71,7 @@ public class RF2ClassifierService {
 		final BuildConfiguration configuration = build.getConfiguration();
 		// Collect names of concept and relationship output files
 		for (final String inputFilename : inputFileSchemaMap.keySet()) {
+
 			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
 
 			if (inputFileSchema == null) {
@@ -79,9 +80,13 @@ public class RF2ClassifierService {
 			}
 			
 			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
-				classifierFiles.getConceptSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT));
+				String conceptSnapshotFileName = inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+				classifierFiles.getConceptSnapshotFilenames().add(conceptSnapshotFileName);
+				logger.debug("generateInferredRelationshipSnapshot - concept file : {} -> {}", inputFilename, conceptSnapshotFileName);
 			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
-				classifierFiles.getStatedRelationshipSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT));
+				String relationshipSnapshotFileName = inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+				classifierFiles.getStatedRelationshipSnapshotFilenames().add(relationshipSnapshotFileName);
+				logger.debug("generateInferredRelationshipSnapshot - relationship file : {} -> ", inputFilename, relationshipSnapshotFileName);
 			}
 		}
 		if (!classifierFiles.isSufficientToClassify()) {
