@@ -636,6 +636,7 @@ public class BuildServiceImpl implements BuildService {
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean!= null ? schemaBean.getTableName() : null);
 				} else {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}
