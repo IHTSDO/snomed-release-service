@@ -55,6 +55,9 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
+import org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient;
+import org.ihtsdo.buildcloud.service.classifier.RF2ClassifierServiceFactory;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -126,7 +129,8 @@ public class BuildServiceImpl implements BuildService {
 	private UUIDGenerator uuidGenerator;
 
 	@Autowired
-	private RF2ClassifierService classifierService;
+	private RF2ClassifierService rf2ClassifierService;
+	
 
 	@Autowired
 	private RelationshipHelper relationshipHelper;
@@ -400,9 +404,9 @@ public class BuildServiceImpl implements BuildService {
 			}
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				final String transformedClassifierSnapshotResult = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
-				if (transformedClassifierSnapshotResult != null) {
-					generator.generateRelationshipFilesFromTransformedClassifierResult(transformedClassifierSnapshotResult);
+				ClassificationResult result = rf2ClassifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+				if (result != null) {
+					generator.generateRelationshipFiles(result);
 				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");

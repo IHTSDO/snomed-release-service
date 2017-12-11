@@ -91,6 +91,10 @@ public class BuildConfiguration {
 	@OneToOne (mappedBy="buildConfiguration", cascade=CascadeType.ALL)
 	private ExtensionConfig extensionConfig;
 	
+	@Type(type="yes_no")
+	@Column(name="use_external_classifier")
+	private boolean useExternalClassifier = false;
+	
 	
 	public BuildConfiguration() {
 	}
@@ -267,7 +271,8 @@ public class BuildConfiguration {
 				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
-				+ createLegacyIds  + "]";
+				+ createLegacyIds + ", useExternalClassifier="
+				+  useExternalClassifier + "]";
 	}	
 
 	@Embeddable
@@ -319,12 +324,23 @@ public class BuildConfiguration {
 		}
 	}
 
-
 	public boolean isInputFilesFixesRequired() {
 		return inputFilesFixesRequired;
 	}
 
 	public void setInputFilesFixesRequired(boolean inputFilesFixesRequired) {
 		this.inputFilesFixesRequired = inputFilesFixesRequired;
+	}
+
+	public boolean useExternalClassifier() {
+		return this.useExternalClassifier;
+	}
+	
+	public boolean getUseExternalClassifier() {
+		return this.useExternalClassifier;
+	}
+	public void setUseExternalClassifier(final boolean useExternalClassifier) {
+		this.useExternalClassifier = useExternalClassifier;
+		
 	}
 }
