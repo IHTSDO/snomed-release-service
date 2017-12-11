@@ -2,10 +2,6 @@ package org.ihtsdo.buildcloud.service.identifier.client;
 
 import java.util.Collection;
 
-
-
-
-
 public class IdServiceRestUrlHelper {
 	private static final String TOKEN_PARAMETER = "?token=";
 	private String rootApiUrl;
