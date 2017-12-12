@@ -3,7 +3,7 @@
 	<changeSet id="20150415" author="PGW">
 		<comment>Add Input File Fixes flag to Build Config</comment>
 		<addColumn tableName="build_config">
-			<column name="use_external_classifier" type="CHAR(1)" defaultValue="N"/>
+			<column name="require_input_files_fix" type="CHAR(1)" defaultValue="N"/>
 		</addColumn>
 	</changeSet>
 </databaseChangeLog>
