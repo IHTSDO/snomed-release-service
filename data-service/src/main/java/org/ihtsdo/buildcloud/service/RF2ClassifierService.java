@@ -120,7 +120,6 @@ public  class RF2ClassifierService {
 
 	private ClassifierFilesPojo constructClassifierFilesPojo(Map<String, TableSchema> inputFileSchemaMap) {
 		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
-		// Collect names of concept and relationship output files
 		for (final String inputFilename : inputFileSchemaMap.keySet()) {
 			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
 			if (inputFileSchema == null) {
@@ -152,7 +151,7 @@ public  class RF2ClassifierService {
 
 	private File runExternalClassifier(Build build, File equivalencyReportOutputFile, ClassifierFilesPojo classifierFiles, File tempDir) throws BusinessServiceException {
 		String previousPublished = build.getConfiguration().getPreviousPublishedPackage();
-		File rf2DeltaZipFile = new File(tempDir, build.getId() + "_rf2Delta.zip");
+		File rf2DeltaZipFile = createRf2DeltaArchiveForClassifier(build, classifierFiles, tempDir);
 		File inferredResult = null;
 		try {
 			File resultZipFile = externalClassifierRestClient.classify(rf2DeltaZipFile, previousPublished);
@@ -173,6 +172,28 @@ public  class RF2ClassifierService {
 			throw new BusinessServiceException("Error coccurred when running external classification.", e);
 		}
 		return inferredResult;
+	}
+
+	private File createRf2DeltaArchiveForClassifier(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws ProcessingException {
+		File rf2DeltaZipFile = new File(tempDir, "rf2Delta_" + build.getId() + ".zip");
+		List<String> rf2DeltaFileList = new ArrayList<>();
+		for ( String filename : classifierFiles.getStatedRelationshipSnapshotFilenames()) {
+			rf2DeltaFileList.add(filename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA));
+		}
+		
+		for ( String filename : classifierFiles.getConceptSnapshotFilenames()) {
+			rf2DeltaFileList.add(filename.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA));
+		}
+		
+		File deltaTempDir = Files.createTempDir();
+		downloadFiles(build, deltaTempDir, rf2DeltaFileList);
+		try {
+			ZipFileUtils.zip(deltaTempDir.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
+		} catch (IOException e) {
+			throw new ProcessingException("Failed to zip RF2 delta files.", e);
+		}
+		return rf2DeltaZipFile;
+		
 	}
 
 	private File runInternalClassifier(BuildConfiguration config, File equivalencyReportOutputFile, ClassifierFilesPojo classifierFiles, File tempDir) throws BusinessServiceException {
@@ -501,7 +522,7 @@ public  class RF2ClassifierService {
 		boolean isBeta = build.getConfiguration().isBetaRelease();
 		for (String downloadFilename : filenameLists) {
 			if (isBeta) {
-				downloadFilename = "x" + downloadFilename;
+				downloadFilename = RF2Constants.BETA_RELEASE_PREFIX + downloadFilename;
 			}
 			final File localFile = new File(tempDir, downloadFilename);
 			try (InputStream inputFileStream = buildDAO.getOutputFileInputStream(build, downloadFilename);
@@ -510,10 +531,10 @@ public  class RF2ClassifierService {
 					StreamUtils.copy(inputFileStream, out);
 					localFilePaths.add(localFile.getAbsolutePath());
 				} else {
-					throw new ProcessingException("Didn't find output file " + downloadFilename);
+					throw new ProcessingException("Didn't find output file:" + downloadFilename);
 				}
 			} catch (final IOException e) {
-				throw new ProcessingException("Failed to download snapshot file for classifier cycle check.", e);
+				throw new ProcessingException("Failed to download files for classification.", e);
 			}
 		}
 		return localFilePaths;
