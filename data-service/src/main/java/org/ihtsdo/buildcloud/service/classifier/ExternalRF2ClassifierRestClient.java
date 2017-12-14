@@ -26,20 +26,21 @@ import us.monoid.web.JSONResource;
 
 public class ExternalRF2ClassifierRestClient {
 	private String classificationServiceUrl;
-	private String userName;
+	private String username;
 	private String password;
 	public static final String ANY_CONTENT_TYPE = "*/*";
 	protected static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
 	private RestyHelper resty;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExternalRF2ClassifierRestClient.class);
 	private static final String STATUS = "status";
-	private int timeoutInSeconds;
+	//default to 5 mins
+	private int timeoutInSeconds = 300;
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-	public ExternalRF2ClassifierRestClient (String serviceUrl, String userName, String password) throws BusinessServiceException {
+	public ExternalRF2ClassifierRestClient (String serviceUrl, String username, String password) throws BusinessServiceException {
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		this.classificationServiceUrl = serviceUrl;
-		this.userName = userName;
+		this.username = username;
 		this.password = password;
 	}
 	
@@ -52,7 +53,7 @@ public class ExternalRF2ClassifierRestClient {
 		multipartEntityBuilder.setCharset(Charset.forName("UTF-8"));
 		multipartEntityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 		HttpEntity httpEntity = multipartEntityBuilder.build();
-		resty.authenticate(classificationServiceUrl, userName, password.toCharArray());
+		resty.authenticate(classificationServiceUrl, username, password.toCharArray());
 		resty.withHeader("Accept", ANY_CONTENT_TYPE);
 		
 		String statusUrl = null;

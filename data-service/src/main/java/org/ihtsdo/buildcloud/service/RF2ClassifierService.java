@@ -77,7 +77,7 @@ public  class RF2ClassifierService {
 	 * Checks for required files, performs cycle check then generates inferred relationships.
 	 * @throws IOException 
 	 */
-	public ClassificationResult generateInferredRelationshipSnapshot(final Build build, final Map<String, TableSchema> inputFileSchemaMap) throws BusinessServiceException {
+	public ClassificationResult classify(final Build build, final Map<String, TableSchema> inputFileSchemaMap) throws BusinessServiceException {
 		ClassifierFilesPojo classifierFiles = constructClassifierFilesPojo(inputFileSchemaMap);
 		BuildConfiguration configuration = build.getConfiguration();
 		if (!classifierFiles.isSufficientToClassify()) {
@@ -90,7 +90,6 @@ public  class RF2ClassifierService {
 		Map<String,String> uuidToSctidMap = prepareFilesForClassifier(build,classifierFiles, tempDir);
 		 File equivalencyReportOutputFile = new File(tempDir, RF2Constants.EQUIVALENCY_REPORT_TXT);
 		 File classifierResultOutputFile = null;
-		 String inferredFilename = getInferredFilename(classifierFiles, configuration.useExternalClassifier());
 		 boolean isSnapshot = true;
 		if (!configuration.useExternalClassifier()) {
 			classifierResultOutputFile = runInternalClassifier(configuration, equivalencyReportOutputFile, classifierFiles, tempDir);
@@ -98,21 +97,24 @@ public  class RF2ClassifierService {
 			isSnapshot = false;
 			classifierResultOutputFile = runExternalClassifier(build, equivalencyReportOutputFile, classifierFiles, tempDir);
 			if (classifierResultOutputFile == null) {
-				throw new BusinessServiceException("No inferred relationships delta file found in the classificaiton result.");
+				throw new BusinessServiceException("No inferred relationship delta file found in the classificaiton result.");
 			}
 		}
 		try {
 		logger.info("Classification finished.");
 		uploadLog(build, equivalencyReportOutputFile, RF2Constants.EQUIVALENCY_REPORT_TXT);
 		
-		// Upload inferred relationships file with null ids
+		// Upload classification results into S3 
 		buildDAO.putTransformedFile(build, classifierResultOutputFile);
-		transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierResultOutputFile), inferredFilename, uuidToSctidMap);
-		ClassificationResult result = new ClassificationResult(inferredFilename, isSnapshot);
+		String transformedInferredFile = getInferredFilename(classifierFiles, configuration.useExternalClassifier());
+		transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierResultOutputFile), transformedInferredFile, uuidToSctidMap);
+		ClassificationResult result = new ClassificationResult(transformedInferredFile, isSnapshot);
 		return result;
 
 	} catch (BusinessServiceException | IOException e) {
-		throw new ProcessingException("Failed to generate inferred relationship snapshot.", e);
+		String msg = "Failed to generate inferred relationship snapshot due to: ";
+		msg += e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+		throw new ProcessingException(msg, e);
 			} finally {
 				FileUtils.deleteQuietly(tempDir);
 			}
@@ -136,15 +138,16 @@ public  class RF2ClassifierService {
 	}
 
 	private String getInferredFilename(ClassifierFilesPojo classifierFiles, boolean isExternal) {
-		String statedRelationshipDeltaPath = classifierFiles.getLocalStatedRelationshipFilePaths().iterator().next();
+		String localStated = classifierFiles.getLocalStatedRelationshipFilePaths().iterator().next();
 		if (!isExternal) {
-			String inferredRelationshipSnapshotFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
+			String inferredRelationshipSnapshotFilename = localStated.substring(localStated.lastIndexOf("/") + 1)
 					.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
 					.replace(RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 			return inferredRelationshipSnapshotFilename;
 		} else {
-			String inferredRelationshipDeltaFilename = statedRelationshipDeltaPath.substring(statedRelationshipDeltaPath.lastIndexOf("/") + 1)
-					.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString());
+			String inferredRelationshipDeltaFilename = localStated.substring(localStated.lastIndexOf("/") + 1)
+					.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString())
+					.replace(RF2Constants.SNAPSHOT, RF2Constants.DELTA);
 			return inferredRelationshipDeltaFilename;
 		}
 	}
@@ -155,26 +158,40 @@ public  class RF2ClassifierService {
 		File inferredResult = null;
 		try {
 			File resultZipFile = externalClassifierRestClient.classify(rf2DeltaZipFile, previousPublished);
-			File classifierResult = new File(tempDir, build.getId() + "_result");
-			ZipFileUtils.extractFilesFromZipToOneFolder(resultZipFile, classifierResult.toString());
+			File classifierResult = new File(tempDir, "result");
+			if (!classifierResult.exists()) {
+				classifierResult.mkdir();
+			}
+			if (classifierResult.exists() && classifierResult.isDirectory()) {
+				ZipFileUtils.extractFilesFromZipToOneFolder(resultZipFile, classifierResult.getAbsolutePath().toString());
+			} else {
+				throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult);
+			}
 			for (File file : classifierResult.listFiles()) {
 				if (file.getName().endsWith(".txt")) {
 					if (file.getName().startsWith("sct2_Relationship_Delta")) {
 						inferredResult = file;
 					}
 					if (file.getName().startsWith("der2_sRefset_EquivalentConceptSimpleMapDelta")) {
-						equivalencyReportOutputFile = file;
+						FileUtils.copyFile(file, equivalencyReportOutputFile);
 					}
 				}
 			}
 			
 		} catch (Exception e) {
-			throw new BusinessServiceException("Error coccurred when running external classification.", e);
+			String errorMsg = "Error coccurred when running external classification due to:";
+			if (e.getCause() != null) {
+				errorMsg += e.getCause().getMessage();
+			} else {
+				errorMsg += e.getMessage();
+			}
+			throw new BusinessServiceException(errorMsg, e);
 		}
 		return inferredResult;
 	}
 
 	private File createRf2DeltaArchiveForClassifier(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws ProcessingException {
+		//external classifier expects the delta files for concept, stated relationship, empty relationship and option MRCM attribute domain refset
 		File rf2DeltaZipFile = new File(tempDir, "rf2Delta_" + build.getId() + ".zip");
 		List<String> rf2DeltaFileList = new ArrayList<>();
 		for ( String filename : classifierFiles.getStatedRelationshipSnapshotFilenames()) {
@@ -187,6 +204,16 @@ public  class RF2ClassifierService {
 		
 		File deltaTempDir = Files.createTempDir();
 		downloadFiles(build, deltaTempDir, rf2DeltaFileList);
+		//add empty relationship delta as the external classifier currently requires it to be present
+		String inferredDeltaFile = null;
+		try {
+			inferredDeltaFile = createEmptyRelationshipDelta(deltaTempDir, rf2DeltaFileList);
+		} catch (IOException e) {
+			throw new ProcessingException("Error occured when creating empty relaitonship delta file.", e);
+		}
+		if (inferredDeltaFile == null) {
+			throw new ProcessingException("Failed to create empty relaitonship delta file.");
+		}
 		try {
 			ZipFileUtils.zip(deltaTempDir.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
 		} catch (IOException e) {
@@ -194,6 +221,25 @@ public  class RF2ClassifierService {
 		}
 		return rf2DeltaZipFile;
 		
+	}
+
+	private String createEmptyRelationshipDelta(File deltaTempDir, List<String> rf2DeltaFileList) throws IOException {
+		String inferredDelta = null;
+		for (String filename : rf2DeltaFileList) {
+			if (filename.contains(RF2Constants.STATED)) {
+				inferredDelta = filename.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString());
+				File statedFile = new File(deltaTempDir, filename);
+				File inferredDeltaFile = new File(deltaTempDir, inferredDelta);
+				try (BufferedWriter writer = new BufferedWriter(new FileWriter(inferredDeltaFile));
+					 BufferedReader reader = new BufferedReader(new FileReader(statedFile))) {
+					String header = reader.readLine();
+					writer.write(header);
+					writer.write(RF2Constants.LINE_ENDING);
+				} 
+				break;
+			}
+		}
+		return inferredDelta;
 	}
 
 	private File runInternalClassifier(BuildConfiguration config, File equivalencyReportOutputFile, ClassifierFilesPojo classifierFiles, File tempDir) throws BusinessServiceException {
