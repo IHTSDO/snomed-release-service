@@ -400,11 +400,11 @@ public class BuildServiceImpl implements BuildService {
 			if (inferedDelta != null) {
 				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
 				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
-				retrieveAdditionalRelationshipsFromTransformedDelta(build, transformedDelta);
+				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				ClassificationResult result = rf2ClassifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
 				if (result != null) {
 					generator.generateRelationshipFiles(result);
 				}
@@ -499,11 +499,12 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private void retrieveAdditionalRelationshipsFromTransformedDelta(final Build build, String inferedDelta) throws BusinessServiceException {
+	private void retrieveAdditionalRelationshipsInputDelta(final Build build, String inferedDelta) throws BusinessServiceException {
 		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
 		String originalDelta = inferedDelta + "_original";
+		String additionalRelsDelta = inferedDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
-		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, inferedDelta).getOutputStream();
+		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, additionalRelsDelta).getOutputStream();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
 		final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
 		if (inputStream != null) {
