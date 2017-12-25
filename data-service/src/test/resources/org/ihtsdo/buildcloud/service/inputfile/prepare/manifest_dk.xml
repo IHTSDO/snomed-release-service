@@ -10,7 +10,11 @@
 				</file>
 				<file Name="xsct2_Relationship_Delta_DK1000005_20170731.txt"/>
 				<file Name="xsct2_StatedRelationship_Delta_DK1000005_20170731.txt"/>
-				<file Name="xsct2_TextDefinition_Delta-en_DK1000005_20170731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_DK1000005_20170731.txt">
+				<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
 			</folder>
 			<folder Name="Refset">
 				<folder Name="Content">
