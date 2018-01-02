@@ -29,6 +29,6 @@ public class ExternalRF2ClassifierRestClientTestHarness {
 		File rf2DeltaZipFile = new File(ExternalRF2ClassifierRestClientTestHarness.class.getResource("RF2Delta.zip").toURI());
 		File result = client.classify(rf2DeltaZipFile, "SnomedCT_InternationalRF2_PRODUCTION_20170731T150000Z.zip");
 		assertNotNull(result);
+		System.out.println("Classification result is saved at:" + result.getAbsolutePath().toString());
 	}
-
 }

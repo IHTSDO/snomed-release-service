@@ -97,4 +97,9 @@ public class IdServiceRestUrlHelper {
 	public String getSctIdBulkRegisterUrl(String token) {
 		return rootApiUrl + "/sct/bulk/register" + TOKEN_PARAMETER + token;
 	}
+	
+	public String getSctIdBulkReserveUrl(String token) {
+		return rootApiUrl + "/sct/bulk/reserve" + TOKEN_PARAMETER + token;
+	}
+	
 }
