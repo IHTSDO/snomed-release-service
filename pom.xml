@@ -22,6 +22,7 @@
 		<snomed-utilities.version>1.0.9</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
+        <additionalparam>-Xdoclint:none</additionalparam>
 	</properties>
 
 	<modules>
