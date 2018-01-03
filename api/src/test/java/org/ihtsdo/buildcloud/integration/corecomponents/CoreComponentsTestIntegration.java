@@ -40,8 +40,10 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		final String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
 		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
+		
 		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt");
 		loadDeltaFilesToInputDirectory(effectiveTime2, false);
+		integrationTestHelper.useExternalClassifier(false);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
 
 		final String expectedZipEntries2 =
@@ -97,7 +99,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	private void firstTimeRelease() throws Exception {
 		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
-		
 		//config assertion tests
 		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
 		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20140731");
@@ -156,6 +157,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	private void executeAndVerfiyResults(final String releaseDate, final String expectedZipEntries, final boolean isBeta) throws Exception {
 		final String buildURL1 = integrationTestHelper.createBuild();
+		integrationTestHelper.printBuildConfig(buildURL1);
 		integrationTestHelper.triggerBuild(buildURL1);
 		// Assert first release output expectations
 		final String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";

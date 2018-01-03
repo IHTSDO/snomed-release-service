@@ -14,6 +14,7 @@
     "createInferredRelationships" : false,
     "createLegacyIds" : false,
     "extensionConfig" : null,
+    "useExternalClassifier" : false,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },

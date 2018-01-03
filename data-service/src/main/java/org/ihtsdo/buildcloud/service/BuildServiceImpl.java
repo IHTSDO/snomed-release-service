@@ -55,6 +55,9 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
+import org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient;
+import org.ihtsdo.buildcloud.service.classifier.RF2ClassifierServiceFactory;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -126,7 +129,8 @@ public class BuildServiceImpl implements BuildService {
 	private UUIDGenerator uuidGenerator;
 
 	@Autowired
-	private RF2ClassifierService classifierService;
+	private RF2ClassifierService rf2ClassifierService;
+	
 
 	@Autowired
 	private RelationshipHelper relationshipHelper;
@@ -396,13 +400,13 @@ public class BuildServiceImpl implements BuildService {
 			if (inferedDelta != null) {
 				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
 				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
-				retrieveAdditionalRelationshipsFromTransformedDelta(build, transformedDelta);
+				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				final String transformedClassifierSnapshotResult = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
-				if (transformedClassifierSnapshotResult != null) {
-					generator.generateRelationshipFilesFromTransformedClassifierResult(transformedClassifierSnapshotResult);
+				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+				if (result != null) {
+					generator.generateRelationshipFiles(result);
 				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
@@ -495,11 +499,12 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private void retrieveAdditionalRelationshipsFromTransformedDelta(final Build build, String inferedDelta) throws BusinessServiceException {
+	private void retrieveAdditionalRelationshipsInputDelta(final Build build, String inferedDelta) throws BusinessServiceException {
 		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
 		String originalDelta = inferedDelta + "_original";
+		String additionalRelsDelta = inferedDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
-		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, inferedDelta).getOutputStream();
+		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, additionalRelsDelta).getOutputStream();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
 		final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
 		if (inputStream != null) {
