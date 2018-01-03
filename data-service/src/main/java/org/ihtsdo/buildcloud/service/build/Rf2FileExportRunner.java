@@ -23,8 +23,10 @@ import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.service.build.database.Rf2FileWriter;
 import org.ihtsdo.buildcloud.service.build.database.map.RF2TableDAOTreeMapImpl;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.helper.StatTimer;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -33,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.google.common.io.Files;
 
 public class Rf2FileExportRunner {
 
@@ -87,7 +90,7 @@ public class Rf2FileExportRunner {
 		int failureCount = 0;
 		while (!success) {
 			try {
-				generateInferredRelationshipFiles(transformedSnapshotFilename);
+				generateInferredRelationshipFiles(transformedSnapshotFilename, true);
 				success = true;
 			} catch (final Exception e) {
 				failureCount = handleException(e, transformedSnapshotFilename, failureCount);
@@ -244,23 +247,23 @@ public class Rf2FileExportRunner {
 		return buildDao.getPublishedFileArchiveEntry(RF2Constants.INT_RELEASE_CENTER, equivalentBuilder.toString(), extensionConfig.getDependencyRelease());
 	}
 	
-	private String extractDeltaFromTransformedClassificationResult(final String snapshotOutputFilename) throws ReleaseFileGenerationException {
-		final String deltaFilename = snapshotOutputFilename.replace(SNAPSHOT, DELTA);
+	private String extractDeltaFromClassificationResult(final String snapshotTransformedFilename) throws ReleaseFileGenerationException {
+		final String deltaFilename = snapshotTransformedFilename.replace(SNAPSHOT, DELTA);
 		// Import snapshot
-		final InputStream snapshotInputStream = buildDao.getTransformedFileAsInputStream(build, snapshotOutputFilename);
+		final InputStream snapshotInputStream = buildDao.getTransformedFileAsInputStream(build, snapshotTransformedFilename);
 		RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
 		TableSchema tableSchema = null;
 		try {
-			tableSchema = rf2TableDAO.createTable(snapshotOutputFilename, snapshotInputStream, false);
+			tableSchema = rf2TableDAO.createTable(snapshotTransformedFilename, snapshotInputStream, false);
 			// additional relationship fix 
 			//add existing additional relationships from the input inferred delta if there is any to the new delta
-			InputStream additionalRelationshipInputStream = buildDao.getTransformedFileAsInputStream(build, deltaFilename);
+			InputStream additionalRelationshipInputStream = buildDao.getTransformedFileAsInputStream(build, deltaFilename.replaceAll(".txt", "_additional.txt"));
 			if (additionalRelationshipInputStream != null) {
 				LOGGER.info("Appending additional relationships to relationship delta file for build id:" + build.getId());
 				rf2TableDAO.appendData(tableSchema, additionalRelationshipInputStream, false);
 			}
 		} catch (IOException | FileRecognitionException | DatabasePopulatorException | NumberFormatException | BadConfigurationException e) {
-			throw new ReleaseFileGenerationException("Failed to create table from " + snapshotOutputFilename, e);
+			throw new ReleaseFileGenerationException("Failed to create table from " + snapshotTransformedFilename, e);
 		}
 		// Export delta
 		final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
@@ -276,9 +279,19 @@ public class Rf2FileExportRunner {
 	}
 	
 
-	private void generateInferredRelationshipFiles(final String snapshotOutputFilename) throws ReleaseFileGenerationException, IOException {
-		final String deltaFilename = extractDeltaFromTransformedClassificationResult(snapshotOutputFilename);
-		final String fullFilename = snapshotOutputFilename.replace(SNAPSHOT, FULL);
+	private void generateInferredRelationshipFiles(final String inferredResult, boolean isSnapshot) throws ReleaseFileGenerationException, IOException {
+		String deltaFilename = null;
+		String fullFilename = null;
+		String snapshotOutputFilename = null;
+		if (isSnapshot) {
+			snapshotOutputFilename = inferredResult;
+			fullFilename = snapshotOutputFilename.replace(SNAPSHOT, FULL);
+		} else {
+			deltaFilename = inferredResult;
+			snapshotOutputFilename = deltaFilename.replace(DELTA, SNAPSHOT);
+			fullFilename = deltaFilename.replace(DELTA, FULL);
+		}
+		deltaFilename = genereateInferredRelationshipDelta(inferredResult, isSnapshot);
 		RF2TableDAOTreeMapImpl rf2TableDAO = null;
 		TableSchema tableSchema = null;
 		// import Delta to generate snapshot and full
@@ -333,6 +346,41 @@ public class Rf2FileExportRunner {
 		} catch (IOException | SQLException e) {
 			throw new ReleaseFileGenerationException("Failed to export " + fullFilename + " and " + snapshotOutputFilename, e);
 		}
+	}
+
+	private String genereateInferredRelationshipDelta(String inferredResult, boolean isSnapshot) throws ReleaseFileGenerationException {
+		 String deltaFilename = inferredResult;
+		 if (isSnapshot) {
+			 deltaFilename = inferredResult.replace(SNAPSHOT, DELTA);
+		 }
+		// Import data
+		final InputStream snapshotInputStream = buildDao.getTransformedFileAsInputStream(build, inferredResult);
+		RF2TableDAOTreeMapImpl rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
+		TableSchema tableSchema = null;
+		try {
+			tableSchema = rf2TableDAO.createTable(inferredResult, snapshotInputStream, false);
+			// additional relationship fix 
+			//add existing additional relationships from the input inferred delta if there is any to the new delta
+			InputStream additionalRelationshipInputStream = buildDao.getTransformedFileAsInputStream(
+					build, deltaFilename.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT));
+			if (additionalRelationshipInputStream != null) {
+				LOGGER.info("Appending additional relationships to relationship delta file for build id:" + build.getId());
+				rf2TableDAO.appendData(tableSchema, additionalRelationshipInputStream, false);
+			}
+		} catch (IOException | FileRecognitionException | DatabasePopulatorException | NumberFormatException | BadConfigurationException e) {
+			throw new ReleaseFileGenerationException("Failed to create table from " + inferredResult, e);
+		}
+		// Export delta
+		final Rf2FileWriter rf2FileWriter = new Rf2FileWriter();
+		//select the delta by the effective time
+		RF2TableResults results = rf2TableDAO.selectWithEffectiveDateOrdered(tableSchema, configuration.getEffectiveTimeSnomedFormat());
+		try (AsyncPipedStreamBean deltaOutputStream = buildDao.getOutputFileOutputStream(build, deltaFilename)) {
+			rf2FileWriter.exportDelta(results, tableSchema, deltaOutputStream.getOutputStream());
+			rf2TableDAO.closeConnection();
+		} catch (IOException | SQLException e) {
+			throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
+		} 
+		return deltaFilename;
 	}
 
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
@@ -402,5 +450,13 @@ public class Rf2FileExportRunner {
 	 */
 	private String constructFullOrSnapshotFilename(String deltaFilename, String fullOrSnapshot) {
 		return deltaFilename.replace(DELTA + FILE_NAME_SEPARATOR, fullOrSnapshot + FILE_NAME_SEPARATOR).replace(DELTA + HYPHEN, fullOrSnapshot + HYPHEN);
+	}
+	
+	public void generateRelationshipFiles(ClassificationResult result) throws ReleaseFileGenerationException {
+		try {
+			generateInferredRelationshipFiles(result.getResultFilePath(), result.isSnapshot());
+		} catch (IOException e) {
+			throw new ReleaseFileGenerationException("Failed to genereate inferred relationships.", e);
+		}
 	}
 }

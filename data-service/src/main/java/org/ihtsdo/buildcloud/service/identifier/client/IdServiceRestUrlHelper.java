@@ -2,10 +2,6 @@ package org.ihtsdo.buildcloud.service.identifier.client;
 
 import java.util.Collection;
 
-
-
-
-
 public class IdServiceRestUrlHelper {
 	private static final String TOKEN_PARAMETER = "?token=";
 	private String rootApiUrl;
@@ -101,4 +97,9 @@ public class IdServiceRestUrlHelper {
 	public String getSctIdBulkRegisterUrl(String token) {
 		return rootApiUrl + "/sct/bulk/register" + TOKEN_PARAMETER + token;
 	}
+	
+	public String getSctIdBulkReserveUrl(String token) {
+		return rootApiUrl + "/sct/bulk/reserve" + TOKEN_PARAMETER + token;
+	}
+	
 }

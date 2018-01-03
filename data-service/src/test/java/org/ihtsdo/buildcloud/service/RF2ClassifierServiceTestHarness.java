@@ -31,12 +31,12 @@ public class RF2ClassifierServiceTestHarness {
 	private RF2ClassifierService classifierService;
 	
 	@Test
-	public void testClassifierWrapper() throws BusinessServiceException, ParseException {
+	public void testInternalClassifierWithUsEdition() throws BusinessServiceException, ParseException {
 		Build build = createBuild();
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_US1000124_20170301"));
 		inputFileSchemaMap.put("rel2_Concept_Snapshot_US1000124_20170301.txt", new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Snapshot_US1000124_20170301"));
-		classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
+		classifierService.classify(build, inputFileSchemaMap);
 	}
 
 	private Build createBuild() throws ParseException {
