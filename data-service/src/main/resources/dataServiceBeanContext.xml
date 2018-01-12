@@ -66,7 +66,6 @@
 		<constructor-arg name="buildBucketName" ref="buildBucketName"/>
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
 	</bean>
-	<bean class="org.ihtsdo.buildcloud.service.RelationshipHelper"/>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="${srs.jdbc.driverClassName}" />

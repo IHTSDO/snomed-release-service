@@ -1,16 +1,33 @@
 package org.ihtsdo.buildcloud.service.classifier;
 
 public class ClassificationResult {
-	private String resultFilePath;
+	
+	private String resultFilename;
 	private boolean isSnapshotFile;
-	public ClassificationResult(String resultFilePath, boolean isSnapshot) {
-		this.resultFilePath = resultFilePath;
+	private String extraResultFileName;
+	
+	public ClassificationResult(String resultFilename, boolean isSnapshot) {
+		this.resultFilename = resultFilename;
 		this.isSnapshotFile = isSnapshot;
 	}
-	public String getResultFilePath() {
-		return this.resultFilePath;
+	
+	public String getResultFilename() {
+		return this.resultFilename;
 	}
+	
 	public boolean isSnapshot() {
 		return this.isSnapshotFile;
+	}
+
+	public String getExtraResultFileName() {
+		return extraResultFileName;
+	}
+
+	public void setExtraResultFileName(String extraResultFileName) {
+		this.extraResultFileName = extraResultFileName;
+	}
+
+	public void setResultFilename(String resultFilename) {
+		this.resultFilename = resultFilename;
 	}
 }
