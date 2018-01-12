@@ -9,7 +9,7 @@ import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
-public interface RF2TableDAO {
+public interface RF2TableExportDAO {
 
 	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException, BadConfigurationException;
 

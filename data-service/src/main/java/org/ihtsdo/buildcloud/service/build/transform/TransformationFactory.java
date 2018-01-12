@@ -27,6 +27,7 @@ public class TransformationFactory {
 	private Set<String> modelConceptIdsForModuleIdFix;
 	private Map<String, String> existingUuidToSctidMap;
 	private final String namespaceId;
+	private Map<String, String> conceptToModuleIdMap;
 	enum PARTITION_ID_TYPE {
 		CONCEPT,
 		DESCRIPTION,
@@ -224,9 +225,15 @@ public class TransformationFactory {
 	private StreamingFileTransformation getInferredRelationshipFileTransformation() throws NoSuchAlgorithmException {
 		// TIG - www.snomed.org/tig?t=trg2main_format_rel
 		final StreamingFileTransformation streamingFileTransformation = newStreamingFileTransformation();
-			 	 if (!RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
-			 		// replace international module id
-			 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0,"null",3, coreModuleSctid));
+				// module id
+			 	 if (RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
+			 		// for international release the module id should be the same as the source concept's module
+			 		 if (conceptToModuleIdMap != null && !conceptToModuleIdMap.isEmpty()) {
+			 			 streamingFileTransformation.addTransformation( new RelationshipModuleIdTransformation(conceptToModuleIdMap));
+			 		 }
+			 	 } else {
+			 		// replace module id with extension module id
+				 	streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(0, "null", 3, coreModuleSctid));
 			 	 }
 				// id
 			 	streamingFileTransformation.addTransformation(new RepeatableRelationshipUUIDTransform(RF2Constants.RelationshipFileType.INFERRED));
@@ -241,7 +248,7 @@ public class TransformationFactory {
 		
 		if (!RF2Constants.INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
 	 		// replace international module id for all effective time with the effectiveTimeInSnomedFormat
-	 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(1,effectiveTimeInSnomedFormat,3, coreModuleSctid));
+	 		streamingFileTransformation.addTransformation( new ReplaceInferredRelationshipModuleIdTransformation(1, effectiveTimeInSnomedFormat, 3, coreModuleSctid));
 	 	 }
 
 		return streamingFileTransformation;
@@ -361,5 +368,9 @@ public class TransformationFactory {
 		break;
 		}
 		return result;
+	}
+
+	public void setConceptToModuleIdMap(Map<String, String> conceptIdToModuleIdMap) {
+		conceptToModuleIdMap = conceptIdToModuleIdMap;
 	}
 }

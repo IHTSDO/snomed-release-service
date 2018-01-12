@@ -26,7 +26,9 @@ public class ExternalRF2ClassifierRestClientTestHarness {
 	@Test
 	public void testClassification() throws Exception {
 		assertTrue(client.getTimeoutInSeconds() > 0);
-		File rf2DeltaZipFile = new File(ExternalRF2ClassifierRestClientTestHarness.class.getResource("RF2Delta.zip").toURI());
+		//Put RF2Delta.zip in folder release under project data-service
+		File rf2DeltaZipFile = new File("release/RF2Delta.zip");
+		assertTrue(rf2DeltaZipFile.exists());
 		File result = client.classify(rf2DeltaZipFile, "SnomedCT_InternationalRF2_PRODUCTION_20170731T150000Z.zip");
 		assertNotNull(result);
 		System.out.println("Classification result is saved at:" + result.getAbsolutePath().toString());
