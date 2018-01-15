@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -224,7 +225,12 @@ public class RF2ClassifierService {
 			for (File file : classifierResult.listFiles()) {
 			  if (file.getName().endsWith(".txt")) {
 					if (file.getName().startsWith("sct2_Relationship_Delta")) {
-						inferredResult = file;
+						File updatedFile = checkAndRemoveAnyExtaEmptyFields(file);
+						if (updatedFile != null) {
+							inferredResult = updatedFile;
+						} else {
+							inferredResult = file;
+						}
 					}
 					if (file.getName().startsWith("der2_sRefset_EquivalentConceptSimpleMapDelta")) {
 						FileUtils.copyFile(file, equivalencyReportOutputFile);
@@ -242,6 +248,39 @@ public class RF2ClassifierService {
 			throw new BusinessServiceException(errorMsg, e);
 		}
 		return inferredResult;
+	}
+
+	private File checkAndRemoveAnyExtaEmptyFields(File rf2InferredDelta) throws FileNotFoundException, IOException {
+		File updated = new File(rf2InferredDelta.getParentFile(), rf2InferredDelta.getName().replaceAll(".txt", "_updated.txt"));
+		boolean wrongDataFound = false;
+		try (BufferedReader reader = new BufferedReader(new FileReader(rf2InferredDelta));
+			 BufferedWriter writer = new BufferedWriter(new FileWriter(updated))) {
+			String line = reader.readLine();
+			writer.write(line);
+			writer.write(LINE_ENDING);
+			int maxColumn = line.split(COLUMN_SEPARATOR).length;
+			while ((line = reader.readLine()) != null) {
+				String[] splits = line.split(COLUMN_SEPARATOR, -1);
+				if (splits.length > maxColumn) {
+					wrongDataFound = true;
+					String[] updatedData = Arrays.copyOfRange(splits, 0, maxColumn);
+					StringBuilder lineBuilder = new StringBuilder();
+					for (int i = 0; i< updatedData.length; i++) {
+						if (i > 0) {
+							lineBuilder.append(COLUMN_SEPARATOR);
+						}
+						lineBuilder.append(updatedData[i]);
+					}
+					writer.write((lineBuilder.toString()));
+					writer.write(LINE_ENDING);
+				}
+			}
+		}
+		if (wrongDataFound) {
+			return updated;
+		} else {
+			return null;
+		}
 	}
 
 	private File createRf2DeltaArchiveForClassifier(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws ProcessingException {
