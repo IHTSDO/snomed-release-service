@@ -90,7 +90,6 @@ public class RF2ClassifierServiceTestHarness {
 		System.out.println(result.getResultFilename());
 	}
 	
-	
 	private void prepareTestFiles(Build build, String ... filenames) throws IOException {
 		for (String filename : filenames) {
 			buildDao.putOutputFile(build, new File(filename), false);
