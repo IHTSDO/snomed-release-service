@@ -72,15 +72,14 @@ public class ExternalRF2ClassifierRestClient {
 		} catch(Exception e) {
 			throw new BusinessServiceException("Error occured when polling classification status:" + statusUrl, e);
 		}
+		
 		try {
 			// retrieve results when status is completed
 			String classificationId = getClassificationId(statusUrl);
 			String resultUrl = classificationServiceUrl + "/classifications/" + classificationId + "/results/rf2";
 			logger.info("Classification result:" + resultUrl);
-			JSONResource resultResp = resty.json(resultUrl);
-			RestyServiceHelper.ensureSuccessfull(resultResp);
+			File archive = File.createTempFile("result_", classificationId + ".zip");
 			BinaryResource archiveResults = resty.bytes(resultUrl);
-			File archive = File.createTempFile(classificationId, ".zip");
 			archiveResults.save(archive);
 			logger.info("Result is archived." + archive.getAbsolutePath());
 			return archive;
@@ -98,8 +97,8 @@ public class ExternalRF2ClassifierRestClient {
 				throw new RestClientException("Not a valid URL:" + locationUrl, e);
 			}
 		}
-	return null;
-}
+		return null;
+	}
 
 	private String waitForCompleteStatus(String classificationStatusUrl, int timeoutInSeconds)
 			throws RestClientException, InterruptedException {
@@ -116,7 +115,6 @@ public class ExternalRF2ClassifierRestClient {
 					errorMsg = response.get("errorMessage") != null ? response.get("errorMessage").toString() : null;
 					developerMsg = response.get("developerMessage") != null ? response.get("developerMessage").toString() : null;
 				}
-				
 			} catch (Exception e) {
 				String msg = "Error occurred when checking the classification status:" + classificationStatusUrl;
 				LOGGER.error(msg, e);
@@ -132,7 +130,7 @@ public class ExternalRF2ClassifierRestClient {
 				Thread.sleep(1000 * 10);
 			}
 		}
-		
+
 		if (isDone && "FAILED".equalsIgnoreCase(status)) {
 			throw new RestClientException("Classification failed with error message:" + errorMsg + " developer message:" + developerMsg);
 		}
