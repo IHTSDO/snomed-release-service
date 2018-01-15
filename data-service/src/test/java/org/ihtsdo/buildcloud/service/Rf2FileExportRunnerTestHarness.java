@@ -13,6 +13,7 @@ import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.ReleaseFileGenerationException;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +35,9 @@ public class Rf2FileExportRunnerTestHarness {
 	@Test
 	public void testEditionReleaseExport() throws ParseException, ReleaseFileGenerationException {
 		Build build = createBuild();
-		Rf2FileExportRunner exportRunner = new Rf2FileExportRunner(build,dao, uuidGenerator, 1);
+		Rf2FileExportRunner exportRunner = new Rf2FileExportRunner(build,dao, 1);
 		String transformedSnapshotFilename = "sct2_Relationship_Snapshot_US1000124_20170301.txt";
-		exportRunner.generateRelationshipFilesFromTransformedClassifierResult(transformedSnapshotFilename);
+		exportRunner.generateRelationshipFiles(new ClassificationResult(transformedSnapshotFilename, true));
 	}
 	
 	

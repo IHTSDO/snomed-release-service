@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	sourceId	destinationId	relationshipGroup	typeId	characteristicTypeId	modifierId
+7346485022	20180131	1	900000000000207008	741232009	123027009	0	704323007	900000000000010007	900000000000451002

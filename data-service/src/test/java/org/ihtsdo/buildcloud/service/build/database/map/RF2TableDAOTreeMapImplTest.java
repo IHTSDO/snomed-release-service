@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -19,13 +19,13 @@ import com.google.common.collect.Lists;
 
 public class RF2TableDAOTreeMapImplTest {
 
-	private RF2TableDAO dao;
+	private RF2TableExportDAO dao;
 	private Map<String, List<Integer>> customRefsetCompositeKeys;
 
 	@Before
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
-		dao = new RF2TableDAOTreeMapImpl(customRefsetCompositeKeys);
+		dao = new RF2TableExportDAOImpl(customRefsetCompositeKeys);
 	}
 
 	@Test

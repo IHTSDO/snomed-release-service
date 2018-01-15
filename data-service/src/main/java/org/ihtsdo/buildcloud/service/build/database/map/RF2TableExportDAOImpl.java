@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.database.DatabasePopulatorException;
-import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.service.build.database.RF2TableResults;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -28,12 +28,11 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: This class wants renaming to RF2TableExport .. we should probably remove the Hsql implementation as it's not used and out of date.
-public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
+public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 
 	public static final Pattern REFSET_ID_PATTERN = Pattern.compile("[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t([^\t]*).*");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOTreeMapImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableExportDAOImpl.class);
 
 	private final SchemaFactory schemaFactory;
 
@@ -49,7 +48,7 @@ public class RF2TableDAOTreeMapImpl implements RF2TableDAO {
 
 	private final ReferenceSetCompositeKeyPatternFactory refsetCompositeKeyPatternFactory;
 
-	public RF2TableDAOTreeMapImpl(final Map<String, List<Integer>> customRefsetCompositeKeys) {
+	public RF2TableExportDAOImpl(final Map<String, List<Integer>> customRefsetCompositeKeys) {
 		schemaFactory = new SchemaFactory();
 		table = new TreeMap<>();
 		refsetCompositeKeyPatternCache = new HashMap<>();

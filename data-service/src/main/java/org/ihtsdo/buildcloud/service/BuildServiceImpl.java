@@ -59,6 +59,7 @@ import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient;
 import org.ihtsdo.buildcloud.service.classifier.RF2ClassifierServiceFactory;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
+import org.ihtsdo.buildcloud.service.helper.RelationshipHelper;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
@@ -92,6 +93,8 @@ public class BuildServiceImpl implements BuildService {
 	private static final String HYPHEN = "-";
 
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
+	
+	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 
@@ -126,14 +129,7 @@ public class BuildServiceImpl implements BuildService {
 	private Boolean localRvf;
 
 	@Autowired
-	private UUIDGenerator uuidGenerator;
-
-	@Autowired
 	private RF2ClassifierService rf2ClassifierService;
-	
-
-	@Autowired
-	private RelationshipHelper relationshipHelper;
 
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -188,14 +184,11 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.debug("Performing fixup on input file prior to input file validation");
 		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
-		
-		final String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
-
+		final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
 		if (statedRelationshipInputFile == null) {
 			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
 			return;
 		}
-
 		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
@@ -217,6 +210,17 @@ public class BuildServiceImpl implements BuildService {
 		dao.putInputFile(build, tempFile, false);
 		tempFile.delete();
 		tempDir.delete();
+	}
+
+	private String getStatedRelationshipInputFile(Build build) {
+		//get a list of input file names
+		final List<String> inputfilesList = dao.listInputFileNames(build);
+		for (final String inputFileName : inputfilesList) { 
+			if (inputFileName.contains(STATED_RELATIONSHIP)) {
+				return inputFileName;
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -392,7 +396,7 @@ public class BuildServiceImpl implements BuildService {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
-			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 			
 			//filter out additional relationships from the transformed delta
@@ -403,11 +407,9 @@ public class BuildServiceImpl implements BuildService {
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
-				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
+				// Run classifier
 				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-				if (result != null) {
-					generator.generateRelationshipFiles(result);
-				}
+				generator.generateRelationshipFiles(result);
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
