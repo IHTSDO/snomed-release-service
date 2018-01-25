@@ -29,8 +29,6 @@
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
-		<module>web</module>
-		
 	</modules>
 
 	<scm>
