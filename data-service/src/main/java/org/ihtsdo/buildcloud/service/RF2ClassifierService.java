@@ -40,7 +40,8 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import static org.ihtsdo.snomed.util.rf2.schema.SchemaFactory.REL_2;
+import static org.ihtsdo.snomed.util.rf2.schema.SchemaFactory.SCT_2;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,12 @@ import com.google.common.io.Files;
 
 public class RF2ClassifierService {
 	
+	private static final String REL2_OWL_AXIOM_REFSET_DELTA = "rel2_sRefset_OWLAxiomReferenceSetDelta";
+
+	private static final String REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA = "rel2_cissccRefset_MRCMAttributeDomainDelta";
+
+	private static final String EQUIVALENT_CONCEPT = "der2_sRefset_EquivalentConceptSimpleMapDelta";
+
 	private static final String CLASSIFIER_RESULT = "_classifier_result.txt";
 
 	private static final String RECONCILED = "_reconciled.txt";
@@ -176,7 +183,7 @@ public class RF2ClassifierService {
 	}
 
 	private ClassifierFilesPojo constructClassifierFilesPojo(Map<String, TableSchema> inputFileSchemaMap) {
-		ClassifierFilesPojo classifierFiles = new ClassifierFilesPojo();
+		ClassifierFilesPojo pojo = new ClassifierFilesPojo();
 		for (final String inputFilename : inputFileSchemaMap.keySet()) {
 			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
 			if (inputFileSchema == null) {
@@ -184,12 +191,18 @@ public class RF2ClassifierService {
 				continue;
 			}
 			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
-				classifierFiles.getConceptSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(DELTA, SNAPSHOT));
+				pojo.getConceptSnapshotFilenames().add(inputFilename.replace(REL_2, SCT_2).replace(DELTA, SNAPSHOT));
 			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
-				classifierFiles.getStatedRelationshipSnapshotFilenames().add(inputFilename.replace(SchemaFactory.REL_2, SchemaFactory.SCT_2).replace(DELTA, SNAPSHOT));
+				pojo.getStatedRelationshipSnapshotFilenames().add(inputFilename.replace(REL_2, SCT_2).replace(DELTA, SNAPSHOT));
+			} else if (inputFileSchema.getComponentType() == ComponentType.REFSET) {
+				if (inputFilename.startsWith(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA)) {
+					pojo.setMrcmAttributeDomainDeltaFilename(inputFilename.replace(REL_2, DER2));
+				} else if (inputFilename.startsWith(REL2_OWL_AXIOM_REFSET_DELTA)) {
+					pojo.setOwlAxiomRefsetDeltaFilename(inputFilename.replace(REL_2, DER2));
+				}
 			}
 		}
-		return classifierFiles;
+		return pojo;
 	}
 
 	private String getInferredFilename(ClassifierFilesPojo classifierFiles, boolean isExternal) {
@@ -223,8 +236,8 @@ public class RF2ClassifierService {
 				throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult);
 			}
 			for (File file : classifierResult.listFiles()) {
-			  if (file.getName().endsWith(".txt")) {
-					if (file.getName().startsWith("sct2_Relationship_Delta")) {
+			  if (file.getName().endsWith(TXT_FILE_EXTENSION)) {
+					if (file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 						File updatedFile = checkAndRemoveAnyExtaEmptyFields(file);
 						if (updatedFile != null) {
 							inferredResult = updatedFile;
@@ -232,7 +245,7 @@ public class RF2ClassifierService {
 							inferredResult = file;
 						}
 					}
-					if (file.getName().startsWith("der2_sRefset_EquivalentConceptSimpleMapDelta")) {
+					if (file.getName().startsWith(EQUIVALENT_CONCEPT)) {
 						FileUtils.copyFile(file, equivalencyReportOutputFile);
 					}
 			  }
@@ -251,7 +264,7 @@ public class RF2ClassifierService {
 	}
 
 	private File checkAndRemoveAnyExtaEmptyFields(File rf2InferredDelta) throws FileNotFoundException, IOException {
-		File updated = new File(rf2InferredDelta.getParentFile(), rf2InferredDelta.getName().replaceAll(".txt", "_updated.txt"));
+		File updated = new File(rf2InferredDelta.getParentFile(), rf2InferredDelta.getName().replaceAll(TXT_FILE_EXTENSION, "_updated.txt"));
 		boolean wrongDataFound = false;
 		try (BufferedReader reader = new BufferedReader(new FileReader(rf2InferredDelta));
 			 BufferedWriter writer = new BufferedWriter(new FileWriter(updated))) {
@@ -283,16 +296,24 @@ public class RF2ClassifierService {
 		}
 	}
 
-	private File createRf2DeltaArchiveForClassifier(Build build, ClassifierFilesPojo classifierFiles, File tempDir) throws ProcessingException {
+	private File createRf2DeltaArchiveForClassifier(Build build, ClassifierFilesPojo pojo, File tempDir) throws ProcessingException {
 		//external classifier expects the delta files for concept, stated relationship, empty relationship and option MRCM attribute domain refset
 		File rf2DeltaZipFile = new File(tempDir, "rf2Delta_" + build.getId() + ".zip");
 		List<String> rf2DeltaFileList = new ArrayList<>();
-		for ( String filename : classifierFiles.getStatedRelationshipSnapshotFilenames()) {
+		for ( String filename : pojo.getStatedRelationshipSnapshotFilenames()) {
 			rf2DeltaFileList.add(filename.replace(SNAPSHOT, DELTA));
 		}
 		
-		for ( String filename : classifierFiles.getConceptSnapshotFilenames()) {
+		for ( String filename : pojo.getConceptSnapshotFilenames()) {
 			rf2DeltaFileList.add(filename.replace(SNAPSHOT, DELTA));
+		}
+		
+		if (pojo.getMrcmAttributeDomainDeltaFilename() != null) {
+			rf2DeltaFileList.add(pojo.getMrcmAttributeDomainDeltaFilename());
+		}
+		
+		if (pojo.getOwlAxiomRefsetDeltaFilename() != null) {
+			rf2DeltaFileList.add(pojo.getOwlAxiomRefsetDeltaFilename());
 		}
 		
 		File deltaTempDir = Files.createTempDir();
@@ -672,12 +693,16 @@ public class RF2ClassifierService {
 	}	
 	
 	private static class ClassifierFilesPojo {
-	
+		//need snapshot files for cycle check and internal classifier
 		private final List<String> conceptSnapshotFilenames;
 		private final List<String> statedRelationshipSnapshotFilenames;
+		//only required for external classifier
+		private String owlAxiomRefsetDeltaFilename;
+		private String mrcmAttributeDomainDeltaFilename;
 		private List<String> localPreviousInferredRelationshipFilePaths;
 		private List<String> localConceptFilePaths;
 		private List<String> localStatedRelationshipFilePaths;
+		
 
 		ClassifierFilesPojo() {
 			conceptSnapshotFilenames = new ArrayList<>();
@@ -721,6 +746,22 @@ public class RF2ClassifierService {
 
 		public List<String> getStatedRelationshipSnapshotFilenames() {
 			return statedRelationshipSnapshotFilenames;
+		}
+
+		public String getOwlAxiomRefsetDeltaFilename() {
+			return owlAxiomRefsetDeltaFilename;
+		}
+
+		public void setOwlAxiomRefsetDeltaFilename(String owlAxiomRefsetDeltaFilename) {
+			this.owlAxiomRefsetDeltaFilename = owlAxiomRefsetDeltaFilename;
+		}
+
+		public String getMrcmAttributeDomainDeltaFilename() {
+			return mrcmAttributeDomainDeltaFilename;
+		}
+
+		public void setMrcmAttributeDomainDeltaFilename(String mrcmAttributeDomainDeltaFilename) {
+			this.mrcmAttributeDomainDeltaFilename = mrcmAttributeDomainDeltaFilename;
 		}
 	}
 }
