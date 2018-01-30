@@ -44,6 +44,7 @@ public class RF2ClassifierServiceTestHarness {
 	
 	@Before
 	public void setUp() {
+		//Add {Root_Dir}/snomed-release-service/data-service/release
 		internationalCenter = new ReleaseCenter("International Release Center", "international");
 		usReleaseCenter = new ReleaseCenter("US release center", "us");
 	}
@@ -77,13 +78,22 @@ public class RF2ClassifierServiceTestHarness {
 				rootDir + "sct2_StatedRelationship_Delta_INT_20180131.txt",
 				rootDir + "sct2_StatedRelationship_Snapshot_INT_20180131.txt",
 				rootDir + "sct2_Concept_Snapshot_INT_20180131.txt",
-				rootDir + "stc2_Relationship_Delta_INT_20180131.txt");
+				rootDir + "stc2_Relationship_Delta_INT_20180131.txt",
+				rootDir + "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
+				rootDir + "der2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt");
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_INT_20180131.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_INT_20180131"));
 		
 		inputFileSchemaMap.put("rel2_Concept_Delta_INT_20180131.txt",
 				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Delta_INT_20180131"));
+		
+		inputFileSchemaMap.put("rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
+				new TableSchema(ComponentType.REFSET, "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt"));
+		
+		inputFileSchemaMap.put("rel2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt",
+				new TableSchema(ComponentType.REFSET, "der2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt"));
+		
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		assertNotNull(result);
 		assertTrue(!result.isSnapshot());
