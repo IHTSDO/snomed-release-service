@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>1.2.10</version>
+	<version>1.2.11</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -29,8 +29,6 @@
 		<module>model</module>
 		<module>data-service</module>
 		<module>api</module>
-		<module>web</module>
-		
 	</modules>
 
 	<scm>
