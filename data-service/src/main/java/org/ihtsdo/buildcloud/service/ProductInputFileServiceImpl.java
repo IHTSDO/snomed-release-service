@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
@@ -15,15 +14,13 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
@@ -35,8 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.xml.bind.JAXBException;
 import java.io.File;
 
-import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +41,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -357,10 +353,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
 			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException {
 		try {
-			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
+			/*File exportFile = termServerService.export(null, requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
 					requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory(),
-					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished(), requestConfig.getCodeSystemShortName());
+					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished(), requestConfig.getCodeSystemShortName());*/
+			File exportFile = termServerService.export(requestConfig.getTermServerUrl(), requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
 			try {
+				//Test whether the exported file is really a zip file
 				ZipFile zipFile = new ZipFile(exportFile);
 				FileInputStream fileInputStream = new FileInputStream(exportFile);
 				putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());

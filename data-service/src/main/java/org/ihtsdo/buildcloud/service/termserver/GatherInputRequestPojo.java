@@ -6,19 +6,28 @@ import java.util.Set;
 
 public class GatherInputRequestPojo {
 
+	private String termServerUrl;
 	private String effectiveDate;
 	private SnowOwlRestClient.ExportCategory exportCategory;
 	private String branchPath;
+	private boolean loadTermServerData;
+	private boolean loadExternalRefsetData;
 	private Set<String> excludedModuleIds;
-	private String namespaceId;
+	/*private String namespaceId;
 	private String startEffectiveDate;
 	private String endEffectiveDate;
 	private boolean includeUnpublished = false;
-	private boolean loadTermServerData;
-	private boolean loadExternalRefsetData;
-	private String codeSystemShortName;
+	private String codeSystemShortName;*/
 
 	public GatherInputRequestPojo() {
+	}
+
+	public String getTermServerUrl() {
+		return termServerUrl;
+	}
+
+	public void setTermServerUrl(String termServerUrl) {
+		this.termServerUrl = termServerUrl;
 	}
 
 	public String getEffectiveDate() {
@@ -53,22 +62,6 @@ public class GatherInputRequestPojo {
 		this.excludedModuleIds = excludedModuleIds;
 	}
 
-	public String getNamespaceId() {
-		return namespaceId;
-	}
-
-	public void setNamespaceId(String namespaceId) {
-		this.namespaceId = namespaceId;
-	}
-
-	public boolean isIncludeUnpublished() {
-		return includeUnpublished;
-	}
-
-	public void setIncludeUnpublished(boolean includeUnpublished) {
-		this.includeUnpublished = includeUnpublished;
-	}
-
 	public boolean isLoadTermServerData() {
 		return loadTermServerData;
 	}
@@ -84,6 +77,23 @@ public class GatherInputRequestPojo {
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
 		this.loadExternalRefsetData = loadExternalRefsetData;
 	}
+
+	/*public String getNamespaceId() {
+		return namespaceId;
+	}
+
+	public void setNamespaceId(String namespaceId) {
+		this.namespaceId = namespaceId;
+	}
+
+	public boolean isIncludeUnpublished() {
+		return includeUnpublished;
+	}
+
+	public void setIncludeUnpublished(boolean includeUnpublished) {
+		this.includeUnpublished = includeUnpublished;
+	}
+
 
 	public String getStartEffectiveDate() {
 		return startEffectiveDate;
@@ -107,19 +117,20 @@ public class GatherInputRequestPojo {
 
 	public void setCodeSystemShortName(String codeSystemShortName) {
 		this.codeSystemShortName = codeSystemShortName;
-	}
+	}*/
 
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
+				", termServerUrl='" + termServerUrl + '\''+
 				", effectiveDate='" + effectiveDate + '\'' +
-				", startEffectiveDate='" + startEffectiveDate + '\'' +
-				", EndEffectiveDate='" + endEffectiveDate + '\'' +
+				/*", startEffectiveDate='" + startEffectiveDate + '\'' +
+				", EndEffectiveDate='" + endEffectiveDate + '\'' +*/
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
-				", namespaceId=" + namespaceId +
-				", includeUnpublished=" + includeUnpublished +
+				/*", namespaceId=" + namespaceId +
+				", includeUnpublished=" + includeUnpublished +*/
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				'}';
