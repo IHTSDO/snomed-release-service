@@ -27,7 +27,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -76,7 +75,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
+        when(termServerService.export(null, Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
                 Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
@@ -95,7 +94,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
+        when(termServerService.export(null, Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
                 Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
                 Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();

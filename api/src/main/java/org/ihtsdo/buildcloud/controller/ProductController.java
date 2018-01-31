@@ -1,9 +1,12 @@
 package org.ihtsdo.buildcloud.controller;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.service.ReleaseService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -18,12 +21,15 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.mangofactory.swagger.annotations.ApiIgnore;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.bind.JAXBException;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
@@ -32,6 +38,9 @@ public class ProductController {
 
 	@Autowired
 	private ProductService productService;
+
+	@Autowired
+	private ReleaseService releaseService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -110,7 +119,6 @@ public class ProductController {
 	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
-
 		Product product = productService.update(releaseCenterKey, productKey, json);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
@@ -118,4 +126,13 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 
+
+	@RequestMapping(value = "/{productKey}/release", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
+	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+													@RequestBody GatherInputRequestPojo buildConfig) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
+		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig);
+		return "Build Triggered !";
+	}
 }
