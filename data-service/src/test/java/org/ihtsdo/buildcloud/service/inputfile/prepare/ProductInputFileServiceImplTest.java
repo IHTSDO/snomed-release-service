@@ -512,42 +512,5 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     	}
     }
 
-    @Test
-    public void testExportFile() throws BusinessServiceException, IOException {
-        SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://authoring.ihtsdotools.org/snowowl","ims-ihtsdo=dQ0DEYv9OR1kTScmT00K4w00");
-        HashSet<String> excluded = new HashSet<>();
-        excluded.add("715515008");
-        Set<String> moduleIds = buildModulesList(snowOwlRestClient, "MAIN/RFB180131A/RFJ/RFJ-5", excluded);
-        snowOwlRestClient.setFlatIndexExportStyle(false);
-        File file = snowOwlRestClient.export("MAIN/RFB180131A/RFJ/RFJ-5","20180131", moduleIds, SnowOwlRestClient.ExportCategory.FEEDBACK_FIX, SnowOwlRestClient.ExportType.DELTA);
-        InputStream inputStream = FileUtils.openInputStream(file);
-        FileUtils.copyInputStreamToFile(inputStream, new File("D:/SNOMED/Int_20180131/resources.zip"));
-    }
-
-    private Set<String> buildModulesList(SnowOwlRestClient snowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
-        // If any modules are excluded build a list of modules to include
-        Set<String> exportModuleIds = null;
-        if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
-            try {
-                Set<String> allModules = snowOwlRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
-                allModules.removeAll(excludedModuleIds);
-                exportModuleIds = new HashSet<>();
-                exportModuleIds.addAll(allModules);
-                Logger logger = LoggerFactory.getLogger(this.getClass());
-                logger.info("Excluded modules are {}, included modules are {} for release on {}", excludedModuleIds, exportModuleIds, branchPath);
-            } catch (RestClientException e) {
-                throw new BusinessServiceException("Failed to build list of modules for export.", e);
-            }
-        }
-        return exportModuleIds;
-    }
-
-    @Test
-    public void testGetConcepts() throws RestClientException {
-        SnowOwlRestClient snowOwlRestClient = new SnowOwlRestClient("https://dev-authoring.ihtsdotools.org/snowowl","dev-ims-ihtsdo=8eMqcEANssg9DKPzM0Au9g00");
-        Set<String> allModules = snowOwlRestClient.eclQuery("MAIN", "<<" + Concepts.MODULE, 1000);
-        System.out.println(allModules.size());
-
-    }
 
 }
