@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.util.regex.Matcher;
 
 import static org.mockito.Mockito.*;
 
@@ -75,9 +76,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
-        when(termServerService.export(null, Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
-                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
-                Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(testArchive);
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         FileInputStream fileInputStream = new FileInputStream(testArchive);
@@ -94,9 +93,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
-        when(termServerService.export(null, Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(),
-                Matchers.any(SnowOwlRestClient.ExportCategory.class), Matchers.any(SnowOwlRestClient.ExportType.class),
-                Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyString())).thenReturn(failedExportArchive);
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles

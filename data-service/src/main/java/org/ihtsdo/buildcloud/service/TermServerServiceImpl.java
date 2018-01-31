@@ -38,7 +38,7 @@ public class TermServerServiceImpl implements TermServerService{
     private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
 
 
-    public File export(String snowowlUrl, String branchPath, String startEffectiveDate, String endEffectiveDate, String effectiveDate, Set<String> excludedModuleIds, SnowOwlRestClient.ExportCategory exportCategory,
+   /* public File export(String snowowlUrl, String branchPath, String startEffectiveDate, String endEffectiveDate, String effectiveDate, Set<String> excludedModuleIds, SnowOwlRestClient.ExportCategory exportCategory,
                        SnowOwlRestClient.ExportType exportType, String namespaceId, Boolean includeUnpublished, String codeSystemShortName) throws BusinessServiceException, FileNotFoundException {
         String snowOwlUrl = snowowlUrl + snowowlPath;
         SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId);
@@ -57,7 +57,7 @@ public class TermServerServiceImpl implements TermServerService{
             configurationBuilder.addModuleIds(excludedModuleIds);
         }
         return snowOwlRestClient.export(configurationBuilder);
-    }
+    }*/
     
 
     @Override
