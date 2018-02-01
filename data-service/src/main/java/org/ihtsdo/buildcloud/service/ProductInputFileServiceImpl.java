@@ -333,9 +333,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException {
-		if(!requestConfig.isLoadTermServerData() && !requestConfig.isLoadExternalRefsetData()) {
-			throw new BusinessServiceException("Either loadTermServerData or loadExternalRefsetData must be true");
-		}
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		Product product = getProduct(centerKey, productKey);
 		dao.persistSourcesGatherReport(product, inputGatherReport);
