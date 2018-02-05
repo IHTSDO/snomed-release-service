@@ -23,7 +23,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	}
 
 	@Test
-	public void testMultipleReleases() throws Exception {
+	public void testCoreMultipleReleases() throws Exception {
 		firstTimeRelease();
 
 		Thread.sleep(1000);
@@ -56,7 +56,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Language/der2_cRefset_LanguageFull-en_INT_" + effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Map/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Map/der2_sRefset_SimpleMapFull_INT_" + effectiveTime2 + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Map/der2_Refset_SimpleFull_INT_" + effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Content/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_" + effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+ effectiveTime2 +".txt\n" +
@@ -69,7 +70,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Map/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Map/der2_sRefset_SimpleMapSnapshot_INT_" + effectiveTime2 + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Map/der2_Refset_SimpleSnapshot_INT_" + effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Content/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Content/der2_Refset_SimpleSnapshot_INT_" + effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+ effectiveTime2 +".txt\n" +
@@ -82,7 +84,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Language/der2_cRefset_LanguageDelta-en_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Map/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Map/der2_sRefset_SimpleMapDelta_INT_" + effectiveTime2 + ".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Map/der2_Refset_SimpleDelta_INT_" + effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Content/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_" + effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime2 +".txt\n" +

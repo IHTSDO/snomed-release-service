@@ -9,6 +9,8 @@
 					</folder>
 					<folder Name="Map">
 						<file Name="der2_sRefset_SimpleMapFull_INT_20140731.txt"/>
+					</folder>
+					<folder Name ="Content">
 						<file Name="der2_Refset_SimpleFull_INT_20140731.txt"/>
 					</folder>
 				</folder>
@@ -27,6 +29,8 @@
 					</folder>
 					<folder Name="Map">
 						<file Name="der2_sRefset_SimpleMapSnapshot_INT_20140731.txt"/>
+					</folder>
+					<folder Name = "Content">
 						<file Name="der2_Refset_SimpleSnapshot_INT_20140731.txt"/>
 					</folder>
 				</folder>
@@ -45,6 +49,8 @@
 					</folder>
 					<folder Name="Map">
 						<file Name="der2_sRefset_SimpleMapDelta_INT_20140731.txt"/>
+					</folder>
+					<folder Name = "Content">
 						<file Name="der2_Refset_SimpleDelta_INT_20140731.txt"/>
 					</folder>
 				</folder>

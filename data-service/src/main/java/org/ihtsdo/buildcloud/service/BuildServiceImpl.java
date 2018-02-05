@@ -54,12 +54,8 @@ import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
-import org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient;
-import org.ihtsdo.buildcloud.service.classifier.RF2ClassifierServiceFactory;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
-import org.ihtsdo.buildcloud.service.helper.RelationshipHelper;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
