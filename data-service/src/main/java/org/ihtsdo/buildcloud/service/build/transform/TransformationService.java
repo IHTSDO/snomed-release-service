@@ -64,9 +64,6 @@ public class TransformationService {
 	private ModuleResolverService moduleResolverService;
 
 	@Autowired
-	private BuildDAO buildDAO;
-
-	@Autowired
 	private String coreModuleSctid;
 
 	@Autowired
@@ -120,7 +117,7 @@ public class TransformationService {
 				if (!configuration.isFirstTimeRelease()) {
 					final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 					try {
-						final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						final InputStream statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 						if (statedRelationshipSnapshotStream != null) {
 							final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 

@@ -13,17 +13,11 @@ import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Resource;
-
-import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.build.transform.RepeatableRelationshipUUIDTransform;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.io.Files;
 
