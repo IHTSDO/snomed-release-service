@@ -411,9 +411,9 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 		if (filePaths.isEmpty()) {
-			LOGGER.error("No files found in the previous published pakcage", previousPublishedPackage);
+			LOGGER.error("No files found in the previous published package", previousPublishedPackage);
 		} else {
-			LOGGER.warn("No file found in the previous published pakcage {} containing {}", previousPublishedPackage, targetFileNameStripped);
+			LOGGER.warn("No file found in the previous published package {} containing {}", previousPublishedPackage, targetFileNameStripped);
 		}
 		return null;
 	}

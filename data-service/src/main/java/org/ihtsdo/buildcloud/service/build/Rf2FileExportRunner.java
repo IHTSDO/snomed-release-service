@@ -25,7 +25,6 @@ import org.ihtsdo.buildcloud.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.helper.StatTimer;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;

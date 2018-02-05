@@ -30,4 +30,11 @@ public class ClassificationResult {
 	public void setResultFilename(String resultFilename) {
 		this.resultFilename = resultFilename;
 	}
+
+	@Override
+	public String toString() {
+		return "ClassificationResult [resultFilename=" + resultFilename + ", isSnapshotFile=" + isSnapshotFile
+				+ ", extraResultFileName=" + extraResultFileName + "]";
+	}
+	
 }
