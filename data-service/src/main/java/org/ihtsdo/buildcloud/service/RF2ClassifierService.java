@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.service;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -402,7 +401,8 @@ public class RF2ClassifierService {
 		}
 		
 		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
-		if (extConfig != null && (!extConfig.isReleaseAsAnEdition())) {
+		if (extConfig != null) {
+			//need for all extension and edition release
 			String dependencyReleaseInferredSnapshot = downloadDependencyInferredRelationshipSnapshot(tempDir,build);
 			previousInferredRelationshipFilePaths.add(dependencyReleaseInferredSnapshot);
 		}

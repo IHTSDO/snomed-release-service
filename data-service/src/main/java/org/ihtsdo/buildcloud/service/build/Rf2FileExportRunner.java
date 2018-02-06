@@ -211,7 +211,6 @@ public class Rf2FileExportRunner {
 	}
 
 	private InputStream getEquivalentInternationalDelta(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
-		//der2_cRefset_AttributeValueDelta_US1000124_20160901.txt
 		if (configuration.isBetaRelease() && transformedDeltaDataFile.startsWith(BuildConfiguration.BETA_PREFIX)) {
 			transformedDeltaDataFile = transformedDeltaDataFile.substring(1);
 		}
