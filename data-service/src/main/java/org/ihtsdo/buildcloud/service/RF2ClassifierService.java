@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -119,6 +120,7 @@ public class RF2ClassifierService {
 			if (build.getConfiguration().useExternalClassifier() && INTERNATIONAL_CORE_MODULE_ID.equals(coreModuleSctid)) {
 				// load moduleIdByConcept map
 				String conceptSnapshot = classifierFiles.getConceptSnapshotFilenames().get(0);
+				conceptSnapshot = build.getConfiguration().isBetaRelease() ? BETA_RELEASE_PREFIX + conceptSnapshot : conceptSnapshot;
 				conceptToModuleIdMap = RelationshipHelper.buildConceptToModuleIdMap(buildDAO.getOutputFileInputStream(build, conceptSnapshot));
 				
 				// find active concepts with module id changed since last release.
@@ -322,7 +324,7 @@ public class RF2ClassifierService {
 		//add empty relationship delta as the external classifier currently requires it to be present
 		String inferredDeltaFile = null;
 		try {
-			inferredDeltaFile = createEmptyRelationshipDelta(deltaTempDir, rf2DeltaFileList);
+			inferredDeltaFile = createEmptyRelationshipDelta(deltaTempDir);
 		} catch (IOException e) {
 			throw new ProcessingException("Error occured when creating empty relaitonship delta file.", e);
 		}
@@ -338,12 +340,12 @@ public class RF2ClassifierService {
 		
 	}
 
-	private String createEmptyRelationshipDelta(File deltaTempDir, List<String> rf2DeltaFileList) throws IOException {
+	private String createEmptyRelationshipDelta(File deltaTempDir) throws IOException {
 		String inferredDelta = null;
-		for (String filename : rf2DeltaFileList) {
-			if (filename.contains(STATED)) {
-				inferredDelta = filename.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString());
-				File statedFile = new File(deltaTempDir, filename);
+		for (File file : deltaTempDir.listFiles() ) {
+			if (file.getName().endsWith(".txt") && file.getName().contains(STATED)) {
+				inferredDelta = file.getName().replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString());
+				File statedFile = new File(deltaTempDir, file.getName());
 				File inferredDeltaFile = new File(deltaTempDir, inferredDelta);
 				try (BufferedWriter writer = new BufferedWriter(new FileWriter(inferredDeltaFile));
 					 BufferedReader reader = new BufferedReader(new FileReader(statedFile))) {
@@ -654,10 +656,10 @@ public class RF2ClassifierService {
 	}
 	
 
-	private List<String> downloadFiles(final Build build, final File tempDir, final List<String> filenameLists) throws ProcessingException {
+	private List<String> downloadFiles(final Build build, final File tempDir, final List<String> filenameList) throws ProcessingException {
 		final List<String> localFilePaths = new ArrayList<>();
 		boolean isBeta = build.getConfiguration().isBetaRelease();
-		for (String downloadFilename : filenameLists) {
+		for (String downloadFilename : filenameList) {
 			if (isBeta) {
 				downloadFilename = BETA_RELEASE_PREFIX + downloadFilename;
 			}
