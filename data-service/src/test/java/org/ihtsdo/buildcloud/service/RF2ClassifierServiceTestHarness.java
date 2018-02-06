@@ -5,11 +5,8 @@ import static org.junit.Assert.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +19,6 @@ import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.Before;
@@ -127,14 +123,15 @@ public class RF2ClassifierServiceTestHarness {
 		File previousPublished = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20170731T150000Z.zip");
 		assertTrue(previousPublished.exists());
 		Build build = createInternationalBuild("20180131", "classification_test", previousPublished, true);
+		build.getConfiguration().setBetaRelease(true);
 		String rootDir = "release/CS_integration_test/";
-		prepareTestFiles(build, rootDir + "sct2_Concept_Delta_INT_20180131.txt", 
-				rootDir + "sct2_StatedRelationship_Delta_INT_20180131.txt",
-				rootDir + "sct2_StatedRelationship_Snapshot_INT_20180131.txt",
-				rootDir + "sct2_Concept_Snapshot_INT_20180131.txt",
-				rootDir + "stc2_Relationship_Delta_INT_20180131.txt",
-				rootDir + "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
-				rootDir + "der2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt");
+		prepareTestFiles(build, rootDir + "xsct2_Concept_Delta_INT_20180131.txt", 
+				rootDir + "xsct2_StatedRelationship_Delta_INT_20180131.txt",
+				rootDir + "xsct2_StatedRelationship_Snapshot_INT_20180131.txt",
+				rootDir + "xsct2_Concept_Snapshot_INT_20180131.txt",
+				rootDir + "xsct2_Relationship_Delta_INT_20180131.txt",
+				rootDir + "xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
+				rootDir + "xder2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt");
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_INT_20180131.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_INT_20180131"));
@@ -152,6 +149,7 @@ public class RF2ClassifierServiceTestHarness {
 		assertNotNull(result);
 		assertTrue(!result.isSnapshot());
 		System.out.println(result.getResultFilename());
+		assertEquals("xsct2_Relationship_Delta_INT_20180131.txt", result.getResultFilename());
 	}
 	
 	private void prepareTestFiles(Build build, String ... filenames) throws IOException {
