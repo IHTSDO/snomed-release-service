@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +45,9 @@ public class ProductController {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
+
+	@Autowired
+	private SimpMessagingTemplate messagingTemplate;
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds"};
 
@@ -132,7 +136,9 @@ public class ProductController {
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
 	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													@RequestBody GatherInputRequestPojo buildConfig) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
+
 		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig);
 		return "Build Triggered !";
 	}
+
 }

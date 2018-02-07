@@ -1,28 +1,33 @@
 <html>
-    <head>
-            <title>Chat WebSocket</title>
-            <script src="./libs/sockjs.min.js"></script>
-            <script src="./libs/stomp.min.js"></script>
-            <script type="text/javascript">
+<head></head>
+<body onload="disconnect()"><title>Chat WebSocket</title>
+<script src="./libs/sockjs.min.js"></script>
+<script src="./libs/stomp.min.js"></script>
+<script src="./libs/moment-min.js"></script>
+<script type="text/javascript">
    var stompClient = null;
+   var errorCount = 0;
 
    function setConnected(connected) {
       document.getElementById('connect').disabled = connected;
       document.getElementById('disconnect').disabled = !connected;
-      document.getElementById('conversationDiv').style.visibility
-         = connected ? 'visible' : 'hidden';
       document.getElementById('response').innerHTML = '';
    }
 
    function connect() {
-      var socket = new SockJS('/chat');
+      var from = document.getElementById('from').value;
+      var socket = new SockJS('/api/v1/ws');
       stompClient = Stomp.over(socket);
-      stompClient.connect({}, function(frame) {
+      stompClient.connect({},
+         function(frame) {
          setConnected(true);
          console.log('Connected: ' + frame);
-         stompClient.subscribe('/topic/messages', function(messageOutput) {
+         stompClient.subscribe('/queue/messages.' + from, function(messageOutput) {
             showMessageOutput(JSON.parse(messageOutput.body));
+            //showMessageOutput(messageOutput.body);
          });
+      }, function(error) {
+         console.log(error);
       });
    }
 
@@ -34,41 +39,33 @@
       console.log("Disconnected");
    }
 
-   function sendMessage() {
-      var from = document.getElementById('from').value;
-      var text = document.getElementById('text').value;
-      stompClient.send("/app/chat", {}, text);
-   }
-
    function showMessageOutput(messageOutput) {
       var response = document.getElementById('response');
       var p = document.createElement('p');
       p.style.wordWrap = 'break-word';
-      p.appendChild(document.createTextNode(messageOutput.from + ": "
-         + messageOutput.text + " (" + messageOutput.time + ")"));
+      var level = messageOutput.level;
+      if(level === "ERROR") {
+         p.style.color = 'red';
+         errorCount++;
+         document.getElementById('errorCount').innerHTML = errorCount;
+      }
+      var time = moment(messageOutput.time).format('DD/MM/YYYY HH:mm:ss');
+      p.appendChild(document.createTextNode(time + " - [" + messageOutput.level + "] - " + messageOutput.message));
       response.appendChild(p);
+      window.scrollTo(0,document.body.scrollHeight);
    }
 </script>
-        </head>
-    <body onload="disconnect()">
-        <div>
-                <div>
-                    <input type="text" id="from" placeholder="Choose a nickname"/>
-                </div>
-                <br />
-                <div>
-                    <button id="connect" onclick="connect();">Connect</button>
-                    <button id="disconnect" disabled="disabled" onclick="disconnect();">
-                        Disconnect
-                    </button>
-                </div>
-                <br />
-                <div id="conversationDiv">
-                    <input type="text" id="text" placeholder="Write a message..."/>
-                    <button id="sendMessage" onclick="sendMessage();">Send</button>
-                    <p id="response"></p>
-                </div>
-            </div>
- 
-    </body>
+<div>
+    <div><input type="text" id="from" placeholder="Tracker Id"></div>
+    <br>
+    <p id="response"></p></div>
+    <div>Errors: <span id="errorCount">0</span></div>
+    <div>
+        <button id="connect" onclick="connect();">Connect</button>
+        <button id="disconnect" disabled="" onclick="disconnect();">Disconnect</button>
+    </div>
+    <br>
+
+</div>
+</body>
 </html>
