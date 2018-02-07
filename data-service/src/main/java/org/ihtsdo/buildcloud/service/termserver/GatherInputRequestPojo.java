@@ -6,6 +6,7 @@ import java.util.Set;
 
 public class GatherInputRequestPojo {
 
+	private String trackerId;
 	private String termServerUrl;
 	private String effectiveDate;
 	private SnowOwlRestClient.ExportCategory exportCategory;
@@ -76,6 +77,14 @@ public class GatherInputRequestPojo {
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
 		this.loadExternalRefsetData = loadExternalRefsetData;
+	}
+
+	public String getTrackerId() {
+		return trackerId;
+	}
+
+	public void setTrackerId(String trackerId) {
+		this.trackerId = trackerId;
 	}
 
 	/*public String getNamespaceId() {

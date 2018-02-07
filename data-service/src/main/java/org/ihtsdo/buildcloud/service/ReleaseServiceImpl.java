@@ -1,8 +1,11 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
+import org.apache.log4j.Appender;
+import org.apache.log4j.LogManager;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.service.helper.WebSocketLogAppender;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -13,7 +16,9 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -34,13 +39,19 @@ public class ReleaseServiceImpl implements ReleaseService{
     @Autowired
     AuthenticationService authenticationService;
 
+    @Autowired
+    SimpMessagingTemplate messagingTemplate;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
     
     @Override
     @Async("securityContextAsyncTaskExecutor")
     public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
+        String trackerId = gatherInputRequestPojo.getTrackerId();
         try {
+            MDC.put("trackerId", trackerId);
+            addAppenderToLogger(trackerId, messagingTemplate);
             final User anonymousSubject = authenticationService.getAnonymousSubject();
             SecurityHelper.setUser(anonymousSubject);
             //Gather all files in term server and externally maintain buckets if specified to source directories
@@ -71,7 +82,24 @@ public class ReleaseServiceImpl implements ReleaseService{
         } catch (Exception e) {
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());
             throw e;
+        } finally {
+            MDC.remove("trackerId");
+            removeAppenderFromLogger(trackerId);
         }
 
+    }
+
+    private void addAppenderToLogger(String trackerId, SimpMessagingTemplate messagingTemplate) {
+        org.apache.log4j.Logger logger = LogManager.getLogger("org.ihtsdo");
+        if(logger.getAppender("wsa_" + trackerId) == null) {
+            WebSocketLogAppender webSocketLogAppender = new WebSocketLogAppender(messagingTemplate, trackerId);
+            webSocketLogAppender.setName("wsa_"+ trackerId);
+            logger.addAppender(webSocketLogAppender);
+        }
+    }
+
+    private void removeAppenderFromLogger(String trackerId) {
+        org.apache.log4j.Logger logger = LogManager.getLogger("org.ihtsdo");
+        logger.removeAppender("wsa_" + trackerId);
     }
 }
