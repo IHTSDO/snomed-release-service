@@ -39,19 +39,19 @@ public class ReleaseServiceImpl implements ReleaseService{
     @Autowired
     AuthenticationService authenticationService;
 
-    @Autowired
-    SimpMessagingTemplate messagingTemplate;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
     
     @Override
     @Async("securityContextAsyncTaskExecutor")
-    public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
+    public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate  messagingTemplate) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
         String trackerId = gatherInputRequestPojo.getTrackerId();
         try {
-            MDC.put("trackerId", trackerId);
-            addAppenderToLogger(trackerId, messagingTemplate);
+            //Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
+            if(messagingTemplate != null) {
+                MDC.put("trackerId", trackerId);
+                addAppenderToLogger(trackerId, messagingTemplate);
+            }
             final User anonymousSubject = authenticationService.getAnonymousSubject();
             SecurityHelper.setUser(anonymousSubject);
             //Gather all files in term server and externally maintain buckets if specified to source directories
@@ -83,8 +83,10 @@ public class ReleaseServiceImpl implements ReleaseService{
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());
             throw e;
         } finally {
-            MDC.remove("trackerId");
-            removeAppenderFromLogger(trackerId);
+            if(messagingTemplate != null) {
+                MDC.remove("trackerId");
+                removeAppenderFromLogger(trackerId);
+            }
         }
 
     }

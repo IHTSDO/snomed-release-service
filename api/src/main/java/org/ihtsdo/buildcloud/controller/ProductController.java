@@ -137,7 +137,7 @@ public class ProductController {
 	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													@RequestBody GatherInputRequestPojo buildConfig) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
 
-		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig);
+		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate);
 		return "Build Triggered !";
 	}
 
