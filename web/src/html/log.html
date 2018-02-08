@@ -1,6 +1,6 @@
 <html>
 <head></head>
-<body onload="disconnect()"><title>Chat WebSocket</title>
+<body onload="disconnect()"><title>Log Tracker</title>
 <script src="./libs/sockjs.min.js"></script>
 <script src="./libs/stomp.min.js"></script>
 <script src="./libs/moment-min.js"></script>
@@ -26,6 +26,7 @@
             showMessageOutput(JSON.parse(messageOutput.body));
             //showMessageOutput(messageOutput.body);
          });
+         document.getElementById('connectedId').innerHTML = 'Tracing log for ' + from + '...';
       }, function(error) {
          console.log(error);
       });
@@ -37,6 +38,9 @@
       }
       setConnected(false);
       console.log("Disconnected");
+      document.getElementById('connectedId').innerHTML = '';
+      errorCount = 0;
+      document.getElementById('errorCount').innerHTML = errorCount;
    }
 
    function showMessageOutput(messageOutput) {
@@ -57,9 +61,11 @@
 </script>
 <div>
     <div><input type="text" id="from" placeholder="Tracker Id"></div>
+
     <br>
     <p id="response"></p></div>
-    <div>Errors: <span id="errorCount">0</span></div>
+
+    <div><span id="connectedId"></span> <br/> Errors: <span id="errorCount">0</span></div>
     <div>
         <button id="connect" onclick="connect();">Connect</button>
         <button id="disconnect" disabled="" onclick="disconnect();">Disconnect</button>
