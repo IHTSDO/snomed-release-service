@@ -1,0 +1,71 @@
+<html>
+<head></head>
+<body onload="disconnect()"><title>Chat WebSocket</title>
+<script src="./libs/sockjs.min.js"></script>
+<script src="./libs/stomp.min.js"></script>
+<script src="./libs/moment-min.js"></script>
+<script type="text/javascript">
+   var stompClient = null;
+   var errorCount = 0;
+
+   function setConnected(connected) {
+      document.getElementById('connect').disabled = connected;
+      document.getElementById('disconnect').disabled = !connected;
+      document.getElementById('response').innerHTML = '';
+   }
+
+   function connect() {
+      var from = document.getElementById('from').value;
+      var socket = new SockJS('/api/v1/ws');
+      stompClient = Stomp.over(socket);
+      stompClient.connect({},
+         function(frame) {
+         setConnected(true);
+         console.log('Connected: ' + frame);
+         stompClient.subscribe('/queue/messages.' + from, function(messageOutput) {
+            showMessageOutput(JSON.parse(messageOutput.body));
+            //showMessageOutput(messageOutput.body);
+         });
+      }, function(error) {
+         console.log(error);
+      });
+   }
+
+   function disconnect() {
+      if(stompClient != null) {
+         stompClient.disconnect();
+      }
+      setConnected(false);
+      console.log("Disconnected");
+   }
+
+   function showMessageOutput(messageOutput) {
+      var response = document.getElementById('response');
+      var p = document.createElement('p');
+      p.style.wordWrap = 'break-word';
+      var level = messageOutput.level;
+      if(level === "ERROR") {
+         p.style.color = 'red';
+         errorCount++;
+         document.getElementById('errorCount').innerHTML = errorCount;
+      }
+      var time = moment(messageOutput.time).format('DD/MM/YYYY HH:mm:ss');
+      p.appendChild(document.createTextNode(time + " - [" + messageOutput.level + "] - " + messageOutput.message));
+      response.appendChild(p);
+      window.scrollTo(0,document.body.scrollHeight);
+   }
+</script>
+<div>
+    <div><input type="text" id="from" placeholder="Tracker Id"></div>
+    <br>
+    <p id="response"></p></div>
+    <div>Errors: <span id="errorCount">0</span></div>
+    <div>
+        <button id="connect" onclick="connect();">Connect</button>
+        <button id="disconnect" disabled="" onclick="disconnect();">Disconnect</button>
+    </div>
+    <br>
+
+</div>
+</body>
+</html>
