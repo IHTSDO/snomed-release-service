@@ -1,12 +1,43 @@
 <html>
-<head></head>
-<body onload="disconnect()"><title>Log Tracker</title>
+<head>
+
+    <style>
+        label {
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body onload="init()"><title>Log Tracker</title>
 <script src="./libs/sockjs.min.js"></script>
 <script src="./libs/stomp.min.js"></script>
 <script src="./libs/moment-min.js"></script>
 <script type="text/javascript">
    var stompClient = null;
    var errorCount = 0;
+   var hideInfo = false;
+   var hideDebug = false;
+   var hideError = false;
+
+   function init() {
+      if (!Notification) {
+         alert('Desktop notifications not available in your browser. Try Chromium.');
+         return;
+      }
+      if (Notification.permission !== "granted")
+         Notification.requestPermission();
+      disconnect();
+      var url = window.location.href;
+      var trackerId = getParameterByName('trackerId', url);
+      if (trackerId !== null) {
+         document.getElementById('from').value = trackerId;
+         connect();
+      }
+   }
 
    function setConnected(connected) {
       document.getElementById('connect').disabled = connected;
@@ -19,21 +50,21 @@
       var socket = new SockJS('/api/v1/ws');
       stompClient = Stomp.over(socket);
       stompClient.connect({},
-         function(frame) {
-         setConnected(true);
-         console.log('Connected: ' + frame);
-         stompClient.subscribe('/queue/messages.' + from, function(messageOutput) {
-            showMessageOutput(JSON.parse(messageOutput.body));
-            //showMessageOutput(messageOutput.body);
+         function (frame) {
+            setConnected(true);
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/queue/messages.' + from, function (messageOutput) {
+               showMessageOutput(JSON.parse(messageOutput.body));
+               //showMessageOutput(messageOutput.body);
+            });
+            document.getElementById('connectedId').innerHTML = 'Tracing log for ' + from + '...';
+         }, function (error) {
+            console.log(error);
          });
-         document.getElementById('connectedId').innerHTML = 'Tracing log for ' + from + '...';
-      }, function(error) {
-         console.log(error);
-      });
    }
 
    function disconnect() {
-      if(stompClient != null) {
+      if (stompClient != null) {
          stompClient.disconnect();
       }
       setConnected(false);
@@ -48,29 +79,83 @@
       var p = document.createElement('p');
       p.style.wordWrap = 'break-word';
       var level = messageOutput.level;
-      if(level === "ERROR") {
+      p.classList.add(level);
+      if (level === 'ERROR') {
          p.style.color = 'red';
          errorCount++;
          document.getElementById('errorCount').innerHTML = errorCount;
+         if (hideError) p.classList.add('hidden');
+         notify(level, messageOutput.message);
+      } else if (level === 'INFO') {
+         if (hideInfo) p.classList.add('hidden');
+         if(messageOutput.message === 'Build completed') notify(level, messageOutput.message);
+      } else if (level === 'DEBUG') {
+         if (hideDebug) p.classList.add('hidden');
       }
       var time = moment(messageOutput.time).format('DD/MM/YYYY HH:mm:ss');
       p.appendChild(document.createTextNode(time + " - [" + messageOutput.level + "] - " + messageOutput.message));
       response.appendChild(p);
-      window.scrollTo(0,document.body.scrollHeight);
+      window.scrollTo(0, document.body.scrollHeight);
    }
+
+   function toggleLogLevel(checkbox) {
+      var level = checkbox.value;
+      var isHidden = checkbox.checked;
+      if (level === 'DEBUG') hideDebug = true;
+      if (level === 'INFO') hideInfo = true;
+      if (level === 'ERROR') hideError = true;
+      var logLines = document.getElementsByClassName(level);
+      for (var i = 0; i < logLines.length; i++) {
+         logLines[i].classList.toggle('hidden', isHidden);
+      }
+   }
+
+   function getParameterByName(name, url) {
+      if (!url) url = window.location.href;
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+         results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, " "));
+   }
+
+   function notify(level, text) {
+      if (Notification.permission !== "granted")
+         Notification.requestPermission();
+      else {
+         var from = document.getElementById('from').value;
+         var notification = new Notification(from + ' - ' + level, {
+            body: text
+         });
+
+      }
+   }
+
 </script>
 <div>
     <div><input type="text" id="from" placeholder="Tracker Id"></div>
 
     <br>
     <p id="response"></p></div>
-
-    <div><span id="connectedId"></span> <br/> Errors: <span id="errorCount">0</span></div>
-    <div>
-        <button id="connect" onclick="connect();">Connect</button>
-        <button id="disconnect" disabled="" onclick="disconnect();">Disconnect</button>
-    </div>
-    <br>
+<div><span id="connectedId"></span> <br/> Errors: <span id="errorCount">0</span></div>
+<div>
+    <button id="connect" onclick="connect();">Start</button>
+    <button id="disconnect" disabled="" onclick="disconnect();">Stop</button>
+</div>
+<div>
+    Hide:
+    <label>
+        <input type="checkbox" name="hideOptions" value="DEBUG" onchange="toggleLogLevel(this)">DEBUG
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="INFO" onchange="toggleLogLevel(this)">INFO
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="ERROR" onchange="toggleLogLevel(this)">ERROR
+    </label>
+</div>
+<br>
 
 </div>
 </body>

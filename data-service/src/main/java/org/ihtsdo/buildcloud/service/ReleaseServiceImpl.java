@@ -79,6 +79,7 @@ public class ReleaseServiceImpl implements ReleaseService{
             //Create and trigger new build
             Build build = buildService.createBuildFromProduct(releaseCenter, productKey);
             buildService.triggerBuild(releaseCenter, productKey, build.getId(), 10);
+            LOGGER.info("Build completed");
         } catch (Exception e) {
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());
             throw e;
