@@ -21,6 +21,7 @@
    var errorCount = 0;
    var hideInfo = false;
    var hideDebug = false;
+   var hideWarn = false;
    var hideError = false;
 
    function init() {
@@ -91,6 +92,8 @@
          if(messageOutput.message === 'Build completed') notify(level, messageOutput.message);
       } else if (level === 'DEBUG') {
          if (hideDebug) p.classList.add('hidden');
+      } else if(level === 'WARN') {
+         if (hideWarn) p.classList.add('hidden');
       }
       var time = moment(messageOutput.time).format('DD/MM/YYYY HH:mm:ss');
       p.appendChild(document.createTextNode(time + " - [" + messageOutput.level + "] - " + messageOutput.message));
@@ -104,6 +107,7 @@
       if (level === 'DEBUG') hideDebug = true;
       if (level === 'INFO') hideInfo = true;
       if (level === 'ERROR') hideError = true;
+      if (level === 'WARN') hideWarn = true;
       var logLines = document.getElementsByClassName(level);
       for (var i = 0; i < logLines.length; i++) {
          logLines[i].classList.toggle('hidden', isHidden);
@@ -150,6 +154,9 @@
     </label>
     <label>
         <input type="checkbox" name="hideOptions" value="INFO" onchange="toggleLogLevel(this)">INFO
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="WARN" onchange="toggleLogLevel(this)">WARN
     </label>
     <label>
         <input type="checkbox" name="hideOptions" value="ERROR" onchange="toggleLogLevel(this)">ERROR
