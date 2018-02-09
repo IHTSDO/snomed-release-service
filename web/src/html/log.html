@@ -104,10 +104,10 @@
    function toggleLogLevel(checkbox) {
       var level = checkbox.value;
       var isHidden = checkbox.checked;
-      if (level === 'DEBUG') hideDebug = true;
-      if (level === 'INFO') hideInfo = true;
-      if (level === 'ERROR') hideError = true;
-      if (level === 'WARN') hideWarn = true;
+      if (level === 'DEBUG') hideDebug = isHidden;
+      if (level === 'INFO') hideInfo = isHidden;
+      if (level === 'ERROR') hideError = isHidden;
+      if (level === 'WARN') hideWarn = isHidden;
       var logLines = document.getElementsByClassName(level);
       for (var i = 0; i < logLines.length; i++) {
          logLines[i].classList.toggle('hidden', isHidden);
