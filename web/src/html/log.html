@@ -10,6 +10,18 @@
         .hidden {
             display: none;
         }
+
+        .ERROR {
+            color: red;
+        }
+
+        .WARN {
+            color: #e38d13;
+        }
+
+        .INFO {
+            color: blue;
+        }
     </style>
 </head>
 <body onload="init()"><title>Log Tracker</title>
@@ -43,7 +55,6 @@
    function setConnected(connected) {
       document.getElementById('connect').disabled = connected;
       document.getElementById('disconnect').disabled = !connected;
-      document.getElementById('response').innerHTML = '';
    }
 
    function connect() {
@@ -71,8 +82,6 @@
       setConnected(false);
       console.log("Disconnected");
       document.getElementById('connectedId').innerHTML = '';
-      errorCount = 0;
-      document.getElementById('errorCount').innerHTML = errorCount;
    }
 
    function showMessageOutput(messageOutput) {
@@ -82,7 +91,6 @@
       var level = messageOutput.level;
       p.classList.add(level);
       if (level === 'ERROR') {
-         p.style.color = 'red';
          errorCount++;
          document.getElementById('errorCount').innerHTML = errorCount;
          if (hideError) p.classList.add('hidden');
@@ -136,15 +144,22 @@
       }
    }
 
+   function clearLog() {
+      errorCount = 0;
+      document.getElementById('errorCount').innerHTML = errorCount;
+      document.getElementById('response').innerHTML = '';
+   }
+
 </script>
 <div>
     <div><input type="text" id="from" placeholder="Tracker Id"></div>
 
     <br>
     <p id="response"></p></div>
-<div><span id="connectedId"></span> <br/> Errors: <span id="errorCount">0</span></div>
+<div><span id="connectedId"></span> <br/> Errors: <span style="color: red;" id="errorCount">0</span></div>
 <div>
     <button id="connect" onclick="connect();">Start</button>
+    <button id="clearLog" onclick="clearLog();">Clear</button>
     <button id="disconnect" disabled="" onclick="disconnect();">Stop</button>
 </div>
 <div>
