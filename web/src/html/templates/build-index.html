@@ -1,0 +1,99 @@
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+	<li>{{#link-to "release-center" product.parent.parent}}{{product.parent.parent.shortName}}{{/link-to}}</li>
+	<li>{{#link-to "extension" product.parent}}{{product.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "product" product}}{{product.name}}{{/link-to}}</li>
+	<li id="tour-stop-c6"> {{name}}</li>
+</ol>
+
+<h2 class="page-header" id="tour-stop-5">{{name}} <small>(Product Build) {{partial "title-dropdown"}}</small></h2>
+
+<div class="row">
+	<div class="col-xs-4">
+		<div  id="tour-stop-6">
+			<h3>Packages</h3>
+			<ul>
+				{{#each package in packages}}
+				<li>
+					{{#link-to "package"  package}}
+					{{package.name}}
+					{{/link-to}}
+				</li>
+				{{/each}}
+			</ul>
+			{{#if controllers.application.isAuthenticated}}
+			<button class="btn btn-primary btn-md list-align" {{action 'addPackage' this}}>
+				<span class="glyphicon glyphicon-plus"></span> Add a Package
+			</button>
+			{{/if}}
+		</div>
+		<div id="tour-stop-8" class="margin-top-big">
+			<h3>Build Triggers</h3>
+			{{#if controllers.application.isAuthenticated}}
+			<div class="well-sm">
+				<button {{action 'createExecution' this}} type="button" class="btn btn-success btn-lg success " >
+					<span class="glyphicon"></span> Build Now...
+				</button>
+			</div>
+			{{/if}}
+			<div class="well-sm">
+				Automatic nightly build <strong>Enabled</strong>.
+				{{#if controllers.application.isAuthenticated}}
+				<button class="btn btn-default">Disable</button>
+				{{/if}}
+			</div>
+		</div>
+	</div>
+	<div class="col-xs-4 build-history" id="tour-stop-7">
+		<h3>Execution History</h3>
+		<ul>{{#if isDemoData }}
+			<li title="Success" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution-mock.output"}}
+				16 Feb, 2014 01:05:00 (UTC)
+				<span class="traffic-light traffic-light-success"></span>
+				{{/link-to}}
+			</li>
+			<li title="Warning" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution-mock"}}
+				15 Feb, 2014 01:05:00 (UTC)
+				<span class="traffic-light traffic-light-warning"></span>
+				{{/link-to}}
+			</li>
+			<li title="Failure" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution-mock"}}
+				14 Feb, 2014 01:05:00 (UTC)
+				<span class="traffic-light traffic-light-failure"></span>
+				{{/link-to}}
+			</li>
+			{{else}}
+			<li title="In Progress" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution" "2014-03-31T09:30:23"}}
+				31 Mar, 2014 09:30:23 (UTC)
+				<span class="traffic-light traffic-light-success traffic-light-in-progress"></span>
+				{{/link-to}}
+			</li>
+			<li title="Success" data-toggle="tooltip" data-placement="right">
+				{{#link-to "execution.output" "2014-03-31T13:08:12"}}
+				31 Mar, 2014 13:08:12 (UTC)
+				<span class="traffic-light traffic-light-success"></span>
+				{{/link-to}}
+			</li>
+			{{/if}}
+			<li class="no-bullet">{{#link-to "execution-history"}}More...{{/link-to}}</li>
+		</ul>
+	</div>
+	<div class="col-xs-4">
+		<h4>Packages</h4>
+		<p>All packages defined for a given Product will be built and released/published together. 
+		   Click on the Package name to navigate to a page which will allow you to configure the 
+		   manifest, input files and post-conditions for each package.</p>
+		<h4>Execution History</h4>
+		<p>This list shows the most recent 'Executions' or runs of the current build. 
+		   The traffic light indicates the status of each execution (Before Trigger, Queued or Built).
+		   Click on the execution link to navigate to a page which shows the output of that
+		   particular run of the build and provides an option to publish the results. </p>
+		<h4>Build Triggers</h4>
+		<p>These buttons allow the build to be executed immediately, or configured for an automatic 
+		   nightly build.</p>
+	</div>
+</div>

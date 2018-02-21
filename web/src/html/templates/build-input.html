@@ -1,0 +1,73 @@
+<div class="row">
+	<div class="col-md-8">
+		<div class="panel panel-default panel-build-input">
+			<div class="panel-heading">
+				<h3 class="panel-title">Build Input</h3>
+			</div>
+			<div class="panel-body">
+
+				<dl class="dl-horizontal">
+					<dt>Manifest</dt>
+					<dd>
+						{{#if manifest}}
+						<a {{bind-attr href=manifest.file_url}} download>{{manifest.filename}}</a>
+						{{else}}
+						<small>No manifest yet.</small>
+						{{/if}}
+					</dd>
+					<dt>Input Files</dt>
+					<dd>
+						{{#each inputfiles}}
+							<div>
+								<a href="#">{{filename}}</a>
+								{{#if controllers.application.isAuthenticated}}
+								<a href="#" {{action 'deleteInputFile' this}}><span class="glyphicon glyphicon-remove" title="Remove file" data-toggle="tooltip" data-placement="right"></span></a>
+								{{/if}}
+							</div>
+						{{else}}
+							<small>No input files yet.</small>
+						{{/each}}
+					</dd>
+				</dl>
+
+				{{#if controllers.application.isAuthenticated}}
+				<hr/>
+				<form method="post" class="uploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/manifest</div>
+					<div class="form-group">
+						<label>Upload manifest file</label>
+						<input type="file" name="file" class="form-control" required/>
+					</div>
+					<input type="submit" class="btn btn-default" value="Upload"/>
+				</form>
+
+				<hr/>
+				<form method="post" class="uploadForm" enctype="multipart/form-data" target="buildInputFileUploadIframe" novalidate="novalidate">
+					<div class="actionpath hidden">api/v1/builds/{{parent.id}}/packages/{{id}}/inputfiles</div>
+					<div class="form-group">
+						<label>Upload other files or a zip</label>
+						<input type="file" name="file" class="form-control" required/>
+					</div>
+					<input type="submit" class="btn btn-default" value="Upload"/>
+				</form>
+				<!--<iframe id="buildInputFileUploadIframe" style="display: none;"/>-->
+				<iframe name="buildInputFileUploadIframe" style="display: none;"/>
+				<button class="reloadmodel hidden" {{action 'reload'}}>Reload Model</button>
+				{{/if}}
+
+			</div>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<h4>Build Input</h4>
+			<ul>
+				<li><strong>Manifest</strong> - upload an xml file containing the expected structure of the build output files.</li>
+				<li><strong>Input Files </strong> - upload any other files that the build process will require.</li>
+			</ul>
+
+		{{#unless controllers.application.isAuthenticated}}
+		<h4>Authentication</h4>
+		Note that users who have not logged into the system will be unable to upload files for a build.
+		{{/unless}}
+	</div>
+</div>	
