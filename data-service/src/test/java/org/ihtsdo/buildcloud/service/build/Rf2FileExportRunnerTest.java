@@ -91,7 +91,7 @@ public class Rf2FileExportRunnerTest {
 		buildConfiguration.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
-		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
@@ -112,7 +112,7 @@ public class Rf2FileExportRunnerTest {
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
-		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, uuidGenerator, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);

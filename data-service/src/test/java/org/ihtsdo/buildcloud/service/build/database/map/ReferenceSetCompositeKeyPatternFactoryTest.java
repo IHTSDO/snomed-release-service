@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.ihtsdo.buildcloud.service.build.database.RF2TableDAO;
+import org.ihtsdo.buildcloud.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,14 +20,14 @@ public class ReferenceSetCompositeKeyPatternFactoryTest {
 	private static final String PATTERN_WITH_FIELDS_AT_4_5_6 = "[^	]*	[^	]*	[^	]*	[^	]*	([^	]*	?)([^	]*	?)([^	]*	?).*";
 	private static final String PATTERN_WITH_FIELDS_AT_4_5_6_7 = "[^	]*	[^	]*	[^	]*	[^	]*	([^	]*	?)([^	]*	?)([^	]*	?)([^	]*	?).*";
 	private static final String PATTERN_WITH_FIELDS_AT_4_5_8 = "[^	]*	[^	]*	[^	]*	[^	]*	([^	]*	?)([^	]*	?)[^	]*	[^	]*	([^	]*	?).*";
-	private RF2TableDAO dao;
+	private RF2TableExportDAO dao;
 	private Map<String, List<Integer>> customRefsetCompositeKeys;
 	private ReferenceSetCompositeKeyPatternFactory refsetCompositeKeyPatternFactory;
 
 	@Before
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
-		dao = new RF2TableDAOTreeMapImpl(customRefsetCompositeKeys);
+		dao = new RF2TableExportDAOImpl(customRefsetCompositeKeys);
 		refsetCompositeKeyPatternFactory = new ReferenceSetCompositeKeyPatternFactory(customRefsetCompositeKeys);
 	}
 

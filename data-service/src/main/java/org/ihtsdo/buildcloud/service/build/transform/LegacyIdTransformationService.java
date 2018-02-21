@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
@@ -81,7 +82,8 @@ public class LegacyIdTransformationService {
 		//can't append to existing file using S3 so need to rename existing transformed file then write again along with additional data.
 		buildDAO.renameTransformedFile(build, simpleRefsetMapDelta, orignalTransformedDelta, false);
 		try (
-				final OutputStream outputStream = buildDAO.getTransformedFileOutputStream(build, simpleRefsetMapDelta).getOutputStream();
+				AsyncPipedStreamBean asyncPipedStreamBean = buildDAO.getTransformedFileOutputStream(build, simpleRefsetMapDelta);
+				OutputStream outputStream = asyncPipedStreamBean.getOutputStream();
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
 				final InputStream inputStream = buildDAO.getTransformedFileAsInputStream(build, orignalTransformedDelta);
 				if (inputStream == null) {
@@ -103,12 +105,12 @@ public class LegacyIdTransformationService {
 						for (final Long sctId : moduleIdAndNewConceptsMap.get(moduleId)) {
 							UUID uuid = sctIdAndUuidMap.get(sctId);
 							//historical reason that the module id is always set to be the core module id since 2011
-							writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
+							writer.write(constructSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.CTV3_ID_REFSET_ID, sctId, uuidCtv3IdMap.get(uuid)));
 							writer.write(RF2Constants.LINE_ENDING);
 							if (!SUPPRESS_SNOMED_ID) {
 								final String snomedId = uuidAndSnomedIdMap.get(uuid);
 								if (snomedId != null && !snomedId.equals("")) {
-									writer.write(productSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
+									writer.write(constructSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
 									writer.write(RF2Constants.LINE_ENDING);
 								} else {
 									LOGGER.warn("No SnomedID was generated for UUID:" + uuid);
@@ -120,23 +122,25 @@ public class LegacyIdTransformationService {
 		} catch (final IOException e) {
 			throw new TransformationException("Error occurred when transforming " + simpleRefsetMapDelta, e);
 		}
+		
+		
 	}
 
-	private String productSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
-		final StringBuilder producter = new StringBuilder();
-		producter.append(componentId);
-		producter.append(TAB);
-		producter.append(effectiveDate);
-		producter.append(TAB);
-		producter.append("1");
-		producter.append(TAB);
-		producter.append(moduleId);
-		producter.append(TAB);
-		producter.append(refsetId);
-		producter.append(TAB);
-		producter.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
-		producter.append(TAB);
-		producter.append(mapTarget);
-		return producter.toString();
+	private String constructSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
+		final StringBuilder builder = new StringBuilder();
+		builder.append(componentId);
+		builder.append(TAB);
+		builder.append(effectiveDate);
+		builder.append(TAB);
+		builder.append("1");
+		builder.append(TAB);
+		builder.append(moduleId);
+		builder.append(TAB);
+		builder.append(refsetId);
+		builder.append(TAB);
+		builder.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
+		builder.append(TAB);
+		builder.append(mapTarget);
+		return builder.toString();
 	}
 }

@@ -60,14 +60,12 @@
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl">
 		<property name="fileProcessingFailureMaxRetry" ref="fileProcessingFailureMaxRetry"/>
 	</bean>
-	<bean class="org.ihtsdo.buildcloud.service.RF2ClassifierService"/>
 	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
 	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PublishServiceImpl">
 		<constructor-arg name="buildBucketName" ref="buildBucketName"/>
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
 	</bean>
-	<bean class="org.ihtsdo.buildcloud.service.RelationshipHelper"/>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
 		<property name="driverClassName" value="${srs.jdbc.driverClassName}" />
@@ -231,6 +229,15 @@
 			<bean class="org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl"/>
 		</constructor-arg>
 	</bean>
+	
+	<bean id="externalClassifier" class="org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient">
+		<constructor-arg value="${external.classifier.url}" />
+		<constructor-arg value="${external.classifier.username}" />
+		<constructor-arg value="${external.classifier.password}" />
+		<property name="timeoutInSeconds" value="${external.classifier.timeoutInSeconds:300}"/>
+	</bean>
+	
+	<bean class="org.ihtsdo.buildcloud.service.RF2ClassifierService"/>
 
 	<bean factory-bean="uuIdGeneratorFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />
