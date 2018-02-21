@@ -27,6 +27,7 @@ import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.ReleaseFileGenerationException;
+import org.ihtsdo.buildcloud.service.helper.RelationshipHelper;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -61,9 +62,6 @@ public class TransformationService {
 
 	@Autowired
 	private ModuleResolverService moduleResolverService;
-
-	@Autowired
-	private BuildDAO buildDAO;
 
 	@Autowired
 	private String coreModuleSctid;
@@ -119,7 +117,7 @@ public class TransformationService {
 				if (!configuration.isFirstTimeRelease()) {
 					final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 					try {
-						final InputStream statedRelationshipSnapshotStream = buildDAO.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						final InputStream statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 						if (statedRelationshipSnapshotStream != null) {
 							final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -370,12 +368,12 @@ public class TransformationService {
 	}
 
 	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
-			Map<String, String> existingUuidToSctidMap) throws BusinessServiceException {
+			Map<String, String> existingUuidToSctidMap, Map<String, String> conceptToModuleIdMap) throws BusinessServiceException {
 		try {
 			logInIdServiceRestClient();
 			final TransformationFactory transformationFactory = getTransformationFactory(build);
 			transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
-
+			transformationFactory.setConceptToModuleIdMap(conceptToModuleIdMap);
 			try (AsyncPipedStreamBean outputFileOutputStream = dao.getTransformedFileOutputStream(build, relationshipFilename)) {
 				final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
 						new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));

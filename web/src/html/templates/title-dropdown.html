@@ -1,9 +1,0 @@
-{{#if controllers.application.isAuthenticated}}
-<span class="dropdown">
-	<a data-toggle="dropdown" href="#"	onclick="return false;"><span class="glyphicon glyphicon-cog"></span></a>
-	<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-		<li><a href="#"	onclick="return false;">Rename</a></li>
-		<li><a href="#" {{action 'removeEntity' this}}>Remove</a></li>
-	</ul>
-</span>
-{{/if}}
