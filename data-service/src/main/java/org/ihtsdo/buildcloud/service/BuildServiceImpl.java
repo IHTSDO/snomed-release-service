@@ -266,11 +266,20 @@ public class BuildServiceImpl implements BuildService {
 							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 					LOGGER.error(resultMessage, e);
 				}
-				report.add("Progress Status", resultStatus);
-				report.add("Message", resultMessage);
-				dao.persistReport(build);
-				updateStatusWithChecks(build, Status.BUILT);
+				if(!dao.isBuildCancelRequested(build)) {
+					report.add("Progress Status", resultStatus);
+					report.add("Message", resultMessage);
+					dao.persistReport(build);
+					updateStatusWithChecks(build, Status.BUILT);
+				} else {
+					report.add("Progress Status", "cancelled");
+					report.add("Message", "Build was cancelled");
+					dao.persistReport(build);
+					dao.updateStatus(build, Status.CANCELLED);
+					dao.deleteOutputFiles(build);
+				}
 			}
+
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
@@ -323,6 +332,9 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case BUILT :
 				dao.assertStatus(build, Status.BUILDING);
+				break;
+			case CANCELLED:
+				dao.assertStatus(build, Status.CANCEL_REQUESTED);
 				break;
 		}
 
@@ -386,22 +398,27 @@ public class BuildServiceImpl implements BuildService {
 		checkManifestPresent(build);
 
 		final BuildConfiguration configuration = build.getConfiguration();
+		if(dao.isBuildCancelRequested(build)) return;
 		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
+			if(dao.isBuildCancelRequested(build)) return;
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
+			if(dao.isBuildCancelRequested(build)) return;
 			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 			
 			//filter out additional relationships from the transformed delta
+			if(dao.isBuildCancelRequested(build)) return;
 			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
 			if (inferedDelta != null) {
 				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
 				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
+			if(dao.isBuildCancelRequested(build)) return;
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier
 				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
@@ -411,9 +428,11 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 
+		if(dao.isBuildCancelRequested(build)) return;
 		// Generate readme file
 		generateReadmeFile(build);
 
+		if(dao.isBuildCancelRequested(build)) return;
 		File zipPackage = null;
 		try {
 			try {
@@ -424,8 +443,9 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
-			} 
+			}
 
+			if(dao.isBuildCancelRequested(build)) return;
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode || localRvf) {
@@ -619,6 +639,7 @@ public class BuildServiceImpl implements BuildService {
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean!= null ? schemaBean.getTableName() : null);
 				} else {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}
@@ -709,6 +730,21 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
+	}
+
+
+	@Override
+	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		//Only cancel build if the status is "BUILDING"
+		dao.assertStatus(build, Status.BUILDING);
+		dao.updateStatus(build, Status.CANCEL_REQUESTED);
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildInputGatherReportStream(build);
 	}
 
 }

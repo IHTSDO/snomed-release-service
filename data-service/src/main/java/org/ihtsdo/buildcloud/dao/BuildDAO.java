@@ -94,4 +94,10 @@ public interface BuildDAO {
 	InputStream getBuildReportFileStream(Build build);
 
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
+
+	boolean isBuildCancelRequested(Build build);
+
+	void deleteOutputFiles(Build build);
+
+	InputStream getBuildInputGatherReportStream(Build build);
 }

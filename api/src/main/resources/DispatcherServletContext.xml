@@ -14,11 +14,11 @@
 	<context:component-scan base-package="org.ihtsdo.buildcloud.controller" />
 
 	<mvc:interceptors>
-		<bean class="org.ihtsdo.buildcloud.security.SecurityHandlerInterceptor"/>
+		<bean class="org.ihtsdo.buildcloud.security.SSOSecurityHandlerInterceptor"/>
 	</mvc:interceptors>
-
 	<import resource="servletContext.xml"/>
 	<import resource="swaggerContext.xml"/>
+	<import resource="websocket.xml"/>
 	<import resource="jms-api-context.xml"/>
 	<import resource="telemetry-jms-broker.xml"/>
 	<import resource="classpath*:dataServiceContext.xml"/>

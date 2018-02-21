@@ -194,6 +194,7 @@ public class RF2ClassifierService {
 	private ClassifierFilesPojo constructClassifierFilesPojo(Map<String, TableSchema> inputFileSchemaMap) {
 		ClassifierFilesPojo pojo = new ClassifierFilesPojo();
 		for (final String inputFilename : inputFileSchemaMap.keySet()) {
+
 			final TableSchema inputFileSchema = inputFileSchemaMap.get(inputFilename);
 			if (inputFileSchema == null) {
 				logger.warn("Failed to recover schema mapped to {}.", inputFilename);
