@@ -1,11 +1,19 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
+import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 
@@ -39,9 +47,16 @@ public interface ProductInputFileService {
 
 	void deleteSourceFilesByPattern(String centerKey, String productKey, String inputFileNamePattern, Set<String> subDirectories) throws ResourceNotFoundException;
 
-	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws BusinessServiceException;
+	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException;
 
 	InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException;
+
+	InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException;
+
+	InputStream getInputGatherReport(String centerKey, String productKey);
+
+	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
+			, InputGatherReport inputGatherReport) throws IOException;
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 

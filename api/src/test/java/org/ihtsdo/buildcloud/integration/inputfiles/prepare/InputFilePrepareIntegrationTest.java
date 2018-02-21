@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
+
 public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
     private static final String TEST_DATA = "test_input_files.zip";

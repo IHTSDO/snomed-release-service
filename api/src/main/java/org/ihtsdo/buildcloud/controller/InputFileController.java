@@ -5,6 +5,8 @@ import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -250,7 +252,7 @@ public class InputFileController {
 			notes = "Create or replace files in input file directories")
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
-												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws BusinessServiceException {
+												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException, DecoderException, JAXBException, NoSuchAlgorithmException, IOException {
 		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
@@ -271,7 +273,26 @@ public class InputFileController {
 		}
 	}
 
+	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
+	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
+	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								 @RequestBody GatherInputRequestPojo request) throws BusinessServiceException, IOException {
+		productInputFileService.gatherSourceFiles(releaseCenterKey, productKey, request);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
 
-	
+	@RequestMapping(value = "/inputfiles/gatherReport", method = RequestMethod.GET)
+	@ApiOperation(value = "Return report of input files gather")
+	public void  getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, final HttpServletResponse response) throws IOException {
+		try (InputStream outputFileStream = productInputFileService.getInputGatherReport(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No report file found");
+			}
+		}
+	}
+
+
 
 }
