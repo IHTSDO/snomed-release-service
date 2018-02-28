@@ -67,7 +67,6 @@ public class TermServerServiceImpl implements TermServerService{
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
         SnowOwlRestClient.ExportType exportType = exportFlatType ? SnowOwlRestClient.ExportType.SNAPSHOT : SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = buildModulesList(snowOwlRestClient, branchPath, excludedModuleId);
-        snowOwlRestClient.
         return snowOwlRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, exportType);
     }
 
