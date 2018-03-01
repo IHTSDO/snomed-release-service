@@ -5,8 +5,10 @@ import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClientFactory;
+import org.ihtsdo.otf.rest.client.snowowl.pojo.Branch;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
+import org.ihtsdo.otf.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,7 +69,62 @@ public class TermServerServiceImpl implements TermServerService{
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
         SnowOwlRestClient.ExportType exportType = exportFlatType ? SnowOwlRestClient.ExportType.SNAPSHOT : SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = buildModulesList(snowOwlRestClient, branchPath, excludedModuleId);
-        return snowOwlRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, exportType);
+        ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
+                exportCategory, exportType,snowOwlRestClient);
+        return snowOwlRestClient.export(configurationExtensionBuilder);
+
+    }
+
+    private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, SnowOwlRestClient.ExportCategory exportCategory,
+                                                                         SnowOwlRestClient.ExportType exportType, SnowOwlRestClient snowOwlRestClient) throws BusinessServiceException {
+        ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
+        exportConfig.setBranchPath(branchPath);
+        exportConfig.setType(exportType);
+        exportConfig.setIncludeUnpublished(false);
+        if(moduleList != null) {
+            exportConfig.addModuleIds(moduleList);
+        }
+        try {
+            Branch branch = snowOwlRestClient.getBranch(branchPath);
+            if(branch == null) {
+                logger.error("Failed to get branch {}", branchPath);
+                throw new BusinessServiceException("Failed to get branch " + branchPath);
+            }
+            Object codeSystemShortNameObj = branch.getMetadata().get("codeSystemShortName");
+            if(codeSystemShortNameObj != null && StringUtils.isNotBlank((String) codeSystemShortNameObj)) {
+                exportConfig.setCodeSystemShortName((String) codeSystemShortNameObj);
+            }
+        } catch (RestClientException e) {
+            logger.error("Failed to get branch {}: {}", branchPath, e);
+            throw new BusinessServiceException("Failed to get branch " + branchPath);
+        }
+        switch (exportCategory) {
+            case UNPUBLISHED:
+                String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
+                exportConfig.setTransientEffectiveTime(tet);
+                break;
+            case PUBLISHED:
+                if(effectiveDate == null) {
+                    throw new BusinessServiceException("Cannot export published data without an effective date");
+                }
+                exportConfig.setStartEffectiveTime(effectiveDate);
+                exportConfig.setTransientEffectiveTime(effectiveDate);
+                exportConfig.setEndEffectiveTime(effectiveDate);
+                break;
+            case FEEDBACK_FIX:
+                if(effectiveDate == null) {
+                    throw new BusinessServiceException("Cannot export feedback-fix data without an effective date");
+                }
+                exportConfig.setStartEffectiveTime(effectiveDate);
+                exportConfig.setIncludeUnpublished(true);
+                exportConfig.setTransientEffectiveTime(effectiveDate);
+                break;
+                default:
+                    logger.error("Export category {} not recognized", exportCategory);
+                    throw new BusinessServiceException("Export type " + exportCategory + " not recognized");
+        }
+
+        return exportConfig;
     }
 
     private Set<String> buildModulesList(SnowOwlRestClient snowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
