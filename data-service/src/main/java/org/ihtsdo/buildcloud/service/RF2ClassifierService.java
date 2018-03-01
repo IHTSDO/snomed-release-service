@@ -54,7 +54,7 @@ import com.google.common.io.Files;
 
 public class RF2ClassifierService {
 	
-	private static final String REL2_OWL_AXIOM_REFSET_DELTA = "rel2_sRefset_OWLAxiomReferenceSetDelta";
+	private static final String REL2_OWL_AXIOM_REFSET_DELTA = ".*Axiom.*.txt";
 
 	private static final String REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA = "rel2_cissccRefset_MRCMAttributeDomainDelta";
 
@@ -206,7 +206,7 @@ public class RF2ClassifierService {
 			} else if (inputFileSchema.getComponentType() == ComponentType.REFSET) {
 				if (inputFilename.startsWith(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA)) {
 					pojo.setMrcmAttributeDomainDeltaFilename(inputFilename.replace(REL_2, DER2));
-				} else if (inputFilename.startsWith(REL2_OWL_AXIOM_REFSET_DELTA)) {
+				} else if (inputFilename.matches(REL2_OWL_AXIOM_REFSET_DELTA)) {
 					pojo.setOwlAxiomRefsetDeltaFilename(inputFilename.replace(REL_2, DER2));
 				}
 			}
@@ -317,7 +317,8 @@ public class RF2ClassifierService {
 		if (pojo.getOwlAxiomRefsetDeltaFilename() != null) {
 			rf2DeltaFileList.add(pojo.getOwlAxiomRefsetDeltaFilename());
 		}
-		
+		logger.info("rf2 delta files prepared for external classification:" + rf2DeltaFileList.toString());
+	
 		File deltaTempDir = Files.createTempDir();
 		downloadFiles(build, deltaTempDir, rf2DeltaFileList);
 		//add empty relationship delta as the external classifier currently requires it to be present
