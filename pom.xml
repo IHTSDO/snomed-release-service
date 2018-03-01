@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>1.2.15-SNAPSHOT</version>
+	<version>1.2.15</version>
 
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
@@ -227,6 +227,7 @@
 				<version>1.0-m5.1</version>
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<enableSshAgent>true</enableSshAgent>
 					<noDeploy>true</noDeploy>
 				</configuration>
 			</plugin>
