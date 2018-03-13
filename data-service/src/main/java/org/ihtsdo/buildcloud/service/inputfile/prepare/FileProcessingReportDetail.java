@@ -34,8 +34,54 @@ public class FileProcessingReportDetail {
         this.message = message;
 
     }
+    
+    @Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((fileName == null) ? 0 : fileName.hashCode());
+		result = prime * result + ((message == null) ? 0 : message.hashCode());
+		result = prime * result + ((refsetId == null) ? 0 : refsetId.hashCode());
+		result = prime * result + ((source == null) ? 0 : source.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
 
-    public ReportType getType() {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FileProcessingReportDetail other = (FileProcessingReportDetail) obj;
+		if (fileName == null) {
+			if (other.fileName != null)
+				return false;
+		} else if (!fileName.equals(other.fileName))
+			return false;
+		if (message == null) {
+			if (other.message != null)
+				return false;
+		} else if (!message.equals(other.message))
+			return false;
+		if (refsetId == null) {
+			if (other.refsetId != null)
+				return false;
+		} else if (!refsetId.equals(other.refsetId))
+			return false;
+		if (source == null) {
+			if (other.source != null)
+				return false;
+		} else if (!source.equals(other.source))
+			return false;
+		if (type != other.getType())
+			return false;
+		return true;
+	}
+
+	public ReportType getType() {
         return type;
     }
 
@@ -74,4 +120,5 @@ public class FileProcessingReportDetail {
     public void setMessage(String message) {
         this.message = message;
     }
+    
 }
