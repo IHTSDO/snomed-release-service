@@ -36,6 +36,8 @@ public interface ProductService extends EntityService<Product> {
 	String MODULE_ID = "moduleId";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	String USE_EXTERNAL_CLASSIFIER = "useExternalClassifier";
+	String ENABLE_DROOLS = "enableDrools";
+	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
 	Product find(String releaseCenterKey, String productKey) throws BusinessServiceException;
