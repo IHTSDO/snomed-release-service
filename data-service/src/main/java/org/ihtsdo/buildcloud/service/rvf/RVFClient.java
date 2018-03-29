@@ -179,7 +179,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 		multiPartBuilder.addTextBody("releaseFileS3Path", s3ZipFilePath);
 		multiPartBuilder.addTextBody("manifestFileS3Path", manifestFileS3Path);
-		
+		multiPartBuilder.addTextBody("enableDrools", Boolean.toString(qaTestConfig.isEnableDrools()));
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
 		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
 		if ( previousIntRelease != null && previousIntRelease.split(UNDER_SCORE).length > 1 ) {
