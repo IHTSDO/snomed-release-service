@@ -118,6 +118,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
 			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE));
 		}
+		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
+			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
+		}
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
