@@ -11,3 +11,4 @@ release
 activemq-data
 # Whitelist some files
 !.gitattributes
+bin/
