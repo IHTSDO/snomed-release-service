@@ -59,7 +59,7 @@ public class RF2ClassifierServiceTestHarness {
 		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_Test_20180131T120000Z.zip");
 		assertTrue(dependencyRelease.exists());
 	
-		Build build = createEditionReleaseBuild(false, previousPublished, dependencyRelease, false);
+		Build build = createEditionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_Extension_20180301.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_Extension_20180301"));
@@ -80,7 +80,7 @@ public class RF2ClassifierServiceTestHarness {
 		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
 		assertTrue(dependencyRelease.exists());
 	
-		Build build = createEditionReleaseBuild(false, previousPublished, dependencyRelease, false);
+		Build build = createEditionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
 		build.getConfiguration().setBetaRelease(true);
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20180301.txt", 
@@ -104,7 +104,7 @@ public class RF2ClassifierServiceTestHarness {
 		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
 		assertTrue(dependencyRelease.exists());
 	
-		Build build = createEditionReleaseBuild(true, previousPublished, dependencyRelease, false);
+		Build build = createEditionReleaseBuild("20180301", true, previousPublished, dependencyRelease, false);
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20180301.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_US1000124_20180301"));
@@ -131,7 +131,7 @@ public class RF2ClassifierServiceTestHarness {
 				rootDir + "xsct2_Concept_Snapshot_INT_20180131.txt",
 				rootDir + "xsct2_Relationship_Delta_INT_20180131.txt",
 				rootDir + "xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
-				rootDir + "xder2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt");
+				rootDir + "xder2_sRefset_OWLAxiomDelta_INT_20180131.txt");
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_INT_20180131.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_INT_20180131"));
@@ -142,8 +142,8 @@ public class RF2ClassifierServiceTestHarness {
 		inputFileSchemaMap.put("rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
 				new TableSchema(ComponentType.REFSET, "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt"));
 		
-		inputFileSchemaMap.put("rel2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt",
-				new TableSchema(ComponentType.REFSET, "der2_sRefset_OWLAxiomReferenceSetDelta_INT_20180131.txt"));
+		inputFileSchemaMap.put("rel2_sRefset_OWLAxiomDelta_INT_20180131.txt",
+				new TableSchema(ComponentType.REFSET, "der2_sRefset_OWLAxiomDelta_INT_20180131.txt"));
 		
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		assertNotNull(result);
@@ -179,8 +179,8 @@ public class RF2ClassifierServiceTestHarness {
 		return build;
 	}
 	
-	private Build createEditionReleaseBuild(boolean isEditionRelease, File previousPublished, File internationalDependnecy, boolean useExternalClassifier) throws Exception {
-		Date releaseDate = DateUtils.parseDate("20170301", "yyyyMMdd");
+	private Build createEditionReleaseBuild(String effectiveTime, boolean isEditionRelease, File previousPublished, File internationalDependnecy, boolean useExternalClassifier) throws Exception {
+		Date releaseDate = DateUtils.parseDate(effectiveTime, "yyyyMMdd");
 		Product testProduct = new Product("snomed_ct_us_edition_20170301_testing");
 		testProduct.setReleaseCenter(usReleaseCenter);
 		if (!publishService.exists(usReleaseCenter, previousPublished.getName())) {

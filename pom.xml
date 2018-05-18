@@ -225,7 +225,7 @@
 			<plugin>
 				<groupId>external.atlassian.jgitflow</groupId>
 				<artifactId>jgitflow-maven-plugin</artifactId>
-				<version>1.0-m4.3</version>
+				<version>1.0-m5.1</version>
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 					<enableSshAgent>true</enableSshAgent>
@@ -235,10 +235,11 @@
 			<plugin>
   				<groupId>org.apache.maven.plugins</groupId>
   				<artifactId>maven-javadoc-plugin</artifactId>
-    			<configuration>
-      				<additionalparam>-Xdoclint:none</additionalparam>
-   			 	</configuration>
- 		 </plugin>
+  				<version>3.0.0</version>
+  				<configuration>
+       				<doclint>none</doclint>
+    			</configuration>
+ 		 	</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
