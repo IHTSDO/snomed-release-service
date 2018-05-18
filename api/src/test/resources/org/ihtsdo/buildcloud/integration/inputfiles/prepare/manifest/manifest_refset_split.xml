@@ -1,0 +1,40 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="Test_Refset_Splitting">
+		<folder Name="Delta">
+			<folder Name="Refset">
+				<folder Name="Language">
+					<file Name="der2_cRefset_LanguageDelta-en_DK1000005_20180331.txt">
+						<contains-reference-sets>
+							<refset id="900000000000508004" label="GB English">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+							<refset id="900000000000509007" label="US English">	
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="acceptabilityId"/>
+						</contains-additional-fields>	
+					</file>						
+					<file Name="der2_cRefset_LanguageDelta-da_DK1000005_20180331.txt">		
+						<contains-reference-sets>
+							<refset id="554461000005103" label="DA Danish">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="acceptabilityId"/>
+						</contains-additional-fields>						
+					</file>
+				</folder>
+			</folder>
+		</folder>
+	</folder>
+</listing>
+
