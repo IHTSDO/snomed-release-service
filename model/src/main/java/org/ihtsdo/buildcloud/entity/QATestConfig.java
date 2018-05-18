@@ -9,6 +9,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Table(name="qa_config")
@@ -38,6 +39,10 @@ public class QATestConfig {
 	
 	@Column(name = "storage_location")
 	private String storageLocation;
+
+	@Type(type="yes_no")
+	@Column(name = "enable_drools")
+	private boolean enableDrools = false;
 
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
@@ -70,13 +75,23 @@ public class QATestConfig {
 	public void setExtensionDependencyRelease(final String extDependencyRelease) {
 		extensionDependencyRelease = extDependencyRelease;
 	}
+
+	public boolean isEnableDrools() {
+		return enableDrools;
+	}
+
+	public void setEnableDrools(boolean enableDrools) {
+		this.enableDrools = enableDrools;
+	}
+
 	@Override
 	public String toString() {
 		return "QATestConfig [id=" + id + ", assertionGroupNames="
 				+ assertionGroupNames + ", previousInternationalRelease="
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionDependencyRelease="
-				+ extensionDependencyRelease + ", storageLocation=" + storageLocation + "]";
+				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
+				+ ", enableDrools=" + enableDrools + "]";
 	}
 
 	public String getStorageLocation() {
