@@ -41,10 +41,11 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		
-		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt");
+		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt|rel2_sRefset_OWLOntologyDelta_INT_20140731.txt");
 		loadDeltaFilesToInputDirectory(effectiveTime2, false);
 		integrationTestHelper.useExternalClassifier(false);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_OWLOntologyDelta_INT_20140731.txt", getClass());
 
 		final String expectedZipEntries2 =
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/\n" +
@@ -64,6 +65,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_TextDefinition_Full-en_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Relationship_Full_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+ effectiveTime2 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_sRefset_OWLOntologyFull_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Refset/Language/\n" +
@@ -78,6 +80,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_TextDefinition_Snapshot-en_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_sRefset_OWLOntologySnapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Language/\n" +
@@ -87,11 +90,12 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Content/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_" + effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime2 +".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime2 +".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_TextDefinition_Delta-en_INT_"+ effectiveTime2 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_TextDefinition_Delta-en_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Relationship_Delta_INT_"+ effectiveTime2 +".txt\n" +
-			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime2 +".txt";
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_sRefset_OWLOntologyDelta_INT_"+ effectiveTime2 + ".txt"; 
 
 		// This code extremely sensitive to timing issues because IdAssignmentBIOfflineDemoImpl only has one counter being accessed
 		// by multiple streams.
