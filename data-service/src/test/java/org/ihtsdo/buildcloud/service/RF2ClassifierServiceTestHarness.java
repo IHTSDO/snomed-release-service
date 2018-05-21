@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.service;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -131,7 +133,7 @@ public class RF2ClassifierServiceTestHarness {
 				rootDir + "xsct2_Concept_Snapshot_INT_20180131.txt",
 				rootDir + "xsct2_Relationship_Delta_INT_20180131.txt",
 				rootDir + "xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
-				rootDir + "xder2_sRefset_OWLAxiomDelta_INT_20180131.txt");
+				rootDir + "xsct2_sRefset_OWLAxiomDelta_INT_20180131.txt");
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_INT_20180131.txt", 
 				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_INT_20180131"));
@@ -140,10 +142,10 @@ public class RF2ClassifierServiceTestHarness {
 				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Delta_INT_20180131"));
 		
 		inputFileSchemaMap.put("rel2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt",
-				new TableSchema(ComponentType.REFSET, "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131.txt"));
+				new TableSchema(ComponentType.REFSET, "der2_cissccRefset_MRCMAttributeDomainDelta_INT_20180131"));
 		
 		inputFileSchemaMap.put("rel2_sRefset_OWLAxiomDelta_INT_20180131.txt",
-				new TableSchema(ComponentType.REFSET, "der2_sRefset_OWLAxiomDelta_INT_20180131.txt"));
+				new TableSchema(ComponentType.REFSET, "sct2_sRefset_OWLAxiomDelta_INT_20180131"));
 		
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		assertNotNull(result);
