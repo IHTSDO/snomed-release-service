@@ -106,17 +106,20 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			qaTestConfig.setProduct(product);
 			product.setQaTestConfig(qaTestConfig);
 		}
-		if (newPropertyValues.containsKey(ProductService.PREVIOUS_INTERNATIONAL_RELEASE)) {
-			qaTestConfig.setPreviousInternationalRelease(newPropertyValues.get(ProductService.PREVIOUS_INTERNATIONAL_RELEASE));
+		if (newPropertyValues.containsKey(PREVIOUS_INTERNATIONAL_RELEASE)) {
+			qaTestConfig.setPreviousInternationalRelease(newPropertyValues.get(PREVIOUS_INTERNATIONAL_RELEASE));
 		}
-		if (newPropertyValues.containsKey(ProductService.PREVIOUS_EXTENSION_RELEASE)) {
-			qaTestConfig.setPreviousExtensionRelease(newPropertyValues.get(ProductService.PREVIOUS_EXTENSION_RELEASE));
+		if (newPropertyValues.containsKey(PREVIOUS_EXTENSION_RELEASE)) {
+			qaTestConfig.setPreviousExtensionRelease(newPropertyValues.get(PREVIOUS_EXTENSION_RELEASE));
 		}
-		if (newPropertyValues.containsKey(ProductService.ASSERTION_GROUP_NAMES)) {
-			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ProductService.ASSERTION_GROUP_NAMES));
+		if (newPropertyValues.containsKey(ASSERTION_GROUP_NAMES)) {
+			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ASSERTION_GROUP_NAMES));
 		}
-		if (newPropertyValues.containsKey(ProductService.EXTENSION_DEPENDENCY_RELEASE)) {
-			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(ProductService.EXTENSION_DEPENDENCY_RELEASE));
+		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
+			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE));
+		}
+		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
+			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
 		}
 	}
 
@@ -137,37 +140,41 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
-		if (newPropertyValues.containsKey(ProductService.JUST_PACKAGE)) {
-			configuration.setJustPackage(TRUE.equals(newPropertyValues.get(ProductService.JUST_PACKAGE)));
+		if (newPropertyValues.containsKey(JUST_PACKAGE)) {
+			configuration.setJustPackage(TRUE.equals(newPropertyValues.get(JUST_PACKAGE)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.FIRST_TIME_RELEASE)) {
-			configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(ProductService.FIRST_TIME_RELEASE)));
+		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
+			configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.BETA_RELEASE)) {
-			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(ProductService.BETA_RELEASE)));
+		if (newPropertyValues.containsKey(BETA_RELEASE)) {
+			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(BETA_RELEASE)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.CREATE_INFERRED_RELATIONSHIPS)) {
-			configuration.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(ProductService.CREATE_INFERRED_RELATIONSHIPS)));
+		if (newPropertyValues.containsKey(CREATE_INFERRED_RELATIONSHIPS)) {
+			configuration.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(CREATE_INFERRED_RELATIONSHIPS)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)) {
-			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(ProductService.WORKBENCH_DATA_FIXES_REQUIRED)));
+		if (newPropertyValues.containsKey(WORKBENCH_DATA_FIXES_REQUIRED)) {
+			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.INPUT_FILES_FIXES_REQUIRED)) {
-			configuration.setInputFilesFixesRequired(TRUE.equals(newPropertyValues.get(ProductService.INPUT_FILES_FIXES_REQUIRED)));
+		if (newPropertyValues.containsKey(INPUT_FILES_FIXES_REQUIRED)) {
+			configuration.setInputFilesFixesRequired(TRUE.equals(newPropertyValues.get(INPUT_FILES_FIXES_REQUIRED)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.CREATE_LEGACY_IDS)) {
+		if (newPropertyValues.containsKey(CREATE_LEGACY_IDS)) {
 			configuration.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
 		}
+		
+		if (newPropertyValues.containsKey(USE_EXTERNAL_CLASSIFIER)) {
+			configuration.setUseExternalClassifier(TRUE.equals(newPropertyValues.get(USE_EXTERNAL_CLASSIFIER)));
+		}
 
-		if (newPropertyValues.containsKey(ProductService.PREVIOUS_PUBLISHED_PACKAGE)) {
+		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
-			final String pPP = newPropertyValues.get(ProductService.PREVIOUS_PUBLISHED_PACKAGE);
+			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
 			//Validate that a file of that name actually exists
 			boolean pppExists = false;
 			Exception rootCause = new Exception("No further information");
@@ -184,10 +191,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			}
 		}
 		
-		if (newPropertyValues.containsKey(ProductService.DEPENDENCY_RELEASE_PACKAGE)) {
+		if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)) {
 			final ReleaseCenter releaseCenter = new ReleaseCenter();
 			releaseCenter.setShortName("International");
-			final String dependencyReleasePackage = newPropertyValues.get(ProductService.DEPENDENCY_RELEASE_PACKAGE);
+			final String dependencyReleasePackage = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
 			//Validate that a file of that name actually exists
 			boolean pppExists = false;
 			Exception rootCause = new Exception("No further information");
@@ -209,39 +216,39 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			}
 		}
 		
-		if (newPropertyValues.containsKey(ProductService.MODULE_ID)) {
+		if (newPropertyValues.containsKey(MODULE_ID)) {
 			if (configuration.getExtensionConfig() == null) {
 				ExtensionConfig extConfig = new ExtensionConfig();
 				configuration.setExtensionConfig(extConfig);
 				extConfig.setBuildConfiguration(configuration);
 			}
-			configuration.getExtensionConfig().setModuleId(newPropertyValues.get(ProductService.MODULE_ID));
+			configuration.getExtensionConfig().setModuleId(newPropertyValues.get(MODULE_ID));
 			
 		}
 		
-		if (newPropertyValues.containsKey(ProductService.NAMESPACE_ID)) {
+		if (newPropertyValues.containsKey(NAMESPACE_ID)) {
 			if (configuration.getExtensionConfig() == null) {
 				ExtensionConfig extConfig = new ExtensionConfig();
 				configuration.setExtensionConfig(extConfig);
 				extConfig.setBuildConfiguration(configuration);
 			}
-			configuration.getExtensionConfig().setNamespaceId(newPropertyValues.get(ProductService.NAMESPACE_ID));
+			configuration.getExtensionConfig().setNamespaceId(newPropertyValues.get(NAMESPACE_ID));
 			
 		}
 		
-		if (newPropertyValues.containsKey(ProductService.RELEASE_AS_AN_EDITION)) {
+		if (newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
 			if (configuration.getExtensionConfig() == null) {
 				ExtensionConfig extConfig = new ExtensionConfig();
 				configuration.setExtensionConfig(extConfig);
 				extConfig.setBuildConfiguration(configuration);
 			}
-			configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(newPropertyValues.get(ProductService.RELEASE_AS_AN_EDITION)));
+			configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(newPropertyValues.get(RELEASE_AS_AN_EDITION)));
 		}
 
-		if (newPropertyValues.containsKey(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS)) {
+		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
 			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
 			try {
-				final String refsetCompositeKeyIndexes = newPropertyValues.get(ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
+				final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
 				final String[] split = refsetCompositeKeyIndexes.split("\\|");
 				for (String refsetKeyAndIndexes : split) {
 					refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
@@ -259,23 +266,23 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					}
 				}
 			} catch (final NumberFormatException e) {
-				throw new BadConfigurationException("Failed to parse " + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS);
+				throw new BadConfigurationException("Failed to parse " + CUSTOM_REFSET_COMPOSITE_KEYS);
 			}
 			configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
 		}
 
-		if (newPropertyValues.containsKey(ProductService.README_HEADER)) {
-			final String readmeHeader = newPropertyValues.get(ProductService.README_HEADER);
+		if (newPropertyValues.containsKey(README_HEADER)) {
+			final String readmeHeader = newPropertyValues.get(README_HEADER);
 			configuration.setReadmeHeader(readmeHeader);
 		}
 
-		if (newPropertyValues.containsKey(ProductService.README_END_DATE)) {
-			final String readmeEndDate = newPropertyValues.get(ProductService.README_END_DATE);
+		if (newPropertyValues.containsKey(README_END_DATE)) {
+			final String readmeEndDate = newPropertyValues.get(README_END_DATE);
 			configuration.setReadmeEndDate(readmeEndDate);
 		}
 
-		if (newPropertyValues.containsKey(ProductService.NEW_RF2_INPUT_FILES)) {
-			configuration.setNewRF2InputFiles(newPropertyValues.get(ProductService.NEW_RF2_INPUT_FILES));
+		if (newPropertyValues.containsKey(NEW_RF2_INPUT_FILES)) {
+			configuration.setNewRF2InputFiles(newPropertyValues.get(NEW_RF2_INPUT_FILES));
 		}
 	}
 

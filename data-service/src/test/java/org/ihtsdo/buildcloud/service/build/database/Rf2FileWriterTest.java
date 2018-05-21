@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.build.database.map.RF2TableDAOTreeMapImpl;
+import org.ihtsdo.buildcloud.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
@@ -31,11 +31,11 @@ public class Rf2FileWriterTest {
 	private ByteArrayOutputStream fullOutputStream;
 	private ByteArrayOutputStream snapshotOutputStream;
 	private ByteArrayOutputStream deltaOutputStream;
-	private RF2TableDAO rf2TableDAO;
+	private RF2TableExportDAO rf2TableDAO;
 
 	@Before
 	public void setUp() throws Exception {
-	    rf2TableDAO = new RF2TableDAOTreeMapImpl( null);
+	    rf2TableDAO = new RF2TableExportDAOImpl( null);
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
 	    snapshotOutputStream = new ByteArrayOutputStream();

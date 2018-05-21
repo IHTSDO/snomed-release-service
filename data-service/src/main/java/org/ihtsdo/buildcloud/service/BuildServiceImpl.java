@@ -54,7 +54,7 @@ import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
+import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -89,6 +89,8 @@ public class BuildServiceImpl implements BuildService {
 	private static final String HYPHEN = "-";
 
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
+	
+	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 
@@ -123,13 +125,7 @@ public class BuildServiceImpl implements BuildService {
 	private Boolean localRvf;
 
 	@Autowired
-	private UUIDGenerator uuidGenerator;
-
-	@Autowired
-	private RF2ClassifierService classifierService;
-
-	@Autowired
-	private RelationshipHelper relationshipHelper;
+	private RF2ClassifierService rf2ClassifierService;
 
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -184,14 +180,11 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.debug("Performing fixup on input file prior to input file validation");
 		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
-		
-		final String statedRelationshipInputFile = relationshipHelper.getStatedRelationshipInputFile(build);
-
+		final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
 		if (statedRelationshipInputFile == null) {
 			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
 			return;
 		}
-
 		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
@@ -213,6 +206,17 @@ public class BuildServiceImpl implements BuildService {
 		dao.putInputFile(build, tempFile, false);
 		tempFile.delete();
 		tempDir.delete();
+	}
+
+	private String getStatedRelationshipInputFile(Build build) {
+		//get a list of input file names
+		final List<String> inputfilesList = dao.listInputFileNames(build);
+		for (final String inputFileName : inputfilesList) { 
+			if (inputFileName.contains(STATED_RELATIONSHIP)) {
+				return inputFileName;
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -403,7 +407,7 @@ public class BuildServiceImpl implements BuildService {
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
 			if(dao.isBuildCancelRequested(build)) return;
-			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, uuidGenerator, fileProcessingFailureMaxRetry);
+			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
 			generator.generateReleaseFiles();
 			
 			//filter out additional relationships from the transformed delta
@@ -412,15 +416,13 @@ public class BuildServiceImpl implements BuildService {
 			if (inferedDelta != null) {
 				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
 				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
-				retrieveAdditionalRelationshipsFromTransformedDelta(build, transformedDelta);
+				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if(dao.isBuildCancelRequested(build)) return;
 			if (configuration.isCreateInferredRelationships()) {
-				// Run classifier against concept and stated relationship snapshots to produce inferred relationship snapshot
-				final String transformedClassifierSnapshotResult = classifierService.generateInferredRelationshipSnapshot(build, inputFileSchemaMap);
-				if (transformedClassifierSnapshotResult != null) {
-					generator.generateRelationshipFilesFromTransformedClassifierResult(transformedClassifierSnapshotResult);
-				}
+				// Run classifier
+				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+				generator.generateRelationshipFiles(result);
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
@@ -515,11 +517,12 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private void retrieveAdditionalRelationshipsFromTransformedDelta(final Build build, String inferedDelta) throws BusinessServiceException {
+	private void retrieveAdditionalRelationshipsInputDelta(final Build build, String inferedDelta) throws BusinessServiceException {
 		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
 		String originalDelta = inferedDelta + "_original";
+		String additionalRelsDelta = inferedDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
-		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, inferedDelta).getOutputStream();
+		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, additionalRelsDelta).getOutputStream();
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
 		final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
 		if (inputStream != null) {
@@ -636,6 +639,7 @@ public class BuildServiceImpl implements BuildService {
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean!= null ? schemaBean.getTableName() : null);
 				} else {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}

@@ -15,27 +15,24 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scripting.bsh.BshScriptUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
 import java.io.File;
-
-import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,8 +43,11 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.ERROR;
@@ -236,7 +236,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException {
+	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
 		Product product = getProduct(centerKey, productKey);
 		InputStream manifestStream = dao.getManifestStream(product);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
@@ -335,9 +335,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException {
-		if(!requestConfig.isLoadTermServerData() && !requestConfig.isLoadExternalRefsetData()) {
-			throw new BusinessServiceException("Either loadTermServerData or loadExternalRefsetData must be true");
-		}
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		Product product = getProduct(centerKey, productKey);
 		dao.persistSourcesGatherReport(product, inputGatherReport);
@@ -355,13 +352,23 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
 			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException {
 		try {
-			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(),
-					requestConfig.getExportCategory(), SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished());
-			FileInputStream fileInputStream = new FileInputStream(exportFile);
-			putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
-			inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
-					"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
-			LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+			/*File exportFile = termServerService.export(null, requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
+					requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory(),
+					SnowOwlRestClient.ExportType.DELTA, requestConfig.getNamespaceId(), requestConfig.isIncludeUnpublished(), requestConfig.getCodeSystemShortName());*/
+			File exportFile = termServerService.export(requestConfig.getTermServerUrl(), requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
+			try {
+				//Test whether the exported file is really a zip file
+				ZipFile zipFile = new ZipFile(exportFile);
+				FileInputStream fileInputStream = new FileInputStream(exportFile);
+				putSourceFile("terminology-server", centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, "terminology-server",
+						"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
+				LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+			} catch (ZipException ex) {
+				String returnedError = org.apache.commons.io.FileUtils.readFileToString(exportFile);
+				LOGGER.error("Failed export data from term server. Term server returned error: {}", returnedError);
+				throw new BusinessServiceException("Failed export data from term server. Term server returned error:" + returnedError);
+			}
 		} catch (Exception ex) {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server", ex.getMessage());
 			throw ex;

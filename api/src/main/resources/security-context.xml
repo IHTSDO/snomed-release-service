@@ -13,10 +13,11 @@
    <http pattern="/**/static/**" security="none"/>
    <http pattern="/**/webjars/**" security="none"/>
    <http pattern="/" security="none"/>
-
+   <http pattern="/ws/**" security="none"/>
+   <http pattern="/api/v1/ws/**" security="none"/>
    <!-- REST should have no state, each request is re-authenticated -->
-   <http create-session="stateless" auto-config="false">
-      <intercept-url pattern="/**" method="POST" access="ROLE_ihtsdo-sca-author" />
+   <http create-session="stateless" auto-config="false" use-expressions="true">
+      <intercept-url pattern="/**" method="POST" access="permitAll()" />
       <http-basic />
       <custom-filter ref="authenticationDecorator" after="BASIC_AUTH_FILTER" />
    </http>

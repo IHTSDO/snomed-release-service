@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.build.database;
 
 import org.ihtsdo.buildcloud.service.build.database.hsql.RF2TableDAOHsqlImpl;
-import org.ihtsdo.buildcloud.service.build.database.map.RF2TableDAOTreeMapImpl;
+import org.ihtsdo.buildcloud.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -13,7 +13,7 @@ import org.junit.Test;
 public class RF2TableDAOTest {
 
 	private UUIDGenerator uuidGenerator;
-	private RF2TableDAO rf2TableDAO;
+	private RF2TableExportDAO rf2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
 	private String rf2CoreFullFilename;
@@ -34,7 +34,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
+		rf2TableDAO = new RF2TableExportDAOImpl(null);
 		testCreateTable();
 	}
 
@@ -46,7 +46,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testAppendDataMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
+		rf2TableDAO = new RF2TableExportDAOImpl(null);
 		testAppendData();
 	}
 
@@ -58,7 +58,7 @@ public class RF2TableDAOTest {
 
 	@Test
 	public void testCoreDescCreateTableTreeMap() throws Exception {
-		rf2TableDAO = new RF2TableDAOTreeMapImpl(null);
+		rf2TableDAO = new RF2TableExportDAOImpl(null);
 		testCoreDescCreateTable();
 	}
 

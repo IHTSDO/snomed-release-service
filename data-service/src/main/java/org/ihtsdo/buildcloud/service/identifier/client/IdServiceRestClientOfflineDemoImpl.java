@@ -165,4 +165,16 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 			String comment) throws RestClientException {
 		throw NOT_IMPLEMENTED_EXCEPTION;
 	}
+
+	@Override
+	public List<Long> reserveSctIds(Integer nameSpace, int totalToReserve, String partitionId, String comment)
+			throws RestClientException {
+		throw NOT_IMPLEMENTED_EXCEPTION;
+	}
+
+	@Override
+	public List<Long> generateSctIds(Integer nameSpace, int totalToGenerate, String partitionId, String comment)
+			throws RestClientException {
+		throw NOT_IMPLEMENTED_EXCEPTION;
+	}
 }
