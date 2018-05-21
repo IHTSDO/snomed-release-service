@@ -81,7 +81,7 @@ public class ExternalRF2ClassifierRestClient {
 			File archive = File.createTempFile("result_", classificationId + ".zip");
 			BinaryResource archiveResults = resty.bytes(resultUrl);
 			archiveResults.save(archive);
-			logger.info("Result is archived." + archive.getAbsolutePath());
+			logger.info("Result is archived " + archive.getAbsolutePath());
 			return archive;
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to download classification result via " + restUrl, e);
