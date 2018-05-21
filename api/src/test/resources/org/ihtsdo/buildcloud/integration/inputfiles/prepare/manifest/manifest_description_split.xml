@@ -1,0 +1,25 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="Test_Description_Splitting">
+		<folder Name="Delta">
+			<folder Name="Terminology">
+				<file Name="sct2_Description_Delta-da_DK1000005_20180331.txt">	
+					<sources>
+						<source>terminology-server</source>	
+					</sources>
+					<contains-language-codes>
+						<code>da</code>
+					</contains-language-codes>					
+				</file>
+				<file Name="sct2_Description_Delta-en_DK1000005_20180331.txt">	
+					<sources>
+						<source>terminology-server</source>		
+					</sources>
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>														
+				</file>
+			</folder>
+		</folder> <!-- Delta -->
+	</folder>
+</listing>
+

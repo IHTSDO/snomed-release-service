@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,11 +252,8 @@ public class InputFileController {
 			notes = "Create or replace files in input file directories")
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
-												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws IOException, ResourceNotFoundException, NoSuchAlgorithmException, JAXBException, DecoderException {
+												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException, DecoderException, JAXBException, NoSuchAlgorithmException, IOException {
 		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
-		if (!report.getDetails().isEmpty() && report.getDetails().get(ReportType.ERROR) != null) {
-			
-		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 	

@@ -176,15 +176,16 @@ public class IntegrationTestHelper {
 	}
 	
 	
-	public void getInputFile(String inputFileName) throws Exception {
+	public String getInputFile(String inputFileName) throws Exception {
 		String getInputFileUrl = getProductUrl() + "/inputfiles/" + inputFileName;
 		System.out.println(getInputFileUrl);
-		mockMvc.perform(
+		MvcResult mvcResult = mockMvc.perform(
 				request(HttpMethod.GET, getInputFileUrl)
-						.header("Authorization", getBasicDigestHeaderValue())
-		)
+						.header("Authorization", getBasicDigestHeaderValue()))
 				.andDo(print())
-				.andExpect(status().isOk());
+				.andExpect(status().isOk()).andReturn();
+		return mvcResult.getResponse().getContentAsString();
+		
 	}
 
 	public void deletePreviousTxtInputFiles() throws Exception {
@@ -490,6 +491,20 @@ public class IntegrationTestHelper {
 						zipFile.getInputStream(zipEntry));
 			}
 		}
+	}
+
+	public void useExternalClassifier(boolean useExternal) throws Exception {
+		setProductProperty("{ " + jsonPair(ProductService.USE_EXTERNAL_CLASSIFIER, Boolean.toString(useExternal)) + " }");
+	}
+
+	public void printBuildConfig(String buildURL) throws Exception {
+		final MvcResult getBuildConfig = mockMvc.perform(
+				get(buildURL + "/configuration")
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andReturn();
 	}
 
 	public int cancelBuild(String buildURL) throws Exception {

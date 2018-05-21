@@ -14,6 +14,7 @@
     "createInferredRelationships" : false,
     "createLegacyIds" : false,
     "extensionConfig" : null,
+    "useExternalClassifier" : false,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },
@@ -22,7 +23,8 @@
     "previousInternationalRelease" : null,
     "previousExtensionRelease" : null,
     "extensionDependencyRelease" : null,
-    "storageLocation" : null
+    "storageLocation" : null,
+    "enableDrools" : false
   },
   "url" : "http://localhost/api/v1/products/snomed_ct_release",
   "manifest_url" : "http://localhost/api/v1/products/snomed_ct_release/manifest",
