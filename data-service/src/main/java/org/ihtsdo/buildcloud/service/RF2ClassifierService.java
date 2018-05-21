@@ -1,5 +1,24 @@
 package org.ihtsdo.buildcloud.service;
 
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.BETA_RELEASE_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.COLUMN_SEPARATOR;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.CONCEPTS_WITH_CYCLES_TXT;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.CONCEPT_SNAPSHOT_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DATA_PROBLEM;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DATE_FORMAT;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DELTA;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.EQUIVALENCY_REPORT_TXT;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.INT_RELATIONSHIP_SNAPSHOT_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.INT_RELEASE_CENTER;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.INT_STATED_RELATIONSHIP_SNAPSHOT_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.LINE_ENDING;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.RELASHIONSHIP_DELTA_PREFIX;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.SNAPSHOT;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.STATED;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.TXT_FILE_EXTENSION;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,11 +45,9 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.service.RF2ClassifierService;
 import org.ihtsdo.buildcloud.service.build.RF2BuildUtils;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
+import org.ihtsdo.buildcloud.service.build.RF2Constants.RelationshipFileType;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient;
@@ -42,8 +59,6 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import static org.ihtsdo.snomed.util.rf2.schema.SchemaFactory.REL_2;
-import static org.ihtsdo.snomed.util.rf2.schema.SchemaFactory.SCT_2;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,15 +214,16 @@ public class RF2ClassifierService {
 				logger.warn("Failed to recover schema mapped to {}.", inputFilename);
 				continue;
 			}
+			String updatedFilename = inputFileSchema.getFilename();
 			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
-				pojo.getConceptSnapshotFilenames().add(inputFilename.replace(REL_2, SCT_2).replace(DELTA, SNAPSHOT));
+				pojo.getConceptSnapshotFilenames().add(updatedFilename.replace(DELTA, SNAPSHOT));
 			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
-				pojo.getStatedRelationshipSnapshotFilenames().add(inputFilename.replace(REL_2, SCT_2).replace(DELTA, SNAPSHOT));
+				pojo.getStatedRelationshipSnapshotFilenames().add(updatedFilename.replace(DELTA, SNAPSHOT));
 			} else if (inputFileSchema.getComponentType() == ComponentType.REFSET) {
 				if (inputFilename.startsWith(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA)) {
-					pojo.setMrcmAttributeDomainDeltaFilename(inputFilename.replace(REL_2, DER2));
+					pojo.setMrcmAttributeDomainDeltaFilename(updatedFilename);
 				} else if (inputFilename.matches(REL2_OWL_AXIOM_REFSET_DELTA)) {
-					pojo.setOwlAxiomRefsetDeltaFilename(inputFilename.replace(REL_2, DER2));
+					pojo.setOwlAxiomRefsetDeltaFilename(updatedFilename);
 				}
 			}
 		}
