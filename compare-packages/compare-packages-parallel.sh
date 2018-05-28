@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e;
 
+enhancedZip=false
+
 function extractZip {
 	zipName=$1
 	dirName=$2
 	echo "Extracting $zipName to $dirName"
 	mkdir -p $dirName
-	unzip "$zipName" -d $dirName
+	if [ "$enhancedZip" = true ]; then
+		7z e -bd -o$dirName "$zipName" "*.*" -r
+	else 
+		unzip "$zipName" -d $dirName
+	fi
 }
 
 function createLists {
@@ -40,12 +46,21 @@ if [ $# -lt 4 ]; then
 	exit 1
 fi
 
-#Check if parallel is installed
+echo "Checking if parallel is installed"
 parallelInstalled=`parallel -? 2>/dev/null | grep GNU || true`
 if [ -z "${parallelInstalled}" ]
 then
-	echo "Could not detect the GNU Program 'Parallel'  if MAC, do brew install parallel"
+	echo "Could not detect the GNU Program 'Parallel'  if Mac OSX, do 'brew install parallel'"
 	exit -2
+fi
+
+echo "Checking if if 7-zip is installed"
+SevenZipInstalled=`command -v 7z || true `
+if [ -z "${SevenZipInstalled}" ]
+then
+	echo "Could not detect 7-Zip, falling back to use 'unzip'. This may cause problems for filenames with non-ASCII characters."
+else
+	enhancedZip=true
 fi
 
 leftName=$1
@@ -67,7 +82,7 @@ if [[ $rightArchive =~ \.zip$ ]]
 then 
 	rightDir="target/right_archive" 
 	echo "2nd archive detected instead of directory, resolving to ${rightDir}"
-	unzip "$rightArchive" -d ${rightDir}
+	extractZip "$rightArchive" "${rightDir}"
 else
 	rightDir=${rightArchive}
 fi
