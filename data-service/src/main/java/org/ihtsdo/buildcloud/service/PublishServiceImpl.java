@@ -35,6 +35,9 @@ import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,9 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private BuildDAO buildDao;
+	
+	@Autowired
+	private SchemaFactory schemaFactory;
 	
 	private static final int BATCH_SIZE = 5000;
 	
@@ -274,6 +280,7 @@ public class PublishServiceImpl implements PublishService {
 			List<String> filesFound = fileHelper.listFiles(fileRootPath);
 			LOGGER.info("Total files found {} from file path {}", filesFound.size(), fileRootPath);
 			LOGGER.info("isBetaRelease flag is set to {}", isBetaRelease);
+			
 			for (String fileName : filesFound) {
 					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
 						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
@@ -285,8 +292,11 @@ public class PublishServiceImpl implements PublishService {
 						}
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
-								publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
-							} catch (IOException | RestClientException e) {
+								ComponentType type = schemaFactory.createSchemaBean(filenameToCheck).getComponentType();
+								if (ComponentType.REFSET != type) {
+									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
+								}
+							} catch (IOException | RestClientException | FileRecognitionException e) {
 								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
 							}
 						}
@@ -412,7 +422,6 @@ public class PublishServiceImpl implements PublishService {
 							LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
 						}
 					}
-					
 				}
 				batchJob = null;
 			}
