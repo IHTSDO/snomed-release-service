@@ -146,4 +146,19 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			Assert.fail("Should not result in exception");
 		}
 	}
+	
+	@Test
+	public void testPublishingOwlAxiom() {
+		String fileToPublish = "test_axiom.zip";
+		InputStream inputStream = ClassLoader.getSystemResourceAsStream(fileToPublish);
+		long size =1000;
+		ReleaseCenter releaseCenter = new ReleaseCenter();
+		releaseCenter.setShortName(releaseCenterName);
+		try {
+			publishService.publishAdHocFile(releaseCenter, inputStream, fileToPublish, size, true);
+		} catch (BusinessServiceException e) {
+			e.printStackTrace();
+			Assert.fail("Should not result in exception");
+		}
+	}
 }
