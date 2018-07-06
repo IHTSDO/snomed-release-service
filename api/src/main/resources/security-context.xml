@@ -17,7 +17,10 @@
    <http pattern="/api/v1/ws/**" security="none"/>
    <!-- REST should have no state, each request is re-authenticated -->
    <http create-session="stateless" auto-config="false" use-expressions="true">
-      <intercept-url pattern="/**" method="POST" access="permitAll()" />
+      <intercept-url pattern="/**" method="GET" access="permitAll()"/>
+      <intercept-url pattern="/**" method="POST" access="isAuthenticated()" />
+      <intercept-url pattern="/**" method="PUT" access="isAuthenticated()" />
+      <intercept-url pattern="/**" method="DELETE" access="isAuthenticated()" />
       <http-basic />
       <custom-filter ref="authenticationDecorator" after="BASIC_AUTH_FILTER" />
    </http>
