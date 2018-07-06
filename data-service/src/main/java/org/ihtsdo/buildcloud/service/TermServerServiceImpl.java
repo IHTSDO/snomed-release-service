@@ -28,9 +28,6 @@ import java.util.zip.ZipInputStream;
 @Service
 public class TermServerServiceImpl implements TermServerService{
 
-    @Value("${snowowl.flatIndexExportStyle}")
-    private Boolean exportFlatType;
-
     @Value("${snowowl.reasonerId}")
     private String reasonerId;
 
@@ -67,7 +64,7 @@ public class TermServerServiceImpl implements TermServerService{
         String snowOwlUrl = termServerUrl + snowowlPath;
         SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId);
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
-        SnowOwlRestClient.ExportType exportType = exportFlatType ? SnowOwlRestClient.ExportType.SNAPSHOT : SnowOwlRestClient.ExportType.DELTA;
+        SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = buildModulesList(snowOwlRestClient, branchPath, excludedModuleId);
         ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
                 exportCategory, exportType,snowOwlRestClient);
@@ -108,8 +105,6 @@ public class TermServerServiceImpl implements TermServerService{
                     throw new BusinessServiceException("Cannot export published data without an effective date");
                 }
                 exportConfig.setStartEffectiveTime(effectiveDate);
-                exportConfig.setTransientEffectiveTime(effectiveDate);
-                exportConfig.setEndEffectiveTime(effectiveDate);
                 break;
             case FEEDBACK_FIX:
                 if(effectiveDate == null) {
