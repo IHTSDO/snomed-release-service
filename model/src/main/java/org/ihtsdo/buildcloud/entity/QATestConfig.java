@@ -44,6 +44,20 @@ public class QATestConfig {
 	@Column(name = "enable_drools")
 	private boolean enableDrools = false;
 
+	@Type(type="yes_no")
+	@Column(name = "create_jira_issue")
+	private boolean jiraIssueCreationFlag = false;
+
+	@Column(name = "product_name")
+	private String productName;
+
+	@Column(name = "reporting_stage")
+	private String reportingStage;
+
+	@Type(type = "yes_no")
+	@Column(name = "enable_mrcm_validation")
+	private boolean enableMRCMValidation;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -84,6 +98,30 @@ public class QATestConfig {
 		this.enableDrools = enableDrools;
 	}
 
+	public boolean isJiraIssueCreationFlag() {
+		return jiraIssueCreationFlag;
+	}
+
+	public void setJiraIssueCreationFlag(boolean jiraIssueCreationFlag) {
+		this.jiraIssueCreationFlag = jiraIssueCreationFlag;
+	}
+
+	public String getProductName() {
+		return productName;
+	}
+
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+
+	public String getReportingStage() {
+		return reportingStage;
+	}
+
+	public void setReportingStage(String reportingStage) {
+		this.reportingStage = reportingStage;
+	}
+
 	@Override
 	public String toString() {
 		return "QATestConfig [id=" + id + ", assertionGroupNames="
@@ -91,8 +129,11 @@ public class QATestConfig {
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionDependencyRelease="
 				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
-				+ ", enableDrools=" + enableDrools + "]";
+				+ ", enableDrools=" + enableDrools + ", jiraIssueCreationFlag=" + jiraIssueCreationFlag
+				+ ", product_name=" + productName + ", reporting_stage=" + reportingStage
+				+ ", enableMRCMValidation=" + enableMRCMValidation +"]";
 	}
+
 
 	public String getStorageLocation() {
 		return storageLocation;
@@ -100,5 +141,13 @@ public class QATestConfig {
 
 	public void setStorageLocation(final String storageLocation) {
 		this.storageLocation = storageLocation;
+	}
+
+	public boolean isEnableMRCMValidation() {
+		return enableMRCMValidation;
+	}
+
+	public void setEnableMRCMValidation(boolean enableMRCMValidation) {
+		this.enableMRCMValidation = enableMRCMValidation;
 	}
 }
