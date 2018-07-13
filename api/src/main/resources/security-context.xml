@@ -18,6 +18,7 @@
    <!-- REST should have no state, each request is re-authenticated -->
    <http create-session="stateless" auto-config="false" use-expressions="true">
       <intercept-url pattern="/**" method="GET" access="permitAll()"/>
+      <intercept-url pattern="/**" method="HEAD" access="permitAll()"/>
       <intercept-url pattern="/**" method="POST" access="isAuthenticated()" />
       <intercept-url pattern="/**" method="PUT" access="isAuthenticated()" />
       <intercept-url pattern="/**" method="DELETE" access="isAuthenticated()" />
