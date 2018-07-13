@@ -592,7 +592,7 @@ public class BuildServiceImpl implements BuildService {
 			}
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			validateQaTestConfig(qaTestConfig, buildConfiguration);
-			String effectiveTime = buildConfiguration.getEffectiveTime() != null ? new SimpleDateFormat("yyyyMMdd").format(buildConfiguration.getEffectiveTime()) : null;
+			String effectiveTime = buildConfiguration.getEffectiveTimeFormatted();
 			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime);
 		}
 	}
