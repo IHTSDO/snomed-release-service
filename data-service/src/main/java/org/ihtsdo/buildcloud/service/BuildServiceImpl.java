@@ -12,8 +12,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -588,8 +590,10 @@ public class BuildServiceImpl implements BuildService {
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			validateQaTestConfig(qaTestConfig, build.getConfiguration());
-			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax);
+			BuildConfiguration buildConfiguration = build.getConfiguration();
+			validateQaTestConfig(qaTestConfig, buildConfiguration);
+			String effectiveTime = buildConfiguration.getEffectiveTimeFormatted();
+			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime);
 		}
 	}
 

@@ -119,7 +119,19 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE));
 		}
 		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
-			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
+			qaTestConfig.setEnableDrools(TRUE.equals(newPropertyValues.get(ENABLE_DROOLS)));
+		}
+		if(newPropertyValues.containsKey(ENABLE_MRCM)) {
+			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
+		}
+		if(newPropertyValues.containsKey(ENABLE_JIRA)) {
+			qaTestConfig.setJiraIssueCreationFlag(TRUE.equals(newPropertyValues.get(ENABLE_JIRA)));
+		}
+		if(newPropertyValues.containsKey(JIRA_PRODUCT_NAME)) {
+			qaTestConfig.setProductName(newPropertyValues.get(JIRA_PRODUCT_NAME));
+		}
+		if(newPropertyValues.containsKey(JIRA_REPORTING_STAGE)) {
+			qaTestConfig.setReportingStage(newPropertyValues.get(JIRA_REPORTING_STAGE));
 		}
 	}
 
