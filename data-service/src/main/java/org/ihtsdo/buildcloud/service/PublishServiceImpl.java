@@ -172,13 +172,13 @@ public class PublishServiceImpl implements PublishService {
 				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 
 				//mark this as previous published package for future builds
-				markAsPreviousPublishedPackage(build, releaseCenterKey, productKey);
+				//markAsPreviousPublishedPackage(build, releaseCenterKey, productKey);
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
-		} catch (JAXBException e) {
+		}/* catch (JAXBException e) {
 			throw new BusinessServiceException("Failed to mark this package as previous published package for future builds {}", e);
-		} finally {
+		}*/ finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
 
