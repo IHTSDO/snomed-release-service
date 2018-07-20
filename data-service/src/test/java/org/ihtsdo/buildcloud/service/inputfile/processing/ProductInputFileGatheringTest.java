@@ -13,6 +13,7 @@ import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +76,7 @@ public class ProductInputFileGatheringTest {
     }
 
     @Test
-    public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
+    public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException, ProcessWorkflowException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
@@ -92,7 +93,7 @@ public class ProductInputFileGatheringTest {
     }
 
     @Test
-    public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
+    public void testGetTermServerExportFailed() throws BusinessServiceException, IOException, ProcessWorkflowException {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
