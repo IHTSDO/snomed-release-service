@@ -350,7 +350,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
-			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException {
+			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException, ProcessWorkflowException {
 		try {
 			/*File exportFile = termServerService.export(null, requestConfig.getBranchPath(), requestConfig.getStartEffectiveDate(), requestConfig.getEndEffectiveDate(),
 					requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory(),
@@ -374,6 +374,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			throw ex;
 		}
 	}
+
 
 	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
 			, InputGatherReport inputGatherReport) throws IOException {
