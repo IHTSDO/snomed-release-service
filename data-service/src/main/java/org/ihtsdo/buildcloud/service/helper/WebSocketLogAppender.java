@@ -18,10 +18,6 @@ public class WebSocketLogAppender extends AppenderSkeleton{
 
     @Override
     protected void append(LoggingEvent loggingEvent) {
-        /*if(!loggingEvent.getLevel().equals(Level.DEBUG)) {
-            LogOutputMessage message = new LogOutputMessage(loggingEvent.getLevel().toString(), loggingEvent.getRenderedMessage());
-            messagingTemplate.convertAndSend("/queue/messages." + trackerId, message);
-        }*/
         Object mdcValue = loggingEvent.getMDC("trackerId");
         if(mdcValue != null && trackerId.equalsIgnoreCase(mdcValue.toString())) {
             LogOutputMessage message = new LogOutputMessage(loggingEvent.getLevel().toString(), loggingEvent.getRenderedMessage(), new Date().getTime());

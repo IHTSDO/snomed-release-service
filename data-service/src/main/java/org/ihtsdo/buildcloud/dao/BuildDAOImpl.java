@@ -567,6 +567,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try {
 			if(s3Client.getObject(buildBucketName, cancelledRequestedPath) != null) {
 				build.setStatus(Build.Status.CANCEL_REQUESTED);
+				LOGGER.warn("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
 				return true;
 			}
 		} catch (Exception e) {

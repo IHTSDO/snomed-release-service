@@ -279,6 +279,7 @@ public class BuildServiceImpl implements BuildService {
 					dao.persistReport(build);
 					dao.updateStatus(build, Status.CANCELLED);
 					dao.deleteOutputFiles(build);
+					LOGGER.info("Build has been canceled");
 				}
 			}
 
