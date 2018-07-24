@@ -28,6 +28,7 @@
 <script src="./libs/sockjs.min.js"></script>
 <script src="./libs/stomp.min.js"></script>
 <script src="./libs/moment-min.js"></script>
+<script src="./libs/jquery-2.0.3.js"></script>
 <script type="text/javascript">
    var stompClient = null;
    var errorCount = 0;
@@ -35,6 +36,7 @@
    var hideDebug = false;
    var hideWarn = false;
    var hideError = false;
+   var buildInfo = null;
 
    function init() {
       if (!Notification) {
@@ -45,11 +47,36 @@
          Notification.requestPermission();
       disconnect();
       var url = window.location.href;
+      setAuthHeader(url);
       var trackerId = getParameterByName('trackerId', url);
       if (trackerId !== null) {
          document.getElementById('from').value = trackerId;
          connect();
       }
+   }
+
+   function setAuthHeader(url) {
+      var keys = ["dev-ims-ihtsdo","uat-ims-ihtsdo","ims-ihtsdo"];
+      for(i=0;i < keys.length; i++) {
+         var authHeaderValue = getParameterByName(keys[i], url);
+         if(authHeaderValue !== null) {
+            var key = keys[i];
+            setCookie(key, authHeaderValue, 1);
+            var newUrl = url.substr(0, url.indexOf('&' + key));
+            window.location.replace(newUrl);
+            break;
+         }
+      }
+   }
+
+   function setCookie(name,value,days) {
+      var expires = "";
+      if (days) {
+         var date = new Date();
+         date.setTime(date.getTime() + (days*24*60*60*1000));
+         expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "")  + expires + "; path=/";
    }
 
    function setConnected(connected) {
@@ -97,7 +124,11 @@
          notify(level, messageOutput.message);
       } else if (level === 'INFO') {
          if (hideInfo) p.classList.add('hidden');
-         if(messageOutput.message === 'Build completed') notify(level, messageOutput.message);
+         if(messageOutput.message.indexOf("BUILD_INFO::")===0) {
+            buildInfo = messageOutput.message.split("::")[1];
+            document.getElementById('cancelBuild').style.color = 'blue';
+         }
+         if(messageOutput.message.indexOf('Build process ends')===0) notify(level, messageOutput.message);
       } else if (level === 'DEBUG') {
          if (hideDebug) p.classList.add('hidden');
       } else if(level === 'WARN') {
@@ -150,6 +181,31 @@
       document.getElementById('response').innerHTML = '';
    }
 
+   function cancelBuild() {
+      if(buildInfo == null) {
+         buildInfo = prompt("This build info is not available, please input with format /centers/{centerKey}/products/{productKey}/builds/{buildId}","/centers/{centerKey}/products/{productKey}/builds/{buildId}");
+      }
+      if(buildInfo !== null && buildInfo.trim() !== "") {
+         var result = confirm("Are you sure you want to cancel this build " + buildInfo + " ?");
+         if(result) {
+            var url = "/api/v1/" + buildInfo + "/cancel";
+            $.ajax({
+               type: "POST",
+               url: url,
+               success: function(data) {
+                  alert("Cancel build request has been sent! Build process will be ended when possible");
+               },
+               error: function(xhr, statusTxt, error) {
+                  alert("Failed to cancel build due to: " + xhr.responseText);
+               }
+            });
+         }
+      } else {
+         alert("Please input build info before cancelling the build");
+      }
+
+   }
+
 </script>
 <div>
     <div><input type="text" id="from" placeholder="Tracker Id"></div>
@@ -160,7 +216,8 @@
 <div>
     <button id="connect" onclick="connect();">Start</button>
     <button id="clearLog" onclick="clearLog();">Clear</button>
-    <button id="disconnect" disabled="" onclick="disconnect();">Stop</button>
+    <button id="disconnect" disabled="" onclick="disconnect();">Stop</button> |
+    <button id="cancelBuild" onclick="cancelBuild();">CANCEL THIS BUILD!</button>
 </div>
 <div>
     Hide:

@@ -30,6 +30,8 @@ import java.util.List;
 @Service
 public class ReleaseServiceImpl implements ReleaseService{
 
+    private  static final String TRACKER_ID = "trackerId";
+
     @Autowired
     ProductInputFileService productInputFileService;
 
@@ -46,10 +48,11 @@ public class ReleaseServiceImpl implements ReleaseService{
     @Async("securityContextAsyncTaskExecutor")
     public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate  messagingTemplate) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
         String trackerId = gatherInputRequestPojo.getTrackerId();
+        Build build = null;
         try {
             //Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
             if(messagingTemplate != null) {
-                MDC.put("trackerId", trackerId);
+                MDC.put(TRACKER_ID, trackerId);
                 addAppenderToLogger(trackerId, messagingTemplate);
             }
             final User anonymousSubject = authenticationService.getAnonymousSubject();
@@ -77,15 +80,16 @@ public class ReleaseServiceImpl implements ReleaseService{
                 }
             }
             //Create and trigger new build
-            Build build = buildService.createBuildFromProduct(releaseCenter, productKey);
+            build = buildService.createBuildFromProduct(releaseCenter, productKey);
+            LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
             buildService.triggerBuild(releaseCenter, productKey, build.getId(), 10);
-            LOGGER.info("Build completed");
+            LOGGER.info("Build process ends", build.getStatus().name());
         } catch (Exception e) {
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());
             throw e;
         } finally {
             if(messagingTemplate != null) {
-                MDC.remove("trackerId");
+                MDC.remove(TRACKER_ID);
                 removeAppenderFromLogger(trackerId);
             }
         }
