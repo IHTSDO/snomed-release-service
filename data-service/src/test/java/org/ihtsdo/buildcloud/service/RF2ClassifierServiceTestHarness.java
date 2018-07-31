@@ -82,13 +82,32 @@ public class RF2ClassifierServiceTestHarness {
 	
 		Build build = createExtensionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
 		build.getConfiguration().setBetaRelease(true);
-		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap(true);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		addFilesToBuild(build, "release/xsct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/xsct2_Concept_Snapshot_US1000124_20180301.txt");
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		System.out.println(result);
 		assertNotNull(result);
 		assertTrue(result.isSnapshot());
 		assertEquals("xsct2_Relationship_Snapshot_US1000124_20180301.txt", result.getResultFilename());
+	}
+	
+	@Test
+	public void testExternalClassifierForUSExtension() throws Exception {
+		File previousPublished = new File("release/SnomedCT_USExtensionRF2_PRODUCTION_20170901T120000Z.zip");
+		assertTrue(previousPublished.exists());
+		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
+		assertTrue(dependencyRelease.exists());
+	
+		Build build = createExtensionReleaseBuild("20180301", false, previousPublished, dependencyRelease, true);
+		build.getConfiguration().setBetaRelease(false);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
+		addFilesToBuild(build, "release/usExtension/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/usExtension/sct2_Concept_Snapshot_US1000124_20180301.txt");
+		addFilesToBuild(build, "release/usExtension/sct2_StatedRelationship_Delta_US1000124_20180301.txt","release/usExtension/sct2_Concept_Delta_US1000124_20180301.txt");
+		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
+		System.out.println(result);
+		assertNotNull(result);
+		assertTrue(!result.isSnapshot());
+		assertEquals("sct2_Relationship_Delta_US1000124_20180301.txt", result.getResultFilename());
 	}
 
 	@Test
@@ -100,7 +119,7 @@ public class RF2ClassifierServiceTestHarness {
 		assertTrue(dependencyRelease.exists());
 	
 		Build build = createExtensionReleaseBuild("20180301", true, previousPublished, dependencyRelease, false);
-		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap(false);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		addFilesToBuild(build, "release/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/sct2_Concept_Snapshot_US1000124_20180301.txt");
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		assertNotNull(result);
@@ -116,7 +135,7 @@ public class RF2ClassifierServiceTestHarness {
 		assertTrue(dependencyRelease.exists());
 	
 		Build build = createExtensionReleaseBuild("20180301", true, previousPublished, dependencyRelease, true);
-		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap(false);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		addFilesToBuild(build, "release/sct2_StatedRelationship_Delta_US1000124_20180301.txt","release/sct2_Concept_Delta_US1000124_20180301.txt");
 		addFilesToBuild(build, "release/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/sct2_Concept_Snapshot_US1000124_20180301.txt");
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
@@ -166,18 +185,13 @@ public class RF2ClassifierServiceTestHarness {
 	}
 
 	
-	private Map<String, TableSchema> createInputFilesSchemaMap(boolean isBeta) {
+	private Map<String, TableSchema> createInputFilesSchemaMap() {
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
-		
-		String statedRelFile = "sct2_StatedRelationship_Delta_US1000124_20180301";
-		
 		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_US1000124_20180301.txt", 
-				new TableSchema(ComponentType.STATED_RELATIONSHIP, isBeta ? "x"+ statedRelFile : statedRelFile));
-		
-		String conceptFile = "sct2_Concept_Delta_US1000124_20180301";
+				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_US1000124_20180301"));
 		
 		inputFileSchemaMap.put("rel2_Concept_Delta_US1000124_20180301.txt",
-				new TableSchema(ComponentType.CONCEPT, isBeta ? "x" + conceptFile : conceptFile));
+				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Delta_US1000124_20180301"));
 		return inputFileSchemaMap;
 	}
 	

@@ -40,7 +40,7 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.service.RF2ClassifierService.Relationship;
+import org.ihtsdo.buildcloud.service.RF2ClassifierService.RelationshipType;
 import org.ihtsdo.buildcloud.service.build.RF2BuildUtils;
 import org.ihtsdo.classifier.ClassificationException;
 import org.ihtsdo.classifier.ClassificationRunner;
@@ -130,7 +130,7 @@ public class InternalRF2Classifier extends RF2Classifier{
 		String previousInferredFileLocalPath = null;
 		if (!configuration.isFirstTimeRelease()) {
 			previousInferredFileLocalPath = downloadPreviousRelationshipFileLocally(build,
-					classifierFiles.getStatedRelationshipFilenames().get(0), tempDir, Relationship.INFERRED);
+					classifierFiles.getStatedRelationshipFilenames().get(0), tempDir, RelationshipType.INFERRED);
 			if (previousInferredFileLocalPath != null) {
 				previousInferredRelationshipFilePaths.add(previousInferredFileLocalPath);
 				logger.debug("Successfully build map of previously allocated inferred relationship SCTIDs");
@@ -215,9 +215,9 @@ public class InternalRF2Classifier extends RF2Classifier{
 	}
 	
 	
-	private String downloadPreviousRelationshipFileLocally(final Build build, String relationshipFilename, final File tempDir, final Relationship relationshipType) throws BusinessServiceException {
+	private String downloadPreviousRelationshipFileLocally(final Build build, String relationshipFilename, final File tempDir, final RelationshipType relationshipType) throws BusinessServiceException {
 		final String previousPublishedPackage = build.getConfiguration().getPreviousPublishedPackage();
-		if (relationshipType == Relationship.INFERRED) {
+		if (relationshipType == RelationshipType.INFERRED) {
 			relationshipFilename = relationshipFilename.replace(STATED, "");
 		}
 		if (build.getConfiguration().isBetaRelease()) {
