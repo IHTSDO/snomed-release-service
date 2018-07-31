@@ -58,7 +58,8 @@ echo "Checking if if 7-zip is installed"
 SevenZipInstalled=`command -v 7z || true `
 if [ -z "${SevenZipInstalled}" ]
 then
-	echo "Could not detect 7-Zip, falling back to use 'unzip'. This may cause problems for filenames with non-ASCII characters."
+	echo "Could not detect 7-Zip, falling back to use 'unzip'. This may cause problems for filenames with non-ASCII characters. If Mac OSX, do 'brew install p7zip'"
+	read -n 1 -s -r -p "Press any key to continue"
 else
 	enhancedZip=true
 fi
