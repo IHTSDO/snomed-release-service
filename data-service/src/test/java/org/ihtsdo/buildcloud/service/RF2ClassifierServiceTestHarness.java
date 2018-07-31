@@ -21,8 +21,11 @@ import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
+import org.ihtsdo.otf.dao.s3.S3ClientFactory;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,6 +35,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.google.common.io.Files;
 
+/**
+ * 1. Create /snomed-release-service/data-service/release folder
+ * 2. Add relevant test files in /release dir
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 public class RF2ClassifierServiceTestHarness {
@@ -43,36 +50,27 @@ public class RF2ClassifierServiceTestHarness {
 	private BuildDAO buildDao;
 	@Autowired
 	private PublishService publishService;
-	ReleaseCenter internationalCenter;
-	ReleaseCenter usReleaseCenter;
+	private  ReleaseCenter internationalCenter;
+	private ReleaseCenter usReleaseCenter;
+	
+	@Autowired
+	private S3ClientFactory factory;
+	
+	private OfflineS3ClientImpl offlineS3Client;
 	
 	@Before
 	public void setUp() {
-		//Add {Root_Dir}/snomed-release-service/data-service/release
+		//Add test files to /snomed-release-service/data-service/release
 		internationalCenter = new ReleaseCenter("International Release Center", "international");
 		usReleaseCenter = new ReleaseCenter("US release center", "us");
+		offlineS3Client = (OfflineS3ClientImpl) factory.getClient(true);
 	}
 	
-	
-	@Test
-	public void testInternalClassifierForExtensionWithEmptyData() throws Exception {
-		File previousPublished = new File("release/SnomedCT_ExtensionRF2_Test_20170901T120000Z.zip");
-		assertTrue(previousPublished.exists());
-		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_Test_20180131T120000Z.zip");
-		assertTrue(dependencyRelease.exists());
-	
-		Build build = createEditionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
-		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
-		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_Extension_20180301.txt", 
-				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_Extension_20180301"));
-		
-		inputFileSchemaMap.put("rel2_Concept_Snapshot_Extension_20180301.txt",
-				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Snapshot_Extension_20180301"));
-		addFilesToBuild(build, "sct2_StatedRelationship_Snapshot_Extension_20180301.txt","sct2_Concept_Snapshot_Extension_20180301.txt");
-		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
-		System.out.println(result);
-		assertNotNull(result);
-		assertTrue(result.isSnapshot());
+	@After
+	public void clearDown() throws IOException {
+		if (offlineS3Client != null) {
+			offlineS3Client.freshBucketStore();
+		}
 	}
 	
 	@Test
@@ -82,14 +80,9 @@ public class RF2ClassifierServiceTestHarness {
 		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
 		assertTrue(dependencyRelease.exists());
 	
-		Build build = createEditionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
+		Build build = createExtensionReleaseBuild("20180301", false, previousPublished, dependencyRelease, false);
 		build.getConfiguration().setBetaRelease(true);
-		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
-		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20180301.txt", 
-				new TableSchema(ComponentType.STATED_RELATIONSHIP, "xsct2_StatedRelationship_Snapshot_US1000124_20180301"));
-		
-		inputFileSchemaMap.put("rel2_Concept_Snapshot_US1000124_20180301.txt",
-				new TableSchema(ComponentType.CONCEPT, "xsct2_Concept_Snapshot_US1000124_20180301"));
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		addFilesToBuild(build, "release/xsct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/xsct2_Concept_Snapshot_US1000124_20180301.txt");
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		System.out.println(result);
@@ -97,31 +90,62 @@ public class RF2ClassifierServiceTestHarness {
 		assertTrue(result.isSnapshot());
 		assertEquals("xsct2_Relationship_Snapshot_US1000124_20180301.txt", result.getResultFilename());
 	}
-
+	
+	@Test
+	public void testExternalClassifierForUSExtension() throws Exception {
+		File previousPublished = new File("release/SnomedCT_USExtensionRF2_PRODUCTION_20170901T120000Z.zip");
+		assertTrue(previousPublished.exists());
+		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
+		assertTrue(dependencyRelease.exists());
+	
+		Build build = createExtensionReleaseBuild("20180301", false, previousPublished, dependencyRelease, true);
+		build.getConfiguration().setBetaRelease(false);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
+		addFilesToBuild(build, "release/usExtension/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/usExtension/sct2_Concept_Snapshot_US1000124_20180301.txt");
+		addFilesToBuild(build, "release/usExtension/sct2_StatedRelationship_Delta_US1000124_20180301.txt","release/usExtension/sct2_Concept_Delta_US1000124_20180301.txt");
+		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
+		System.out.println(result);
+		assertNotNull(result);
+		assertTrue(!result.isSnapshot());
+		assertEquals("sct2_Relationship_Delta_US1000124_20180301.txt", result.getResultFilename());
+	}
 
 	@Test
 	public void testInternalClassifierWithUsEdition() throws Exception {
+		
 		File previousPublished = new File("release/SnomedCT_USEditionRF2_PRODUCTION_20170901T120000Z.zip");
 		assertTrue(previousPublished.exists());
 		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
 		assertTrue(dependencyRelease.exists());
 	
-		Build build = createEditionReleaseBuild("20180301", true, previousPublished, dependencyRelease, false);
-		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
-		inputFileSchemaMap.put("rel2_StatedRelationship_Snapshot_US1000124_20180301.txt", 
-				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Snapshot_US1000124_20180301"));
-		
-		inputFileSchemaMap.put("rel2_Concept_Snapshot_US1000124_20180301.txt",
-				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Snapshot_US1000124_20180301"));
+		Build build = createExtensionReleaseBuild("20180301", true, previousPublished, dependencyRelease, false);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		addFilesToBuild(build, "release/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/sct2_Concept_Snapshot_US1000124_20180301.txt");
 		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
 		assertNotNull(result);
 		assertTrue(result.isSnapshot());
 		assertEquals("sct2_Relationship_Snapshot_US1000124_20180301.txt", result.getResultFilename());
 	}
-
+	
 	@Test
-	public void testExternalClassification() throws Exception {
+	public void testExternalClassifierWithUsEdition() throws Exception {
+		File previousPublished = new File("release/SnomedCT_USEditionRF2_PRODUCTION_20170901T120000Z.zip");
+		assertTrue(previousPublished.exists());
+		File dependencyRelease = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip");
+		assertTrue(dependencyRelease.exists());
+	
+		Build build = createExtensionReleaseBuild("20180301", true, previousPublished, dependencyRelease, true);
+		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
+		addFilesToBuild(build, "release/sct2_StatedRelationship_Delta_US1000124_20180301.txt","release/sct2_Concept_Delta_US1000124_20180301.txt");
+		addFilesToBuild(build, "release/sct2_StatedRelationship_Snapshot_US1000124_20180301.txt","release/sct2_Concept_Snapshot_US1000124_20180301.txt");
+		ClassificationResult result = classifierService.classify(build, inputFileSchemaMap);
+		assertNotNull(result);
+		assertTrue(!result.isSnapshot());
+		assertEquals("sct2_Relationship_Delta_US1000124_20180301.txt", result.getResultFilename());
+	}
+	
+	@Test
+	public void testExternalClassificationForINT() throws Exception {
 		File previousPublished = new File("release/SnomedCT_InternationalRF2_PRODUCTION_20170731T150000Z.zip");
 		assertTrue(previousPublished.exists());
 		Build build = createInternationalBuild("20180131", "classification_test", previousPublished, true);
@@ -160,6 +184,17 @@ public class RF2ClassifierServiceTestHarness {
 		}
 	}
 
+	
+	private Map<String, TableSchema> createInputFilesSchemaMap() {
+		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
+		inputFileSchemaMap.put("rel2_StatedRelationship_Delta_US1000124_20180301.txt", 
+				new TableSchema(ComponentType.STATED_RELATIONSHIP, "sct2_StatedRelationship_Delta_US1000124_20180301"));
+		
+		inputFileSchemaMap.put("rel2_Concept_Delta_US1000124_20180301.txt",
+				new TableSchema(ComponentType.CONCEPT, "sct2_Concept_Delta_US1000124_20180301"));
+		return inputFileSchemaMap;
+	}
+	
 	private Build createInternationalBuild(String effectiveTime, String productName, File previousPublished, boolean useExternalClassifier) throws Exception {
 		Date releaseDate = DateUtils.parseDate(effectiveTime, "yyyyMMdd");
 		Product testProduct = new Product(productName);
@@ -181,10 +216,11 @@ public class RF2ClassifierServiceTestHarness {
 		return build;
 	}
 	
-	private Build createEditionReleaseBuild(String effectiveTime, boolean isEditionRelease, File previousPublished, File internationalDependnecy, boolean useExternalClassifier) throws Exception {
+	private Build createExtensionReleaseBuild(String effectiveTime, boolean isEditionRelease, File previousPublished, File internationalDependnecy, boolean useExternalClassifier) throws Exception {
 		Date releaseDate = DateUtils.parseDate(effectiveTime, "yyyyMMdd");
 		Product testProduct = new Product("snomed_ct_us_edition_20170301_testing");
 		testProduct.setReleaseCenter(usReleaseCenter);
+		
 		if (!publishService.exists(usReleaseCenter, previousPublished.getName())) {
 			publishService.publishAdHocFile(usReleaseCenter, new FileInputStream(previousPublished),
 					previousPublished.getName(), previousPublished.length(), false);
@@ -194,7 +230,6 @@ public class RF2ClassifierServiceTestHarness {
 			publishService.publishAdHocFile(internationalCenter, new FileInputStream(internationalDependnecy),
 					internationalDependnecy.getName(), internationalDependnecy.length(), false);
 		}
-		
 		Build build = new Build(releaseDate, testProduct);
 		BuildConfiguration configuration = new BuildConfiguration();
 		configuration.setBetaRelease(false);
