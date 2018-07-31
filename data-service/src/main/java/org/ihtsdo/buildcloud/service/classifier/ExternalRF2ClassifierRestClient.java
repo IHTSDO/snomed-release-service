@@ -49,7 +49,9 @@ public class ExternalRF2ClassifierRestClient {
 	
 	
 	public File classify( File rf2DeltaZipFile, List<String> previousReleases) throws BusinessServiceException {
-		URI uri = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications").queryParam("previousReleases", previousReleases.toArray()).build().toUri();
+		URI uri = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications")
+				.queryParam("previousReleases", previousReleases.toArray())
+				.build().toUri();
 		logger.info("External classifier request url=" + uri.toString());
 		MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
 		multipartEntityBuilder.addBinaryBody("rf2Delta", rf2DeltaZipFile, ContentType.create(CONTENT_TYPE_MULTIPART), rf2DeltaZipFile.getName());

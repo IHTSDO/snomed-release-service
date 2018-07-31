@@ -43,9 +43,6 @@ public class RF2ClassifierService {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private String coreModuleSctid;
-
-	@Autowired
 	private TransformationService transformationService;
 	
 	@Autowired
@@ -56,7 +53,7 @@ public class RF2ClassifierService {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	public enum Relationship {
+	public enum RelationshipType {
 		STATED, INFERRED
 	};
 	
