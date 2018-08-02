@@ -220,7 +220,7 @@ public class InternalRF2Classifier extends RF2Classifier{
 		if (relationshipType == RelationshipType.INFERRED) {
 			relationshipFilename = relationshipFilename.replace(STATED, "");
 		}
-		if (build.getConfiguration().isBetaRelease()) {
+		if (build.getConfiguration().isBetaRelease() && relationshipFilename.startsWith(BETA_RELEASE_PREFIX)) {
 			relationshipFilename = relationshipFilename.replaceFirst(BETA_RELEASE_PREFIX, "");
 		}
 		final File localFile = new File(tempDir, relationshipFilename);
