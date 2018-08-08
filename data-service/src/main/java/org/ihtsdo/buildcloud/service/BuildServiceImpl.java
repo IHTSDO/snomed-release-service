@@ -40,6 +40,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -594,7 +595,15 @@ public class BuildServiceImpl implements BuildService {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			validateQaTestConfig(qaTestConfig, buildConfiguration);
 			String effectiveTime = buildConfiguration.getEffectiveTimeFormatted();
-			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime);
+			boolean releaseAsAnEdition = false;
+			String includedModuleId = null;
+			ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
+			if(extensionConfig != null) {
+				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
+				includedModuleId = extensionConfig.getModuleId();
+
+			}
+			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
 		}
 	}
 

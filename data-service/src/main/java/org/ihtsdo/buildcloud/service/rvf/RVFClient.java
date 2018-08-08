@@ -173,7 +173,7 @@ public class RVFClient implements Closeable {
 	}
 
 	private HttpPost createHttpPostRequest(final String s3ZipFilePath,
-			final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax, String effectiveTime)
+			final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition, String includedModuleId)
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
@@ -184,6 +184,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody("enableMRCMValidation", Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
 		multiPartBuilder.addTextBody("jiraIssueCreationFlag", Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
+		multiPartBuilder.addTextBody("releaseAsAnEdition", Boolean.toString(releaseAsAnEdition));
 		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
 		if ( previousIntRelease != null && previousIntRelease.split(UNDER_SCORE).length > 1 ) {
 			multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
@@ -220,6 +221,9 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody("effectiveTime", effectiveTime);
 		}
 
+		if(StringUtils.isNotBlank(includedModuleId)) {
+			multiPartBuilder.addTextBody("includedModules",includedModuleId);
+		}
 		post.setEntity(multiPartBuilder.build());
 		return post;
 	}
@@ -257,11 +261,12 @@ public class RVFClient implements Closeable {
 		return null;
 	}
 
-	public String validateOutputPackageFromS3(String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax, String effectiveTime) throws FileNotFoundException {
+	public String validateOutputPackageFromS3(String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition
+	, String includedModuleId) throws FileNotFoundException {
 		final String runId = Long.toString(System.currentTimeMillis());
 		final String targetUrl = "/run-post-via-s3";
 		
-		final HttpPost post = createHttpPostRequest(s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax, effectiveTime);
+		final HttpPost post = createHttpPostRequest(s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", s3ZipFilePath, post.getURI(), runId);
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
