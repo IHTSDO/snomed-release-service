@@ -3,10 +3,12 @@ package org.ihtsdo.buildcloud.service.classifier;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
@@ -19,6 +21,7 @@ import org.ihtsdo.otf.rest.client.resty.RestyServiceHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import us.monoid.json.JSONException;
 import us.monoid.web.BinaryResource;
@@ -45,9 +48,11 @@ public class ExternalRF2ClassifierRestClient {
 	}
 	
 	
-	public File classify( File rf2DeltaZipFile, String ... previousPublished) throws BusinessServiceException {
-		String restUrl = classificationServiceUrl + "/classifications?previousRelease=" + previousPublished[0];
-		logger.info("External classifier request." + restUrl);
+	public File classify( File rf2DeltaZipFile, List<String> previousReleases) throws BusinessServiceException {
+		URI uri = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications")
+				.queryParam("previousReleases", previousReleases.toArray())
+				.build().toUri();
+		logger.info("External classifier request url=" + uri.toString());
 		MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
 		multipartEntityBuilder.addBinaryBody("rf2Delta", rf2DeltaZipFile, ContentType.create(CONTENT_TYPE_MULTIPART), rf2DeltaZipFile.getName());
 		multipartEntityBuilder.setCharset(Charset.forName("UTF-8"));
@@ -58,7 +63,7 @@ public class ExternalRF2ClassifierRestClient {
 		
 		String statusUrl = null;
 		try {
-			JSONResource response = resty.json(restUrl, new HttpEntityContent(httpEntity));
+			JSONResource response = resty.json(uri, new HttpEntityContent(httpEntity));
 			RestyServiceHelper.ensureSuccessfull(response);
 			statusUrl = response.http().getHeaderField("location");
 			logger.info("classification request is submitted." + statusUrl );
@@ -84,7 +89,7 @@ public class ExternalRF2ClassifierRestClient {
 			logger.info("Result is archived " + archive.getAbsolutePath());
 			return archive;
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to download classification result via " + restUrl, e);
+			throw new BusinessServiceException("Failed to download classification result via " + uri, e);
 		}
 	}
 

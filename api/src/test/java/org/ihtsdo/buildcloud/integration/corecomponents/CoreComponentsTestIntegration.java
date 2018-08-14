@@ -44,6 +44,8 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt|rel2_sRefset_OWLOntologyDelta_INT_20140731.txt");
 		loadDeltaFilesToInputDirectory(effectiveTime2, false);
 		integrationTestHelper.useExternalClassifier(false);
+		//Change it for beta release testing
+		integrationTestHelper.setBetaRelease(false);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_OWLOntologyDelta_INT_20140731.txt", getClass());
 
