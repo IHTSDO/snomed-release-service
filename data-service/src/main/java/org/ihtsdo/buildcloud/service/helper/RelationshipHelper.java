@@ -1,6 +1,9 @@
 package org.ihtsdo.buildcloud.service.helper;
 
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.COLUMN_SEPARATOR;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.LINE_ENDING;
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,6 +19,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.ihtsdo.buildcloud.service.build.RF2Constants.RelationshipFileType;
 import org.ihtsdo.buildcloud.service.build.transform.RepeatableRelationshipUUIDTransform;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 
@@ -49,14 +53,16 @@ public class RelationshipHelper {
 
 	public static Map<String, String> buildConceptToModuleIdMap(InputStream conceptSnapshotStream) throws FileNotFoundException, IOException {
 		Map<String, String> conceptToModuleIdMap = new HashMap<>();
-		try (BufferedReader reader = new BufferedReader( new InputStreamReader(conceptSnapshotStream, UTF_8))) {
-			//skip header
-			String line = reader.readLine();
-			while ((line = reader.readLine()) != null) {
-				String[] splits = line.split(COLUMN_SEPARATOR);
-				conceptToModuleIdMap.put(splits[0], splits[3]);
+		if (conceptSnapshotStream != null) {
+			try (BufferedReader reader = new BufferedReader( new InputStreamReader(conceptSnapshotStream, UTF_8))) {
+				//skip header
+				String line = reader.readLine();
+				while ((line = reader.readLine()) != null) {
+					String[] splits = line.split(COLUMN_SEPARATOR);
+					conceptToModuleIdMap.put(splits[0], splits[3]);
+				}
 			}
-		}
+		} 
 		return conceptToModuleIdMap;
 	}
 	
@@ -66,7 +72,7 @@ public class RelationshipHelper {
 			String line = reader.readLine();
 			while ((line = reader.readLine()) != null) {
 				String[] splits = line.split(COLUMN_SEPARATOR);
-				if (!splits[3].equals(conceptToModuleIdMap.get(splits[0]))) {
+				if (conceptToModuleIdMap.containsKey(splits[0]) && !splits[3].equals(conceptToModuleIdMap.get(splits[0]))) {
 					result.put(splits[0], conceptToModuleIdMap.get(splits[0]));
 				}
 			}
