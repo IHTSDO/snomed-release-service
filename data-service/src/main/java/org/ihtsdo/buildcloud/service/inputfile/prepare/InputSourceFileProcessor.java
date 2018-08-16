@@ -71,6 +71,7 @@ public class InputSourceFileProcessor {
     private static final String OUT_DIR = "out";
     private static final int DESCRIPTION_TYPE_COL = 6;
     private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
+    private static final String TXT_EXTENSION = ".txt";
 
     private InputStream manifestStream;
     private FileHelper fileHelper;
@@ -361,7 +362,7 @@ public class InputSourceFileProcessor {
                     String header = lines.get(0);
                	 	//remove header before processing
                     lines.remove(0);
-                    if (header.startsWith(HEADER_REFSETS)) {
+                    if (header.startsWith(HEADER_REFSETS) && fileName.endsWith(TXT_EXTENSION)) {
                         processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
 
                         //Handle in case this refset file is only meant for copying
@@ -372,7 +373,7 @@ public class InputSourceFileProcessor {
                                 || filesToCopyFromSource.get(baseFileName).isEmpty())) {
                             addFileToSkippedList(source, fileName);
                         }
-                    } else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
+                    } else if (header.startsWith(HEADER_TERM_DESCRIPTION) && fileName.endsWith(TXT_EXTENSION)) {
                     	//create delta file with header
                     	writeHeaderToFile(outDir,header, descriptionFileProcessingConfigs.values());
                         if (foundTextDefinitionFile) {
