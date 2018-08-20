@@ -158,6 +158,7 @@ public class TermServerServiceImpl implements TermServerService{
                     throw new BusinessServiceException("Cannot export published data without an effective date");
                 }
                 exportConfig.setStartEffectiveTime(effectiveDate);
+                exportConfig.setTransientEffectiveTime(effectiveDate);
                 exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
                 break;
             case FEEDBACK_FIX:
