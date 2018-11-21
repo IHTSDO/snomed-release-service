@@ -37,6 +37,7 @@ public interface ProductService extends EntityService<Product> {
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	String USE_EXTERNAL_CLASSIFIER = "useExternalClassifier";
 	String ENABLE_DROOLS = "enableDrools";
+	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

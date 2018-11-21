@@ -56,6 +56,7 @@ public class Rf2FileExportRunner {
 		final List<String> transformedFiles = getTransformedDeltaFiles();
 		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
+		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
 		for ( String thisFile : transformedFiles) {
 			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 				continue;
@@ -71,7 +72,8 @@ public class Rf2FileExportRunner {
 					}
 					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX));
 					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
-					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease);
+					Set<String> includedFilesInNewFile = includedFilesMap.get(cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX));
+					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease, includedFilesInNewFile);
 					success = true;
 				} catch (final Exception e) {
 					failureCount = handleException(e, thisFile, failureCount);
@@ -81,7 +83,7 @@ public class Rf2FileExportRunner {
 	}
 	
 	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys,
-			final boolean fileFirstTimeRelease) throws ReleaseFileGenerationException {
+			final boolean fileFirstTimeRelease, final Set<String> includedFilesInNewFile) throws ReleaseFileGenerationException {
 
 		final String effectiveTime = configuration.getEffectiveTimeSnomedFormat();
 		final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
@@ -90,7 +92,6 @@ public class Rf2FileExportRunner {
 		final StatTimer timer = new StatTimer(getClass());
 		RF2TableExportDAO rf2TableDAO = null;
 		TableSchema tableSchema = null;
-
 		try {
 			// Create table containing transformed input delta
 			LOGGER.debug("Start: creating table for {}", transformedDeltaDataFile);
@@ -175,6 +176,21 @@ public class Rf2FileExportRunner {
 				rf2TableDAO.appendData(tableSchema, previousFullFileStream, workbenchDataFixesRequired);
 				timer.logTimeTaken("Insert previous release data");
 				LOGGER.debug("Finish: Insert previous release data into table {}", tableSchema.getTableName());
+			}
+
+			
+			if(includedFilesInNewFile != null && !includedFilesInNewFile.isEmpty()) {
+				for (String includedFile : includedFilesInNewFile) {
+					final String includedFileFullName = constructFullOrSnapshotFilename(includedFile, FULL);
+					final InputStream previousCombinedFullFileStream = getPreviousFileStream(previousPublishedPackage, includedFileFullName);
+
+					// Append transformed previous full file
+					LOGGER.debug("Start: Insert previous release data from {} into table {}", includedFileFullName, tableSchema.getTableName());
+					timer.split();
+					rf2TableDAO.appendData(tableSchema, previousCombinedFullFileStream, workbenchDataFixesRequired);
+					timer.logTimeTaken("Insert previous release data");
+					LOGGER.debug("Finish: Insert previous release data from {} into table {}", includedFileFullName, tableSchema.getTableName());
+				}
 			}
 
 			// Export Full and Snapshot files
