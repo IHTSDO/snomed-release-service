@@ -4,4 +4,9 @@
       <comment>Increase varchar size of column rf2_input_files in table build_config</comment>
       <modifyDataType tableName="build_config" columnName="rf2_input_files" newDataType="VARCHAR(1024)"/>
    </changeSet>
+   <changeSet id="20181120" author="HUYLE">
+      <addColumn tableName="build_config">
+         <column name="include_prev_release_files" type="VARCHAR(2048)"/>
+      </addColumn>
+   </changeSet>
 </databaseChangeLog>

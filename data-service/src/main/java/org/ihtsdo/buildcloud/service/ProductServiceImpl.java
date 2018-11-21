@@ -284,6 +284,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(NEW_RF2_INPUT_FILES)) {
 			configuration.setNewRF2InputFiles(newPropertyValues.get(NEW_RF2_INPUT_FILES));
 		}
+
+		if(newPropertyValues.containsKey(INCLUDED_PREV_RELEASE_FILES)) {
+			configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
+		}
 	}
 
 }
