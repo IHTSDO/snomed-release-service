@@ -23,6 +23,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -94,6 +95,9 @@ public class BuildConfiguration {
 	@Type(type="yes_no")
 	@Column(name="use_external_classifier")
 	private boolean useExternalClassifier = false;
+
+	@Column(name = "include_prev_release_files")
+	private String includePrevReleaseFiles;
 	
 	
 	public BuildConfiguration() {
@@ -161,6 +165,24 @@ public class BuildConfiguration {
 			Collections.addAll(files, newRF2InputFiles.split("\\|"));
 		}
 		return files;
+	}
+
+	@JsonIgnore
+	public Map<String, Set<String>> getIncludedFilesInNewFilesMap() {
+		final Map<String, Set<String>> fileMaps = new HashMap<>();
+		if(StringUtils.isNotBlank(includePrevReleaseFiles)) {
+			String[] configurations = includePrevReleaseFiles.split("\\|");
+			for (String configuration : configurations) {
+				String key = configuration.substring(0, configuration.indexOf("("));
+				String[] mapFiles = configuration.substring(configuration.indexOf("(")+1,configuration.indexOf(")")).split(",");
+				Set<String> filesList = new HashSet<>();
+				for (String mapFile : mapFiles) {
+					filesList.add(mapFile.trim());
+				}
+				fileMaps.put(key.trim(), filesList);
+			}
+		}
+		return fileMaps;
 	}
 
 	public String getReadmeHeader() {
@@ -272,7 +294,8 @@ public class BuildConfiguration {
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
 				+ createLegacyIds + ", useExternalClassifier="
-				+  useExternalClassifier + "]";
+				+  useExternalClassifier + ", includePrevReleaseFiles="
+				+ includePrevReleaseFiles + "]";
 	}	
 
 	@Embeddable
@@ -342,5 +365,13 @@ public class BuildConfiguration {
 	public void setUseExternalClassifier(final boolean useExternalClassifier) {
 		this.useExternalClassifier = useExternalClassifier;
 		
+	}
+
+	public String getIncludePrevReleaseFiles() {
+		return includePrevReleaseFiles;
+	}
+
+	public void setIncludePrevReleaseFiles(String includePrevReleaseFiles) {
+		this.includePrevReleaseFiles = includePrevReleaseFiles;
 	}
 }
