@@ -22,7 +22,6 @@ import org.ihtsdo.buildcloud.service.build.RF2Constants.RelationshipFileType;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.classifier.ExternalRF2Classifier;
-import org.ihtsdo.buildcloud.service.classifier.InternalRF2Classifier;
 import org.ihtsdo.buildcloud.service.classifier.RF2Classifier;
 import org.ihtsdo.buildcloud.service.classifier.RF2Classifier.ClassificationInputInfo;
 import org.ihtsdo.buildcloud.service.helper.RelationshipHelper;
@@ -48,9 +47,6 @@ public class RF2ClassifierService {
 	@Autowired
 	private ExternalRF2Classifier externalRF2Classifier;
 
-	@Autowired 
-	private InternalRF2Classifier internalRF2Classifier;
-	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	public enum RelationshipType {
@@ -72,7 +68,7 @@ public class RF2ClassifierService {
 		File equivalencyReportOutputFile = new File(tempDir, EQUIVALENCY_REPORT_TXT);
 		File classifierResultOutputFile = rf2Classifier.run(build, equivalencyReportOutputFile, classifierFiles, tempDir);
 		if (classifierResultOutputFile == null) {
-			throw new BusinessServiceException("No inferred relationship delta file found in the classificaiton result.");
+			throw new BusinessServiceException("No inferred relationship delta file found in the classification result.");
 		}
 		try {
 			logger.info("Classification finished.");
@@ -128,11 +124,11 @@ public class RF2ClassifierService {
 		}
 	}
 	
-	private RF2Classifier getRF2Classifier(BuildConfiguration configuration) {
-		if (configuration.useExternalClassifier()) {
-			return externalRF2Classifier;
+	private RF2Classifier getRF2Classifier(BuildConfiguration configuration) throws BusinessServiceException {
+		if (!configuration.useExternalClassifier()) {
+			throw new BusinessServiceException("The internal classifier has now been removed. Please use the external classifier.");
 		}
-		return internalRF2Classifier;
+		return externalRF2Classifier;
 	}
 
 	private InputStream getPreviousInferredSnapshotInputStream(Build build, String inferredDeltaFilename) throws IOException, BusinessServiceException {
