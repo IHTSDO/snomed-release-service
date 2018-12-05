@@ -83,7 +83,7 @@ public class RF2ClassifierService {
 			Map<String, String> changedConceptToModuleIdMap = null;
 			//only required for international release
 			if (config.useExternalClassifier() && config.getExtensionConfig() == null) {
-				String conceptSnapshot = classifierFiles.getConceptFilenames().get(0).replace(DELTA, SNAPSHOT);
+				String conceptSnapshot = classifierFiles.getConceptFileNames().get(0).replace(DELTA, SNAPSHOT);
 				if (!conceptSnapshot.startsWith(BETA_RELEASE_PREFIX) && config.isBetaRelease()) {
 					conceptSnapshot = BETA_RELEASE_PREFIX + conceptSnapshot;
 				}
@@ -168,7 +168,7 @@ public class RF2ClassifierService {
 
 
 	private String getInferredFilename(ClassificationInputInfo classifierFiles, BuildConfiguration config) {
-		String stated = classifierFiles.getStatedRelationshipFilenames().get(0);
+		String stated = classifierFiles.getStatedRelationshipFileNames().get(0);
 		if (!stated.startsWith(BETA_RELEASE_PREFIX) && config.isBetaRelease()) {
 			stated = BETA_RELEASE_PREFIX + stated;
 		}

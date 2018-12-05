@@ -1,0 +1,3 @@
+id	effectiveTime	active	moduleId	refsetId	referencedComponentId	owlExpression
+3c566f2c-b38f-40bb-a6cb-7ea114ce8cf9	20180731	1	900000000000012004	762103008	734146004	Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+709e618d-9434-4c3b-b437-200e9aa26d59	20180731	1	900000000000012004	762103008	734146004	Prefix(:=<http://snomed.info/id/>)

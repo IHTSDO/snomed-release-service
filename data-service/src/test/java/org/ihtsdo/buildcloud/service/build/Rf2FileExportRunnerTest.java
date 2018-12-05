@@ -8,7 +8,11 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -51,7 +55,21 @@ public class Rf2FileExportRunnerTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
 	
+
 	private static final String LANGUAGE_REFSET = "der2_cRefset_LanguageDelta-en_INT_20150731_transformed.txt";
+
+	//OWL files
+	public static final String INPUT_OWL_EXPRESSION_FILE_NAME = "rel2_sRefset_OWLExpressionDelta_INT_20190131.txt";
+	public static final String EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME = "xsct2_sRefset_OWLExpressionDelta_INT_20190131.txt";
+	public static final String EXPECTED_OWL_EXPRESSION_SNAPSHOT_FILE_NAME = "xsct2_sRefset_OWLExpressionFull_INT_20190131.txt";
+	public static final String EXPECTED_OWL_EXPRESSION_FULL_FILE_NAME = "xsct2_sRefset_OWLExpressionSnapshot_INT_20190131.txt";
+	public static final String PREVIOUS_OWL_AXIOM_FULL_FILE_NAME = "sct2_sRefset_OWLAxiomFull_INT_20180731.txt";
+	public static final String PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME = "sct2_sRefset_OWLAxiomSnapshot_INT_20180731.txt";
+	public static final String PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME = "sct2_sRefset_OWLOntologyFull_INT_20180731.txt";
+	public static final String PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME = "sct2_sRefset_OWLOntologySnapshot_INT_20180731.txt";
+	public static final String PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME = "sct2_sRefset_OWLAxiomDelta_INT_20180731.txt";
+	public static final String PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME = "sct2_sRefset_OWLOntologyDelta_INT_20180731.txt";
+
 	private Product product;
 	@Autowired
 	private BuildDAO dao;
@@ -100,6 +118,36 @@ public class Rf2FileExportRunnerTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_DELTA_FILE_NAME));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_FULL_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_FULL_FILE_NAME));
+
+	}
+
+	@Test
+	public void testGenerateNewFileIncludingPrevReleaseFiles() throws Exception {
+		buildConfiguration.setFirstTimeRelease(true);
+		buildConfiguration.setPreviousPublishedPackage("20180731");
+		buildConfiguration.setBetaRelease(true);
+		buildConfiguration.setEffectiveTimeFormatted("2019-01-31");
+		String path = "int/20180731/";
+		Map<String, Set<String>> includedFileMap = new HashMap<>();
+		Set<String> includedFiles = new HashSet<>();
+		includedFiles.add(PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME);
+		includedFiles.add(PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME);
+		includedFileMap.put(INPUT_OWL_EXPRESSION_FILE_NAME,includedFiles);
+		buildConfiguration.setIncludePrevReleaseFiles(INPUT_OWL_EXPRESSION_FILE_NAME + "(" + PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME + "," + PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME + ")");
+		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME, getFileByName(EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_AXIOM_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_FULL_FILE_NAME));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME));
+		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME));
+
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
+		rf2ExportService.generateReleaseFiles();
+
+		final List<String> outputFiles = dao.listOutputFilePaths(build);
+		Assert.assertEquals(3, outputFiles.size());
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_SNAPSHOT_FILE_NAME));
+		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_FULL_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_FULL_FILE_NAME));
 
 	}
 
