@@ -15,6 +15,7 @@
     "createLegacyIds" : false,
     "extensionConfig" : null,
     "useExternalClassifier" : false,
+    "includePrevReleaseFiles" : null,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },

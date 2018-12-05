@@ -37,7 +37,7 @@ import com.google.common.io.Files;
 
 public class ExternalRF2Classifier extends RF2Classifier{
 
-	private static final String REL2_OWL_AXIOM_REFSET_DELTA = ".*Axiom.*.txt";
+	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
 
 	private static final String REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA = "rel2_cissccRefset_MRCMAttributeDomainDelta";
 
@@ -121,14 +121,14 @@ public class ExternalRF2Classifier extends RF2Classifier{
 			}
 			String updatedFilename = inputFileSchema.getFilename();
 			if (inputFileSchema.getComponentType() == ComponentType.CONCEPT) {
-				pojo.getConceptFilenames().add(updatedFilename);
+				pojo.getConceptFileNames().add(updatedFilename);
 			} else if (inputFileSchema.getComponentType() == ComponentType.STATED_RELATIONSHIP) {
-				pojo.getStatedRelationshipFilenames().add(updatedFilename);
+				pojo.getStatedRelationshipFileNames().add(updatedFilename);
 			} else if (inputFileSchema.getComponentType() == ComponentType.REFSET) {
 				if (inputFilename.startsWith(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA)) {
-					pojo.setMrcmAttributeDomainDeltaFilename(updatedFilename);
-				} else if (inputFilename.matches(REL2_OWL_AXIOM_REFSET_DELTA)) {
-					pojo.setOwlAxiomRefsetDeltaFilename(updatedFilename);
+					pojo.setMrcmAttributeDomainDeltaFileName(updatedFilename);
+				} else if (inputFilename.matches(OWL_REFSET_FILE_PATTERN)) {
+					pojo.addOwlRefsetFile(updatedFilename);
 				}
 			}
 		}
@@ -173,21 +173,22 @@ public class ExternalRF2Classifier extends RF2Classifier{
 		//external classifier expects the delta files for concept, stated relationship, empty relationship and option MRCM attribute domain refset
 		File rf2DeltaZipFile = new File(tempDir, "rf2Delta_" + build.getId() + ".zip");
 		List<String> rf2DeltaFileList = new ArrayList<>();
-		for ( String filename : pojo.getStatedRelationshipFilenames()) {
+		for ( String filename : pojo.getStatedRelationshipFileNames()) {
 			rf2DeltaFileList.add(filename.replace(SNAPSHOT, DELTA));
 		}
 		
-		for ( String filename : pojo.getConceptFilenames()) {
+		for ( String filename : pojo.getConceptFileNames()) {
 			rf2DeltaFileList.add(filename.replace(SNAPSHOT, DELTA));
 		}
 		
-		if (pojo.getMrcmAttributeDomainDeltaFilename() != null) {
-			rf2DeltaFileList.add(pojo.getMrcmAttributeDomainDeltaFilename());
+		if (pojo.getMrcmAttributeDomainDeltaFileName() != null) {
+			rf2DeltaFileList.add(pojo.getMrcmAttributeDomainDeltaFileName());
 		}
 		
-		if (pojo.getOwlAxiomRefsetDeltaFilename() != null) {
-			rf2DeltaFileList.add(pojo.getOwlAxiomRefsetDeltaFilename());
+		if (pojo.getOwlRefsetFileNames() != null) {
+			rf2DeltaFileList.addAll(pojo.getOwlRefsetFileNames());
 		}
+		
 		logger.info("rf2 delta files prepared for external classification:" + rf2DeltaFileList.toString());
 	
 		File deltaTempDir = Files.createTempDir();
