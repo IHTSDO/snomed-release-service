@@ -106,6 +106,7 @@ public class BuildDAOImplTest {
 			"\"createLegacyIds\":false," +
 			"\"extensionConfig\":null," +
 			"\"useExternalClassifier\":false," +
+			"\"includePrevReleaseFiles\":null," +
 			"\"customRefsetCompositeKeys\":{}," +
 			"\"effectiveTime\":null" +
 				"}", configJson);

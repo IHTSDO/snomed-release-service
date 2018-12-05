@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="20181119" author="HUYLE">
+      <comment>Increase varchar size of column rf2_input_files in table build_config</comment>
+      <modifyDataType tableName="build_config" columnName="rf2_input_files" newDataType="VARCHAR(1024)"/>
+   </changeSet>
+   <changeSet id="20181120" author="HUYLE">
+      <addColumn tableName="build_config">
+         <column name="include_prev_release_files" type="VARCHAR(2048)"/>
+      </addColumn>
+   </changeSet>
+</databaseChangeLog>

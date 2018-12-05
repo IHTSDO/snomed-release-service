@@ -49,11 +49,11 @@ public abstract class RF2Classifier {
 
 	public static class ClassificationInputInfo {
 		//snapshot files for cycle check and internal classifier but delta for external classifier
-		private final List<String> conceptFilenames;
-		private final List<String> statedRelationshipFilenames;
+		private final List<String> conceptFileNames;
+		private final List<String> statedRelationshipFileNames;
 		//only required for external classifier
-		private String owlAxiomRefsetDeltaFilename;
-		private String mrcmAttributeDomainDeltaFilename;
+		private List<String> owlRefsetFileNames;
+		private String mrcmAttributeDomainDeltaFileName;
 		private List<String> localPreviousInferredRelationshipFilePaths;
 		private List<String> localConceptFilePaths;
 		private List<String> localStatedRelationshipFilePaths;
@@ -61,11 +61,12 @@ public abstract class RF2Classifier {
 		
 
 		ClassificationInputInfo(boolean isExternal) {
-			conceptFilenames = new ArrayList<>();
-			statedRelationshipFilenames = new ArrayList<>();
+			conceptFileNames = new ArrayList<>();
+			statedRelationshipFileNames = new ArrayList<>();
 			localConceptFilePaths = new ArrayList<>();
 			localPreviousInferredRelationshipFilePaths = new ArrayList<>();
 			localStatedRelationshipFilePaths = new ArrayList<>();
+			owlRefsetFileNames = new ArrayList<>();
 			this.isExternal = isExternal;
 		}
 		
@@ -98,31 +99,31 @@ public abstract class RF2Classifier {
 		}
 
 		public boolean isSufficientToClassify() {
-			return !conceptFilenames.isEmpty() && !statedRelationshipFilenames.isEmpty();
+			return !conceptFileNames.isEmpty() && !statedRelationshipFileNames.isEmpty();
 		}
 
-		public List<String> getConceptFilenames() {
-			return conceptFilenames;
+		public List<String> getConceptFileNames() {
+			return conceptFileNames;
 		}
 
-		public List<String> getStatedRelationshipFilenames() {
-			return statedRelationshipFilenames;
+		public List<String> getStatedRelationshipFileNames() {
+			return statedRelationshipFileNames;
 		}
 
-		public String getOwlAxiomRefsetDeltaFilename() {
-			return owlAxiomRefsetDeltaFilename;
+		public String getMrcmAttributeDomainDeltaFileName() {
+			return mrcmAttributeDomainDeltaFileName;
 		}
 
-		public void setOwlAxiomRefsetDeltaFilename(String owlAxiomRefsetDeltaFilename) {
-			this.owlAxiomRefsetDeltaFilename = owlAxiomRefsetDeltaFilename;
+		public void setMrcmAttributeDomainDeltaFileName(String mrcmAttributeDomainDeltaFilename) {
+			this.mrcmAttributeDomainDeltaFileName = mrcmAttributeDomainDeltaFilename;
 		}
 
-		public String getMrcmAttributeDomainDeltaFilename() {
-			return mrcmAttributeDomainDeltaFilename;
+		public void addOwlRefsetFile(String owlRefsetFileName) {
+			owlRefsetFileNames.add(owlRefsetFileName);
 		}
-
-		public void setMrcmAttributeDomainDeltaFilename(String mrcmAttributeDomainDeltaFilename) {
-			this.mrcmAttributeDomainDeltaFilename = mrcmAttributeDomainDeltaFilename;
+		
+		public List<String> getOwlRefsetFileNames() {
+			return this.owlRefsetFileNames;
 		}
 	}
 }
