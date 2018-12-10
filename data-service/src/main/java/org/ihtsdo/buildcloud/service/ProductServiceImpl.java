@@ -121,6 +121,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
 			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
 		}
+		if(newPropertyValues.containsKey(DROOLS_RULES_GROUPS)) {
+			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUPS));
+		}
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
@@ -288,6 +291,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if(newPropertyValues.containsKey(INCLUDED_PREV_RELEASE_FILES)) {
 			configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
 		}
+
 	}
 
 }

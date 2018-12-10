@@ -38,6 +38,7 @@ public interface ProductService extends EntityService<Product> {
 	String USE_EXTERNAL_CLASSIFIER = "useExternalClassifier";
 	String ENABLE_DROOLS = "enableDrools";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
+	String DROOLS_RULES_GROUPS = "droolsRulesGroups";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
