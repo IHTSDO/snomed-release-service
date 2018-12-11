@@ -27,6 +27,9 @@ public class QATestConfig {
 	
 	@Column(name="assertion_group_names")
 	private String assertionGroupNames;
+
+	@Column(name="drools_rules_group_names")
+	private String droolsRulesGroupNames;
 	
 	@Column(name="previous_int_release")
 	private String previousInternationalRelease;
@@ -50,7 +53,15 @@ public class QATestConfig {
 	public void setAssertionGroupNames(final String assertionGroupNames) {
 		this.assertionGroupNames = assertionGroupNames;
 	}
-	
+
+	public String getDroolsRulesGroupNames() {
+		return droolsRulesGroupNames;
+	}
+
+	public void setDroolsRulesGroupNames(String droolsRulesGroupNames) {
+		this.droolsRulesGroupNames = droolsRulesGroupNames;
+	}
+
 	public String getPreviousInternationalRelease() {
 		return previousInternationalRelease;
 	}
@@ -87,7 +98,8 @@ public class QATestConfig {
 	@Override
 	public String toString() {
 		return "QATestConfig [id=" + id + ", assertionGroupNames="
-				+ assertionGroupNames + ", previousInternationalRelease="
+				+ assertionGroupNames + ", droolsRulesGroupNames="
+				+ droolsRulesGroupNames + ", previousInternationalRelease="
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionDependencyRelease="
 				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
