@@ -21,6 +21,7 @@
   },
   "qaTestConfig" : {
     "assertionGroupNames" : null,
+    "droolsRulesGroupNames" : null,
     "previousInternationalRelease" : null,
     "previousExtensionRelease" : null,
     "extensionDependencyRelease" : null,
