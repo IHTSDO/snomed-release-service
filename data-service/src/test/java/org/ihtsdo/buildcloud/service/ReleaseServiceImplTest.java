@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -8,6 +9,7 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingRepor
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.junit.Before;
@@ -37,6 +39,15 @@ public class ReleaseServiceImplTest {
 
     @Mock
     AuthenticationService authenticationService;
+
+    @Mock
+    S3Client s3Client;
+
+    @Mock
+    BuildS3PathHelper s3PathHelper;
+
+    @Mock
+    ProductService productService;
 
     @Spy
     @InjectMocks
