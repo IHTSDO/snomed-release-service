@@ -60,4 +60,6 @@ public interface ProductInputFileService {
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 
+	InputStream getFullBuildLogFromProductIfExists(String releaseCenterKey, String productKey);
+
 }

@@ -52,7 +52,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs","buildLogs"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -300,6 +300,15 @@ public class BuildController {
 								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
 		response.setStatus(HttpStatus.OK.value());
+	}
+
+
+	@RequestMapping(value = "/{buildId}/buildLogs", method = RequestMethod.GET)
+	@ApiOperation(value = "Get the full logs of the build process")
+	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								   @PathVariable final String buildId, HttpServletResponse response) throws IOException {
+		String logUrl = "/logViewer.html?center="+releaseCenterKey+"&product="+productKey+"&build="+buildId;
+		response.sendRedirect(logUrl);
 	}
 
 }

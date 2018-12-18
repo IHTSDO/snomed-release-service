@@ -410,4 +410,10 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(releaseCenterKey, productKey);
 		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
 	}
+
+	@Override
+	public InputStream getFullBuildLogFromProductIfExists(String releaseCenterKey, String productKey) {
+		Product product = getProduct(releaseCenterKey, productKey);
+		return fileHelper.getFileStream(s3PathHelper.getBuildFullLogJsonFromProduct(product));
+	}
 }

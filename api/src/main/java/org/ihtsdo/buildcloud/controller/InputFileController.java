@@ -293,6 +293,29 @@ public class InputFileController {
 		}
 	}
 
+	@RequestMapping(value = "/buildLogs", method = RequestMethod.GET)
+	@ApiOperation(value = "Get the full logs of the build process")
+	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								 HttpServletResponse response) throws IOException {
+		String logUrl = "/logViewer.html?center="+releaseCenterKey+"&product="+productKey;
+		response.sendRedirect(logUrl);
+	}
+
+	@RequestMapping(value = "/buildLogs/details", method = RequestMethod.GET)
+	@ApiOperation(value = "Return report of input files gather")
+	public void getFullBuildLogFromProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+										   HttpServletResponse response) {
+		try (InputStream outputFileStream = productInputFileService.getFullBuildLogFromProductIfExists(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No build log found in product directory. Please find the build log from specific product");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 
 
 }

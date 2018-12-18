@@ -23,6 +23,7 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import com.mangofactory.swagger.annotations.ApiIgnore;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 
 @Controller
@@ -49,7 +51,7 @@ public class ProductController {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 
-	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds"};
+	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
 	@RequestMapping( method = RequestMethod.GET )
 	@ApiOperation( value = "Returns a list of products",
