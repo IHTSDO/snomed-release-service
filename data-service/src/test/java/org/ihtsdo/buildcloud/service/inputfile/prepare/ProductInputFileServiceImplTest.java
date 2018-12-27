@@ -291,7 +291,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         			Arrays.asList(filesReportedAsError).contains(reportDetail.getFileName()));
         }
         assertEquals(7, report.getDetails().get(ReportType.WARNING).size());
-        assertEquals(21, report.getDetails().get(ReportType.INFO).size());
+        assertEquals(20, report.getDetails().get(ReportType.INFO).size());
     }
 
 
