@@ -426,6 +426,7 @@ public class BuildServiceImpl implements BuildService {
 			if (configuration.isCreateInferredRelationships()) {
 				// Run classifier
 				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+				if(dao.isBuildCancelRequested(build)) return;
 				generator.generateRelationshipFiles(result);
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
