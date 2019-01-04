@@ -182,7 +182,6 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody("manifestFileS3Path", manifestFileS3Path);
 		multiPartBuilder.addTextBody("enableDrools", Boolean.toString(qaTestConfig.isEnableDrools()));
 		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
-		multiPartBuilder.addTextBody("droolsRulesGroups", qaTestConfig.getDroolsRulesGroupNames());
 		multiPartBuilder.addTextBody("releaseAsAnEdition", Boolean.toString(releaseAsAnEdition));
 		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
 		if ( previousIntRelease != null && previousIntRelease.split(UNDER_SCORE).length > 1 ) {
@@ -213,6 +212,11 @@ public class RVFClient implements Closeable {
 		if(StringUtils.isNotBlank(includedModuleId)) {
 			multiPartBuilder.addTextBody("includedModules",includedModuleId);
 		}
+		
+		if(StringUtils.isNotBlank(qaTestConfig.getDroolsRulesGroupNames())) {
+			multiPartBuilder.addTextBody("droolsRulesGroups", qaTestConfig.getDroolsRulesGroupNames());
+		}
+
 
 		post.setEntity(multiPartBuilder.build());
 		return post;
