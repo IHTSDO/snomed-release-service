@@ -364,11 +364,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				ZipFile zipFile = new ZipFile(exportFile);
 				FileInputStream fileInputStream = new FileInputStream(exportFile);
 
-				//Clean up current source directory before copying
-				Set<String> srcDir = new HashSet<>();
-				srcDir.add(SRC_TERM_SERVER);
-				deleteSourceFilesByPattern(centerKey, productKey, "*.*", srcDir);
-
 				putSourceFile(SRC_TERM_SERVER, centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
 				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, SRC_TERM_SERVER,
 						"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
@@ -395,11 +390,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			if (externalFile != null && externalFile.equals("/"))
 				continue;
 			try {
-				//Clean up current source directory before copying
-				Set<String> srcDir = new HashSet<>();
-				srcDir.add(SRC_EXT_MAINTAINED);
-				deleteSourceFilesByPattern(centerKey, productKey, "*.*", srcDir);
-
 				Product product = getProduct(centerKey, productKey);
 				String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, SRC_EXT_MAINTAINED).toString();
 				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
