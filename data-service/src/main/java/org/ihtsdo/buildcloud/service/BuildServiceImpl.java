@@ -754,6 +754,7 @@ public class BuildServiceImpl implements BuildService {
 		//Only cancel build if the status is "BUILDING"
 		dao.assertStatus(build, Status.BUILDING);
 		dao.updateStatus(build, Status.CANCEL_REQUESTED);
+		LOGGER.warn("Status of build {} has been updated to {}", build, Status.CANCEL_REQUESTED.name());
 	}
 
 	@Override

@@ -7,8 +7,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.ihtsdo.buildcloud.dao.BuildDAO;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +24,8 @@ public class CachedSctidFactory {
 	private String comment;
 	private int maxTries;
 	private int retryDelaySeconds;
+	private Build build;
+	private BuildDAO buildDAO;
 
 	public CachedSctidFactory(final Integer namespaceId, final String releaseId, final String buildId, final IdServiceRestClient idRestClient, final int maxtries, final int retryDelayDeconds) {
 		this.namespaceId = namespaceId;
@@ -29,6 +34,17 @@ public class CachedSctidFactory {
 		uuidToSctidCache = new ConcurrentHashMap<>();
 		this.maxTries = maxtries;
 		this.retryDelaySeconds = retryDelayDeconds;
+	}
+
+	public CachedSctidFactory(final Integer namespaceId, final String releaseId, final Build build, final BuildDAO buildDAO, final IdServiceRestClient idRestClient, final int maxtries, final int retryDelayDeconds) {
+		this.namespaceId = namespaceId;
+		this.idServiceRestClient = idRestClient;
+		comment = "ReleaseId:" + releaseId + " BuildId:" + build.getId();
+		uuidToSctidCache = new ConcurrentHashMap<>();
+		this.maxTries = maxtries;
+		this.retryDelaySeconds = retryDelayDeconds;
+		this.buildDAO = buildDAO;
+		this.build = build;
 	}
 
 	public Long getSCTID(final String componentUuid, final String partitionId, final String moduleId) throws Exception{
@@ -42,6 +58,7 @@ public class CachedSctidFactory {
 	}
 
 	public Map<String, Long> getSCTIDs(final List<String> componentUuidStrings, final String partitionId, final String moduleId) throws RestClientException {
+
 		final Map<String, Long> uuidStringToSctidMapResults = new HashMap<>();
 		if (componentUuidStrings == null || componentUuidStrings.isEmpty()) {
 			return uuidStringToSctidMapResults;
@@ -56,6 +73,10 @@ public class CachedSctidFactory {
 		int attempt = 1;
 		while (uuidToSctidMap == null) {
 			try {
+				if (build != null && buildDAO != null && buildDAO.isBuildCancelRequested(build)) {
+					LOGGER.warn("Stop requesting ID from CIS. Build status has been changed to CANCEL_REQUESTED");
+					throw new BusinessServiceRuntimeException("Stop requesting ID from CIS. Build status has been changed to CANCEL_REQUESTED");
+				}
 				LOGGER.info("Batch ID service request, batch size {}.", componentUuids.size());
 				if ( !componentUuids.isEmpty()) {
 					uuidToSctidMap = idServiceRestClient.getOrCreateSctIds(componentUuids, namespaceId, partitionId, comment);
