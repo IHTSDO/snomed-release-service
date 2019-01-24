@@ -172,12 +172,13 @@ public class RVFClient implements Closeable {
 		httpClient.close();
 	}
 
-	private HttpPost createHttpPostRequest(final String s3ZipFilePath,
-			final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition, String includedModuleId)
+	private HttpPost createHttpPostRequest(final String s3BucketName,
+			String s3ZipFilePath, final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition, String includedModuleId)
 			throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		multiPartBuilder.addTextBody("bucketName", s3ZipFilePath);
 		multiPartBuilder.addTextBody("releaseFileS3Path", s3ZipFilePath);
 		multiPartBuilder.addTextBody("manifestFileS3Path", manifestFileS3Path);
 		multiPartBuilder.addTextBody("enableDrools", Boolean.toString(qaTestConfig.isEnableDrools()));
@@ -222,45 +223,12 @@ public class RVFClient implements Closeable {
 		return post;
 	}
 
-	private String parseRvfJsonResponse( final File tmpJson) {
-		long failureCount = -1L;
-		final Map<String,Object> msg = new HashMap<>();
-		try (final Reader tmpJsonReader =  new InputStreamReader(new FileInputStream(tmpJson))) {
-			final JSONParser jsonParser = new JSONParser();
-			final JSONObject jsonObject = (JSONObject) jsonParser.parse(tmpJsonReader);
-			if (jsonObject.containsKey("type")) {
-				msg.put("type",jsonObject.get("type"));
-			}
-			if (jsonObject.containsKey("reportUrl")) {
-				msg.put("reportUrl", jsonObject.get("reportUrl"));
-			}
-			if( jsonObject.containsKey("assertionsFailed")) {
-				final Long assertionsFailed = (Long)jsonObject.get("assertionsFailed");
-				msg.put("assertionsFailed", assertionsFailed);
-				failureCount = assertionsFailed != null ? assertionsFailed.longValue() : failureCount ;
-			}
-			if (jsonObject.containsKey("assertionsRun")) {
-				final Long assertionsRun =  (Long) jsonObject.get("assertionsRun");
-				msg.put("assertionsRun", assertionsRun);
-			}
-			if (jsonObject.containsKey("failureMessage")) {
-				msg.put("failureMessage", jsonObject.get("failureMessage"));
-			}
-		} catch (final ParseException | IOException e) {
-			LOGGER.error("Failed to parse response in JSON." + e.fillInStackTrace());
-		}
-		if (failureCount != 0) {
-			return JSONObject.toJSONString(msg);
-		}
-		return null;
-	}
-
-	public String validateOutputPackageFromS3(String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition
+	public String validateOutputPackageFromS3(String s3BucketName, String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition
 			, String includedModuleId) throws FileNotFoundException {
 		final String runId = Long.toString(System.currentTimeMillis());
 		final String targetUrl = "/run-post-via-s3";
 		
-		final HttpPost post = createHttpPostRequest(s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
+		final HttpPost post = createHttpPostRequest(s3BucketName, s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", s3ZipFilePath, post.getURI(), runId);
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {

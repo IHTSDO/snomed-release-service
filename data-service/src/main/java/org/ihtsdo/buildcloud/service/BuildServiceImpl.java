@@ -127,6 +127,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private RF2ClassifierService rf2ClassifierService;
+	
+	@Autowired
+	private String buildBucketName;
 
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -584,7 +587,7 @@ public class BuildServiceImpl implements BuildService {
 				includedModuleId = extensionConfig.getModuleId();
 
 			}
-			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
+			return rvfClient.validateOutputPackageFromS3(buildBucketName, s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
 		}
 	}
 
