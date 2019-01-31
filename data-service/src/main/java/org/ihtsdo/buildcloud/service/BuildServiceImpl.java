@@ -62,6 +62,7 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingRepor
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -587,7 +588,16 @@ public class BuildServiceImpl implements BuildService {
 				includedModuleId = extensionConfig.getModuleId();
 
 			}
-			return rvfClient.validateOutputPackageFromS3(buildBucketName, s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
+			String runId = Long.toString(System.currentTimeMillis());
+			ValidationRequest request = new ValidationRequest(runId);
+			request.setBuildBucketName(buildBucketName);
+			request.setReleaseZipFileS3Path(s3ZipFilePath);
+			request.setEffectiveTime(effectiveTime);
+			request.setFailureExportMax(failureExportMax);
+			request.setManifestFileS3Path(manifestFileS3Path);
+			request.setReleaseAsAnEdition(releaseAsAnEdition);
+			request.setIncludedModuleId(includedModuleId);
+			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
 	}
 
@@ -728,5 +738,4 @@ public class BuildServiceImpl implements BuildService {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
 	}
-
 }
