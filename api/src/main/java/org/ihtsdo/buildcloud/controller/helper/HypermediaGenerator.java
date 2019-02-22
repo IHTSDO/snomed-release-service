@@ -60,7 +60,7 @@ public class HypermediaGenerator {
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
-		if (!currentResource) {
+		if (!currentResource && entityMap != null) {
 			url = url + "/" + entityMap.get("id");
 		}
 		if (entityMap != null) {
