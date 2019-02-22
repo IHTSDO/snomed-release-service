@@ -3,15 +3,12 @@ package org.ihtsdo.buildcloud.service.rvf;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.IOUtils;
@@ -19,13 +16,9 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.AbstractContentBody;
-import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -35,8 +28,6 @@ import org.ihtsdo.otf.rest.exception.ApplicationWiringException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
-
-import com.google.gson.Gson;
 
 public class RVFClient implements Closeable {
 
@@ -69,6 +60,8 @@ public class RVFClient implements Closeable {
 	private static final String BUCKET_NAME = "bucketName";
 
 	private static final String RUN_POST_VIA_S3 = "/run-post-via-s3";
+
+	private static final String LOCATION = "location";
 
 	public static final String TOTAL_NUMBER_OF_FAILURES = "Total number of failures: ";
 
@@ -251,6 +244,13 @@ public class RVFClient implements Closeable {
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
+			if (200 == statusCode || 201 == statusCode) {
+				if (response.containsHeader(LOCATION)) {
+					rvfResponse = response.getFirstHeader(LOCATION).toString();
+					LOGGER.info("RVF result url:" + response);
+					return rvfResponse;
+				}
+			} 
 			try (InputStream content = response.getEntity().getContent()) {
 				rvfResponse = IOUtils.toString(content);
 				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
@@ -264,8 +264,7 @@ public class RVFClient implements Closeable {
 					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
 							validationRequest.getReleaseZipFileS3Path(), rvfResponse);
 				} else {
-					rvfResponse = " Received RVF response HTTP status code: " + statusCode + 
-							" with body: " + rvfResponse;
+					rvfResponse = " Received RVF response HTTP status code: " + statusCode + " with body: " + rvfResponse;
 					LOGGER.info("RVF Service failure: {}", rvfResponse);
 				}
 			}
