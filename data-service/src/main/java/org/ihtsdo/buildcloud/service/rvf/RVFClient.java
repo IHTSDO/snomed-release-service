@@ -243,11 +243,12 @@ public class RVFClient implements Closeable {
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
+			LOGGER.debug(response.toString());
 			final int statusCode = response.getStatusLine().getStatusCode();
 			if (200 == statusCode || 201 == statusCode) {
 				if (response.containsHeader(LOCATION)) {
-					rvfResponse = response.getFirstHeader(LOCATION).toString();
-					LOGGER.info("RVF result url:" + response);
+					rvfResponse = response.getFirstHeader(LOCATION).getValue().toString();
+					LOGGER.info("RVF result url:" + rvfResponse);
 					return rvfResponse;
 				}
 			} 
