@@ -121,8 +121,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
 			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
 		}
-		if(newPropertyValues.containsKey(DROOLS_RULES_GROUPS)) {
-			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUPS));
+		if(newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
+			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
 		}
 	}
 
