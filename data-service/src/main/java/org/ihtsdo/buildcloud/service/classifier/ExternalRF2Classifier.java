@@ -53,11 +53,7 @@ public class ExternalRF2Classifier extends RF2Classifier{
 	
 	@Override
 	public File run(Build build, File equivalencyReportOutputFile, ClassificationInputInfo classifierFiles, File resultDir) throws BusinessServiceException {
-		List<String> previousReleases = new ArrayList<>();
 		String previousPublished = build.getConfiguration().getPreviousPublishedPackage();
-		if (previousPublished != null && !previousPublished.isEmpty()) {
-			previousReleases.add(previousPublished);
-		}
 		String dependencyRelease = null;
 		ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();  
 		if (extensionConfig != null) {
@@ -66,13 +62,10 @@ public class ExternalRF2Classifier extends RF2Classifier{
 				throw new BusinessServiceException("International dependency release can't be null for extension release build.");
 			}
 		}
-		if (dependencyRelease != null) {
-			previousReleases.add(dependencyRelease);
-		}
 		File rf2DeltaZipFile = createRf2DeltaArchiveForClassifier(build, classifierFiles, resultDir);
 		File inferredResult = null;
 		try {
-			File resultZipFile = externalClassifierRestClient.classify(rf2DeltaZipFile, previousReleases);
+			File resultZipFile = externalClassifierRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
 			File classifierResult = new File(resultDir, "result");
 			if (!classifierResult.exists()) {
 				classifierResult.mkdir();

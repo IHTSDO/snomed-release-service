@@ -45,5 +45,4 @@ public class RVFClientTest {
 
 		Assert.assertEquals(2, failureCount);
 	}
-
 }

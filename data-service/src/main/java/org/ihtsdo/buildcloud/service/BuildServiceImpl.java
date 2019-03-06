@@ -38,6 +38,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.BuildReport;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -61,6 +62,7 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingRepor
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -126,6 +128,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private RF2ClassifierService rf2ClassifierService;
+	
+	@Autowired
+	private String buildBucketName;
 
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -403,9 +408,13 @@ public class BuildServiceImpl implements BuildService {
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
-				// Run classifier
-				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-				generator.generateRelationshipFiles(result);
+				if (offlineMode) {
+					LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
+				} else {
+					// Run classifier
+					ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+					generator.generateRelationshipFiles(result);
+				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
@@ -568,8 +577,27 @@ public class BuildServiceImpl implements BuildService {
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
-			validateQaTestConfig(qaTestConfig, build.getConfiguration());
-			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax);
+			BuildConfiguration buildConfiguration = build.getConfiguration();
+			validateQaTestConfig(qaTestConfig, buildConfiguration);
+			String effectiveTime = buildConfiguration.getEffectiveTimeFormatted();
+			boolean releaseAsAnEdition = false;
+			String includedModuleId = null;
+			ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
+			if(extensionConfig != null) {
+				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
+				includedModuleId = extensionConfig.getModuleId();
+
+			}
+			String runId = Long.toString(System.currentTimeMillis());
+			ValidationRequest request = new ValidationRequest(runId);
+			request.setBuildBucketName(buildBucketName);
+			request.setReleaseZipFileS3Path(s3ZipFilePath);
+			request.setEffectiveTime(effectiveTime);
+			request.setFailureExportMax(failureExportMax);
+			request.setManifestFileS3Path(manifestFileS3Path);
+			request.setReleaseAsAnEdition(releaseAsAnEdition);
+			request.setIncludedModuleId(includedModuleId);
+			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
 	}
 
@@ -710,5 +738,4 @@ public class BuildServiceImpl implements BuildService {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
 	}
-
 }
