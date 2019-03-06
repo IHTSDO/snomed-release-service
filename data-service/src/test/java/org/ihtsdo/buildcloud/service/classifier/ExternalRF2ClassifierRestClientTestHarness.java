@@ -30,7 +30,7 @@ public class ExternalRF2ClassifierRestClientTestHarness {
 		//Put RF2Delta.zip in folder release under project data-service
 		File rf2DeltaZipFile = new File("release/RF2DeltaWithAxiom.zip");
 		assertTrue(rf2DeltaZipFile.exists());
-		File result = client.classify(rf2DeltaZipFile, Arrays.asList("SnomedCT_InternationalRF2_PRODUCTION_20180731T120000Z_OWLExpression.zip"));
+		File result = client.classify(rf2DeltaZipFile, "SnomedCT_InternationalRF2_MEMBER_20190131T120000Z.zip", null);
 		assertNotNull(result);
 		System.out.println("Classification result is saved at:" + result.getAbsolutePath().toString());
 	}
@@ -42,7 +42,7 @@ public class ExternalRF2ClassifierRestClientTestHarness {
 		//Put RF2Delta.zip in folder release under project data-service
 		File rf2DeltaZipFile = new File("release/Empty_RF2Delta.zip");
 		assertTrue(rf2DeltaZipFile.exists());
-		File result = client.classify(rf2DeltaZipFile, Arrays.asList("xSnomedCT_InternationalRF2_ALPHA_20180731T120000Z.zip", "SnomedCT_InternationalRF2_PRODUCTION_20180131T120000Z.zip"));
+		File result = client.classify(rf2DeltaZipFile, "SnomedCT_USExtensionRF2_PRODUCTION_20180901T120000Z.zip", "SnomedCT_InternationalRF2_MEMBER_20190131T120000Z.zip");
 		assertNotNull(result);
 		System.out.println("Classification result is saved at:" + result.getAbsolutePath().toString());
 	}
