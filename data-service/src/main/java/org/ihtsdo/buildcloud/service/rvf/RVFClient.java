@@ -3,17 +3,12 @@ package org.ihtsdo.buildcloud.service.rvf;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.IOUtils;
@@ -30,22 +25,57 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.exception.ApplicationWiringException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
 
 public class RVFClient implements Closeable {
 
+	private static final String ENABLE_MRCM_VALIDATION = "enableMRCMValidation";
+
+	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
+
+	private static final String PRODUCT_NAME = "productName";
+
+	private static final String REPORTING_STAGE = "reportingStage";
+
+	private static final String DROOLS_RULES_GROUPS = "droolsRulesGroups";
+
+	private static final String INCLUDED_MODULES = "includedModules";
+
+	private static final String EFFECTIVE_TIME = "effectiveTime";
+
+	private static final String STORAGE_LOCATION = "storageLocation";
+
+	private static final String FAILURE_EXPORT_MAX = "failureExportMax";
+
+	private static final String RUN_ID = "runId";
+
+	private static final String DEPENDENCY_RELEASE = "dependencyRelease";
+
+	private static final String PREVIOUS_RELEASE = "previousRelease";
+
+	private static final String RELEASE_AS_AN_EDITION = "releaseAsAnEdition";
+
+	private static final String GROUPS = "groups";
+
+	private static final String ENABLE_DROOLS = "enableDrools";
+
+	private static final String MANIFEST_FILE_S3_PATH = "manifestFileS3Path";
+
+	private static final String RELEASE_FILE_S3_PATH = "releaseFileS3Path";
+
+	private static final String BUCKET_NAME = "bucketName";
+
+	private static final String RUN_POST_VIA_S3 = "/run-post-via-s3";
+
+	private static final String LOCATION = "location";
+
 	public static final String TOTAL_NUMBER_OF_FAILURES = "Total number of failures: ";
 
 	private static final String ERROR_NO_LINES_RECEIVED_FROM_RVF = "Error - No lines received from RVF!";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
-
-	private static final String UNDER_SCORE = "_";
 
 	private final String releaseValidationFrameworkUrl;
 
@@ -171,106 +201,75 @@ public class RVFClient implements Closeable {
 	public void close() throws IOException {
 		httpClient.close();
 	}
-
-	private HttpPost createHttpPostRequest(final String s3ZipFilePath,
-			final QATestConfig qaTestConfig, final String runId, final String targetUrl, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition, String includedModuleId)
-			throws FileNotFoundException {
+	private HttpPost createHttpPostRequest(QATestConfig qaTestConfig, ValidationRequest request, String targetUrl) throws FileNotFoundException {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		multiPartBuilder.addTextBody("releaseFileS3Path", s3ZipFilePath);
-		multiPartBuilder.addTextBody("manifestFileS3Path", manifestFileS3Path);
-		multiPartBuilder.addTextBody("enableDrools", Boolean.toString(qaTestConfig.isEnableDrools()));
-		multiPartBuilder.addTextBody("groups", qaTestConfig.getAssertionGroupNames());
-		multiPartBuilder.addTextBody("enableMRCMValidation", Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
-		multiPartBuilder.addTextBody("jiraIssueCreationFlag", Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
-		multiPartBuilder.addTextBody("releaseAsAnEdition", Boolean.toString(releaseAsAnEdition));
-		final String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
-		if ( previousIntRelease != null && previousIntRelease.split(UNDER_SCORE).length > 1 ) {
-			multiPartBuilder.addTextBody("previousIntReleaseVersion",qaTestConfig.getPreviousInternationalRelease());
+		multiPartBuilder.addTextBody(BUCKET_NAME, request.getBuildBucketName());
+		multiPartBuilder.addTextBody(RELEASE_FILE_S3_PATH, request.getReleaseZipFileS3Path());
+		multiPartBuilder.addTextBody(MANIFEST_FILE_S3_PATH, request.getManifestFileS3Path());
+		multiPartBuilder.addTextBody(ENABLE_DROOLS, Boolean.toString(qaTestConfig.isEnableDrools()));
+		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
+		multiPartBuilder.addTextBody(CREATE_JIRA_ISSUE, Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
+		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
+		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
+		String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
+		if ( previousIntRelease != null && !previousIntRelease.isEmpty() ) {
+			multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
 		}
-		final String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
-		if (previousExtensionRelease != null && previousExtensionRelease.split(UNDER_SCORE).length > 1) {
-			multiPartBuilder.addTextBody("previousExtensionReleaseVersion", previousExtensionRelease);
+		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
+		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
+				multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
+			String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
+			if (previousExtensionRelease != null && !previousExtensionRelease.isEmpty()) {
+				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
+			}
 		}
-
-		final String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
-		if (extensionDependencyRelease != null && extensionDependencyRelease.split(UNDER_SCORE).length > 1) 
-		{
-			multiPartBuilder.addTextBody("extensionDependencyReleaseVersion", extensionDependencyRelease);
-		}
-
-		multiPartBuilder.addTextBody("runId",runId);
+		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );
+		Integer failureExportMax = request.getFailureExportMax();
 		if (failureExportMax != null && failureExportMax.intValue() != 0) {
-			multiPartBuilder.addTextBody("failureExportMax",String.valueOf(failureExportMax));
+			multiPartBuilder.addTextBody(FAILURE_EXPORT_MAX, String.valueOf(failureExportMax));
 		}
 
-		multiPartBuilder.addTextBody("storageLocation", qaTestConfig.getStorageLocation());
+		multiPartBuilder.addTextBody(STORAGE_LOCATION, qaTestConfig.getStorageLocation());
 
-		final String productName = qaTestConfig.getProductName();
-		if(StringUtils.isNotBlank(productName)) {
-			multiPartBuilder.addTextBody("productName",productName);
+		if (StringUtils.isNotBlank(request.getEffectiveTime())) {
+			multiPartBuilder.addTextBody(EFFECTIVE_TIME, request.getEffectiveTime());
 		}
 
-		final String reportingStage = qaTestConfig.getReportingStage();
-		if(StringUtils.isNotBlank(reportingStage)) {
-			multiPartBuilder.addTextBody("reportingStage", reportingStage);
+		if (StringUtils.isNotBlank(request.getIncludedModuleId())) {
+			multiPartBuilder.addTextBody(INCLUDED_MODULES, request.getIncludedModuleId());
+		}
+		
+		if (StringUtils.isNotBlank(qaTestConfig.getDroolsRulesGroupNames())) {
+			multiPartBuilder.addTextBody(DROOLS_RULES_GROUPS, qaTestConfig.getDroolsRulesGroupNames());
 		}
 
-		if(StringUtils.isNotBlank(effectiveTime)) {
-			multiPartBuilder.addTextBody("effectiveTime", effectiveTime);
+		if (StringUtils.isNotBlank(qaTestConfig.getProductName())) {
+			multiPartBuilder.addTextBody(PRODUCT_NAME, qaTestConfig.getProductName());
 		}
 
-		if(StringUtils.isNotBlank(includedModuleId)) {
-			multiPartBuilder.addTextBody("includedModules",includedModuleId);
+		if (StringUtils.isNotBlank(qaTestConfig.getReportingStage())) {
+			multiPartBuilder.addTextBody(REPORTING_STAGE, qaTestConfig.getReportingStage());
 		}
 		post.setEntity(multiPartBuilder.build());
 		return post;
 	}
 
-	private String parseRvfJsonResponse( final File tmpJson) {
-		long failureCount = -1L;
-		final Map<String,Object> msg = new HashMap<>();
-		try (final Reader tmpJsonReader =  new InputStreamReader(new FileInputStream(tmpJson))) {
-			final JSONParser jsonParser = new JSONParser();
-			final JSONObject jsonObject = (JSONObject) jsonParser.parse(tmpJsonReader);
-			if (jsonObject.containsKey("type")) {
-				msg.put("type",jsonObject.get("type"));
-			}
-			if (jsonObject.containsKey("reportUrl")) {
-				msg.put("reportUrl", jsonObject.get("reportUrl"));
-			}
-			if( jsonObject.containsKey("assertionsFailed")) {
-				final Long assertionsFailed = (Long)jsonObject.get("assertionsFailed");
-				msg.put("assertionsFailed", assertionsFailed);
-				failureCount = assertionsFailed != null ? assertionsFailed.longValue() : failureCount ;
-			}
-			if (jsonObject.containsKey("assertionsRun")) {
-				final Long assertionsRun =  (Long) jsonObject.get("assertionsRun");
-				msg.put("assertionsRun", assertionsRun);
-			}
-			if (jsonObject.containsKey("failureMessage")) {
-				msg.put("failureMessage", jsonObject.get("failureMessage"));
-			}
-		} catch (final ParseException | IOException e) {
-			LOGGER.error("Failed to parse response in JSON." + e.fillInStackTrace());
-		}
-		if (failureCount != 0) {
-			return JSONObject.toJSONString(msg);
-		}
-		return null;
-	}
-
-	public String validateOutputPackageFromS3(String s3ZipFilePath, QATestConfig qaTestConfig, String manifestFileS3Path, Integer failureExportMax, String effectiveTime, boolean releaseAsAnEdition
-	, String includedModuleId) throws FileNotFoundException {
-		final String runId = Long.toString(System.currentTimeMillis());
-		final String targetUrl = "/run-post-via-s3";
-		
-		final HttpPost post = createHttpPostRequest(s3ZipFilePath, qaTestConfig, runId, targetUrl, manifestFileS3Path,failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
-		LOGGER.info("Posting file {} to RVF at {} with run id {}.", s3ZipFilePath, post.getURI(), runId);
+	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest) throws FileNotFoundException {
+		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest, RUN_POST_VIA_S3);
+		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
 		String rvfResponse = "No result recovered from RVF";
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
+			LOGGER.debug(response.toString());
 			final int statusCode = response.getStatusLine().getStatusCode();
+			if (200 == statusCode || 201 == statusCode) {
+				if (response.containsHeader(LOCATION)) {
+					rvfResponse = response.getFirstHeader(LOCATION).getValue().toString();
+					LOGGER.info("RVF result url:" + rvfResponse);
+					return rvfResponse;
+				}
+			} 
 			try (InputStream content = response.getEntity().getContent()) {
 				rvfResponse = IOUtils.toString(content);
 				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
@@ -282,16 +281,15 @@ public class RVFClient implements Closeable {
 						rvfResponse = rvfResponse.substring(urlStart, urlEnd);
 					}
 					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
-							s3ZipFilePath, rvfResponse);
+							validationRequest.getReleaseZipFileS3Path(), rvfResponse);
 				} else {
-					rvfResponse = " Received RVF response HTTP status code: " + statusCode + 
-							" with body: " + rvfResponse;
+					rvfResponse = " Received RVF response HTTP status code: " + statusCode + " with body: " + rvfResponse;
 					LOGGER.info("RVF Service failure: {}", rvfResponse);
 				}
 			}
 		} catch (Exception e) {
-			rvfResponse = "Exception detected while initiating RVF at: " + targetUrl + 
-					" to test: " + s3ZipFilePath + " which said: " + e.getMessage();
+			rvfResponse = "Exception detected while initiating RVF at: " + RUN_POST_VIA_S3 + 
+					" to test: " + validationRequest.getReleaseZipFileS3Path() + " which said: " + e.getMessage();
 			LOGGER.error(rvfResponse, e);
 		}
 		return rvfResponse;

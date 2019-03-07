@@ -27,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
 public class RF2ClassificationServiceTest {
+
 	@Autowired 
 	private RF2ClassifierService classifierService;
 	
@@ -41,37 +42,25 @@ public class RF2ClassificationServiceTest {
 	}
 	
 	@Test
-	public void testClassificationWitoutSufficientData() throws Exception {
+	public void testClassificationWithoutSufficientData() throws Exception {
 		expectedEx.expect(BusinessServiceException.class);
 		expectedEx.expectMessage(CoreMatchers.equalTo("Classification can't be run due to stated relationship and concept files are missing"));
-		Build build = createBuild(false, "test.zip");
+		Build build = createBuild("test.zip");
 		Map<String, TableSchema> inputFileSchemaMap = new HashMap<>();
 		classifierService.classify(build, inputFileSchemaMap);
 	}
 	
 	@Test
-	public void testInternalClassificationWithNoFileFound() throws Exception{
-		expectedEx.expect(ProcessingException.class);
-		expectedEx.expectMessage(CoreMatchers.equalTo("Didn't find output file:xsct2_Concept_Snapshot_INT_20180301.txt"));
-		Build build = createBuild(false, "test.zip");
-		build.getConfiguration().setBetaRelease(true);
-		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
-		classifierService.classify(build, inputFileSchemaMap);
-	}
-	
-	
-	@Test
 	public void testExternalClassificationWithNoFileFound() throws Exception{
 		expectedEx.expect(ProcessingException.class);
 		expectedEx.expectMessage(CoreMatchers.equalTo("Didn't find output file:xsct2_StatedRelationship_Delta_INT_20180301.txt"));
-		Build build = createBuild(true, "test.zip");
+		Build build = createBuild("test.zip");
 		build.getConfiguration().setBetaRelease(true);
 		Map<String, TableSchema> inputFileSchemaMap = createInputFilesSchemaMap();
 		classifierService.classify(build, inputFileSchemaMap);
 	}
-	
-	
-	private Build createBuild(boolean useExternalClassifier, String previousPublished) throws ParseException {
+
+	private Build createBuild(String previousPublished) throws ParseException {
 		Date releaseDate = DateUtils.parseDate("20180731", "yyyyMMdd");
 		Product testProduct = new Product("Test");
 		testProduct.setReleaseCenter(internationalCenter);
@@ -81,7 +70,7 @@ public class RF2ClassificationServiceTest {
 		configuration.setCreateLegacyIds(false);
 		configuration.setEffectiveTime(releaseDate);
 		configuration.setFirstTimeRelease(false);
-		configuration.setUseExternalClassifier(useExternalClassifier);
+		configuration.setUseExternalClassifier(true);
 		configuration.setPreviousPublishedPackage(previousPublished);
 		build.setConfiguration(configuration);
 		return build;

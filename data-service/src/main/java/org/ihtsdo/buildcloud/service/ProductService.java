@@ -41,7 +41,8 @@ public interface ProductService extends EntityService<Product> {
 	String ENABLE_MRCM = "enableMRCMValidation";
 	String JIRA_PRODUCT_NAME = "jiraProductName";
 	String JIRA_REPORTING_STAGE = "jiraReportingStage";
-String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
+	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
+	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
