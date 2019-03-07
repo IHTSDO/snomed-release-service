@@ -8,7 +8,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
@@ -22,6 +21,8 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.google.common.base.Strings;
 
 import us.monoid.json.JSONException;
 import us.monoid.web.BinaryResource;
@@ -48,10 +49,15 @@ public class ExternalRF2ClassifierRestClient {
 	}
 	
 	
-	public File classify( File rf2DeltaZipFile, List<String> previousReleases) throws BusinessServiceException {
-		URI uri = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications")
-				.queryParam("previousReleases", previousReleases.toArray())
-				.build().toUri();
+	public File classify( File rf2DeltaZipFile, String previousPackage, String dependencyPackage) throws BusinessServiceException {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications");
+		if (!Strings.isNullOrEmpty(previousPackage)) {
+			builder.queryParam("previousPackage", previousPackage);
+		}
+		if (!Strings.isNullOrEmpty(dependencyPackage)) {
+			builder.queryParam("dependencyPackage", dependencyPackage);
+		}
+		URI uri = builder.build().toUri();
 		logger.info("External classifier request url=" + uri.toString());
 		MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
 		multipartEntityBuilder.addBinaryBody("rf2Delta", rf2DeltaZipFile, ContentType.create(CONTENT_TYPE_MULTIPART), rf2DeltaZipFile.getName());
@@ -141,7 +147,6 @@ public class ExternalRF2ClassifierRestClient {
 		}
 		return status;
 	}
-
 
 	public int getTimeoutInSeconds() {
 		return timeoutInSeconds;

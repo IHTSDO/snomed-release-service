@@ -64,6 +64,7 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingRepor
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
+import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -129,6 +130,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private RF2ClassifierService rf2ClassifierService;
+	
+	@Autowired
+	private String buildBucketName;
 
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -424,10 +428,14 @@ public class BuildServiceImpl implements BuildService {
 			}
 			if(dao.isBuildCancelRequested(build)) return;
 			if (configuration.isCreateInferredRelationships()) {
-				// Run classifier
-				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-				if(dao.isBuildCancelRequested(build)) return;
-				generator.generateRelationshipFiles(result);
+				if (offlineMode) {
+					LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
+				} else {
+					// Run classifier
+					ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+ 					if(dao.isBuildCancelRequested(build)) return;
+					generator.generateRelationshipFiles(result);
+				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
@@ -604,7 +612,16 @@ public class BuildServiceImpl implements BuildService {
 				includedModuleId = extensionConfig.getModuleId();
 
 			}
-			return rvfClient.validateOutputPackageFromS3(s3ZipFilePath, qaTestConfig, manifestFileS3Path, failureExportMax, effectiveTime, releaseAsAnEdition, includedModuleId);
+			String runId = Long.toString(System.currentTimeMillis());
+			ValidationRequest request = new ValidationRequest(runId);
+			request.setBuildBucketName(buildBucketName);
+			request.setReleaseZipFileS3Path(s3ZipFilePath);
+			request.setEffectiveTime(effectiveTime);
+			request.setFailureExportMax(failureExportMax);
+			request.setManifestFileS3Path(manifestFileS3Path);
+			request.setReleaseAsAnEdition(releaseAsAnEdition);
+			request.setIncludedModuleId(includedModuleId);
+			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
 	}
 

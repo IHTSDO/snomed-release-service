@@ -133,6 +133,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if(newPropertyValues.containsKey(JIRA_REPORTING_STAGE)) {
 			qaTestConfig.setReportingStage(newPropertyValues.get(JIRA_REPORTING_STAGE));
 		}
+		if(newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
+			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
+		}
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
@@ -300,6 +303,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if(newPropertyValues.containsKey(INCLUDED_PREV_RELEASE_FILES)) {
 			configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
 		}
+
 	}
 
 }
