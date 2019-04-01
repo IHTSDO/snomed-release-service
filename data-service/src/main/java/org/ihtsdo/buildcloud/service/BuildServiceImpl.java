@@ -136,9 +136,7 @@ public class BuildServiceImpl implements BuildService {
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
-		if (product.getBuildConfiguration().getEffectiveTime() == null) {
-			throw new BadConfigurationException("Product effective time must be set before an build is created.");
-		}
+		validateBuildConfig(product.getBuildConfiguration());
 		Build build;
 		try {
 			synchronized (product) {
@@ -178,12 +176,26 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
+	private void validateBuildConfig(BuildConfiguration buildConfiguration) throws BadConfigurationException {
+		if (buildConfiguration.getEffectiveTime() == null) {
+			throw new BadConfigurationException("The effective time must be set before a build is created.");
+		}
+		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
+		if (extensionConfig != null) {
+			if (extensionConfig.getModuleId() == null || extensionConfig.getModuleId().isEmpty()) {
+				throw new BadConfigurationException("The module id must be set for an extension build.");
+			}
+			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
+				throw new BadConfigurationException("The namespace must be set for an extension build.");
+			}
+		}
+	}
+
 	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
 		// Due to design choices made in the terminology server, we may see input files with null SCTIDs in the
 		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
 		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
 		LOGGER.debug("Performing fixup on input file prior to input file validation");
-		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
 		final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
 		if (statedRelationshipInputFile == null) {
@@ -583,7 +595,7 @@ public class BuildServiceImpl implements BuildService {
 			boolean releaseAsAnEdition = false;
 			String includedModuleId = null;
 			ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
-			if(extensionConfig != null) {
+			if (extensionConfig != null) {
 				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
 				includedModuleId = extensionConfig.getModuleId();
 

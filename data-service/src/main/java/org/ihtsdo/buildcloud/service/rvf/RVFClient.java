@@ -203,10 +203,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(ENABLE_DROOLS, Boolean.toString(qaTestConfig.isEnableDrools()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
-		String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
-		if ( previousIntRelease != null && !previousIntRelease.isEmpty() ) {
-			multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
-		}
+		
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
 				multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
@@ -214,7 +211,13 @@ public class RVFClient implements Closeable {
 			if (previousExtensionRelease != null && !previousExtensionRelease.isEmpty()) {
 				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
 			}
+		} else {
+			String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
+			if (previousIntRelease != null && !previousIntRelease.isEmpty() ) {
+				multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
+			}
 		}
+		
 		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );
 		Integer failureExportMax = request.getFailureExportMax();
 		if (failureExportMax != null && failureExportMax.intValue() != 0) {
