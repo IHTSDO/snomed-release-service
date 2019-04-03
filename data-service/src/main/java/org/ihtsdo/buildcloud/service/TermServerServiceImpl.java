@@ -139,10 +139,6 @@ public class TermServerServiceImpl implements TermServerService{
                 logger.error("Failed to get branch {}", branchPath);
                 throw new BusinessServiceException("Failed to get branch " + branchPath);
             }
-            Object codeSystemShortNameObj = branch.getMetadata().get("codeSystemShortName");
-            if(codeSystemShortNameObj != null && StringUtils.isNotBlank((String) codeSystemShortNameObj)) {
-                exportConfig.setCodeSystemShortName((String) codeSystemShortNameObj);
-            }
         } catch (RestClientException e) {
             logger.error("Failed to get branch {}: {}", branchPath, e);
             throw new BusinessServiceException("Failed to get branch " + branchPath);
