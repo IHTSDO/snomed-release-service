@@ -47,6 +47,10 @@ public class QATestConfig {
 	@Column(name = "enable_drools")
 	private boolean enableDrools = false;
 
+	@Type(type = "yes_no")
+	@Column(name = "enable_mrcm_validation")
+	private boolean enableMRCMValidation = false;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -103,7 +107,8 @@ public class QATestConfig {
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionDependencyRelease="
 				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
-				+ ", enableDrools=" + enableDrools + "]";
+				+ ", enableDrools=" + enableDrools
+				+ ", enableMRCMValidation=" + enableMRCMValidation + "]";
 	}
 
 	public String getStorageLocation() {
@@ -112,5 +117,13 @@ public class QATestConfig {
 
 	public void setStorageLocation(final String storageLocation) {
 		this.storageLocation = storageLocation;
+	}
+
+	public boolean isEnableMRCMValidation() {
+		return enableMRCMValidation;
+	}
+
+	public void setEnableMRCMValidation(boolean enableMRCMValidation) {
+		this.enableMRCMValidation = enableMRCMValidation;
 	}
 }
