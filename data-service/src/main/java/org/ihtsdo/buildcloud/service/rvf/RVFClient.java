@@ -31,6 +31,8 @@ import org.springframework.util.StreamUtils;
 
 public class RVFClient implements Closeable {
 
+	private static final String ENABLE_MRCM_VALIDATION = "enableMRCMValidation";
+
 	private static final String DROOLS_RULES_GROUPS = "droolsRulesGroups";
 
 	private static final String INCLUDED_MODULES = "includedModules";
@@ -203,6 +205,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(ENABLE_DROOLS, Boolean.toString(qaTestConfig.isEnableDrools()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
+		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
 		
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {

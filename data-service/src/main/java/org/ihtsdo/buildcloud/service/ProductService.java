@@ -39,6 +39,7 @@ public interface ProductService extends EntityService<Product> {
 	String ENABLE_DROOLS = "enableDrools";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
+	String ENABLE_MRCM = "enableMRCMValidation";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
