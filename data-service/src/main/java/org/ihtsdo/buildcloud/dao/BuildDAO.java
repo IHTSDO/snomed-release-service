@@ -94,4 +94,6 @@ public interface BuildDAO {
 	InputStream getBuildReportFileStream(Build build);
 
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
+
+	boolean isDerivativeProduct(Build build);
 }
