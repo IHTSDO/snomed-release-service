@@ -25,7 +25,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -35,7 +34,6 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
@@ -67,8 +65,6 @@ public class BuildDAOImpl implements BuildDAO {
 	private static final String BLANK = "";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildDAOImpl.class);
-
-	private static final String INTERNATIONAL = "international";
 
 	private final ExecutorService executorService;
 
@@ -559,18 +555,5 @@ public class BuildDAOImpl implements BuildDAO {
 	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
-	}
-
-	@Override
-	public boolean isDerivativeProduct(Build build) {
-		ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();
-		if(extensionConfig == null) {
-			return false;
-		}
-		String releaseCenter = build.getProduct().getReleaseCenter().getBusinessKey();
-		if(INTERNATIONAL.equalsIgnoreCase(releaseCenter) && StringUtils.isNotBlank(extensionConfig.getDependencyRelease())) {
-			return true;
-		}
-		return false;
 	}
 }

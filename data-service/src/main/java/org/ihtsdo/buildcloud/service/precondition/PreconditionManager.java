@@ -27,7 +27,7 @@ public class PreconditionManager {
 	public List<PreConditionCheckReport> runPreconditionChecks(final Build build) {
 		List<PreConditionCheckReport> checkReports = new ArrayList<>();
 		for (PreconditionCheck thisCheck : preconditionChecks) {
-			if (onlineMode || (!RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) && !TermServerClassificationResultsCheck.class.isAssignableFrom(thisCheck.getClass())) || localRvf) {
+			if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
 				thisCheck.runCheck(build);
 				checkReports.add(thisCheck.getReport());
 			} else {
