@@ -27,7 +27,6 @@ import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.ReleaseFileGenerationException;
-import org.ihtsdo.buildcloud.service.helper.RelationshipHelper;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -398,7 +397,7 @@ public class TransformationService {
 		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
 		String moduleId = coreModuleSctid;
 		if (extConfig != null) {
-			namespaceId = new Integer(extConfig.getNamespaceId());
+			namespaceId = Integer.valueOf(extConfig.getNamespaceId());
 			moduleId = extConfig.getModuleId();
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);

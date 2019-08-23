@@ -139,8 +139,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
-			throws ResourceNotFoundException, BadRequestException,
-			BadConfigurationException {
+			throws ResourceNotFoundException, BadRequestException, BadConfigurationException {
 		 BuildConfiguration configuration = product.getBuildConfiguration();
 		if (configuration == null) {
 			configuration = new BuildConfiguration();
