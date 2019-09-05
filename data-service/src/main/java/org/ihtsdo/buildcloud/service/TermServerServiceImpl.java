@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.service;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
@@ -20,7 +19,6 @@ import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,8 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -43,6 +39,9 @@ public class TermServerServiceImpl implements TermServerService{
     @Value("${snowowl.path}")
     private String snowowlPath;
 
+    @Value("${snowstorm.path}")
+    private String snowstormPath;
+
     private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
 
     private static final String DELTA = "Delta";
@@ -50,12 +49,13 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     @Override
-    public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, SnowOwlRestClient.ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
-        String snowOwlUrl = termServerUrl + snowowlPath;
+    public File export(boolean useSnowOwl, String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, SnowOwlRestClient.ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
+        String contextPath = useSnowOwl ? snowowlPath : snowstormPath;
+        String snowOwlUrl = termServerUrl + contextPath;
         SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId);
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
         SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
-        Set<String> moduleList = buildModulesList(snowOwlRestClient, branchPath, excludedModuleId);
+        Set<String> moduleList = useSnowOwl ? buildModulesList(snowOwlRestClient, branchPath, excludedModuleId) : null;
         ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
                 exportCategory, exportType,snowOwlRestClient);
         File export = snowOwlRestClient.export(configurationExtensionBuilder);
