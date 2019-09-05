@@ -12,10 +12,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
-import java.text.DateFormat;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,7 +63,6 @@ import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
@@ -707,7 +704,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
-		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
+		return productDAO.find(releaseCenterKey, productKey);
 	}
 
 	private void generateReadmeFile(final Build build) throws BusinessServiceException {

@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.TermServerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
@@ -31,7 +30,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.regex.Matcher;
 
 import static org.mockito.Mockito.*;
 
@@ -71,7 +69,7 @@ public class ProductInputFileGatheringTest {
         String failedExportFile = getClass().getResource(FAILED_EXPORT_DATA_ZIP).getFile();
         testArchive = new File(testFile);
         failedExportArchive = new File(failedExportFile);
-        when(productDAO.find(Matchers.anyString(), Matchers.anyString(), Matchers.any(User.class))).thenReturn(new Product());
+        when(productDAO.find(Matchers.anyString(), Matchers.anyString())).thenReturn(new Product());
         doNothing().when(productInputFileService).putSourceFile(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.any(InputStream.class), Matchers.anyString(), Matchers.anyLong());
     }
 

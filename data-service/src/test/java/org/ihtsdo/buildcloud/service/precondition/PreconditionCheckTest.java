@@ -62,7 +62,7 @@ public abstract class PreconditionCheckTest {
 
 	@Before
 	public void setup() throws Exception {
-		product = productDAO.find(1L, TestUtils.TEST_USER);
+		product = productDAO.find(1L);
 		if(product.getBuildConfiguration() == null) {
 			product.setBuildConfiguration(new BuildConfiguration());
 		}
