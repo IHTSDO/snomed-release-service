@@ -54,12 +54,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Override
 	public List<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions) throws AuthenticationException {
-		return productDAO.findAll(releaseCenterKey, filterOptions, SecurityHelper.getRequiredUser());
+		return productDAO.findAll(releaseCenterKey, filterOptions);
 	}
 
 	@Override
 	public Product find(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
-		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
+		return productDAO.find(releaseCenterKey, productKey);
 	}
 
 	@Override
@@ -67,7 +67,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		final User user = SecurityHelper.getRequiredUser();
 		LOGGER.info("create product, releaseCenterBusinessKey: {}", releaseCenterKey);
 
-		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey, user);
+		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey);
 
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException("Unable to find Release Center: " + releaseCenterKey);
@@ -75,7 +75,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		// Check that we don't already have one of these
 		final String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
-		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey, user);
+		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey);
 		if (existingProduct != null) {
 			throw new EntityAlreadyExistsException("Product named '" + productName + "' already exists.");
 		}

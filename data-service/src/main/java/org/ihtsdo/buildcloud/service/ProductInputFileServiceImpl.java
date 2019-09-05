@@ -12,7 +12,6 @@ import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -278,7 +277,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	private Product getProduct(String centerKey,final String productKey) throws ResourceNotFoundException {
-		Product product = productDAO.find(centerKey, productKey, SecurityHelper.getRequiredUser());
+		Product product = productDAO.find(centerKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}

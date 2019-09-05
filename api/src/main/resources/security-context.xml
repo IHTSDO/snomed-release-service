@@ -16,14 +16,15 @@
    <http pattern="/ws/**" security="none"/>
    <http pattern="/api/v1/ws/**" security="none"/>
    <!-- REST should have no state, each request is re-authenticated -->
-   <http create-session="stateless" auto-config="false" use-expressions="true">
-      <intercept-url pattern="/**" method="GET" access="permitAll()"/>
-      <intercept-url pattern="/**" method="HEAD" access="permitAll()"/>
-      <intercept-url pattern="/**" method="POST" access="isAuthenticated()" />
-      <intercept-url pattern="/**" method="PUT" access="isAuthenticated()" />
-      <intercept-url pattern="/**" method="DELETE" access="isAuthenticated()" />
-      <http-basic />
+   <http create-session="stateless" auto-config="false" use-expressions="false">
       <custom-filter ref="authenticationDecorator" after="BASIC_AUTH_FILTER" />
+      <intercept-url pattern="/**" method="GET" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
+      <intercept-url pattern="/**" method="HEAD" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
+      <intercept-url pattern="/**" method="POST" access="ROLE_${srs.role.release-manager}" />
+      <intercept-url pattern="/**" method="PUT" access="ROLE_${srs.role.release-manager}" />
+      <intercept-url pattern="/**" method="PATCH" access="ROLE_${srs.role.release-manager}" />
+      <intercept-url pattern="/**" method="DELETE" access="ROLE_${srs.role.release-manager}" />
+      <http-basic />
    </http>
 
    <global-method-security pre-post-annotations="enabled" secured-annotations="enabled" proxy-target-class="true" />

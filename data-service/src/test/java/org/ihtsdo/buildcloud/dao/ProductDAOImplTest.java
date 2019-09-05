@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.dao;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,14 +25,14 @@ public class ProductDAOImplTest {
 	@Test
 	public void testInitialData() {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
-		List<Product> products = dao.findAll(filterOptions, TestUtils.TEST_USER);
+		List<Product> products = dao.findAll(filterOptions);
 		Assert.assertNotNull(products);
 		Assert.assertEquals(TestEntityGenerator.productNames.length, products.size());
 
-		Assert.assertNotNull(dao.find(1L, TestUtils.TEST_USER));
-		Assert.assertNotNull(dao.find(2L, TestUtils.TEST_USER));
+		Assert.assertNotNull(dao.find(1L));
+		Assert.assertNotNull(dao.find(2L));
 		// Attempt to recover product greater than our current amount of test data - should not be found
-		Assert.assertNull(dao.find((long)TestEntityGenerator.productNames.length + 1, TestUtils.TEST_USER));
+		Assert.assertNull(dao.find((long)TestEntityGenerator.productNames.length + 1));
 	}
 
 }
