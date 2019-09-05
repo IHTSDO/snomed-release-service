@@ -14,12 +14,8 @@ public class GatherInputRequestPojo {
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
 	private Set<String> excludedModuleIds;
-	/*private String namespaceId;
-	private String startEffectiveDate;
-	private String endEffectiveDate;
-	private boolean includeUnpublished = false;
-	private String codeSystemShortName;*/
-
+	private boolean useSnowOwl;
+	
 	public GatherInputRequestPojo() {
 	}
 
@@ -87,61 +83,25 @@ public class GatherInputRequestPojo {
 		this.trackerId = trackerId;
 	}
 
-	/*public String getNamespaceId() {
-		return namespaceId;
+	public boolean getUseSnowOwl() {
+		return useSnowOwl;
 	}
 
-	public void setNamespaceId(String namespaceId) {
-		this.namespaceId = namespaceId;
+	public void setUseSnowOwl(boolean useSnowOwl) {
+		this.useSnowOwl = useSnowOwl;
 	}
-
-	public boolean isIncludeUnpublished() {
-		return includeUnpublished;
-	}
-
-	public void setIncludeUnpublished(boolean includeUnpublished) {
-		this.includeUnpublished = includeUnpublished;
-	}
-
-
-	public String getStartEffectiveDate() {
-		return startEffectiveDate;
-	}
-
-	public void setStartEffectiveDate(String startEffectiveDate) {
-		this.startEffectiveDate = startEffectiveDate;
-	}
-
-	public String getEndEffectiveDate() {
-		return endEffectiveDate;
-	}
-
-	public void setEndEffectiveDate(String endEffectiveDate) {
-		this.endEffectiveDate = endEffectiveDate;
-	}
-
-	public String getCodeSystemShortName() {
-		return codeSystemShortName;
-	}
-
-	public void setCodeSystemShortName(String codeSystemShortName) {
-		this.codeSystemShortName = codeSystemShortName;
-	}*/
 
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
 				", termServerUrl='" + termServerUrl + '\''+
 				", effectiveDate='" + effectiveDate + '\'' +
-				/*", startEffectiveDate='" + startEffectiveDate + '\'' +
-				", EndEffectiveDate='" + endEffectiveDate + '\'' +*/
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
-				/*", namespaceId=" + namespaceId +
-				", includeUnpublished=" + includeUnpublished +*/
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
+				", useSnowOwl=" + useSnowOwl +
 				'}';
 	}
 
