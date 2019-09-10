@@ -99,6 +99,9 @@ public class BuildConfiguration {
 	@Column(name = "include_prev_release_files")
 	private String includePrevReleaseFiles;
 	
+	@Type(type="yes_no")
+	@Column(name = "daily_build")
+	private boolean dailyBuild;
 	
 	public BuildConfiguration() {
 	}
@@ -373,5 +376,9 @@ public class BuildConfiguration {
 
 	public void setIncludePrevReleaseFiles(String includePrevReleaseFiles) {
 		this.includePrevReleaseFiles = includePrevReleaseFiles;
+	}
+
+	public boolean isDailyBuild() {
+		return dailyBuild;
 	}
 }

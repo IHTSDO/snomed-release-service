@@ -16,6 +16,7 @@
     "extensionConfig" : null,
     "useExternalClassifier" : false,
     "includePrevReleaseFiles" : null,
+    "dailyBuild" : false,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },

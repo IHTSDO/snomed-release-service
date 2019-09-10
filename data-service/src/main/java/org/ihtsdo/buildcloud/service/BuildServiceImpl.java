@@ -131,7 +131,7 @@ public class BuildServiceImpl implements BuildService {
 	
 	@Autowired
 	private String buildBucketName;
-
+	
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
@@ -443,7 +443,8 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-			} catch (JAXBException | IOException | ResourceNotFoundException e) {
+				checkAndOutputDailyBuildPackage(build, zipPackage);
+				} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			} 
 
@@ -473,6 +474,12 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 	
+	private void checkAndOutputDailyBuildPackage(Build build, File zipPackage) throws IOException {
+		if (build.getConfiguration().isDailyBuild()) {
+			dao.uploadDailyBuildToS3(build, zipPackage);
+		}
+	}
+
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 * 
 	 * @param build
