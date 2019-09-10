@@ -47,8 +47,7 @@ public interface BuildDAO {
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
-	String putOutputFile(Build build, File file, boolean calcMD5)
-			throws IOException;
+	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
 	String putOutputFile(Build build, File file)
 			throws IOException;
@@ -94,4 +93,6 @@ public interface BuildDAO {
 	InputStream getBuildReportFileStream(Build build);
 
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
+
+	void uploadDailyBuildToS3(Build build, File zipPackage) throws IOException;
 }
