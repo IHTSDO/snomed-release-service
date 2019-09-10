@@ -57,7 +57,7 @@ public class TermServerServiceImpl implements TermServerService{
         SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = useSnowOwl ? buildModulesList(snowOwlRestClient, branchPath, excludedModuleId) : null;
         ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
-                exportCategory, exportType,snowOwlRestClient);
+                exportCategory, exportType,snowOwlRestClient, useSnowOwl);
         File export = snowOwlRestClient.export(configurationExtensionBuilder);
         try {
             ZipFile zipFile = new ZipFile(export);
@@ -125,7 +125,7 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, SnowOwlRestClient.ExportCategory exportCategory,
-                                                                         SnowOwlRestClient.ExportType exportType, SnowOwlRestClient snowOwlRestClient) throws BusinessServiceException {
+                                                                         SnowOwlRestClient.ExportType exportType, SnowOwlRestClient snowOwlRestClient, boolean useSnowOwl) throws BusinessServiceException {
         ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
         exportConfig.setBranchPath(branchPath);
         exportConfig.setType(exportType);
@@ -146,6 +146,7 @@ public class TermServerServiceImpl implements TermServerService{
         switch (exportCategory) {
             case UNPUBLISHED:
                 String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
+                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(tet);
                 exportConfig.setTransientEffectiveTime(tet);
                 exportConfig.setType(SnowOwlRestClient.ExportType.DELTA);
                 break;
@@ -155,6 +156,7 @@ public class TermServerServiceImpl implements TermServerService{
                 }
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
+                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
                 exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
                 break;
             case FEEDBACK_FIX:
@@ -164,6 +166,7 @@ public class TermServerServiceImpl implements TermServerService{
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setIncludeUnpublished(true);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
+                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
                 exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
                 break;
                 default:
@@ -193,14 +196,14 @@ public class TermServerServiceImpl implements TermServerService{
 
     public static class ExportConfigurationExtensionBuilder extends SnowOwlRestClient.ExportConfigurationBuilder {
 
-        private String codeSystemShortName;
+        private String filenameEffectiveDate;
 
-        public String getCodeSystemShortName() {
-            return codeSystemShortName;
+        public String getFilenameEffectiveDate() {
+            return filenameEffectiveDate;
         }
 
-        public void setCodeSystemShortName(String codeSystemShortName) {
-            this.codeSystemShortName = codeSystemShortName;
+        public void setFilenameEffectiveDate(String filenameEffectiveDate) {
+            this.filenameEffectiveDate = filenameEffectiveDate;
         }
     }
 
