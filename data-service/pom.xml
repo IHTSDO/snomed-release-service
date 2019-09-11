@@ -24,6 +24,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
+			<artifactId>resource-manager</artifactId>
+			<version>${otf-common.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.ihtsdo.otf.common</groupId>
 			<artifactId>otf-common</artifactId>
 			<version>${otf-common.version}</version>
 			<exclusions>

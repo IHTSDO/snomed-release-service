@@ -31,6 +31,7 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -44,6 +45,7 @@ import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -53,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.FileCopyUtils;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
@@ -76,8 +79,6 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final FileHelper buildFileHelper;
 	
-	private final FileHelper dailyBuildFileHelper;
-
 	@Autowired
 	private ObjectMapper objectMapper;
 
@@ -94,9 +95,6 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	private String buildBucketName;
-	
-	@Value("${srs.dailybuild.bucket}")
-	private String dailyBuildBucket;
 
 	@Autowired
 	private ProductInputFileDAO productInputFileDAO;
@@ -106,7 +104,6 @@ public class BuildDAOImpl implements BuildDAO {
 		executorService = Executors.newCachedThreadPool();
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-		dailyBuildFileHelper = new FileHelper(dailyBuildBucket, s3Client, s3ClientHelper);
 		this.s3Client = s3Client;
 		this.tempDir = Files.createTempDir();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
@@ -568,27 +565,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
-
-	public void setDailyBuildBucket(String dailyBuildBucket) {
-		this.dailyBuildBucket = dailyBuildBucket;
-	}
-
-	@Override
-	public void uploadDailyBuildToS3(Build build, File zipPackage) throws IOException {
-		String codeSystem = "SNOMEDCT";
-		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
-		if (!"international".equalsIgnoreCase(businessKey)) {
-			codeSystem += "-" + businessKey;
-		}
-		String dateStr = DateUtils.now("yyyy-mm-dd-hhmmss");
-		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
-		try {
-			dailyBuildFileHelper.putFile(zipPackage, targetFilePath);
-		} catch (NoSuchAlgorithmException | DecoderException e) {
-			throw new IOException("Failed to upload file to S3 " + dailyBuildBucket + "/" + targetFilePath, e);
-		}
-	}
-
+	
 	@Override
 	public boolean isDerivativeProduct(Build build) {
 		ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();

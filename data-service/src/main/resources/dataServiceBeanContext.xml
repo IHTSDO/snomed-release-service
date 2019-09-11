@@ -50,6 +50,9 @@
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl">
 		<property name="buildBucketName" ref="buildBucketName"/>
 	</bean>
+	
+	<bean id = "dailyBuildResourceConfig" class = "org.ihtsdo.buildcloud.config.DailyBuildResourceConfig"/>
+	
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
 

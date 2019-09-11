@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -93,8 +94,6 @@ public interface BuildDAO {
 	InputStream getBuildReportFileStream(Build build);
 
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
-
-	void uploadDailyBuildToS3(Build build, File zipPackage) throws IOException;
 
 	boolean isDerivativeProduct(Build build);
 }
