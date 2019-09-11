@@ -51,7 +51,21 @@
 		<property name="buildBucketName" ref="buildBucketName"/>
 	</bean>
 	
-	<bean id = "dailyBuildResourceConfig" class = "org.ihtsdo.buildcloud.config.DailyBuildResourceConfig"/>
+	<bean id = "dailyBuildResourceConfig" class = "org.ihtsdo.buildcloud.config.DailyBuildResourceConfig">
+		<property name="readonly" value = "${srs.dailybuild.storage.readonly}" />
+		<property name="useCloud"  value = "${srs.dailybuild.storage.useCloud}"/>
+		<property name = "local"> 
+			<bean class = "org.ihtsdo.otf.resourcemanager.ResourceConfiguration.Local">
+				<property name="path" value = "${srs.dailybuild.storage.local.path}"/>
+			</bean>
+		</property>
+		<property name = "cloud"> 
+			<bean class = "org.ihtsdo.otf.resourcemanager.ResourceConfiguration.Cloud">
+				<property name="bucketName" value = "${srs.dailybuild.storage.cloud.bucketName}"/>
+				<property name="path" value = "${srs.dailybuild.storage.cloud.path}"/>
+			</bean>
+		</property>
+	</bean>
 	
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
