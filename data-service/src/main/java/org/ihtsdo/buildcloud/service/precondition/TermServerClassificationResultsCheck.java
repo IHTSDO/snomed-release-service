@@ -52,7 +52,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 
 	private static final String REL2_RELATIONSHIP = "rel2_Relationship_Delta";
 
-	private static final String REL2_STATED_RELATIONSHIP = "rel2_Stated_Relationship_Delta";
+	private static final String REL2_STATED_RELATIONSHIP = "rel2_StatedRelationship_Delta";
 
 	private static final String REFSET = "Refset_";
 
@@ -93,7 +93,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			String errorMessage = validateClassificationResults(classificationResults, resultTempDir);
 			if (StringUtils.isNotBlank(errorMessage)) {
 				fail(errorMessage);
-				LOGGER.warn("Classification validation check has failed");
+				LOGGER.error("Classification validation check has failed");
 			} else {
 				pass();
 				LOGGER.info("Classification validation check has passed");
@@ -145,12 +145,16 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 				if(file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 					List<String> results = FileUtils.readLines(file);
 					if (results.size() > 1) {
-						errorMessageBuilder.append("Inconsistencies found in relationship file in classification results - expected 0 records but found " + results.size() + " records from classification service. ");
+						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						LOGGER.error(errorMessage);
+						errorMessageBuilder.append(errorMessage);
 					}
 				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
 					List<String> results = FileUtils.readLines(file);
 					if (results.size() > 1) {
-						errorMessageBuilder.append("Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + results.size() + " records from classification service. ");
+						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						LOGGER.error(errorMessage);
+						errorMessageBuilder.append(errorMessage);
 					}
 				}
 
