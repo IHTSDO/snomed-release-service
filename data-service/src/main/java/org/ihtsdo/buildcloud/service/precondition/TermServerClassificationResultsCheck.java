@@ -52,7 +52,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 
 	private static final String REL2_RELATIONSHIP = "rel2_Relationship_Delta";
 
-	private static final String REL2_STATED_RELATIONSHIP = "rel2_Stated_Relationship_Delta";
+	private static final String REL2_STATED_RELATIONSHIP = "rel2_StatedRelationship_Delta";
 
 	private static final String REFSET = "Refset_";
 
