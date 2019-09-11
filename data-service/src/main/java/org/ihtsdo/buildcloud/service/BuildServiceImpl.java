@@ -5,6 +5,7 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,10 +30,13 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Build.Status;
@@ -64,12 +68,14 @@ import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.PostConditionException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
@@ -79,6 +85,7 @@ import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -132,6 +139,12 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private String buildBucketName;
 	
+	@Autowired
+	private DailyBuildResourceConfig dailyBuildResourceConfig;
+	
+	@Autowired
+	private ResourceLoader cloudResourceLoader;
+		
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
@@ -443,7 +456,7 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-				checkAndOutputDailyBuildPackage(build, zipPackage);
+				checkAndOutputDailyBuildPackage(build, zipPackage, dailyBuildResourceConfig);
 				} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			} 
@@ -474,9 +487,9 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 	
-	private void checkAndOutputDailyBuildPackage(Build build, File zipPackage) throws IOException {
+	private void checkAndOutputDailyBuildPackage(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
 		if (build.getConfiguration().isDailyBuild()) {
-			dao.uploadDailyBuildToS3(build, zipPackage);
+			uploadDailyBuildToS3(build, zipPackage, resourceConfig);
 		}
 	}
 
@@ -756,5 +769,18 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
+	}
+	
+	public void uploadDailyBuildToS3(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
+		ResourceManager resourceManager = new ResourceManager(resourceConfig, cloudResourceLoader);
+		String codeSystem = "SNOMEDCT";
+		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
+		if (!"international".equalsIgnoreCase(businessKey)) {
+			codeSystem += "-" + businessKey;
+		}
+		String dateStr = DateUtils.now("yyyy-mm-dd-hhmmss");
+		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
+		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
+		LOGGER.info("Daily build package {} is uploaded as {}", zipPackage.getName(), targetFilePath);
 	}
 }
