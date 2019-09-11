@@ -95,4 +95,6 @@ public interface BuildDAO {
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
 
 	void uploadDailyBuildToS3(Build build, File zipPackage) throws IOException;
+
+	boolean isDerivativeProduct(Build build);
 }
