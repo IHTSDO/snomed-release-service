@@ -162,6 +162,7 @@ public class BuildServiceImpl implements BuildService {
 					doInputFileFixup(build);
 				}
 				runPreconditionChecks(build);
+				dao.updatePreConditionCheckReport(build);
 				final Status newStatus = build.getStatus();
 				if (newStatus != preStatus) {
 					dao.updateStatus(build, newStatus);
@@ -787,6 +788,12 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputGatherReportStream(build);
+	}
+
+	@Override
+	public InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPreConditionCheckReportStream(build);
 	}
 
 }
