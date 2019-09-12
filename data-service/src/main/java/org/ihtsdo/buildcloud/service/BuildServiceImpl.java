@@ -30,7 +30,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.codec.DecoderException;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;

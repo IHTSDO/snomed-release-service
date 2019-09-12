@@ -22,6 +22,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
 		<activemq.version>5.15.9 </activemq.version>
+		<spring-cloud.version>1.2.2.RELEASE</spring-cloud.version>
 	</properties>
 
 	<modules>
