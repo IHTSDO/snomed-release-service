@@ -20,6 +20,7 @@ public class BuildS3PathHelper {
 	private static final String QA_CONFIG_JSON = "qa-test-config.json";
 	private static final String INPUT_PREPARE_REPORT_JSON = "input-prepare-report.json";
 	private static final String INPUT_PREPARE_REPORT_DIR = "input-prepare-report";
+	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -129,6 +130,10 @@ public class BuildS3PathHelper {
 
 	public String getBuildInputFilePrepareReportPath(Build build) {
 		return getBuildPath(build).append(INPUT_PREPARE_REPORT_JSON).toString();
+	}
+
+	public String getBuildPreConditionCheckReportPath(Build build) {
+		return getBuildPath(build).append(PRE_CONDITION_CHECKS_REPORT).toString();
 	}
 
 }

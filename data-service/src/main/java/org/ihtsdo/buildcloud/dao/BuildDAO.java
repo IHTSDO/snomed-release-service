@@ -96,4 +96,8 @@ public interface BuildDAO {
 	InputStream getBuildInputFilesPrepareReportStream(Build build);
 
 	boolean isDerivativeProduct(Build build);
+
+	void updatePreConditionCheckReport(Build build) throws IOException;
+
+	InputStream getPreConditionCheckReportStream(Build build);
 }
