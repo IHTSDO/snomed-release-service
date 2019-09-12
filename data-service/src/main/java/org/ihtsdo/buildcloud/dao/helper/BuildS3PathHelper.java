@@ -23,6 +23,7 @@ public class BuildS3PathHelper {
 	private static final String INPUT_GATHER_REPORT_DIR = "input-gather-report";
 	private static final String INPUT_GATHER_REPORT_JSON = "input-gather-report.json";
 	private static final String BUILD_RELEASE_LOG_JSON = "full-log.json";
+	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -150,5 +151,9 @@ public class BuildS3PathHelper {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(LOG).append(SEPARATOR).append(BUILD_RELEASE_LOG_JSON).toString();
 	}
 
+
+	public String getBuildPreConditionCheckReportPath(Build build) {
+		return getBuildPath(build).append(PRE_CONDITION_CHECKS_REPORT).toString();
+	}
 
 }

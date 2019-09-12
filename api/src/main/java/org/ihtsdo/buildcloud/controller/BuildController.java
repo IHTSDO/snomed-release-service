@@ -52,7 +52,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs","buildLogs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs","preConditionCheckReports"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -275,6 +275,22 @@ public class BuildController {
 		try (InputStream outputFileStream = buildService.getLogFile(releaseCenterKey, productKey, buildId, logFileName)) {
 			// This will blow up with 404 if the file isn't found. HTTP HEAD demands that no body is returned, so nothing to do here
 			logger.debug("HTTP 200 response to head request for {}/{}/{}", productKey, buildId, logFileName);
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/preConditionCheckReports", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves Pre-Condition Check Report",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public void getPreConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	                                  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getPreConditionChecksReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
 		}
 	}
 

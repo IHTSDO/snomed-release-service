@@ -611,4 +611,23 @@ public class BuildDAOImpl implements BuildDAO {
 		return false;
 
 	}
+
+	@Override
+	public void updatePreConditionCheckReport(final Build build) throws IOException {
+		File preConditionChecksReport = null;
+		try {
+			preConditionChecksReport = toJson(build.getPreConditionCheckReports());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), new FileInputStream(preConditionChecksReport), new ObjectMetadata());
+		} finally {
+			if (preConditionChecksReport != null) {
+				preConditionChecksReport.delete();
+			}
+		}
+	}
+
+	@Override
+	public InputStream getPreConditionCheckReportStream(final Build build) {
+		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
 }
