@@ -176,6 +176,7 @@ public class BuildServiceImpl implements BuildService {
 					doInputFileFixup(build);
 				}
 				runPreconditionChecks(build);
+				dao.updatePreConditionCheckReport(build);
 				final Status newStatus = build.getStatus();
 				if (newStatus != preStatus) {
 					dao.updateStatus(build, newStatus);
@@ -770,7 +771,13 @@ public class BuildServiceImpl implements BuildService {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
 	}
-	
+
+	@Override
+	public InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPreConditionCheckReportStream(build);
+	}
+
 	public void uploadDailyBuildToS3(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
 		ResourceManager resourceManager = new ResourceManager(resourceConfig, cloudResourceLoader);
 		String codeSystem = "SNOMEDCT";
