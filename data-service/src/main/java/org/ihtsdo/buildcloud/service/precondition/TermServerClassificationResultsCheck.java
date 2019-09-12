@@ -65,8 +65,8 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 	public void runCheck(Build build) {
 		boolean isDerivativeProduct = buildDAO.isDerivativeProduct(build);
 		boolean isCreateInferredRelationships = build.getConfiguration().isCreateInferredRelationships();
-		LOGGER.info("TermServerClassificationResultsCheck: isCreateInferredRelationships={}", isCreateInferredRelationships);
-		LOGGER.info("TermServerClassificationResultsCheck: isDerivativeProduct={}", isDerivativeProduct);
+		LOGGER.info("Term Server Classification Results Check: isCreateInferredRelationships={}", isCreateInferredRelationships);
+		LOGGER.info("Term Server Classification Results Check: isDerivativeProduct={}", isDerivativeProduct);
 		if (build.getConfiguration().isCreateInferredRelationships() || isDerivativeProduct) {
 			return;
 		}
@@ -110,7 +110,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 		LOGGER.info("Creating delta archive for classification");
 		final List<String> localFilePaths = new ArrayList<>();
 		for (String downloadFilename : buildDAO.listInputFileNames(build)) {
-			if(!isRequiredFileForClassification(downloadFilename)) continue;
+			if (!isRequiredFileForClassification(downloadFilename)) continue;
 			LOGGER.info("Prepare {} for archiving", downloadFilename);
 			String rename = (downloadFilename.contains(REFSET) && !downloadFilename.matches(OWL_REFSET_FILE_PATTERN)) ? downloadFilename.replace(INPUT_FILE_PREFIX, DER2) : downloadFilename.replace(INPUT_FILE_PREFIX, SCT2);
 			LOGGER.info("Rename {} to {} for archiving", downloadFilename, rename);
@@ -119,10 +119,15 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 					, build.getProduct().getBusinessKey(), downloadFilename);
 			FileOutputStream out = new FileOutputStream(localFile);
 			if (inputFileStream != null) {
-				StreamUtils.copy(inputFileStream, out);
-				localFilePaths.add(localFile.getAbsolutePath());
+				try {
+					StreamUtils.copy(inputFileStream, out);
+					localFilePaths.add(localFile.getAbsolutePath());
+				} finally {
+					inputFileStream.close();
+					out.close();
+				}
 			} else {
-				throw new ProcessingException("Didn't find output file:" + downloadFilename);
+				throw new ProcessingException("Didn't find input file:" + downloadFilename);
 			}
 		}
 		return localFilePaths;
@@ -164,11 +169,8 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 	}
 
 	private boolean isRequiredFileForClassification(String filename) {
-		if(filename.contains(REL2_CONCEPT) || filename.contains(REL2_STATED_RELATIONSHIP) || filename.contains(REL2_RELATIONSHIP)
-				|| filename.contains(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN)) {
-			return true;
-		}
-		return false;
+		return filename.contains(REL2_CONCEPT) || filename.contains(REL2_STATED_RELATIONSHIP) || filename.contains(REL2_RELATIONSHIP)
+				|| filename.contains(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
 	}
 
 }
