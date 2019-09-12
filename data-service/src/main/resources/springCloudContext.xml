@@ -1,0 +1,15 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aws-context="http://www.springframework.org/schema/cloud/aws/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/cloud/aws/context
+	http://www.springframework.org/schema/cloud/spring-cloud-aws-context.xsd">
+	
+	<aws-context:context-region auto-detect="false" />
+	<aws-context:context-credentials>
+		<aws-context:simple-credentials access-key="${aws.key}" secret-key="${aws.privateKey}" />
+	</aws-context:context-credentials>
+	
+	<aws-context:context-resource-loader/>
+</beans>
