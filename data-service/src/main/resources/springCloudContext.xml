@@ -7,6 +7,7 @@
 	http://www.springframework.org/schema/cloud/spring-cloud-aws-context.xsd">
 	
 	<aws-context:context-region auto-detect="false" />
+	<aws-context:context-region region="${cloud.aws.region}"/>
 	<aws-context:context-credentials>
 		<aws-context:simple-credentials access-key="${aws.key}" secret-key="${aws.privateKey}" />
 	</aws-context:context-credentials>
