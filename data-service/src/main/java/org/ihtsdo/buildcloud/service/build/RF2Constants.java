@@ -53,6 +53,8 @@ public class RF2Constants {
 	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 	public static final String INT = "INT";
 	public static final String ADDITIONAL_TXT = "_additional.txt";
+	public static final String SNOMEDCT = "SNOMEDCT";
+	public static final String 	DAILY_BUILD_TIME_FORMAT = "yyyy-MM-dd-HHmmss";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED
