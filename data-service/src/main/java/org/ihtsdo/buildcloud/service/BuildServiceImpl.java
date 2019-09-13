@@ -779,12 +779,12 @@ public class BuildServiceImpl implements BuildService {
 
 	public void uploadDailyBuildToS3(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
 		ResourceManager resourceManager = new ResourceManager(resourceConfig, cloudResourceLoader);
-		String codeSystem = "SNOMEDCT";
+		String codeSystem = RF2Constants.SNOMEDCT;
 		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
-		if (!"international".equalsIgnoreCase(businessKey)) {
+		if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
 			codeSystem += "-" + businessKey;
 		}
-		String dateStr = DateUtils.now("yyyy-mm-dd-hhmmss");
+		String dateStr = DateUtils.now(DAILY_BUILD_TIME_FORMAT);
 		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
 		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
 		LOGGER.info("Daily build package {} is uploaded as {}", zipPackage.getName(), targetFilePath);
