@@ -174,9 +174,8 @@ public class BuildServiceImpl implements BuildService {
 					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
 					doInputFileFixup(build);
 				}
-				runPreconditionChecks(build);
+				final Status newStatus = runPreconditionChecks(build);
 				dao.updatePreConditionCheckReport(build);
-				final Status newStatus = build.getStatus();
 				if (newStatus != preStatus) {
 					dao.updateStatus(build, newStatus);
 				}
@@ -221,7 +220,7 @@ public class BuildServiceImpl implements BuildService {
 		final File tempDir = Files.createTempDir();
 		final File tempFile = new File(tempDir, statedRelationshipInputFile);
 		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
-		
+
 		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
 		// groups.
 
@@ -241,7 +240,7 @@ public class BuildServiceImpl implements BuildService {
 	private String getStatedRelationshipInputFile(Build build) {
 		//get a list of input file names
 		final List<String> inputfilesList = dao.listInputFileNames(build);
-		for (final String inputFileName : inputfilesList) { 
+		for (final String inputFileName : inputfilesList) {
 			if (inputFileName.contains(STATED_RELATIONSHIP)) {
 				return inputFileName;
 			}
@@ -395,20 +394,22 @@ public class BuildServiceImpl implements BuildService {
 		return dao.listBuildLogFilePaths(build);
 	}
 
-	private void runPreconditionChecks(final Build build) {
+	private Build.Status runPreconditionChecks(final Build build) {
 	    LOGGER.info("Start of Pre-condition checks");
+	    Build.Status buildStatus = build.getStatus();
 		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(build);
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
 		for (final PreConditionCheckReport report : preConditionReports) {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
-				build.setStatus(Status.FAILED_PRE_CONDITIONS);
+				buildStatus = Status.FAILED_PRE_CONDITIONS;
 				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report.toString(), build.getId());
 				break;
 			}
 		}
 		LOGGER.info("End of Pre-condition checks");
+		return buildStatus;
 	}
 
 	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException {
