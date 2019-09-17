@@ -101,7 +101,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			File classificationResults = classifierRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
 			String errorMessage = validateClassificationResults(classificationResults, resultTempDir);
 			if (StringUtils.isNotBlank(errorMessage)) {
-				fail(errorMessage);
+				fatalError(errorMessage);
 				LOGGER.error("Classification validation check has failed");
 			} else {
 				pass();
