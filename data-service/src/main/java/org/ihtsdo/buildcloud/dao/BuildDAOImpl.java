@@ -16,6 +16,7 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -29,13 +30,17 @@ import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.ByteArrayInputStream;
@@ -71,7 +76,7 @@ public class BuildDAOImpl implements BuildDAO {
 	private final ExecutorService executorService;
 
 	private final FileHelper buildFileHelper;
-
+	
 	@Autowired
 	private ObjectMapper objectMapper;
 
@@ -564,7 +569,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
-
+	
 	@Override
 	public boolean isBuildCancelRequested(final Build build) {
 		if(Build.Status.CANCEL_REQUESTED.equals(build.getStatus())) return true;
@@ -630,4 +635,5 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
+
 }

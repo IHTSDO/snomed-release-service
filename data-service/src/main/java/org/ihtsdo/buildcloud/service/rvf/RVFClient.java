@@ -213,6 +213,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(CREATE_JIRA_ISSUE, Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
+		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
 		
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {

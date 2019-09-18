@@ -52,7 +52,7 @@ public class TermServerServiceImpl implements TermServerService{
     public File export(boolean useSnowOwl, String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, SnowOwlRestClient.ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
         String contextPath = useSnowOwl ? snowowlPath : snowstormPath;
         String snowOwlUrl = termServerUrl + contextPath;
-        SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId);
+        SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId, true);
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
         SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = useSnowOwl ? buildModulesList(snowOwlRestClient, branchPath, excludedModuleId) : null;

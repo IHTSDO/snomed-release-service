@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -47,8 +48,7 @@ public interface BuildDAO {
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
-	String putOutputFile(Build build, File file, boolean calcMD5)
-			throws IOException;
+	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
 	String putOutputFile(Build build, File file)
 			throws IOException;
