@@ -68,6 +68,15 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 		LOGGER.info("Term Server Classification Results Check: isCreateInferredRelationships={}", isCreateInferredRelationships);
 		LOGGER.info("Term Server Classification Results Check: isDerivativeProduct={}", isDerivativeProduct);
 		if (build.getConfiguration().isCreateInferredRelationships() || isDerivativeProduct) {
+			StringBuilder reasonBuilder = new StringBuilder("Skipped Term Server Classification Results Check. Reason: ");
+			if (build.getConfiguration().isCreateInferredRelationships()) {
+				reasonBuilder.append("This product is configured to generate inferred relationship Delta file " +
+						"when creating the release package ( isCreateInferredRelationships=true ). ");
+			} else if (isDerivativeProduct) {
+				reasonBuilder.append("This product is a derivative product.");
+			}
+			LOGGER.info(reasonBuilder.toString());
+			notRun(reasonBuilder.toString());
 			return;
 		}
 		LOGGER.info("Run classification validation check for input files of build {}", build.getId());
@@ -92,7 +101,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			File classificationResults = classifierRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
 			String errorMessage = validateClassificationResults(classificationResults, resultTempDir);
 			if (StringUtils.isNotBlank(errorMessage)) {
-				fail(errorMessage);
+				fatalError(errorMessage);
 				LOGGER.error("Classification validation check has failed");
 			} else {
 				pass();
