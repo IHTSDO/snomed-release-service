@@ -146,8 +146,8 @@ public class TermServerServiceImpl implements TermServerService{
         switch (exportCategory) {
             case UNPUBLISHED:
                 String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
-                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(tet);
                 exportConfig.setTransientEffectiveTime(tet);
+                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(tet);
                 exportConfig.setType(SnowOwlRestClient.ExportType.DELTA);
                 break;
             case PUBLISHED:
@@ -156,7 +156,7 @@ public class TermServerServiceImpl implements TermServerService{
                 }
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
-                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
+                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
                 exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
                 break;
             case FEEDBACK_FIX:
@@ -166,7 +166,7 @@ public class TermServerServiceImpl implements TermServerService{
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setIncludeUnpublished(true);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
-                if(useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
+                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
                 exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
                 break;
                 default:
