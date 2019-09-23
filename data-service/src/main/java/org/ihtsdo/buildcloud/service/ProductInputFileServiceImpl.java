@@ -130,7 +130,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public void deleteFile(String centerKey, final String productKey, final String filename) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		fileHelper.deleteFile(s3PathHelper.getProductInputFilesPath(product) + filename);
+		String inputFilePath = s3PathHelper.getProductInputFilesPath(product) + filename;
+		LOGGER.info("Deleting input file {}", inputFilePath);
+		fileHelper.deleteFile(inputFilePath);
 	}
 
 	@Override
@@ -338,8 +340,14 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		dao.persistSourcesGatherReport(product, inputGatherReport);
 		try {
-			if(requestConfig.isLoadTermServerData()) gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
-			if(requestConfig.isLoadExternalRefsetData()) gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
+			if(requestConfig.isLoadTermServerData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
+				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
+			}
+			if(requestConfig.isLoadExternalRefsetData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_EXT_MAINTAINED);
+				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
+			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
 		} catch (Exception ex) {
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
@@ -375,12 +383,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
 			, InputGatherReport inputGatherReport) throws IOException {
-		String dirPath = centerKey + "/" + effectiveDate;
+		String dirPath = centerKey + "/" + effectiveDate + "/";
 		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
 		LOGGER.info("Found {} files at {} in external refsets bucket", externalFiles.size(), dirPath);
 		for (String externalFile : externalFiles) {
-			// The current directory is also listed
-			if (externalFile != null && externalFile.equals("/"))
+			// Skip if current object is a directory
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/"))
 				continue;
 			try {
 				Product product = getProduct(centerKey, productKey);

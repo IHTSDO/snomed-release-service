@@ -11,8 +11,8 @@ public class GatherInputRequestPojo {
 	private String effectiveDate;
 	private SnowOwlRestClient.ExportCategory exportCategory;
 	private String branchPath;
-	private boolean loadTermServerData;
-	private boolean loadExternalRefsetData;
+	private boolean loadTermServerData = true;
+	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
 	private boolean useSnowOwl;
 	

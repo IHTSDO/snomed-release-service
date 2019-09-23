@@ -40,7 +40,9 @@ import java.util.List;
 @Service
 public class ReleaseServiceImpl implements ReleaseService{
 
-    private  static final String TRACKER_ID = "trackerId";
+    private static final String TRACKER_ID = "trackerId";
+
+    private static final String PATTERN_ALL_FILES = "*.*";
 
     @Autowired
     ProductInputFileService productInputFileService;
@@ -100,6 +102,7 @@ public class ReleaseServiceImpl implements ReleaseService{
                 }
             }
             //After gathering all sources, start to transform and put them into input directories
+            productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
             SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
             if(sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
                 LOGGER.error("Error occurred when processing input files");
