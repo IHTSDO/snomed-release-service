@@ -26,6 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -54,16 +56,14 @@ public class TermServerServiceImpl implements TermServerService{
         String snowOwlUrl = termServerUrl + contextPath;
         SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId, true);
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
-        SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
         Set<String> moduleList = useSnowOwl ? buildModulesList(snowOwlRestClient, branchPath, excludedModuleId) : null;
-        ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
-                exportCategory, exportType,snowOwlRestClient, useSnowOwl);
-        File export = snowOwlRestClient.export(configurationExtensionBuilder);
+        File export = snowOwlRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, SnowOwlRestClient.ExportType.SNAPSHOT);
         try {
             ZipFile zipFile = new ZipFile(export);
             File extractDir = Files.createTempDir();
             unzipFlat(export, extractDir);
             renameFiles(extractDir, SNAPSHOT, DELTA);
+            enforceReleaseDate(extractDir, effectiveDate);
             File tempDir = Files.createTempDir();
             File newZipFile = new File(tempDir,"term-server.zip");
             ZipFileUtils.zip(extractDir.getAbsolutePath(), newZipFile.getAbsolutePath());
@@ -122,59 +122,31 @@ public class TermServerServiceImpl implements TermServerService{
         }
     }
 
-
-
-    private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, SnowOwlRestClient.ExportCategory exportCategory,
-                                                                         SnowOwlRestClient.ExportType exportType, SnowOwlRestClient snowOwlRestClient, boolean useSnowOwl) throws BusinessServiceException {
-        ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
-        exportConfig.setBranchPath(branchPath);
-        exportConfig.setType(exportType);
-        exportConfig.setIncludeUnpublished(false);
-        if(moduleList != null) {
-            exportConfig.addModuleIds(moduleList);
-        }
-        try {
-            Branch branch = snowOwlRestClient.getBranch(branchPath);
-            if(branch == null) {
-                logger.error("Failed to get branch {}", branchPath);
-                throw new BusinessServiceException("Failed to get branch " + branchPath);
+    private void enforceReleaseDate(File extractDir, String enforcedReleaseDate) throws ProcessWorkflowException {
+        //Loop through all the files in the directory and change the release date if required
+        for (File thisFile : extractDir.listFiles()) {
+            if (thisFile.isFile()) {
+                String thisReleaseDate = findDateInString(thisFile.getName(), true);
+                if (thisReleaseDate != null && !thisReleaseDate.equals("_" + enforcedReleaseDate)) {
+                    logger.debug("Modifying releaseDate in " + thisFile.getName() + " to _" + enforcedReleaseDate);
+                    renameFile(extractDir, thisFile, thisReleaseDate, "_" + enforcedReleaseDate);
+                }
             }
-        } catch (RestClientException e) {
-            logger.error("Failed to get branch {}: {}", branchPath, e);
-            throw new BusinessServiceException("Failed to get branch " + branchPath);
         }
-        switch (exportCategory) {
-            case UNPUBLISHED:
-                String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
-                exportConfig.setTransientEffectiveTime(tet);
-                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(tet);
-                exportConfig.setType(SnowOwlRestClient.ExportType.DELTA);
-                break;
-            case PUBLISHED:
-                if(effectiveDate == null) {
-                    throw new BusinessServiceException("Cannot export published data without an effective date");
-                }
-                exportConfig.setStartEffectiveTime(effectiveDate);
-                exportConfig.setTransientEffectiveTime(effectiveDate);
-                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
-                exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
-                break;
-            case FEEDBACK_FIX:
-                if(effectiveDate == null) {
-                    throw new BusinessServiceException("Cannot export feedback-fix data without an effective date");
-                }
-                exportConfig.setStartEffectiveTime(effectiveDate);
-                exportConfig.setIncludeUnpublished(true);
-                exportConfig.setTransientEffectiveTime(effectiveDate);
-                if(!useSnowOwl) exportConfig.setFilenameEffectiveDate(effectiveDate);
-                exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
-                break;
-                default:
-                    logger.error("Export category {} not recognized", exportCategory);
-                    throw new BusinessServiceException("Export type " + exportCategory + " not recognized");
-        }
+    }
 
-        return exportConfig;
+    public String findDateInString(String str, boolean optional) throws ProcessWorkflowException {
+        Matcher dateMatcher = Pattern.compile("(_\\d{8})").matcher(str);
+        if (dateMatcher.find()) {
+            return dateMatcher.group();
+        } else {
+            if (optional) {
+                logger.warn("Did not find a date in: " + str);
+            } else {
+                throw new ProcessWorkflowException("Unable to determine date from " + str);
+            }
+        }
+        return null;
     }
 
     private Set<String> buildModulesList(SnowOwlRestClient snowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
@@ -192,19 +164,6 @@ public class TermServerServiceImpl implements TermServerService{
             }
         }
         return exportModuleIds;
-    }
-
-    public static class ExportConfigurationExtensionBuilder extends SnowOwlRestClient.ExportConfigurationBuilder {
-
-        private String filenameEffectiveDate;
-
-        public String getFilenameEffectiveDate() {
-            return filenameEffectiveDate;
-        }
-
-        public void setFilenameEffectiveDate(String filenameEffectiveDate) {
-            this.filenameEffectiveDate = filenameEffectiveDate;
-        }
     }
 
 }
