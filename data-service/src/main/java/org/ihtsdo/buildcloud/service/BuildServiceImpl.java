@@ -5,6 +5,7 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +32,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Build.Status;
@@ -64,12 +67,14 @@ import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.PostConditionException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
@@ -79,6 +84,7 @@ import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -131,7 +137,13 @@ public class BuildServiceImpl implements BuildService {
 	
 	@Autowired
 	private String buildBucketName;
-
+	
+	@Autowired
+	private DailyBuildResourceConfig dailyBuildResourceConfig;
+	
+	@Autowired
+	private ResourceLoader cloudResourceLoader;
+		
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
@@ -162,8 +174,8 @@ public class BuildServiceImpl implements BuildService {
 					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
 					doInputFileFixup(build);
 				}
-				runPreconditionChecks(build);
-				final Status newStatus = build.getStatus();
+				final Status newStatus = runPreconditionChecks(build);
+				dao.updatePreConditionCheckReport(build);
 				if (newStatus != preStatus) {
 					dao.updateStatus(build, newStatus);
 				}
@@ -208,7 +220,7 @@ public class BuildServiceImpl implements BuildService {
 		final File tempDir = Files.createTempDir();
 		final File tempFile = new File(tempDir, statedRelationshipInputFile);
 		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
-		
+
 		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
 		// groups.
 
@@ -228,7 +240,7 @@ public class BuildServiceImpl implements BuildService {
 	private String getStatedRelationshipInputFile(Build build) {
 		//get a list of input file names
 		final List<String> inputfilesList = dao.listInputFileNames(build);
-		for (final String inputFileName : inputfilesList) { 
+		for (final String inputFileName : inputfilesList) {
 			if (inputFileName.contains(STATED_RELATIONSHIP)) {
 				return inputFileName;
 			}
@@ -382,20 +394,22 @@ public class BuildServiceImpl implements BuildService {
 		return dao.listBuildLogFilePaths(build);
 	}
 
-	private void runPreconditionChecks(final Build build) {
+	private Build.Status runPreconditionChecks(final Build build) {
 	    LOGGER.info("Start of Pre-condition checks");
+	    Build.Status buildStatus = build.getStatus();
 		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(build);
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
 		for (final PreConditionCheckReport report : preConditionReports) {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
-				build.setStatus(Status.FAILED_PRE_CONDITIONS);
+				buildStatus = Status.FAILED_PRE_CONDITIONS;
 				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report.toString(), build.getId());
 				break;
 			}
 		}
 		LOGGER.info("End of Pre-condition checks");
+		return buildStatus;
 	}
 
 	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException {
@@ -439,10 +453,11 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			try {
 				final Zipper zipper = new Zipper(build, dao);
-				zipPackage = zipper.createZipFile();
+				zipPackage = zipper.createZipFile(false);
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
+				checkAndOutputDailyBuildPackage(build, zipper, dailyBuildResourceConfig);
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			} 
@@ -473,6 +488,18 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 	
+	private void checkAndOutputDailyBuildPackage(Build build, Zipper zipper, DailyBuildResourceConfig resourceConfig) throws IOException, ResourceNotFoundException, JAXBException {
+		File deltaZip = null;
+		try {
+			if (build.getConfiguration().isDailyBuild()) {
+				deltaZip = zipper.createZipFile(true);
+				uploadDailyBuildToS3(build, deltaZip, resourceConfig);
+			}
+		} finally {
+			org.apache.commons.io.FileUtils.deleteQuietly(deltaZip);
+		}
+	}
+
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 * 
 	 * @param build
@@ -749,5 +776,24 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
+	}
+
+	@Override
+	public InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPreConditionCheckReportStream(build);
+	}
+
+	public void uploadDailyBuildToS3(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
+		ResourceManager resourceManager = new ResourceManager(resourceConfig, cloudResourceLoader);
+		String codeSystem = RF2Constants.SNOMEDCT;
+		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
+		if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
+			codeSystem += "-" + businessKey;
+		}
+		String dateStr = DateUtils.now(DAILY_BUILD_TIME_FORMAT);
+		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
+		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
+		LOGGER.info("Daily build package {} is uploaded as {}", zipPackage.getName(), targetFilePath);
 	}
 }
