@@ -124,6 +124,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if(newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
 			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
 		}
+		if(newPropertyValues.containsKey(ENABLE_MRCM)) {
+			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
+		}
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
