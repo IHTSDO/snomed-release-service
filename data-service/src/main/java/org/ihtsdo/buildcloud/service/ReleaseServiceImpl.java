@@ -115,7 +115,8 @@ public class ReleaseServiceImpl implements ReleaseService{
             //Create and trigger new build
             build = buildService.createBuildFromProduct(releaseCenter, productKey);
             LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
-            buildService.triggerBuild(releaseCenter, productKey, build.getId(), 10);
+            Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+            buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
             LOGGER.info("Build process ends", build.getStatus().name());
         } catch (Exception e) {
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());

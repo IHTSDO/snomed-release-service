@@ -15,6 +15,7 @@ public class GatherInputRequestPojo {
 	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
 	private boolean useSnowOwl;
+	private Integer maxFailuresExport;
 	
 	public GatherInputRequestPojo() {
 	}
@@ -91,6 +92,14 @@ public class GatherInputRequestPojo {
 		this.useSnowOwl = useSnowOwl;
 	}
 
+	public Integer getMaxFailuresExport() {
+		return maxFailuresExport;
+	}
+
+	public void setMaxFailuresExport(Integer maxFailuresExport) {
+		this.maxFailuresExport = maxFailuresExport;
+	}
+
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
@@ -102,6 +111,7 @@ public class GatherInputRequestPojo {
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", useSnowOwl=" + useSnowOwl +
+				", maxFailuresExport=" + maxFailuresExport +
 				'}';
 	}
 
