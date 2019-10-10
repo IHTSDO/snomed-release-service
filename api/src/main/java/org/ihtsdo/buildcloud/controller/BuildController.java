@@ -215,11 +215,11 @@ public class BuildController {
 	@ApiOperation( value = "Publish a release for given build id",
 	notes = "Publish release for given build id to make it available in repository for wider usages" )
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId) throws BusinessServiceException {
+			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		publishService.publishBuild(build, true);
+		publishService.publishBuild(build, true, environment);
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
