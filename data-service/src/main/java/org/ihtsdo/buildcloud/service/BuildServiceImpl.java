@@ -474,12 +474,12 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			try {
 				final Zipper zipper = new Zipper(build, dao);
-				zipPackage = zipper.createZipFile();
+				zipPackage = zipper.createZipFile(false);
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-				checkAndOutputDailyBuildPackage(build, zipPackage, dailyBuildResourceConfig);
-				} catch (JAXBException | IOException | ResourceNotFoundException e) {
+				checkAndOutputDailyBuildPackage(build, zipper, dailyBuildResourceConfig);
+			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			}
 
@@ -510,9 +510,15 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 	
-	private void checkAndOutputDailyBuildPackage(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
-		if (build.getConfiguration().isDailyBuild()) {
-			uploadDailyBuildToS3(build, zipPackage, resourceConfig);
+	private void checkAndOutputDailyBuildPackage(Build build, Zipper zipper, DailyBuildResourceConfig resourceConfig) throws IOException, ResourceNotFoundException, JAXBException {
+		File deltaZip = null;
+		try {
+			if (build.getConfiguration().isDailyBuild()) {
+				deltaZip = zipper.createZipFile(true);
+				uploadDailyBuildToS3(build, deltaZip, resourceConfig);
+			}
+		} finally {
+			org.apache.commons.io.FileUtils.deleteQuietly(deltaZip);
 		}
 	}
 
@@ -665,7 +671,11 @@ public class BuildServiceImpl implements BuildService {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
 			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
-				throw new ConfigurationException("No extention dependency release is configured for extension testing.");
+				if (buildConfig.getExtensionConfig().isReleaseAsAnEdition()) {
+					LOGGER.warn("This edition does not have dependency release. Empty dependency release will be used for testing");
+				} else {
+					throw new ConfigurationException("No extention dependency release is configured for extension testing.");
+				}
 			}
 			
 			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
