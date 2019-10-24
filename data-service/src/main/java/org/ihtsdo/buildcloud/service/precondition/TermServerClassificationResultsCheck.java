@@ -87,7 +87,11 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			if (extensionConfig != null) {
 				dependencyRelease = extensionConfig.getDependencyRelease();
 				if (dependencyRelease == null || dependencyRelease.isEmpty()) {
-					throw new BusinessServiceException("International dependency release can't be null for extension release build.");
+					if (extensionConfig.isReleaseAsAnEdition()) {
+						LOGGER.warn("The product is configured as an edition without dependency package. Only previous package {} will be used in classification", previousPublished);
+					} else {
+						throw new BusinessServiceException("International dependency release can't be null for extension release build.");
+					}
 				}
 			}
 			File deltaTempDir = Files.createTempDir();

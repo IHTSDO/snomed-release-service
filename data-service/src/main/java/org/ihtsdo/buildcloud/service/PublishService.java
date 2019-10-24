@@ -15,7 +15,7 @@ public interface PublishService {
 
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
-	void publishBuild(Build build, boolean publishComponentIds, String releaseCenterKey, String productKey) throws BusinessServiceException;
+	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
 
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 
