@@ -145,6 +145,7 @@ public class InputFileController {
 			final HttpServletResponse response) throws ResourceNotFoundException {
 
 		try (InputStream fileStream = productInputFileService.getFileInputStream(releaseCenterKey, productKey, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
