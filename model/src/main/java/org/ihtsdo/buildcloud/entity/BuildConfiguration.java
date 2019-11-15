@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.entity;
 
+import java.text.Normalizer;
 import java.text.ParseException;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -165,7 +167,12 @@ public class BuildConfiguration {
 	public Set<String> getNewRF2InputFileSet() {
 		final Set<String> files = new HashSet<String>();
 		if (newRF2InputFiles != null) {
-			Collections.addAll(files, newRF2InputFiles.split("\\|"));
+			for (String newInputile :newRF2InputFiles.split("\\|")) {
+				if (!Normalizer.isNormalized(newInputile, Form.NFC)) {
+					newInputile = Normalizer.normalize(newInputile, Form.NFC);
+				}
+				files.add(newInputile);
+			}
 		}
 		return files;
 	}
@@ -180,6 +187,9 @@ public class BuildConfiguration {
 				String[] mapFiles = configuration.substring(configuration.indexOf("(")+1,configuration.indexOf(")")).split(",");
 				Set<String> filesList = new HashSet<>();
 				for (String mapFile : mapFiles) {
+					if (!Normalizer.isNormalized(mapFile, Form.NFC)) {
+						mapFile = Normalizer.normalize(mapFile, Form.NFC);
+					}
 					filesList.add(mapFile.trim());
 				}
 				fileMaps.put(key.trim(), filesList);
