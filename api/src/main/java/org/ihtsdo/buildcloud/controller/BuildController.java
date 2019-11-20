@@ -172,6 +172,7 @@ public class BuildController {
 			@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		try (InputStream outputFileStream = buildService.getInputFile(releaseCenterKey, productKey, buildId, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -196,6 +197,7 @@ public class BuildController {
 			@PathVariable final String outputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		try (InputStream outputFileStream = buildService.getOutputFile(releaseCenterKey, productKey, buildId, outputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
