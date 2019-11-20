@@ -104,7 +104,7 @@ public class Zipper {
 			}
 			if (!Normalizer.isNormalized(filename,Form.NFC)) {
 				filename = Normalizer.normalize(filename, Form.NFC);
-				LOGGER.debug("NFC Normalized file name from manifest" + filename);
+				LOGGER.debug("NFC Normalized file name from manifest " + filename);
 			}
 			try (InputStream is = buildDAO.getOutputFileInputStream(build, filename)) {
 				if (is != null) {
@@ -117,7 +117,7 @@ public class Zipper {
 						is.close();
 					}
 				} else {
-					LOGGER.info(RF2Constants.DATA_PROBLEM + "Failed to find output file listed in manifest: " + filename);
+					LOGGER.info(RF2Constants.DATA_PROBLEM + " Failed to find output file listed in manifest: " + filename);
 				}
 			}
 		}
