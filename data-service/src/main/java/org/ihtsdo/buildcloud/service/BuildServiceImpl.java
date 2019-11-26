@@ -5,7 +5,6 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +34,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Build.Status;
@@ -50,6 +48,7 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
@@ -74,7 +73,6 @@ import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.PostConditionException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
@@ -143,6 +141,7 @@ public class BuildServiceImpl implements BuildService {
 	
 	@Autowired
 	private ResourceLoader cloudResourceLoader;
+	
 		
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
@@ -457,7 +456,10 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-				checkAndOutputDailyBuildPackage(build, zipper, dailyBuildResourceConfig);
+				if (build.getConfiguration().isDailyBuild()) {
+					DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
+					extractor.outputDailyBuildPackage(new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader));
+				}
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			} 
@@ -488,17 +490,6 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 	
-	private void checkAndOutputDailyBuildPackage(Build build, Zipper zipper, DailyBuildResourceConfig resourceConfig) throws IOException, ResourceNotFoundException, JAXBException {
-		File deltaZip = null;
-		try {
-			if (build.getConfiguration().isDailyBuild()) {
-				deltaZip = zipper.createZipFile(true);
-				uploadDailyBuildToS3(build, deltaZip, resourceConfig);
-			}
-		} finally {
-			org.apache.commons.io.FileUtils.deleteQuietly(deltaZip);
-		}
-	}
 
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 * 
@@ -786,18 +777,5 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getPreConditionCheckReportStream(build);
-	}
-
-	public void uploadDailyBuildToS3(Build build, File zipPackage, DailyBuildResourceConfig resourceConfig) throws IOException {
-		ResourceManager resourceManager = new ResourceManager(resourceConfig, cloudResourceLoader);
-		String codeSystem = RF2Constants.SNOMEDCT;
-		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
-		if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
-			codeSystem += "-" + businessKey;
-		}
-		String dateStr = DateUtils.now(DAILY_BUILD_TIME_FORMAT);
-		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
-		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
-		LOGGER.info("Daily build package {} is uploaded as {}", zipPackage.getName(), targetFilePath);
 	}
 }
