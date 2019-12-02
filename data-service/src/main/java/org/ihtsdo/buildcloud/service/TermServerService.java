@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 

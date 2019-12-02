@@ -10,7 +10,7 @@ import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
-import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.junit.Assert;
