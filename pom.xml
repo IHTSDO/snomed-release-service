@@ -16,7 +16,7 @@
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
-		<otf-common.version>2.0.1</otf-common.version>
+		<otf-common.version>2.5.0</otf-common.version>
 		<snomed-utilities.version>1.2</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
