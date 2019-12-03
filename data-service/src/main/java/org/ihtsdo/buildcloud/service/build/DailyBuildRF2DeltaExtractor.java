@@ -84,7 +84,7 @@ public class DailyBuildRF2DeltaExtractor {
 		return updatedZip;
 	}
 	
-	void uploadDailyBuildToS3(Build build, File zipPackage, ResourceManager resourceManager) throws IOException {
+	private void uploadDailyBuildToS3(Build build, File zipPackage, ResourceManager resourceManager) throws IOException {
 		String codeSystem = RF2Constants.SNOMEDCT;
 		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
 		if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
