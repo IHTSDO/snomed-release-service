@@ -47,7 +47,7 @@ public class DailyBuildRF2DeltaExtractor {
 				ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();
 				// for edition release the international content is not required for the daily build browser import
 				if (extensionConfig != null && extensionConfig.isReleaseAsAnEdition()) {
-					deltaZip = filterContentWithEffectiveTime(deltaZip, build.getConfiguration().getEffectiveTimeFormatted());
+					deltaZip = filterContentWithEffectiveTime(deltaZip, build.getConfiguration().getEffectiveTimeSnomedFormat());
 				}
 				uploadDailyBuildToS3(build, deltaZip, resourceManager);
 			}
