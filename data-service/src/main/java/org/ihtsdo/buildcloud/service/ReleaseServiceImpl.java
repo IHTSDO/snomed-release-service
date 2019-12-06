@@ -79,15 +79,15 @@ public class ReleaseServiceImpl implements ReleaseService{
         final User anonymousSubject = authenticationService.getAnonymousSubject();
         SecurityHelper.setUser(anonymousSubject);
         try {
-             product = productService.find(releaseCenter, productKey);
-            if(product == null) {
-                LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
-                throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
-            }
             //Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
             if(messagingTemplate != null) {
                 MDC.put(TRACKER_ID, trackerId);
                 addWebSocketAppenderToLogger(trackerId, messagingTemplate);
+            }
+            product = productService.find(releaseCenter, productKey);
+            if(product == null) {
+                LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
+                throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
             }
             //Gather all files in term server and externally maintain buckets if specified to source directories
             InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, productKey, gatherInputRequestPojo);
