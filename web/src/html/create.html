@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Create Product</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="libs/jsonform/deps/opt/bootstrap.css" />
+</head>
+
+<body>
+<div id="message" class="message"></div>
+<div id="error" class="message-error"></div>
+<h2 align="center">Create Product</h2>
+<div style="width: 80%; margin:0 auto">
+    <form id="productConfig"></form>
+</div>
+
+<script type="text/javascript" src="libs/jsonform/deps/jquery.min.js"></script>
+<script type="text/javascript" src="libs/jsonform/deps/underscore.js"></script>
+<script type="text/javascript" src="libs/jsonform/deps/opt/jsv.js"></script>
+<script type="text/javascript" src="libs/jsonform/lib/jsonform.js"></script>
+<script type="text/javascript">
+
+   var releaseServerUrl = "https://" + window.location.hostname;
+   var productConfigJsonFormConfig =  {
+      "schema": {
+         "effectiveDate": {
+            "type": "string"
+         },
+         "readmeEndDate": {
+            "type": "string"
+         },
+         "isFirstTime": {
+            "type": "boolean"
+         },
+         "isBeta": {
+            "type": "boolean"
+         },
+         "isWorkbenchDataFixesRequired": {
+            "type": "boolean"
+         },
+         "headless": {
+            "type": "boolean"
+         },
+         "createInferredRelationships": {
+            "type": "boolean"
+         },
+         "createLegacyIds": {
+            "type": "boolean"
+         },
+         "justPackage": {
+            "type": "boolean"
+         },
+         "productName": {
+            "type": "string"
+         },
+         "useExternalClassifier": {
+            "type": "boolean"
+         },
+         "newRF2InputFiles": {
+            "type": "string"
+         },
+         "previousPublishedPackageName": {
+            "type": "string"
+         },
+         "releaseCentreId": {
+            "type": "string"
+         },
+         "namespaceId": {
+            "type": "string"
+         },
+         "moduleId": {
+            "type": "string"
+         },
+         "dependencyReleasePackage": {
+            "type": "string"
+         },
+         "isEditionRelease": {
+            "type": "boolean"
+         },
+         "assertionGroupNames": {
+            "type": "string"
+         },
+         "droolsRulesGroupNames": {
+            "type": "string"
+         },
+         "enableDrools": {
+            "type": "boolean"
+         },
+         "enableMRCMValidation": {
+            "type": "boolean"
+         },
+         "extensionDependencyRelease": {
+            "type": "string"
+         },
+         "previousExtensionRelease": {
+            "type": "string"
+         },
+         "jiraIssueCreationFlag": {
+            "type": "boolean"
+         },
+         "jiraProductName": {
+            "type": "string"
+         },
+         "jiraReportingStage": {
+            "type": "string"
+         },
+         "readmeFile": {
+            "type": "string"
+         },
+         "manifestFile": {
+            "type": "file"
+         }
+      },
+      "form" : [
+         {
+            "key": "manifestFile",
+            "type": "file"
+         },
+         {
+            "type": "button",
+            "title": "Upload",
+            "onClick": function(e) {
+               e.preventDefault();
+               uploadManifestFile();
+            }
+         }
+      ]
+   };
+
+
+   $('#productConfig').jsonForm(productConfigJsonFormConfig);
+
+   function uploadManifestFile() {
+      var fd = new FormData();
+      var files = $('input[name="manifestFile"][type="file"]')[0].files[0];
+      fd.append('file', files);
+      var url = releaseServerUrl + "/api/v1/centers/no/products/snomed_ct_ms_norway_extension_example_october_2019_release/manifest";
+      $.ajax({
+         url: url,
+         type: 'post',
+         data: fd,
+         contentType: false,
+         processData: false,
+         success: function(response){
+            if(response != 0){
+               alert('file uploaded');
+            }
+            else{
+               alert('file not uploaded');
+            }
+         }
+      });
+   }
+
+
+
+   function validateMandatoryFields() {
+      var invalidFields = [];
+      var values = $("#productConfig").jsonFormValue();
+      Object.keys(productConfigJsonFormConfig.schema).forEach(function (key){
+         if(!values[key] && productConfigJsonFormConfig.schema[key].required) {
+            invalidFields.push(key);
+         }
+      });
+      if (invalidFields.length > 0) {
+         showError("Missing mandatory fields: " + invalidFields.join(", "));
+         return false;
+      }
+      return true;
+   }
+
+
+   function redrawForm(id) {
+      $('#productConfig').empty();
+      $('#productConfig').jsonForm(productConfigJsonFormConfig);
+      hideNotification();
+      hideError();
+   }
+
+   function showNotification(message) {
+      $("#message").html(message);
+   }
+
+   function hideNotification() {
+      $("#message").html("");
+   }
+
+   function showError(message) {
+      $("#error").html(message);
+   }
+
+   function hideError() {
+      $("#error").html("");
+   }
+</script>
+</body>
+
+</html>

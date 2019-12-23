@@ -207,3 +207,25 @@ td.warning {
 	cursor: pointer; 
 	cursor: hand;
 }
+
+.message {
+    position: fixed;
+    width: 100%;
+    height: 30px;
+    top: 0%;
+    left: 50%;
+    margin-left: -50%; /* Negative half of width. */
+    text-align: center;
+}
+
+.message-error {
+    position: fixed;
+    width: 100%;
+    height: 30px;
+    top: 30px;
+    left: 50%;
+    margin-left: -50%; /* Negative half of width. */
+    text-align: center;
+    color: red;
+}
+
