@@ -229,3 +229,17 @@ td.warning {
     color: red;
 }
 
+.executionLog {
+    width: 80%;
+    height: 300px;
+    margin:0 auto;
+    overflow-y: auto;
+    background-color: #3c3c3c;
+    color: white;
+    padding: 5px;
+}
+
+input[type=checkbox] {
+    transform: scale(1.75);
+}
+

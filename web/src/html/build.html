@@ -23,7 +23,7 @@
 <script type="text/javascript" src="libs/jsonform/lib/jsonform.js"></script>
 <script type="text/javascript">
    var trackerId;
-   var releaseServerUrl;
+   var releaseServerUrl = location.protocol + "//" + window.location.hostname;
 
    var buildJobJsonFormConfig =  {
       "schema": {
@@ -79,7 +79,6 @@
             "type": "fieldset",
             "title": "Release Server Settings",
             "items" : [
-              
                {
                   "key": "release_center",
                   "title": "Release Center",
@@ -149,8 +148,7 @@
          }
       ]
    };
-   console.log(window.location.hostname);
-   loadReleaseCenters("https://" + window.location.hostname);
+   loadReleaseCenters(releaseServerUrl);
    $('form').jsonForm(buildJobJsonFormConfig);
 
    function runBuild(values) {
@@ -189,7 +187,6 @@
    }
 
    function loadReleaseCenters(releaseUrl) {
-      releaseServerUrl = releaseUrl;
       showNotification("Loading Release Centers ...");
       var releaseCentersUrl = releaseUrl + "/api/v1/centers";
       $.ajax({
