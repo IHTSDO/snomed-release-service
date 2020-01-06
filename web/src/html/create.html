@@ -15,30 +15,38 @@
 <div style="width: 80%; margin:0 auto">
     <form id="productConfig"></form>
 </div>
-
+<hr/>
+<div id="executionLog" class="executionLog">Execution Log...<br/></div>
+<br/>
 <script type="text/javascript" src="libs/jsonform/deps/jquery.min.js"></script>
 <script type="text/javascript" src="libs/jsonform/deps/underscore.js"></script>
 <script type="text/javascript" src="libs/jsonform/deps/opt/jsv.js"></script>
 <script type="text/javascript" src="libs/jsonform/lib/jsonform.js"></script>
 <script type="text/javascript">
 
-   var releaseServerUrl = "https://" + window.location.hostname;
+   var releaseServerUrl = location.protocol + "//" + window.location.hostname;
+   var currentReleaseCentre;
+   var currentProductId;
    var productConfigJsonFormConfig =  {
       "schema": {
          "effectiveDate": {
-            "type": "string"
+            "type": "string",
+            "keyLoad": "effectiveTime"
          },
          "readmeEndDate": {
             "type": "string"
          },
          "isFirstTime": {
-            "type": "boolean"
+            "type": "boolean",
+            "keyLoad": "firstTimeRelease"
          },
          "isBeta": {
-            "type": "boolean"
+            "type": "boolean",
+            "keyLoad": "betaRelease"
          },
          "isWorkbenchDataFixesRequired": {
-            "type": "boolean"
+            "type": "boolean",
+            "keyLoad": "workbenchDataFixesRequired"
          },
          "headless": {
             "type": "boolean"
@@ -49,11 +57,20 @@
          "createLegacyIds": {
             "type": "boolean"
          },
+         "isInputFilesFixesRequired": {
+            "type": "boolean",
+            "keyLoad": "inputFilesFixesRequired"
+         },
          "justPackage": {
             "type": "boolean"
          },
          "productName": {
-            "type": "string"
+            "type": "string",
+            "enum" :[]
+         },
+         "newProductName": {
+            "type": "string",
+            "description" : "Fill in this field to create a NEW product OR leave it empty to update the EXISTING product"
          },
          "useExternalClassifier": {
             "type": "boolean"
@@ -61,23 +78,31 @@
          "newRF2InputFiles": {
             "type": "string"
          },
-         "previousPublishedPackageName": {
+         "includePrevReleaseFiles": {
             "type": "string"
+         },
+         "previousPublishedPackageName": {
+            "type": "string",
+            "keyLoad": "previousPublishedPackage"
          },
          "releaseCentreId": {
             "type": "string"
          },
          "namespaceId": {
-            "type": "string"
+            "type": "string",
+            "keyLoad": "extensionConfig.namespaceId"
          },
          "moduleId": {
-            "type": "string"
+            "type": "string",
+            "keyLoad": "extensionConfig.moduleId"
          },
          "dependencyReleasePackage": {
-            "type": "string"
+            "type": "string",
+            "keyLoad": "extensionConfig.dependencyRelease"
          },
          "isEditionRelease": {
-            "type": "boolean"
+            "type": "boolean",
+            "keyLoad": "extensionConfig.releaseAsAnEdition"
          },
          "assertionGroupNames": {
             "type": "string"
@@ -97,6 +122,9 @@
          "previousExtensionRelease": {
             "type": "string"
          },
+         "previousInternationalRelease": {
+            "type": "string"
+         },
          "jiraIssueCreationFlag": {
             "type": "boolean"
          },
@@ -104,59 +132,444 @@
             "type": "string"
          },
          "jiraReportingStage": {
-            "type": "string"
+            "type": "string",
+            "enum": ["", "Pre-Alpha", "Alpha feedback", "Beta feedback", "Pre-Production feedback", "Post-Production"]
          },
-         "readmeFile": {
+         "readmeHeader": {
             "type": "string"
          },
          "manifestFile": {
-            "type": "file"
+            "type": "file",
+            "description": "The manifest file should be named manifest.xml"
          }
       },
       "form" : [
          {
-            "key": "manifestFile",
-            "type": "file"
+            "type": "help",
+            "helpvalue": "An EXISTING product can be loaded to update its settings OR used as a template for creating a NEW product"
+         },
+         {
+
+            "type": "fieldset",
+            "title": "Load Product",
+            "items": [
+
+               {
+                  "key": "releaseCentreId",
+                  "title": "Release Center",
+                  "onChange": function(evt) {
+                     var value = $(evt.target).val();
+                     if (value) {
+                        currentReleaseCentre = value;
+                        loadProducts(value);
+                     }
+                  }
+               },
+               {
+                  "key": "productName",
+                  "title": "Product Name",
+                  "onChange": function(evt) {
+                     var value = $(evt.target).val();
+                     if (value) {
+                        loadProductDetails(value)
+                     }
+                  }
+               }
+            ]
+         },
+         {
+            "type": "fieldset",
+            "title": "Basic Settings",
+            "items": [
+               {
+                  "key": "newProductName",
+                  "title": "New Product Name"
+               },
+               {
+                  "key": "manifestFile",
+                  "type": "file",
+                  "title": "Manifest File"
+               },
+               /*{
+                  "type": "button",
+                  "title": "Upload",
+                  "onClick": function(e) {
+                     e.preventDefault();
+                     uploadManifestFile();
+                  }
+               },*/
+               {
+                  "key": "effectiveDate",
+                  "title": "Effective Date"
+               },
+               {
+                  "key": "previousPublishedPackageName",
+                  "title": "Previous Published Package Name"
+               },
+               {
+                  "key": "newRF2InputFiles",
+                  "title": "New RF2 Files:",
+                  "type": "textarea"
+               },
+               {
+                  "key": "includePrevReleaseFiles",
+                  "title": "Combine previous files into new file:",
+                  "type": "textarea"
+               }
+            ]
+         },
+         {
+            "type": "fieldset",
+            "title": "Readme.txt Settings",
+            "items": [
+               {
+                  "key": "readmeHeader",
+                  "title": "Readme Template",
+                  "type": "textarea"
+               },
+               {
+                  "key": "readmeEndDate",
+                  "title": "Readme End Date"
+               }
+            ]
+         },
+         {
+            "type": "fieldset",
+            "title": "Operational Settings",
+            "items": [
+               {
+                  "key": "isFirstTime",
+                  "title": "Is First Time Release for this line of Product?"
+               },
+               {
+                  "key": "isBeta",
+                  "title": "Is Beta ?"
+               },
+               {
+                  "key": "justPackage",
+                  "title": "Just Package ?"
+               },
+               {
+                  "key": "createInferredRelationships",
+                  "title": "Generate Inferred Relationships ?"
+               },
+               {
+                  "key": "useExternalClassifier",
+                  "title": "Use External Classifier ?"
+               },
+               {
+                  "key": "createLegacyIds",
+                  "title": "Generate Legacy IDs ?"
+               },
+               {
+                  "key": "isWorkbenchDataFixesRequired",
+                  "title": "Is Workbench Data Fixes Required ?"
+               },
+               {
+                  "key": "isInputFilesFixesRequired",
+                  "title": "Is Input Files Fixed Required ?"
+               },
+               {
+                  "key": "headless",
+                  "title": "Is Headless ?"
+               }
+            ]
+         },
+         {
+            "type": "fieldset",
+            "title": "Extension Settings",
+            "items" : [
+               {
+                  "key": "namespaceId",
+                  "title": "Namespace ID"
+               },
+               {
+                  "key": "moduleId",
+                  "title": "Module ID"
+               },
+               {
+                  "key": "dependencyReleasePackage",
+                  "title": "Dependency Release Package"
+               },
+               {
+                  "key": "isEditionRelease",
+                  "title": "Is Edition Release ?"
+               },
+               {
+                  "key": "previousExtensionRelease",
+                  "title": "Previous Extension Release"
+               },
+               {
+                  "key": "previousInternationalRelease",
+                  "title": "Previous International Release"
+               },
+               {
+                  "key": "extensionDependencyRelease",
+                  "title": "Extension Dependency Release"
+               }
+            ]
+         },
+         {
+           "type": "fieldset",
+           "title" : "Validation Settings",
+            "items": [
+               {
+                  "key": "assertionGroupNames",
+                  "title": "RVF Assertion Group Names"
+               },
+               {
+                  "key": "enableDrools",
+                  "title": "Enable Drools Validation"
+               },
+               {
+                  "key": "droolsRulesGroupNames",
+                  "title": "Drools Rules Group Names"
+               },
+               {
+                  "key": "enableMRCMValidation",
+                  "title": "Enable MRCM Validation"
+               }
+            ]
+         },
+         {
+            "type": "fieldset",
+            "title": "JIRA Settings for Validation",
+            "items": [
+               {
+                  "key": "jiraIssueCreationFlag",
+                  "title": "Create JIRA tickets for failures in validation ?"
+               },
+               {
+                  "key": "jiraProductName",
+                  "title": "Product Name on JIRA"
+               },
+               {
+                  "key": "jiraReportingStage",
+                  "title": "Reporting Stage on JIRA"
+               }
+            ]
          },
          {
             "type": "button",
-            "title": "Upload",
-            "onClick": function(e) {
-               e.preventDefault();
-               uploadManifestFile();
+            "title": "Submit",
+            "onClick" : function(env) {
+               env.preventDefault();
+               clearLog();
+               var values = $("form").jsonFormValue();
+               submit(values);
             }
          }
       ]
    };
 
-
+   loadReleaseCenters(releaseServerUrl);
    $('#productConfig').jsonForm(productConfigJsonFormConfig);
+
+   function loadReleaseCenters(releaseUrl) {
+      showNotification("Loading Release Centers ...");
+      var releaseCentersUrl = releaseUrl + "/api/v1/centers";
+      $.ajax({
+         "type": "GET",
+         "url": releaseCentersUrl
+      }).done(function (data) {
+         console.log(data);
+         setDefaultValuesInFormBeforeReset();
+         var releaseCenterIds = [null];
+         data.forEach(function(value) {
+            releaseCenterIds.push(value.id);
+         });
+         productConfigJsonFormConfig.schema.releaseCentreId.enum = releaseCenterIds;
+         redrawForm();
+      }).fail(function (xhr, status, e) {
+         showNotification(status);
+      });
+   }
+
+   function loadProducts(releaseCenter) {
+      showNotification("Loading Products in Release Center " + releaseCenter + " ...");
+      var releaseUrl =  releaseServerUrl;
+      var productsUrl = releaseUrl + "/api/v1/centers/" + releaseCenter + "/products";
+      $.ajax({
+         "type": "GET",
+         "url": productsUrl
+      }).done(function (data) {
+         console.log(data);
+         setDefaultValuesInFormBeforeReset();
+         var products = [];
+         data.forEach(function(value) {
+            products.push(value.name);
+         });
+         products.reverse();
+         products.unshift(null);
+         productConfigJsonFormConfig.schema.productName.enum = products;
+         redrawForm();
+      }).fail(function (xhr, status, e) {
+         showNotification(status);
+      });
+   }
+
+   function loadProductDetails(productName) {
+      showNotification("Loading Configurations for " + productName + "...");
+      var releaseUrl = releaseServerUrl;
+      var releaseCenter =  $("form").jsonFormValue().releaseCentreId;
+      var productId = $("form").jsonFormValue().productName.trim().toLocaleLowerCase().replace(/\s+/g,"_");
+      var productUrl = releaseUrl + "/api/v1/centers/" + releaseCenter + "/products/" + productId;
+      $.ajax({
+         "type": "GET",
+         "url": productUrl
+      }).done(function (data) {
+         console.log(data);
+         setDefaultValuesInFormBeforeReset();
+         resetForm(["releaseCentreId","productName"]);
+         var buildConfigurations = data.buildConfiguration;
+         var qaTestConfig = data.qaTestConfig;
+         var schema = productConfigJsonFormConfig.schema;
+         Object.keys(schema).forEach(function (key){
+            if (key === "releaseCentreId" || key === "productName") return;
+            if (buildConfigurations && buildConfigurations[key]) {
+               schema[key].default = buildConfigurations[key];
+            } else if (qaTestConfig && qaTestConfig[key]) {
+               schema[key].default = qaTestConfig[key];
+            } else if (schema[key].keyLoad) {
+               var keyLoad = schema[key].keyLoad;
+               if (keyLoad.indexOf("extensionConfig.") > -1 && buildConfigurations && buildConfigurations.extensionConfig) {
+                  var nestedKey = keyLoad.substring(keyLoad.indexOf(".")+1);
+                  schema[key].default = buildConfigurations["extensionConfig"][nestedKey];
+               } else {
+                  if (buildConfigurations && buildConfigurations[keyLoad]) {
+                     schema[key].default = buildConfigurations[keyLoad];
+                  } else if(qaTestConfig && qaTestConfig[keyLoad]) {
+                     schema[key].default = qaTestConfig[keyLoad];
+                  }
+               }
+
+            }
+         });
+         redrawForm();
+      }).fail(function (xhr, status, e) {
+         showNotification(status);
+      });
+   }
+
+   function submit(formValues) {
+      if (!currentReleaseCentre) {
+         logErrorAndExit("No Release Centre is specified. Execution halted !!!");
+      }
+      currentProductId = null;
+      if ((!formValues.productName && !formValues.newProductName)
+         || (formValues.productName && formValues.productName.trim().length === 0)
+         || (formValues.newProductName && formValues.newProductName.trim().length === 0)) {
+         logErrorAndExit("No Product is specified. Execution halted !!!");
+      }
+      findOrCreateProduct(formValues);
+      uploadManifestFile();
+      saveConfigurations();
+
+   }
+
+   function findOrCreateProduct(formValues) {
+      var productId;
+      var productName;
+      if (formValues.newProductName) {
+         productName = formValues.newProductName;
+      } else {
+         productName = formValues.productName;
+      }
+      productId = productName.trim().toLocaleLowerCase().replace(/\s+/g,"_");
+      var productUrl = releaseServerUrl + "/api/v1/centers/" + currentReleaseCentre + "/products/" + productId;
+
+      return $.ajax({
+         "type": "GET",
+         "url": productUrl,
+         "async": false
+      }).done(function (data) {
+         logInfo("Product " + productId + " is found. Existing product will be updated.");
+         currentProductId = productId;
+      }).fail(function (xhr, status, e) {
+         if (xhr.status === 404) {
+            logInfo("Product " + productId + " is not found. New product will be created.");
+            var createProductUrl = releaseServerUrl + "/api/v1/centers/" + currentReleaseCentre + "/products/";
+            currentProductId = productId;
+            createProduct(createProductUrl, productName);
+         } else {
+            logErrorAndExit("Received unexpected error status code " + xhr.status + ". Execution halted !!!");
+         }
+      });
+
+   }
+
+   function createProduct(url, name) {
+      logInfo("Begin creating new product " + currentProductId);
+      $.ajax({
+         "type": "POST",
+         "url": url,
+         "data": JSON.stringify({"name" : name}),
+         "contentType": "application/json",
+         "async": false
+      }).done(function (data) {
+         logInfo("Successfully created new Product " + name + " with ID " + data.id);
+      }).fail(function (xhr, status, e) {
+         logErrorAndExit("Received unexpected error status code " + xhr.status + ". Execution halted !!!");
+      });
+   }
 
    function uploadManifestFile() {
       var fd = new FormData();
-      var files = $('input[name="manifestFile"][type="file"]')[0].files[0];
-      fd.append('file', files);
-      var url = releaseServerUrl + "/api/v1/centers/no/products/snomed_ct_ms_norway_extension_example_october_2019_release/manifest";
-      $.ajax({
-         url: url,
-         type: 'post',
-         data: fd,
-         contentType: false,
-         processData: false,
-         success: function(response){
-            if(response != 0){
-               alert('file uploaded');
-            }
-            else{
-               alert('file not uploaded');
-            }
-         }
+      if ( $('input[name="manifestFile"][type="file"]')[0].files.length > 0) {
+         logInfo("Begin uploading manifest file to " + currentProductId);
+         var files = $('input[name="manifestFile"][type="file"]')[0].files[0];
+         fd.append('file', files);
+         var url = releaseServerUrl + "/api/v1/centers/" + currentReleaseCentre + "/products/" + currentProductId + "/manifest";
+         $.ajax({
+            "url": url,
+            "type": "post",
+            "data": fd,
+            "contentType": false,
+            "processData": false,
+            "async": false
+         }).done(function (data) {
+            logInfo("Successfully uploaded manifest file to " + currentProductId);
+         }).fail(function (xhr, status, e) {
+            logErrorAndExit("Received unexpected error status code " + xhr.status + ". Execution halted");
+         });
+      }
+
+   }
+
+   function logErrorAndExit(message) {
+      logInfo(message);
+      throw new Error("Script halted due to unexpected error");
+   }
+
+   function saveConfigurations() {
+      var values = $("form").jsonFormValue();
+      var excludedFields = ["releaseCentreId","productName","newProductName"];
+      var url = releaseServerUrl + "/api/v1/centers/" + currentReleaseCentre + "/products/" + currentProductId + "/configurations";
+      var jsonBody = {};
+      Object.keys(values).forEach(function (key){
+         if (excludedFields.includes(key)) return;
+         jsonBody[key] = values[key];
+      });
+      console.log(jsonBody);
+
+   }
+
+   function resetForm(ignoreFields) {
+      Object.keys(productConfigJsonFormConfig.schema).forEach(function (key){
+         if(ignoreFields.includes(key)) return;
+         productConfigJsonFormConfig.schema[key].default = null;
       });
    }
 
 
-
-   function validateMandatoryFields() {
+   function setDefaultValuesInFormBeforeReset() {
+      var values = $("form").jsonFormValue();
+      Object.keys(productConfigJsonFormConfig.schema).forEach(function (key){
+         productConfigJsonFormConfig.schema[key].default = values[key];
+      });
+   }
+   
+   function  validateMandatoryFields() {
       var invalidFields = [];
       var values = $("#productConfig").jsonFormValue();
       Object.keys(productConfigJsonFormConfig.schema).forEach(function (key){
@@ -172,7 +585,7 @@
    }
 
 
-   function redrawForm(id) {
+   function redrawForm() {
       $('#productConfig').empty();
       $('#productConfig').jsonForm(productConfigJsonFormConfig);
       hideNotification();
@@ -193,6 +606,15 @@
 
    function hideError() {
       $("#error").html("");
+   }
+
+   function logInfo(message) {
+      $("#executionLog").append(message + "<br/>");
+   }
+
+   function  clearLog() {
+      $("#executionLog").empty();
+      $("#executionLog").append("Execution Log...<br/>");
    }
 </script>
 </body>
