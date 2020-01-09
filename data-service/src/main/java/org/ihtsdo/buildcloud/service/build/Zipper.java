@@ -110,7 +110,7 @@ public class Zipper {
 				if (is != null) {
 				BufferedInputStream bis = new BufferedInputStream(is, BUFFER_SIZE);
 					try {
-						zos.putNextEntry(new ZipEntry(thisFolder + file.getName()));
+						zos.putNextEntry(new ZipEntry(thisFolder + filename));
 						IOUtils.copy(bis, zos);
 					} finally {
 						zos.closeEntry();
