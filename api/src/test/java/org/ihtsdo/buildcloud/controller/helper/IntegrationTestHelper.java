@@ -474,10 +474,6 @@ public class IntegrationTestHelper {
 		}
 	}
 
-	public void useExternalClassifier(boolean useExternal) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.USE_EXTERNAL_CLASSIFIER, Boolean.toString(useExternal)) + " }");
-	}
-
 	public void printBuildConfig(String buildURL) throws Exception {
 		final MvcResult getBuildConfig = mockMvc.perform(
 				get(buildURL + "/configuration")

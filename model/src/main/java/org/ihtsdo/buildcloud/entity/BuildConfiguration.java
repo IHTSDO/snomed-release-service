@@ -94,10 +94,6 @@ public class BuildConfiguration {
 	@OneToOne (mappedBy="buildConfiguration", cascade=CascadeType.ALL)
 	private ExtensionConfig extensionConfig;
 	
-	@Type(type="yes_no")
-	@Column(name="use_external_classifier")
-	private boolean useExternalClassifier = false;
-
 	@Column(name = "include_prev_release_files")
 	private String includePrevReleaseFiles;
 	
@@ -306,8 +302,7 @@ public class BuildConfiguration {
 				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
-				+ createLegacyIds + ", useExternalClassifier="
-				+  useExternalClassifier + ", includePrevReleaseFiles="
+				+ createLegacyIds + ", includePrevReleaseFiles="
 				+ includePrevReleaseFiles + "]";
 	}	
 
@@ -366,18 +361,6 @@ public class BuildConfiguration {
 
 	public void setInputFilesFixesRequired(boolean inputFilesFixesRequired) {
 		this.inputFilesFixesRequired = inputFilesFixesRequired;
-	}
-
-	public boolean useExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	
-	public boolean getUseExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	public void setUseExternalClassifier(final boolean useExternalClassifier) {
-		this.useExternalClassifier = useExternalClassifier;
-		
 	}
 
 	public String getIncludePrevReleaseFiles() {
