@@ -43,7 +43,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		
 		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt|rel2_sRefset_OWLOntologyDelta_INT_20140731.txt");
 		loadDeltaFilesToInputDirectory(effectiveTime2, false);
-		integrationTestHelper.useExternalClassifier(true);
 		//Change it for beta release testing
 		integrationTestHelper.setBetaRelease(false);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
@@ -113,7 +112,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setCreateInferredRelationships(true);
 		integrationTestHelper.setCreateLegacyIds(true);
-		integrationTestHelper.useExternalClassifier(true);
 		final String effectiveTime1 = "20140131";
 		integrationTestHelper.setEffectiveTime(effectiveTime1);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
