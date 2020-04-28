@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs","preConditionCheckReports"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs","preConditionCheckReports", "postConditionCheckReports"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -278,6 +278,23 @@ public class BuildController {
 			}
 		}
 	}
+
+	@RequestMapping(value = "/{buildId}/postConditionCheckReports", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves Post-Condition Check Report",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public void getPostConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											@PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getPostConditionChecksReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+
 
 	private void ifBuildIsNullThrow(final String productKey, final String buildId, final Build build) throws ResourceNotFoundException {
 		if (build == null) {

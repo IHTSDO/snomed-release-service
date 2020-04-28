@@ -100,6 +100,10 @@ public class BuildConfiguration {
 	@Type(type="yes_no")
 	@Column(name = "daily_build")
 	private boolean dailyBuild;
+
+	@Type(type="yes_no")
+	@Column(name = "classify_output_files")
+	private boolean classifyOutputFiles;
 	
 	public BuildConfiguration() {
 	}
@@ -290,6 +294,14 @@ public class BuildConfiguration {
 		this.extensionConfig = extensionConfig;
 	}
 
+	public boolean isClassifyOutputFiles() {
+		return classifyOutputFiles;
+	}
+
+	public void setClassifyOutputFiles(boolean classifyOutputFiles) {
+		this.classifyOutputFiles = classifyOutputFiles;
+	}
+
 	@Override
 	public String toString() {
 		return "BuildConfiguration [id=" + id + ", effectiveTime="
@@ -303,7 +315,8 @@ public class BuildConfiguration {
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
 				+ createLegacyIds + ", includePrevReleaseFiles="
-				+ includePrevReleaseFiles + "]";
+				+ includePrevReleaseFiles + ", classifyOutputFiles="
+				+ classifyOutputFiles + "]";
 	}	
 
 	@Embeddable

@@ -204,6 +204,14 @@
 		<property name="offlineMode" value="${offlineMode}"/>
 	</bean>
 
+	<bean class="org.ihtsdo.buildcloud.service.postcondition.PostconditionManager">
+		<property name="postconditionChecks">
+			<list>
+				<bean class="org.ihtsdo.buildcloud.service.postcondition.TermServerClassificationResultsOutputCheck"/>
+			</list>
+		</property>
+	</bean>
+
 	<bean id="releaseValidationFrameworkUrl" class="java.lang.String" >
 		<constructor-arg value="${releaseValidationFramework.url}"/>
 	</bean>

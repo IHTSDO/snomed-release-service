@@ -99,5 +99,9 @@ public interface BuildDAO {
 
 	void updatePreConditionCheckReport(Build build) throws IOException;
 
+	void updatePostConditionCheckReport(Build build, Object object) throws IOException;
+
 	InputStream getPreConditionCheckReportStream(Build build);
+
+    InputStream getPostConditionCheckReportStream(Build build);
 }

@@ -1,10 +1,10 @@
-package org.ihtsdo.buildcloud.service.precondition;
+package org.ihtsdo.buildcloud.service.postcondition;
 
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
+import org.ihtsdo.buildcloud.entity.PostConditionCheckReport;
+import org.ihtsdo.buildcloud.entity.PostConditionCheckReport.State;
 
-public abstract class PreconditionCheck {
+public abstract class PostconditionCheck {
 
 	private State state = State.NOT_RUN;
 
@@ -12,9 +12,9 @@ public abstract class PreconditionCheck {
 
 	public abstract void runCheck(Build build);
 
-	public PreConditionCheckReport getReport() {
-		PreConditionCheckReport report = new PreConditionCheckReport();
-		report.setPreConditionCheckName(getTestName());
+	public PostConditionCheckReport getReport() {
+		PostConditionCheckReport report = new PostConditionCheckReport();
+		report.setPostConditionCheckName(getTestName());
 		report.setResult(state);
 		report.setMessage(getResponseMessage());
 		return report;
@@ -27,13 +27,8 @@ public abstract class PreconditionCheck {
 	}
 
 	protected void fail(String msg) {
-		this.state = State.FAIL;
+		this.state = State.FAILED;
 		this.responseMessage = msg;
-	}
-
-	protected void fatalError(String error) {
-		state = State.FATAL;
-		responseMessage = error;
 	}
 
 	protected void notRun(String msg) {

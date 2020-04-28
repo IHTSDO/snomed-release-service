@@ -52,4 +52,5 @@ public interface BuildService {
 
 	InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId);
 
+    InputStream getPostConditionChecksReport(String releaseCenterKey, String productKey, String buildId);
 }
