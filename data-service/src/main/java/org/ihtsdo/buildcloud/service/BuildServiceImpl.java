@@ -2,25 +2,11 @@ package org.ihtsdo.buildcloud.service;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import javax.naming.ConfigurationException;
@@ -29,21 +15,16 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Build.Status;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.BuildReport;
-import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.FileType;
 import org.ihtsdo.buildcloud.manifest.FolderType;
@@ -58,9 +39,13 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
+import org.ihtsdo.buildcloud.service.classifier.RF2Classifier;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionCheck;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
+import org.ihtsdo.buildcloud.service.postcondition.TermServerClassificationResultsOutputCheck;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
@@ -79,6 +64,7 @@ import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.telemetry.client.TelemetryStream;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,6 +94,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private PreconditionManager preconditionManager;
+
+	@Autowired
+	private PostconditionManager postconditionManager;
 
 	@Autowired
 	private ReadmeGenerator readmeGenerator;
@@ -411,7 +400,7 @@ public class BuildServiceImpl implements BuildService {
 		return buildStatus;
 	}
 
-	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException {
+	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
@@ -442,6 +431,16 @@ public class BuildServiceImpl implements BuildService {
 				}
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
+			}
+
+			// Cross check for Snapshot after build
+			LOGGER.info("Start classification cross check");
+			if (!offlineMode && configuration.isClassifyOutputFiles()) {
+				List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
+				dao.updatePostConditionCheckReport(build, reports);
+			}
+			else {
+				dao.updatePostConditionCheckReport(build, Collections.EMPTY_LIST);
 			}
 		}
 
@@ -778,4 +777,12 @@ public class BuildServiceImpl implements BuildService {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getPreConditionCheckReportStream(build);
 	}
+
+	@Override
+	public InputStream getPostConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPostConditionCheckReportStream(build);
+	}
+
+
 }

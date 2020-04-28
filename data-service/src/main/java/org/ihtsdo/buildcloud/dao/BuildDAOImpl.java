@@ -593,8 +593,27 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
+	public void updatePostConditionCheckReport(final Build build, final Object object) throws IOException {
+		File postConditionChecksReport = null;
+		try {
+			postConditionChecksReport = toJson(object);
+			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), new FileInputStream(postConditionChecksReport), new ObjectMetadata());
+		} finally {
+			if (postConditionChecksReport != null) {
+				postConditionChecksReport.delete();
+			}
+		}
+	}
+
+	@Override
 	public InputStream getPreConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
+
+	@Override
+	public InputStream getPostConditionCheckReportStream(final Build build) {
+		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
 }

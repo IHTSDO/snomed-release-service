@@ -172,6 +172,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(CREATE_LEGACY_IDS)) {
 			configuration.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
 		}
+
+		if (newPropertyValues.containsKey(CLASSIFY_OUTPUT_FILES)) {
+			configuration.setClassifyOutputFiles(TRUE.equals(newPropertyValues.get(CLASSIFY_OUTPUT_FILES)));
+		}
 		
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();

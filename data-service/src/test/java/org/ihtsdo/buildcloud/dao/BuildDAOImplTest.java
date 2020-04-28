@@ -107,6 +107,7 @@ public class BuildDAOImplTest {
 			"\"extensionConfig\":null," +
 			"\"includePrevReleaseFiles\":null," +
 			"\"dailyBuild\":false," +
+			"\"classifyOutputFiles\":false," +
 			"\"customRefsetCompositeKeys\":{}," +
 			"\"effectiveTime\":null" +
 				"}", configJson);
