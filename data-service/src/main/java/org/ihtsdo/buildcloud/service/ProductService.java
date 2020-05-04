@@ -35,6 +35,7 @@ public interface ProductService extends EntityService<Product> {
 	String NAMESPACE_ID = "namespaceId";
 	String MODULE_ID = "moduleId";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
+	String USE_EXTERNAL_CLASSIFIER = "useExternalClassifier";
 	String ENABLE_DROOLS = "enableDrools";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
