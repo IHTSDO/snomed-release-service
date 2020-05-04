@@ -177,6 +177,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setClassifyOutputFiles(TRUE.equals(newPropertyValues.get(CLASSIFY_OUTPUT_FILES)));
 		}
 		
+		if (newPropertyValues.containsKey(USE_EXTERNAL_CLASSIFIER)) {
+			configuration.setUseExternalClassifier(TRUE.equals(newPropertyValues.get(USE_EXTERNAL_CLASSIFIER)));
+		}
+
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
 			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);

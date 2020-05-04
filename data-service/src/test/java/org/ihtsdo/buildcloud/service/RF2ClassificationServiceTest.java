@@ -70,6 +70,7 @@ public class RF2ClassificationServiceTest {
 		configuration.setCreateLegacyIds(false);
 		configuration.setEffectiveTime(releaseDate);
 		configuration.setFirstTimeRelease(false);
+		configuration.setUseExternalClassifier(true);
 		configuration.setPreviousPublishedPackage(previousPublished);
 		build.setConfiguration(configuration);
 		return build;

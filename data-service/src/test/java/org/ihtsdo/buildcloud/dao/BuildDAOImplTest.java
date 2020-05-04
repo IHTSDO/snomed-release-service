@@ -105,6 +105,7 @@ public class BuildDAOImplTest {
 			"\"createInferredRelationships\":false," +
 			"\"createLegacyIds\":false," +
 			"\"extensionConfig\":null," +
+			"\"useExternalClassifier\":false," +
 			"\"includePrevReleaseFiles\":null," +
 			"\"dailyBuild\":false," +
 			"\"classifyOutputFiles\":false," +
