@@ -319,7 +319,7 @@ public class BuildConfiguration {
 				+ inputFilesFixesRequired + ", createInferredRelationships="
 				+ createInferredRelationships + ", createLegacyIds="
 				+ createLegacyIds + ", includePrevReleaseFiles="
-				+ includePrevReleaseFiles +  + ", useExternalClassifier="
+				+ includePrevReleaseFiles + ", useExternalClassifier="
 				+ useExternalClassifier +", classifyOutputFiles="
 				+ classifyOutputFiles + "]";
 	}	
