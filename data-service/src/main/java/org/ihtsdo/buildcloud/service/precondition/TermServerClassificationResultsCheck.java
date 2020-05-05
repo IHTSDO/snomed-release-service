@@ -33,6 +33,7 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.RELASHIONSHIP_DEL
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.TXT_FILE_EXTENSION;
 
+@Deprecated
 public class TermServerClassificationResultsCheck extends PreconditionCheck implements NetworkRequired {
 
 	@Autowired
@@ -63,7 +64,8 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 
 	@Override
 	public void runCheck(Build build) {
-		boolean isDerivativeProduct = buildDAO.isDerivativeProduct(build);
+		fail("");
+		/*boolean isDerivativeProduct = buildDAO.isDerivativeProduct(build);
 		boolean isCreateInferredRelationships = build.getConfiguration().isCreateInferredRelationships();
 		LOGGER.info("Term Server Classification Results Check: isCreateInferredRelationships={}", isCreateInferredRelationships);
 		LOGGER.info("Term Server Classification Results Check: isDerivativeProduct={}", isDerivativeProduct);
@@ -116,10 +118,10 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 		} catch (Exception e) {
 			LOGGER.error("Error occurred during classification results validation due to: ", e);
 			fatalError("Error occurred during classification results validation due to: " + e.getMessage());
-		}
+		}*/
 	}
 
-	private List<String> createDeltaArchiveForClassification(final Build build, final File deltaTempDir) throws ProcessingException, IOException {
+	/*private List<String> createDeltaArchiveForClassification(final Build build, final File deltaTempDir) throws ProcessingException, IOException {
 		LOGGER.info("Creating delta archive for classification");
 		final List<String> localFilePaths = new ArrayList<>();
 		for (String downloadFilename : buildDAO.listInputFileNames(build)) {
@@ -184,6 +186,6 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 	private boolean isRequiredFileForClassification(String filename) {
 		return filename.contains(REL2_CONCEPT) || filename.contains(REL2_STATED_RELATIONSHIP) || filename.contains(REL2_RELATIONSHIP)
 				|| filename.contains(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
-	}
+	}*/
 
 }
