@@ -430,16 +430,16 @@ public class BuildServiceImpl implements BuildService {
 			} else {
 				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
 			}
+		}
 
-			// Cross check for Snapshot after build
+		// Cross check for Snapshot after build
+		if (!offlineMode && configuration.isClassifyOutputFiles()) {
 			LOGGER.info("Start classification cross check");
-			if (!offlineMode && configuration.isClassifyOutputFiles()) {
-				List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
-				dao.updatePostConditionCheckReport(build, reports);
-			}
-			else {
-				dao.updatePostConditionCheckReport(build, Collections.EMPTY_LIST);
-			}
+			List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
+			dao.updatePostConditionCheckReport(build, reports);
+		}
+		else {
+			dao.updatePostConditionCheckReport(build, Collections.EMPTY_LIST);
 		}
 	
 		// Generate release package information
