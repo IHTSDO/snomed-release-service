@@ -96,7 +96,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 			ZipFileUtils.zip(deltaTempDir.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
 			// Classify and validate the returned results
 			File classificationResults = classifierRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
-			String errorMessage = validateClassificationResults(classificationResults, resultTempDir);
+			String errorMessage = validateClassificationResults(classificationResults, resultTempDir, build);
 			if (StringUtils.isNotBlank(errorMessage)) {
 				LOGGER.error("Classification validation check has failed");
 				fail(errorMessage);
@@ -142,7 +142,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 		return localFilePaths;
 	}
 
-	private String validateClassificationResults(File classificationResults, File resultTemp) throws IOException, BusinessServiceException {
+	private String validateClassificationResults(File classificationResults, File resultTemp, Build build) throws IOException, BusinessServiceException {
 		// Raise the errors if the results returned from Classification Service are not empty
 		StringBuilder errorMessageBuilder = new StringBuilder();
 		File classifierResult = new File(resultTemp, "result");
@@ -161,6 +161,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 					if (results.size() > 1) {
 						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
 						LOGGER.error(errorMessage);
+						buildDAO.putClassificationResultOutputFile(build, file);
 						errorMessageBuilder.append(errorMessage);
 					}
 				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
@@ -168,6 +169,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 					if (results.size() > 1) {
 						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
 						LOGGER.error(errorMessage);
+						buildDAO.putClassificationResultOutputFile(build, file);
 						errorMessageBuilder.append(errorMessage);
 					}
 				}
