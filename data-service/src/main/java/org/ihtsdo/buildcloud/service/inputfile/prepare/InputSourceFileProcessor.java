@@ -668,7 +668,7 @@ public class InputSourceFileProcessor {
             logger.info("Uploaded {} to product input files directory with name {}", file.getName(), inputFileName);
         }
         for (String filename : filesToCopyFromSource.keySet()) {
-        	if (!filesPrepared.contains(filename) && !filename.startsWith("Readme")) {
+        	if (!filesPrepared.contains(filename) && !filename.startsWith("Readme") && !filename.startsWith("release")) {
         		String message = null;
         		 if (filesToCopyFromSource.get(filename).isEmpty()) {
         			 message = String.format("Required by manifest but not found in any source.");
