@@ -108,6 +108,12 @@ public class BuildConfiguration {
 	@Type(type="yes_no")
 	@Column(name = "classify_output_files")
 	private boolean classifyOutputFiles;
+
+	@Column(name="licence_statement")
+	private String licenceStatement;
+
+	@Column(name="release_information_fields")
+	private String releaseInformationFields;
 	
 	public BuildConfiguration() {
 	}
@@ -304,6 +310,22 @@ public class BuildConfiguration {
 
 	public void setClassifyOutputFiles(boolean classifyOutputFiles) {
 		this.classifyOutputFiles = classifyOutputFiles;
+	}
+
+	public String getLicenceStatement() {
+		return licenceStatement;
+	}
+
+	public void setLicenceStatement(String licenceStatement) {
+		this.licenceStatement = licenceStatement;
+	}
+
+	public String getReleaseInformationFields() {
+		return releaseInformationFields;
+	}
+
+	public void setReleaseInformationFields(String releaseInformationFields) {
+		this.releaseInformationFields = releaseInformationFields;
 	}
 
 	@Override

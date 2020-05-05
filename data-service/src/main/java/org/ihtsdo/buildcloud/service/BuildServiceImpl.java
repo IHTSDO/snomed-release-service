@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -16,8 +17,10 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
@@ -26,9 +29,8 @@ import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.manifest.FileType;
-import org.ihtsdo.buildcloud.manifest.FolderType;
-import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.manifest.*;
+import org.ihtsdo.buildcloud.releaseinformation.ReleasePackageInfor;
 import org.ihtsdo.buildcloud.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
@@ -39,13 +41,10 @@ import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
-import org.ihtsdo.buildcloud.service.classifier.RF2Classifier;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.postcondition.PostconditionCheck;
 import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
-import org.ihtsdo.buildcloud.service.postcondition.TermServerClassificationResultsOutputCheck;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
@@ -64,7 +63,6 @@ import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.telemetry.client.TelemetryStream;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -443,7 +441,13 @@ public class BuildServiceImpl implements BuildService {
 				dao.updatePostConditionCheckReport(build, Collections.EMPTY_LIST);
 			}
 		}
+	
+		// Generate release package information
+		if (configuration.getReleaseInformationFields() != null && !configuration.getReleaseInformationFields().isEmpty()) {
+			generateReleasePackageFile(build,configuration.getReleaseInformationFields());
+		}
 
+		
 		// Generate readme file
 		generateReadmeFile(build);
 
@@ -488,7 +492,158 @@ public class BuildServiceImpl implements BuildService {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
 	}
-	
+
+	private void generateReleasePackageFile(Build build, String releaseInfoFields) throws BusinessServiceException {
+		String[] fields = releaseInfoFields.split(",");
+		BuildConfiguration buildConfig = build.getConfiguration();
+		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
+		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
+		ReleasePackageInfor release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap);
+		try {
+			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
+			final Unmarshaller unmarshaller = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH).createUnmarshaller();
+			final InputStream manifestStream = dao.getManifestStream(build);
+			final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+
+			String releaseFilename = null;
+			if (manifestListing != null) {
+				final FolderType rootFolder = manifestListing.getFolder();
+				if (rootFolder != null) {
+					final List<FileType> files = rootFolder.getFile();
+					for (final FileType file : files) {
+						final String filename = file.getName();
+						if (file.getName().startsWith(RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RELEASE_INFORMATION_FILENAME_EXTENSION)) {
+							releaseFilename = filename;
+							break;
+						}
+					}
+				}
+			} else {
+				LOGGER.warn("Can not generate release package information file, manifest listing is null.");
+			}
+			if (releaseFilename != null) {
+				File releasePackageInfor = null;
+				try {
+					releasePackageInfor =  new File(releaseFilename);
+					ObjectMapper objectMapper = new ObjectMapper();
+					objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+					objectMapper.disable(SerializationConfig.Feature.WRITE_NULL_PROPERTIES);
+					objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
+					dao.putOutputFile(build, releasePackageInfor);
+				} finally {
+					if (releasePackageInfor != null) {
+						releasePackageInfor.delete();
+					}
+				}
+			} else {
+				LOGGER.warn("Can not generate release package file, no file found in manifest root directory starting with '{}' and ending with '{}'",
+						RELEASE_INFORMATION_FILENAME_PREFIX, RELEASE_INFORMATION_FILENAME_EXTENSION);
+			}
+		} catch (IOException | JAXBException e) {
+			throw new BusinessServiceException("Failed to generate release package information file.", e);
+		}
+	}
+
+	private ReleasePackageInfor buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap) {
+		ReleasePackageInfor release = new ReleasePackageInfor();
+		for (String field : fields) {
+			switch (field) {
+				case "deltaFromDate":
+					Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
+					release.setDeltaFromDate(deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+					break;
+				case "deltaToDate":
+					Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
+					release.setDeltaToDate(deltaToDateInt != null ? deltaToDateInt.toString() : null);
+					break;
+				case "effectiveTime":
+					release.setEffectiveTime(buildConfig.getEffectiveTimeFormatted() != null ? buildConfig.getEffectiveTimeFormatted() : null);
+					break;
+				case "includeModuleId":
+					release.setIncludeModuleId(buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null);
+					break;
+				case "languagesRefset":
+					String languagesRefset = "";
+					for (int i = 0 ; i < languagesRefsets.size(); i++) {
+						languagesRefset += languagesRefsets.get(i).getId().toString() + (i != languagesRefsets.size() -1 ? "," : "");
+					}
+					release.setLanguagesRefset(languagesRefset);
+					break;
+				case "humanReadableLanguageRefset":
+					release.setHumanReadableLanguageRefset(languagesRefsets.isEmpty() ? null : languagesRefsets);
+					break;
+				case "licenceStatement":
+					release.setLicenceStatement(buildConfig.getLicenceStatement());
+					break;
+			}
+		}
+
+		return release;
+	}
+
+	private List<RefsetType> getLanguageRefsets(Build build) {
+		List<RefsetType> languagesRefsets = new ArrayList<>();
+		try (InputStream manifestInputSteam = dao.getManifestStream(build)) {
+			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			final ListingType listingType = parser.parse(manifestInputSteam);
+			FolderType folderType = listingType.getFolder();
+			List<FolderType>  folderTypes = folderType.getFolder();
+			for (FolderType subFolderType1 : folderTypes) {
+				if (subFolderType1.getName().equalsIgnoreCase(DELTA)) {
+					for (FolderType subFolderType2 : subFolderType1.getFolder()) {
+						if (subFolderType2.getName().equalsIgnoreCase(REFSET)) {
+							for (FolderType subFolderType3 : subFolderType2.getFolder()) {
+								if (subFolderType3.getName().equalsIgnoreCase(LANGUAGE)) {
+									List<FileType> fileTypes = subFolderType3.getFile();
+									for (FileType fileType : fileTypes) {
+										ContainsReferenceSetsType refset = fileType.getContainsReferenceSets();
+										for (RefsetType refsetType : refset.getRefset()) {
+											languagesRefsets.add(refsetType);
+										}
+									}
+									break;
+								}
+							}
+							break;
+						}
+					}
+					break;
+				}
+			}
+		} catch (ResourceNotFoundException | JAXBException | IOException e) {
+			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
+		}
+
+		return languagesRefsets;
+	}
+
+	private Map<String, Integer> getDeltaFromAndToDate(Build build) {
+		Map<String, Integer> result = new HashMap<>();
+		Integer deltaFromDateInt = null, deltaToDateInt = null;
+		List<String> outputFilesName = dao.listOutputFilePaths(build);
+		for (String fileName : outputFilesName) {
+			if (fileName.contains(DELTA)) {
+				int date = Integer.parseInt(fileName.substring(fileName.lastIndexOf("_") + 1, fileName.lastIndexOf(".txt")));
+				if (deltaFromDateInt == null ) {
+					deltaFromDateInt = date;
+					deltaToDateInt = date;
+				}
+				else {
+					if (date > deltaToDateInt) {
+						deltaToDateInt = date;
+					}
+
+					if (date < deltaFromDateInt) {
+						deltaFromDateInt = date;
+					}
+				}
+			}
+		}
+		result.put("deltaFromDate", deltaFromDateInt);
+		result.put("deltaToDate", deltaToDateInt);
+
+		return result;
+	}
 
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 * 
