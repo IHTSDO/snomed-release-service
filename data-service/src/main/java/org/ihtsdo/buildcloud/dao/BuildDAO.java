@@ -104,4 +104,8 @@ public interface BuildDAO {
 	InputStream getPreConditionCheckReportStream(Build build);
 
     InputStream getPostConditionCheckReportStream(Build build);
+
+	List<String> listClassificationResultOutputFileNames(Build build);
+
+	String putClassificationResultOutputFile(Build build, File file) throws IOException;
 }

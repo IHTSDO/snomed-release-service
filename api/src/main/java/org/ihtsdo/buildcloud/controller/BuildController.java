@@ -51,7 +51,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs","preConditionCheckReports", "postConditionCheckReports"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputPrepareReport","outputfiles","buildReport","logs","preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -293,6 +293,16 @@ public class BuildController {
 				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
 			}
 		}
+	}
+
+	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves classification results for output files",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public List<Map<String, Object>> getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											 @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+		final List<String> relativeFilePaths = buildService.getClassificationResultOutputFilePaths(releaseCenterKey, productKey, buildId);
+		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
 

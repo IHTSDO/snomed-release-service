@@ -939,5 +939,11 @@ public class BuildServiceImpl implements BuildService {
 		return dao.getPostConditionCheckReportStream(build);
 	}
 
+	@Override
+	public List<String> getClassificationResultOutputFilePaths(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.listClassificationResultOutputFileNames(build);
+	}
+
 
 }

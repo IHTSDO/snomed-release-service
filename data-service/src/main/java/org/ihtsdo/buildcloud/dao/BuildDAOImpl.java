@@ -616,4 +616,21 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
+
+	@Override
+	public List<String> listClassificationResultOutputFileNames(Build build) {
+		final String buildInputFilesPath = pathHelper.getClassificationResultOutputFilePath(build).toString();
+		return buildFileHelper.listFiles(buildInputFilesPath);
+	}
+
+	@Override
+	public String putClassificationResultOutputFile(final Build build, final File file) throws IOException {
+		final String filename = file.getName();
+		final String outputFilePath = pathHelper.getClassificationResultOutputPath(build, filename);
+		try {
+			return buildFileHelper.putFile(file, outputFilePath, false);
+		} catch (NoSuchAlgorithmException | DecoderException e) {
+			throw new IOException("Problem creating checksum while uploading " + filename, e);
+		}
+	}
 }
