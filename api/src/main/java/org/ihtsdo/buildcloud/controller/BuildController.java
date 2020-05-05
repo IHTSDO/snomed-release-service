@@ -305,6 +305,17 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
+	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Download a specific file",
+			notes = "Download a specific file content for given release center, product key, build id and given file name combination" )
+	public void getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
+									@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getClassificationResultOutputFile(releaseCenterKey, productKey, buildId, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
+		}
+	}
 
 	private void ifBuildIsNullThrow(final String productKey, final String buildId, final Build build) throws ResourceNotFoundException {
 		if (build == null) {
