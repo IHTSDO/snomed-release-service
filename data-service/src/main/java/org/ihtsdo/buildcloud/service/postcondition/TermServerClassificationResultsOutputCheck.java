@@ -159,7 +159,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 				if(file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 					List<String> results = FileUtils.readLines(file);
 					if (results.size() > 1) {
-						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. Please see detailed failures via the classificationResultsOutputFiles_url link listed. ";
 						LOGGER.error(errorMessage);
 						buildDAO.putClassificationResultOutputFile(build, file);
 						errorMessageBuilder.append(errorMessage);
@@ -167,7 +167,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
 					List<String> results = FileUtils.readLines(file);
 					if (results.size() > 1) {
-						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. Please see detailed failures via the classificationResultsOutputFiles_url link listed. ";
 						LOGGER.error(errorMessage);
 						buildDAO.putClassificationResultOutputFile(build, file);
 						errorMessageBuilder.append(errorMessage);

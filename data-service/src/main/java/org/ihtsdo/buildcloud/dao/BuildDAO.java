@@ -108,4 +108,6 @@ public interface BuildDAO {
 	List<String> listClassificationResultOutputFileNames(Build build);
 
 	String putClassificationResultOutputFile(Build build, File file) throws IOException;
+
+	InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath);
 }

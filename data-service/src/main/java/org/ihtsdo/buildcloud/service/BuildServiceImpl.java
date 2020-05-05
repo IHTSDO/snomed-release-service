@@ -945,5 +945,9 @@ public class BuildServiceImpl implements BuildService {
 		return dao.listClassificationResultOutputFileNames(build);
 	}
 
-
+	@Override
+	public InputStream getClassificationResultOutputFile(String releaseCenterKey, String productKey, String buildId, String inputFilePath) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getClassificationResultOutputFileStream(build, inputFilePath);
+	}
 }

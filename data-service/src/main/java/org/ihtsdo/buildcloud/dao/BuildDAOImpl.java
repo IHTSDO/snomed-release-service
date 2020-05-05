@@ -633,4 +633,10 @@ public class BuildDAOImpl implements BuildDAO {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
 	}
+
+	@Override
+	public InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath) {
+		final String path = pathHelper.getClassificationResultOutputPath(build, relativeFilePath);
+		return buildFileHelper.getFileStream(path);
+	}
 }

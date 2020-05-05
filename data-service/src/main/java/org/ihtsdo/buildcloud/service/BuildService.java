@@ -55,4 +55,6 @@ public interface BuildService {
     InputStream getPostConditionChecksReport(String releaseCenterKey, String productKey, String buildId);
 
     List<String> getClassificationResultOutputFilePaths(String releaseCenterKey, String productKey, String buildId);
+
+	InputStream getClassificationResultOutputFile(String releaseCenterKey, String productKey, String buildId, String inputFileName) throws ResourceNotFoundException;
 }
