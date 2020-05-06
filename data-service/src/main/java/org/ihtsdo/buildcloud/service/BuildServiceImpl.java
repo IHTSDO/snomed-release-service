@@ -573,7 +573,7 @@ public class BuildServiceImpl implements BuildService {
 					List<LanguageRefset> list = new ArrayList<>();
 					for (RefsetType refsetType : languagesRefsets) {
 						LanguageRefset languageRefset = new LanguageRefset();
-						languageRefset.setId(refsetType.getId());
+						languageRefset.setId(String.valueOf(refsetType.getId()));
 						languageRefset.setTerm(refsetType.getLabel());
 						list.add(languageRefset);
 					}
