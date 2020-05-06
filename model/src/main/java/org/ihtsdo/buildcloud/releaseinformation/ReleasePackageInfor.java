@@ -6,19 +6,20 @@ import java.math.BigInteger;
 import java.util.List;
 
 public class ReleasePackageInfor {
+
+    private String effectiveTime;
+
     private String deltaFromDate;
 
     private String deltaToDate;
+
+    private String includedModuleIDs;
 
     private String languageRefset;
 
     private List<LanguageRefset> humanReadableLanguageRefset;
 
     private String licenceStatement;
-
-    private String effectiveTime;
-
-    private String includedModuleIDs;
 
     public String getDeltaFromDate() {
         return deltaFromDate;
