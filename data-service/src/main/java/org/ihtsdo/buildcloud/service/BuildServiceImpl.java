@@ -557,7 +557,7 @@ public class BuildServiceImpl implements BuildService {
 					release.setDeltaToDate(deltaToDateInt != null ? deltaToDateInt.toString() : null);
 					break;
 				case "effectiveTime":
-					release.setEffectiveTime(buildConfig.getEffectiveTimeFormatted() != null ? buildConfig.getEffectiveTimeFormatted() : null);
+					release.setEffectiveTime(buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
 					break;
 				case "includeModuleId":
 					release.setIncludedModuleIDs(buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null);
@@ -574,8 +574,7 @@ public class BuildServiceImpl implements BuildService {
 					for (RefsetType refsetType : languagesRefsets) {
 						LanguageRefset languageRefset = new LanguageRefset();
 						languageRefset.setId(refsetType.getId());
-						languageRefset.setLabel(refsetType.getLabel());
-						languageRefset.setDataSource(refsetType.getSources() != null ? (refsetType.getSources().getSource() != null ? StringUtils.join(refsetType.getSources().getSource(), ',') : null) : null);
+						languageRefset.setTerm(refsetType.getLabel());
 						list.add(languageRefset);
 					}
 					release.setHumanReadableLanguageRefset(list);
