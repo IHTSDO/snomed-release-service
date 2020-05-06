@@ -3,10 +3,10 @@ package org.ihtsdo.buildcloud.service;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -16,8 +16,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -30,6 +29,7 @@ import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.*;
+import org.ihtsdo.buildcloud.releaseinformation.LanguageRefset;
 import org.ihtsdo.buildcloud.releaseinformation.ReleasePackageInfor;
 import org.ihtsdo.buildcloud.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
@@ -415,8 +415,8 @@ public class BuildServiceImpl implements BuildService {
 			//filter out additional relationships from the transformed delta
 			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
 			if (inferedDelta != null) {
-				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
-				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
+			 	String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
+			 	transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
 			if (configuration.isCreateInferredRelationships()) {
@@ -560,17 +560,25 @@ public class BuildServiceImpl implements BuildService {
 					release.setEffectiveTime(buildConfig.getEffectiveTimeFormatted() != null ? buildConfig.getEffectiveTimeFormatted() : null);
 					break;
 				case "includeModuleId":
-					release.setIncludeModuleId(buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null);
+					release.setIncludedModuleIDs(buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null);
 					break;
 				case "languagesRefset":
 					String languagesRefset = "";
 					for (int i = 0 ; i < languagesRefsets.size(); i++) {
 						languagesRefset += languagesRefsets.get(i).getId().toString() + (i != languagesRefsets.size() -1 ? "," : "");
 					}
-					release.setLanguagesRefset(languagesRefset);
+					release.setLanguageRefset(languagesRefset);
 					break;
 				case "humanReadableLanguageRefset":
-					release.setHumanReadableLanguageRefset(languagesRefsets.isEmpty() ? null : languagesRefsets);
+					List<LanguageRefset> list = new ArrayList<>();
+					for (RefsetType refsetType : languagesRefsets) {
+						LanguageRefset languageRefset = new LanguageRefset();
+						languageRefset.setId(refsetType.getId());
+						languageRefset.setLabel(refsetType.getLabel());
+						languageRefset.setDataSource(refsetType.getSources() != null ? (refsetType.getSources().getSource() != null ? StringUtils.join(refsetType.getSources().getSource(), ',') : null) : null);
+						list.add(languageRefset);
+					}
+					release.setHumanReadableLanguageRefset(list);
 					break;
 				case "licenceStatement":
 					release.setLicenceStatement(buildConfig.getLicenceStatement());
@@ -619,28 +627,24 @@ public class BuildServiceImpl implements BuildService {
 
 	private Map<String, Integer> getDeltaFromAndToDate(Build build) {
 		Map<String, Integer> result = new HashMap<>();
-		Integer deltaFromDateInt = null, deltaToDateInt = null;
-		List<String> outputFilesName = dao.listOutputFilePaths(build);
-		for (String fileName : outputFilesName) {
-			if (fileName.contains(DELTA)) {
-				int date = Integer.parseInt(fileName.substring(fileName.lastIndexOf("_") + 1, fileName.lastIndexOf(".txt")));
-				if (deltaFromDateInt == null ) {
-					deltaFromDateInt = date;
-					deltaToDateInt = date;
-				}
-				else {
-					if (date > deltaToDateInt) {
-						deltaToDateInt = date;
-					}
-
-					if (date < deltaFromDateInt) {
-						deltaFromDateInt = date;
-					}
+		BuildConfiguration configuration = build.getConfiguration();
+		String previousReleaseDateStr = null;
+		if (configuration.getPreviousPublishedPackage() != null && !configuration.getPreviousPublishedPackage().isEmpty()) {
+			String[] tokens = build.getConfiguration().getPreviousPublishedPackage().split(RF2Constants.FILE_NAME_SEPARATOR);
+			if (tokens.length > 0) {
+				previousReleaseDateStr = tokens[tokens.length - 1].replace(RF2Constants.ZIP_FILE_EXTENSION, "");
+				try {
+					Date preReleasedDate = RF2Constants.DATE_FORMAT.parse(previousReleaseDateStr);
+					previousReleaseDateStr = RF2Constants.DATE_FORMAT.format(preReleasedDate); // make sure the date in format yyyyMMdd
+				} catch (ParseException e) {
+					LOGGER.error("Expecting release date format in package file name to be yyyyMMdd");
+					previousReleaseDateStr = null;
 				}
 			}
 		}
-		result.put("deltaFromDate", deltaFromDateInt);
-		result.put("deltaToDate", deltaToDateInt);
+
+		result.put("deltaFromDate", previousReleaseDateStr != null ? Integer.valueOf(previousReleaseDateStr) : null);
+		result.put("deltaToDate", Integer.valueOf(RF2Constants.DATE_FORMAT.format(configuration.getEffectiveTime())));
 
 		return result;
 	}

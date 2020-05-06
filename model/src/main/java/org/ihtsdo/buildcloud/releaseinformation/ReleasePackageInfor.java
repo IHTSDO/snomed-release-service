@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.releaseinformation;
 
 import org.ihtsdo.buildcloud.manifest.RefsetType;
 
+import java.math.BigInteger;
 import java.util.List;
 
 public class ReleasePackageInfor {
@@ -9,15 +10,15 @@ public class ReleasePackageInfor {
 
     private String deltaToDate;
 
-    private String languagesRefset;
+    private String languageRefset;
 
-    private List<RefsetType> humanReadableLanguageRefset;
+    private List<LanguageRefset> humanReadableLanguageRefset;
 
     private String licenceStatement;
 
     private String effectiveTime;
 
-    private String includeModuleId;
+    private String includedModuleIDs;
 
     public String getDeltaFromDate() {
         return deltaFromDate;
@@ -35,19 +36,19 @@ public class ReleasePackageInfor {
         this.deltaToDate = deltaToDate;
     }
 
-    public String getLanguagesRefset() {
-        return languagesRefset;
+    public String getLanguageRefset() {
+        return languageRefset;
     }
 
-    public void setLanguagesRefset(String languagesRefset) {
-        this.languagesRefset = languagesRefset;
+    public void setLanguageRefset(String languageRefset) {
+        this.languageRefset = languageRefset;
     }
 
-    public List<RefsetType> getHumanReadableLanguageRefset() {
+    public List<LanguageRefset> getHumanReadableLanguageRefset() {
         return humanReadableLanguageRefset;
     }
 
-    public void setHumanReadableLanguageRefset(List<RefsetType> humanReadableLanguageRefset) {
+    public void setHumanReadableLanguageRefset(List<LanguageRefset> humanReadableLanguageRefset) {
         this.humanReadableLanguageRefset = humanReadableLanguageRefset;
     }
 
@@ -67,11 +68,11 @@ public class ReleasePackageInfor {
         this.effectiveTime = effectiveTime;
     }
 
-    public String getIncludeModuleId() {
-        return includeModuleId;
+    public String getIncludedModuleIDs() {
+        return includedModuleIDs;
     }
 
-    public void setIncludeModuleId(String includeModuleId) {
-        this.includeModuleId = includeModuleId;
+    public void setIncludedModuleIDs(String includedModuleIDs) {
+        this.includedModuleIDs = includedModuleIDs;
     }
 }
