@@ -38,7 +38,6 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
-		integrationTestHelper.setCreateInferredRelationships(true);
 		integrationTestHelper.setCreateLegacyIds(true);
 		final String effectiveTime = "20161130";
 		integrationTestHelper.setEffectiveTime(effectiveTime);

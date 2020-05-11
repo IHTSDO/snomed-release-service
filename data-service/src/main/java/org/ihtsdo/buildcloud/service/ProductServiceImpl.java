@@ -157,10 +157,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(BETA_RELEASE)));
 		}
 
-		if (newPropertyValues.containsKey(CREATE_INFERRED_RELATIONSHIPS)) {
-			configuration.setCreateInferredRelationships(TRUE.equals(newPropertyValues.get(CREATE_INFERRED_RELATIONSHIPS)));
-		}
-
 		if (newPropertyValues.containsKey(WORKBENCH_DATA_FIXES_REQUIRED)) {
 			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
@@ -177,16 +173,16 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setClassifyOutputFiles(TRUE.equals(newPropertyValues.get(CLASSIFY_OUTPUT_FILES)));
 		}
 		
-		if (newPropertyValues.containsKey(USE_EXTERNAL_CLASSIFIER)) {
-			configuration.setUseExternalClassifier(TRUE.equals(newPropertyValues.get(USE_EXTERNAL_CLASSIFIER)));
-		}
-
 		if (newPropertyValues.containsKey(LICENSE_STATEMENT)) {
 			configuration.setLicenceStatement(newPropertyValues.get(LICENSE_STATEMENT));
 		}
 
 		if (newPropertyValues.containsKey(RELEASE_INFORMATION_FIELDS)) {
 			configuration.setReleaseInformationFields(newPropertyValues.get(RELEASE_INFORMATION_FIELDS));
+		}
+
+		if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
+			configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
 		}
 
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {

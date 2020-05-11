@@ -102,15 +102,14 @@ public class BuildDAOImplTest {
 			"\"justPackage\":false," +
 			"\"workbenchDataFixesRequired\":false," +
 			"\"inputFilesFixesRequired\":false," +
-			"\"createInferredRelationships\":false," +
 			"\"createLegacyIds\":false," +
 			"\"extensionConfig\":null," +
-			"\"useExternalClassifier\":false," +
 			"\"includePrevReleaseFiles\":null," +
 			"\"dailyBuild\":false," +
 			"\"classifyOutputFiles\":false," +
 			"\"licenceStatement\":null," +
 			"\"releaseInformationFields\":null," +
+			"\"useClassifierPreConditionChecks\":false," +
 			"\"customRefsetCompositeKeys\":{}," +
 			"\"effectiveTime\":null" +
 				"}", configJson);

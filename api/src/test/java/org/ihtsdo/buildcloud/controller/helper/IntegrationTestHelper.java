@@ -234,11 +234,6 @@ public class IntegrationTestHelper {
 		setProductProperty("{ " + jsonPair(ProductService.BETA_RELEASE, Boolean.toString(isBeta)) + " }");
 	}
 	
-	public void setCreateInferredRelationships(final boolean isCreateInferredRelationships) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.CREATE_INFERRED_RELATIONSHIPS, Boolean.toString(isCreateInferredRelationships))
-				+ " }");
-	}
-
 	public void setCreateLegacyIds(final boolean createLegacyIds) throws Exception {
 		setProductProperty("{ " + jsonPair(ProductService.CREATE_LEGACY_IDS, Boolean.toString(createLegacyIds)) + " }");
 	}
@@ -472,10 +467,6 @@ public class IntegrationTestHelper {
 						zipFile.getInputStream(zipEntry));
 			}
 		}
-	}
-
-	public void useExternalClassifier(boolean useExternal) throws Exception {
-		setProductProperty("{ " + jsonPair(ProductService.USE_EXTERNAL_CLASSIFIER, Boolean.toString(useExternal)) + " }");
 	}
 
 	public void printBuildConfig(String buildURL) throws Exception {

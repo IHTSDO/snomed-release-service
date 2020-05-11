@@ -79,7 +79,7 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				errorMsgBuilder.append(".");
 			}
 			//check stated relationship delta file present
-			if (!justPackage && build.getConfiguration().isCreateInferredRelationships()) {
+			if (!justPackage) {
 				boolean isStatedRelationshipFilePresent = false;
 				for ( final String name : inputfilesList) {
 					if (name.contains(STATED_RELATIONSHIP)) {
