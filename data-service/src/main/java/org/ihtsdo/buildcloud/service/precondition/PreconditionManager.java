@@ -30,6 +30,9 @@ public class PreconditionManager {
 		for (PreconditionCheck thisCheck : preconditionChecks) {
 			if (onlineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())
 					|| (RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) && localRvf)) {
+				if (thisCheck instanceof TermServerClassificationResultsCheck && !build.getConfiguration().useClassifierPreConditionChecks() ) {
+					continue;
+				}
 				thisCheck.runCheck(build);
 				checkReports.add(thisCheck.getReport());
 			} else {

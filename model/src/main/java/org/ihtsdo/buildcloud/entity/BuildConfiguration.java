@@ -4,7 +4,6 @@ import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,10 +79,6 @@ public class BuildConfiguration {
 	private boolean inputFilesFixesRequired = false;
 	
 	@Type(type="yes_no")
-	@Column(name="create_inferred_relationships")
-	private boolean createInferredRelationships = false;
-	
-	@Type(type="yes_no")
 	@Column(name="create_legacy_ids")
 	private boolean createLegacyIds = false;
 
@@ -94,10 +89,6 @@ public class BuildConfiguration {
 	@OneToOne (mappedBy="buildConfiguration", cascade=CascadeType.ALL)
 	private ExtensionConfig extensionConfig;
 	
-	@Type(type="yes_no")
-	@Column(name="use_external_classifier")
-	private boolean useExternalClassifier = false;
-
 	@Column(name = "include_prev_release_files")
 	private String includePrevReleaseFiles;
 	
@@ -114,7 +105,11 @@ public class BuildConfiguration {
 
 	@Column(name="release_information_fields")
 	private String releaseInformationFields;
-	
+
+	@Type(type="yes_no")
+	@Column(name = "use_classifier_precondition_checks")
+	private boolean useClassifierPreConditionChecks;
+
 	public BuildConfiguration() {
 	}
 
@@ -264,14 +259,6 @@ public class BuildConfiguration {
 		this.previousPublishedPackage = previousPublishedPackage;
 	}
 
-	public boolean isCreateInferredRelationships() {
-		return createInferredRelationships;
-	}
-
-	public void setCreateInferredRelationships(final boolean createInferredRelationships) {
-		this.createInferredRelationships = createInferredRelationships;
-	}
-
 	public boolean isCreateLegacyIds() {
 		return createLegacyIds;
 	}
@@ -328,6 +315,18 @@ public class BuildConfiguration {
 		this.releaseInformationFields = releaseInformationFields;
 	}
 
+	public boolean useClassifierPreConditionChecks() {
+		return useClassifierPreConditionChecks;
+	}
+
+	public boolean isUseClassifierPreConditionChecks() {
+		return useClassifierPreConditionChecks;
+	}
+
+	public void setUseClassifierPreConditionChecks(boolean useClassifierPreConditionChecks) {
+		this.useClassifierPreConditionChecks = useClassifierPreConditionChecks;
+	}
+
 	@Override
 	public String toString() {
 		return "BuildConfiguration [id=" + id + ", effectiveTime="
@@ -338,13 +337,12 @@ public class BuildConfiguration {
 				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
 				+ justPackage + ", workbenchDataFixesRequired="
 				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
-				+ inputFilesFixesRequired + ", createInferredRelationships="
-				+ createInferredRelationships + ", createLegacyIds="
+				+ inputFilesFixesRequired + ", createLegacyIds="
 				+ createLegacyIds + ", includePrevReleaseFiles="
-				+ includePrevReleaseFiles + ", useExternalClassifier="
-				+ useExternalClassifier +", classifyOutputFiles="
+				+ includePrevReleaseFiles + ", useClassifierPreConditionChecks="
+				+ useClassifierPreConditionChecks + ", classifyOutputFiles="
 				+ classifyOutputFiles + "]";
-	}	
+	}
 
 	@Embeddable
 	public static class RefsetCompositeKey {
@@ -401,18 +399,6 @@ public class BuildConfiguration {
 
 	public void setInputFilesFixesRequired(boolean inputFilesFixesRequired) {
 		this.inputFilesFixesRequired = inputFilesFixesRequired;
-	}
-
-	public boolean useExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	
-	public boolean getUseExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	public void setUseExternalClassifier(final boolean useExternalClassifier) {
-		this.useExternalClassifier = useExternalClassifier;
-		
 	}
 
 	public String getIncludePrevReleaseFiles() {

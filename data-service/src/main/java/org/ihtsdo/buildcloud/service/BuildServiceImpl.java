@@ -419,16 +419,12 @@ public class BuildServiceImpl implements BuildService {
 			 	transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
-			if (configuration.isCreateInferredRelationships()) {
-				if (offlineMode) {
-					LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
-				} else {
-					// Run classifier
-					ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-					generator.generateRelationshipFiles(result);
-				}
+			if (offlineMode) {
+				LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
 			} else {
-				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
+				// Run classifier
+				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+				generator.generateRelationshipFiles(result);
 			}
 		}
 

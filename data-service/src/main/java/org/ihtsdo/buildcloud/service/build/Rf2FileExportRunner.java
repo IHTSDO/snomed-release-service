@@ -59,7 +59,7 @@ public class Rf2FileExportRunner {
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
 		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || (thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX) && configuration.isCreateInferredRelationships())) {
+			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 				continue;
 			}
 			int failureCount = 0;

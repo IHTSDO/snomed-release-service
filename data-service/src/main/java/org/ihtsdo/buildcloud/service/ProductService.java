@@ -22,7 +22,6 @@ public interface ProductService extends EntityService<Product> {
 	String README_END_DATE = "readmeEndDate";
 	String WORKBENCH_DATA_FIXES_REQUIRED = "workbenchDataFixesRequired";
 	String INPUT_FILES_FIXES_REQUIRED = "inputFilesFixesRequired";
-	String CREATE_INFERRED_RELATIONSHIPS = "createInferredRelationships";
 	String CREATE_LEGACY_IDS = "createLegacyIds";
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
@@ -35,7 +34,6 @@ public interface ProductService extends EntityService<Product> {
 	String NAMESPACE_ID = "namespaceId";
 	String MODULE_ID = "moduleId";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
-	String USE_EXTERNAL_CLASSIFIER = "useExternalClassifier";
 	String ENABLE_DROOLS = "enableDrools";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
@@ -43,6 +41,7 @@ public interface ProductService extends EntityService<Product> {
 	String CLASSIFY_OUTPUT_FILES = "classifyOutputFiles";
 	String LICENSE_STATEMENT = "licenseStatement";
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
+	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

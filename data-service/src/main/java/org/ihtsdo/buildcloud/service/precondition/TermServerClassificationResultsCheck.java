@@ -33,7 +33,6 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.RELASHIONSHIP_DEL
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.TXT_FILE_EXTENSION;
 
-@Deprecated
 public class TermServerClassificationResultsCheck extends PreconditionCheck implements NetworkRequired {
 
 	@Autowired
@@ -64,19 +63,11 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 
 	@Override
 	public void runCheck(Build build) {
-		fail("");
-		/*boolean isDerivativeProduct = buildDAO.isDerivativeProduct(build);
-		boolean isCreateInferredRelationships = build.getConfiguration().isCreateInferredRelationships();
-		LOGGER.info("Term Server Classification Results Check: isCreateInferredRelationships={}", isCreateInferredRelationships);
+		boolean isDerivativeProduct = buildDAO.isDerivativeProduct(build);
 		LOGGER.info("Term Server Classification Results Check: isDerivativeProduct={}", isDerivativeProduct);
-		if (build.getConfiguration().isCreateInferredRelationships() || isDerivativeProduct) {
+		if (isDerivativeProduct) {
 			StringBuilder reasonBuilder = new StringBuilder("Skipped Term Server Classification Results Check. Reason: ");
-			if (build.getConfiguration().isCreateInferredRelationships()) {
-				reasonBuilder.append("This product is configured to generate inferred relationship Delta file " +
-						"when creating the release package ( isCreateInferredRelationships=true ). ");
-			} else if (isDerivativeProduct) {
-				reasonBuilder.append("This product is a derivative product.");
-			}
+			reasonBuilder.append("This product is a derivative product.");
 			LOGGER.info(reasonBuilder.toString());
 			notRun(reasonBuilder.toString());
 			return;
@@ -118,10 +109,10 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 		} catch (Exception e) {
 			LOGGER.error("Error occurred during classification results validation due to: ", e);
 			fatalError("Error occurred during classification results validation due to: " + e.getMessage());
-		}*/
+		}
 	}
 
-	/*private List<String> createDeltaArchiveForClassification(final Build build, final File deltaTempDir) throws ProcessingException, IOException {
+	private List<String> createDeltaArchiveForClassification(final Build build, final File deltaTempDir) throws ProcessingException, IOException {
 		LOGGER.info("Creating delta archive for classification");
 		final List<String> localFilePaths = new ArrayList<>();
 		for (String downloadFilename : buildDAO.listInputFileNames(build)) {
@@ -186,6 +177,6 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 	private boolean isRequiredFileForClassification(String filename) {
 		return filename.contains(REL2_CONCEPT) || filename.contains(REL2_STATED_RELATIONSHIP) || filename.contains(REL2_RELATIONSHIP)
 				|| filename.contains(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
-	}*/
+	}
 
 }
