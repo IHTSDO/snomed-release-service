@@ -428,14 +428,10 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 
-		// Cross check for Snapshot after build
-		if (!offlineMode && configuration.isClassifyOutputFiles()) {
+		if (!offlineMode) {
 			LOGGER.info("Start classification cross check");
 			List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
 			dao.updatePostConditionCheckReport(build, reports);
-		}
-		else {
-			dao.updatePostConditionCheckReport(build, Collections.EMPTY_LIST);
 		}
 	
 		// Generate release package information

@@ -14,6 +14,8 @@ import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
@@ -34,7 +36,8 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
  */
 public class InputFilesExistenceCheck extends PreconditionCheck {
 
-	private static final String MISSING_STATED_RELATIONSHIP_FILE = "The create inferred relationship flag is active but no stated relationship file is found in the input file directory.";
+	private static final String MISSING_STATED_RELATIONSHIP_FILE = "No stated relationship file is found in the input file directory.";
+	private static final String MISSING_RELATIONSHIP_FILE = "No relationship file is found in the input file directory.";
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 	private static final String RELATIONSHIP = "_Relationship_";
 	private static final String ERROR_MSG = "The input files directory doesn't contain the following files required by the manifest.xml: ";
@@ -81,17 +84,29 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 			//check stated relationship delta file present
 			if (!justPackage) {
 				boolean isStatedRelationshipFilePresent = false;
+				boolean isRelationshipFilePresent = false;
 				for ( final String name : inputfilesList) {
 					if (name.contains(STATED_RELATIONSHIP)) {
 						isStatedRelationshipFilePresent = true;
-						break;
+					}
+					if (name.contains(RELATIONSHIP)) {
+						isRelationshipFilePresent = true;
 					}
 				}
-				if (!isStatedRelationshipFilePresent) {
-					if (errorMsgBuilder.length() > 0 ) {
-						errorMsgBuilder.append(" ");
+				if (!isStatedRelationshipFilePresent || !isRelationshipFilePresent) {
+					if (!isStatedRelationshipFilePresent) {
+						if (errorMsgBuilder.length() > 0 ) {
+							errorMsgBuilder.append(" ");
+						}
+						errorMsgBuilder.append(MISSING_STATED_RELATIONSHIP_FILE);
 					}
-					errorMsgBuilder.append(MISSING_STATED_RELATIONSHIP_FILE);
+
+					if (!isRelationshipFilePresent) {
+						if (errorMsgBuilder.length() > 0 ) {
+							errorMsgBuilder.append(" ");
+						}
+						errorMsgBuilder.append(MISSING_RELATIONSHIP_FILE);
+					}
 				}
 			}
 			if (errorMsgBuilder.length() > 0) {
