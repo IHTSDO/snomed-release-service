@@ -22,6 +22,10 @@ public class PostconditionManager {
 	public List<PostConditionCheckReport> runPostconditionChecks(final Build build) {
 		List<PostConditionCheckReport> checkReports = new ArrayList<>();
 		for (PostconditionCheck thisCheck : postconditionChecks) {
+				if (thisCheck instanceof TermServerClassificationResultsOutputCheck && !build.getConfiguration().isClassifyOutputFiles()) {
+					continue;
+				}
+
 				thisCheck.runCheck(build);
 				checkReports.add(thisCheck.getReport());
 		}
