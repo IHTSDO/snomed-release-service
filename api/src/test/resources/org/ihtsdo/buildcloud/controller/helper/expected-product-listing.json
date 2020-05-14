@@ -19,6 +19,7 @@
     "licenceStatement" : null,
     "releaseInformationFields" : null,
     "useClassifierPreConditionChecks" : false,
+    "conceptPreferredTerms" : null,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },

@@ -42,6 +42,7 @@ public interface ProductService extends EntityService<Product> {
 	String LICENSE_STATEMENT = "licenseStatement";
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
+	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
