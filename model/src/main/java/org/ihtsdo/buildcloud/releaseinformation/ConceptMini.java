@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.releaseinformation;
 
 import java.math.BigInteger;
 
-public class LanguageRefset {
+public class ConceptMini {
     private String id;
 
     private String term;

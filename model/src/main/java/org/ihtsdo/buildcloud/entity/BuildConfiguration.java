@@ -110,6 +110,9 @@ public class BuildConfiguration {
 	@Column(name = "use_classifier_precondition_checks")
 	private boolean useClassifierPreConditionChecks;
 
+	@Column(name="concept_preferred_terms")
+	private String conceptPreferredTerms;
+
 	public BuildConfiguration() {
 	}
 
@@ -325,6 +328,14 @@ public class BuildConfiguration {
 
 	public void setUseClassifierPreConditionChecks(boolean useClassifierPreConditionChecks) {
 		this.useClassifierPreConditionChecks = useClassifierPreConditionChecks;
+	}
+
+	public String getConceptPreferredTerms() {
+		return conceptPreferredTerms;
+	}
+
+	public void setConceptPreferredTerms(String conceptPreferredTerms) {
+		this.conceptPreferredTerms = conceptPreferredTerms;
 	}
 
 	@Override

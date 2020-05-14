@@ -110,6 +110,7 @@ public class BuildDAOImplTest {
 			"\"licenceStatement\":null," +
 			"\"releaseInformationFields\":null," +
 			"\"useClassifierPreConditionChecks\":false," +
+			"\"conceptPreferredTerms\":null," +
 			"\"customRefsetCompositeKeys\":{}," +
 			"\"effectiveTime\":null" +
 				"}", configJson);

@@ -177,6 +177,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setLicenceStatement(newPropertyValues.get(LICENSE_STATEMENT));
 		}
 
+		if (newPropertyValues.containsKey(CONCEPT_PREFERRED_TERMS)) {
+			configuration.setConceptPreferredTerms(newPropertyValues.get(CONCEPT_PREFERRED_TERMS));
+		}
+
 		if (newPropertyValues.containsKey(RELEASE_INFORMATION_FIELDS)) {
 			configuration.setReleaseInformationFields(newPropertyValues.get(RELEASE_INFORMATION_FIELDS));
 		}

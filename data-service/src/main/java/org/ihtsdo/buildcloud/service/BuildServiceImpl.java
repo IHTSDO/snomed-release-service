@@ -16,7 +16,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -29,8 +28,8 @@ import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.manifest.*;
-import org.ihtsdo.buildcloud.releaseinformation.LanguageRefset;
-import org.ihtsdo.buildcloud.releaseinformation.ReleasePackageInfor;
+import org.ihtsdo.buildcloud.releaseinformation.ConceptMini;
+import org.ihtsdo.buildcloud.releaseinformation.ReleasePackageInformation;
 import org.ihtsdo.buildcloud.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
@@ -490,7 +489,8 @@ public class BuildServiceImpl implements BuildService {
 		BuildConfiguration buildConfig = build.getConfiguration();
 		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
 		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
-		ReleasePackageInfor release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap);
+		Map<String, String> preferredTermMap = getPreferredTermMap(build);
+		ReleasePackageInformation release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap, preferredTermMap);
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH).createUnmarshaller();
@@ -536,10 +536,27 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private ReleasePackageInfor buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap) {
-		ReleasePackageInfor release = new ReleasePackageInfor();
+	private Map<String, String> getPreferredTermMap(Build build) {
+		Map<String, String> result = new HashMap<>();
+		if (build.getConfiguration().getConceptPreferredTerms() != null) {
+			String[] conceptIdAndTerms =  build.getConfiguration().getConceptPreferredTerms().split(",");
+			for (String conceptIdAndTerm : conceptIdAndTerms) {
+				String[] arr = conceptIdAndTerm.split("|");
+				if (arr.length != 0) {
+					result.put(arr[0].trim(), arr[1].trim());
+				}
+			}
+		}
+		return  result;
+	}
+
+	private ReleasePackageInformation buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap, Map<String, String> preferredTermMap) {
+		ReleasePackageInformation release = new ReleasePackageInformation();
 		for (String field : fields) {
 			switch (field) {
+				case "effectiveTime":
+					release.setEffectiveTime(buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
+					break;
 				case "deltaFromDate":
 					Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
 					release.setDeltaFromDate(deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
@@ -548,28 +565,30 @@ public class BuildServiceImpl implements BuildService {
 					Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
 					release.setDeltaToDate(deltaToDateInt != null ? deltaToDateInt.toString() : null);
 					break;
-				case "effectiveTime":
-					release.setEffectiveTime(buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
-					break;
-				case "includeModuleId":
-					release.setIncludedModuleIDs(buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null);
-					break;
-				case "languagesRefset":
-					String languagesRefset = "";
-					for (int i = 0 ; i < languagesRefsets.size(); i++) {
-						languagesRefset += languagesRefsets.get(i).getId().toString() + (i != languagesRefsets.size() -1 ? "," : "");
+				case "includedModules":
+					String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
+					if (extensionModule != null) {
+						List<ConceptMini> list = new ArrayList<>();
+						for (String moduleId : extensionModule.split(",")) {
+							ConceptMini conceptMini = new ConceptMini();
+							String moudleId = String.valueOf(moduleId).trim();
+							conceptMini.setId(moudleId);
+							conceptMini.setTerm(preferredTermMap.containsKey(moudleId) ? preferredTermMap.get(moudleId) : "");
+							list.add(conceptMini);
+						}
+						release.setIncludedModules(list);
 					}
-					release.setLanguageRefset(languagesRefset);
 					break;
-				case "humanReadableLanguageRefset":
-					List<LanguageRefset> list = new ArrayList<>();
+				case "languageRefsets":
+					List<ConceptMini> list = new ArrayList<>();
 					for (RefsetType refsetType : languagesRefsets) {
-						LanguageRefset languageRefset = new LanguageRefset();
-						languageRefset.setId(String.valueOf(refsetType.getId()));
-						languageRefset.setTerm(refsetType.getLabel());
-						list.add(languageRefset);
+						ConceptMini conceptMini = new ConceptMini();
+						String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+						conceptMini.setId(languageRefsetId);
+						conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
+						list.add(conceptMini);
 					}
-					release.setHumanReadableLanguageRefset(list);
+					release.setLanguageRefsets(list);
 					break;
 				case "licenceStatement":
 					release.setLicenceStatement(buildConfig.getLicenceStatement());
