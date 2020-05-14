@@ -9,6 +9,7 @@ import java.text.Normalizer.Form;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
@@ -541,7 +542,7 @@ public class BuildServiceImpl implements BuildService {
 		if (build.getConfiguration().getConceptPreferredTerms() != null) {
 			String[] conceptIdAndTerms =  build.getConfiguration().getConceptPreferredTerms().split(",");
 			for (String conceptIdAndTerm : conceptIdAndTerms) {
-				String[] arr = conceptIdAndTerm.split("|");
+				String[] arr = conceptIdAndTerm.split(Pattern.quote("|"));
 				if (arr.length != 0) {
 					result.put(arr[0].trim(), arr[1].trim());
 				}
