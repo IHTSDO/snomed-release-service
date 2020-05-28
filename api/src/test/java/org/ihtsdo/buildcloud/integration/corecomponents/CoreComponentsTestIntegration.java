@@ -64,6 +64,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_TextDefinition_Full-en_INT_"+ effectiveTime2 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_Relationship_Full_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Full/Terminology/sct2_sRefset_OWLOntologyFull_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/\n" +
@@ -78,6 +79,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_TextDefinition_Snapshot-en_INT_"+ effectiveTime2 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Snapshot/Terminology/sct2_sRefset_OWLOntologySnapshot_INT_"+ effectiveTime2 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/\n" +
@@ -92,6 +94,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_TextDefinition_Delta-en_INT_"+ effectiveTime2 + ".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_Relationship_Delta_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime2 + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/RF2Release/Delta/Terminology/sct2_sRefset_OWLOntologyDelta_INT_"+ effectiveTime2 + ".txt"; 
 
@@ -130,6 +133,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Full/Terminology/sct2_Concept_Full_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Full/Terminology/sct2_Description_Full-en_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Full/Terminology/sct2_TextDefinition_Full-en_INT_"+ effectiveTime1 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Full/Terminology/sct2_Relationship_Full_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Full/Terminology/sct2_StatedRelationship_Full_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Refset/\n" +
@@ -141,6 +145,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Terminology/sct2_Concept_Snapshot_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Terminology/sct2_Description_Snapshot-en_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Terminology/sct2_TextDefinition_Snapshot-en_INT_"+ effectiveTime1 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Terminology/sct2_Relationship_Snapshot_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Snapshot/Terminology/sct2_StatedRelationship_Snapshot_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Refset/\n" +
@@ -152,6 +157,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Terminology/sct2_Concept_Delta_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Terminology/sct2_Description_Delta-en_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Terminology/sct2_TextDefinition_Delta-en_INT_"+ effectiveTime1 +".txt\n" +
+			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Terminology/sct2_Relationship_Delta_INT_"+ effectiveTime1 +".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/RF2Release/Delta/Terminology/sct2_StatedRelationship_Delta_INT_"+ effectiveTime1 +".txt";
 		executeAndVerifyResults(effectiveTime1, expectedZipEntries1, false);
 	}

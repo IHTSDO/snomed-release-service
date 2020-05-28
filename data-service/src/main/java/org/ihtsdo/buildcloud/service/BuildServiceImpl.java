@@ -409,7 +409,12 @@ public class BuildServiceImpl implements BuildService {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
+
 			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
+
+			if (!generator.isInferredRelationshipFileExist(rf2DeltaFilesSpecifiedByManifest(build))) {
+				throw new BusinessServiceException("There is no inferred relationship delta file");
+			}
 			generator.generateReleaseFiles();
 			
 			//filter out additional relationships from the transformed delta
@@ -423,8 +428,8 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
 			} else {
 				// Run classifier
-				ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-				generator.generateRelationshipFiles(result);
+				//ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
+				//generator.generateRelationshipFiles(result);
 			}
 		}
 
