@@ -59,7 +59,7 @@ public class Rf2FileExportRunner {
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
 		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+			if (!thisFile.endsWith(TXT_FILE_EXTENSION)) {
 				continue;
 			}
 			int failureCount = 0;
@@ -82,7 +82,30 @@ public class Rf2FileExportRunner {
 			}
 		}
 	}
-	
+
+	public boolean isInferredRelationshipFileExist(final List<String> rf2DeltaFilesSpecifiedByManifest) throws ReleaseFileGenerationException{
+		boolean isRelationshipDeltaFileSpecifiedInManifest = false;
+		for (String thisFile : rf2DeltaFilesSpecifiedByManifest) {
+			if (thisFile.endsWith(TXT_FILE_EXTENSION) && thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+				isRelationshipDeltaFileSpecifiedInManifest = true;
+				break;
+			}
+		}
+		// if the relationship delta is not required in manifest, then skip this check
+		if (!isRelationshipDeltaFileSpecifiedInManifest) {
+			return true;
+		}
+
+		final List<String> transformedFiles = getTransformedDeltaFiles();
+		for ( String thisFile : transformedFiles) {
+			if (thisFile.endsWith(TXT_FILE_EXTENSION) && thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+				return  true;
+			}
+		}
+
+		return  false;
+	}
+
 	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys,
 			final boolean fileFirstTimeRelease, final Set<String> includedFilesInNewFile) throws ReleaseFileGenerationException {
 
