@@ -231,8 +231,9 @@ public class InputFileController {
 			notes = "Deletes the specified file, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												  @PathVariable final String source) throws IOException, ResourceNotFoundException {
+												  @PathVariable final String source) throws ResourceNotFoundException {
 		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, null, source);
+		LOGGER.info("Deleted source files {} for product {}", source, productKey);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
@@ -241,8 +242,9 @@ public class InputFileController {
 			notes = "Deletes the files with specified pattern in specified sources, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFileByPattern(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-															@RequestParam(required = false) final Set<String> sources, @RequestParam final String pattern) throws IOException, ResourceNotFoundException {
+															@RequestParam(required = false) final Set<String> sources, @RequestParam final String pattern) throws ResourceNotFoundException {
 		productInputFileService.deleteSourceFilesByPattern(releaseCenterKey, productKey, pattern, sources);
+		LOGGER.info("Deleted source files by pattern {} for product {}", pattern, productKey);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
@@ -252,6 +254,7 @@ public class InputFileController {
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
 												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws BusinessServiceException {
+		// try avoid to throw exceptions so that build status
 		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
