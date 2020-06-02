@@ -44,7 +44,7 @@ public interface BuildDAO {
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
 
-	void copyAll(Product productSource, Build build);
+	void copyAll(Product productSource, Build build) throws IOException;
 
 	InputStream getOutputFileInputStream(Build build, String name);
 

@@ -34,7 +34,7 @@ public class Build {
 
 	private QATestConfig qaTestConfig;
 
-	public static enum Status {
+	public enum Status {
 		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN
 	}
 
