@@ -429,11 +429,10 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public void persistReport(final Build build) {
-		final String reportPath = pathHelper.getReportPath(build);
-		try {
-			// Get the build report as a string we can write to disk/S3 synchronously because it's small
-			final String buildReportJSON = build.getBuildReport().toString();
-			final InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8");
+		String reportPath = pathHelper.getReportPath(build);
+		// Get the build report as a string we can write to disk/S3 synchronously because it's small
+		String buildReportJSON = build.getBuildReport().toString();
+		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
 			buildFileHelper.putFile(is, buildReportJSON.length(), reportPath);
 		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
