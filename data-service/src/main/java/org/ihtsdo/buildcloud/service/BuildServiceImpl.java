@@ -149,9 +149,10 @@ public class BuildServiceImpl implements BuildService {
 				// save build with config
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 				dao.save(build);
-				LOGGER.info("Created build.", productKey, build.getId());
+				LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
 				// Copy all files from Product input and manifest directory to Build input and manifest directory
 				dao.copyAll(product, build);
+				LOGGER.info("Input and manifest files are copied to build {}", build.getId());
 			}
 			if (!product.getBuildConfiguration().isJustPackage()) {
 				// Perform Pre-condition testing
@@ -167,7 +168,9 @@ public class BuildServiceImpl implements BuildService {
 				}
 			}
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to create build.", e);
+			String msg = "Failed to create build for product " + productKey;
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
 		}
@@ -200,7 +203,7 @@ public class BuildServiceImpl implements BuildService {
 			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
 			return;
 		}
-		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
+		InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
 		final File tempDir = Files.createTempDir();
@@ -225,8 +228,8 @@ public class BuildServiceImpl implements BuildService {
 
 	private String getStatedRelationshipInputFile(Build build) {
 		//get a list of input file names
-		final List<String> inputfilesList = dao.listInputFileNames(build);
-		for (final String inputFileName : inputfilesList) {
+		final List<String> inputFilenames = dao.listInputFileNames(build);
+		for (final String inputFileName : inputFilenames) {
 			if (inputFileName.contains(STATED_RELATIONSHIP)) {
 				return inputFileName;
 			}
@@ -236,22 +239,25 @@ public class BuildServiceImpl implements BuildService {
 
 	@Override
 	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax) throws BusinessServiceException {
-		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
-		try {
-			dao.loadConfiguration(build);
-		} catch (final IOException e) {
-			throw new BusinessServiceException("Failed to load build configuration.", e);
-		}
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
-		TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
-		LOGGER.info("Trigger product", productKey, buildId);
-		boolean isAbandoned = false;
+		Build build;
 		try {
-			//check source file prepare report
-			InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build);
-			if (reportStream != null) {
-				ObjectMapper objectMapper = new ObjectMapper();
-				try {
+			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+			TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
+
+			try {
+				dao.loadConfiguration(build);
+			} catch (final IOException e) {
+				String msg = String.format("Failed to load configuration for build %s", build.getId());
+				LOGGER.error(msg, e);
+				throw new BusinessServiceException(msg, e);
+			}
+			LOGGER.info("Trigger product", productKey, buildId);
+			boolean isAbandoned = false;
+			try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
+				//check source file prepare report
+				if (reportStream != null) {
+					ObjectMapper objectMapper = new ObjectMapper();
 					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
 					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
 						isAbandoned = true;
@@ -259,15 +265,15 @@ public class BuildServiceImpl implements BuildService {
 						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
 								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
 					}
-				} catch (IOException e) {
-					updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
-					LOGGER.error("Failed to read source file processing report", e);
-					isAbandoned = true;
+				} else {
+					LOGGER.warn("No source file prepare report found.");
 				}
-			} else {
-				LOGGER.warn("No source file prepare report found.");
+			} catch (IOException e) {
+				updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+				LOGGER.error("Failed to read source file processing report", e);
+				isAbandoned = true;
 			}
-			// Run product
+			// execute build
 			if (!isAbandoned) {
 				final BuildReport report = build.getBuildReport();
 				String resultStatus = "completed";
@@ -299,7 +305,6 @@ public class BuildServiceImpl implements BuildService {
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
-
 		return dao.findAllDesc(product);
 	}
 
