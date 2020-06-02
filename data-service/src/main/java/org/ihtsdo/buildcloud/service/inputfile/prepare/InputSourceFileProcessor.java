@@ -213,34 +213,32 @@ public class InputSourceFileProcessor {
 	private File copySourceFilesToLocal(List<String> sourceFileLists) {
 		for (String sourceFilePath : sourceFileLists) {
 			 //Copy files from S3 to local for processing
-
 			String s3FilePath = buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString();
-			InputStream sourceFileStream = fileHelper.getFileStream(s3FilePath);
-			if (sourceFileStream == null) {
-				fileProcessingReport.add(ReportType.ERROR, String.format("Source file not found in S3 %s", s3FilePath));
-			}
-			String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
-			//Keep track of the sources directories that are used
-			availableSources.add(sourceName);
-			File sourceDir = new File(localDir, sourceName);
-			if (!sourceDir.exists()) {
-				sourceDir.mkdir();
-			}
-			String fileName = FilenameUtils.getName(sourceFilePath);
-			fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
-			File outFile = new File(localDir + "/" + sourceName, fileName);
-			try {
+			try (InputStream sourceFileStream = fileHelper.getFileStream(s3FilePath)) {
+				if (sourceFileStream == null) {
+					fileProcessingReport.add(ReportType.ERROR, String.format("Source file not found in S3 %s", s3FilePath));
+				}
+				String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
+				//Keep track of the sources directories that are used
+				availableSources.add(sourceName);
+				File sourceDir = new File(localDir, sourceName);
+				if (!sourceDir.exists()) {
+					sourceDir.mkdir();
+				}
+				String fileName = FilenameUtils.getName(sourceFilePath);
+				fileName = fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? fileName.substring(1) : fileName;
+				File outFile = new File(localDir + "/" + sourceName, fileName);
 				FileUtils.copyInputStreamToFile(sourceFileStream, outFile);
+				logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
+				if (!sourceFilesMap.containsKey(sourceName)) {
+					sourceFilesMap.put(sourceName, new ArrayList<>());
+				}
+				sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
+				fileOrKeyWithMultipleSources.add(fileName, sourceName);
 			} catch (IOException e) {
 				String errorMsg = String.format("Failed to copy source file %s to local disk", sourceFilePath);
 				fileProcessingReport.add(ReportType.ERROR, errorMsg);
 			}
-			logger.info("Successfully created temp source file {}", outFile.getAbsolutePath());
-			if (!sourceFilesMap.containsKey(sourceName)) {
-				sourceFilesMap.put(sourceName, new ArrayList<>());
-			}
-			sourceFilesMap.get(sourceName).add(outFile.getAbsolutePath());
-			fileOrKeyWithMultipleSources.add(fileName, sourceName);
 		}
 		for (String sourceName : sourceFilesMap.keySet()) {
 			 fileProcessingReport.addSoureFiles(sourceName, sourceFilesMap.get(sourceName));

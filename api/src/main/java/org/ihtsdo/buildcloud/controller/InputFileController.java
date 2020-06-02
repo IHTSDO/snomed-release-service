@@ -181,13 +181,18 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
-		String inputFileName = file.getOriginalFilename();
-		LOGGER.debug("uploading source file:" + inputFileName);
-		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
-			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+		if (file != null) {
+			String inputFileName = file.getOriginalFilename();
+			LOGGER.debug("uploading source file:" + inputFileName);
+			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
+				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+			}
+			try (InputStream inputStream = file.getInputStream()) {
+				productInputFileService.putSourceFile(source, releaseCenterKey, productKey, inputStream, inputFileName,file.getSize());
+			}
+			return new ResponseEntity<>(HttpStatus.CREATED);
 		}
-		productInputFileService.putSourceFile(source, releaseCenterKey, productKey, file.getInputStream(),inputFileName,file.getSize());
-		return new ResponseEntity<>(HttpStatus.CREATED);
+		throw new IllegalArgumentException("No input source file specified.");
 	}
 
 	@RequestMapping(value = "/sourcefiles", method = RequestMethod.GET)

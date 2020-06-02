@@ -110,9 +110,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public void deleteFilesByPattern(String centerKey, final String productKey, final String inputFileNamePattern) throws ResourceNotFoundException {
-
 		List<String> filesFound = listInputFilePaths(centerKey, productKey);
-
 		//Need to convert a standard file wildcard to a regex pattern
 		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
 		Pattern pattern = Pattern.compile(regexPattern);
@@ -214,26 +212,28 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
 		try {
-			InputStream manifestStream = dao.getManifestStream(product);
-			if(manifestStream == null) {
-				report.add(ERROR, "Failed to load manifest");
-			} else {
-				//validate manifest.xml
-				String validationMsg = ManifestValidator.validate(manifestStream);
-				if (validationMsg != null) {
-					report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
+			try (InputStream manifestStream = dao.getManifestStream(product)) {
+				if(manifestStream == null) {
+					report.add(ERROR, "Failed to load manifest");
 				} else {
-					manifestStream = dao.getManifestStream(product);
-					InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
-					List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
-					if(sourceFiles != null && !sourceFiles.isEmpty()) {
-						report = fileProcessor.processFiles(sourceFiles);
+					//validate manifest.xml
+					String validationMsg = ManifestValidator.validate(manifestStream);
+					if (validationMsg != null) {
+						report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
 					} else {
-						report.add(ERROR, "Failed to load files from source directory");
-					}
-					for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
-						for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
-							report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+						try (InputStream manifestInputStream = dao.getManifestStream(product)) {
+							InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestInputStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
+							List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
+							if(sourceFiles != null && !sourceFiles.isEmpty()) {
+								report = fileProcessor.processFiles(sourceFiles);
+							} else {
+								report.add(ERROR, "Failed to load files from source directory");
+							}
+							for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
+								for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
+									report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+								}
+							}
 						}
 					}
 				}
