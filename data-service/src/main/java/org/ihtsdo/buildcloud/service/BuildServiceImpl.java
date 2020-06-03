@@ -275,22 +275,25 @@ public class BuildServiceImpl implements BuildService {
 			}
 			// execute build
 			if (!isAbandoned) {
+				Status status = Status.BUILDING;
 				final BuildReport report = build.getBuildReport();
 				String resultStatus = "completed";
 				String resultMessage = "Process completed successfully";
 				try {
-					updateStatusWithChecks(build, Status.BUILDING);
+					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax);
+					status = Status.BUILT;
 				} catch (final Exception e) {
 					resultStatus = "fail";
 					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
 							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 					LOGGER.error(resultMessage, e);
+					status = Status.FAILED;
 				}
 				report.add("Progress Status", resultStatus);
 				report.add("Message", resultMessage);
 				dao.persistReport(build);
-				updateStatusWithChecks(build, Status.BUILT);
+				updateStatusWithChecks(build, status);
 			}
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
