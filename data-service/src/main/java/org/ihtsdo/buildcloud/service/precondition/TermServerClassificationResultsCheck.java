@@ -96,7 +96,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			ZipFileUtils.zip(deltaTempDir.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
 			// Classify and validate the returned results
 			File classificationResults = classifierRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
-			String errorMessage = validateClassificationResults(classificationResults, resultTempDir);
+			String errorMessage = validateClassificationResults(classificationResults, resultTempDir, build);
 			if (StringUtils.isNotBlank(errorMessage)) {
 				fatalError(errorMessage);
 				LOGGER.error("Classification validation check has failed");
@@ -110,6 +110,43 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			LOGGER.error("Error occurred during classification results validation due to: ", e);
 			fatalError("Error occurred during classification results validation due to: " + e.getMessage());
 		}
+	}
+
+	private String validateClassificationResults(File classificationResults, File resultTemp, Build build) throws IOException, BusinessServiceException {
+		// Raise the errors if the results returned from Classification Service are not empty
+		StringBuilder errorMessageBuilder = new StringBuilder();
+		File classifierResult = new File(resultTemp, "result");
+		if (!classifierResult.exists()) {
+			classifierResult.mkdir();
+		}
+		if (classifierResult.exists() && classifierResult.isDirectory()) {
+			ZipFileUtils.extractFilesFromZipToOneFolder(classificationResults, classifierResult.getAbsolutePath().toString());
+		} else {
+			throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult);
+		}
+		for (File file : classifierResult.listFiles()) {
+			if (file.getName().endsWith(TXT_FILE_EXTENSION)) {
+				if(file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+					List<String> results = FileUtils.readLines(file);
+					if (results.size() > 1) {
+						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						LOGGER.error(errorMessage);
+						buildDAO.putClassificationResultOutputFile(build, file);
+						errorMessageBuilder.append(errorMessage);
+					}
+				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
+					List<String> results = FileUtils.readLines(file);
+					if (results.size() > 1) {
+						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
+						LOGGER.error(errorMessage);
+						buildDAO.putClassificationResultOutputFile(build, file);
+						errorMessageBuilder.append(errorMessage);
+					}
+				}
+
+			}
+		}
+		return errorMessageBuilder.toString();
 	}
 
 	private List<String> createDeltaArchiveForClassification(final Build build, final File deltaTempDir) throws ProcessingException, IOException {
@@ -137,41 +174,6 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 			}
 		}
 		return localFilePaths;
-	}
-
-	private String validateClassificationResults(File classificationResults, File resultTemp) throws IOException, BusinessServiceException {
-		// Raise the errors if the results returned from Classification Service are not empty
-		StringBuilder errorMessageBuilder = new StringBuilder();
-		File classifierResult = new File(resultTemp, "result");
-		if (!classifierResult.exists()) {
-			classifierResult.mkdir();
-		}
-		if (classifierResult.exists() && classifierResult.isDirectory()) {
-			ZipFileUtils.extractFilesFromZipToOneFolder(classificationResults, classifierResult.getAbsolutePath().toString());
-		} else {
-			throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult);
-		}
-		for (File file : classifierResult.listFiles()) {
-			if (file.getName().endsWith(TXT_FILE_EXTENSION)) {
-				if(file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
-					List<String> results = FileUtils.readLines(file);
-					if (results.size() > 1) {
-						String errorMessage = "Inconsistencies found in relationship file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
-						LOGGER.error(errorMessage);
-						errorMessageBuilder.append(errorMessage);
-					}
-				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
-					List<String> results = FileUtils.readLines(file);
-					if (results.size() > 1) {
-						String errorMessage = "Inconsistencies found in equivalent concept refsets file in classification results - expected 0 records but found " + (results.size() - 1) + " records from classification service. ";
-						LOGGER.error(errorMessage);
-						errorMessageBuilder.append(errorMessage);
-					}
-				}
-
-			}
-		}
-		return errorMessageBuilder.toString();
 	}
 
 	private boolean isRequiredFileForClassification(String filename) {
