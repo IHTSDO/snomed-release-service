@@ -1,8 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
@@ -17,17 +15,14 @@ import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scripting.bsh.BshScriptUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.bind.JAXBException;
 
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
 
@@ -37,7 +32,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -116,9 +110,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public void deleteFilesByPattern(String centerKey, final String productKey, final String inputFileNamePattern) throws ResourceNotFoundException {
-
 		List<String> filesFound = listInputFilePaths(centerKey, productKey);
-
 		//Need to convert a standard file wildcard to a regex pattern
 		String regexPattern = inputFileNamePattern.replace(".", "\\.").replace("*", ".*");
 		Pattern pattern = Pattern.compile(regexPattern);
@@ -216,37 +208,46 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) throws BusinessServiceException{
+	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) {
 		Product product = getProduct(centerKey, productKey);
-		InputStream manifestStream = dao.getManifestStream(product);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
-		if(manifestStream == null) {
-			report.add(ERROR, "Failed to load manifest");
-		} else {
-			//validate manifest.xml
-	    	String validationMsg = ManifestValidator.validate(manifestStream);
-	    	if (validationMsg != null) {
-	    		report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
-	    	} else {
-	    		manifestStream = dao.getManifestStream(product);
-	    		InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
-				List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
-				if(sourceFiles != null && !sourceFiles.isEmpty()) {
-					report = fileProcessor.processFiles(sourceFiles);
+		try {
+			try (InputStream manifestStream = dao.getManifestStream(product)) {
+				if(manifestStream == null) {
+					report.add(ERROR, "Failed to load manifest");
 				} else {
-					report.add(ERROR, "Failed to load files from source directory");
-				}
-				for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
-					for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
-						report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+					//validate manifest.xml
+					String validationMsg = ManifestValidator.validate(manifestStream);
+					if (validationMsg != null) {
+						report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
+					} else {
+						try (InputStream manifestInputStream = dao.getManifestStream(product)) {
+							InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestInputStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
+							List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
+							if(sourceFiles != null && !sourceFiles.isEmpty()) {
+								report = fileProcessor.processFiles(sourceFiles);
+							} else {
+								report.add(ERROR, "Failed to load files from source directory");
+							}
+							for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
+								for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
+									report.add(WARNING, FilenameUtils.getName(skippedFile), null, source, "skipped processing");
+								}
+							}
+						}
 					}
 				}
-	    	}
-		}
-		try {
-			dao.persistInputPrepareReport(product, report);
-		} catch (IOException e) {
-			throw new BusinessServiceException("Failed to persist input file preparation report!", e);
+			}
+		} catch (Throwable t) {
+			String errorMsg = String.format("Failed to prepare input files successfully for product %s", productKey);
+			LOGGER.error(errorMsg, t);
+			report.add(ReportType.ERROR, errorMsg);
+		} finally {
+			try {
+				dao.persistInputPrepareReport(product, report);
+			} catch (IOException e) {
+				LOGGER.error("Failed to persist input file preparation report!", e);
+			}
 		}
 		return report;
 	}

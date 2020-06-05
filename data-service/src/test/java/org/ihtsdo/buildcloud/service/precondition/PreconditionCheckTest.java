@@ -71,7 +71,7 @@ public abstract class PreconditionCheckTest {
 		}
 	}
 
-	protected void createNewBuild() {
+	protected void createNewBuild() throws IOException {
 		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, buildIdx++).getTime();
 		build = new Build(creationTime, product);
 
@@ -82,7 +82,7 @@ public abstract class PreconditionCheckTest {
 		buildDAO.copyAll(product, build);
 	}
 
-	protected PreConditionCheckReport runPreConditionCheck(final Class<? extends PreconditionCheck> classUnderTest) throws InstantiationException, IllegalAccessException {
+	protected PreConditionCheckReport runPreConditionCheck(final Class<? extends PreconditionCheck> classUnderTest) throws IOException {
 
 		// Do we need an build? // TODO: remove this - we should always know the state of a test
 		if (build == null) {
@@ -105,7 +105,7 @@ public abstract class PreconditionCheckTest {
 		return testResult;
 	}
 
-	protected void loadManifest(final String filename) throws FileNotFoundException {
+	protected void loadManifest(final String filename) throws IOException {
 		if (filename != null) {
 			final String testFilePath = getClass().getResource(filename).getFile();
 			final File testManifest = new File(testFilePath);

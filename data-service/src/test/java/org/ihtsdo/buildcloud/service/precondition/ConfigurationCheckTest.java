@@ -24,7 +24,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 
 	@Test
-	public void testFirstReleaseConfiguredCorrectly() throws InstantiationException, IllegalAccessException, ParseException {
+	public void testFirstReleaseConfiguredCorrectly() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(true);
 		buildConfiguration.setPreviousPublishedPackage(null);
@@ -38,7 +38,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public void testSubsequentReleaseConfiguredCorrectly() throws InstantiationException, IllegalAccessException, ParseException {
+	public void testSubsequentReleaseConfiguredCorrectly() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(false);
 		buildConfiguration.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
@@ -53,7 +53,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public void testFirstReleaseConfiguredIncorrectly() throws InstantiationException, IllegalAccessException {
+	public void testFirstReleaseConfiguredIncorrectly() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(true);
 		buildConfiguration.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
@@ -64,7 +64,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	
 	@Test
-	public void testSubsequentConfiguredIncorrectly() throws InstantiationException, IllegalAccessException {
+	public void testSubsequentConfiguredIncorrectly() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(false);
 		buildConfiguration.setPreviousPublishedPackage(null);
@@ -77,7 +77,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	
 	@Test
-	public void testMissingEffectiveTime() throws InstantiationException, IllegalAccessException {
+	public void testMissingEffectiveTime() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setEffectiveTime(null);
 		buildConfiguration.setFirstTimeRelease(true);
@@ -90,7 +90,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public void testMissingReadmeHeader() throws InstantiationException, IllegalAccessException {
+	public void testMissingReadmeHeader() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(true);
 		buildConfiguration.setPreviousPublishedPackage(null);
@@ -101,7 +101,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public void testMissingReadmeEndDate() throws InstantiationException, IllegalAccessException {
+	public void testMissingReadmeEndDate() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(true);
 		buildConfiguration.setPreviousPublishedPackage(null);
@@ -112,7 +112,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public void testPreviousPublishedReleaseDateIsNotBeforeCurrentReleaseDate() throws InstantiationException, IllegalAccessException {
+	public void testPreviousPublishedReleaseDateIsNotBeforeCurrentReleaseDate() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(false);
 		buildConfiguration.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JULY);
@@ -125,7 +125,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	
 	@Test
-	public void testInvalidPublishedPackageName() throws InstantiationException, IllegalAccessException {
+	public void testInvalidPublishedPackageName() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(false);
 		buildConfiguration.setPreviousPublishedPackage(INVALID_PUBLISHED_PAKCAGE_NAME);
@@ -138,18 +138,18 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 
 	
 	@Test
-	public void testAllMissingForSubsequentRelease() throws InstantiationException, IllegalAccessException {
+	public void testAllMissingForSubsequentRelease() throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(false);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		Assert.assertEquals(State.FAIL, report.getResult());
 		Assert.assertEquals("Subsequent releases must have a previous published package specified. The copyright end date is not set. No Readme Header detected.",
 				report.getMessage());
 	}
 
 	@Test
-	public void testAllMissingForFirstTimeRelease() throws InstantiationException, IllegalAccessException {
+	public void testAllMissingForFirstTimeRelease()throws Exception {
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		buildConfiguration.setFirstTimeRelease(true);
 
