@@ -21,7 +21,7 @@ public class SourceFileProcessingReport {
 
     private String executionTime;
     private Map<String, List<String>> soureFiles;
-    private SortedMap<ReportType,List<FileProcessingReportDetail>> details;
+    private SortedMap<ReportType, List<FileProcessingReportDetail>> details;
 
     public SourceFileProcessingReport() {
         this.details = new TreeMap<>(new ReportTypeComparator());
@@ -38,7 +38,7 @@ public class SourceFileProcessingReport {
         addReportDetail(detail);
     }
 
-    public void add(ReportType type,  String fileName, String refsetId, String source, String message) {
+    public void add(ReportType type, String fileName, String refsetId, String source, String message) {
         FileProcessingReportDetail detail = new FileProcessingReportDetail(type, fileName, refsetId, source, message);
         addReportDetail(detail);
     }

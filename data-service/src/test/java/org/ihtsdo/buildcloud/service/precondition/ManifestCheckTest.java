@@ -23,21 +23,21 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	}
 
 	@Test
-	public final void checkNoManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkNoManifest() throws Exception {
 		loadManifest(null);
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.FATAL, actualResult);
 	}
 
 	@Test
-	public final void checkValidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkValidManifest() throws Exception {
 		loadManifest("valid_manifest.xml");
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.PASS, actualResult);
 	}
 
 	@Test
-	public final void checkInvalidManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkInvalidManifest() throws Exception {
 		loadManifest("invalid_manifest.xml");
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.FATAL, actualResult);
@@ -45,14 +45,14 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 
 	@Test
 	@Ignore
-	public final void checkNoNamespaceManifest() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkNoNamespaceManifest() throws Exception {
 		loadManifest("no_namespace_otherwise_valid_manifest.xml");
 		final State actualResult = runPreConditionCheck(ManifestCheck.class).getResult();
 		Assert.assertEquals(State.FATAL, actualResult);
 	}
 	
 	@Test
-	public final void checkManifestWithNotMachedDate() throws FileNotFoundException, InstantiationException, IllegalAccessException {
+	public final void checkManifestWithNotMachedDate() throws Exception {
 		loadManifest("august_release_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
 		final State actualResult = report.getResult();
@@ -63,7 +63,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public final void checkFileNameFormatSpecifedInManifest() throws InstantiationException, IllegalAccessException, FileNotFoundException {
+	public final void checkFileNameFormatSpecifedInManifest() throws Exception {
 		loadManifest("containing_invalid_fileName_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
 		final State actualResult = report.getResult();

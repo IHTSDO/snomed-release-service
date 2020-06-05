@@ -112,31 +112,27 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void save(final Build build) throws IOException {
 		// Save config file
-		final String configPath = pathHelper.getBuildConfigFilePath(build);
-		LOGGER.debug("Readme header from build config:"  +  build.getConfiguration().getReadmeHeader());
-		File configJson = null;
-		try {
-			configJson = toJson(build.getConfiguration());
-			s3Client.putObject(buildBucketName, configPath, new FileInputStream(configJson), new ObjectMetadata());
+		LOGGER.debug("Saving build {} for product {}", build.getId(), build.getProduct().getBusinessKey());
+		File configJson = toJson(build.getConfiguration());
+		File qaConfigJson = toJson(build.getQaTestConfig());
+		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
+			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, new ObjectMetadata());
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
 			}
-		}
-		File qaConfigJson = null;
-		try {
-			qaConfigJson = toJson(build.getQaTestConfig());
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), new FileInputStream(qaConfigJson), new ObjectMetadata());
-		} finally {
 			if (qaConfigJson != null) {
 				qaConfigJson.delete();
 			}
 		}
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
+		LOGGER.debug("Saved build {} with {} ", build.getId(), Build.Status.BEFORE_TRIGGER);
 	}
 
-	private File toJson(final Object obj) throws IOException {
+	protected File toJson(final Object obj) throws IOException {
 		final File temp = File.createTempFile("tempJson", ".tmp"); 
 		final JsonFactory jsonFactory = objectMapper.getJsonFactory();
 		try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(temp, JsonEncoding.UTF8)) {
@@ -253,26 +249,27 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void copyAll(final Product productSource, final Build build) {
+	public void copyAll(final Product product, final Build build) throws IOException {
 		// Copy input files
-		final String productInputFilesPath = pathHelper.getProductInputFilesPath(productSource);
+		final String productInputFilesPath = pathHelper.getProductInputFilesPath(product);
 		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
-		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(productSource);
+		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
 		for (final String filePath : filePaths) {
 			buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
 		}
 
 		// Copy manifest file
-		final String manifestPath = productInputFileDAO.getManifestPath(productSource);
+		final String manifestPath = productInputFileDAO.getManifestPath(product);
 		if (manifestPath != null) { // Let the packages with manifests product
 			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
 			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
 		}
 		//copy input-prepare-report.json if exists
-		InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(productSource);
-		if (inputReportStream != null) {
-			buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
+		try (InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(product)) {
+			if (inputReportStream != null) {
+				buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
+			}
 		}
 	}
 
@@ -429,11 +426,10 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public void persistReport(final Build build) {
-		final String reportPath = pathHelper.getReportPath(build);
-		try {
-			// Get the build report as a string we can write to disk/S3 synchronously because it's small
-			final String buildReportJSON = build.getBuildReport().toString();
-			final InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8");
+		String reportPath = pathHelper.getReportPath(build);
+		// Get the build report as a string we can write to disk/S3 synchronously because it's small
+		String buildReportJSON = build.getBuildReport().toString();
+		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
 			buildFileHelper.putFile(is, buildReportJSON.length(), reportPath);
 		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
