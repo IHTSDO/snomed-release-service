@@ -261,7 +261,7 @@ public class BuildServiceImpl implements BuildService {
 					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
 					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
 						isAbandoned = true;
-						updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+						updateStatusWithChecks(build, Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION);
 						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
 								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
 					}
