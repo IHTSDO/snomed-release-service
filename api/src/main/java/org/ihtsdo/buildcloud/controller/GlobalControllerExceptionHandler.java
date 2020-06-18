@@ -18,8 +18,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
-public class
-		GlobalControllerExceptionHandler {
+public class GlobalControllerExceptionHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalControllerExceptionHandler.class);
 

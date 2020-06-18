@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.termserver;
 
-import org.ihtsdo.otf.rest.client.snowowl.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
 
 import java.util.Set;
 

@@ -59,6 +59,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Override
 	public Product find(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
+		System.out.println(SecurityHelper.getRequiredUser().getUsername());
 		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
 	}
 
