@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>2.0.11</version>
+	<version>2.0.12</version>
 	<packaging>pom</packaging>
 	<name>SNOMED CT Release Service</name>
 
@@ -16,7 +16,7 @@
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
-		<otf-common.version>1.4.3</otf-common.version>
+		<otf-common.version>3.2.0</otf-common.version>
 		<snomed-utilities.version>1.2</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
@@ -237,27 +237,28 @@
 
 	<repositories>
 		<repository>
-			<id>ihtsdo-public-nexus</id>
+			<id>ihtsdo-releases</id>
 			<name>IHTSDO Public Nexus Releases</name>
-			<url>https://maven.ihtsdotools.org/content/repositories/releases</url>
+			<url>https://nexus3.ihtsdotools.org/repository/maven-releases/</url>
 		</repository>
 		<repository>
-			<id>ihtsdo-public-nexus-snapshot</id>
+			<id>ihtsdo-snapshots</id>
 			<name>IHTSDO Public Nexus Snapshots</name>
-			<url>https://maven.ihtsdotools.org/content/repositories/snapshots/</url>
+			<url>https://nexus3.ihtsdotools.org/repository/maven-snapshots/</url>
 		</repository>
 	</repositories>
+
 
 	<distributionManagement>
 		<repository>
 			<id>ihtsdo-public-nexus</id>
 			<name>IHTSDO Public Nexus Releases</name>
-			<url>https://maven.ihtsdotools.org/content/repositories/releases/</url>
+			<url>https://nexus3.ihtsdotools.org/repository/maven-releases/</url>
 		</repository>
 		<snapshotRepository>
 			<id>ihtsdo-public-nexus</id>
 			<name>IHTSDO Public Nexus Snapshots</name>
-			<url>https://maven.ihtsdotools.org/content/repositories/snapshots/</url>
+			<url>https://nexus3.ihtsdotools.org/repository/maven-snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
