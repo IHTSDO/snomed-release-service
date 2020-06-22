@@ -5,8 +5,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClientFactory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportConfigurationBuilder;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportType;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClientFactory;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
@@ -34,11 +37,11 @@ import java.util.zip.ZipInputStream;
 @Service
 public class TermServerServiceImpl implements TermServerService{
 
-    @Value("${snowowl.reasonerId}")
+    @Value("${snowstorm.reasonerId}")
     private String reasonerId;
 
-    @Value("${snowowl.path}")
-    private String snowowlPath;
+    @Value("${snowstorm.path}")
+    private String snowstormPath;
 
     private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
 
@@ -47,16 +50,16 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     @Override
-    public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, SnowOwlRestClient.ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
-        String snowOwlUrl = termServerUrl + snowowlPath;
-        logger.info("Start exporting from {}", snowOwlUrl);
-        SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId, true);
-        SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
-        SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
-        Set<String> moduleList = buildModulesList(snowOwlRestClient, branchPath, excludedModuleId);
+    public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
+        String snowstormUrl = termServerUrl + snowstormPath;
+        logger.info("Start exporting from {}", snowstormUrl);
+        SnowstormRestClientFactory clientFactory = new SnowstormRestClientFactory(snowstormUrl, reasonerId);
+        SnowstormRestClient snowstormRestClient = clientFactory.getClient();
+        ExportType exportType = ExportType.DELTA;
+        Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleId);
         ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
-                exportCategory, exportType,snowOwlRestClient);
-        File export = snowOwlRestClient.export(configurationExtensionBuilder);
+                exportCategory, exportType,snowstormRestClient);
+        File export = snowstormRestClient.export(configurationExtensionBuilder);
         try {
             ZipFile zipFile = new ZipFile(export);
             File extractDir = Files.createTempDir();
@@ -122,8 +125,8 @@ public class TermServerServiceImpl implements TermServerService{
 
 
 
-    private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, SnowOwlRestClient.ExportCategory exportCategory,
-                                                                         SnowOwlRestClient.ExportType exportType, SnowOwlRestClient snowOwlRestClient) throws BusinessServiceException {
+    private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, ExportCategory exportCategory,
+                                                                         ExportType exportType, SnowstormRestClient SnowstormRestClient) throws BusinessServiceException {
         ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
         exportConfig.setBranchPath(branchPath);
         exportConfig.setType(exportType);
@@ -132,7 +135,7 @@ public class TermServerServiceImpl implements TermServerService{
             exportConfig.addModuleIds(moduleList);
         }
         try {
-            Branch branch = snowOwlRestClient.getBranch(branchPath);
+            Branch branch = SnowstormRestClient.getBranch(branchPath);
             if(branch == null) {
                 logger.error("Failed to get branch {}", branchPath);
                 throw new BusinessServiceException("Failed to get branch " + branchPath);
@@ -149,7 +152,7 @@ public class TermServerServiceImpl implements TermServerService{
             case UNPUBLISHED:
                 String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
                 exportConfig.setTransientEffectiveTime(tet);
-                exportConfig.setType(SnowOwlRestClient.ExportType.DELTA);
+                exportConfig.setType(ExportType.DELTA);
                 break;
             case PUBLISHED:
                 if(effectiveDate == null) {
@@ -157,7 +160,7 @@ public class TermServerServiceImpl implements TermServerService{
                 }
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
-                exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
+                exportConfig.setType(ExportType.SNAPSHOT);
                 break;
             case FEEDBACK_FIX:
                 if(effectiveDate == null) {
@@ -166,7 +169,7 @@ public class TermServerServiceImpl implements TermServerService{
                 exportConfig.setStartEffectiveTime(effectiveDate);
                 exportConfig.setIncludeUnpublished(true);
                 exportConfig.setTransientEffectiveTime(effectiveDate);
-                exportConfig.setType(SnowOwlRestClient.ExportType.SNAPSHOT);
+                exportConfig.setType(ExportType.SNAPSHOT);
                 break;
                 default:
                     logger.error("Export category {} not recognized", exportCategory);
@@ -176,12 +179,12 @@ public class TermServerServiceImpl implements TermServerService{
         return exportConfig;
     }
 
-    private Set<String> buildModulesList(SnowOwlRestClient snowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
+    private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
         // If any modules are excluded build a list of modules to include
         Set<String> exportModuleIds = null;
         if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
             try {
-                Set<String> allModules = snowOwlRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
+                Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
                 allModules.removeAll(excludedModuleIds);
                 exportModuleIds = new HashSet<>();
                 exportModuleIds.addAll(allModules);
@@ -193,7 +196,7 @@ public class TermServerServiceImpl implements TermServerService{
         return exportModuleIds;
     }
 
-    public static class ExportConfigurationExtensionBuilder extends SnowOwlRestClient.ExportConfigurationBuilder {
+    public static class ExportConfigurationExtensionBuilder extends ExportConfigurationBuilder {
 
         private String codeSystemShortName;
 
