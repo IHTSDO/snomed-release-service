@@ -49,6 +49,7 @@ public class TermServerServiceImpl implements TermServerService{
     @Override
     public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, SnowOwlRestClient.ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
         String snowOwlUrl = termServerUrl + snowowlPath;
+        logger.info("Start exporting from {}", snowOwlUrl);
         SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId, true);
         SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
         SnowOwlRestClient.ExportType exportType = SnowOwlRestClient.ExportType.DELTA;
@@ -67,7 +68,7 @@ public class TermServerServiceImpl implements TermServerService{
             return newZipFile;
         } catch (IOException e) {
             String returnedError = org.apache.commons.io.FileUtils.readFileToString(export);
-            logger.error("Failed export data from term server. Term server returned error: {}", returnedError);
+            logger.error("Failed export data from term server. Term server returned error: {}", returnedError, e);
             throw new BusinessServiceException("Failed export data from term server. Term server returned error:" + returnedError);
         }
 

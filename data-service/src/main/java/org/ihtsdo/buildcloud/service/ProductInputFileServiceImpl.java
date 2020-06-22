@@ -339,10 +339,11 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		dao.persistSourcesGatherReport(product, inputGatherReport);
 		try {
-			if(requestConfig.isLoadTermServerData()) gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
-			if(requestConfig.isLoadExternalRefsetData()) gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
+			if (requestConfig.isLoadTermServerData()) gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
+			if (requestConfig.isLoadExternalRefsetData()) gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
 		} catch (Exception ex) {
+			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
 		}
 		dao.persistSourcesGatherReport(product, inputGatherReport);
