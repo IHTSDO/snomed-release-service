@@ -57,7 +57,7 @@ public class ReleaseCenterController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
 	}
 
-	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ApiOperation( value = "Creates a new Release Center for a logged in user",
 		notes = " Creates a new Release Center and returns the newly created release center." )
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,

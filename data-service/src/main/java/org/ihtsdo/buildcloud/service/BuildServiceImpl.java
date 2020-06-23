@@ -2,20 +2,10 @@ package org.ihtsdo.buildcloud.service;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
-import java.text.DateFormat;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,7 +13,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.text.ParseException;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
@@ -33,22 +25,19 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.log4j.MDC;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Build.Status;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.BuildReport;
-import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.manifest.FileType;
-import org.ihtsdo.buildcloud.manifest.FolderType;
-import org.ihtsdo.buildcloud.manifest.ListingType;
+import org.ihtsdo.buildcloud.manifest.*;
+import org.ihtsdo.buildcloud.releaseinformation.ConceptMini;
+import org.ihtsdo.buildcloud.releaseinformation.ReleasePackageInformation;
+import org.ihtsdo.buildcloud.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.service.build.Zipper;
@@ -57,15 +46,16 @@ import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
 import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
@@ -81,6 +71,7 @@ import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,6 +99,9 @@ public class BuildServiceImpl implements BuildService {
 	private PreconditionManager preconditionManager;
 
 	@Autowired
+	private PostconditionManager postconditionManager;
+
+	@Autowired
 	private ReadmeGenerator readmeGenerator;
 
 	@Autowired
@@ -133,14 +127,19 @@ public class BuildServiceImpl implements BuildService {
 	
 	@Autowired
 	private String buildBucketName;
-
+	
+	@Autowired
+	private DailyBuildResourceConfig dailyBuildResourceConfig;
+	
+	@Autowired
+	private ResourceLoader cloudResourceLoader;
+	
+		
 	@Override
 	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
-		if (product.getBuildConfiguration().getEffectiveTime() == null) {
-			throw new BadConfigurationException("Product effective time must be set before an build is created.");
-		}
+		validateBuildConfig(product.getBuildConfiguration());
 		Build build;
 		try {
 			synchronized (product) {
@@ -155,9 +154,10 @@ public class BuildServiceImpl implements BuildService {
 				// save build with config
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 				dao.save(build);
-				LOGGER.info("Created build.", productKey, build.getId());
+				LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
 				// Copy all files from Product input and manifest directory to Build input and manifest directory
 				dao.copyAll(product, build);
+				LOGGER.info("Input and manifest files are copied to build {}", build.getId());
 			}
 			if (!product.getBuildConfiguration().isJustPackage()) {
 				// Perform Pre-condition testing
@@ -166,18 +166,35 @@ public class BuildServiceImpl implements BuildService {
 					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
 					doInputFileFixup(build);
 				}
-				runPreconditionChecks(build);
-				final Status newStatus = build.getStatus();
+				final Status newStatus = runPreconditionChecks(build);
+				dao.updatePreConditionCheckReport(build);
 				if (newStatus != preStatus) {
 					dao.updateStatus(build, newStatus);
 				}
 			}
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to create build.", e);
+			String msg = "Failed to create build for product " + productKey;
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
 		}
 		return build;
+	}
+
+	private void validateBuildConfig(BuildConfiguration buildConfiguration) throws BadConfigurationException {
+		if (buildConfiguration.getEffectiveTime() == null) {
+			throw new BadConfigurationException("The effective time must be set before a build is created.");
+		}
+		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
+		if (extensionConfig != null) {
+			if (extensionConfig.getModuleId() == null || extensionConfig.getModuleId().isEmpty()) {
+				throw new BadConfigurationException("The module id must be set for an extension build.");
+			}
+			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
+				throw new BadConfigurationException("The namespace must be set for an extension build.");
+			}
+		}
 	}
 
 	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
@@ -185,20 +202,19 @@ public class BuildServiceImpl implements BuildService {
 		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
 		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
 		LOGGER.debug("Performing fixup on input file prior to input file validation");
-		final String buildId = build.getId();
 		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
 		final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
 		if (statedRelationshipInputFile == null) {
 			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
 			return;
 		}
-		final InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
+		InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 		// We can't replace the file while we're reading it, so use a temp file
 		final File tempDir = Files.createTempDir();
 		final File tempFile = new File(tempDir, statedRelationshipInputFile);
 		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
-		
+
 		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
 		// groups.
 
@@ -217,8 +233,8 @@ public class BuildServiceImpl implements BuildService {
 
 	private String getStatedRelationshipInputFile(Build build) {
 		//get a list of input file names
-		final List<String> inputfilesList = dao.listInputFileNames(build);
-		for (final String inputFileName : inputfilesList) { 
+		final List<String> inputFilenames = dao.listInputFileNames(build);
+		for (final String inputFileName : inputFilenames) {
 			if (inputFileName.contains(STATED_RELATIONSHIP)) {
 				return inputFileName;
 			}
@@ -228,66 +244,70 @@ public class BuildServiceImpl implements BuildService {
 
 	@Override
 	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax) throws BusinessServiceException {
-		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
-		try {
-			dao.loadConfiguration(build);
-		} catch (final IOException e) {
-			throw new BusinessServiceException("Failed to load build configuration.", e);
-		}
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
-		TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
-		LOGGER.info("Trigger product", productKey, buildId);
-		boolean isAbandoned = false;
+		Build build;
 		try {
-			//check source file prepare report
-			InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build);
-			if (reportStream != null) {
-				ObjectMapper objectMapper = new ObjectMapper();
-				try {
+			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+			TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
+			try {
+				dao.loadConfiguration(build);
+			} catch (final IOException e) {
+				String msg = String.format("Failed to load configuration for build %s", build.getId());
+				LOGGER.error(msg, e);
+				throw new BusinessServiceException(msg, e);
+			}
+			LOGGER.info("Trigger product", productKey, buildId);
+			boolean isAbandoned = false;
+			try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
+				//check source file prepare report
+				if (reportStream != null) {
+					ObjectMapper objectMapper = new ObjectMapper();
 					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
 					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
 						isAbandoned = true;
-						updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+						updateStatusWithChecks(build, Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION);
 						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
 								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
 					}
-				} catch (IOException e) {
-					updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
-					LOGGER.error("Failed to read source file processing report", e);
-					isAbandoned = true;
+				} else {
+					LOGGER.warn("No source file prepare report found.");
 				}
-			} else {
-				LOGGER.warn("No source file prepare report found.");
+			} catch (IOException e) {
+				updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+				LOGGER.error("Failed to read source file processing report", e);
+				isAbandoned = true;
 			}
-			// Run product
+			// execute build
 			if (!isAbandoned) {
+				Status status = Status.BUILDING;
 				final BuildReport report = build.getBuildReport();
 				String resultStatus = "completed";
 				String resultMessage = "Process completed successfully";
 				try {
-					updateStatusWithChecks(build, Status.BUILDING);
+					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax);
+					status = Status.BUILT;
 				} catch (final Exception e) {
 					resultStatus = "fail";
 					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
 							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
 					LOGGER.error(resultMessage, e);
+					status = Status.FAILED;
 				}
-				if(!dao.isBuildCancelRequested(build)) {
-					report.add("Progress Status", resultStatus);
-					report.add("Message", resultMessage);
-					dao.persistReport(build);
-					updateStatusWithChecks(build, Status.BUILT);
-				} else {
+				if (dao.isBuildCancelRequested(build)) {
 					report.add("Progress Status", "cancelled");
 					report.add("Message", "Build was cancelled");
 					dao.persistReport(build);
 					dao.updateStatus(build, Status.CANCELLED);
 					dao.deleteOutputFiles(build);
 					LOGGER.info("Build has been canceled");
+				} else {
+					report.add("Progress Status", resultStatus);
+					report.add("Message", resultMessage);
+					dao.persistReport(build);
+					updateStatusWithChecks(build, status);
 				}
 			}
-
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			TelemetryStream.finish(LOGGER);
@@ -301,7 +321,6 @@ public class BuildServiceImpl implements BuildService {
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
-
 		return dao.findAllDesc(product);
 	}
 
@@ -385,80 +404,87 @@ public class BuildServiceImpl implements BuildService {
 		return dao.listBuildLogFilePaths(build);
 	}
 
-	private void runPreconditionChecks(final Build build) {
+	private Build.Status runPreconditionChecks(final Build build) {
 	    LOGGER.info("Start of Pre-condition checks");
+	    Build.Status buildStatus = build.getStatus();
 		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(build);
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
 		for (final PreConditionCheckReport report : preConditionReports) {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
-				build.setStatus(Status.FAILED_PRE_CONDITIONS);
+				buildStatus = Status.FAILED_PRE_CONDITIONS;
 				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report.toString(), build.getId());
 				break;
 			}
 		}
 		LOGGER.info("End of Pre-condition checks");
+		return buildStatus;
 	}
 
-	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException {
+	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
 		final BuildConfiguration configuration = build.getConfiguration();
-		if(dao.isBuildCancelRequested(build)) return;
+		if (dao.isBuildCancelRequested(build)) return;
 		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
-			if(dao.isBuildCancelRequested(build)) return;
+			if (dao.isBuildCancelRequested(build)) return;
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
-			if(dao.isBuildCancelRequested(build)) return;
+			if (dao.isBuildCancelRequested(build)) return;
+
 			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
+
+			if (!generator.isInferredRelationshipFileExist(rf2DeltaFilesSpecifiedByManifest(build))) {
+				throw new BusinessServiceException("There is no inferred relationship delta file");
+			}
 			generator.generateReleaseFiles();
-			
+
 			//filter out additional relationships from the transformed delta
-			if(dao.isBuildCancelRequested(build)) return;
+			if (dao.isBuildCancelRequested(build)) return;
 			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
 			if (inferedDelta != null) {
-				 String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
-				 transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
+				String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
+				transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
-			if(dao.isBuildCancelRequested(build)) return;
-			if (configuration.isCreateInferredRelationships()) {
-				if (offlineMode) {
-					LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
-				} else {
-					// Run classifier
-					ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
- 					if(dao.isBuildCancelRequested(build)) return;
-					generator.generateRelationshipFiles(result);
-				}
-			} else {
-				LOGGER.info("Skipping inferred relationship creation due to product configuration.");
-			}
+		}
+		if (dao.isBuildCancelRequested(build)) return;
+		if (!offlineMode) {
+			LOGGER.info("Start classification cross check");
+			List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
+			dao.updatePostConditionCheckReport(build, reports);
 		}
 
-		if(dao.isBuildCancelRequested(build)) return;
+		// Generate release package information
+		if (configuration.getReleaseInformationFields() != null && !configuration.getReleaseInformationFields().isEmpty()) {
+			generateReleasePackageFile(build,configuration.getReleaseInformationFields());
+		}
 		// Generate readme file
 		generateReadmeFile(build);
 
-		if(dao.isBuildCancelRequested(build)) return;
+		if (dao.isBuildCancelRequested(build)) return;
 		File zipPackage = null;
 		try {
 			try {
 				final Zipper zipper = new Zipper(build, dao);
-				zipPackage = zipper.createZipFile();
+				zipPackage = zipper.createZipFile(false);
 				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 				dao.putOutputFile(build, zipPackage, true);
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
+				if (build.getConfiguration().isDailyBuild()) {
+					DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
+					extractor.outputDailyBuildPackage(new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader));
+				}
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
 			}
 
-			if(dao.isBuildCancelRequested(build)) return;
+			if (dao.isBuildCancelRequested(build)) return;
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode || localRvf) {
@@ -484,7 +510,182 @@ public class BuildServiceImpl implements BuildService {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
 	}
-	
+
+	private void generateReleasePackageFile(Build build, String releaseInfoFields) throws BusinessServiceException {
+		String[] fields = releaseInfoFields.split(",");
+		BuildConfiguration buildConfig = build.getConfiguration();
+		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
+		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
+		Map<String, String> preferredTermMap = getPreferredTermMap(build);
+		ReleasePackageInformation release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap, preferredTermMap);
+		try {
+			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
+			final Unmarshaller unmarshaller = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH).createUnmarshaller();
+			final InputStream manifestStream = dao.getManifestStream(build);
+			final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+
+			String releaseFilename = null;
+			if (manifestListing != null) {
+				final FolderType rootFolder = manifestListing.getFolder();
+				if (rootFolder != null) {
+					final List<FileType> files = rootFolder.getFile();
+					for (final FileType file : files) {
+						final String filename = file.getName();
+						if (file.getName().startsWith(RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RELEASE_INFORMATION_FILENAME_EXTENSION)) {
+							releaseFilename = filename;
+							break;
+						}
+					}
+				}
+			} else {
+				LOGGER.warn("Can not generate release package information file, manifest listing is null.");
+			}
+			if (releaseFilename != null) {
+				File releasePackageInfor = null;
+				try {
+					releasePackageInfor =  new File(releaseFilename);
+					ObjectMapper objectMapper = new ObjectMapper();
+					objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+					objectMapper.disable(SerializationConfig.Feature.WRITE_NULL_PROPERTIES);
+					objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
+					dao.putOutputFile(build, releasePackageInfor);
+				} finally {
+					if (releasePackageInfor != null) {
+						releasePackageInfor.delete();
+					}
+				}
+			} else {
+				LOGGER.warn("Can not generate release package file, no file found in manifest root directory starting with '{}' and ending with '{}'",
+						RELEASE_INFORMATION_FILENAME_PREFIX, RELEASE_INFORMATION_FILENAME_EXTENSION);
+			}
+		} catch (IOException | JAXBException e) {
+			throw new BusinessServiceException("Failed to generate release package information file.", e);
+		}
+	}
+
+	private Map<String, String> getPreferredTermMap(Build build) {
+		Map<String, String> result = new HashMap<>();
+		if (build.getConfiguration().getConceptPreferredTerms() != null) {
+			String[] conceptIdAndTerms =  build.getConfiguration().getConceptPreferredTerms().split(",");
+			for (String conceptIdAndTerm : conceptIdAndTerms) {
+				String[] arr = conceptIdAndTerm.split(Pattern.quote("|"));
+				if (arr.length != 0) {
+					result.put(arr[0].trim(), arr[1].trim());
+				}
+			}
+		}
+		return  result;
+	}
+
+	private ReleasePackageInformation buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap, Map<String, String> preferredTermMap) {
+		ReleasePackageInformation release = new ReleasePackageInformation();
+		for (String field : fields) {
+			switch (field) {
+				case "effectiveTime":
+					release.setEffectiveTime(buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
+					break;
+				case "deltaFromDate":
+					Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
+					release.setDeltaFromDate(deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+					break;
+				case "deltaToDate":
+					Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
+					release.setDeltaToDate(deltaToDateInt != null ? deltaToDateInt.toString() : null);
+					break;
+				case "includedModules":
+					String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
+					if (extensionModule != null) {
+						List<ConceptMini> list = new ArrayList<>();
+						for (String moduleId : extensionModule.split(",")) {
+							ConceptMini conceptMini = new ConceptMini();
+							String moudleId = String.valueOf(moduleId).trim();
+							conceptMini.setId(moudleId);
+							conceptMini.setTerm(preferredTermMap.containsKey(moudleId) ? preferredTermMap.get(moudleId) : "");
+							list.add(conceptMini);
+						}
+						release.setIncludedModules(list);
+					}
+					break;
+				case "languageRefsets":
+					List<ConceptMini> list = new ArrayList<>();
+					for (RefsetType refsetType : languagesRefsets) {
+						ConceptMini conceptMini = new ConceptMini();
+						String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+						conceptMini.setId(languageRefsetId);
+						conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
+						list.add(conceptMini);
+					}
+					release.setLanguageRefsets(list);
+					break;
+				case "licenceStatement":
+					release.setLicenceStatement(buildConfig.getLicenceStatement());
+					break;
+			}
+		}
+
+		return release;
+	}
+
+	private List<RefsetType> getLanguageRefsets(Build build) {
+		List<RefsetType> languagesRefsets = new ArrayList<>();
+		try (InputStream manifestInputSteam = dao.getManifestStream(build)) {
+			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			final ListingType listingType = parser.parse(manifestInputSteam);
+			FolderType folderType = listingType.getFolder();
+			List<FolderType>  folderTypes = folderType.getFolder();
+			for (FolderType subFolderType1 : folderTypes) {
+				if (subFolderType1.getName().equalsIgnoreCase(DELTA)) {
+					for (FolderType subFolderType2 : subFolderType1.getFolder()) {
+						if (subFolderType2.getName().equalsIgnoreCase(REFSET)) {
+							for (FolderType subFolderType3 : subFolderType2.getFolder()) {
+								if (subFolderType3.getName().equalsIgnoreCase(LANGUAGE)) {
+									List<FileType> fileTypes = subFolderType3.getFile();
+									for (FileType fileType : fileTypes) {
+										ContainsReferenceSetsType refset = fileType.getContainsReferenceSets();
+										for (RefsetType refsetType : refset.getRefset()) {
+											languagesRefsets.add(refsetType);
+										}
+									}
+									break;
+								}
+							}
+							break;
+						}
+					}
+					break;
+				}
+			}
+		} catch (ResourceNotFoundException | JAXBException | IOException e) {
+			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
+		}
+
+		return languagesRefsets;
+	}
+
+	private Map<String, Integer> getDeltaFromAndToDate(Build build) {
+		Map<String, Integer> result = new HashMap<>();
+		BuildConfiguration configuration = build.getConfiguration();
+		String previousReleaseDateStr = null;
+		if (configuration.getPreviousPublishedPackage() != null && !configuration.getPreviousPublishedPackage().isEmpty()) {
+			String[] tokens = build.getConfiguration().getPreviousPublishedPackage().split(RF2Constants.FILE_NAME_SEPARATOR);
+			if (tokens.length > 0) {
+				previousReleaseDateStr = tokens[tokens.length - 1].replace(RF2Constants.ZIP_FILE_EXTENSION, "");
+				try {
+					Date preReleasedDate = RF2Constants.DATE_FORMAT.parse(previousReleaseDateStr);
+					previousReleaseDateStr = RF2Constants.DATE_FORMAT.format(preReleasedDate); // make sure the date in format yyyyMMdd
+				} catch (ParseException e) {
+					LOGGER.error("Expecting release date format in package file name to be yyyyMMdd");
+					previousReleaseDateStr = null;
+				}
+			}
+		}
+
+		result.put("deltaFromDate", previousReleaseDateStr != null ? Integer.valueOf(previousReleaseDateStr) : null);
+		result.put("deltaToDate", Integer.valueOf(RF2Constants.DATE_FORMAT.format(configuration.getEffectiveTime())));
+
+		return result;
+	}
+
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 * 
 	 * @param build
@@ -607,7 +808,7 @@ public class BuildServiceImpl implements BuildService {
 			boolean releaseAsAnEdition = false;
 			String includedModuleId = null;
 			ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
-			if(extensionConfig != null) {
+			if (extensionConfig != null) {
 				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
 				includedModuleId = extensionConfig.getModuleId();
 
@@ -634,7 +835,11 @@ public class BuildServiceImpl implements BuildService {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
 			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
-				throw new ConfigurationException("No extention dependency release is configured for extension testing.");
+				if (buildConfig.getExtensionConfig().isReleaseAsAnEdition()) {
+					LOGGER.warn("This edition does not have dependency release. Empty dependency release will be used for testing");
+				} else {
+					throw new ConfigurationException("No extention dependency release is configured for extension testing.");
+				}
 			}
 			
 			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
@@ -764,7 +969,6 @@ public class BuildServiceImpl implements BuildService {
 		return dao.getBuildInputFilesPrepareReportStream(build);
 	}
 
-
 	@Override
 	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
@@ -780,4 +984,27 @@ public class BuildServiceImpl implements BuildService {
 		return dao.getBuildInputGatherReportStream(build);
 	}
 
+	@Override
+	public InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPreConditionCheckReportStream(build);
+	}
+
+	@Override
+	public InputStream getPostConditionChecksReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getPostConditionCheckReportStream(build);
+	}
+
+	@Override
+	public List<String> getClassificationResultOutputFilePaths(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.listClassificationResultOutputFileNames(build);
+	}
+
+	@Override
+	public InputStream getClassificationResultOutputFile(String releaseCenterKey, String productKey, String buildId, String inputFilePath) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getClassificationResultOutputFileStream(build, inputFilePath);
+	}
 }

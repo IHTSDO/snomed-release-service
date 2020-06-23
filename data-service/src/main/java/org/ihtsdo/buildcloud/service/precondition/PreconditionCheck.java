@@ -36,6 +36,11 @@ public abstract class PreconditionCheck {
 		responseMessage = error;
 	}
 
+	protected void notRun(String msg) {
+		state = State.NOT_RUN;
+		responseMessage = msg;
+	}
+
 	public State getState() {
 		return state;
 	}

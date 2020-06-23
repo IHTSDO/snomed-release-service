@@ -26,6 +26,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void checkInputFilesNotExisting() throws Exception {
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		loadManifest("valid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
@@ -38,6 +40,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesNotMatchingManifest() throws Exception {
 		addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140731.txt");
+        addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		loadManifest("valid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
@@ -50,6 +54,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesMatchingManifest() throws Exception {
 		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140831.txt");
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		loadManifest("august_release_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
@@ -62,6 +68,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_TextDefinition_Delta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
@@ -86,8 +93,6 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
-		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt.";
-		assertEquals(expectedMsg, report.getMessage());
 	}
 	
 	
@@ -102,6 +107,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesNotMatchingBetaManifest() throws Exception {
 		product.getBuildConfiguration().setBetaRelease(true);
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		loadManifest("valid_manifest_betaRelease.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
@@ -113,6 +120,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesMatchedBetaManifest() throws Exception {
 		product.getBuildConfiguration().setBetaRelease(true);
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140731.txt");
 		loadManifest("valid_manifest_betaRelease.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
@@ -136,12 +145,12 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingStatedRelationshipWhenClassifierIsActive() throws Exception {
-		product.getBuildConfiguration().setCreateInferredRelationships(true);
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_TextDefinition_Delta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
 		loadManifest("valid_core_manifest.xml");
@@ -149,10 +158,27 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt."
-				+ " The create inferred relationship flag is active but no stated relationship file is found in the input file directory.";
+				+ " No stated relationship file is found in the input file directory.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
-	
+
+	@Test
+	public void testMissingRelationshipWhenClassifierIsActive() throws Exception {
+		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_TextDefinition_Delta-en_INT_20140731.txt");
+		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
+		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
+		loadManifest("valid_core_manifest.xml");
+		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
+		final State actualResult = report.getResult();
+		assertEquals(State.FAIL, actualResult);
+		final String expectedMsg = "No relationship file is found in the input file directory.";
+		assertEquals(expectedMsg, report.getMessage());
+	}
 	
 	@Test
 	public void testManifestFailedToBeParsed() throws Exception {

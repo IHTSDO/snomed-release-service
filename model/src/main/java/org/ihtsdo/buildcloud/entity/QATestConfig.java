@@ -140,12 +140,14 @@ public class QATestConfig {
 				+ droolsRulesGroupNames + ", previousInternationalRelease="
 				+ previousInternationalRelease + ", previousExtensionRelease="
 				+ previousExtensionRelease + ", extensionDependencyRelease="
-				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
-				+ ", enableDrools=" + enableDrools + ", jiraIssueCreationFlag=" + jiraIssueCreationFlag
-				+ ", product_name=" + productName + ", reporting_stage=" + reportingStage
-				+ ", enableMRCMValidation=" + enableMRCMValidation +"]";
+				+ extensionDependencyRelease + ", storageLocation="
+				+ storageLocation + ", enableDrools="
+				+ enableDrools + ", jiraIssueCreationFlag="
+				+ jiraIssueCreationFlag + ", product_name="
+				+ productName + ", reporting_stage="
+				+ reportingStage + ", enableMRCMValidation="
+				+ enableMRCMValidation +"]";
 	}
-
 
 	public String getStorageLocation() {
 		return storageLocation;

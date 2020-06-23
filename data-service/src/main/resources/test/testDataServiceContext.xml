@@ -3,7 +3,6 @@
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
 	<import resource="../dataServiceBeanContext.xml"/>
-
 	<bean class="org.ihtsdo.buildcloud.test.TestUtils"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>

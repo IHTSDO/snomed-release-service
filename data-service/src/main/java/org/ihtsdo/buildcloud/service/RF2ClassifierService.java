@@ -59,7 +59,7 @@ public class RF2ClassifierService {
 	 */
 	public ClassificationResult classify(final Build build, final Map<String, TableSchema> inputFileSchemaMap) throws BusinessServiceException {
 		BuildConfiguration config = build.getConfiguration();
-		RF2Classifier rf2Classifier = getRF2Classifier(config);
+		RF2Classifier rf2Classifier = externalRF2Classifier;
 		ClassificationInputInfo classifierFiles = rf2Classifier.constructClassificationInputInfo(inputFileSchemaMap);
 		if (!classifierFiles.isSufficientToClassify()) {
 			throw new BusinessServiceException("Classification can't be run due to stated relationship and concept files are missing");
@@ -78,7 +78,7 @@ public class RF2ClassifierService {
 			Map<String, String> conceptToModuleIdMap = null;
 			Map<String, String> changedConceptToModuleIdMap = null;
 			//only required for international release
-			if (config.useExternalClassifier() && config.getExtensionConfig() == null) {
+			if (config.getExtensionConfig() == null) {
 				String conceptSnapshot = classifierFiles.getConceptFileNames().get(0).replace(DELTA, SNAPSHOT);
 				if (!conceptSnapshot.startsWith(BETA_RELEASE_PREFIX) && config.isBetaRelease()) {
 					conceptSnapshot = BETA_RELEASE_PREFIX + conceptSnapshot;
@@ -100,8 +100,7 @@ public class RF2ClassifierService {
 			String inferredFilename = getInferredFilename(classifierFiles, build.getConfiguration());
 			transformationService.transformInferredRelationshipFile(build, new FileInputStream(classifierResultOutputFile), 
 					inferredFilename, uuidToSctidMap, conceptToModuleIdMap);
-			boolean isSnapshot = config.useExternalClassifier() ? false : true;
-			ClassificationResult classificationResult = new ClassificationResult(inferredFilename, isSnapshot);
+			ClassificationResult classificationResult = new ClassificationResult(inferredFilename, false);
 			
 			if (changedConceptToModuleIdMap != null && !changedConceptToModuleIdMap.isEmpty()) {
 				InputStream inferredDeltaStream = buildDAO.getTransformedFileAsInputStream(build, inferredFilename);
@@ -124,13 +123,6 @@ public class RF2ClassifierService {
 		}
 	}
 	
-	private RF2Classifier getRF2Classifier(BuildConfiguration configuration) throws BusinessServiceException {
-		if (!configuration.useExternalClassifier()) {
-			throw new BusinessServiceException("The internal classifier has now been removed. Please use the external classifier.");
-		}
-		return externalRF2Classifier;
-	}
-
 	private InputStream getPreviousInferredSnapshotInputStream(Build build, String inferredDeltaFilename) throws IOException, BusinessServiceException {
 		String inferredSnapshot = inferredDeltaFilename.replace(DELTA, SNAPSHOT);
 		if (build.getConfiguration().isBetaRelease()) {
@@ -169,8 +161,7 @@ public class RF2ClassifierService {
 			stated = BETA_RELEASE_PREFIX + stated;
 		}
 		String inferred = stated.replace(ComponentType.STATED_RELATIONSHIP.toString(), ComponentType.RELATIONSHIP.toString());
-		inferred = config.useExternalClassifier() ? inferred.replace(SNAPSHOT, DELTA) : inferred;
-		return inferred;
+		return inferred.replace(SNAPSHOT, DELTA);
 	}
 	
 	public void uploadLog(final Build build, final File logFile, final String targetFilename) throws ProcessingException {

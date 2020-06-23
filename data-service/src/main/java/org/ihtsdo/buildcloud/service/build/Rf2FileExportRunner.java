@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.Build;
@@ -58,7 +59,7 @@ public class Rf2FileExportRunner {
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
 		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(TXT_FILE_EXTENSION) || thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+			if (!thisFile.endsWith(TXT_FILE_EXTENSION)) {
 				continue;
 			}
 			int failureCount = 0;
@@ -81,7 +82,30 @@ public class Rf2FileExportRunner {
 			}
 		}
 	}
-	
+
+	public boolean isInferredRelationshipFileExist(final List<String> rf2DeltaFilesSpecifiedByManifest) throws ReleaseFileGenerationException{
+		boolean isRelationshipDeltaFileSpecifiedInManifest = false;
+		for (String thisFile : rf2DeltaFilesSpecifiedByManifest) {
+			if (thisFile.endsWith(TXT_FILE_EXTENSION) && thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+				isRelationshipDeltaFileSpecifiedInManifest = true;
+				break;
+			}
+		}
+		// if the relationship delta is not required in manifest, then skip this check
+		if (!isRelationshipDeltaFileSpecifiedInManifest) {
+			return true;
+		}
+
+		final List<String> transformedFiles = getTransformedDeltaFiles();
+		for ( String thisFile : transformedFiles) {
+			if (thisFile.endsWith(TXT_FILE_EXTENSION) && thisFile.startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
+				return  true;
+			}
+		}
+
+		return  false;
+	}
+
 	private void generateReleaseFile(final String transformedDeltaDataFile, final Map<String, List<Integer>> customRefsetCompositeKeys,
 			final boolean fileFirstTimeRelease, final Set<String> includedFilesInNewFile) throws ReleaseFileGenerationException {
 
@@ -104,12 +128,17 @@ public class Rf2FileExportRunner {
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 			//add the international delta for extension edition release.
 			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaseAsAnEdition()) {
-				InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),transformedDeltaDataFile);
-				if (intDeltaInputStream != null) {
-					rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
+				if (!StringUtils.isBlank(configuration.getExtensionConfig().getDependencyRelease())) {
+					InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),transformedDeltaDataFile);
+					if (intDeltaInputStream != null) {
+						rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
+					} else {
+						LOGGER.info("No equivalent file found in the international release for delta file:" + transformedDeltaDataFile);
+					}
 				} else {
-					LOGGER.info("No equivalent file found in the international release for delta file:" + transformedDeltaDataFile);
+					LOGGER.warn("No equivalent file in International Dependency package will be loaded for this Edition release as it is not configured");
 				}
+
 			}
 			//Replace Delta_ to Snapshot_ add file name separator due to some extension refsets have the word "delta" as part of the refset name
 
@@ -269,22 +298,27 @@ public class Rf2FileExportRunner {
 			tableSchema =  rf2TableDAO.createTable(deltaFilename, deltaInputStream, false);
 			//add the international delta for extension edition release.
 			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaseAsAnEdition()) {
-				InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),deltaFilename);
-				if (intDeltaInputStream != null) {
-					try {
-						rf2TableDAO.appendData(tableSchema, intDeltaInputStream, false);
-						RF2TableResults combinedResults = rf2TableDAO.selectAllOrdered(tableSchema);
-						try (AsyncPipedStreamBean deltaOutputStream = buildDao.getOutputFileOutputStream(build, deltaFilename)) {
-							rf2FileWriter.exportDelta(combinedResults, tableSchema, deltaOutputStream.getOutputStream());
-						} catch (IOException | SQLException e) {
-							throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
-						} 
-					} catch (BadConfigurationException | DatabasePopulatorException e) {
-						throw new ReleaseFileGenerationException("Failed to append the international inferred delta when generating:" + deltaFilename, e);
+				if (!StringUtils.isBlank(configuration.getExtensionConfig().getDependencyRelease())) {
+					InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(),deltaFilename);
+					if (intDeltaInputStream != null) {
+						try {
+							rf2TableDAO.appendData(tableSchema, intDeltaInputStream, false);
+							RF2TableResults combinedResults = rf2TableDAO.selectAllOrdered(tableSchema);
+							try (AsyncPipedStreamBean deltaOutputStream = buildDao.getOutputFileOutputStream(build, deltaFilename)) {
+								rf2FileWriter.exportDelta(combinedResults, tableSchema, deltaOutputStream.getOutputStream());
+							} catch (IOException | SQLException e) {
+								throw new ReleaseFileGenerationException("Failed to export " + deltaFilename, e);
+							}
+						} catch (BadConfigurationException | DatabasePopulatorException e) {
+							throw new ReleaseFileGenerationException("Failed to append the international inferred delta when generating:" + deltaFilename, e);
+						}
+					} else {
+						LOGGER.info("No equivalent file found in the international release for delta file:" + deltaFilename);
 					}
 				} else {
-					LOGGER.info("No equivalent file found in the international release for delta file:" + deltaFilename);
+					LOGGER.warn("No equivalent file in International Dependency package will be loaded for this Edition release as it is not configured");
 				}
+
 			}
 		} catch (BadConfigurationException | IOException| FileRecognitionException | DatabasePopulatorException e) {
 			throw new ReleaseFileGenerationException("Failed to create table from " + deltaFilename, e);

@@ -35,7 +35,7 @@ public class Build {
 	private QATestConfig qaTestConfig;
 
 	public static enum Status {
-		BEFORE_TRIGGER, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN, CANCEL_REQUESTED, CANCELLED
+		BEFORE_TRIGGER, FAILED_INPUT_PREPARE_REPORT_VALIDATION, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN, CANCEL_REQUESTED, CANCELLED, FAILED
 	}
 
 	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {

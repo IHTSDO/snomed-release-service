@@ -59,7 +59,11 @@ public class ExternalRF2Classifier extends RF2Classifier{
 		if (extensionConfig != null) {
 			dependencyRelease = extensionConfig.getDependencyRelease();
 			if (dependencyRelease == null || dependencyRelease.isEmpty()) {
-				throw new BusinessServiceException("International dependency release can't be null for extension release build.");
+				if (extensionConfig.isReleaseAsAnEdition()) {
+					logger.warn("The product is configured as an edition without dependency package. Only previous package {} will be used in classification", previousPublished);
+				} else {
+					throw new BusinessServiceException("International dependency release can't be null for extension release build.");
+				}
 			}
 		}
 		File rf2DeltaZipFile = createRf2DeltaArchiveForClassifier(build, classifierFiles, resultDir);

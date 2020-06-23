@@ -20,6 +20,8 @@
 		<snomed-utilities.version>1.2</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
+		<activemq.version>5.15.9 </activemq.version>
+		<spring-cloud.version>1.2.2.RELEASE</spring-cloud.version>
 	</properties>
 
 	<modules>
@@ -216,13 +218,13 @@
 				</configuration>
 			</plugin>
 			<plugin>
-  				<groupId>org.apache.maven.plugins</groupId>
-  				<artifactId>maven-javadoc-plugin</artifactId>
-  				<version>3.0.0</version>
-  				<configuration>
-       				<doclint>none</doclint>
-    			</configuration>
- 		 	</plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+				<doclint>none</doclint>
+		</configuration>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>

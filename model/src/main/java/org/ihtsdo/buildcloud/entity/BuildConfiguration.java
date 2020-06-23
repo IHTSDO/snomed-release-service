@@ -1,8 +1,9 @@
 package org.ihtsdo.buildcloud.entity;
 
+import java.text.Normalizer;
 import java.text.ParseException;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,10 +79,6 @@ public class BuildConfiguration {
 	private boolean inputFilesFixesRequired = false;
 	
 	@Type(type="yes_no")
-	@Column(name="create_inferred_relationships")
-	private boolean createInferredRelationships = false;
-	
-	@Type(type="yes_no")
 	@Column(name="create_legacy_ids")
 	private boolean createLegacyIds = false;
 
@@ -92,14 +89,30 @@ public class BuildConfiguration {
 	@OneToOne (mappedBy="buildConfiguration", cascade=CascadeType.ALL)
 	private ExtensionConfig extensionConfig;
 	
-	@Type(type="yes_no")
-	@Column(name="use_external_classifier")
-	private boolean useExternalClassifier = false;
-
 	@Column(name = "include_prev_release_files")
 	private String includePrevReleaseFiles;
 	
-	
+	@Type(type="yes_no")
+	@Column(name = "daily_build")
+	private boolean dailyBuild;
+
+	@Type(type="yes_no")
+	@Column(name = "classify_output_files")
+	private boolean classifyOutputFiles;
+
+	@Column(name="licence_statement")
+	private String licenceStatement;
+
+	@Column(name="release_information_fields")
+	private String releaseInformationFields;
+
+	@Type(type="yes_no")
+	@Column(name = "use_classifier_precondition_checks")
+	private boolean useClassifierPreConditionChecks;
+
+	@Column(name="concept_preferred_terms")
+	private String conceptPreferredTerms;
+
 	public BuildConfiguration() {
 	}
 
@@ -162,7 +175,12 @@ public class BuildConfiguration {
 	public Set<String> getNewRF2InputFileSet() {
 		final Set<String> files = new HashSet<String>();
 		if (newRF2InputFiles != null) {
-			Collections.addAll(files, newRF2InputFiles.split("\\|"));
+			for (String newInputile :newRF2InputFiles.split("\\|")) {
+				if (!Normalizer.isNormalized(newInputile, Form.NFC)) {
+					newInputile = Normalizer.normalize(newInputile, Form.NFC);
+				}
+				files.add(newInputile);
+			}
 		}
 		return files;
 	}
@@ -177,6 +195,9 @@ public class BuildConfiguration {
 				String[] mapFiles = configuration.substring(configuration.indexOf("(")+1,configuration.indexOf(")")).split(",");
 				Set<String> filesList = new HashSet<>();
 				for (String mapFile : mapFiles) {
+					if (!Normalizer.isNormalized(mapFile, Form.NFC)) {
+						mapFile = Normalizer.normalize(mapFile, Form.NFC);
+					}
 					filesList.add(mapFile.trim());
 				}
 				fileMaps.put(key.trim(), filesList);
@@ -241,14 +262,6 @@ public class BuildConfiguration {
 		this.previousPublishedPackage = previousPublishedPackage;
 	}
 
-	public boolean isCreateInferredRelationships() {
-		return createInferredRelationships;
-	}
-
-	public void setCreateInferredRelationships(final boolean createInferredRelationships) {
-		this.createInferredRelationships = createInferredRelationships;
-	}
-
 	public boolean isCreateLegacyIds() {
 		return createLegacyIds;
 	}
@@ -281,6 +294,50 @@ public class BuildConfiguration {
 		this.extensionConfig = extensionConfig;
 	}
 
+	public boolean isClassifyOutputFiles() {
+		return classifyOutputFiles;
+	}
+
+	public void setClassifyOutputFiles(boolean classifyOutputFiles) {
+		this.classifyOutputFiles = classifyOutputFiles;
+	}
+
+	public String getLicenceStatement() {
+		return licenceStatement;
+	}
+
+	public void setLicenceStatement(String licenceStatement) {
+		this.licenceStatement = licenceStatement;
+	}
+
+	public String getReleaseInformationFields() {
+		return releaseInformationFields;
+	}
+
+	public void setReleaseInformationFields(String releaseInformationFields) {
+		this.releaseInformationFields = releaseInformationFields;
+	}
+
+	public boolean useClassifierPreConditionChecks() {
+		return useClassifierPreConditionChecks;
+	}
+
+	public boolean isUseClassifierPreConditionChecks() {
+		return useClassifierPreConditionChecks;
+	}
+
+	public void setUseClassifierPreConditionChecks(boolean useClassifierPreConditionChecks) {
+		this.useClassifierPreConditionChecks = useClassifierPreConditionChecks;
+	}
+
+	public String getConceptPreferredTerms() {
+		return conceptPreferredTerms;
+	}
+
+	public void setConceptPreferredTerms(String conceptPreferredTerms) {
+		this.conceptPreferredTerms = conceptPreferredTerms;
+	}
+
 	@Override
 	public String toString() {
 		return "BuildConfiguration [id=" + id + ", effectiveTime="
@@ -291,12 +348,12 @@ public class BuildConfiguration {
 				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
 				+ justPackage + ", workbenchDataFixesRequired="
 				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
-				+ inputFilesFixesRequired + ", createInferredRelationships="
-				+ createInferredRelationships + ", createLegacyIds="
-				+ createLegacyIds + ", useExternalClassifier="
-				+  useExternalClassifier + ", includePrevReleaseFiles="
-				+ includePrevReleaseFiles + "]";
-	}	
+				+ inputFilesFixesRequired + ", createLegacyIds="
+				+ createLegacyIds + ", includePrevReleaseFiles="
+				+ includePrevReleaseFiles + ", useClassifierPreConditionChecks="
+				+ useClassifierPreConditionChecks + ", classifyOutputFiles="
+				+ classifyOutputFiles + "]";
+	}
 
 	@Embeddable
 	public static class RefsetCompositeKey {
@@ -355,23 +412,15 @@ public class BuildConfiguration {
 		this.inputFilesFixesRequired = inputFilesFixesRequired;
 	}
 
-	public boolean useExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	
-	public boolean getUseExternalClassifier() {
-		return this.useExternalClassifier;
-	}
-	public void setUseExternalClassifier(final boolean useExternalClassifier) {
-		this.useExternalClassifier = useExternalClassifier;
-		
-	}
-
 	public String getIncludePrevReleaseFiles() {
 		return includePrevReleaseFiles;
 	}
 
 	public void setIncludePrevReleaseFiles(String includePrevReleaseFiles) {
 		this.includePrevReleaseFiles = includePrevReleaseFiles;
+	}
+
+	public boolean isDailyBuild() {
+		return dailyBuild;
 	}
 }

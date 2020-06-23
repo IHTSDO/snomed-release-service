@@ -101,7 +101,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			publishService.publishBuild(build, true, releaseCenterName, productKey);
+			publishService.publishBuild(build, true, null);
 		} catch (EntityAlreadyExistsException eaee) {
 			expectedExceptionThrown = true;
 		}
@@ -116,7 +116,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			@Override
 			public void run() {
 				try {
-					service.publishBuild(build, true, releaseCenterName, productKey);
+					service.publishBuild(build, true, null);
 					LOGGER.info("Publishing complete in thread " +threadName );
 				} catch (Exception e) {
 					if (expectedExceptionClass == null) {

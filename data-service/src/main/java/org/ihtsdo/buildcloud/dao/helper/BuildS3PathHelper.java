@@ -11,6 +11,7 @@ public class BuildS3PathHelper {
 	private static final String STATUS_PREFIX = "status:";
 	private static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
+	private static final String CLASSIFICATION_RESULT_OUTPUT_FILES = "classification-result-output-files";
 	private static final String BUILD_FILES = "product-files";
 	private static final String SOURCES_FILES = "sources";
 	private static final String MANIFEST = "manifest";
@@ -23,6 +24,8 @@ public class BuildS3PathHelper {
 	private static final String INPUT_GATHER_REPORT_DIR = "input-gather-report";
 	private static final String INPUT_GATHER_REPORT_JSON = "input-gather-report.json";
 	private static final String BUILD_RELEASE_LOG_JSON = "full-log.json";
+	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
+	private static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -150,5 +153,19 @@ public class BuildS3PathHelper {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(LOG).append(SEPARATOR).append(BUILD_RELEASE_LOG_JSON).toString();
 	}
 
+	public String getBuildPreConditionCheckReportPath(Build build) {
+		return getBuildPath(build).append(PRE_CONDITION_CHECKS_REPORT).toString();
+	}
 
+	public String getPostConditionCheckReportPath(Build build) {
+		return getBuildPath(build).append(POST_CONDITION_CHECKS_REPORT).toString();
+	}
+
+	public StringBuilder getClassificationResultOutputFilePath(Build build) {
+		return getBuildPath(build.getProduct(), build.getId()).append(CLASSIFICATION_RESULT_OUTPUT_FILES).append(SEPARATOR);
+	}
+
+	public String getClassificationResultOutputPath(final Build build, final String relativeFilePath) {
+		return getClassificationResultOutputFilePath(build).append(relativeFilePath).toString();
+	}
 }

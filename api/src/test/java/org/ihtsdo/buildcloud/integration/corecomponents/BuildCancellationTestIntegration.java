@@ -7,8 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.zip.ZipFile;
-
 public class BuildCancellationTestIntegration extends AbstractControllerTest{
 
     private static final String INTERNATIONAL_RELEASE = "SnomedCT_Release_INT_";
@@ -33,7 +31,6 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
 
         // Perform first time release
         integrationTestHelper.setFirstTimeRelease(true);
-        integrationTestHelper.setCreateInferredRelationships(true);
         integrationTestHelper.setCreateLegacyIds(true);
         final String effectiveTime1 = "20140131";
         integrationTestHelper.setEffectiveTime(effectiveTime1);
