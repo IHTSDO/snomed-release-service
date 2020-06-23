@@ -10,11 +10,6 @@
 	<artifactId>telemetry</artifactId>
 
 	<name>Telemetry</name>
-
-	<properties>
-		<activemq.version>5.10.0</activemq.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.commons</groupId>

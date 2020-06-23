@@ -43,12 +43,11 @@ public interface BuildDAO {
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
 
-	void copyAll(Product productSource, Build build);
+	void copyAll(Product productSource, Build build) throws IOException;
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
-	String putOutputFile(Build build, File file, boolean calcMD5)
-			throws IOException;
+	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
 	String putOutputFile(Build build, File file)
 			throws IOException;
@@ -100,4 +99,19 @@ public interface BuildDAO {
 	void deleteOutputFiles(Build build);
 
 	InputStream getBuildInputGatherReportStream(Build build);
+	boolean isDerivativeProduct(Build build);
+
+	void updatePreConditionCheckReport(Build build) throws IOException;
+
+	void updatePostConditionCheckReport(Build build, Object object) throws IOException;
+
+	InputStream getPreConditionCheckReportStream(Build build);
+
+    InputStream getPostConditionCheckReportStream(Build build);
+
+	List<String> listClassificationResultOutputFileNames(Build build);
+
+	String putClassificationResultOutputFile(Build build, File file) throws IOException;
+
+	InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath);
 }

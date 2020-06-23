@@ -54,6 +54,23 @@
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl">
 		<property name="buildBucketName" ref="buildBucketName"/>
 	</bean>
+	
+	<bean id = "dailyBuildResourceConfig" class = "org.ihtsdo.buildcloud.config.DailyBuildResourceConfig">
+		<property name="readonly" value = "${srs.dailybuild.storage.readonly}" />
+		<property name="useCloud"  value = "${srs.dailybuild.storage.useCloud}"/>
+		<property name = "local"> 
+			<bean class = "org.ihtsdo.otf.resourcemanager.ResourceConfiguration.Local">
+				<property name="path" value = "${srs.dailybuild.storage.local.path}"/>
+			</bean>
+		</property>
+		<property name = "cloud"> 
+			<bean class = "org.ihtsdo.otf.resourcemanager.ResourceConfiguration.Cloud">
+				<property name="bucketName" value = "${srs.dailybuild.storage.cloud.bucketName}"/>
+				<property name="path" value = "${srs.dailybuild.storage.cloud.path}"/>
+			</bean>
+		</property>
+	</bean>
+	
 	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
 	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
 
@@ -191,9 +208,18 @@
 				<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
 				<bean class="org.ihtsdo.buildcloud.service.precondition.InputFilesExistenceCheck"/>
 				<bean class="org.ihtsdo.buildcloud.service.precondition.RF2FilesCheck"/>
+				<bean class="org.ihtsdo.buildcloud.service.precondition.TermServerClassificationResultsCheck"/>
 			</list>
 		</property>
 		<property name="offlineMode" value="${offlineMode}"/>
+	</bean>
+
+	<bean class="org.ihtsdo.buildcloud.service.postcondition.PostconditionManager">
+		<property name="postconditionChecks">
+			<list>
+				<bean class="org.ihtsdo.buildcloud.service.postcondition.TermServerClassificationResultsOutputCheck"/>
+			</list>
+		</property>
 	</bean>
 
 	<bean id="releaseValidationFrameworkUrl" class="java.lang.String" >

@@ -1,15 +1,12 @@
 package org.ihtsdo.buildcloud.controller;
 
 import com.wordnik.swagger.annotations.ApiParam;
-import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +18,11 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.amazonaws.services.elasticbeanstalk.model.transform.SolutionStackDescriptionStaxUnmarshaller;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
@@ -38,7 +33,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
@@ -147,6 +141,7 @@ public class InputFileController {
 			final HttpServletResponse response) throws ResourceNotFoundException {
 
 		try (InputStream fileStream = productInputFileService.getFileInputStream(releaseCenterKey, productKey, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
@@ -182,13 +177,18 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable String source,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
-		String inputFileName = file.getOriginalFilename();
-		LOGGER.debug("uploading source file:" + inputFileName);
-		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
-			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+		if (file != null) {
+			String inputFileName = file.getOriginalFilename();
+			LOGGER.debug("uploading source file:" + inputFileName);
+			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
+				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
+			}
+			try (InputStream inputStream = file.getInputStream()) {
+				productInputFileService.putSourceFile(source, releaseCenterKey, productKey, inputStream, inputFileName,file.getSize());
+			}
+			return new ResponseEntity<>(HttpStatus.CREATED);
 		}
-		productInputFileService.putSourceFile(source, releaseCenterKey, productKey, file.getInputStream(),inputFileName,file.getSize());
-		return new ResponseEntity<>(HttpStatus.CREATED);
+		throw new IllegalArgumentException("No input source file specified.");
 	}
 
 	@RequestMapping(value = "/sourcefiles", method = RequestMethod.GET)
@@ -232,8 +232,9 @@ public class InputFileController {
 			notes = "Deletes the specified file, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-												  @PathVariable final String source) throws IOException, ResourceNotFoundException {
+												  @PathVariable final String source) throws ResourceNotFoundException {
 		productInputFileService.deleteSourceFile(releaseCenterKey, productKey, null, source);
+		LOGGER.info("Deleted source files {} for product {}", source, productKey);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
@@ -242,8 +243,9 @@ public class InputFileController {
 			notes = "Deletes the files with specified pattern in specified sources, if found. "
 					+ "Returns HTTP 404 if the file is not found for the package specified in the URL" )
 	public ResponseEntity<Object> deleteSourceFileByPattern(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-															@RequestParam(required = false) final Set<String> sources, @RequestParam final String pattern) throws IOException, ResourceNotFoundException {
+															@RequestParam(required = false) final Set<String> sources, @RequestParam final String pattern) throws ResourceNotFoundException {
 		productInputFileService.deleteSourceFilesByPattern(releaseCenterKey, productKey, pattern, sources);
+		LOGGER.info("Deleted source files by pattern {} for product {}", pattern, productKey);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
@@ -252,7 +254,8 @@ public class InputFileController {
 			notes = "Create or replace files in input file directories")
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
-												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException, DecoderException, JAXBException, NoSuchAlgorithmException, IOException {
+												   @RequestParam(required = false) final Boolean copyFilesInManifest)throws BusinessServiceException {
+		// try avoid to throw exceptions so that build status
 		SourceFileProcessingReport report = productInputFileService.prepareInputFiles(releaseCenterKey, productKey, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
@@ -315,7 +318,4 @@ public class InputFileController {
 			e.printStackTrace();
 		}
 	}
-
-
-
 }

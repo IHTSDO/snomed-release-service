@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="20200511" author="QLY">
+      <addColumn tableName="build_config">
+         <column name="use_classifier_precondition_checks" type="CHAR(1)" defaultValue="N"/>
+      </addColumn>
+
+      <dropColumn tableName="build_config">
+         <column name="use_external_classifier" type="CHAR(1)"/>
+         <column name="create_inferred_relationships" type="CHAR(1)"/>
+      </dropColumn>
+   </changeSet>
+</databaseChangeLog>

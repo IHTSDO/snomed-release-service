@@ -26,6 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -81,7 +86,7 @@ public class ZipperTest {
 	public void testZipper() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
 
 		Zipper zipper = new Zipper(build, buildDAO);
-		File zipFile = zipper.createZipFile();
+		File zipFile = zipper.createZipFile(false);
 
 		Assert.assertNotNull(zipFile);
 		Assert.assertTrue(zipFile.exists());
@@ -90,13 +95,47 @@ public class ZipperTest {
 		for (String key : zipContents.keySet()) {
 			System.out.println(key + "," + zipContents.get(key));
 		}
-		Assert.assertEquals("Expecting 11 directories + 1 file = 12 items in zipped file", 12, zipContents.size());
+		assertEquals("Expecting 11 directories + 1 file = 12 items in zipped file", 12, zipContents.size());
 
 		//And lets make sure our test file is in there.
-		Assert.assertTrue(zipContents.containsValue(FilenameUtils
+		assertTrue(zipContents.containsValue(FilenameUtils
 				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140831.txt")));
+		
+		assertTrue(zipContents.containsValue(FilenameUtils
+				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Snapshot/Refset/")));
 
+		assertTrue(zipContents.containsValue(FilenameUtils
+				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Full/Refset/")));
+		
 		LOGGER.info("Created Test Zip Archive: {}", zipFile.getAbsolutePath());
 	}
 
+	
+	@Test
+	public void testZipperDeltaOnly() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
+
+		Zipper zipper = new Zipper(build, buildDAO);
+		File zipFile = zipper.createZipFile(true);
+
+		assertNotNull(zipFile);
+		assertTrue(zipFile.exists());
+
+		Map<String, String> zipContents = FileUtils.examineZipContents(zipFile.getName(), new FileInputStream(zipFile));
+		for (String key : zipContents.keySet()) {
+			System.out.println(key + "," + zipContents.get(key));
+		}
+		assertEquals("Expecting 5 directories + 1 file = 6 items in zipped file", 6, zipContents.size());
+
+		//And lets make sure our test file is in there.
+		assertTrue(zipContents.containsValue(FilenameUtils
+				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140831.txt")));
+
+		assertFalse(zipContents.containsValue(FilenameUtils
+				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Snapshot/Refset/")));
+
+		assertFalse(zipContents.containsValue(FilenameUtils
+				.separatorsToSystem("SnomedCT_Release_INT_20140831/RF2Release/Snapshot/Refset/")));
+		
+		LOGGER.info("Created Test Zip Archive: {}", zipFile.getAbsolutePath());
+	}
 }

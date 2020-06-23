@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.service.NetworkRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,11 @@ public class PreconditionManager {
 	public List<PreConditionCheckReport> runPreconditionChecks(final Build build) {
 		List<PreConditionCheckReport> checkReports = new ArrayList<>();
 		for (PreconditionCheck thisCheck : preconditionChecks) {
-			if (onlineMode || !RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) || localRvf) {
+			if (onlineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())
+					|| (RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) && localRvf)) {
+				if (thisCheck instanceof TermServerClassificationResultsCheck && !build.getConfiguration().useClassifierPreConditionChecks() ) {
+					continue;
+				}
 				thisCheck.runCheck(build);
 				checkReports.add(thisCheck.getReport());
 			} else {

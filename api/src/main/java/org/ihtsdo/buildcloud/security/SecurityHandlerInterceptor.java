@@ -25,11 +25,10 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 		SecurityHelper.clearUser();
-
 		final String authHeader = request.getHeader("Authorization");
 		//For a file upload we're sending the auth token in a hidden input element
 		final String authParameter = request.getParameter(AUTH_TOKEN_NAME);
-
+		
 		String pathInfo = request.getPathInfo();
 		String requestMethod = request.getMethod();
 		LOGGER.debug("pathInfo: '{}' from {}", pathInfo, request.getRemoteAddr());
@@ -49,10 +48,14 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 			if (index > 0) {
 				String credsString = new String(DatatypeConverter.parseBase64Binary(authHeader.substring(index)));
 				String[] credentials = credsString.split(":");
-
-				if (credentials.length > 0) {
+				if (credentials.length == 1) {
 					String authenticationToken = credentials[0];
 					validUser = authenticationService.getAuthenticatedSubject(authenticationToken);
+				} else if (credentials.length == 2) {
+					String token = authenticationService.authenticate(credentials[0], credentials[1]);
+					if (token != null) {
+						validUser = authenticationService.getAuthenticatedSubject(token);
+					}
 				}
 			}
 		}

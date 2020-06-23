@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
@@ -45,6 +46,7 @@ import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -66,6 +68,12 @@ public class PublishServiceImpl implements PublishService {
 	private final FileHelper publishedFileHelper;
 
 	private final String publishedBucketName;
+
+	@Value("${snomedInternationalBucket}")
+	private String snomedInternationalBucket;
+
+	@Value("${versionedContent.path}")
+	private String versionedContentPath;
 
 	@Autowired
 	private BuildS3PathHelper buildS3PathHelper;
@@ -116,7 +124,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishBuild(final Build build, boolean publishComponentIds, String releaseCenterKey, String productKey) throws BusinessServiceException {
+	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		try {
 			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
@@ -158,6 +166,8 @@ public class PublishServiceImpl implements PublishService {
 					buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
 					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
 					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+
+					copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
 				}
 				// copy MD5 file if available
 				if (md5FileName != null) {
@@ -170,18 +180,25 @@ public class PublishServiceImpl implements PublishService {
 				//copy build info to published bucket
 				backupPublishedBuild(build,publishedBucketName);
 				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
-
-				//mark this as previous published package for future builds
-				//markAsPreviousPublishedPackage(build, releaseCenterKey, productKey);
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
-		}/* catch (JAXBException e) {
-			throw new BusinessServiceException("Failed to mark this package as previous published package for future builds {}", e);
-		}*/ finally {
+		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
 
+	}
+
+	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) {
+		try {
+			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
+			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
+			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
+			outputPathBuilder.append(releaseFileName);
+			buildFileHelper.copyFile(releaseFileFullPath, snomedInternationalBucket, outputPathBuilder.toString());
+		} catch (Exception e) {
+			LOGGER.error("Failed to copy release file to versioned contents repository because of error: {}", e);
+		}
 	}
 
 	private void backupPublishedBuild(Build build, String publishedBucketName) {

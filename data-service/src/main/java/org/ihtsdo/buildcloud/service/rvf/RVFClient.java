@@ -213,10 +213,8 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(CREATE_JIRA_ISSUE, Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
-		String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
-		if ( previousIntRelease != null && !previousIntRelease.isEmpty() ) {
-			multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
-		}
+		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
+
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
 				multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
@@ -225,6 +223,19 @@ public class RVFClient implements Closeable {
 				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
 			}
 		}
+		else if (StringUtils.isBlank(extensionDependencyRelease) && request.isReleaseAsAnEdition()) {
+			String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
+			if (previousExtensionRelease != null && !previousExtensionRelease.isEmpty()) {
+				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
+			}
+		}
+		else {
+			String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
+			if (previousIntRelease != null && !previousIntRelease.isEmpty() ) {
+				multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
+			}
+		}
+		
 		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );
 		Integer failureExportMax = request.getFailureExportMax();
 		if (failureExportMax != null && failureExportMax.intValue() != 0) {

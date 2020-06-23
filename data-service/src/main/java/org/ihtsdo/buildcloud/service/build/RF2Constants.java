@@ -23,6 +23,8 @@ public class RF2Constants {
 	public static final String SCT2 = "sct2";
 	public static final String README_FILENAME_PREFIX = "Readme";
 	public static final String README_FILENAME_EXTENSION = ".txt";
+	public static final String RELEASE_INFORMATION_FILENAME_PREFIX = "release";
+	public static final String RELEASE_INFORMATION_FILENAME_EXTENSION = ".json";
 	public static final String ZIP_FILE_EXTENSION = ".zip";
 	public static final String BOOLEAN_TRUE = "1";
 	public static final String BOOLEAN_FALSE = "0";
@@ -53,6 +55,10 @@ public class RF2Constants {
 	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 	public static final String INT = "INT";
 	public static final String ADDITIONAL_TXT = "_additional.txt";
+	public static final String SNOMEDCT = "SNOMEDCT";
+	public static final String 	DAILY_BUILD_TIME_FORMAT = "yyyy-MM-dd-HHmmss";
+	public static final String REFSET = "Refset";
+	public static final String LANGUAGE = "Language";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED

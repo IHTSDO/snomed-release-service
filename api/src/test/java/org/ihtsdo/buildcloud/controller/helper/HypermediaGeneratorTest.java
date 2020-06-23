@@ -64,7 +64,7 @@ public class HypermediaGeneratorTest {
 		final List<Product> products = new ArrayList<>();
 		products.add(product);
 
-		final String expected = FileCopyUtils.copyToString(new InputStreamReader(getClass().getResourceAsStream("expected-product-listing.json"), RF2Constants.UTF_8));
+		String expected = FileCopyUtils.copyToString(new InputStreamReader(getClass().getResourceAsStream("expected-product-listing.json"), RF2Constants.UTF_8));
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_international_edition/products")).anyTimes();
 		mocksControl.replay();
 
@@ -72,8 +72,9 @@ public class HypermediaGeneratorTest {
 
 		mocksControl.verify();
 		Assert.assertNotNull(hypermedia);
-		final String actual = toString(hypermedia);
-//		System.out.println(actual);
+		String actual = toString(hypermedia);
+		expected = expected.replaceAll("\r\n", "/n");
+		actual = actual.replaceAll("/r/n","/n");
 		Assert.assertEquals(expected, actual);
 	}
 

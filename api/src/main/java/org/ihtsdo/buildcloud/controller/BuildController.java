@@ -52,7 +52,7 @@ public class BuildController {
 	@Autowired
 	private PublishService publishService;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport","outputfiles","buildReport","logs","buildLogs"};
+	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
 	@RequestMapping( method = RequestMethod.POST )
 	@ApiOperation( value = "Create a build",
@@ -189,6 +189,7 @@ public class BuildController {
 			@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		try (InputStream outputFileStream = buildService.getInputFile(releaseCenterKey, productKey, buildId, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -213,6 +214,7 @@ public class BuildController {
 			@PathVariable final String outputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
 		try (InputStream outputFileStream = buildService.getOutputFile(releaseCenterKey, productKey, buildId, outputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
 			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
@@ -232,11 +234,11 @@ public class BuildController {
 	@ApiOperation( value = "Publish a release for given build id",
 	notes = "Publish release for given build id to make it available in repository for wider usages" )
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId) throws BusinessServiceException {
+			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		publishService.publishBuild(build, true, releaseCenterKey, productKey);
+		publishService.publishBuild(build, true, environment);
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
@@ -275,6 +277,60 @@ public class BuildController {
 		try (InputStream outputFileStream = buildService.getLogFile(releaseCenterKey, productKey, buildId, logFileName)) {
 			// This will blow up with 404 if the file isn't found. HTTP HEAD demands that no body is returned, so nothing to do here
 			logger.debug("HTTP 200 response to head request for {}/{}/{}", productKey, buildId, logFileName);
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/preConditionCheckReports", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves Pre-Condition Check Report",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public void getPreConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	                                  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getPreConditionChecksReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/postConditionCheckReports", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves Post-Condition Check Report",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public void getPostConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											@PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getPostConditionChecksReport(releaseCenterKey, productKey, buildId)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No input file prepare report json file found for build: " + productKey + "/" + buildId + "/");
+			}
+		}
+	}
+
+	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Retrieves classification results for output files",
+			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	public List<Map<String, Object>> getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											 @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+		final List<String> relativeFilePaths = buildService.getClassificationResultOutputFilePaths(releaseCenterKey, productKey, buildId);
+		return convertFileListToEntities(request, relativeFilePaths);
+	}
+
+	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@ApiOperation( value = "Download a specific file",
+			notes = "Download a specific file content for given release center, product key, build id and given file name combination" )
+	public void getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
+									@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
+
+		try (InputStream outputFileStream = buildService.getClassificationResultOutputFile(releaseCenterKey, productKey, buildId, inputFileName)) {
+			response.setContentType("text/plain; charset=utf-8");
+			StreamUtils.copy(outputFileStream, response.getOutputStream());
 		}
 	}
 

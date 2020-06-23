@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.dao;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -8,6 +9,9 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
@@ -75,7 +79,6 @@ public class BuildDAOImplTest {
 
 	@Test
 	public void testSave() throws IOException {
-
 		final Capture<String> configPathCapture = new Capture<>();
 		final Capture<InputStream> configJsonStreamCapture = new Capture<>();
 		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(configPathCapture), EasyMock.capture(configJsonStreamCapture), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
@@ -91,26 +94,30 @@ public class BuildDAOImplTest {
 		mocksControl.verify();
 
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/configuration.json", configPathCapture.getValue());
-		final String configJson = TestUtils.readStream(configJsonStreamCapture.getValue());
+		String configJson = TestUtils.readStream(new FileInputStream(buildDAO.toJson(build.getConfiguration())));
 		Assert.assertEquals("{" +
-			"\"readmeHeader\":null," +
-			"\"readmeEndDate\":null," +
-			"\"firstTimeRelease\":false," +
-			"\"betaRelease\":false," +
-			"\"previousPublishedPackage\":null," +
-			"\"newRF2InputFiles\":null," +
-			"\"justPackage\":false," +
-			"\"workbenchDataFixesRequired\":false," +
-			"\"inputFilesFixesRequired\":false," +
-			"\"createInferredRelationships\":false," +
-			"\"createLegacyIds\":false," +
-			"\"extensionConfig\":null," +
-			"\"useExternalClassifier\":false," +
-			"\"includePrevReleaseFiles\":null," +
-			"\"customRefsetCompositeKeys\":{}," +
-			"\"effectiveTime\":null" +
+				"\"readmeHeader\":null," +
+				"\"readmeEndDate\":null," +
+				"\"firstTimeRelease\":false," +
+				"\"betaRelease\":false," +
+				"\"previousPublishedPackage\":null," +
+				"\"newRF2InputFiles\":null," +
+				"\"justPackage\":false," +
+				"\"workbenchDataFixesRequired\":false," +
+				"\"inputFilesFixesRequired\":false," +
+				"\"createLegacyIds\":false," +
+				"\"extensionConfig\":null," +
+				"\"includePrevReleaseFiles\":null," +
+				"\"dailyBuild\":false," +
+				"\"classifyOutputFiles\":false," +
+				"\"licenceStatement\":null," +
+				"\"releaseInformationFields\":null," +
+				"\"useClassifierPreConditionChecks\":false," +
+				"\"conceptPreferredTerms\":null," +
+				"\"customRefsetCompositeKeys\":{}," +
+				"\"effectiveTime\":null" +
 				"}", configJson);
-		
+
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/qa-test-config.json", qaConfigPathCapture.getValue());
 		Assert.assertEquals("international/" + product.getBusinessKey() + "/2014-02-04T10:30:01/status:BEFORE_TRIGGER", statusPathCapture.getValue());
 	}

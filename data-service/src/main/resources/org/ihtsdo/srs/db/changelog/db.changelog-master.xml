@@ -19,4 +19,11 @@
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-10.0.xml"/>
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-10.1.xml"/>
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-11.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-11.1.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-12.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-13.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-14.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-14.1.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-15.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-15.1.xml"/>
 </databaseChangeLog>

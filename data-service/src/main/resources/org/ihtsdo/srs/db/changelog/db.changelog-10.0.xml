@@ -10,7 +10,6 @@
       <comment>Add parameters to QAConfig</comment>
       <addColumn tableName="qa_config">
          <column name="create_jira_issue" type="CHAR(1)" defaultValue="N"/>
-         <column name="enable_mrcm_validation" type="CHAR(1)" defaultValue="N"/>
          <column name="product_name" type="varchar(255)"/>
          <column name="reporting_stage" type="varchar(255)"/>
       </addColumn>

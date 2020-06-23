@@ -210,7 +210,6 @@ public class RF2ClassifierServiceTestHarness {
 		configuration.setCreateLegacyIds(false);
 		configuration.setEffectiveTime(releaseDate);
 		configuration.setFirstTimeRelease(false);
-		configuration.setUseExternalClassifier(useExternalClassifier);
 		configuration.setPreviousPublishedPackage(previousPublished.getName());
 		build.setConfiguration(configuration);
 		return build;
@@ -243,7 +242,6 @@ public class RF2ClassifierServiceTestHarness {
 		configuration.setExtensionConfig(extensionConfig);
 		configuration.setFirstTimeRelease(false);
 		configuration.setPreviousPublishedPackage(previousPublished.getName());
-		configuration.setUseExternalClassifier(useExternalClassifier);
 		build.setConfiguration(configuration);
 		return build;
 	}

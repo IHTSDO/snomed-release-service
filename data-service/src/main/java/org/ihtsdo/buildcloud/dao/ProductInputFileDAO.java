@@ -13,7 +13,7 @@ public interface ProductInputFileDAO {
 
 	InputStream getManifestStream(Product product);
 
-	public List<String> listRelativeInputFilePaths(Product product);
+	List<String> listRelativeInputFilePaths(Product product);
 
 	String getManifestPath(Product product);
 
