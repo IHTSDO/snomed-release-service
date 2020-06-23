@@ -11,7 +11,7 @@ import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.junit.Assert;
@@ -76,7 +76,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException, ProcessWorkflowException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         FileInputStream fileInputStream = new FileInputStream(testArchive);
@@ -93,7 +93,7 @@ public class ProductInputFileGatheringTest {
 
     @Test
     public void testGetTermServerExportFailed() throws BusinessServiceException, IOException, ProcessWorkflowException {
-        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
+        when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
         InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
