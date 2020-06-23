@@ -5,11 +5,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportConfigurationBuilder;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportType;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClientFactory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportCategory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportConfigurationBuilder;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportType;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClientFactory;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
@@ -53,13 +53,13 @@ public class TermServerServiceImpl implements TermServerService{
     public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleId, ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
         String snowstormUrl = termServerUrl + snowstormPath;
         logger.info("Start exporting from {}", snowstormUrl);
-        SnowstormRestClientFactory clientFactory = new SnowstormRestClientFactory(snowstormUrl, reasonerId);
-        SnowstormRestClient snowstormRestClient = clientFactory.getClient();
+        SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowstormUrl, reasonerId, true);
+        SnowOwlRestClient SnowOwlRestClient = clientFactory.getClient();
         ExportType exportType = ExportType.DELTA;
-        Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleId);
+        Set<String> moduleList = buildModulesList(SnowOwlRestClient, branchPath, excludedModuleId);
         ExportConfigurationExtensionBuilder configurationExtensionBuilder = buildExportConfiguration(branchPath,effectiveDate,moduleList,
-                exportCategory, exportType,snowstormRestClient);
-        File export = snowstormRestClient.export(configurationExtensionBuilder);
+                exportCategory, exportType,SnowOwlRestClient);
+        File export = SnowOwlRestClient.export(configurationExtensionBuilder);
         try {
             ZipFile zipFile = new ZipFile(export);
             File extractDir = Files.createTempDir();
@@ -126,7 +126,7 @@ public class TermServerServiceImpl implements TermServerService{
 
 
     private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, ExportCategory exportCategory,
-                                                                         ExportType exportType, SnowstormRestClient SnowstormRestClient) throws BusinessServiceException {
+                                                                         ExportType exportType, SnowOwlRestClient SnowOwlRestClient) throws BusinessServiceException {
         ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
         exportConfig.setBranchPath(branchPath);
         exportConfig.setType(exportType);
@@ -135,7 +135,7 @@ public class TermServerServiceImpl implements TermServerService{
             exportConfig.addModuleIds(moduleList);
         }
         try {
-            Branch branch = SnowstormRestClient.getBranch(branchPath);
+            Branch branch = SnowOwlRestClient.getBranch(branchPath);
             if(branch == null) {
                 logger.error("Failed to get branch {}", branchPath);
                 throw new BusinessServiceException("Failed to get branch " + branchPath);
@@ -179,12 +179,12 @@ public class TermServerServiceImpl implements TermServerService{
         return exportConfig;
     }
 
-    private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
+    private Set<String> buildModulesList(SnowOwlRestClient SnowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
         // If any modules are excluded build a list of modules to include
         Set<String> exportModuleIds = null;
         if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
             try {
-                Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
+                Set<String> allModules = SnowOwlRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
                 allModules.removeAll(excludedModuleIds);
                 exportModuleIds = new HashSet<>();
                 exportModuleIds.addAll(allModules);

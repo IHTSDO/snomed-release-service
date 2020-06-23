@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.termserver;
 
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
 
 import java.util.Set;
 
@@ -9,7 +9,7 @@ public class GatherInputRequestPojo {
 	private String trackerId;
 	private String termServerUrl;
 	private String effectiveDate;
-	private SnowstormRestClient.ExportCategory exportCategory;
+	private SnowOwlRestClient.ExportCategory exportCategory;
 	private String branchPath;
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
@@ -39,11 +39,11 @@ public class GatherInputRequestPojo {
 		this.effectiveDate = effectiveDate;
 	}
 
-	public SnowstormRestClient.ExportCategory getExportCategory() {
+	public SnowOwlRestClient.ExportCategory getExportCategory() {
 		return exportCategory;
 	}
 
-	public void setExportCategory(SnowstormRestClient.ExportCategory exportCategory) {
+	public void setExportCategory(SnowOwlRestClient.ExportCategory exportCategory) {
 		this.exportCategory = exportCategory;
 	}
 
