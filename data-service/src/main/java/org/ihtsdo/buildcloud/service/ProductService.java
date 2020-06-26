@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -46,7 +45,7 @@ public interface ProductService extends EntityService<Product> {
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
-	
+
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 
 	Product find(String releaseCenterKey, String productKey) throws BusinessServiceException;

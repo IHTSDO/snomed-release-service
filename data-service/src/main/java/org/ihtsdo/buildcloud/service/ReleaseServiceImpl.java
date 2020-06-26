@@ -40,7 +40,9 @@ import java.util.List;
 @Service
 public class ReleaseServiceImpl implements ReleaseService{
 
-    private  static final String TRACKER_ID = "trackerId";
+    private static final String TRACKER_ID = "trackerId";
+
+    private static final String PATTERN_ALL_FILES = "*.*";
 
     @Autowired
     ProductInputFileService productInputFileService;
@@ -77,15 +79,15 @@ public class ReleaseServiceImpl implements ReleaseService{
         final User anonymousSubject = authenticationService.getAnonymousSubject();
         SecurityHelper.setUser(anonymousSubject);
         try {
-             product = productService.find(releaseCenter, productKey);
-            if(product == null) {
-                LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
-                throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
-            }
             //Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
             if(messagingTemplate != null) {
                 MDC.put(TRACKER_ID, trackerId);
                 addWebSocketAppenderToLogger(trackerId, messagingTemplate);
+            }
+            product = productService.find(releaseCenter, productKey);
+            if(product == null) {
+                LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
+                throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
             }
             //Gather all files in term server and externally maintain buckets if specified to source directories
             InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, productKey, gatherInputRequestPojo);
@@ -100,6 +102,7 @@ public class ReleaseServiceImpl implements ReleaseService{
                 }
             }
             //After gathering all sources, start to transform and put them into input directories
+            productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
             SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
             if(sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
                 LOGGER.error("Error occurred when processing input files");
@@ -112,7 +115,8 @@ public class ReleaseServiceImpl implements ReleaseService{
             //Create and trigger new build
             build = buildService.createBuildFromProduct(releaseCenter, productKey);
             LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
-            buildService.triggerBuild(releaseCenter, productKey, build.getId(), 10);
+            Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+            buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
             LOGGER.info("Build process ends", build.getStatus().name());
         } catch (Exception e) {
             LOGGER.error("Encounter error while creating package. Build process stopped. Details: {}", e.getMessage());

@@ -72,7 +72,7 @@ public class ReleaseCenterController {
 		return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@RequestMapping(value = "/{releaseCenterBusinessKey}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ApiOperation( value = "Updates a release center details",
 		notes = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed.   "
 				+ "Note that the short name is used in the formation of the ‘business key'" )

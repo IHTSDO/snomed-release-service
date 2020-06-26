@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.controller;
 
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.User;
+import org.ihtsdo.buildcloud.security.AuthenticationUtils;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -30,18 +31,15 @@ public class UserController {
 		notes = "Returns the currently logged in user " )
 	@ResponseBody
 	public Map<String, Object> getCurrentUser(HttpServletRequest request) {
-		User authenticatedUser = SecurityHelper.getRequiredUser();
-		Map<String, Object> userRepresentation = getUserRepresentation(authenticatedUser);
+		Map<String, Object> userRepresentation = getUserRepresentation();
 		boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(userRepresentation, currentResource, request);
 	}
 
-	private Map<String, Object> getUserRepresentation(User user) {
+	private Map<String, Object> getUserRepresentation() {
 		Map<String, Object> representation = new HashMap<>();
-		String username = user.getUsername();
+		String username = AuthenticationUtils.getCurrentUserName();
 		representation.put("username", username);
-		boolean authenticated = !username.equals(User.ANONYMOUS_USER);
-		representation.put("authenticated", authenticated);
 		return representation;
 	}
 

@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.TermServerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
@@ -70,8 +69,9 @@ public class ProductInputFileGatheringTest {
         String failedExportFile = getClass().getResource(FAILED_EXPORT_DATA_ZIP).getFile();
         testArchive = new File(testFile);
         failedExportArchive = new File(failedExportFile);
-        when(productDAO.find(Matchers.anyString(), Matchers.anyString(), Matchers.any(User.class))).thenReturn(new Product());
+        when(productDAO.find(Matchers.anyString(), Matchers.anyString())).thenReturn(new Product());
         doNothing().when(productInputFileService).putSourceFile(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.any(InputStream.class), Matchers.anyString(), Matchers.anyLong());
+        doNothing().when(productInputFileService).deleteSourceFile(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString());
     }
 
     @Test
@@ -79,6 +79,7 @@ public class ProductInputFileGatheringTest {
         when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), Matchers.any(SnowOwlRestClient.ExportCategory.class))).thenReturn(testArchive);
         GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
         requestPojo.setLoadTermServerData(true);
+        requestPojo.setLoadExternalRefsetData(false);
         FileInputStream fileInputStream = new FileInputStream(testArchive);
         InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
                 ("centerkey", "productkey", requestPojo);

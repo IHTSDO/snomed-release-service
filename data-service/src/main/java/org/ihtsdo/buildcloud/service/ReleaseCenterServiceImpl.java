@@ -32,12 +32,12 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 
 	@Override
 	public List<ReleaseCenter> findAll() {
-		return dao.findAll(SecurityHelper.getRequiredUser());
+		return dao.findAll();
 	}
 
 	@Override
 	public ReleaseCenter find(String businessKey) throws ResourceNotFoundException {
-		ReleaseCenter releaseCenter = dao.find(businessKey, SecurityHelper.getRequiredUser());
+		ReleaseCenter releaseCenter = dao.find(businessKey);
 		if (releaseCenter != null) {
 			return releaseCenter;
 		} else {
@@ -51,7 +51,7 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 
 		//Check that we don't already have one of these
 		String releaseCenterBusinessKey = EntityHelper.formatAsBusinessKey(shortName);
-		ReleaseCenter existingRC = dao.find(releaseCenterBusinessKey, user);
+		ReleaseCenter existingRC = dao.find(releaseCenterBusinessKey);
 		if (existingRC != null) {
 			throw new EntityAlreadyExistsException(name + " already exists.");
 		}
