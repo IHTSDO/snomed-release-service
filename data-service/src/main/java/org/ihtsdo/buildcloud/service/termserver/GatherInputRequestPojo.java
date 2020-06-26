@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.termserver;
 
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
+
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportCategory;
 
 import java.util.Set;
 
@@ -9,17 +10,14 @@ public class GatherInputRequestPojo {
 	private String trackerId;
 	private String termServerUrl;
 	private String effectiveDate;
-	private SnowOwlRestClient.ExportCategory exportCategory;
+	private ExportCategory exportCategory;
 	private String branchPath;
-	private boolean loadTermServerData;
-	private boolean loadExternalRefsetData;
+	private boolean loadTermServerData = true;
+	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
-	/*private String namespaceId;
-	private String startEffectiveDate;
-	private String endEffectiveDate;
-	private boolean includeUnpublished = false;
-	private String codeSystemShortName;*/
-
+	private boolean useSnowOwl;
+	private Integer maxFailuresExport;
+	
 	public GatherInputRequestPojo() {
 	}
 
@@ -39,11 +37,11 @@ public class GatherInputRequestPojo {
 		this.effectiveDate = effectiveDate;
 	}
 
-	public SnowOwlRestClient.ExportCategory getExportCategory() {
+	public ExportCategory getExportCategory() {
 		return exportCategory;
 	}
 
-	public void setExportCategory(SnowOwlRestClient.ExportCategory exportCategory) {
+	public void setExportCategory(ExportCategory exportCategory) {
 		this.exportCategory = exportCategory;
 	}
 
@@ -87,61 +85,34 @@ public class GatherInputRequestPojo {
 		this.trackerId = trackerId;
 	}
 
-	/*public String getNamespaceId() {
-		return namespaceId;
+	public boolean getUseSnowOwl() {
+		return useSnowOwl;
 	}
 
-	public void setNamespaceId(String namespaceId) {
-		this.namespaceId = namespaceId;
+	public void setUseSnowOwl(boolean useSnowOwl) {
+		this.useSnowOwl = useSnowOwl;
 	}
 
-	public boolean isIncludeUnpublished() {
-		return includeUnpublished;
+	public Integer getMaxFailuresExport() {
+		return maxFailuresExport;
 	}
 
-	public void setIncludeUnpublished(boolean includeUnpublished) {
-		this.includeUnpublished = includeUnpublished;
+	public void setMaxFailuresExport(Integer maxFailuresExport) {
+		this.maxFailuresExport = maxFailuresExport;
 	}
-
-
-	public String getStartEffectiveDate() {
-		return startEffectiveDate;
-	}
-
-	public void setStartEffectiveDate(String startEffectiveDate) {
-		this.startEffectiveDate = startEffectiveDate;
-	}
-
-	public String getEndEffectiveDate() {
-		return endEffectiveDate;
-	}
-
-	public void setEndEffectiveDate(String endEffectiveDate) {
-		this.endEffectiveDate = endEffectiveDate;
-	}
-
-	public String getCodeSystemShortName() {
-		return codeSystemShortName;
-	}
-
-	public void setCodeSystemShortName(String codeSystemShortName) {
-		this.codeSystemShortName = codeSystemShortName;
-	}*/
 
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
 				", termServerUrl='" + termServerUrl + '\''+
 				", effectiveDate='" + effectiveDate + '\'' +
-				/*", startEffectiveDate='" + startEffectiveDate + '\'' +
-				", EndEffectiveDate='" + endEffectiveDate + '\'' +*/
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
-				/*", namespaceId=" + namespaceId +
-				", includeUnpublished=" + includeUnpublished +*/
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
+				", useSnowOwl=" + useSnowOwl +
+				", maxFailuresExport=" + maxFailuresExport +
 				'}';
 	}
 

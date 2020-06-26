@@ -99,6 +99,7 @@ public interface BuildDAO {
 	void deleteOutputFiles(Build build);
 
 	InputStream getBuildInputGatherReportStream(Build build);
+
 	boolean isDerivativeProduct(Build build);
 
 	void updatePreConditionCheckReport(Build build) throws IOException;

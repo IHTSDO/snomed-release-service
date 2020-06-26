@@ -62,7 +62,6 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	
 	private static final String BETA_TEST_FILENAME = "xBetaTest.zip";
 	private String releaseCenterName;
-	private String productKey;
 
 	@Before
 	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
@@ -78,8 +77,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		List<Product> products = productService.findAll(releaseCenterName, null);
 		Product product = products.get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
-		productKey = product.getBusinessKey();
-		build = buildService.createBuildFromProduct(releaseCenterName, productKey);
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey());
 
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();
@@ -89,10 +87,10 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	@Test
 	public void testPublishing() throws IOException, InterruptedException, BusinessServiceException {
 		//Using separate threads to check second thread detects file already written.
-		Thread a = runThread("one", publishService, build, null, releaseCenterName, productKey);
+		Thread a = runThread("one", publishService, build, null);
 		// Give thread a a head start to ensure it enters the sync block first
 		Thread.sleep(1);
-		Thread b = runThread("two", publishService, build, EntityAlreadyExistsException.class, releaseCenterName, productKey);
+		Thread b = runThread("two", publishService, build, EntityAlreadyExistsException.class);
 
 		//Wait for both threads to finish.
 		a.join();
@@ -111,7 +109,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	}
 
 	private static Thread runThread(final String threadName, final PublishService service, final Build build,
-			final Class<?> expectedExceptionClass, final String releaseCenterName, final String productKey) {
+			final Class<?> expectedExceptionClass) {
 		Thread thread = new Thread() {
 			@Override
 			public void run() {

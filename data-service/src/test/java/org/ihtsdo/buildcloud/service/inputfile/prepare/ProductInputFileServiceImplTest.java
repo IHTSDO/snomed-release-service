@@ -75,7 +75,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         String testFile = getClass().getResource(TEST_ARCHIVE_FILE).getFile();
         testArchive = new File(testFile);
         SecurityHelper.setUser(TestUtils.TEST_USER);
-        product = productDAO.find(1L, TestUtils.TEST_USER);
+        product = productDAO.find(1L);
         if(product.getBuildConfiguration() == null) {
             product.setBuildConfiguration(new BuildConfiguration());
         }
