@@ -2,23 +2,21 @@ package org.ihtsdo.buildcloud.service;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportCategory;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportConfigurationBuilder;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportType;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClientFactory;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportType;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClientFactory;
 
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
-import org.ihtsdo.otf.utils.DateUtils;
 import org.ihtsdo.otf.utils.ZipFileUtils;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -52,14 +50,16 @@ public class TermServerServiceImpl implements TermServerService{
 
 
 	@Override
-	public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException, IOException, ProcessWorkflowException {
-		String contextPath =  snowstormPath;
-		String snowOwlUrl = termServerUrl + contextPath;
-		SnowOwlRestClientFactory clientFactory = new SnowOwlRestClientFactory(snowOwlUrl, reasonerId, true);
-		SnowOwlRestClient snowOwlRestClient = clientFactory.getClient();
-		Set<String> moduleList =  buildModulesList(snowOwlRestClient, branchPath, excludedModuleIds);
-		File export = snowOwlRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
+	public File export(String termServerUrl, String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
 		try {
+			String snowstormUrl = termServerUrl + snowstormPath;
+			logger.info("Starting export from snowstorm {} on branch {} ", snowstormUrl, branchPath);
+			System.out.println("Security context = " + SecurityContextHolder.getContext().getAuthentication());
+			System.out.println("Token=" + SecurityUtil.getAuthenticationToken());
+			SnowstormRestClientFactory clientFactory = new SnowstormRestClientFactory(snowstormUrl, reasonerId);
+			SnowstormRestClient snowstormRestClient = clientFactory.getClient();
+			Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
+			File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.DELTA);
 			File extractDir = Files.createTempDir();
 			unzipFlat(export, extractDir);
 			renameFiles(extractDir, SNAPSHOT, DELTA);
@@ -69,18 +69,16 @@ public class TermServerServiceImpl implements TermServerService{
 			ZipFileUtils.zip(extractDir.getAbsolutePath(), newZipFile.getAbsolutePath());
 			return newZipFile;
 		} catch (IOException e) {
-			String returnedError = org.apache.commons.io.FileUtils.readFileToString(export);
-			logger.error("Failed export data from term server. Term server returned error: {}", returnedError, e);
-			throw new BusinessServiceException("Failed export data from term server. Term server returned error:" + returnedError);
+			logger.error("Failed export data from term server.", e);
+			throw new BusinessServiceException(e);
 		}
-
 	}
 
 
-	public void unzipFlat(File archive, File targetDir) throws ProcessWorkflowException, IOException {
+	public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
 
 		if (!targetDir.exists() || !targetDir.isDirectory()) {
-			throw new ProcessWorkflowException(targetDir + " is not a viable directory in which to extract archive");
+			throw new BusinessServiceException(targetDir + " is not a viable directory in which to extract archive");
 		}
 
 		ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));
@@ -122,61 +120,7 @@ public class TermServerServiceImpl implements TermServerService{
 		}
 	}
 
-
-	private ExportConfigurationExtensionBuilder buildExportConfiguration(String branchPath, String effectiveDate, Set<String> moduleList, ExportCategory exportCategory,
-																		 ExportType exportType, SnowOwlRestClient SnowOwlRestClient) throws BusinessServiceException {
-		ExportConfigurationExtensionBuilder exportConfig = new ExportConfigurationExtensionBuilder();
-		exportConfig.setBranchPath(branchPath);
-		exportConfig.setType(exportType);
-		exportConfig.setIncludeUnpublished(false);
-		if (moduleList != null) {
-			exportConfig.addModuleIds(moduleList);
-		}
-		try {
-			Branch branch = SnowOwlRestClient.getBranch(branchPath);
-			if (branch == null) {
-				logger.error("Failed to get branch {}", branchPath);
-				throw new BusinessServiceException("Failed to get branch " + branchPath);
-			}
-			Object codeSystemShortNameObj = branch.getMetadata().get("codeSystemShortName");
-			if (codeSystemShortNameObj != null && StringUtils.isNotBlank((String) codeSystemShortNameObj)) {
-				exportConfig.setCodeSystemShortName((String) codeSystemShortNameObj);
-			}
-		} catch (RestClientException e) {
-			logger.error("Failed to get branch {}: {}", branchPath, e);
-			throw new BusinessServiceException("Failed to get branch " + branchPath);
-		}
-		switch (exportCategory) {
-			case UNPUBLISHED:
-				String tet = (effectiveDate == null) ? DateUtils.now(DateUtils.YYYYMMDD) : effectiveDate;
-				exportConfig.setTransientEffectiveTime(tet);
-				exportConfig.setType(ExportType.DELTA);
-				break;
-			case PUBLISHED:
-				if (effectiveDate == null) {
-					throw new BusinessServiceException("Cannot export published data without an effective date");
-				}
-				exportConfig.setStartEffectiveTime(effectiveDate);
-				exportConfig.setTransientEffectiveTime(effectiveDate);
-				exportConfig.setType(ExportType.SNAPSHOT);
-				break;
-			case FEEDBACK_FIX:
-				if (effectiveDate == null) {
-					throw new BusinessServiceException("Cannot export feedback-fix data without an effective date");
-				}
-				exportConfig.setStartEffectiveTime(effectiveDate);
-				exportConfig.setIncludeUnpublished(true);
-				exportConfig.setTransientEffectiveTime(effectiveDate);
-				exportConfig.setType(ExportType.SNAPSHOT);
-				break;
-			default:
-				logger.error("Export category {} not recognized", exportCategory);
-				throw new BusinessServiceException("Export type " + exportCategory + " not recognized");
-		}
-		return exportConfig;
-	}
-
-	private void enforceReleaseDate(File extractDir, String enforcedReleaseDate) throws ProcessWorkflowException {
+	private void enforceReleaseDate(File extractDir, String enforcedReleaseDate) throws BusinessServiceException {
 		//Loop through all the files in the directory and change the release date if required
 		for (File thisFile : extractDir.listFiles()) {
 			if (thisFile.isFile()) {
@@ -189,7 +133,7 @@ public class TermServerServiceImpl implements TermServerService{
 		}
 	}
 
-	public String findDateInString(String str, boolean optional) throws ProcessWorkflowException {
+	public String findDateInString(String str, boolean optional) throws BusinessServiceException {
 		Matcher dateMatcher = Pattern.compile("(_\\d{8})").matcher(str);
 		if (dateMatcher.find()) {
 			return dateMatcher.group();
@@ -197,18 +141,18 @@ public class TermServerServiceImpl implements TermServerService{
 			if (optional) {
 				logger.warn("Did not find a date in: " + str);
 			} else {
-				throw new ProcessWorkflowException("Unable to determine date from " + str);
+				throw new BusinessServiceException("Unable to determine date from " + str);
 			}
 		}
 		return null;
 	}
 
-	private Set<String> buildModulesList(SnowOwlRestClient SnowOwlRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
+	private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
 		// If any modules are excluded build a list of modules to include
 		Set<String> exportModuleIds = null;
 		if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
 			try {
-				Set<String> allModules = SnowOwlRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
+				Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
 				allModules.removeAll(excludedModuleIds);
 				exportModuleIds = new HashSet<>();
 				exportModuleIds.addAll(allModules);
@@ -218,18 +162,5 @@ public class TermServerServiceImpl implements TermServerService{
 			}
 		}
 		return exportModuleIds;
-	}
-
-	public static class ExportConfigurationExtensionBuilder extends ExportConfigurationBuilder {
-
-		private String codeSystemShortName;
-
-		public String getCodeSystemShortName() {
-			return codeSystemShortName;
-		}
-
-		public void setCodeSystemShortName(String codeSystemShortName) {
-			this.codeSystemShortName = codeSystemShortName;
-		}
 	}
 }

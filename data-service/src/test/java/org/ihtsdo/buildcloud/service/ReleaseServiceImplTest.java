@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.service;
 
-import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
@@ -21,11 +20,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.xml.bind.JAXBException;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -61,17 +62,17 @@ public class ReleaseServiceImplTest {
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
-    public void testSourceFileGatheringError() throws BusinessServiceException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
+    public void testSourceFileGatheringError() throws BusinessServiceException, IOException {
         InputGatherReport inputGatherReport = new InputGatherReport();
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
-        when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), Matchers.any(GatherInputRequestPojo.class))).thenReturn(inputGatherReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null);
+        when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
-    public void testInputPrepareError() throws BusinessServiceException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException {
-        when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), Matchers.any(GatherInputRequestPojo.class))).thenReturn(new InputGatherReport());
+    public void testInputPrepareError() throws BusinessServiceException, IOException {
+        when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(new InputGatherReport());
         SourceFileProcessingReport sourceFileProcessingReport = new SourceFileProcessingReport();
         FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail();
         fileProcessingReportDetail.setFileName("sct2_Identifier_Delta_DK1000005_20170930.txt");
@@ -79,7 +80,7 @@ public class ReleaseServiceImplTest {
         fileProcessingReportDetail.setType(ReportType.ERROR);
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null);
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication());
     }
 
 

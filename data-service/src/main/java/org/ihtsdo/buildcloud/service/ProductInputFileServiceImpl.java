@@ -17,12 +17,13 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
@@ -341,32 +342,34 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig) throws BusinessServiceException, IOException {
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig, SecurityContext securityContext) {
 		InputGatherReport inputGatherReport = new InputGatherReport();
-		Product product = getProduct(centerKey, productKey);
-		dao.persistSourcesGatherReport(product, inputGatherReport);
 		try {
+			Product product = getProduct(centerKey, productKey);
+			dao.persistSourcesGatherReport(product, inputGatherReport);
 			if (requestConfig.isLoadTermServerData()) {
 				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
-				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport);
+				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport, securityContext);
 			}
 			if (requestConfig.isLoadExternalRefsetData()) {
 				deleteSourceFile(centerKey, productKey, null, SRC_EXT_MAINTAINED);
 				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
+			dao.persistSourcesGatherReport(product, inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
 		}
-		dao.persistSourcesGatherReport(product, inputGatherReport);
 		return inputGatherReport;
 	}
 
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
-			, InputGatherReport inputGatherReport) throws BusinessServiceException, IOException, ProcessWorkflowException {
+			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
 		try {
-			File exportFile = termServerService.export(requestConfig.getTermServerUrl(), requestConfig.getBranchPath(), requestConfig.getEffectiveDate(), requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
+			SecurityContextHolder.setContext(securityContext);
+			File exportFile = termServerService.export(requestConfig.getTermServerUrl(), requestConfig.getBranchPath(), requestConfig.getEffectiveDate(),
+					requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
 			try {
 				//Test whether the exported file is really a zip file
 				ZipFile zipFile = new ZipFile(exportFile);
@@ -384,6 +387,8 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		} catch (Exception ex) {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_TERM_SERVER, ex.getMessage());
 			throw ex;
+		} finally {
+			SecurityContextHolder.clearContext();
 		}
 	}
 

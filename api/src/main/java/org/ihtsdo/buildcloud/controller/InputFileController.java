@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
@@ -280,7 +281,7 @@ public class InputFileController {
 	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
 	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								 @RequestBody GatherInputRequestPojo request) throws BusinessServiceException, IOException {
-		productInputFileService.gatherSourceFiles(releaseCenterKey, productKey, request);
+		productInputFileService.gatherSourceFiles(releaseCenterKey, productKey, request, SecurityContextHolder.getContext());
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 

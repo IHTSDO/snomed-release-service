@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -137,9 +138,9 @@ public class ProductController {
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
 	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													@RequestBody GatherInputRequestPojo buildConfig) throws DecoderException, JAXBException, NoSuchAlgorithmException, BusinessServiceException, IOException {
+													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
 
-		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate);
+		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate, SecurityContextHolder.getContext().getAuthentication());
 		return "Build Triggered !";
 	}
 

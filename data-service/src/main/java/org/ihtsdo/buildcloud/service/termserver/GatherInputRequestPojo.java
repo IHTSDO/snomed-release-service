@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.termserver;
 
 
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowOwlRestClient.ExportCategory;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 
 import java.util.Set;
 
