@@ -33,7 +33,7 @@
    <authentication-manager>
       <authentication-provider>
          <user-service>
-            <user name="${srs.basicAuth.username}" password="${srs.basicAuth.password}" authorities="ROLE_${srs.role.release-manager}"/>
+            <user name="${srs.basicAuth.username}" password="${srs.basicAuth.password}" authorities="ROLE_USER"/>
          </user-service>
       </authentication-provider>
    </authentication-manager>
