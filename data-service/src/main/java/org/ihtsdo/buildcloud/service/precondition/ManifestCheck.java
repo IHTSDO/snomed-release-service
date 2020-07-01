@@ -5,12 +5,13 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.*;
 
 import javax.xml.bind.JAXBException;
 
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
@@ -30,6 +31,8 @@ public class ManifestCheck extends PreconditionCheck {
 	private static final String DER1 = "der1";
 	private static final String SCT1 = "sct1";
 	private static final String EMPTY_FILE_NAME_MSG = "Total number of files with no file name specified: %d";
+	private static final String README_FILE_NOT_FOUND_MSG = "No Readme file ends with .txt found in manifest.";
+	private static final String INVALID_FILES_IN_FOLDER = "Invalid files in %s folder: %s.";
 	private static final Logger LOGGER = LoggerFactory.getLogger(ManifestCheck.class);
 
 	@Autowired
@@ -108,6 +111,13 @@ public class ManifestCheck extends PreconditionCheck {
 				continue;
 			}
 		}
+		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
+		Map<String, List<String>> fileNamesMap = new HashMap<>();
+		for (FolderType folderType : folderTypes) {
+			fileNamesMap.put(folderType.getName(), ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderType.getName()));
+		}
+		String invalidFileNamesAgainstFolderMsg = validateFileNamesAgainstFolder(fileNamesMap);
+
 		final StringBuilder result = new StringBuilder();
 		if (invalidFileNameMsgBuilder.length() > 0) {
 			result.append(String.format(INVALID_RELEASE_FILE_FORMAT_MSG,invalidFileNameMsgBuilder.toString(), FILE_NAME_CONVENTION));
@@ -116,14 +126,56 @@ public class ManifestCheck extends PreconditionCheck {
 			result.append(String.format(RELEASE_DATE_NOT_MATCHED_MSG, releaseVersionMsgBuilder.toString(), releaseVersion));
 		}
 		if (!isReadmeFound) {
-			result.append("No Readme file ends with .txt found in manifest.");
+			result.append(README_FILE_NOT_FOUND_MSG);
 		}
 		if (emptyFileNameCount > 0) {
 			result.append(String.format(EMPTY_FILE_NAME_MSG, emptyFileNameCount));
+		}
+		if (invalidFileNamesAgainstFolderMsg.length() > 0) {
+			result.append(invalidFileNamesAgainstFolderMsg);
 		}
 		if (result.length() > 0) {
 			return result.toString();
 		}
 		return null;
+	}
+
+	private String validateFileNamesAgainstFolder(Map<String, List<String>> fileNamesMap) {
+		final StringBuilder result = new StringBuilder();
+		for (String key : fileNamesMap.keySet()) {
+			List<String> fileNames = fileNamesMap.get(key);
+			List<String> invalidFileNames;
+			if (RF2Constants.DELTA.equals(key)) {
+				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.SNAPSHOT, RF2Constants.FULL);
+				if (!invalidFileNames.isEmpty()) {
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.DELTA, String.join(",", invalidFileNames)));
+				}
+			} else if (RF2Constants.SNAPSHOT.equals(key)) {
+				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.FULL);
+				if (!invalidFileNames.isEmpty()) {
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.SNAPSHOT, String.join(",", invalidFileNames)));
+				}
+			} else if (RF2Constants.FULL.equals(key)) {
+				invalidFileNames =  getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+				if (!invalidFileNames.isEmpty()) {
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.FULL, String.join(",", invalidFileNames)));
+				}
+			} else  {
+				// do nothing
+			}
+		}
+
+		return  result.toString();
+	}
+
+	private List<String> getFileNamesContainsAny(List<String> fileNames, String... patterns) {
+		List<String> result = new ArrayList<>();
+		for (String fileName : fileNames) {
+			if (Arrays.stream(patterns).parallel().anyMatch(fileName::contains)) {
+				result.add(fileName);
+			}
+		}
+
+		return result;
 	}
 }
