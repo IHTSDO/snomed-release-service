@@ -47,6 +47,12 @@ public class ManifestCheck extends PreconditionCheck {
 			final ListingType manifestListing = parser.parse(manifestInputSteam);
 			final String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
+				String invalidFileNamesInFolderMsg = validateFileNamesAgainstFolder(manifestListing);
+				if (invalidFileNamesInFolderMsg.length() > 0) {
+					fatalError(invalidFileNamesInFolderMsg);
+					return;
+				}
+
 				final String errorMsg = validate(manifestListing, releaseVersion);
 				if (errorMsg != null) {
 					fail(errorMsg);
@@ -111,12 +117,7 @@ public class ManifestCheck extends PreconditionCheck {
 				continue;
 			}
 		}
-		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
-		Map<String, List<String>> fileNamesMap = new HashMap<>();
-		for (FolderType folderType : folderTypes) {
-			fileNamesMap.put(folderType.getName(), ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderType.getName()));
-		}
-		String invalidFileNamesAgainstFolderMsg = validateFileNamesAgainstFolder(fileNamesMap);
+
 
 		final StringBuilder result = new StringBuilder();
 		if (invalidFileNameMsgBuilder.length() > 0) {
@@ -131,31 +132,30 @@ public class ManifestCheck extends PreconditionCheck {
 		if (emptyFileNameCount > 0) {
 			result.append(String.format(EMPTY_FILE_NAME_MSG, emptyFileNameCount));
 		}
-		if (invalidFileNamesAgainstFolderMsg.length() > 0) {
-			result.append(invalidFileNamesAgainstFolderMsg);
-		}
 		if (result.length() > 0) {
 			return result.toString();
 		}
 		return null;
 	}
 
-	private String validateFileNamesAgainstFolder(Map<String, List<String>> fileNamesMap) {
+	private String validateFileNamesAgainstFolder(final ListingType manifestListing) {
+		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
 		final StringBuilder result = new StringBuilder();
-		for (String key : fileNamesMap.keySet()) {
-			List<String> fileNames = fileNamesMap.get(key);
+		for (FolderType folderType : folderTypes) {
+			String folderName = folderType.getName();
+			List<String> fileNames = ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderName);
 			List<String> invalidFileNames;
-			if (RF2Constants.DELTA.equals(key)) {
+			if (RF2Constants.DELTA.equals(folderName)) {
 				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.SNAPSHOT, RF2Constants.FULL);
 				if (!invalidFileNames.isEmpty()) {
 					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.DELTA, String.join(",", invalidFileNames)));
 				}
-			} else if (RF2Constants.SNAPSHOT.equals(key)) {
+			} else if (RF2Constants.SNAPSHOT.equals(folderName)) {
 				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.FULL);
 				if (!invalidFileNames.isEmpty()) {
 					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.SNAPSHOT, String.join(",", invalidFileNames)));
 				}
-			} else if (RF2Constants.FULL.equals(key)) {
+			} else if (RF2Constants.FULL.equals(folderName)) {
 				invalidFileNames =  getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.SNAPSHOT);
 				if (!invalidFileNames.isEmpty()) {
 					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.FULL, String.join(",", invalidFileNames)));
