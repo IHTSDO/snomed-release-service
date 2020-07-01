@@ -6,4 +6,4 @@ echo $*
 
 APP_NAME=[[packageName]]
 
-dpkg -s [[packageName]] >/srv/http/[[packageName]]/version.txt
+dpkg -s [[packageName]] >/opt/[[packageName]]/version.txt
