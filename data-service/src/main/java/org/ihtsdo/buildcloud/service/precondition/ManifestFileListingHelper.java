@@ -17,6 +17,19 @@ public class ManifestFileListingHelper {
 		return result;
 	}
 
+	public static  List<String> getFilesByFolderName(ListingType listingType, String folderName) {
+		List<String> result = new ArrayList<>();
+		List<FolderType> folderTypes = listingType.getFolder().getFolder();
+		for (FolderType folderType : folderTypes) {
+			if (folderType.getName().equals(folderName)) {
+				getFilesFromCurrentAndSubFolders(folderType, result);
+				break;
+			}
+		}
+
+		return  result;
+	}
+
 	private static void getFilesFromCurrentAndSubFolders(FolderType folder, List<String> filesList) {
 		if (folder != null) {
 			if (folder.getFile() != null) {
