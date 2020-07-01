@@ -6,6 +6,6 @@ echo $*
 
 case $1 in
 	remove)
-		test -f /srv/http/[[packageName]]/version.txt && rm /srv/http/[[packageName]]/version.txt
+		test -f /opt/[[packageName]]/version.txt && rm /opt/[[packageName]]/version.txt
 	;;
 esac

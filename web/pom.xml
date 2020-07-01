@@ -61,7 +61,7 @@
 				                  </mapper>
 				                  <mapper>
 				                  	<type>perm</type>
-				                  	<prefix>/srv/http/${packageName}</prefix>
+				                  	<prefix>/opt/${packageName}</prefix>
 				                  	<filemode>0644</filemode>
 				                  </mapper>
 				                </data>
