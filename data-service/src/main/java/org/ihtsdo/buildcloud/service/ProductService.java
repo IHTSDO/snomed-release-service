@@ -43,6 +43,7 @@ public interface ProductService extends EntityService<Product> {
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
+	String ENABLE_GOOGLE_SHEET_DROOL_REPORT = "enableGoogleSheetDroolReport";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
 

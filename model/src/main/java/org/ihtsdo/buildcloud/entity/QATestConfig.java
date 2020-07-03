@@ -47,6 +47,10 @@ public class QATestConfig {
 	@Column(name = "enable_drools")
 	private boolean enableDrools = false;
 
+	@Type(type="yes_no")
+	@Column(name = "enable_google_sheet_drool_report")
+	private boolean enableGoogleSheetDroolReport = false;
+
 	@Type(type = "yes_no")
 	@Column(name = "enable_mrcm_validation")
 	private boolean enableMRCMValidation = false;
@@ -99,6 +103,14 @@ public class QATestConfig {
 		this.enableDrools = enableDrools;
 	}
 
+	public boolean isEnableGoogleSheetDroolReport() {
+		return enableGoogleSheetDroolReport;
+	}
+
+	public void setEnableGoogleSheetDroolReport(boolean enableGoogleSheetDroolReport) {
+		this.enableGoogleSheetDroolReport = enableGoogleSheetDroolReport;
+	}
+
 	@Override
 	public String toString() {
 		return "QATestConfig [id=" + id + ", assertionGroupNames="
@@ -108,7 +120,8 @@ public class QATestConfig {
 				+ previousExtensionRelease + ", extensionDependencyRelease="
 				+ extensionDependencyRelease + ", storageLocation=" + storageLocation
 				+ ", enableDrools=" + enableDrools
-				+ ", enableMRCMValidation=" + enableMRCMValidation + "]";
+				+ ", enableMRCMValidation=" + enableMRCMValidation
+				+ ", enableGoogleSheetDroolReport=" + enableGoogleSheetDroolReport + "]";
 	}
 
 	public String getStorageLocation() {
