@@ -59,7 +59,7 @@ public class TermServerServiceImpl implements TermServerService{
 			SnowstormRestClientFactory clientFactory = new SnowstormRestClientFactory(snowstormUrl, reasonerId);
 			SnowstormRestClient snowstormRestClient = clientFactory.getClient();
 			Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
-			File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.DELTA);
+			File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
 			File extractDir = Files.createTempDir();
 			unzipFlat(export, extractDir);
 			renameFiles(extractDir, SNAPSHOT, DELTA);
