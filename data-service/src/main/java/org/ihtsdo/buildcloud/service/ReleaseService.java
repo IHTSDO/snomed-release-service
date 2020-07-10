@@ -7,6 +7,6 @@ import org.springframework.security.core.Authentication;
 
 public interface ReleaseService {
 
-    void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate messagingTemplate, Authentication authentication) throws BusinessServiceException;
+    void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate messagingTemplate, Authentication authentication) throws BusinessServiceException, InterruptedException;
 
 }

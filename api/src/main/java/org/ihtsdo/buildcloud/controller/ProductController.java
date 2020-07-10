@@ -138,7 +138,7 @@ public class ProductController {
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
 	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
+													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException, InterruptedException {
 
 		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate, SecurityContextHolder.getContext().getAuthentication());
 		return "Build Triggered !";
