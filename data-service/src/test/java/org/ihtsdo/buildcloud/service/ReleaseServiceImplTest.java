@@ -62,7 +62,7 @@ public class ReleaseServiceImplTest {
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
-    public void testSourceFileGatheringError() throws BusinessServiceException, IOException {
+    public void testSourceFileGatheringError() throws BusinessServiceException, IOException, InterruptedException {
         InputGatherReport inputGatherReport = new InputGatherReport();
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
@@ -71,7 +71,7 @@ public class ReleaseServiceImplTest {
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
-    public void testInputPrepareError() throws BusinessServiceException, IOException {
+    public void testInputPrepareError() throws BusinessServiceException, IOException, InterruptedException {
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(new InputGatherReport());
         SourceFileProcessingReport sourceFileProcessingReport = new SourceFileProcessingReport();
         FileProcessingReportDetail fileProcessingReportDetail = new FileProcessingReportDetail();
