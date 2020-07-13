@@ -37,8 +37,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import static java.lang.Thread.*;
-
 @Service
 public class ReleaseServiceImpl implements ReleaseService{
 
@@ -72,7 +70,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate  messagingTemplate, Authentication authentication) throws BusinessServiceException, InterruptedException {
+	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate  messagingTemplate, Authentication authentication) throws BusinessServiceException {
 		String trackerId = gatherInputRequestPojo.getTrackerId();
 		String inMemoryLogTrackerId = StringUtils.isBlank(trackerId) ? Long.toString(new Date().getTime()) : trackerId;
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
@@ -107,7 +105,6 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 			//After gathering all sources, start to transform and put them into input directories
 			productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
-			sleep(5000);
 			SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
 			if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
 				LOGGER.error("Error occurred when processing input files");
@@ -118,7 +115,6 @@ public class ReleaseServiceImpl implements ReleaseService{
 				}
 			}
 			//Create and trigger new build
-			sleep(5000);
 			build = buildService.createBuildFromProduct(releaseCenter, productKey);
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
