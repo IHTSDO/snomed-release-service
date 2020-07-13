@@ -72,6 +72,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	private TermServerService termServerService;
 
+	@Autowired
+	private Integer fileProcessingFailureMaxRetry;
+
 	private String buildBucketName;
 
 	@Autowired
@@ -248,7 +251,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 							InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestInputStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
 							List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
 							if(sourceFiles != null && !sourceFiles.isEmpty()) {
-								report = fileProcessor.processFiles(sourceFiles);
+								report = fileProcessor.processFiles(sourceFiles,fileProcessingFailureMaxRetry);
 							} else {
 								report.add(ERROR, "Failed to load files from source directory");
 							}

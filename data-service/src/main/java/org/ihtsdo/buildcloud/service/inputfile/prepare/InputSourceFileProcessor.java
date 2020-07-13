@@ -112,10 +112,10 @@ public class InputSourceFileProcessor {
         this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
     }
 
-    public SourceFileProcessingReport processFiles(List<String> sourceFileLists) throws BusinessServiceException {
+    public SourceFileProcessingReport processFiles(List<String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws BusinessServiceException {
         try {
             initLocalDirs();
-            copySourceFilesToLocal(sourceFileLists);
+            copySourceFilesToLocal(sourceFileLists,fileProcessingFailureMaxRetry);
             loadFileProcessConfigsFromManifest();
             prepareSourceFiles();
             if (this.copyFilesDefinedInManifest) {
@@ -216,13 +216,31 @@ public class InputSourceFileProcessor {
 		outDir.mkdir();
 	}
 
-	private File copySourceFilesToLocal(List<String> sourceFileLists) {
+	private File copySourceFilesToLocal(List <String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws IOException{
 		for (String sourceFilePath : sourceFileLists) {
 			 //Copy files from S3 to local for processing
 			String s3FilePath = buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString();
-			try (InputStream sourceFileStream = fileHelper.getFileStream(s3FilePath)) {
+			InputStream sourceFileStream = null;
+			try {
+				sourceFileStream = fileHelper.getFileStream(s3FilePath);
+				if (sourceFileStream == null && fileProcessingFailureMaxRetry != null) {
+					int attempt = 1;
+					do {
+						logger.warn("Failed to download file {} from S3 on attempt {}. Waiting {} seconds before retrying.", s3FilePath, attempt, 10);
+						try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							logger.warn("Retry delay interrupted.",e);
+						}
+						sourceFileStream = fileHelper.getFileStream(s3FilePath);
+						attempt++;
+					}
+					while (sourceFileStream == null && attempt < fileProcessingFailureMaxRetry + 1);
+				}
 				if (sourceFileStream == null) {
 					fileProcessingReport.add(ReportType.ERROR, String.format("Source file not found in S3 %s", s3FilePath));
+					logger.error(String.format("Source file not found in S3 %s", s3FilePath));
+					continue;
 				}
 				String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
 				//Keep track of the sources directories that are used
@@ -244,6 +262,8 @@ public class InputSourceFileProcessor {
 			} catch (IOException e) {
 				String errorMsg = String.format("Failed to copy source file %s to local disk", sourceFilePath);
 				fileProcessingReport.add(ReportType.ERROR, errorMsg);
+			} finally {
+				sourceFileStream.close();
 			}
 		}
 		for (String sourceName : sourceFilesMap.keySet()) {

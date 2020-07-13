@@ -1,12 +1,6 @@
 package org.ihtsdo.buildcloud.dao;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.*;
 import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
@@ -91,6 +85,9 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	private ProductInputFileDAO productInputFileDAO;
+
+	@Autowired
+	private Integer fileProcessingFailureMaxRetry;
 
 	@Autowired
 	public BuildDAOImpl(final String buildBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -248,7 +245,31 @@ public class BuildDAOImpl implements BuildDAO {
 		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
 		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
 		for (final String filePath : filePaths) {
-			buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+			try {
+				buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+			} catch (AmazonS3Exception e) {
+				if (fileProcessingFailureMaxRetry != null) {
+					int attempt = 1;
+					boolean copiedSuccessfully = false;
+					do {
+						LOGGER.warn("Failed to copy file {} from S3 product input-files bucket {} to build input-file bucket {} on attempt {}. Waiting {} seconds before retrying.", filePath, productInputFilesPath, buildInputFilesPath, attempt, 10);
+						try {
+							try {
+								Thread.sleep(10000);
+							} catch (InterruptedException ex) {
+								LOGGER.warn("Retry delay interrupted.",e);
+							}
+							buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+							List<String> buildInputFileNames = listInputFileNames(build);
+							copiedSuccessfully = buildInputFileNames.contains(filePath);
+						} catch (AmazonS3Exception ex) {
+							// do nothing
+						} finally {
+							attempt++;
+						}
+					} while (!copiedSuccessfully && attempt < fileProcessingFailureMaxRetry + 1);
+				}
+			}
 		}
 
 		// Copy manifest file
