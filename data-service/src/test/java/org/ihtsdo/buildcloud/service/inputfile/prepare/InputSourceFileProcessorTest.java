@@ -220,7 +220,7 @@ public class InputSourceFileProcessorTest {
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
 		manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
 		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		SourceFileProcessingReport report = processor.processFiles(Collections.emptyList());
+		SourceFileProcessingReport report = processor.processFiles(Collections.emptyList(), null);
 		assertNotNull(report);
 		assertNull(report.getDetails().get(ReportType.ERROR));
 		Map<String,FileProcessingConfig> refsetProcessingConfig = processor.getRefsetFileProcessingConfigs();
