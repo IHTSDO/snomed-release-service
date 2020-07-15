@@ -15,7 +15,6 @@ public class GatherInputRequestPojo {
 	private boolean loadTermServerData = true;
 	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
-	private boolean useSnowOwl;
 	private Integer maxFailuresExport;
 	
 	public GatherInputRequestPojo() {
@@ -85,14 +84,6 @@ public class GatherInputRequestPojo {
 		this.trackerId = trackerId;
 	}
 
-	public boolean getUseSnowOwl() {
-		return useSnowOwl;
-	}
-
-	public void setUseSnowOwl(boolean useSnowOwl) {
-		this.useSnowOwl = useSnowOwl;
-	}
-
 	public Integer getMaxFailuresExport() {
 		return maxFailuresExport;
 	}
@@ -111,7 +102,6 @@ public class GatherInputRequestPojo {
 				", excludedModuleIds=" + excludedModuleIds +
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
-				", useSnowOwl=" + useSnowOwl +
 				", maxFailuresExport=" + maxFailuresExport +
 				'}';
 	}
