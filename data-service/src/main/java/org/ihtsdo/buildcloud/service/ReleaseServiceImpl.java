@@ -104,16 +104,19 @@ public class ReleaseServiceImpl implements ReleaseService{
 				}
 			}
 			//After gathering all sources, start to transform and put them into input directories
-			productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
-			SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
-			if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
-				LOGGER.error("Error occurred when processing input files");
-				List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
-				for (FileProcessingReportDetail errorDetail : errorDetails) {
-					LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
-					throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
+			if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
+				productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
+				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
+				if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
+					LOGGER.error("Error occurred when processing input files");
+					List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
+					for (FileProcessingReportDetail errorDetail : errorDetails) {
+						LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
+						throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
+					}
 				}
 			}
+
 			//Create and trigger new build
 			build = buildService.createBuildFromProduct(releaseCenter, productKey);
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
