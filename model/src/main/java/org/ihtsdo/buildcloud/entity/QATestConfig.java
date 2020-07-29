@@ -51,6 +51,7 @@ public class QATestConfig {
 	@Column(name = "enable_google_sheet_drool_report")
 	private boolean enableGoogleSheetDroolReport = false;
 
+	@Type(type="yes_no")
 	@Column(name = "create_jira_issue")
 	private boolean jiraIssueCreationFlag = false;
 
