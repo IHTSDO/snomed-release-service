@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.releaseinformation;
 
-import java.math.BigInteger;
-
 public class ConceptMini {
     private String id;
 

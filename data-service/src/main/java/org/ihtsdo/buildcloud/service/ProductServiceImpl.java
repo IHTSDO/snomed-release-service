@@ -54,20 +54,18 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Override
 	public List<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions) throws AuthenticationException {
-		return productDAO.findAll(releaseCenterKey, filterOptions, SecurityHelper.getRequiredUser());
+		return productDAO.findAll(releaseCenterKey, filterOptions);
 	}
 
 	@Override
 	public Product find(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
-		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
+		return productDAO.find(releaseCenterKey, productKey);
 	}
 
 	@Override
 	public Product create(final String releaseCenterKey, final String productName) throws BusinessServiceException {
-		final User user = SecurityHelper.getRequiredUser();
 		LOGGER.info("create product, releaseCenterBusinessKey: {}", releaseCenterKey);
-
-		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey, user);
+		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey);
 
 		if (releaseCenter == null) {
 			throw new ResourceNotFoundException("Unable to find Release Center: " + releaseCenterKey);
@@ -75,7 +73,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		// Check that we don't already have one of these
 		final String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
-		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey, user);
+		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey);
 		if (existingProduct != null) {
 			throw new EntityAlreadyExistsException("Product named '" + productName + "' already exists.");
 		}
@@ -119,7 +117,19 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE));
 		}
 		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
-			qaTestConfig.setEnableDrools(Boolean.parseBoolean(newPropertyValues.get(ENABLE_DROOLS)));
+			qaTestConfig.setEnableDrools(TRUE.equals(newPropertyValues.get(ENABLE_DROOLS)));
+		}
+		if(newPropertyValues.containsKey(ENABLE_MRCM)) {
+			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
+		}
+		if(newPropertyValues.containsKey(ENABLE_JIRA)) {
+			qaTestConfig.setJiraIssueCreationFlag(TRUE.equals(newPropertyValues.get(ENABLE_JIRA)));
+		}
+		if(newPropertyValues.containsKey(JIRA_PRODUCT_NAME)) {
+			qaTestConfig.setProductName(newPropertyValues.get(JIRA_PRODUCT_NAME));
+		}
+		if(newPropertyValues.containsKey(JIRA_REPORTING_STAGE)) {
+			qaTestConfig.setReportingStage(newPropertyValues.get(JIRA_REPORTING_STAGE));
 		}
 		if(newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
 			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));

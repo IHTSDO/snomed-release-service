@@ -1,0 +1,34 @@
+<div class="row">
+	<div class="col-md-8">
+		<div class="panel panel-default post-conditions">
+			<div class="panel-heading">
+				<h3 class="panel-title"  id="tour-stop-c10">Build Postconditions</h3>
+			</div>
+			<div class="panel-body">
+		
+				<p class="lead"><small id="tour-stop-c11">Choose which rule sets will be used to test this package.</small></p>
+		
+				<h4>Rule Sets</h4>
+				<ul class="no-bullet" >
+					<li><input type="checkbox" checked/> <a href="#" onclick="return false;">International Edition Only</a></li>
+					<li><input type="checkbox" checked/> <a href="#" onclick="return false;">My Extension Only</a></li>
+					<li><input type="checkbox"/> <a href="#" onclick="return false;">My Extension and International Edition</a></li>
+				</ul>
+				<hr/>
+				{{#link-to "rule-sets" this.parent.product.parent.parent class="add-button tour-stop-c12"}}Maintain Rule Sets{{/link-to}}
+			</div>
+		</div>
+		{{#if controllers.application.isAuthenticated}}
+		<button type="submit" class="btn btn-default">Save</button>
+		{{/if}}
+	</div>
+	<div class="col-md-4">
+		<h4>Post-conditions</h4>
+		Each of the items shown on the left represent a group of individual tests that have been selected using the 'Maintain Rule Sets' link.  
+		Any rule group with a tick against it will be included in the next execution of the build.
+		{{#unless controllers.application.isAuthenticated}}
+		<h4>Authentication</h4>
+		Note that users who have not logged into the system will be unable to save modifications to the selection of rule sets.
+		{{/unless}}
+	</div>
+</div>	

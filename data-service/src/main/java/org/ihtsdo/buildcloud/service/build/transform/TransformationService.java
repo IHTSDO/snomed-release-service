@@ -393,7 +393,6 @@ public class TransformationService {
 
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
-		final String buildId =  build.getId();
 		Integer namespaceId = RF2Constants.INTERNATIONAL_NAMESPACE_ID;
 		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
 		String moduleId = coreModuleSctid;
@@ -402,7 +401,7 @@ public class TransformationService {
 			moduleId = extConfig.getModuleId();
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, buildId, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
 
 		return new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, moduleId, modelModuleSctid, transformBufferSize);

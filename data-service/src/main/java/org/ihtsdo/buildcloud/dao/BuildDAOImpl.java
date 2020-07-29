@@ -1,5 +1,37 @@
 package org.ihtsdo.buildcloud.dao;
 
+import com.amazonaws.services.s3.model.*;
+import com.google.common.io.Files;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.entity.ExtensionConfig;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.FileCopyUtils;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +46,6 @@ import java.io.PipedOutputStream;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,50 +53,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
-import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.QATestConfig;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
-import org.ihtsdo.otf.dao.s3.S3Client;
-import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
-import org.ihtsdo.otf.resourcemanager.ResourceManager;
-import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.utils.DateUtils;
-import org.ihtsdo.otf.utils.FileUtils;
-import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.FileCopyUtils;
-
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.io.Files;
 
 public class BuildDAOImpl implements BuildDAO {
 
@@ -98,6 +85,9 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	private ProductInputFileDAO productInputFileDAO;
+
+	@Autowired
+	private Integer fileProcessingFailureMaxRetry;
 
 	@Autowired
 	public BuildDAOImpl(final String buildBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
@@ -255,7 +245,31 @@ public class BuildDAOImpl implements BuildDAO {
 		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
 		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
 		for (final String filePath : filePaths) {
-			buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+			try {
+				buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+			} catch (AmazonS3Exception e) {
+				if (fileProcessingFailureMaxRetry != null) {
+					int attempt = 1;
+					boolean copiedSuccessfully = false;
+					do {
+						LOGGER.warn("Failed to copy file {} from S3 product input-files bucket {} to build input-file bucket {} on attempt {}. Waiting {} seconds before retrying.", filePath, productInputFilesPath, buildInputFilesPath, attempt, 10);
+						try {
+							try {
+								Thread.sleep(10000);
+							} catch (InterruptedException ex) {
+								LOGGER.warn("Retry delay interrupted.",e);
+							}
+							buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+							List<String> buildInputFileNames = listInputFileNames(build);
+							copiedSuccessfully = buildInputFileNames.contains(filePath);
+						} catch (AmazonS3Exception ex) {
+							// do nothing
+						} finally {
+							attempt++;
+						}
+					} while (!copiedSuccessfully && attempt < fileProcessingFailureMaxRetry + 1);
+				}
+			}
 		}
 
 		// Copy manifest file
@@ -270,6 +284,12 @@ public class BuildDAOImpl implements BuildDAO {
 			if (inputReportStream != null) {
 				buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
 			}
+		}
+
+		//copy sources-gather-report.json if exists
+		InputStream sourcesGatherStream = productInputFileDAO.getInputGatherReport(product);
+		if(sourcesGatherStream != null) {
+			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build));
 		}
 	}
 
@@ -399,8 +419,8 @@ public class BuildDAOImpl implements BuildDAO {
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
 		String targetFileNameStripped = targetFileName;
-		if (!Normalizer.isNormalized(targetFileNameStripped, Form.NFC)) {
-			targetFileNameStripped = Normalizer.normalize(targetFileNameStripped, Form.NFC);
+		if (!Normalizer.isNormalized(targetFileNameStripped, Normalizer.Form.NFC)) {
+			targetFileNameStripped = Normalizer.normalize(targetFileNameStripped, Normalizer.Form.NFC);
 		}
 		targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 		
@@ -409,8 +429,8 @@ public class BuildDAOImpl implements BuildDAO {
 			 String filename = FileUtils.getFilenameFromPath(filePath);
 			// use contains rather that startsWith so that we can have candidate release (with x prefix in the filename) 
 			// as previous published release.
-			if (!Normalizer.isNormalized(filename, Form.NFC)) {
-				filename = Normalizer.normalize(filename, Form.NFC);
+			if (!Normalizer.isNormalized(filename, Normalizer.Form.NFC)) {
+				filename = Normalizer.normalize(filename, Normalizer.Form.NFC);
 			}
 			if (filename.contains(targetFileNameStripped)) {
 				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
@@ -561,7 +581,41 @@ public class BuildDAOImpl implements BuildDAO {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
-	
+
+	@Override
+	public boolean isBuildCancelRequested(final Build build) {
+		if(Build.Status.CANCEL_REQUESTED.equals(build.getStatus())) return true;
+		String cancelledRequestedPath = pathHelper.getStatusFilePath(build, Build.Status.CANCEL_REQUESTED);
+		try {
+			if(s3Client.getObject(buildBucketName, cancelledRequestedPath) != null) {
+				build.setStatus(Build.Status.CANCEL_REQUESTED);
+				LOGGER.warn("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
+				return true;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return false;
+
+	}
+
+	@Override
+	public void deleteOutputFiles(Build build) {
+		List<String> outputFiles = listOutputFilePaths(build);
+		for (String outputFile : outputFiles) {
+			if (buildFileHelper.exists(outputFile)) {
+				buildFileHelper.deleteFile(outputFile);
+			}
+		}
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReportStream(Build build) {
+		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
+		return buildFileHelper.getFileStream(reportFilePath);
+	}
+
+
 	@Override
 	public boolean isDerivativeProduct(Build build) {
 		ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();
@@ -573,6 +627,7 @@ public class BuildDAOImpl implements BuildDAO {
 			return true;
 		}
 		return false;
+
 	}
 
 	@Override
@@ -601,7 +656,6 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	@Override
 	public InputStream getPreConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);

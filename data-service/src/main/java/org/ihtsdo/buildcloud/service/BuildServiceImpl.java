@@ -6,8 +6,14 @@ import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.text.ParseException;
-import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
@@ -40,7 +46,6 @@ import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
-import org.ihtsdo.buildcloud.service.classifier.ClassificationResult;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -49,7 +54,6 @@ import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -244,7 +248,6 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 			TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
-
 			try {
 				dao.loadConfiguration(build);
 			} catch (final IOException e) {
@@ -290,10 +293,19 @@ public class BuildServiceImpl implements BuildService {
 					LOGGER.error(resultMessage, e);
 					status = Status.FAILED;
 				}
-				report.add("Progress Status", resultStatus);
-				report.add("Message", resultMessage);
-				dao.persistReport(build);
-				updateStatusWithChecks(build, status);
+				if (dao.isBuildCancelRequested(build)) {
+					report.add("Progress Status", "cancelled");
+					report.add("Message", "Build was cancelled");
+					dao.persistReport(build);
+					dao.updateStatus(build, Status.CANCELLED);
+					dao.deleteOutputFiles(build);
+					LOGGER.info("Build has been canceled");
+				} else {
+					report.add("Progress Status", resultStatus);
+					report.add("Message", resultMessage);
+					dao.persistReport(build);
+					updateStatusWithChecks(build, status);
+				}
 			}
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
@@ -346,6 +358,9 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case BUILT :
 				dao.assertStatus(build, Status.BUILDING);
+				break;
+			case CANCELLED:
+				dao.assertStatus(build, Status.CANCEL_REQUESTED);
 				break;
 		}
 
@@ -411,12 +426,15 @@ public class BuildServiceImpl implements BuildService {
 		checkManifestPresent(build);
 
 		final BuildConfiguration configuration = build.getConfiguration();
+		if (dao.isBuildCancelRequested(build)) return;
 		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
+			if (dao.isBuildCancelRequested(build)) return;
 			transformationService.transformFiles(build, inputFileSchemaMap);
 			// Convert Delta input files to Full, Snapshot and Delta release files
+			if (dao.isBuildCancelRequested(build)) return;
 
 			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
 
@@ -424,38 +442,31 @@ public class BuildServiceImpl implements BuildService {
 				throw new BusinessServiceException("There is no inferred relationship delta file");
 			}
 			generator.generateReleaseFiles();
-			
+
 			//filter out additional relationships from the transformed delta
+			if (dao.isBuildCancelRequested(build)) return;
 			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
 			if (inferedDelta != null) {
-			 	String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
-			 	transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
+				String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
+				transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
-			if (offlineMode) {
-				LOGGER.info("Skipping inferred relationship creation because in Offline mode.");
-			} else {
-				// Run classifier
-				//ClassificationResult result = rf2ClassifierService.classify(build, inputFileSchemaMap);
-				//generator.generateRelationshipFiles(result);
-			}
 		}
-
+		if (dao.isBuildCancelRequested(build)) return;
 		if (!offlineMode) {
 			LOGGER.info("Start classification cross check");
 			List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
 			dao.updatePostConditionCheckReport(build, reports);
 		}
-	
+
 		// Generate release package information
 		if (configuration.getReleaseInformationFields() != null && !configuration.getReleaseInformationFields().isEmpty()) {
 			generateReleasePackageFile(build,configuration.getReleaseInformationFields());
 		}
-
-		
 		// Generate readme file
 		generateReadmeFile(build);
 
+		if (dao.isBuildCancelRequested(build)) return;
 		File zipPackage = null;
 		try {
 			try {
@@ -470,8 +481,9 @@ public class BuildServiceImpl implements BuildService {
 				}
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
-			} 
+			}
 
+			if (dao.isBuildCancelRequested(build)) return;
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode || localRvf) {
@@ -863,6 +875,7 @@ public class BuildServiceImpl implements BuildService {
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
+					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean!= null ? schemaBean.getTableName() : null);
 				} else {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}
@@ -886,7 +899,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
-		return productDAO.find(releaseCenterKey, productKey, SecurityHelper.getRequiredUser());
+		return productDAO.find(releaseCenterKey, productKey);
 	}
 
 	private void generateReadmeFile(final Build build) throws BusinessServiceException {
@@ -953,6 +966,21 @@ public class BuildServiceImpl implements BuildService {
 	public InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputFilesPrepareReportStream(build);
+	}
+
+	@Override
+	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		//Only cancel build if the status is "BUILDING"
+		dao.assertStatus(build, Status.BUILDING);
+		dao.updateStatus(build, Status.CANCEL_REQUESTED);
+		LOGGER.warn("Status of build {} has been updated to {}", build, Status.CANCEL_REQUESTED.name());
+	}
+
+	@Override
+	public InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId) {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		return dao.getBuildInputGatherReportStream(build);
 	}
 
 	@Override

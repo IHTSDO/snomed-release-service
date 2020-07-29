@@ -1,0 +1,29 @@
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+	<li>{{#link-to "release-center" parent.product.parent.parent}}{{parent.product.parent.parent.shortName}}{{/link-to}}</li>
+	<li>{{#link-to "extension" parent.product.parent}}{{parent.product.parent.name}}{{/link-to}}</li>
+	<li>{{#link-to "product" parent.product}}{{parent.product.name}}{{/link-to}}</li>
+	<li>{{#link-to "build" parent}}{{parent.name}}{{/link-to}}</li>
+	<li>{{id}}</li>
+</ol>
+
+<h3 class="page-header" id="tour-stop-9">{{creationTime}} <small>(Execution)</small> Status: {{status}}</h3>
+
+<div class="row">
+	<div class="col-md-3">
+		<ul class="nav">
+			<li>{{#link-to 'execution.configuration'}}Configuration{{/link-to}}</li>
+			{{#if isTriggered}}
+			<li>{{#link-to 'execution.build-scripts'}}Debug Scripts{{/link-to}}</li>
+			{{/if}}
+			{{#if isBuilt}}
+			<li>{{#link-to 'execution.output'}}Output{{/link-to}}</li>
+			<li>{{#link-to 'execution.results'}}Post Condition Results{{/link-to}}</li>
+			<li>{{#link-to 'execution.publish'}}Publish{{/link-to}}</li>
+			{{/if}}
+		</ul>
+	</div>
+	<div class="col-md-9">
+		{{outlet}}
+	</div>
+</div>

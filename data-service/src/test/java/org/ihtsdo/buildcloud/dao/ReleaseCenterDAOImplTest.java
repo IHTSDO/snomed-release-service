@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.dao;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,8 +22,8 @@ public class ReleaseCenterDAOImplTest {
 	@Test
 	public void testFindAll() {
 		Assert.assertNotNull(dao);
-		List<ReleaseCenter> centers = dao.findAll(TestUtils.TEST_USER);
-		Assert.assertEquals(4, centers.size());
+		List<ReleaseCenter> centers = dao.findAll();
+		Assert.assertEquals(5, centers.size());
 		ReleaseCenter internationalReleaseCenter = centers.get(0);
 		Assert.assertEquals("International Release Center", internationalReleaseCenter.getName());
 		Assert.assertEquals("International", internationalReleaseCenter.getShortName());
@@ -33,7 +32,7 @@ public class ReleaseCenterDAOImplTest {
 
 	@Test
 	public void testFind() {
-		ReleaseCenter releaseCenter = dao.find("international", TestUtils.TEST_USER);
+		ReleaseCenter releaseCenter = dao.find("international");
 		Assert.assertNotNull(releaseCenter);
 		Assert.assertEquals("International Release Center", releaseCenter.getName());
 		Assert.assertEquals("International", releaseCenter.getShortName());

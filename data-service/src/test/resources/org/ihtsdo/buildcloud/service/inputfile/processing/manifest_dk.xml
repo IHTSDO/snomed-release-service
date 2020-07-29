@@ -1,0 +1,45 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_ManagedServiceDK_ProductionBeta_DK1000005_20170731T120000">
+		<folder Name="Delta">
+			<folder Name="Terminology">
+				<file Name="xsct2_Concept_Delta_DK1000005_20170731.txt"/>
+				<file Name="xsct2_Description_Delta-en_DK1000005_20170731.txt">
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
+				<file Name="xsct2_Relationship_Delta_DK1000005_20170731.txt"/>
+				<file Name="xsct2_StatedRelationship_Delta_DK1000005_20170731.txt"/>
+				<file Name="xsct2_TextDefinition_Delta-en_DK1000005_20170731.txt"/>
+			</folder>
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="xder2_cRefset_AssociationReferenceDelta_DK1000005_20170731.txt">
+						<contains-reference-sets>
+							<refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+							<refset id="900000000000524003" label="MOVED TO"/>
+							<refset id="900000000000525002" label="MOVED FROM"/>
+							<refset id="900000000000526001" label="REPLACED BY"/>
+							<refset id="900000000000527005" label="SAME AS"/>
+							<refset id="900000000000528000" label="WAS A"/>
+							<refset id="900000000000530003" label="ALTERNATIVE"/>
+							<refset id="900000000000531004" label="REFERS TO"/>
+						</contains-reference-sets>
+					</file>
+					<file Name="xder2_cRefset_AttributeValueDelta_DK1000005_20170731.txt">
+						<contains-reference-sets>
+							<refset id="900000000000489007" label="Concept inactivation indicator"/>
+							<refset id="900000000000490003" label="Description inactivation indicator"/>
+						</contains-reference-sets>
+					</file>
+					<file Name="xder2_Refset_SimpleDelta_DK1000005_20170731.txt">
+						<contains-reference-sets>
+							<refset id="723264001" label="Lateralizable body structure"/>
+						</contains-reference-sets>
+					</file>
+				</folder>
+			</folder>
+		</folder> <!-- Delta -->
+	</folder> <!-- SnomedCT_Release_DK1000005_20170731 -->
+</listing>
+

@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.entity.User;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,25 +15,21 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<ReleaseCenter> findAll(User user) {
+	public List<ReleaseCenter> findAll() {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCenter " +
-						"from ReleaseCenterMembership m " +
-						"where m.user = :user " +
-						"order by m.releaseCenter.id ");
-		query.setEntity("user", user);
+						"from ReleaseCenter releaseCenter " +
+						"order by releaseCenter.id ");
 		return query.list();
 	}
 
 	@Override
-	public ReleaseCenter find(String businessKey, User user) {
+	public ReleaseCenter find(String businessKey) {
 		Query query = getCurrentSession().createQuery(
 				"select releaseCenter " +
-						"from ReleaseCenterMembership m " +
-						"where m.user = :user " +
-						"and m.releaseCenter.businessKey = :businessKey " +
-						"order by m.releaseCenter.id ");
-		query.setEntity("user", user);
+						"from ReleaseCenter releaseCenter " +
+						"where releaseCenter.businessKey = :businessKey " +
+						"order by releaseCenter.id ");
 		query.setString("businessKey", businessKey);
 		return (ReleaseCenter) query.uniqueResult();
 	}

@@ -1,0 +1,174 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_SE_Test_20170531T120000">
+		<file Name="Readme_en_20170531.txt"/>
+		<folder Name="Delta">
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="der2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt">
+					<contains-reference-sets>
+							<refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+							<refset id="900000000000524003" label="MOVED TO"/>
+							<refset id="900000000000525002" label="MOVED FROM"/>
+							<refset id="900000000000526001" label="REPLACED BY"/>
+							<refset id="900000000000527005" label="SAME AS"/>
+							<refset id="900000000000528000" label="WAS A"/>
+							<refset id="900000000000530003" label="ALTERNATIVE"/>
+							<refset id="900000000000531004" label="REFERS TO"/>
+						</contains-reference-sets>
+					</file>
+					<file Name="der2_cRefset_AttributeValueDelta_SE1000052_20170531.txt">
+						<contains-reference-sets>
+							<refset id="900000000000489007" label="Concept inactivation indicator"/>
+							<refset id="900000000000490003" label="Description inactivation indicator"/>
+						</contains-reference-sets>
+					</file>
+					<file Name="der2_Refset_ReasonsForPrescriptionReferenceSetSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_urvalAktivitetsstatusSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalDeltagandetyperHälso-OchSjukvårdSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalDeltagandetyperSocialtjänstSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalLevnadsvanorSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_urvalObservationsstatusSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalSambandstyperHälso-OchSjukvårdSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalSambandstyperSocialtjänstSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_Refset_UrvalVårdkontaktstatusSimpleRefsetDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+				</folder>
+				<folder Name="Language">
+					<file Name="der2_cRefset_LanguageDelta-en_SE1000052_20170531.txt">
+						<source>terminology-server</source>
+					</file>
+					<file Name="der2_cRefset_LanguageDelta-sv_SE1000052_20170531.txt">
+						<source>terminology-server</source>
+					</file>
+				</folder>
+				<folder Name="Metadata">
+					<file Name="der2_cciRefset_RefsetDescriptorDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_ciRefset_DescriptionTypeDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="der2_ssRefset_ModuleDependencyDelta_SE1000052_20170531.txt">
+						<source>externally-maintained</source>
+					</file>
+				</folder>
+			</folder>
+			<folder Name="Terminology">
+				<file Name="sct2_Concept_Delta_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_Description_Delta-en_SE1000052_20170531.txt"/>
+				<file Name="sct2_Description_Delta-sv_SE1000052_20170531.txt">
+					<contains-language-codes>
+						<code>sv</code>
+					</contains-language-codes>
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_Identifier_Delta_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_Relationship_Delta_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_StatedRelationship_Delta_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-en_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-sv_SE1000052_20170531.txt">
+					<source>terminology-server</source>
+				</file>				
+			</folder>
+		</folder>
+		<folder Name="Full">
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="der2_cRefset_AssociationReferenceFull_SE1000052_20170531.txt"/>
+					<file Name="der2_cRefset_AttributeValueFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_ReasonsForPrescriptionReferenceSetSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_urvalAktivitetsstatusSimpleRefsetFull_SE1000052_20170531.txt"/>				
+					<file Name="der2_Refset_UrvalDeltagandetyperHälso-OchSjukvårdSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalDeltagandetyperSocialtjänstSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalLevnadsvanorSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_urvalObservationsstatusSimpleRefsetFull_SE1000052_20170531.txt"/>					
+					<file Name="der2_Refset_UrvalSambandstyperHälso-OchSjukvårdSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalSambandstyperSocialtjänstSimpleRefsetFull_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalVårdkontaktstatusSimpleRefsetFull_SE1000052_20170531.txt"/>
+				</folder>
+				<folder Name="Language">
+					<file Name="der2_cRefset_LanguageFull-en_SE1000052_20170531.txt"/>
+					<file Name="der2_cRefset_LanguageFull-sv_SE1000052_20170531.txt"/>
+				</folder>
+				<folder Name="Metadata">
+					<file Name="der2_cciRefset_RefsetDescriptorFull_SE1000052_20170531.txt"/>
+					<file Name="der2_ciRefset_DescriptionTypeFull_SE1000052_20170531.txt"/>
+					<file Name="der2_ssRefset_ModuleDependencyFull_SE1000052_20170531.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Terminology">
+				<file Name="sct2_Concept_Full_SE1000052_20170531.txt"/>
+				<file Name="sct2_Description_Full-en_SE1000052_20170531.txt"/>
+				<file Name="sct2_Description_Full-sv_SE1000052_20170531.txt"/>
+				<file Name="sct2_Identifier_Full_SE1000052_20170531.txt"/>
+				<file Name="sct2_Relationship_Full_SE1000052_20170531.txt"/>
+				<file Name="sct2_StatedRelationship_Full_SE1000052_20170531.txt"/>
+				<file Name="sct2_TextDefinition_Full-en_SE1000052_20170531.txt"/>
+				<file Name="sct2_TextDefinition_Full-sv_SE1000052_20170531.txt"/>				
+			</folder>
+		</folder>
+		<folder Name="Snapshot">
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="der2_cRefset_AssociationReferenceSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_cRefset_AttributeValueSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_ReasonsForPrescriptionReferenceSetSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_urvalAktivitetsstatusSimpleRefsetSnapshot_SE1000052_20170531.txt"/>				
+					<file Name="der2_Refset_UrvalDeltagandetyperHälso-OchSjukvårdSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalDeltagandetyperSocialtjänstSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalLevnadsvanorSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_urvalObservationsstatusSimpleRefsetSnapshot_SE1000052_20170531.txt"/>					
+					<file Name="der2_Refset_UrvalSambandstyperHälso-OchSjukvårdSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalSambandstyperSocialtjänstSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_Refset_UrvalVårdkontaktstatusSimpleRefsetSnapshot_SE1000052_20170531.txt"/>
+				</folder>
+				<folder Name="Language">
+					<file Name="der2_cRefset_LanguageSnapshot-en_SE1000052_20170531.txt"/>
+					<file Name="der2_cRefset_LanguageSnapshot-sv_SE1000052_20170531.txt"/>
+				</folder>
+				<folder Name="Metadata">
+					<file Name="der2_cciRefset_RefsetDescriptorSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_ciRefset_DescriptionTypeSnapshot_SE1000052_20170531.txt"/>
+					<file Name="der2_ssRefset_ModuleDependencySnapshot_SE1000052_20170531.txt"/>
+				</folder>
+			</folder>
+			<folder Name="Terminology">
+				<file Name="sct2_Concept_Snapshot_SE1000052_20170531.txt"/>
+				<file Name="sct2_Description_Snapshot-en_SE1000052_20170531.txt"/>
+				<file Name="sct2_Description_Snapshot-sv_SE1000052_20170531.txt"/>
+				<file Name="sct2_Identifier_Snapshot_SE1000052_20170531.txt"/>
+				<file Name="sct2_Relationship_Snapshot_SE1000052_20170531.txt"/>
+				<file Name="sct2_StatedRelationship_Snapshot_SE1000052_20170531.txt"/>
+				<file Name="sct2_TextDefinition_Snapshot-en_SE1000052_20170531.txt"/>
+				<file Name="sct2_TextDefinition_Snapshot-sv_SE1000052_20170531.txt"/>				
+			</folder>
+		</folder>
+	</folder>
+</listing>

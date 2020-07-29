@@ -7,12 +7,12 @@ public class FileProcessingConfig {
     private String key;
     private String targetFileName;
     private Set<String> specificSources;
-    
+
     public FileProcessingConfig(String fileType, String value, String targetFilename) {
-    	this.fileType = fileType;
-    	this.key = value;
-    	this.targetFileName = targetFilename;
-    	this.specificSources = new HashSet<>();
+        this.fileType = fileType;
+        this.key = value;
+        this.targetFileName = targetFilename;
+        this.specificSources = new HashSet<>();
     }
 
     public String getFileType() {
@@ -23,23 +23,23 @@ public class FileProcessingConfig {
         return key;
     }
 
-	public String getTargetFileName() {
-		return targetFileName;
-	}
-	
-	public void setSpecificSources(Set<String> specificSources) {
-		this.specificSources = specificSources;
-	}
+    public String getTargetFileName() {
+        return targetFileName;
+    }
 
-	public Set<String> getSpecificSources() {
-		return specificSources;
-	}
+    public void setSpecificSources(Set<String> specificSources) {
+        this.specificSources = specificSources;
+    }
 
-	@Override
-	public String toString() {
-		return "FileProcessingConfig [fileType=" + fileType + ", key=" + key + ", targetFileName=" + targetFileName
-				+ ", specifiedSources=" + specificSources + "]";
-	}
+    public Set<String> getSpecificSources() {
+        return specificSources;
+    }
 
-	
+    @Override
+    public String toString() {
+        return "FileProcessingConfig [fileType=" + fileType + ", key=" + key + ", targetFileName=" + targetFileName
+                + ", specifiedSources=" + specificSources + "]";
+    }
+
+
 }

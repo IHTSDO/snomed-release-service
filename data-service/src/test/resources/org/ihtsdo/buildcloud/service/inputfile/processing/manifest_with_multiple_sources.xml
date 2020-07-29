@@ -1,0 +1,107 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_InternationalRF2_ALPHA_20170731T120000Z">
+		<folder Name="Delta">
+			<folder Name="Terminology">
+				<file Name="xsct2_Description_Delta-en_INT_20170731.txt">
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt"/>
+				<file Name="xsct2_Concept_Delta_INT_20170731.txt"/>
+				<file Name="xsct2_StatedRelationship_Delta_INT_20170731.txt"/>
+				<file Name="xsct2_Relationship_Delta_INT_20170731.txt">
+				<sources>
+					<source>terminology-server</source>
+				</sources>
+				</file>
+				<file Name="xsct2_Identifier_Delta_INT_20170731.txt">
+				<sources>
+					<source>externally-maintained</source>
+					<source>terminology-server</source>
+				</sources>
+				</file>
+				<file Name="xsct2_TextDefinition_Delta-en_INT_20170731.txt"/>
+			</folder>
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="xder2_cRefset_AssociationReferenceDelta_INT_20170731.txt">
+						<contains-reference-sets>
+							<refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+							<refset id="900000000000524003" label="MOVED TO"/>
+							<refset id="900000000000525002" label="MOVED FROM"/>
+							<refset id="900000000000526001" label="REPLACED BY"/>
+							<refset id="900000000000527005" label="SAME AS"/>
+							<refset id="900000000000528000" label="WAS A"/>
+							<refset id="900000000000530003" label="ALTERNATIVE"/>
+							<refset id="900000000000531004" label="REFERS TO"/>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="targetComponent"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="xder2_cRefset_AttributeValueDelta_INT_20170731.txt">
+						<contains-reference-sets>
+							<refset id="900000000000489007" label="Concept inactivation indicator"/>
+							<refset id="900000000000490003" label="Description inactivation indicator"/>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="valueid"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="xder2_Refset_SimpleDelta_INT_20170731.txt">
+						<contains-reference-sets>
+							<refset id="723264001" label="Lateralizable body structure"/>
+							<source>externally-maintained</source>
+						</contains-reference-sets>
+					</file>
+				</folder>
+				<folder Name="Map">
+					<file Name="xder2_sRefset_SimpleMapDelta_INT_20170731.txt"/>
+					<file Name="xder2_iisssccRefset_ExtendedMapDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+				</folder>
+				<folder Name="Language">
+					<file Name="xder2_cRefset_LanguageDelta-en_INT_20170731.txt"/>	
+				</folder>
+				<folder Name="Metadata">
+					<file Name="xder2_cciRefset_RefsetDescriptorDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_ssRefset_ModuleDependencyDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_ciRefset_DescriptionTypeDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_sssssssRefset_MRCMDomainDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_cissccRefset_MRCMAttributeDomainDelta_INT_20170731.txt">
+						<contains-reference-sets>
+							<refset id="723561005" label="MRCM Domain"/>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name ="domainConstraint"/>
+							<field name ="parentDomain"/>
+							<field name ="proximalPrimitiveConstraint"/>
+							<field name ="proximalPrimitiveRefinement"/>
+							<field name ="domainTemplateForPrecoordination"/>
+							<field name ="domainTemplateForPostcoordination"/>
+							<field name ="guideUrl"/>
+						</contains-additional-fields>
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_ssccRefset_MRCMAttributeRangeDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+					<file Name="xder2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt">
+						<source>externally-maintained</source>
+					</file>
+				</folder>
+			</folder>
+		</folder> <!-- Delta -->
+	</folder> <!-- SnomedCT_Release_INT_20170731 -->
+</listing>
+
