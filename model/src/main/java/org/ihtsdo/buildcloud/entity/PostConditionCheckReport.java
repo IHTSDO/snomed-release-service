@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.entity;
 
 /**
- * A status report of post-condition checks for all packages in an excecution.
+ * A status report of post-condition checks for all packages in an execution.
  * <p>
  * This entity is stored via S3, not Hibernate.
  */

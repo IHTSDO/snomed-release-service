@@ -1,31 +1,29 @@
 package org.ihtsdo.buildcloud.controller;
 
 import com.wordnik.swagger.annotations.ApiParam;
-import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.amazonaws.services.elasticbeanstalk.model.transform.SolutionStackDescriptionStaxUnmarshaller;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
@@ -280,7 +277,46 @@ public class InputFileController {
 		}
 	}
 
+	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
+	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
+	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								 @RequestBody GatherInputRequestPojo request) throws BusinessServiceException, IOException {
+		productInputFileService.gatherSourceFiles(releaseCenterKey, productKey, request, SecurityContextHolder.getContext());
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
 
-	
+	@RequestMapping(value = "/inputfiles/gatherReport", method = RequestMethod.GET)
+	@ApiOperation(value = "Return report of input files gather")
+	public void  getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, final HttpServletResponse response) throws IOException {
+		try (InputStream outputFileStream = productInputFileService.getInputGatherReport(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No report file found");
+			}
+		}
+	}
 
+	@RequestMapping(value = "/buildLogs", method = RequestMethod.GET)
+	@ApiOperation(value = "Get the full logs of the build process")
+	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+								 HttpServletResponse response) throws IOException {
+		String logUrl = "/logViewer.html?center="+releaseCenterKey+"&product="+productKey;
+		response.sendRedirect(logUrl);
+	}
+
+	@RequestMapping(value = "/buildLogs/details", method = RequestMethod.GET)
+	@ApiOperation(value = "Return report of input files gather")
+	public void getFullBuildLogFromProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+										   HttpServletResponse response) {
+		try (InputStream outputFileStream = productInputFileService.getFullBuildLogFromProductIfExists(releaseCenterKey, productKey)) {
+			if (outputFileStream != null) {
+				StreamUtils.copy(outputFileStream, response.getOutputStream());
+			} else {
+				throw new ResourceNotFoundException("No build log found in product directory. Please find the build log from specific product");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

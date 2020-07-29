@@ -61,80 +61,86 @@ public class InputSourceFileProcessor {
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
 
-	private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
-	private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
-	private static final int REFSETID_COL = 4;
-	private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
-	private static final String INPUT_FILE_TYPE_REFSET = "Refset";
-	private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
-	private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
-	private static final String OUT_DIR = "out";
-	private static final int DESCRIPTION_TYPE_COL = 6;
-	private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
+    private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
+    private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
+    private static final int REFSETID_COL = 4;
+    private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
+    private static final String INPUT_FILE_TYPE_REFSET = "Refset";
+    private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
+    private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
+    private static final String OUT_DIR = "out";
+    private static final int DESCRIPTION_TYPE_COL = 6;
+    private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
+    private static final String TXT_EXTENSION = ".txt";
 
-	private InputStream manifestStream;
-	private FileHelper fileHelper;
-	private BuildS3PathHelper buildS3PathHelper;
-	private Product product;
-	private File localDir;
-	private File outDir;
-	private boolean foundTextDefinitionFile = false;
-	private boolean copyFilesDefinedInManifest = false;
-	private Set<String> availableSources;
-	private Map<String, List<String>> sourceFilesMap;
-	private SourceFileProcessingReport fileProcessingReport;
-	private Map<String,List<String>> skippedSourceFiles;
-	private MultiValueMap<String, String> fileOrKeyWithMultipleSources;
-	//processing instructions from the manifest.xml
-	private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
-	private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
-	private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
-	private MultiValueMap<String, String> filesToCopyFromSource;
-	private MultiValueMap<String, String> refsetWithAdditionalFields;
+    private InputStream manifestStream;
+    private FileHelper fileHelper;
+    private BuildS3PathHelper buildS3PathHelper;
+    private Product product;
+    private File localDir;
+    private File outDir;
+    private boolean foundTextDefinitionFile = false;
+    private boolean copyFilesDefinedInManifest = false;
+    private Set<String> availableSources;
+    private Map<String, List<String>> sourceFilesMap;
+    private SourceFileProcessingReport fileProcessingReport;
+    private Map<String, Set<String>> skippedSourceFiles;
+    private MultiValueMap<String, String> fileOrKeyWithMultipleSources;
+    //processing instructions from the manifest.xml
+    private Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
+    private Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
+    private Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
+    private MultiValueMap<String, String> filesToCopyFromSource;
+    private MultiValueMap<String, String> refsetWithAdditionalFields;
+  
+    public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
+                         Product product, boolean copyFilesDefinedInManifest) {
+        this.manifestStream = manifestStream;
+        this.fileHelper = fileHelper;
+        this.buildS3PathHelper = buildS3PathHelper;
+        this.product = product;
+        this.sourceFilesMap = new HashMap<>();
+        this.refsetFileProcessingConfigs = new HashMap<>();
+        this.descriptionFileProcessingConfigs = new HashMap<>();
+        this.textDefinitionFileProcessingConfigs = new HashMap<>();
+        this.availableSources = new HashSet<>();
+        this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
+        this.skippedSourceFiles = new HashMap<>();
+        this.filesToCopyFromSource = new LinkedMultiValueMap<>();
+        this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
+        this.fileProcessingReport = new SourceFileProcessingReport();
+        this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
+    }
 
-	public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
-						 Product product, boolean copyFilesDefinedInManifest) {
-		this.manifestStream = manifestStream;
-		this.fileHelper = fileHelper;
-		this.buildS3PathHelper = buildS3PathHelper;
-		this.product = product;
-		this.sourceFilesMap = new HashMap<>();
-		this.refsetFileProcessingConfigs = new HashMap<>();
-		this.descriptionFileProcessingConfigs = new HashMap<>();
-		this.textDefinitionFileProcessingConfigs = new HashMap<>();
-		this.availableSources = new HashSet<>();
-		this.copyFilesDefinedInManifest = copyFilesDefinedInManifest;
-		this.skippedSourceFiles = new HashMap<>();
-		this.filesToCopyFromSource = new LinkedMultiValueMap<>();
-		this.refsetWithAdditionalFields = new LinkedMultiValueMap<>();
-		this.fileProcessingReport = new SourceFileProcessingReport();
-		this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
-	}
-
-	public SourceFileProcessingReport processFiles(List<String> sourceFileLists) {
-		try {
-			initLocalDirs();
-			copySourceFilesToLocal(sourceFileLists);
-			loadFileProcessConfigsFromManifest();
-			prepareSourceFiles();
-			if (copyFilesDefinedInManifest) {
-				try {
-					fileProcessingReport.addReportDetails(copyFilesToOutputDir());
-				} catch (Exception e) {
-					String errorMsg = "Failed to copy files defined in manifest locally for preparing input files.";
-					logger.error(errorMsg, e);
-					fileProcessingReport.add(ReportType.ERROR, errorMsg);
-				}
-			}
-			verifyRefsetFiles();
-			uploadOutFilesToProductInputFiles();
-		} finally {
-			if (!FileUtils.deleteQuietly(localDir)) {
-				logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
-			}
-		}
-		return fileProcessingReport;
-	}
+    public SourceFileProcessingReport processFiles(List<String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws BusinessServiceException {
+        try {
+            initLocalDirs();
+            copySourceFilesToLocal(sourceFileLists,fileProcessingFailureMaxRetry);
+            loadFileProcessConfigsFromManifest();
+            prepareSourceFiles();
+            if (this.copyFilesDefinedInManifest) {
+               fileProcessingReport.addReportDetails(copyFilesToOutputDir());
+            }
+            verifyRefsetFiles();
+            uploadOutFilesToProductInputFiles();
+        } catch (Exception e) {
+        	StringBuilder msgBuilder = new StringBuilder();
+        	msgBuilder.append("Error encountered when preparing input files.");
+        	if (e.getCause() != null) {
+        		msgBuilder.append("Cause:" + e.getCause().getMessage());
+        	} else {
+        		msgBuilder.append("Failure message:" + e.getMessage());
+        	}
+        	logger.error(msgBuilder.toString(), e);
+            fileProcessingReport.add(ReportType.ERROR, msgBuilder.toString() );
+            throw new BusinessServiceException(msgBuilder.toString(), e);
+        } finally {
+           if (!FileUtils.deleteQuietly(localDir)) {
+                logger.warn("Failed to delete local directory {}", localDir.getAbsolutePath());
+            }
+        }
+        return fileProcessingReport;
+    }
 
 	private void verifyRefsetFiles() {
 		File[] filesPrepared = outDir.listFiles();
@@ -210,13 +216,31 @@ public class InputSourceFileProcessor {
 		outDir.mkdir();
 	}
 
-	private File copySourceFilesToLocal(List<String> sourceFileLists) {
+	private File copySourceFilesToLocal(List <String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws IOException{
 		for (String sourceFilePath : sourceFileLists) {
 			 //Copy files from S3 to local for processing
 			String s3FilePath = buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString();
-			try (InputStream sourceFileStream = fileHelper.getFileStream(s3FilePath)) {
+			InputStream sourceFileStream = null;
+			try {
+				sourceFileStream = fileHelper.getFileStream(s3FilePath);
+				if (sourceFileStream == null && fileProcessingFailureMaxRetry != null) {
+					int attempt = 1;
+					do {
+						logger.warn("Failed to download file {} from S3 on attempt {}. Waiting {} seconds before retrying.", s3FilePath, attempt, 10);
+						try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							logger.warn("Retry delay interrupted.",e);
+						}
+						sourceFileStream = fileHelper.getFileStream(s3FilePath);
+						attempt++;
+					}
+					while (sourceFileStream == null && attempt < fileProcessingFailureMaxRetry + 1);
+				}
 				if (sourceFileStream == null) {
 					fileProcessingReport.add(ReportType.ERROR, String.format("Source file not found in S3 %s", s3FilePath));
+					logger.error(String.format("Source file not found in S3 %s", s3FilePath));
+					continue;
 				}
 				String sourceName = sourceFilePath.substring(0, sourceFilePath.indexOf("/"));
 				//Keep track of the sources directories that are used
@@ -238,6 +262,8 @@ public class InputSourceFileProcessor {
 			} catch (IOException e) {
 				String errorMsg = String.format("Failed to copy source file %s to local disk", sourceFilePath);
 				fileProcessingReport.add(ReportType.ERROR, errorMsg);
+			} finally {
+				sourceFileStream.close();
 			}
 		}
 		for (String sourceName : sourceFilesMap.keySet()) {
@@ -453,14 +479,13 @@ public class InputSourceFileProcessor {
 
 	private void addFileToSkippedList(String sourceName, String filename) {
 		if (skippedSourceFiles.get(sourceName) == null) {
-			List<String> files = new ArrayList<>();
+			Set<String> files = new HashSet<>();
 			files.add(filename);
 			skippedSourceFiles.put(sourceName, files );
 		} else {
 			skippedSourceFiles.get(sourceName).add(filename);
 		}
 	}
-
 
 	private void processDataByLanguageCode(Map<String,FileProcessingConfig> fileProcessingConfigs, String sourceName, Map<String, List<String>> rows,
 			String inputFilename, String header, boolean isTextDefinition) throws IOException {
@@ -657,11 +682,11 @@ public class InputSourceFileProcessor {
 		rf2FileName = rf2FileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX) ? rf2FileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : rf2FileName;
 		String[] splits = rf2FileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 		StringBuilder key = new StringBuilder();
-		for (int i=0; i < splits.length ;i++) {
+		for (int i = 0; i < splits.length; i++) {
 			if (i == 3) {
 				continue;
 			}
-			if ( i > 0) {
+			if (i > 0) {
 				key.append(RF2Constants.FILE_NAME_SEPARATOR);
 			}
 			key.append(splits[i]);
@@ -715,7 +740,7 @@ public class InputSourceFileProcessor {
 		}
 	}
 
-	public Map<String, List<String>> getSkippedSourceFiles() {
+	public Map<String, Set<String>> getSkippedSourceFiles() {
 		return skippedSourceFiles;
 	}
 

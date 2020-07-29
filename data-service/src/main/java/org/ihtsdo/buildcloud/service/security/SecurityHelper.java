@@ -34,11 +34,8 @@ public class SecurityHelper {
 
 	public static User getRequiredUser() throws AuthenticationException {
 		User user = getUser();
-		if (user == null) {
-			throw new AuthenticationException("Authentication required.");
-		} else {
-			return user;
-		}
+		return user;
+
 	}
 
 }

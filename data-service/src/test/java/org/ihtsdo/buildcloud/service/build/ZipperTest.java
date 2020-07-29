@@ -7,7 +7,6 @@ import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -65,7 +64,7 @@ public class ZipperTest {
 	
 	@Before
 	public void setup() throws NoSuchAlgorithmException, IOException, DecoderException, InterruptedException {
-		Product product = productDAO.find(1L, TestUtils.TEST_USER);
+		Product product = productDAO.find(1L);
 		Thread.sleep(1000);// Make build unique
 		build = new Build(new Date(), product);
 

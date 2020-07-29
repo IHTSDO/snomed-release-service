@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -35,9 +34,12 @@ public interface ProductService extends EntityService<Product> {
 	String MODULE_ID = "moduleId";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	String ENABLE_DROOLS = "enableDrools";
+	String ENABLE_JIRA = "jiraIssueCreationFlag";
+	String ENABLE_MRCM = "enableMRCMValidation";
+	String JIRA_PRODUCT_NAME = "jiraProductName";
+	String JIRA_REPORTING_STAGE = "jiraReportingStage";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
-	String ENABLE_MRCM = "enableMRCMValidation";
 	String CLASSIFY_OUTPUT_FILES = "classifyOutputFiles";
 	String LICENSE_STATEMENT = "licenseStatement";
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";

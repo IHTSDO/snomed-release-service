@@ -1,0 +1,160 @@
+<html>
+<head>
+
+    <style>
+        label {
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .ERROR {
+            color: red;
+        }
+
+        .WARN {
+            color: #e38d13;
+        }
+
+        .INFO {
+            color: blue;
+        }
+    </style>
+</head>
+<body onload="init()"><title>Log Viewer</title>
+<script src="./libs/moment-min.js"></script>
+<script src="./libs/jquery-2.0.3.js"></script>
+<script type="text/javascript">
+   var hideInfo = false;
+   var hideDebug = false;
+   var hideWarn = false;
+   var hideError = false;
+   var errorCount = 0;
+
+   function init() {
+      var url = window.location.href;
+      setAuthHeader(url);
+      var center = getParameterByName('center', url);
+      var product = getParameterByName('product', url);
+      var build = getParameterByName('build', url);
+      var reportPath = window.location.protocol + "//" + window.location.host + "/api/v1" + "/centers/" + center + "/products/" + product;
+      if(build !== null) {
+         reportPath = reportPath + "/builds/" + build;
+         reportPath = reportPath + "/logs/full-log.json";
+      }  else {
+         reportPath = reportPath + "/buildLogs/details"
+      }
+      $.get(reportPath, function(data) {
+         var messages = JSON.parse(data).messages;
+         var size = messages.length;
+         $.each(messages, function (index, value) {
+            showMessageOutput(value);
+         });
+      });
+
+   }
+
+   function setAuthHeader(url) {
+      var keys = ["dev-ims-ihtsdo","uat-ims-ihtsdo","ims-ihtsdo"];
+      for(i=0;i < keys.length; i++) {
+         var authHeaderValue = getParameterByName(keys[i], url);
+         if(authHeaderValue !== null) {
+            var key = keys[i];
+            setCookie(key, authHeaderValue, 1);
+            var newUrl = url.substr(0, url.indexOf('&' + key));
+            window.location.replace(newUrl);
+            break;
+         }
+      }
+   }
+
+   function setCookie(name,value,days) {
+      var expires = "";
+      if (days) {
+         var date = new Date();
+         date.setTime(date.getTime() + (days*24*60*60*1000));
+         expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+   }
+
+
+
+
+   function showMessageOutput(messageOutput) {
+      var response = document.getElementById('response');
+      var p = document.createElement('p');
+      p.style.wordWrap = 'break-word';
+      var level = messageOutput.level;
+      p.classList.add(level);
+      if (level === 'ERROR') {
+         errorCount++;
+         document.getElementById('errorCount').innerHTML = errorCount;
+         if (hideError) p.classList.add('hidden');
+      } else if (level === 'INFO') {
+         if (hideInfo) p.classList.add('hidden');
+      } else if (level === 'DEBUG') {
+         if (hideDebug) p.classList.add('hidden');
+      } else if(level === 'WARN') {
+         if (hideWarn) p.classList.add('hidden');
+      }
+      var time = moment(messageOutput.time).format('DD/MM/YYYY HH:mm:ss');
+      p.appendChild(document.createTextNode(time + " - [" + messageOutput.level + "] - " + messageOutput.message));
+      response.appendChild(p);
+   }
+
+   function toggleLogLevel(checkbox) {
+      var level = checkbox.value;
+      var isHidden = checkbox.checked;
+      if (level === 'DEBUG') hideDebug = isHidden;
+      if (level === 'INFO') hideInfo = isHidden;
+      if (level === 'ERROR') hideError = isHidden;
+      if (level === 'WARN') hideWarn = isHidden;
+      var logLines = document.getElementsByClassName(level);
+      for (var i = 0; i < logLines.length; i++) {
+         logLines[i].classList.toggle('hidden', isHidden);
+      }
+   }
+
+   function getParameterByName(name, url) {
+      if (!url) url = window.location.href;
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+         results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, " "));
+   }
+
+
+
+</script>
+<div>
+    <br>
+    <p>---START---</p>
+    <p id="response"></p></div>
+<div><span id="connectedId"></span> <br/> Errors: <span style="color: red;" id="errorCount">0</span></div>
+<p>---END---</p>
+<div>
+    Hide:
+    <label>
+        <input type="checkbox" name="hideOptions" value="DEBUG" onchange="toggleLogLevel(this)">DEBUG
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="INFO" onchange="toggleLogLevel(this)">INFO
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="WARN" onchange="toggleLogLevel(this)">WARN
+    </label>
+    <label>
+        <input type="checkbox" name="hideOptions" value="ERROR" onchange="toggleLogLevel(this)">ERROR
+    </label>
+</div>
+<br>
+
+</div>
+</body>
+</html>

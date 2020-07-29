@@ -1,0 +1,15 @@
+<ol class="breadcrumb">
+	<li><a href="#">Home</a></li>
+	<li>{{#link-to 'release-center' this}}{{shortName}}{{/link-to}}</a></li>
+	<li>Rule Sets</li>
+</ol>
+
+<h2>Rule Sets</h2>
+<ul>
+	<li>{{#link-to 'rule-set'}}International Edition Only{{/link-to}} <small>(4 updates available)</small></a></li>
+	<li>{{#link-to 'rule-set'}}My Extension Only{{/link-to}}</li>
+	<li>{{#link-to 'rule-set'}}My Extension and International Edition{{/link-to}} <small>(1 update available)</small></li>
+</ul>
+{{#if controllers.application.isAuthenticated}}
+<a class="no-bullet list-align" href="#" onclick="return false;"><span class="glyphicon glyphicon-plus"></span> Add Rule Set</a>
+{{/if}}

@@ -6,4 +6,12 @@
          <column name="enable_drools" type="CHAR(1)" defaultValue="N"/>
       </addColumn>
    </changeSet>
+   <changeSet id="20180711" author="HUYLE">
+      <comment>Add parameters to QAConfig</comment>
+      <addColumn tableName="qa_config">
+         <column name="create_jira_issue" type="CHAR(1)" defaultValue="N"/>
+         <column name="product_name" type="varchar(255)"/>
+         <column name="reporting_stage" type="varchar(255)"/>
+      </addColumn>
+   </changeSet>
 </databaseChangeLog>

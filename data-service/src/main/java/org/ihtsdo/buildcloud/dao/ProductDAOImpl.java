@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.dao;
 
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.springframework.stereotype.Repository;
 
@@ -17,31 +16,31 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	}
 
 	@Override
-	public List<Product> findAll(Set<FilterOption> filterOptions, User user) {
-		return findAll(null, filterOptions, user);
+	public List<Product> findAll(Set<FilterOption> filterOptions) {
+		return findAll(null, filterOptions);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, User user) {
+	public List<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions) {
 
 		String filter = "";
 		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
-			filter += " and ( removed = 'N' or removed is null) ";
+			filter += " ( removed = 'N' or removed is null) ";
 		}
 		if (releaseCenterBusinessKey != null) {
-			filter += " and releaseCenter.businessKey = :releaseCenterBusinessKey ";
+			if(!filter.isEmpty()) {
+				filter += " and ";
+			}
+			filter += " releaseCenter.businessKey = :releaseCenterBusinessKey ";
 		}
 		Query query = getCurrentSession().createQuery(
 				"select product " +
-						"from ReleaseCenterMembership membership " +
-						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.products product " +
-						"where membership.user = :user " +
+						"from Product product " +
+						"join product.releaseCenter releaseCenter " +
+						"where " +
 						filter +
 						"order by product.id ");
-		query.setEntity("user", user);
-
 		if (releaseCenterBusinessKey != null) {
 			query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
 		}
@@ -49,16 +48,12 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	}
 
 	@Override
-	public Product find(Long id, User user) {
+	public Product find(Long id) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
-						"from ReleaseCenterMembership membership " +
-						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.products product " +
-						"where membership.user = :user " +
-						"and product.id = :productId " +
+						"from Product product " +
+						"where product.id = :productId " +
 						"order by product.id ");
-		query.setEntity("user", user);
 		query.setLong("productId", id);
 		return (Product) query.uniqueResult();
 	}
@@ -68,16 +63,13 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	 */
 	@Override
 	public Product find(String releaseCenterKey,
-			String productKey, User user) {
+	                    String productKey) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
-						"from ReleaseCenterMembership membership " +
-						"join membership.releaseCenter releaseCenter " +
-						"join releaseCenter.products product " +
-						"where membership.user = :user " +
-						"and releaseCenter.businessKey = :releaseCenterBusinessKey " +
+						"from Product product " +
+						"join product.releaseCenter releaseCenter " +
+						"where releaseCenter.businessKey = :releaseCenterBusinessKey " +
 						"and product.businessKey = :productBusinessKey ");
-		query.setEntity("user", user);
 		query.setString("releaseCenterBusinessKey", releaseCenterKey);
 		query.setString("productBusinessKey", productKey);
 		return (Product) query.uniqueResult();

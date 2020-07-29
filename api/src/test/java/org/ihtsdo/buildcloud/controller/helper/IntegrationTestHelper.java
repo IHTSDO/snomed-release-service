@@ -325,6 +325,25 @@ public class IntegrationTestHelper {
 		Assert.assertEquals("Build bad status. Message: " + message, COMPLETION_STATUS, status);
 	}
 
+	public void triggerBuildAndGotCancelled(final String buildURL) throws Exception {
+		final MvcResult triggerResult = mockMvc.perform(
+				post(buildURL + "/trigger")
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andReturn();
+
+		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
+		final JSONObject jsonObject = new JSONObject(outputFileListJson);
+		final JSONObject buildReport = jsonObject.getJSONObject("buildReport");
+		final String status = buildReport.getString("Progress Status");
+		final String message = buildReport.getString("Message");
+		Assert.assertEquals("Build bad status. Message: " + message, "cancelled", status);
+	}
+
 	public void publishOutput(final String buildURL) throws Exception {
 		mockMvc.perform(
 				post(buildURL + "/publish")
@@ -477,6 +496,17 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andReturn();
+	}
+
+	public int cancelBuild(String buildURL) throws Exception {
+		final MvcResult cancelBuildResult = mockMvc.perform(
+				post(buildURL + "/cancel")
+						.header("Authorization", getBasicDigestHeaderValue())
+						.contentType(MediaType.APPLICATION_JSON)
+		)
+				.andDo(print())
+				.andReturn();
+		return cancelBuildResult.getResponse().getStatus();
 	}
 
 }

@@ -8,24 +8,25 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
+import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-
-import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.*;
-
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
+
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.ERROR;
+import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.WARNING;
+
+
 
 @Service
 @Transactional
@@ -45,6 +53,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public static final Logger LOGGER = LoggerFactory.getLogger(ProductInputFileServiceImpl.class);
 
 	private final FileHelper fileHelper;
+
+	private final FileHelper externallyMaintainedFileHelper;
+
+	private static final String SRC_TERM_SERVER = "terminology-server";
+
+	private static final String SRC_EXT_MAINTAINED = "externally-maintained";
 
 	@Autowired
 	private ProductDAO productDAO;
@@ -56,8 +70,18 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileServiceImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+	private TermServerService termServerService;
+
+	@Autowired
+	private Integer fileProcessingFailureMaxRetry;
+
+	private String buildBucketName;
+
+	@Autowired
+	public ProductInputFileServiceImpl(final String buildBucketName, final String externallyMaintainedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
+		this.buildBucketName = buildBucketName;
+		externallyMaintainedFileHelper = new FileHelper(externallyMaintainedBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -105,7 +129,9 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public void deleteFile(String centerKey, final String productKey, final String filename) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		fileHelper.deleteFile(s3PathHelper.getProductInputFilesPath(product) + filename);
+		String inputFilePath = s3PathHelper.getProductInputFilesPath(product) + filename;
+		LOGGER.info("Deleting input file {}", inputFilePath);
+		fileHelper.deleteFile(inputFilePath);
 	}
 
 	@Override
@@ -225,7 +251,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 							InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestInputStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
 							List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
 							if(sourceFiles != null && !sourceFiles.isEmpty()) {
-								report = fileProcessor.processFiles(sourceFiles);
+								report = fileProcessor.processFiles(sourceFiles,fileProcessingFailureMaxRetry);
 							} else {
 								report.add(ERROR, "Failed to load files from source directory");
 							}
@@ -263,7 +289,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	private Product getProduct(String centerKey,final String productKey) throws ResourceNotFoundException {
-		Product product = productDAO.find(centerKey, productKey, SecurityHelper.getRequiredUser());
+		Product product = productDAO.find(centerKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
@@ -319,8 +345,95 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig, SecurityContext securityContext) {
+		InputGatherReport inputGatherReport = new InputGatherReport();
+		try {
+			Product product = getProduct(centerKey, productKey);
+			dao.persistSourcesGatherReport(product, inputGatherReport);
+			if (requestConfig.isLoadTermServerData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
+				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport, securityContext);
+			}
+			if (requestConfig.isLoadExternalRefsetData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_EXT_MAINTAINED);
+				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
+			}
+			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
+			dao.persistSourcesGatherReport(product, inputGatherReport);
+		} catch (Exception ex) {
+			LOGGER.error("Failed to gather source files!", ex);
+			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
+		}
+		return inputGatherReport;
+	}
+
+	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, GatherInputRequestPojo requestConfig
+			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
+		try {
+			SecurityContextHolder.setContext(securityContext);
+			File exportFile = termServerService.export(requestConfig.getTermServerUrl(), requestConfig.getBranchPath(), requestConfig.getEffectiveDate(),
+					requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
+			try {
+				//Test whether the exported file is really a zip file
+				ZipFile zipFile = new ZipFile(exportFile);
+				FileInputStream fileInputStream = new FileInputStream(exportFile);
+
+				putSourceFile(SRC_TERM_SERVER, centerKey, productKey, fileInputStream, exportFile.getName(),exportFile.length());
+				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, SRC_TERM_SERVER,
+						"Successfully export file " + exportFile.getName() + " from term server and upload to source \"terminology-server\"");
+				LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", exportFile.getName());
+			} catch (ZipException ex) {
+				String returnedError = org.apache.commons.io.FileUtils.readFileToString(exportFile);
+				LOGGER.error("Failed export data from term server. Term server returned error: {}", returnedError);
+				throw new BusinessServiceException("Failed export data from term server. Term server returned error:" + returnedError);
+			}
+		} catch (Exception ex) {
+			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_TERM_SERVER, ex.getMessage());
+			throw ex;
+		} finally {
+			SecurityContextHolder.clearContext();
+		}
+	}
+
+
+	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String effectiveDate
+			, InputGatherReport inputGatherReport) throws IOException {
+		String dirPath = centerKey + "/" + effectiveDate + "/";
+		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
+		LOGGER.info("Found {} files at {} in external refsets bucket", externalFiles.size(), dirPath);
+		for (String externalFile : externalFiles) {
+			// Skip if current object is a directory
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/"))
+				continue;
+			try {
+				Product product = getProduct(centerKey, productKey);
+				String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, SRC_EXT_MAINTAINED).toString();
+				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
+				LOGGER.info("Successfully export file " + externalFile + " from Externally Maintained bucket and uploaded to source \"externally-maintained\"");
+			} catch (Exception ex) {
+				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, effectiveDate, externalFile, ex);
+				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
+				throw ex;
+			}
+		}
+	}
+
+
+	@Override
+	public InputStream getInputGatherReport(String centerKey, String productKey) {
+		Product product = getProduct(centerKey, productKey);
+		return dao.getInputGatherReport(product);
+	}
+
+	@Override
 	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
 		Product product = getProduct(releaseCenterKey, productKey);
 		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
+	}
+
+	@Override
+	public InputStream getFullBuildLogFromProductIfExists(String releaseCenterKey, String productKey) {
+		Product product = getProduct(releaseCenterKey, productKey);
+		return fileHelper.getFileStream(s3PathHelper.getBuildFullLogJsonFromProduct(product));
 	}
 }

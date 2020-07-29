@@ -66,7 +66,7 @@ public class BuildDAOImplTest {
 		this.mockS3Client = mocksControl.createMock(S3Client.class);
 		buildDAO.setS3Client(mockS3Client);
 
-		product = productDAO.find(1L, TestUtils.TEST_USER);
+		product = productDAO.find(1L);
 		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
 		build = new Build(creationTime, product);
 	}

@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
+import org.apache.commons.codec.DecoderException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -9,6 +11,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +28,7 @@ import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +38,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.xml.sax.SAXException;
+
+import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
@@ -66,7 +75,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         String testFile = getClass().getResource(TEST_ARCHIVE_FILE).getFile();
         testArchive = new File(testFile);
         SecurityHelper.setUser(TestUtils.TEST_USER);
-        product = productDAO.find(1L, TestUtils.TEST_USER);
+        product = productDAO.find(1L);
         if(product.getBuildConfiguration() == null) {
             product.setBuildConfiguration(new BuildConfiguration());
         }
@@ -123,7 +132,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesInAllSources() throws Exception {
+    public void testPrepareInputFilesInAllSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_without_sources_specified.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED);
@@ -137,9 +146,9 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         verifyFileProcessingInAllSources();
     }
 
-    
+
     @Test
-    public void testPrepareInputFilesForOneSource() throws Exception {
+    public void testPrepareInputFilesForOneSource() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_without_sources_specified.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
@@ -159,9 +168,9 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         	assertTrue("must contain " + filename, Arrays.asList(inputFileCreated).contains(filename));
         }
     }
-    
+
     @Test
-    public void testPrepareInputFilesInRestrictedSources() throws Exception {
+    public void testPrepareInputFilesInRestrictedSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_restricted_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
@@ -169,14 +178,14 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
         SourceFileProcessingReport report = productInputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), false);
         printReport(report);
-   
+
         assertEquals(2, report.getDetails().get(ReportType.ERROR).size());
         verifyForFileProcessingInRestrictedSources();
-        
+
     }
 
     @Test
-    public void testPrepareInputFilesMissingRefsets() throws Exception {
+    public void testPrepareInputFilesMissingRefsets() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_missing_refsets.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
@@ -186,7 +195,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     }
 
     @Test
-    public void testPrepareInputFilesWithTerminologyFiles() throws Exception {
+    public void testPrepareInputFilesWithTerminologyFiles() throws ResourceNotFoundException, IOException, NoSuchAlgorithmException, JAXBException, DecoderException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_with_unprocessed.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
@@ -196,7 +205,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         printReport(report);
         verifyResults();
     }
-    
+
     @Test
     public void testPrepareFilesForDK_Extension() throws Exception {
     	 String testManifestFile = getClass().getResource("manifest_dk.xml").getFile();
@@ -208,7 +217,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          List<String> inputFileList = productInputFileService.listInputFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey());
          assertNotNull(report.getDetails().get(ReportType.ERROR));
          assertEquals(3,report.getDetails().get(ReportType.ERROR).size());
-         String [] fileNameReportedWithError = {"sct2_Concept_Delta_DK1000005_20170731.txt", 
+         String [] fileNameReportedWithError = {"sct2_Concept_Delta_DK1000005_20170731.txt",
         		 "sct2_Relationship_Delta_DK1000005_20170731.txt",
         		 "sct2_StatedRelationship_Delta_DK1000005_20170731.txt"};
          for (FileProcessingReportDetail detail : report.getDetails().get(ReportType.ERROR)) {
@@ -217,8 +226,8 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          }
          assertEquals(5, inputFileList.size());
     }
-    
-    
+
+
     @Test
     public void testPrepareFilesForSE_Extension() throws Exception {
     	 String testManifestFile = getClass().getResource("manifest_se_test.xml").getFile();
@@ -237,11 +246,11 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
          assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
          assertEquals(18, report.getDetails().get(ReportType.ERROR).size());
          assertEquals(16, report.getDetails().get(ReportType.WARNING).size());
-         
+
     }
-    
+
     @Test
-    public void testPrepareInputFilesWithEmptyData() throws Exception {
+    public void testPrepareInputFilesWithEmptyData() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_with_additonal_fields.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -272,16 +281,16 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         		"der2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt"};
         for (FileProcessingReportDetail reportDetail :report.getDetails().get(ReportType.ERROR)) {
         	assertEquals("Required by manifest but not found in any source.", reportDetail.getMessage());
-        	assertTrue("must contain" + reportDetail.getFileName(), 
+        	assertTrue("must contain" + reportDetail.getFileName(),
         			Arrays.asList(filesReportedAsError).contains(reportDetail.getFileName()));
         }
         assertEquals(7, report.getDetails().get(ReportType.WARNING).size());
         assertEquals(20, report.getDetails().get(ReportType.INFO).size());
     }
-    
-    
+
+
     @Test
-    public void testPrepareInputFileWithMultipleLanguageCodes() throws Exception {
+    public void testPrepareInputFileWithMultipleLanguageCodes() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_with_multiple_language_codes.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -307,10 +316,10 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertNotNull(report.getDetails().get(ReportType.WARNING));
         assertEquals(7,report.getDetails().get(ReportType.WARNING).size());
     }
-    
-    
+
+
     @Test
-    public void testPrepareInputFilesWithEmptyDataInTwoSources() throws Exception {
+    public void testPrepareInputFilesWithEmptyDataInTwoSources() throws ResourceNotFoundException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_with_multiple_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -346,9 +355,9 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertNotNull(report.getDetails().get(ReportType.WARNING));
         assertEquals(6,report.getDetails().get(ReportType.WARNING).size());
     }
-    
+
     @Test
-    public void testPrepareInputFilesWithInvalidManifest() throws Exception {
+    public void testPrepareInputFilesWithInvalidManifest() throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("invalid_manifest.xml").getFile();
         File testManifest = new File(testManifestFile);
         String testFile = getClass().getResource(EMPTY_DATA_FILE).getFile();
@@ -362,9 +371,9 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertEquals("manifest.xml doesn't conform to the schema definition. The element type \"refset\" must be terminated by the matching end-tag \"</refset>\". The issue lies in the manifest.xml at line 22 and column 9",
         		report.getDetails().get(ReportType.ERROR).get(0).getMessage());
     }
-    
+
     @Test
-    public void testPrepareInputFilesWithMultipleSources() throws Exception {
+    public void testPrepareInputFilesWithMultipleSources() throws ResourceNotFoundException, IOException, JAXBException, DecoderException, NoSuchAlgorithmException, BusinessServiceException {
         String testManifestFile = getClass().getResource("manifest_with_multiple_sources.xml").getFile();
         File testManifest = new File(testManifestFile);
         addTestFileToSourceDirectory(SRC_TERM_SERVER, new File(getClass().getResource(TEST_ARCHIVE_FILE).getFile()));
@@ -391,7 +400,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         assertNotNull(report.getDetails().get(ReportType.WARNING));
         assertEquals(2, report.getDetails().get(ReportType.WARNING).size());
     }
-    
+
 
 
     private void verifyFileProcessingInAllSources() throws ResourceNotFoundException, IOException {
@@ -439,7 +448,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Description_Delta-en_INT_20170731.txt");
         assertNotNull(inputStream);
         assertEquals(2, IOUtils.readLines(inputStream).size());
-        
+
         //Unprocessed files
         inputStream = productInputFileService.getFileInputStream(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "rel2_Concept_Delta_INT_20170731.txt");
         assertNull(inputStream);
@@ -485,21 +494,23 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
         InputStream inputStream = new FileInputStream(testArchive);
         productInputFileService.putSourceFile(sourceName, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, TEST_ARCHIVE_FILE, 0L);
     }
-    
+
     protected void addTestFileToSourceDirectory(final String sourceName, File zipFile ) throws ResourceNotFoundException, IOException {
         InputStream inputStream = new FileInputStream(zipFile);
         productInputFileService.putSourceFile(sourceName, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), inputStream, zipFile.getName(), 0L);
     }
-    
+
     private void assertFileNameExist (List<String> inputFileList, String ...fileNames ) {
     	for (String name : fileNames) {
     		assertTrue("File name must exist:" + name, inputFileList.contains(name));
     	}
     }
-    
+
     private void printReport(SourceFileProcessingReport report) {
     	if (isDebugRun) {
     		 System.out.println(report);
     	}
     }
+
+
 }
