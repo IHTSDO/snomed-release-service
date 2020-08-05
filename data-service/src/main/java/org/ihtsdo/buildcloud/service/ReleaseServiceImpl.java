@@ -118,7 +118,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 
 			//Create and trigger new build
-			build = buildService.createBuildFromProduct(releaseCenter, productKey);
+			final  User user = SecurityHelper.getRequiredUser();
+			build = buildService.createBuildFromProduct(releaseCenter, productKey, user != null ? user.getUsername() : User.ANONYMOUS_USER);
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
 			buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);

@@ -21,6 +21,8 @@ public class Build {
 
 	private Status status;
 
+	private String buildUser;
+
 	private BuildConfiguration configuration;
 
 	private final String productBusinessKey;
@@ -124,5 +126,13 @@ public class Build {
 
 	public void setQaTestConfig(final QATestConfig assertionTestConfiguration) {
 		this.qaTestConfig = assertionTestConfiguration;
+	}
+
+	public String getBuildUser() {
+		return buildUser;
+	}
+
+	public void setBuildUser(String buildUser) {
+		this.buildUser = buildUser;
 	}
 }
