@@ -135,7 +135,7 @@ public class BuildServiceImpl implements BuildService {
 	
 		
 	@Override
-	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey) throws BusinessServiceException {
+	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey, String user) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 		validateBuildConfig(product.getBuildConfiguration());
@@ -150,6 +150,7 @@ public class BuildServiceImpl implements BuildService {
 				build = new Build(creationDate, product);
 				build.setProduct(product);
 				build.setQaTestConfig(product.getQaTestConfig());
+				build.setBuildUser(user);
 				// save build with config
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 				dao.save(build);

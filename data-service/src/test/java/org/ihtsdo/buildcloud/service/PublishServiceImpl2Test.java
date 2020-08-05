@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
@@ -77,7 +78,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		List<Product> products = productService.findAll(releaseCenterName, null);
 		Product product = products.get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
-		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey());
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), User.ANONYMOUS_USER);
 
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();

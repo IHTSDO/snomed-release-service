@@ -14,7 +14,7 @@ public interface BuildService {
 
 	String MDC_BUILD_KEY = "build";
 
-	Build createBuildFromProduct(String releaseCenterKey, String productKey) throws BusinessServiceException;
+	Build createBuildFromProduct(String releaseCenterKey, String productKey, String user) throws BusinessServiceException;
 
 	/**
 	 * Synchronous method which runs the build.

@@ -12,12 +12,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.entity.QATestConfig;
-import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -119,6 +114,13 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 		// Save status file
 		updateStatus(build, Build.Status.BEFORE_TRIGGER);
+
+		// Save trigger user
+		if (StringUtils.isNotEmpty(build.getBuildUser())) {
+			final String userFilePath = pathHelper.getBuildUserFilePath(build, build.getBuildUser());
+			// Put new status before deleting old to avoid there being none.
+			putFile(userFilePath, BLANK);
+		}
 		LOGGER.debug("Saved build {} with {} ", build.getId(), Build.Status.BEFORE_TRIGGER);
 	}
 
@@ -504,9 +506,26 @@ public class BuildDAOImpl implements BuildDAO {
 				final String dateString = keyParts[2];
 				final String status = keyParts[3].split(":")[1];
 				final Build build = new Build(dateString, product.getBusinessKey(), status);
+				build.setBuildUser(getBuildUser(dateString, objectSummaries));
 				builds.add(build);
 			}
 		}
+	}
+
+	private String getBuildUser(final  String creationTime, final List<S3ObjectSummary> objectSummaries) {
+		for (final S3ObjectSummary objectSummary : objectSummaries) {
+			final String key = objectSummary.getKey();
+			if (key.contains("/user:")) {
+				final String[] keyParts = key.split("/");
+				final String dateString = keyParts[2];
+				final String user = keyParts[3].split(":")[1];
+				if (creationTime.equals(dateString)) {
+					return user;
+				}
+			}
+		}
+
+		return User.ANONYMOUS_USER;
 	}
 
 	private AsyncPipedStreamBean getFileAsOutputStream(final String buildOutputFilePath) throws IOException {

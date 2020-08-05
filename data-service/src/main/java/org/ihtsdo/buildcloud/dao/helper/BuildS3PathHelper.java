@@ -9,6 +9,7 @@ public class BuildS3PathHelper {
 	public static final String SEPARATOR = "/";
 	private static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
+	private static final String USER_PREFIX = "user:";
 	private static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String CLASSIFICATION_RESULT_OUTPUT_FILES = "classification-result-output-files";
@@ -85,8 +86,13 @@ public class BuildS3PathHelper {
 	public String getQATestConfigFilePath(final Build build) {
 		return getFilePath(build, QA_CONFIG_JSON);
 	} 
+
 	public String getStatusFilePath(final Build build, final Build.Status status) {
 		return getBuildPath(build).append(STATUS_PREFIX).append(status.toString()).toString();
+	}
+
+	public String getBuildUserFilePath(final Build build, final String user) {
+		return getBuildPath(build).append(USER_PREFIX).append(user).toString();
 	}
 
 	public String getOutputFilesPath(final Build build) {
