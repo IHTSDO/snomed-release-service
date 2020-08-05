@@ -18,7 +18,7 @@ public class SecurityHandlerInterceptor implements HandlerInterceptor {
 	@Autowired
 	private AuthenticationService authenticationService;
 
-	private static final String AUTH_TOKEN_NAME = "auth_token";
+	private static final String AUTH_TOKEN_NAME = "X-AUTH-token";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandlerInterceptor.class);
 
