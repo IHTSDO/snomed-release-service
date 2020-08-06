@@ -47,9 +47,9 @@ public interface ProductService extends EntityService<Product> {
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
 	String ENABLE_GOOGLE_SHEET_DROOL_REPORT = "enableGoogleSheetDroolReport";
 	
-	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions) throws AuthenticationException;
+	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions);
 
-	Product find(String releaseCenterKey, String productKey) throws BusinessServiceException;
+	Product find(String releaseCenterKey, String productKey);
 
 	Product create(String releaseCenterKey, String name) throws BusinessServiceException;
 
