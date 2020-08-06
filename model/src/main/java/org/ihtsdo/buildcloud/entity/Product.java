@@ -1,19 +1,12 @@
 package org.ihtsdo.buildcloud.entity;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import static org.ihtsdo.buildcloud.entity.Build.Status;
 
 @Entity
 @Table(name="product")
@@ -36,13 +29,17 @@ public class Product {
 	@JoinColumn(name="release_center_id")
 	@JsonIgnore
 	private ReleaseCenter releaseCenter;
-	
+
+	@JsonIgnore
+	@Transient
+	private Status latestBuildStatus;
+
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private BuildConfiguration buildConfiguration;
 
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private QATestConfig qaTestConfig;
-	
+
 	public Product() {
 	}
 
@@ -91,6 +88,17 @@ public class Product {
 	@JsonProperty("id")
 	public String getBusinessKey() {
 		return businessKey;
+	}
+
+
+	@JsonProperty
+	public Status getLatestBuildStatus() {
+		return latestBuildStatus;
+	}
+
+	@JsonIgnore
+	public void setLatestBuildStatus(Status latestBuildStatus) {
+		this.latestBuildStatus = latestBuildStatus;
 	}
 
 	public ReleaseCenter getReleaseCenter() {

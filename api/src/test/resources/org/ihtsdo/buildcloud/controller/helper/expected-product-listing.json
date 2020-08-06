@@ -1,6 +1,7 @@
 [ {
   "id" : "snomed_ct_release",
   "name" : "SNOMED CT Release",
+  "latestBuildStatus" : null,
   "buildConfiguration" : {
     "readmeHeader" : null,
     "readmeEndDate" : null,
