@@ -517,6 +517,7 @@ public class BuildDAOImpl implements BuildDAO {
                 final Build build = new Build(dateString, product.getBusinessKey(), status);
                 build.setBuildUser(getBuildUser(dateString, objectSummaries));
                 build.setTag(getTag(build, objectSummaries));
+                build.setProductName(product.getName());
                 builds.add(build);
             }
         }

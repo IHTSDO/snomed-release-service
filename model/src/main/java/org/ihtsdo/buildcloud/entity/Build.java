@@ -25,6 +25,8 @@ public class Build {
 
 	private String buildUser;
 
+	private String productName;
+
 	private BuildConfiguration configuration;
 
 	private final String productBusinessKey;
@@ -93,6 +95,14 @@ public class Build {
 
 	public void setTag(Tag tag) {
 		this.tag = tag;
+	}
+
+	public String getProductName() {
+		return productName;
+	}
+
+	public void setProductName(String productName) {
+		this.productName = productName;
 	}
 
 	public String getUniqueId() {
