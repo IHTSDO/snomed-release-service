@@ -6,6 +6,9 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+
+import java.util.List;
+
 import static org.ihtsdo.buildcloud.entity.Build.Status;
 
 @Entity
@@ -33,6 +36,10 @@ public class Product {
 	@JsonIgnore
 	@Transient
 	private Status latestBuildStatus;
+
+	@JsonIgnore
+	@Transient
+	private List<Build.Tag> latestTags;
 
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private BuildConfiguration buildConfiguration;
@@ -99,6 +106,16 @@ public class Product {
 	@JsonIgnore
 	public void setLatestBuildStatus(Status latestBuildStatus) {
 		this.latestBuildStatus = latestBuildStatus;
+	}
+
+	@JsonProperty("latestTag")
+	public List<Build.Tag> getLatestTags() {
+		return latestTags;
+	}
+
+	@JsonIgnore
+	public void setLatestTags(List<Build.Tag> latestTags) {
+		this.latestTags = latestTags;
 	}
 
 	public ReleaseCenter getReleaseCenter() {

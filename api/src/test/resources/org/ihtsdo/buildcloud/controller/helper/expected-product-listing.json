@@ -38,6 +38,7 @@
     "reportingStage" : null,
     "enableMRCMValidation" : false
   },
+  "latestTag" : null,
   "url" : "http://localhost/api/v1/products/snomed_ct_release",
   "manifest_url" : "http://localhost/api/v1/products/snomed_ct_release/manifest",
   "inputfiles_url" : "http://localhost/api/v1/products/snomed_ct_release/inputfiles",
