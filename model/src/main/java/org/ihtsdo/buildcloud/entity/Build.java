@@ -21,6 +21,11 @@ public class Build {
 
 	private Status status;
 
+	private List<Tag> tags;
+
+	@JsonIgnore
+	private Long taggingTime;
+
 	private String buildUser;
 
 	private BuildConfiguration configuration;
@@ -28,9 +33,9 @@ public class Build {
 	private final String productBusinessKey;
 
 	private List<PreConditionCheckReport> preConditionCheckReports;
-	
+
 	private BuildReport buildReport;
-	
+
 	@Transient
 	private Product product;
 
@@ -38,6 +43,10 @@ public class Build {
 
 	public static enum Status {
 		BEFORE_TRIGGER, FAILED_INPUT_PREPARE_REPORT_VALIDATION, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN, CANCEL_REQUESTED, CANCELLED, FAILED, PUBLISHED
+	}
+
+	public static enum Tag {
+		ALPHA, BETA, PRE_PRODUCTION, PRODUCTION
 	}
 
 	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {
@@ -81,6 +90,14 @@ public class Build {
 		this.status = status;
 	}
 
+	public List<Tag> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<Tag> tags) {
+		this.tags = tags;
+	}
+
 	public String getUniqueId() {
 		return productBusinessKey + "|" + getId();
 	}
@@ -118,7 +135,7 @@ public class Build {
 	public void setProduct(final Product product) {
 		this.product = product;
 	}
-	
+
 	@JsonIgnore
 	public QATestConfig getQaTestConfig() {
 		return qaTestConfig;
@@ -134,5 +151,13 @@ public class Build {
 
 	public void setBuildUser(String buildUser) {
 		this.buildUser = buildUser;
+	}
+
+	public Long getTaggingTime() {
+		return taggingTime;
+	}
+
+	public void setTaggingTime(Long taggingTime) {
+		this.taggingTime = taggingTime;
 	}
 }

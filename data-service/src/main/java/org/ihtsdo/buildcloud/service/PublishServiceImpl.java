@@ -172,7 +172,7 @@ public class PublishServiceImpl implements PublishService {
 				backupPublishedBuild(build,publishedBucketName);
 
 				//mark the build as Published
-				buildDao.updateStatus(build, Build.Status.PUBLISHED);
+				buildDao.addTag(build, Build.Tag.PRODUCTION);
 				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 			}
 		} catch (IOException e) {
