@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.ByteArrayInputStream;
@@ -49,7 +48,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.entity.Build.Tag;
 
@@ -194,26 +192,8 @@ public class BuildDAOImpl implements BuildDAO {
 
     @Override
     public void addTag(Build build, Tag tag) {
-        List<Tag> tags = build.getTags();
-        if (CollectionUtils.isEmpty(tags)) {
-            tags = new ArrayList<>();
-        }
-        else {
-            StringBuilder buildPath = pathHelper.getBuildPath(build);
-            // remove old tagged file
-            final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, buildPath.toString(), null, null, 10000);
-            ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-            for (final S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-                final String key = objectSummary.getKey();
-                if (key.contains("/tags:")) {
-                    s3Client.deleteObject(buildBucketName, key);
-                    break;
-                }
-            }
-        }
-        tags.add(tag);
-        build.setTags(tags);
-        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.toString()).collect(Collectors.joining(",")));
+        build.setTag(tag);
+        final String newTagFilePath = pathHelper.getTagFilePath(build, tag.name());
         putFile(newTagFilePath, BLANK);
     }
 
@@ -536,31 +516,25 @@ public class BuildDAOImpl implements BuildDAO {
                 final String status = keyParts[3].split(":")[1];
                 final Build build = new Build(dateString, product.getBusinessKey(), status);
                 build.setBuildUser(getBuildUser(dateString, objectSummaries));
-                findAndSetTags(build, objectSummaries);
+                build.setTag(getTag(build, objectSummaries));
                 builds.add(build);
             }
         }
     }
 
-    private void findAndSetTags(Build build, List<S3ObjectSummary> objectSummaries) {
+    private Tag getTag(Build build, List<S3ObjectSummary> objectSummaries) {
         for (final S3ObjectSummary objectSummary : objectSummaries) {
             final String key = objectSummary.getKey();
-            if (key.contains("/tags:")) {
+            if (key.contains("/tag:")) {
                 final String[] keyParts = key.split("/");
                 final String dateString = keyParts[2];
-                final String tagsString = keyParts[3].split(":")[1];
-                final String taggingTime= keyParts[3].split(":")[2];
+                final String tagString = keyParts[3].split(":")[1];
                 if (build.getCreationTime().equals(dateString)) {
-                    String[] tagArray = tagsString.split(",");
-                    List<Build.Tag> result = new ArrayList<>();
-                    for (int i = 0; i < tagArray.length; i++) {
-                        result.add(Build.Tag.valueOf(tagArray[i]));
-                    }
-                    build.setTags(result);
-                    build.setTaggingTime(Long.parseLong(taggingTime));
+                    return Build.Tag.valueOf(tagString);
                 }
             }
         }
+        return null;
     }
 
     private String getBuildUser(final String creationTime, final List<S3ObjectSummary> objectSummaries) {

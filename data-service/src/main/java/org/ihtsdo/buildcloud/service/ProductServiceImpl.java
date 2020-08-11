@@ -14,8 +14,6 @@ import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -56,7 +54,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         List<Product> products = productDAO.findAll(releaseCenterKey, filterOptions);
         if (!CollectionUtils.isEmpty(products)) {
             products.forEach(product -> {
-                findAndSetLatestBuildStatusAndTag(releaseCenterKey, product);
+                setLatestBuildStatusAndTag(releaseCenterKey, product);
             });
         }
         return products;
@@ -66,7 +64,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     public Product find(final String releaseCenterKey, final String productKey) {
         Product product = productDAO.find(releaseCenterKey, productKey);
         if (product != null) {
-            findAndSetLatestBuildStatusAndTag(releaseCenterKey, product);
+            setLatestBuildStatusAndTag(releaseCenterKey, product);
         }
         return product;
     }
@@ -330,19 +328,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         }
     }
 
-    private void findAndSetLatestBuildStatusAndTag(String releaseCenterKey, Product product) {
+    private void setLatestBuildStatusAndTag(String releaseCenterKey, Product product) {
         List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey());
         product.setLatestBuildStatus(!CollectionUtils.isEmpty(builds) ? builds.get(0).getStatus() : Build.Status.UNKNOWN);
-        List<Build.Tag> latestTags = null;
-        Long taggingTime = null;
         for (Build build : builds) {
-            if (build.getTaggingTime() != null && (taggingTime == null || build.getTaggingTime() > taggingTime)) {
-				taggingTime = build.getTaggingTime();
-				latestTags = build.getTags();
+            if (build.getTag() != null ) {
+                product.setLatestTag(build.getTag());
+                break;
             }
         }
-        if (latestTags != null) {
-			product.setLatestTags(latestTags);
-		}
     }
 }
