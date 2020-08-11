@@ -39,7 +39,7 @@ public class Product {
 
 	@JsonIgnore
 	@Transient
-	private List<Build.Tag> latestTags;
+	private Build.Tag latestTag;
 
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private BuildConfiguration buildConfiguration;
@@ -108,14 +108,14 @@ public class Product {
 		this.latestBuildStatus = latestBuildStatus;
 	}
 
-	@JsonProperty("latestTag")
-	public List<Build.Tag> getLatestTags() {
-		return latestTags;
+	@JsonProperty
+	public Build.Tag getLatestTag() {
+		return latestTag;
 	}
 
 	@JsonIgnore
-	public void setLatestTags(List<Build.Tag> latestTags) {
-		this.latestTags = latestTags;
+	public void setLatestTag(Build.Tag latestTag) {
+		this.latestTag = latestTag;
 	}
 
 	public ReleaseCenter getReleaseCenter() {
