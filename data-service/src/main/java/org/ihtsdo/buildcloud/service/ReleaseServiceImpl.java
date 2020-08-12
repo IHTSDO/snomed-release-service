@@ -21,6 +21,7 @@ import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -118,8 +119,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 
 			//Create and trigger new build
-			final  User user = SecurityHelper.getRequiredUser();
-			build = buildService.createBuildFromProduct(releaseCenter, productKey, user != null ? user.getUsername() : User.ANONYMOUS_USER);
+			final String currentUser = SecurityUtil.getUsername();
+			build = buildService.createBuildFromProduct(releaseCenter, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER);
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
 			buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
