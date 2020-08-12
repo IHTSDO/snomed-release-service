@@ -21,6 +21,7 @@ import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,8 +63,8 @@ public class BuildController {
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws BusinessServiceException {
-		final User user = SecurityHelper.getRequiredUser();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, user != null ? user.getUsername() : User.ANONYMOUS_USER);
+		final String currentUser = SecurityUtil.getUsername();
+		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER);
 
 		final boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
