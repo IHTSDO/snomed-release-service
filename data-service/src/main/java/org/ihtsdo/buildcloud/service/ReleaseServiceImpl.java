@@ -77,8 +77,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
 		Build build = null;
 		Product product = null;
-		final User anonymousSubject = authenticationService.getAnonymousSubject();
-		SecurityHelper.setUser(anonymousSubject);
+
 		try {
 			//Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
 			if (messagingTemplate != null) {
