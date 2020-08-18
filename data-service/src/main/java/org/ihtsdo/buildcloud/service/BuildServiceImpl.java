@@ -348,6 +348,16 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
+	public void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
+		final Product product = getProduct(releaseCenterKey, productKey);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+		}
+
+		dao.delete(product, buildId);
+	}
+
+	@Override
 	public BuildConfiguration loadBuildConfiguration(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
