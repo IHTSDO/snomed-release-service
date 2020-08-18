@@ -135,7 +135,7 @@ public class BuildServiceImpl implements BuildService {
 	
 		
 	@Override
-	public Build createBuildFromProduct(final String releaseCenterKey, final String productKey, String user) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 		validateBuildConfig(product.getBuildConfiguration());
@@ -149,7 +149,14 @@ public class BuildServiceImpl implements BuildService {
 				}
 				build = new Build(creationDate, product);
 				build.setProduct(product);
+				if (build.getConfiguration() != null) {
+					build.getConfiguration().setBranchPath(branchPath);
+					build.getConfiguration().setExportType(exportType);
+				}
 				build.setQaTestConfig(product.getQaTestConfig());
+				if (build.getQaTestConfig() != null) {
+					build.getQaTestConfig().setMaxFailureExport(maxFailureExport);
+				}
 				build.setBuildUser(user);
 				// save build with config
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());

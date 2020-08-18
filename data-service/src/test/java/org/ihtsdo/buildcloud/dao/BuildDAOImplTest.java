@@ -114,6 +114,8 @@ public class BuildDAOImplTest {
 				"\"releaseInformationFields\":null," +
 				"\"useClassifierPreConditionChecks\":false," +
 				"\"conceptPreferredTerms\":null," +
+				"\"branchPath\":null," +
+				"\"exportType\":null," +
 				"\"customRefsetCompositeKeys\":{}," +
 				"\"effectiveTime\":null" +
 				"}", configJson);
