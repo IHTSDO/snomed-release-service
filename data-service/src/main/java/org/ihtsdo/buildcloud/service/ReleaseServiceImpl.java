@@ -16,7 +16,6 @@ import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -71,7 +70,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate  messagingTemplate, Authentication authentication) throws BusinessServiceException {
+	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate messagingTemplate, Authentication authentication, String currentUser) throws BusinessServiceException {
 		String trackerId = gatherInputRequestPojo.getTrackerId();
 		String inMemoryLogTrackerId = StringUtils.isBlank(trackerId) ? Long.toString(new Date().getTime()) : trackerId;
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
@@ -118,10 +117,11 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 
 			//Create and trigger new build
-			final String currentUser = SecurityUtil.getUsername();
-			build = buildService.createBuildFromProduct(releaseCenter, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER);
-			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+			String branchPath = gatherInputRequestPojo.getBranchPath();
+			String exportType = gatherInputRequestPojo.getExportCategory() != null ?  gatherInputRequestPojo.getExportCategory().name() : null;
+			build = buildService.createBuildFromProduct(releaseCenter, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER, branchPath, exportType, maxFailureExport);
+			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
 			LOGGER.info("Build process ends", build.getStatus().name());
 		} catch (IOException e) {

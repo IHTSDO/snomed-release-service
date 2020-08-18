@@ -78,7 +78,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		List<Product> products = productService.findAll(releaseCenterName, null);
 		Product product = products.get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
-		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), User.ANONYMOUS_USER);
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), User.ANONYMOUS_USER, null, null, null);
 
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();

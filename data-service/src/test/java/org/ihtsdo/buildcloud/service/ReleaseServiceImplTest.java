@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -20,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -67,7 +67,7 @@ public class ReleaseServiceImplTest {
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication());
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
@@ -80,7 +80,7 @@ public class ReleaseServiceImplTest {
         fileProcessingReportDetail.setType(ReportType.ERROR);
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication());
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
     }
 
 

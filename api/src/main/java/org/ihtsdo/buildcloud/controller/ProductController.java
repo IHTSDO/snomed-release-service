@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -140,7 +141,8 @@ public class ProductController {
 	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
 
-		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate, SecurityContextHolder.getContext().getAuthentication());
+		final String currentUser = SecurityUtil.getUsername();
+		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate, SecurityContextHolder.getContext().getAuthentication(), currentUser);
 		return "Build Triggered !";
 	}
 

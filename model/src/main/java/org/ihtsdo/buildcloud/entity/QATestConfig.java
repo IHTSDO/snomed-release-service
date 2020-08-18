@@ -1,12 +1,6 @@
 package org.ihtsdo.buildcloud.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.hibernate.annotations.Type;
@@ -64,6 +58,9 @@ public class QATestConfig {
 	@Type(type = "yes_no")
 	@Column(name = "enable_mrcm_validation")
 	private boolean enableMRCMValidation;
+
+	@Transient
+	private Integer maxFailureExport;
 
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
@@ -176,5 +173,13 @@ public class QATestConfig {
 
 	public void setEnableMRCMValidation(boolean enableMRCMValidation) {
 		this.enableMRCMValidation = enableMRCMValidation;
+	}
+
+	public Integer getMaxFailureExport() {
+		return maxFailureExport;
+	}
+
+	public void setMaxFailureExport(Integer maxFailureExport) {
+		this.maxFailureExport = maxFailureExport;
 	}
 }

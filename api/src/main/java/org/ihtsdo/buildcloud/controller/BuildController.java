@@ -64,7 +64,7 @@ public class BuildController {
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER);
+		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null);
 
 		final boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);

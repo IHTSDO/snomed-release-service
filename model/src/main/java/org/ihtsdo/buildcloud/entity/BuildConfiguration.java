@@ -11,18 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -112,6 +101,12 @@ public class BuildConfiguration {
 
 	@Column(name="concept_preferred_terms")
 	private String conceptPreferredTerms;
+
+	@Transient
+	private String branchPath;
+
+	@Transient
+	private String exportType;
 
 	public BuildConfiguration() {
 	}
@@ -336,6 +331,22 @@ public class BuildConfiguration {
 
 	public void setConceptPreferredTerms(String conceptPreferredTerms) {
 		this.conceptPreferredTerms = conceptPreferredTerms;
+	}
+
+	public String getBranchPath() {
+		return branchPath;
+	}
+
+	public void setBranchPath(String branchPath) {
+		this.branchPath = branchPath;
+	}
+
+	public String getExportType() {
+		return exportType;
+	}
+
+	public void setExportType(String exportType) {
+		this.exportType = exportType;
 	}
 
 	@Override
