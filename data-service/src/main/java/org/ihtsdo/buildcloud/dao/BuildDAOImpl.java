@@ -153,6 +153,14 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
+    public void delete(Product product, String buildId) {
+        String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
+        for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, buildDirectoryPath).getObjectSummaries()){
+            s3Client.deleteObject(buildBucketName, file.getKey());
+        }
+    }
+
+    @Override
     public void loadBuildConfiguration(final Build build) throws IOException {
         final String configFilePath = pathHelper.getBuildConfigFilePath(build);
         final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);

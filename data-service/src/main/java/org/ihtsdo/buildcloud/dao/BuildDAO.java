@@ -20,6 +20,8 @@ public interface BuildDAO {
 	List<Build> findAllDesc(Product product);
 
 	Build find(Product product, String buildId);
+
+	void delete(Product product, String buildId);
 	
 	void loadConfiguration(Build build) throws IOException;
 

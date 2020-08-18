@@ -70,6 +70,22 @@ public class BuildController {
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
 	}
 
+	@RequestMapping( value = "/{buildId}", method = RequestMethod.DELETE )
+	@ApiOperation( value = "Delete a build",
+			notes = "" +
+					"Delete a build for given product key and release center key and build id" )
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
+
+		ifBuildIsNullThrow(productKey, buildId, build);
+
+		buildService.delete(releaseCenterKey, productKey, buildId);
+
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
 	@RequestMapping( method = RequestMethod.GET )
 	@ApiOperation( value = "Returns a list all builds for a logged in user",
 		notes = "Returns a list all builds visible to the currently logged in user, "
