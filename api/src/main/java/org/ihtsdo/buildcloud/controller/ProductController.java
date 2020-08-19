@@ -50,9 +50,6 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	@Autowired
-	private SimpMessagingTemplate messagingTemplate;
-
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
 	@RequestMapping( method = RequestMethod.GET )
@@ -142,7 +139,7 @@ public class ProductController {
 													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
 
 		final String currentUser = SecurityUtil.getUsername();
-		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, messagingTemplate, SecurityContextHolder.getContext().getAuthentication(), currentUser);
+		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, SecurityContextHolder.getContext().getAuthentication(), currentUser);
 		return "Build Triggered !";
 	}
 
