@@ -67,7 +67,7 @@ public class ReleaseServiceImplTest {
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
     }
 
     @Test(expected = BusinessServiceRuntimeException.class)
@@ -80,7 +80,7 @@ public class ReleaseServiceImplTest {
         fileProcessingReportDetail.setType(ReportType.ERROR);
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
-        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), null, SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
+        releaseService.createReleasePackage("center", "product", new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
     }
 
 

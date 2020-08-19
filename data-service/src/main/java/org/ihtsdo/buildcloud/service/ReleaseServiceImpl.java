@@ -70,24 +70,25 @@ public class ReleaseServiceImpl implements ReleaseService{
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, SimpMessagingTemplate messagingTemplate, Authentication authentication, String currentUser) throws BusinessServiceException {
-		String trackerId = gatherInputRequestPojo.getTrackerId();
-		String inMemoryLogTrackerId = StringUtils.isBlank(trackerId) ? Long.toString(new Date().getTime()) : trackerId;
-		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
-		Build build = null;
-		Product product = null;
+	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String currentUser) throws BusinessServiceException {
+		Product product = productService.find(releaseCenter, productKey);
+		if (product == null) {
+			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
+			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
+		}
 
+		//Create new build
+		Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+		String branchPath = gatherInputRequestPojo.getBranchPath();
+		String exportType = gatherInputRequestPojo.getExportCategory() != null ?  gatherInputRequestPojo.getExportCategory().name() : null;
+		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
+		Build build = buildService.createBuildFromProduct(releaseCenter, productKey, user, branchPath, exportType, maxFailureExport);
+
+		String inMemoryLogTrackerId = Long.toString(new Date().getTime());
+		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
 		try {
-			//Only send message to websocket queue if there is messaging template. Otherwise just run normally without logging
-			if (messagingTemplate != null) {
-				MDC.put(TRACKER_ID, trackerId);
-				addWebSocketAppenderToLogger(trackerId, messagingTemplate);
-			}
-			product = productService.find(releaseCenter, productKey);
-			if (product == null) {
-				LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
-				throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
-			}
+			MDC.put(TRACKER_ID, releaseCenter + "_" + productKey + build.getId());
+
 			//Gather all files in term server and externally maintain buckets if specified to source directories
 			SecurityContext securityContext = new SecurityContextImpl();
 			securityContext.setAuthentication(authentication);
@@ -116,11 +117,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 				}
 			}
 
-			//Create and trigger new build
-			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
-			String branchPath = gatherInputRequestPojo.getBranchPath();
-			String exportType = gatherInputRequestPojo.getExportCategory() != null ?  gatherInputRequestPojo.getExportCategory().name() : null;
-			build = buildService.createBuildFromProduct(releaseCenter, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER, branchPath, exportType, maxFailureExport);
+			// trigger build
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
 			buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
 			LOGGER.info("Build process ends", build.getStatus().name());
@@ -128,23 +125,11 @@ public class ReleaseServiceImpl implements ReleaseService{
 			LOGGER.error("Encounter error while creating package. Build process stopped.", e);
 			throw new BusinessServiceException(e);
 		} finally {
-			if(messagingTemplate != null) {
-				MDC.remove(TRACKER_ID);
-				removeWebSocketAppenderFromLogger(trackerId);
-			}
+			MDC.remove(TRACKER_ID);
 			saveInMemoryLogToS3(inMemoryLogAppender, build, product);
 			removeInMemorySocketAppenderFromLogger(inMemoryLogTrackerId);
 		}
 
-	}
-
-	private void addWebSocketAppenderToLogger(String trackerId, SimpMessagingTemplate messagingTemplate) {
-		org.apache.log4j.Logger logger = LogManager.getLogger("org.ihtsdo");
-		if(logger.getAppender("wsa_" + trackerId) == null) {
-			WebSocketLogAppender webSocketLogAppender = new WebSocketLogAppender(messagingTemplate, trackerId);
-			webSocketLogAppender.setName("wsa_"+ trackerId);
-			logger.addAppender(webSocketLogAppender);
-		}
 	}
 
 	private InMemoryLogAppender addInMemoryAppenderToLogger(String trackerId) {
@@ -157,11 +142,6 @@ public class ReleaseServiceImpl implements ReleaseService{
 		} else {
 			return (InMemoryLogAppender) logger.getAppender("mem_" + trackerId);
 		}
-	}
-
-	private void removeWebSocketAppenderFromLogger(String trackerId) {
-		org.apache.log4j.Logger logger = LogManager.getLogger("org.ihtsdo");
-		logger.removeAppender("wsa_" + trackerId);
 	}
 
 	private void removeInMemorySocketAppenderFromLogger(String trackerId) {
