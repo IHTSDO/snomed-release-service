@@ -523,7 +523,7 @@ public class BuildDAOImpl implements BuildDAO {
                 final String dateString = keyParts[2];
                 final String status = keyParts[3].split(":")[1];
                 final Build build = new Build(dateString, product.getBusinessKey(), status);
-                build.setBuildUser(getBuildUser(dateString, objectSummaries));
+                build.setBuildUser(getBuildUser(build, objectSummaries));
                 build.setTag(getTag(build, objectSummaries));
                 build.setProductName(product.getName());
                 builds.add(build);
@@ -537,29 +537,27 @@ public class BuildDAOImpl implements BuildDAO {
             if (key.contains("/tag:")) {
                 final String[] keyParts = key.split("/");
                 final String dateString = keyParts[2];
-                final String tagString = keyParts[3].split(":")[1];
                 if (build.getCreationTime().equals(dateString)) {
-                    return Build.Tag.valueOf(tagString);
+                    return Build.Tag.valueOf(keyParts[3].split(":")[1]);
                 }
             }
         }
         return null;
     }
 
-    private String getBuildUser(final String creationTime, final List<S3ObjectSummary> objectSummaries) {
+    private String getBuildUser(Build build, final List<S3ObjectSummary> objectSummaries) {
         for (final S3ObjectSummary objectSummary : objectSummaries) {
             final String key = objectSummary.getKey();
             if (key.contains("/user:")) {
                 final String[] keyParts = key.split("/");
                 final String dateString = keyParts[2];
-                final String user = keyParts[3].split(":")[1];
-                if (creationTime.equals(dateString)) {
-                    return user;
+                if (build.getCreationTime().equals(dateString)) {
+                    return keyParts[3].split(":")[1];
                 }
             }
         }
 
-        return User.ANONYMOUS_USER;
+        return null;
     }
 
     private AsyncPipedStreamBean getFileAsOutputStream(final String buildOutputFilePath) throws IOException {
