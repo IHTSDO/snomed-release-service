@@ -87,7 +87,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 		String inMemoryLogTrackerId = Long.toString(new Date().getTime());
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
 		try {
-			MDC.put(TRACKER_ID, releaseCenter + "_" + productKey + build.getId());
+			MDC.put(TRACKER_ID, releaseCenter + "|" + productKey + "|" + build.getId());
 
 			//Gather all files in term server and externally maintain buckets if specified to source directories
 			SecurityContext securityContext = new SecurityContextImpl();
