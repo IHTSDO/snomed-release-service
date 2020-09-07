@@ -8,7 +8,6 @@ import java.util.Set;
 public class GatherInputRequestPojo {
 
 	private String trackerId;
-	private String termServerUrl;
 	private String effectiveDate;
 	private ExportCategory exportCategory;
 	private String branchPath;
@@ -18,14 +17,6 @@ public class GatherInputRequestPojo {
 	private Integer maxFailuresExport;
 	
 	public GatherInputRequestPojo() {
-	}
-
-	public String getTermServerUrl() {
-		return termServerUrl;
-	}
-
-	public void setTermServerUrl(String termServerUrl) {
-		this.termServerUrl = termServerUrl;
 	}
 
 	public String getEffectiveDate() {
@@ -95,7 +86,6 @@ public class GatherInputRequestPojo {
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
-				", termServerUrl='" + termServerUrl + '\''+
 				", effectiveDate='" + effectiveDate + '\'' +
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
