@@ -226,6 +226,10 @@
 		<constructor-arg value="${releaseValidationFramework.url}"/>
 	</bean>
 
+	<bean id="termServerUrl" class="java.lang.String" >
+		<constructor-arg value="${termServer.url}"/>
+	</bean>
+
 	<bean class="org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator" />
 
 	<bean class="org.ihtsdo.snomed.util.rf2.schema.SchemaFactory"/>
