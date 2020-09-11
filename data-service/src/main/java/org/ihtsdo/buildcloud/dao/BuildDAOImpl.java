@@ -136,7 +136,7 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<Build> findAllDesc(final Product product) {
+    public List <Build> findAllDesc(final Product product) {
         final String productDirectoryPath = pathHelper.getProductPath(product).toString();
         return findBuildsDesc(productDirectoryPath, product);
     }
@@ -144,7 +144,7 @@ public class BuildDAOImpl implements BuildDAO {
     @Override
     public Build find(final Product product, final String buildId) {
         final String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-        final List<Build> builds = findBuildsDesc(buildDirectoryPath, product);
+        final List <Build> builds = findBuildsDesc(buildDirectoryPath, product);
         if (!builds.isEmpty()) {
             return builds.get(0);
         } else {
@@ -155,7 +155,7 @@ public class BuildDAOImpl implements BuildDAO {
     @Override
     public void delete(Product product, String buildId) {
         String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-        for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, buildDirectoryPath).getObjectSummaries()){
+        for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, buildDirectoryPath).getObjectSummaries()) {
             s3Client.deleteObject(buildBucketName, file.getKey());
         }
     }
@@ -220,7 +220,7 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<String> listInputFileNames(final Build build) {
+    public List <String> listInputFileNames(final Build build) {
         final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
         return buildFileHelper.listFiles(buildInputFilesPath);
     }
@@ -262,7 +262,7 @@ public class BuildDAOImpl implements BuildDAO {
         // Copy input files
         final String productInputFilesPath = pathHelper.getProductInputFilesPath(product);
         final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
-        final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
+        final List <String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
         for (final String filePath : filePaths) {
             try {
                 buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
@@ -279,7 +279,7 @@ public class BuildDAOImpl implements BuildDAO {
                                 LOGGER.warn("Retry delay interrupted.", e);
                             }
                             buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
-                            List<String> buildInputFileNames = listInputFileNames(build);
+                            List <String> buildInputFileNames = listInputFileNames(build);
                             copiedSuccessfully = buildInputFileNames.contains(filePath);
                         } catch (AmazonS3Exception ex) {
                             // do nothing
@@ -370,25 +370,25 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<String> listTransformedFilePaths(final Build build) {
+    public List <String> listTransformedFilePaths(final Build build) {
         final String transformedFilesPath = pathHelper.getBuildTransformedFilesPath(build).toString();
         return buildFileHelper.listFiles(transformedFilesPath);
     }
 
     @Override
-    public List<String> listOutputFilePaths(final Build build) {
+    public List <String> listOutputFilePaths(final Build build) {
         final String outputFilesPath = pathHelper.getOutputFilesPath(build);
         return buildFileHelper.listFiles(outputFilesPath);
     }
 
     @Override
-    public List<String> listLogFilePaths(final Build build) {
+    public List <String> listLogFilePaths(final Build build) {
         final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
         return buildFileHelper.listFiles(logFilesPath);
     }
 
     @Override
-    public List<String> listBuildLogFilePaths(final Build build) {
+    public List <String> listBuildLogFilePaths(final Build build) {
         final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
         return buildFileHelper.listFiles(logFilesPath);
     }
@@ -443,7 +443,7 @@ public class BuildDAOImpl implements BuildDAO {
         }
         targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 
-        final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
+        final List <String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
         for (final String filePath : filePaths) {
             String filename = FileUtils.getFilenameFromPath(filePath);
             // use contains rather that startsWith so that we can have candidate release (with x prefix in the filename)
@@ -485,8 +485,10 @@ public class BuildDAOImpl implements BuildDAO {
         }
     }
 
-    private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product) {
-        final List<Build> builds = new ArrayList<>();
+    private List <Build> findBuildsDesc(final String productDirectoryPath, final Product product) {
+        final List <Build> builds = new ArrayList <>();
+        final List <String> userPaths = new ArrayList <>();
+        final List <String> tagPaths = new ArrayList <>();
         LOGGER.info("List s3 objects {}, {}", buildBucketName, productDirectoryPath);
 
         // Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
@@ -504,9 +506,18 @@ public class BuildDAOImpl implements BuildDAO {
             if (!firstPass) {
                 objectListing = s3Client.listNextBatchOfObjects(objectListing);
             }
-            final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-            findBuilds(product, objectSummaries, builds);
+            final List <S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+            findBuilds(product, objectSummaries, builds, userPaths, tagPaths);
             firstPass = false;
+        }
+
+        // populate user and tag for builds
+        if (!builds.isEmpty()) {
+            builds.forEach(build -> {
+                build.setBuildUser(getBuildUser(build, userPaths));
+                build.setTag(getTag(build, tagPaths));
+                build.setProductName(product.getName());
+            });
         }
 
         LOGGER.debug("Found {} Builds", builds.size());
@@ -514,7 +525,7 @@ public class BuildDAOImpl implements BuildDAO {
         return builds;
     }
 
-    private void findBuilds(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Build> builds) {
+    private void findBuilds(final Product product, final List <S3ObjectSummary> objectSummaries, final List <Build> builds, final List <String> userPaths, final List <String> tagPaths) {
         for (final S3ObjectSummary objectSummary : objectSummaries) {
             final String key = objectSummary.getKey();
             if (key.contains("/status:")) {
@@ -523,40 +534,37 @@ public class BuildDAOImpl implements BuildDAO {
                 final String dateString = keyParts[2];
                 final String status = keyParts[3].split(":")[1];
                 final Build build = new Build(dateString, product.getBusinessKey(), status);
-                build.setBuildUser(getBuildUser(build, objectSummaries));
-                build.setTag(getTag(build, objectSummaries));
-                build.setProductName(product.getName());
+
                 builds.add(build);
+            } else if (key.contains("/tag:")) {
+                tagPaths.add(key);
+            } else if (key.contains("/user:")) {
+                userPaths.add(key);
+            } else {
+                // do nothing
             }
         }
     }
 
-    private Tag getTag(Build build, List<S3ObjectSummary> objectSummaries) {
-        for (final S3ObjectSummary objectSummary : objectSummaries) {
-            final String key = objectSummary.getKey();
-            if (key.contains("/tag:")) {
-                final String[] keyParts = key.split("/");
-                final String dateString = keyParts[2];
-                if (build.getCreationTime().equals(dateString)) {
-                    return Build.Tag.valueOf(keyParts[3].split(":")[1]);
-                }
+    private Tag getTag(Build build, final List <String> tagPaths) {
+        for (final String key : tagPaths) {
+            final String[] keyParts = key.split("/");
+            final String dateString = keyParts[2];
+            if (build.getCreationTime().equals(dateString)) {
+                return Build.Tag.valueOf(keyParts[3].split(":")[1]);
             }
         }
         return null;
     }
 
-    private String getBuildUser(Build build, final List<S3ObjectSummary> objectSummaries) {
-        for (final S3ObjectSummary objectSummary : objectSummaries) {
-            final String key = objectSummary.getKey();
-            if (key.contains("/user:")) {
-                final String[] keyParts = key.split("/");
-                final String dateString = keyParts[2];
-                if (build.getCreationTime().equals(dateString)) {
-                    return keyParts[3].split(":")[1];
-                }
+    private String getBuildUser(Build build, final List <String> userPaths) {
+        for (final String key : userPaths) {
+            final String[] keyParts = key.split("/");
+            final String dateString = keyParts[2];
+            if (build.getCreationTime().equals(dateString)) {
+                return keyParts[3].split(":")[1];
             }
         }
-
         return null;
     }
 
@@ -565,7 +573,7 @@ public class BuildDAOImpl implements BuildDAO {
         final PipedInputStream pipedInputStream = new PipedInputStream();
         final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
-        final Future<String> future = executorService.submit(new Callable<String>() {
+        final Future <String> future = executorService.submit(new Callable <String>() {
             @Override
             public String call() throws Exception {
                 buildFileHelper.putFile(pipedInputStream, buildOutputFilePath);
@@ -611,7 +619,7 @@ public class BuildDAOImpl implements BuildDAO {
     @Override
     public String getManifestFilePath(Build build) {
         final String directoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-        final List<String> files = buildFileHelper.listFiles(directoryPath);
+        final List <String> files = buildFileHelper.listFiles(directoryPath);
         //The first file in the manifest directory we'll call our manifest
         if (!files.isEmpty()) {
             final String manifestFilePath = directoryPath + files.iterator().next();
@@ -652,7 +660,7 @@ public class BuildDAOImpl implements BuildDAO {
 
     @Override
     public void deleteOutputFiles(Build build) {
-        List<String> outputFiles = listOutputFilePaths(build);
+        List <String> outputFiles = listOutputFilePaths(build);
         for (String outputFile : outputFiles) {
             if (buildFileHelper.exists(outputFile)) {
                 buildFileHelper.deleteFile(outputFile);
@@ -719,7 +727,7 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<String> listClassificationResultOutputFileNames(Build build) {
+    public List <String> listClassificationResultOutputFileNames(Build build) {
         final String buildInputFilesPath = pathHelper.getClassificationResultOutputFilePath(build).toString();
         return buildFileHelper.listFiles(buildInputFilesPath);
     }
