@@ -102,6 +102,9 @@ public class BuildConfiguration {
 	@Column(name="concept_preferred_terms")
 	private String conceptPreferredTerms;
 
+	@Column(name="default_branch_path")
+	private String defaultBranchPath;
+
 	@Transient
 	private String branchPath;
 
@@ -331,6 +334,14 @@ public class BuildConfiguration {
 
 	public void setConceptPreferredTerms(String conceptPreferredTerms) {
 		this.conceptPreferredTerms = conceptPreferredTerms;
+	}
+
+	public String getDefaultBranchPath() {
+		return defaultBranchPath;
+	}
+
+	public void setDefaultBranchPath(String defaultBranchPath) {
+		this.defaultBranchPath = defaultBranchPath;
 	}
 
 	public String getBranchPath() {

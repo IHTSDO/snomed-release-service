@@ -75,9 +75,6 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	private Integer fileProcessingFailureMaxRetry;
 
-	@Autowired
-	private String termServerUrl;
-
 	private String buildBucketName;
 
 	@Autowired
@@ -374,7 +371,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
 		try {
 			SecurityContextHolder.setContext(securityContext);
-			File exportFile = termServerService.export(termServerUrl, requestConfig.getBranchPath(), requestConfig.getEffectiveDate(),
+			File exportFile = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(),
 					requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
 			try {
 				//Test whether the exported file is really a zip file

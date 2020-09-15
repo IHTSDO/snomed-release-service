@@ -46,6 +46,9 @@ public interface ProductService extends EntityService<Product> {
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
 	String ENABLE_GOOGLE_SHEET_DROOL_REPORT = "enableGoogleSheetDroolReport";
+	String DEFAULT_BRANCH_PATH = "defaultBranchPath";
+	String INTERNATIONAL = "international";
+	String SNOMEDCT = "SNOMEDCT";
 	
 	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions);
 

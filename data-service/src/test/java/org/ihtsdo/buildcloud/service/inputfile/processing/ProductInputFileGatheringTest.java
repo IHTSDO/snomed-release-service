@@ -77,7 +77,7 @@ public class ProductInputFileGatheringTest {
 
 	@Test
 	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException, ProcessWorkflowException {
-		when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
+		when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
 		GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
 		requestPojo.setLoadTermServerData(true);
 		requestPojo.setLoadExternalRefsetData(false);
@@ -95,7 +95,7 @@ public class ProductInputFileGatheringTest {
 
 	@Test
 	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException, ProcessWorkflowException {
-		when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
+		when(termServerService.export(Matchers.anyString(), Matchers.anyString(), Matchers.anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
 		GatherInputRequestPojo requestPojo = new GatherInputRequestPojo();
 		requestPojo.setLoadTermServerData(true);
 		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
