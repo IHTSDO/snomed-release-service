@@ -25,6 +25,8 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -60,14 +62,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     }
 
     @Override
-    public List<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions) {
-        List<Product> products = productDAO.findAll(releaseCenterKey, filterOptions);
-        if (!CollectionUtils.isEmpty(products)) {
-            products.forEach(product -> {
+    public Page<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions, Pageable pageable) {
+        Page<Product> page = productDAO.findAll(releaseCenterKey, filterOptions, pageable);
+        if (!CollectionUtils.isEmpty(page.getContent())) {
+            page.getContent().forEach(product -> {
                 setLatestBuildStatusAndTag(releaseCenterKey, product);
             });
         }
-        return products;
+        return page;
     }
 
     @Override

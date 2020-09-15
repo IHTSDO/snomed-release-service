@@ -12,6 +12,10 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -56,16 +60,20 @@ public class ProductController {
 	@ApiOperation( value = "Returns a list of products",
 	notes = "Returns a list of products for the extension specified in the URL" )
 	@ResponseBody
-	public List<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey, @RequestParam(required = false) boolean includeRemoved,
-			HttpServletRequest request) {
-		
+	public Page<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey,
+												 @RequestParam(required = false) boolean includeRemoved,
+												 @RequestParam(defaultValue = "0") Integer pageNumber,
+												 @RequestParam(defaultValue = "10") Integer pageSize,
+												 HttpServletRequest request) {
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
 		if (includeRemoved) {
 			filterOptions.add(FilterOption.INCLUDE_REMOVED);
 		}
 
-		List<Product> products = productService.findAll(releaseCenterKey, filterOptions);
-		return hypermediaGenerator.getEntityCollectionHypermedia(products, request, PRODUCT_LINKS);
+		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize));
+		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
+
+		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), page.getTotalElements());
 	}
 
 	@RequestMapping( value = "/{productKey}", method = RequestMethod.GET)

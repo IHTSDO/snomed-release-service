@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,8 +77,8 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 
 		//Packages get looked up using a product composite key (ie include the unique ID)
 		//so first lets find the first product for a known product, and use that
-		List<Product> products = productService.findAll(releaseCenterName, null);
-		Product product = products.get(0);
+		Page<Product> page = productService.findAll(releaseCenterName, null, PageRequest.of(0,10));
+		Product product = page.getContent().get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
 		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), User.ANONYMOUS_USER, null, null, null);
 

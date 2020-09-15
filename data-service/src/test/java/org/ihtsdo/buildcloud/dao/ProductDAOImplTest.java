@@ -7,6 +7,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +27,9 @@ public class ProductDAOImplTest {
 	@Test
 	public void testInitialData() {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
-		List<Product> products = dao.findAll(filterOptions);
+		Page<Product> products = dao.findAll(filterOptions, PageRequest.of(0,10));
 		Assert.assertNotNull(products);
-		Assert.assertEquals(TestEntityGenerator.productNames.length, products.size());
+		Assert.assertEquals(TestEntityGenerator.productNames.length, products.getTotalElements());
 
 		Assert.assertNotNull(dao.find(1L));
 		Assert.assertNotNull(dao.find(2L));
