@@ -14,6 +14,9 @@ import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -25,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Service
 @Transactional
@@ -43,6 +47,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
     @Autowired
     BuildService buildService;
+
+    @Autowired
+    private TermServerService termServerService;
+
+    @Autowired
+    private Boolean offlineMode;
 
     @Autowired
     public ProductServiceImpl(final ProductDAO dao) {
@@ -88,6 +98,50 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         final Product product = new Product(productName);
         releaseCenter.addProduct(product);
         productDAO.save(product);
+
+        // auto-discover product configurations form code-system
+        if (!offlineMode) {
+            List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+            String shortName = INTERNATIONAL.equals(releaseCenter.getBusinessKey()) ? SNOMEDCT : SNOMEDCT + "-" + releaseCenter.getBusinessKey().toUpperCase();
+
+            CodeSystem codeSystem = codeSystems.stream()
+                    .filter(c -> shortName.equals(c.getShortName()))
+                    .findAny()
+                    .orElse(null);
+
+            if (codeSystem != null && !StringUtils.isEmpty(codeSystem.getBranchPath())) {
+                try {
+                    Branch branch = termServerService.getBranch(codeSystem.getBranchPath());
+                    Map<String, String> propertyValues = new HashMap<>();
+                    if (branch.getMetadata() != null) {
+                        Map<String, Object> metaData = branch.getMetadata();
+                        propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
+
+                        if (metaData.containsKey("previousPackage")) {
+                            propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
+                        }
+                        if (metaData.containsKey("defaultNamespace")) {
+                            propertyValues.put(NAMESPACE_ID, metaData.get("defaultNamespace").toString());
+                        }
+                        if (metaData.containsKey("defaultModuleId")) {
+                            propertyValues.put(MODULE_ID, metaData.get("defaultModuleId").toString());
+                        }
+                        if (metaData.containsKey("assertionGroupNames")) {
+                            String assertionGroupNames = metaData.get("assertionGroupNames").toString();
+                            propertyValues.put(ASSERTION_GROUP_NAMES, assertionGroupNames);
+                            propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
+                        }
+                        if (metaData.containsKey("dependencyPackage")) {
+                            propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, metaData.get("dependencyPackage").toString());
+                        }
+                    }
+                    this.update(releaseCenter.getBusinessKey(), product.getBusinessKey(), propertyValues);
+                } catch (RestClientException e) {
+                    LOGGER.error("Unable to find branch path {}", codeSystem.getBranchPath());
+                }
+            }
+        }
+
         return product;
     }
 
@@ -208,6 +262,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
         if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
             configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
+        }
+
+        if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
+            configuration.setDefaultBranchPath(newPropertyValues.get(DEFAULT_BRANCH_PATH));
         }
 
         if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
@@ -332,7 +390,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey());
         product.setLatestBuildStatus(!CollectionUtils.isEmpty(builds) ? builds.get(0).getStatus() : Build.Status.UNKNOWN);
         for (Build build : builds) {
-            if (build.getTag() != null ) {
+            if (build.getTag() != null) {
                 product.setLatestTag(build.getTag());
                 break;
             }
