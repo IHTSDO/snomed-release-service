@@ -8,6 +8,8 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProductService extends EntityService<Product> {
 
@@ -50,7 +52,7 @@ public interface ProductService extends EntityService<Product> {
 	String INTERNATIONAL = "international";
 	String SNOMEDCT = "SNOMEDCT";
 	
-	List<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions);
+	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable);
 
 	Product find(String releaseCenterKey, String productKey);
 
