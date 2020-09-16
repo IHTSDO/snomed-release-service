@@ -27,7 +27,6 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
     @Override
     @SuppressWarnings("unchecked")
     public Page<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, Pageable pageable) {
-
         String filter = "";
         if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
             filter += " ( removed = 'N' or removed is null) ";
@@ -38,30 +37,27 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
             }
             filter += " releaseCenter.businessKey = :releaseCenterBusinessKey ";
         }
+        String fromClause = "from Product product join product.releaseCenter releaseCenter ";
         Query query = getCurrentSession().createQuery(
                 "select product " +
-                        "from Product product " +
-                        "join product.releaseCenter releaseCenter " +
+                        fromClause +
                         "where " +
                         filter +
-                        "order by product.id ");
+                        "order by product.id DESC");
+        Query queryTotal = getCurrentSession().createQuery(
+                "select count(product.id) " +
+                        fromClause +
+                        "where " +
+                        filter);
         if (releaseCenterBusinessKey != null) {
             query.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
+            queryTotal.setString("releaseCenterBusinessKey", releaseCenterBusinessKey);
         }
 
-        // Pagination
-        List<Product> products = query.list();
-        int pageSize = pageable.getPageSize();
-        int pageNumber = pageable.getPageNumber();
-        int fromIndex  = 0;
-        int toIndex  = 0;
-        if (products.size() > 0) {
-            fromIndex  = pageSize * pageNumber;
-            toIndex  = (fromIndex + pageSize) > products.size() ? products.size() : fromIndex + pageSize;
-            return new PageImpl(products.subList(fromIndex, toIndex), pageable, products.size());
-        } else {
-            return new PageImpl(Collections.emptyList(), pageable, 0);
-        }
+        query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
+        query.setMaxResults(pageable.getPageSize());
+
+        return new PageImpl(query.list(), pageable, (long) queryTotal.uniqueResult());
     }
 
     @Override
