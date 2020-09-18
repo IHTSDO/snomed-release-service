@@ -27,6 +27,7 @@ public class ProductDAOImplTest {
 	@Test
 	public void testInitialData() {
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
+		filterOptions.add(FilterOption.INCLUDE_LEGACY);
 		Page<Product> products = dao.findAll(filterOptions, PageRequest.of(0,10));
 		Assert.assertNotNull(products);
 		Assert.assertEquals(TestEntityGenerator.productNames.length, products.getTotalElements());
