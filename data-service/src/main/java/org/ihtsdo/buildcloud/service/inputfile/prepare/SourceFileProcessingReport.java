@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.io.IOException;

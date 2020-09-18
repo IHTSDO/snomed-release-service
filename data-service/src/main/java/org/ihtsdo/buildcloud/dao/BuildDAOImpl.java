@@ -1,15 +1,16 @@
 package org.ihtsdo.buildcloud.dao;
 
 import com.amazonaws.services.s3.model.*;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.io.Files;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.*;
@@ -128,8 +129,9 @@ public class BuildDAOImpl implements BuildDAO {
 
     protected File toJson(final Object obj) throws IOException {
         final File temp = File.createTempFile("tempJson", ".tmp");
-        final JsonFactory jsonFactory = objectMapper.getJsonFactory();
-        try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(temp, JsonEncoding.UTF8)) {
+        objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+        final JsonFactory jsonFactory = objectMapper.getFactory();
+        try (JsonGenerator jsonGenerator = jsonFactory.createGenerator(temp, JsonEncoding.UTF8)) {
             jsonGenerator.writeObject(obj);
         }
         return temp;
@@ -166,7 +168,7 @@ public class BuildDAOImpl implements BuildDAO {
         final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
         final S3ObjectInputStream objectContent = s3Object.getObjectContent();
         final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
-        try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
+        try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
             final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
             build.setConfiguration(buildConfiguration);
         }
@@ -179,7 +181,7 @@ public class BuildDAOImpl implements BuildDAO {
         final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
         final S3ObjectInputStream objectContent = s3Object.getObjectContent();
         final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
-        try (JsonParser jsonParser = objectMapper.getJsonFactory().createJsonParser(configurationJson)) {
+        try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
             final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
             build.setQaTestConfig(qaTestConfig);
         }
