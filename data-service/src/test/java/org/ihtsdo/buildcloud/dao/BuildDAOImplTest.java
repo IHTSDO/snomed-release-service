@@ -9,9 +9,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;

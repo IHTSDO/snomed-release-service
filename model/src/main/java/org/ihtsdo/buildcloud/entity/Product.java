@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.entity;
 
 import javax.persistence.*;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.hibernate.annotations.Type;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 

@@ -23,9 +23,10 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.log4j.MDC;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
@@ -562,8 +563,8 @@ public class BuildServiceImpl implements BuildService {
 				try {
 					releasePackageInfor =  new File(releaseFilename);
 					ObjectMapper objectMapper = new ObjectMapper();
-					objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
-					objectMapper.disable(SerializationConfig.Feature.WRITE_NULL_PROPERTIES);
+					objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+					objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 					objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
 					dao.putOutputFile(build, releasePackageInfor);
 				} finally {

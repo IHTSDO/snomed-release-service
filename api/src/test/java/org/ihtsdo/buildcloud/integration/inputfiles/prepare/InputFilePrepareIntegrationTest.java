@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.integration.inputfiles.prepare;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
