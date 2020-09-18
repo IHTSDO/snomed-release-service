@@ -30,6 +30,13 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
         String filter = "";
         if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
             filter += " ( removed = 'N' or removed is null) ";
+
+        }
+        if (filterOptions == null || !filterOptions.contains(FilterOption.INCLUDE_LEGACY)) {
+            if (!filter.isEmpty()) {
+                filter += " and ";
+            }
+            filter += " product.isLegacyProduct = 'N' ";
         }
         if (releaseCenterBusinessKey != null) {
             if (!filter.isEmpty()) {

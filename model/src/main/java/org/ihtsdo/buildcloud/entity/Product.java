@@ -5,6 +5,7 @@ import javax.persistence.*;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.hibernate.annotations.Type;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import java.util.List;
@@ -46,6 +47,11 @@ public class Product {
 
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private QATestConfig qaTestConfig;
+
+	@JsonIgnore
+	@Type(type="yes_no")
+	@Column(name = "legacy_product")
+	private boolean isLegacyProduct;
 
 	public Product() {
 	}
@@ -128,6 +134,14 @@ public class Product {
 
 	public void setBusinessKey(final String businessKey) {
 		this.businessKey = businessKey;
+	}
+
+	public boolean isLegacyProduct() {
+		return isLegacyProduct;
+	}
+
+	public void setLegacyProduct(boolean legacyProduct) {
+		isLegacyProduct = legacyProduct;
 	}
 	
 	@Override

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
@@ -16,6 +17,7 @@ import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
+import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
@@ -77,7 +79,8 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 
 		//Packages get looked up using a product composite key (ie include the unique ID)
 		//so first lets find the first product for a known product, and use that
-		Page<Product> page = productService.findAll(releaseCenterName, null, PageRequest.of(0,10));
+		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_LEGACY);
+		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0,10));
 		Product product = page.getContent().get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
 		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), User.ANONYMOUS_USER, null, null, null);

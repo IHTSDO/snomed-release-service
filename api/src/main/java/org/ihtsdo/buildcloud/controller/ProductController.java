@@ -62,6 +62,7 @@ public class ProductController {
 	@ResponseBody
 	public Page<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey,
 												 @RequestParam(required = false) boolean includeRemoved,
+												 @RequestParam(required = false) boolean includeLegacy,
 												 @RequestParam(defaultValue = "0") Integer pageNumber,
 												 @RequestParam(defaultValue = "10") Integer pageSize,
 												 HttpServletRequest request) {
@@ -69,6 +70,10 @@ public class ProductController {
 		if (includeRemoved) {
 			filterOptions.add(FilterOption.INCLUDE_REMOVED);
 		}
+		if (includeLegacy) {
+			filterOptions.add(FilterOption.INCLUDE_LEGACY);
+		}
+
 
 		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize));
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
