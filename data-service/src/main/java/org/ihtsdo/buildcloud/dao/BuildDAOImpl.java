@@ -549,6 +549,7 @@ public class BuildDAOImpl implements BuildDAO {
                 final String dateString = keyParts[2];
                 final String status = keyParts[3].split(":")[1];
                 final Build build = new Build(dateString, product.getBusinessKey(), status);
+                build.setProduct(product);
                 builds.add(build);
             } else if (key.contains("/tag:")) {
                 tagPaths.add(key);
