@@ -99,7 +99,6 @@ public class Build {
 		return productBusinessKey + "|" + getId();
 	}
 
-	@JsonIgnore // BuildConfiguration is not loaded when listing Builds for efficiency
 	public BuildConfiguration getConfiguration() {
 		return configuration;
 	}
@@ -133,7 +132,6 @@ public class Build {
 		this.product = product;
 	}
 
-	@JsonIgnore
 	public QATestConfig getQaTestConfig() {
 		return qaTestConfig;
 	}
