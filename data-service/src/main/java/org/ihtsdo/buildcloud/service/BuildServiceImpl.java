@@ -136,7 +136,7 @@ public class BuildServiceImpl implements BuildService {
 	
 		
 	@Override
-	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 		validateBuildConfig(product.getBuildConfiguration());
@@ -153,6 +153,7 @@ public class BuildServiceImpl implements BuildService {
 				if (build.getConfiguration() != null) {
 					build.getConfiguration().setBranchPath(branchPath);
 					build.getConfiguration().setExportType(exportType);
+					build.getConfiguration().setBuildName(buildName);
 				}
 				build.setQaTestConfig(product.getQaTestConfig());
 				if (build.getQaTestConfig() != null) {
@@ -324,12 +325,12 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
+	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
-		return dao.findAllDesc(product);
+		return dao.findAllDesc(product, includeBuildConfiguration, includeQAConfiguration);
 	}
 
 	@Override

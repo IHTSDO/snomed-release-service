@@ -14,7 +14,7 @@ public interface BuildService {
 
 	String MDC_BUILD_KEY = "build";
 
-	Build createBuildFromProduct(String releaseCenterKey, String productKey, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException;
+	Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException;
 
 	/**
 	 * Synchronous method which runs the build.
@@ -27,7 +27,7 @@ public interface BuildService {
 	 */
 	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax) throws BusinessServiceException;
 
-	List<Build> findAllDesc(String releaseCenterKey, String productKey) throws ResourceNotFoundException;
+	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) throws ResourceNotFoundException;
 
 	Build find(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 

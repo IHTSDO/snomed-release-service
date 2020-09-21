@@ -82,7 +82,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 		String branchPath = gatherInputRequestPojo.getBranchPath();
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ?  gatherInputRequestPojo.getExportCategory().name() : null;
 		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
-		Build build = buildService.createBuildFromProduct(releaseCenter, productKey, user, branchPath, exportType, maxFailureExport);
+		String buildName = gatherInputRequestPojo.getBuildName();
+		Build build = buildService.createBuildFromProduct(releaseCenter, productKey, buildName, user, branchPath, exportType, maxFailureExport);
 
 		String inMemoryLogTrackerId = Long.toString(new Date().getTime());
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);

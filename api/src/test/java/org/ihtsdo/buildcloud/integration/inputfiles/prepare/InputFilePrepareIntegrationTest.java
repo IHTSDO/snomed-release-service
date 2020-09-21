@@ -40,16 +40,16 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
         integrationTestHelper.uploadSourceFile("der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt", MAPPING_TOOLS, this.getClass());
         integrationTestHelper.uploadSourceFile("der2_cRefset_DescriptionInactivationIndicatorReferenceSetDelta_INT_20170731.txt", MANUAL, this.getClass());
         String fileList = integrationTestHelper.listSourceFiles().replace("\r\n", "\n").replace("\r", "\n");
-        Assert.assertEquals("[ {\n" +
-                "  \"id\" : \"manual/der2_cRefset_DescriptionInactivationIndicatorReferenceSetDelta_INT_20170731.txt\",\n" +
-                "  \"url\" : \"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/manual/der2_cRefset_DescriptionInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"\n" +
-                "}, {\n" +
-                "  \"id\" : \"mapping-tools/der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt\",\n" +
-                "  \"url\" : \"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/mapping-tools/der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"\n" +
-                "}, {\n" +
-                "  \"id\" : \"reference-set-tool/der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt\",\n" +
-                "  \"url\" : \"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/reference-set-tool/der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt\"\n" +
-                "} ]", fileList);
+        Assert.assertEquals("[{" +
+                "\"id\":\"manual/der2_cRefset_DescriptionInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"," +
+                "\"url\":\"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/manual/der2_cRefset_DescriptionInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"" +
+                "},{" +
+                "\"id\":\"mapping-tools/der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"," +
+                "\"url\":\"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/mapping-tools/der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt\"" +
+                "},{" +
+                "\"id\":\"reference-set-tool/der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt\"," +
+                "\"url\":\"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/reference-set-tool/der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt\"" +
+                "}]", fileList);
         integrationTestHelper.deleteTxtSourceFiles();
     }
 
@@ -57,10 +57,10 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
     public void testUploadZipSourceFile() throws Exception {
         integrationTestHelper.uploadSourceFile("simple.zip", MANUAL, this.getClass());
         String fileList = integrationTestHelper.listSourceFiles().replace("\r\n", "\n").replace("\r", "\n");
-        Assert.assertEquals("[ {\n" +
-                "  \"id\" : \"manual/der2_Refset_SimpleDelta_INT_20140131.txt\",\n" +
-                "  \"url\" : \"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/manual/der2_Refset_SimpleDelta_INT_20140131.txt\"\n" +
-                "} ]", fileList);
+        Assert.assertEquals("[{" +
+                "\"id\":\"manual/der2_Refset_SimpleDelta_INT_20140131.txt\"," +
+                "\"url\":\"http://localhost/centers/international/products/fileprocessingtest_product/sourcefiles/manual/der2_Refset_SimpleDelta_INT_20140131.txt\"" +
+                "}]", fileList);
         integrationTestHelper.deleteTxtSourceFiles();
     }
 

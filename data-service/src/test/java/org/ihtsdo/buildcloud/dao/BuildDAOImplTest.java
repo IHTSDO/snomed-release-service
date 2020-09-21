@@ -113,6 +113,7 @@ public class BuildDAOImplTest {
 				"\"conceptPreferredTerms\":null," +
 				"\"defaultBranchPath\":null," +
 				"\"branchPath\":null," +
+				"\"buildName\":null," +
 				"\"exportType\":null," +
 				"\"customRefsetCompositeKeys\":{}," +
 				"\"effectiveTime\":null" +
@@ -132,7 +133,7 @@ public class BuildDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
-		final List<Build> all = buildDAO.findAllDesc(product);
+		final List<Build> all = buildDAO.findAllDesc(product, null, null);
 		mocksControl.verify();
 
 		Assert.assertEquals(2, all.size());
