@@ -11,6 +11,7 @@ public class GatherInputRequestPojo {
 	private String effectiveDate;
 	private ExportCategory exportCategory;
 	private String branchPath;
+	private String buildName;
 	private boolean loadTermServerData = true;
 	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
@@ -37,6 +38,14 @@ public class GatherInputRequestPojo {
 
 	public String getBranchPath() {
 		return branchPath;
+	}
+
+	public String getBuildName() {
+		return buildName;
+	}
+
+	public void setBuildName(String buildName) {
+		this.buildName = buildName;
 	}
 
 	public void setBranchPath(String branchPath) {

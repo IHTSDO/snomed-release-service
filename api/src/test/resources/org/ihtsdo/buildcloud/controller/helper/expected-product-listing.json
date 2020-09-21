@@ -24,6 +24,7 @@
     "conceptPreferredTerms" : null,
     "defaultBranchPath" : null,
     "branchPath" : null,
+    "buildName" : null,
     "exportType" : null,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null

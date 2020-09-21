@@ -110,6 +110,9 @@ public class BuildConfiguration {
 	private String branchPath;
 
 	@Transient
+	private String buildName;
+
+	@Transient
 	private String exportType;
 
 	public BuildConfiguration() {
@@ -351,6 +354,14 @@ public class BuildConfiguration {
 
 	public void setBranchPath(String branchPath) {
 		this.branchPath = branchPath;
+	}
+
+	public String getBuildName() {
+		return buildName;
+	}
+
+	public void setBuildName(String buildName) {
+		this.buildName = buildName;
 	}
 
 	public String getExportType() {

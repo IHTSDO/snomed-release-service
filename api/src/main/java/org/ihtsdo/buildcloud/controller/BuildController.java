@@ -64,7 +64,7 @@ public class BuildController {
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null);
+		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null);
 
 		final boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
@@ -92,8 +92,10 @@ public class BuildController {
 			+ "so this could potentially span across Release Centres" )
 	@ResponseBody
 	public List<Map<String, Object>> getBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											   @RequestParam(required = false) boolean includeBuildConfiguration,
+											   @RequestParam(required = false) boolean includeQAConfiguration,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey);
+		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
