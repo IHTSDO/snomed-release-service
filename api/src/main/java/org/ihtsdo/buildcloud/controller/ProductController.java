@@ -148,12 +148,12 @@ public class ProductController {
 	@RequestMapping(value = "/{productKey}/release", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
-	public String createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+	public ResponseEntity createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
-
 		final String currentUser = SecurityUtil.getUsername();
-		releaseService.createReleasePackage(releaseCenterKey, productKey, buildConfig, SecurityContextHolder.getContext().getAuthentication(), currentUser);
-		return "Build Triggered !";
+		releaseService.validateInProgressBuild(releaseCenterKey, productKey);
+		releaseService.createAndTriggerBuild(releaseCenterKey, productKey, buildConfig, SecurityContextHolder.getContext().getAuthentication(), currentUser);
+		return new ResponseEntity(HttpStatus.CREATED);
 	}
 
 }

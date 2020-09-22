@@ -20,6 +20,7 @@ import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
+import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +33,13 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ReleaseServiceImpl implements ReleaseService{
@@ -43,6 +47,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 	private static final String TRACKER_ID = "trackerId";
 
 	private static final String PATTERN_ALL_FILES = "*.*";
+
+	private static Map concurrentReleaseBuildMap = new ConcurrentHashMap();
 
 	@Autowired
 	private ProductInputFileService productInputFileService;
@@ -69,8 +75,17 @@ public class ReleaseServiceImpl implements ReleaseService{
 
 
 	@Override
+	public void validateInProgressBuild(String releaseCenter, String productKey) throws BusinessServiceException {
+		// Checking in-progress build for product
+		if (concurrentReleaseBuildMap.containsKey(productKey)) {
+			throw new EntityAlreadyExistsException("Product " + productKey + " in release center " + releaseCenter + " has already a in-progress build");
+		}
+	}
+
+	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void createReleasePackage(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String currentUser) throws BusinessServiceException {
+	public void createAndTriggerBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String currentUser) throws BusinessServiceException {
+		concurrentReleaseBuildMap.putIfAbsent(productKey, Boolean.TRUE);
 		Product product = productService.find(releaseCenter, productKey);
 		if (product == null) {
 			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
@@ -83,17 +98,17 @@ public class ReleaseServiceImpl implements ReleaseService{
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ?  gatherInputRequestPojo.getExportCategory().name() : null;
 		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
 		String buildName = gatherInputRequestPojo.getBuildName();
-		Build build = buildService.createBuildFromProduct(releaseCenter, productKey, buildName, user, branchPath, exportType, maxFailureExport);
+		Build build = buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport);
 
 		String inMemoryLogTrackerId = Long.toString(new Date().getTime());
 		InMemoryLogAppender inMemoryLogAppender = addInMemoryAppenderToLogger(inMemoryLogTrackerId);
 		try {
-			MDC.put(TRACKER_ID, releaseCenter + "|" + productKey + "|" + build.getId());
+			MDC.put(TRACKER_ID, releaseCenter + "|" + product.getBusinessKey() + "|" + build.getId());
 
 			//Gather all files in term server and externally maintain buckets if specified to source directories
 			SecurityContext securityContext = new SecurityContextImpl();
 			securityContext.setAuthentication(authentication);
-			InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, productKey, gatherInputRequestPojo, securityContext);
+			InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), gatherInputRequestPojo, securityContext);
 			if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 				LOGGER.error("Error occurred when gathering source files: ");
 				for (String source : inputGatherReport.getDetails().keySet()) {
@@ -106,8 +121,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 			//After gathering all sources, start to transform and put them into input directories
 			if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
-				productInputFileService.deleteFilesByPattern(releaseCenter, productKey, PATTERN_ALL_FILES);
-				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, productKey, true);
+				productInputFileService.deleteFilesByPattern(releaseCenter, product.getBusinessKey(), PATTERN_ALL_FILES);
+				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), true);
 				if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
 					LOGGER.error("Error occurred when processing input files");
 					List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
@@ -119,8 +134,8 @@ public class ReleaseServiceImpl implements ReleaseService{
 			}
 
 			// trigger build
-			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, productKey,build.getId());
-			buildService.triggerBuild(releaseCenter, productKey, build.getId(), maxFailureExport);
+			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
+			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport);
 			LOGGER.info("Build process ends", build.getStatus().name());
 		} catch (IOException e) {
 			LOGGER.error("Encounter error while creating package. Build process stopped.", e);
@@ -129,6 +144,7 @@ public class ReleaseServiceImpl implements ReleaseService{
 			MDC.remove(TRACKER_ID);
 			saveInMemoryLogToS3(inMemoryLogAppender, build, product);
 			removeInMemorySocketAppenderFromLogger(inMemoryLogTrackerId);
+			concurrentReleaseBuildMap.remove(product.getBusinessKey(), Boolean.TRUE);
 		}
 
 	}
@@ -173,6 +189,5 @@ public class ReleaseServiceImpl implements ReleaseService{
 				throw new BusinessServiceException(e);
 			}
 		}
-
 	}
 }
