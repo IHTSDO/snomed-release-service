@@ -133,7 +133,7 @@ public class BuildDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.isA(ListObjectsRequest.class))).andReturn(objectListing);
 
 		mocksControl.replay();
-		final List<Build> all = buildDAO.findAllDesc(product, null, null);
+		final List<Build> all = buildDAO.findAllDesc(product, null, null, null);
 		mocksControl.verify();
 
 		Assert.assertEquals(2, all.size());
@@ -153,7 +153,7 @@ public class BuildDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
 		mocksControl.replay();
-		final Build foundBuild = buildDAO.find(product, buildId);
+		final Build foundBuild = buildDAO.find(product, buildId, null, null, null);
 		mocksControl.verify();
 
 		Assert.assertNull(foundBuild);
@@ -169,7 +169,7 @@ public class BuildDAOImplTest {
 		EasyMock.expect(mockS3Client.listObjects(EasyMock.capture(listObjectsRequestCapture))).andReturn(objectListing);
 
 		mocksControl.replay();
-		final Build foundBuild = buildDAO.find(product, buildId);
+		final Build foundBuild = buildDAO.find(product, buildId, null, null, null);
 		mocksControl.verify();
 
 		Assert.assertNotNull(foundBuild);

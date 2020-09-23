@@ -27,9 +27,9 @@ public interface BuildService {
 	 */
 	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax) throws BusinessServiceException;
 
-	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) throws ResourceNotFoundException;
+	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException;
 
-	Build find(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
+	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException;
 
 	void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 

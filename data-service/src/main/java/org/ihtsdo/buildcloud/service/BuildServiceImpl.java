@@ -325,22 +325,22 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) throws ResourceNotFoundException {
+	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
-		return dao.findAllDesc(product, includeBuildConfiguration, includeQAConfiguration);
+		return dao.findAllDesc(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 	}
 
 	@Override
-	public Build find(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
+	public Build find(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);
 		}
 
-		final Build build = dao.find(product, buildId);
+		final Build build = dao.find(product, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
 		}
@@ -907,7 +907,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
-		final Build build = find(releaseCenterKey, productKey, buildId);
+		final Build build = find(releaseCenterKey, productKey, buildId, null, null, null);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build for releaseCenterKey: " + releaseCenterKey + ", productKey: " + productKey + ", buildId: " + buildId);
 		}
@@ -915,7 +915,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuild(final Product product, final Date creationTime) {
-		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime));
+		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime), null, null, null);
 	}
 
 	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {

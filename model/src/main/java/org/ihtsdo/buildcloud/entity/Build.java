@@ -25,6 +25,8 @@ public class Build {
 
 	private String buildUser;
 
+	private String rvfURL;
+
 	private BuildConfiguration configuration;
 
 	private final String productBusinessKey;
@@ -146,5 +148,13 @@ public class Build {
 
 	public void setBuildUser(String buildUser) {
 		this.buildUser = buildUser;
+	}
+
+	public String getRvfURL() {
+		return rvfURL;
+	}
+
+	public void setRvfURL(String rvfURL) {
+		this.rvfURL = rvfURL;
 	}
 }

@@ -17,9 +17,9 @@ public interface BuildDAO {
 
 	void save(Build build) throws IOException;
 
-	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration);
+	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL);
 
-	Build find(Product product, String buildId);
+	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL);
 
 	void delete(Product product, String buildId);
 	
