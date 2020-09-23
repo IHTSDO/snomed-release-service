@@ -22,6 +22,9 @@ import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.telemetry.core.TelemetryStreamPathBuilder;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,15 +141,15 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) {
+    public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
         final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-        return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration);
+        return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
     }
 
     @Override
-    public Build find(final Product product, final String buildId) {
+    public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
         final String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-        final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, null, null);
+        final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
         if (!builds.isEmpty()) {
             return builds.get(0);
         } else {
@@ -487,7 +490,7 @@ public class BuildDAOImpl implements BuildDAO {
         }
     }
 
-    private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration) {
+    private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
         final List<Build> builds = new ArrayList<>();
         final List<String> userPaths = new ArrayList<>();
         final List<String> tagPaths = new ArrayList<>();
@@ -513,11 +516,27 @@ public class BuildDAOImpl implements BuildDAO {
             firstPass = false;
         }
 
-        // populate user and tag for builds
+        // populate user, tag  and rvfURL for builds
         if (!builds.isEmpty()) {
             builds.forEach(build -> {
                 build.setBuildUser(getBuildUser(build, userPaths));
                 build.setTag(getTag(build, tagPaths));
+                if (Boolean.TRUE.equals(includeRvfURL) && build.getStatus().equals(Build.Status.BUILT)) {
+                    InputStream buildReportStream = getBuildReportFileStream(build);
+                    if (buildReportStream != null) {
+                        JSONParser jsonParser = new JSONParser();
+                        try {
+                            JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse( new InputStreamReader(buildReportStream, "UTF-8"));
+                            if (jsonObject.containsKey("rvf_response")) {
+                                build.setRvfURL(jsonObject.get("rvf_response").toString());
+                            }
+                        } catch (IOException e) {
+                            LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+                        } catch (ParseException e) {
+                            LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
+                        }
+                    }
+                }
                 if (Boolean.TRUE.equals(includeBuildConfiguration)) {
                     try {
                         this.loadBuildConfiguration(build);

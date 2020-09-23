@@ -77,7 +77,7 @@ public class BuildController {
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
@@ -95,7 +95,7 @@ public class BuildController {
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration);
+		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
@@ -105,7 +105,7 @@ public class BuildController {
 	notes = "Returns a single build object for given key" )
 	public Map<String, Object> getBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, true);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
@@ -257,7 +257,7 @@ public class BuildController {
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
 		publishService.publishBuild(build, true, environment);
 	}
