@@ -521,7 +521,10 @@ public class BuildDAOImpl implements BuildDAO {
             builds.forEach(build -> {
                 build.setBuildUser(getBuildUser(build, userPaths));
                 build.setTag(getTag(build, tagPaths));
-                if (Boolean.TRUE.equals(includeRvfURL) && build.getStatus().equals(Build.Status.BUILT)) {
+                if (Boolean.TRUE.equals(includeRvfURL) &&
+                        (build.getStatus().equals(Build.Status.BUILT)
+                        || build.getStatus().equals(Build.Status.RVF_RUNNING)
+                        || build.getStatus().equals(Build.Status.RELEASE_COMPLETE))) {
                     InputStream buildReportStream = getBuildReportFileStream(build);
                     if (buildReportStream != null) {
                         JSONParser jsonParser = new JSONParser();

@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
-import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.ReleaseService;
@@ -15,30 +15,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
-import com.mangofactory.swagger.annotations.ApiIgnore;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
@@ -151,9 +143,9 @@ public class ProductController {
 	public ResponseEntity createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		releaseService.validateInProgressBuild(releaseCenterKey, productKey);
-		releaseService.createAndTriggerBuild(releaseCenterKey, productKey, buildConfig, SecurityContextHolder.getContext().getAuthentication(), currentUser);
-		return new ResponseEntity(HttpStatus.CREATED);
+		Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, currentUser);
+		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext().getAuthentication());
+		return new ResponseEntity(newBuild, HttpStatus.CREATED);
 	}
 
 }

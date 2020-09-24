@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 import java.io.*;
+import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -76,15 +77,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.io.Files;
+import org.springframework.util.Assert;
+import us.monoid.web.JSONResource;
+import us.monoid.web.Resty;
 
 @Service
 @Transactional
 public class BuildServiceImpl implements BuildService {
 
+	private static final String JSON_FIELD_STATUS = "status";
+
 	private static final String HYPHEN = "-";
 
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
-	
+
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
@@ -124,17 +130,21 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private RF2ClassifierService rf2ClassifierService;
-	
+
 	@Autowired
 	private String buildBucketName;
-	
+
 	@Autowired
 	private DailyBuildResourceConfig dailyBuildResourceConfig;
-	
+
 	@Autowired
 	private ResourceLoader cloudResourceLoader;
-	
-		
+
+	public enum RVF_STATE {
+		QUEUED, RUNNING, COMPLETE, FAILED, UNKNOWN
+	};
+
+
 	@Override
 	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
 		final Date creationDate = new Date();
@@ -149,7 +159,6 @@ public class BuildServiceImpl implements BuildService {
 					throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
 				}
 				build = new Build(creationDate, product);
-				build.setProduct(product);
 				if (build.getConfiguration() != null) {
 					build.getConfiguration().setBranchPath(branchPath);
 					build.getConfiguration().setExportType(exportType);
@@ -295,7 +304,7 @@ public class BuildServiceImpl implements BuildService {
 				try {
 					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax);
-					status = Status.BUILT;
+					status = Status.RELEASE_COMPLETE;
 				} catch (final Exception e) {
 					resultStatus = "fail";
 					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
@@ -525,6 +534,10 @@ public class BuildServiceImpl implements BuildService {
 			report.add("post_validation_status", rvfStatus);
 			report.add("rvf_response", rvfResultMsg);
 			LOGGER.info("End of running build {}", build.getUniqueId());
+			dao.persistReport(build);
+			waitForRvfComplete(build, rvfResultMsg);
+		} catch (Exception e) {
+			LOGGER.error("Failure during getting RVF results", e);
 		} finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
@@ -706,7 +719,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
-	 * 
+	 *
 	 * @param build
 	 * @return
 	 */
@@ -746,7 +759,7 @@ public class BuildServiceImpl implements BuildService {
 			}
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
 			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
-		} 
+		}
 		return result;
 	}
 
@@ -816,7 +829,7 @@ public class BuildServiceImpl implements BuildService {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
 			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
-				final String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey() 
+				final String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey()
 						+ "/" + build.getProduct().getBusinessKey()
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
@@ -845,6 +858,54 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
+	private  void waitForRvfComplete(Build build, String pollURL) throws Exception  {
+		Resty resty = new Resty(new Resty.Option[]{new Resty.Option() {
+			public void apply(URLConnection aConnection) {
+				aConnection.addRequestProperty("Accept", "*/*");
+			}}});
+		dao.updateStatus(build, Status.RVF_RUNNING);
+		boolean isFinalState = false;
+		long msElapsed = 0;
+		int pollPeriod = 60000;
+		int maxElapsedTime = 7200000;
+
+		Assert.notNull(pollURL, "Unable to check for RVF results - location not known.");
+
+		if (!pollURL.startsWith("http")) {
+			throw new ProcessingException("RVF location not available to check.  Instead we have: " + pollURL);
+		}
+
+		while (!isFinalState) {
+			JSONResource json = resty.json(pollURL);
+			Object responseState = json.get(JSON_FIELD_STATUS);
+			RVF_STATE currentState;
+
+			try {
+				currentState = RVF_STATE.valueOf(responseState.toString());
+			} catch (Exception e) {
+				throw new ProcessingException ("Failed to determine RVF Status from response: " + json.object().toString(2));
+			}
+
+			switch (currentState){
+				case QUEUED:
+				case RUNNING:
+					Thread.sleep(pollPeriod);
+					msElapsed += pollPeriod;
+					break;
+				case FAILED:
+				case COMPLETE:
+					isFinalState = true;
+					break;
+				default:
+					throw new ProcessingException("RVF Reponse was not recognised: " + currentState);
+			}
+
+			if (msElapsed > maxElapsedTime) {
+				throw new ProcessingException("RVF did not complete within the allotted time ");
+			}
+		}
+	}
+
 	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
 			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specifield.");
@@ -860,7 +921,7 @@ public class BuildServiceImpl implements BuildService {
 					throw new ConfigurationException("No extention dependency release is configured for extension testing.");
 				}
 			}
-			
+
 			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
 				throw new ConfigurationException("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
 			}

@@ -7,7 +7,6 @@ import java.util.Set;
 
 public class GatherInputRequestPojo {
 
-	private String trackerId;
 	private String effectiveDate;
 	private ExportCategory exportCategory;
 	private String branchPath;
@@ -74,14 +73,6 @@ public class GatherInputRequestPojo {
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
 		this.loadExternalRefsetData = loadExternalRefsetData;
-	}
-
-	public String getTrackerId() {
-		return trackerId;
-	}
-
-	public void setTrackerId(String trackerId) {
-		this.trackerId = trackerId;
 	}
 
 	public Integer getMaxFailuresExport() {
