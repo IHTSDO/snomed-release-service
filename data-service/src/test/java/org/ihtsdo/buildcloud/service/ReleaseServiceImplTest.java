@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
@@ -10,6 +11,7 @@ import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.junit.Before;
@@ -61,16 +63,17 @@ public class ReleaseServiceImplTest {
         MockitoAnnotations.initMocks(this);
     }
 
-    @Test(expected = BusinessServiceRuntimeException.class)
+    @Test(expected = BadRequestException.class)
     public void testSourceFileGatheringError() throws BusinessServiceException, IOException {
         InputGatherReport inputGatherReport = new InputGatherReport();
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
-        releaseService.createAndTriggerBuild("center", "product", new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
+        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
+        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
     }
 
-    @Test(expected = BusinessServiceRuntimeException.class)
+    @Test(expected = BadRequestException.class)
     public void testInputPrepareError() throws BusinessServiceException, IOException {
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(new InputGatherReport());
         SourceFileProcessingReport sourceFileProcessingReport = new SourceFileProcessingReport();
@@ -80,7 +83,8 @@ public class ReleaseServiceImplTest {
         fileProcessingReportDetail.setType(ReportType.ERROR);
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
-        releaseService.createAndTriggerBuild("center", "product", new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), User.ANONYMOUS_USER);
+        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
+        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
     }
 
 
