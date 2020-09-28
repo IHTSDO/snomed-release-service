@@ -1,12 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
@@ -111,16 +106,30 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                     .findAny()
                     .orElse(null);
 
+            Map<String, String> propertyValues = new HashMap<>();
+            propertyValues.put(EFFECTIVE_TIME, "1970-01-01");
+            propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
+            propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
+            propertyValues.put(CLASSIFY_OUTPUT_FILES, TRUE);
+            propertyValues.put(ENABLE_DROOLS, TRUE);
+            propertyValues.put(ENABLE_MRCM, TRUE);
+            propertyValues.put(RELEASE_INFORMATION_FIELDS, "effectiveTime,deltaFromDate,deltaToDate,includedModules,languageRefsets,licenceStatement");
+            propertyValues.put(README_END_DATE, String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+            if (INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
+                propertyValues.put(CREATE_LEGACY_IDS, TRUE);
+            }
             if (codeSystem != null && !StringUtils.isEmpty(codeSystem.getBranchPath())) {
                 try {
                     Branch branch = termServerService.getBranch(codeSystem.getBranchPath());
-                    Map<String, String> propertyValues = new HashMap<>();
                     if (branch.getMetadata() != null) {
                         Map<String, Object> metaData = branch.getMetadata();
                         propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
 
                         if (metaData.containsKey("previousPackage")) {
                             propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
+                        }
+                        else {
+                            propertyValues.put(FIRST_TIME_RELEASE, TRUE);
                         }
                         if (metaData.containsKey("defaultNamespace")) {
                             propertyValues.put(NAMESPACE_ID, metaData.get("defaultNamespace").toString());
@@ -137,11 +146,21 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                             propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, metaData.get("dependencyPackage").toString());
                         }
                     }
-                    this.update(releaseCenter.getBusinessKey(), product.getBusinessKey(), propertyValues);
+                    branch = termServerService.getBranch("MAIN");
+                    if (branch.getMetadata() != null) {
+                        Map<String, Object> metaData = branch.getMetadata();
+                        if (metaData.containsKey("previousPackage")) {
+                            String latestInternationalPackage = metaData.get("previousPackage").toString();
+                            propertyValues.put(PREVIOUS_INTERNATIONAL_RELEASE, latestInternationalPackage);
+                            propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
+                            propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, latestInternationalPackage);
+                        }
+                    }
                 } catch (RestClientException e) {
                     LOGGER.error("Unable to find branch path {}", codeSystem.getBranchPath());
                 }
             }
+            this.update(releaseCenter.getBusinessKey(), product.getBusinessKey(), propertyValues);
         }
 
         return product;
