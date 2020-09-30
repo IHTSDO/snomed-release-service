@@ -25,7 +25,7 @@ public interface BuildService {
 	 * @return
 	 * @throws BusinessServiceException
 	 */
-	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax) throws BusinessServiceException;
+	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax, Boolean enableTelemetryStream) throws BusinessServiceException;
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException;
 
