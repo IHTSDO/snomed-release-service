@@ -69,6 +69,7 @@ import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.telemetry.client.TelemetryStream;
+import org.ihtsdo.telemetry.core.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -261,12 +262,15 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax) throws BusinessServiceException {
+	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, Boolean enableTelemetryStream) throws BusinessServiceException {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		Build build;
 		try {
 			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
-			TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
+			if (Boolean.TRUE.equals(enableTelemetryStream)) {
+				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
+			}
+
 			try {
 				dao.loadConfiguration(build);
 			} catch (final IOException e) {
@@ -328,7 +332,9 @@ public class BuildServiceImpl implements BuildService {
 			}
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
-			TelemetryStream.finish(LOGGER);
+			if (Boolean.TRUE.equals(enableTelemetryStream)) {
+				TelemetryStream.finish(LOGGER);
+			}
 		}
 		return build;
 	}

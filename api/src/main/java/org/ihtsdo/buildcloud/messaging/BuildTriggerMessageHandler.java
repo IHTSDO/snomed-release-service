@@ -57,7 +57,7 @@ public class BuildTriggerMessageHandler {
 
 			String failureExportMax = incomingMessage.getStringProperty(RVF_FAILURE_EXPORT_MAX);
 			Integer exportMax = failureExportMax == null ? null : Integer.valueOf(failureExportMax);
-			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, exportMax);
+			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, exportMax, true);
 
 			messagingHelper.sendResponse(incomingMessage, build);
 		} catch (Exception e) {

@@ -246,7 +246,7 @@ public class BuildController {
 	public Map<String, Object> triggerProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @RequestParam(value = "failureExportMax", required = false) final Integer failureExportMax, final HttpServletRequest request) throws BusinessServiceException {
 		//when failureExportMax is set to less than zero means exporting all results. The default value is 10 when not set
-		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax);
+		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax, true);
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 
