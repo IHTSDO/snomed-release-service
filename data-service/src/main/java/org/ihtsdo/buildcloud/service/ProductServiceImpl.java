@@ -142,9 +142,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                             propertyValues.put(ASSERTION_GROUP_NAMES, assertionGroupNames);
                             propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
                         }
-                        if (metaData.containsKey("dependencyPackage")) {
-                            propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, metaData.get("dependencyPackage").toString());
-                        }
+
                     }
                     branch = termServerService.getBranch("MAIN");
                     if (branch.getMetadata() != null) {
@@ -152,8 +150,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                         if (metaData.containsKey("previousPackage")) {
                             String latestInternationalPackage = metaData.get("previousPackage").toString();
                             propertyValues.put(PREVIOUS_INTERNATIONAL_RELEASE, latestInternationalPackage);
-                            propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
-                            propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, latestInternationalPackage);
+                            if (!INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
+                                propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
+                                propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, latestInternationalPackage);
+                            }
                         }
                     }
                 } catch (RestClientException e) {
