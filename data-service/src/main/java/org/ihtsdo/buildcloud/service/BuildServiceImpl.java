@@ -178,19 +178,6 @@ public class BuildServiceImpl implements BuildService {
 				dao.copyAll(product, build);
 				LOGGER.info("Input and manifest files are copied to build {}", build.getId());
 			}
-			if (!product.getBuildConfiguration().isJustPackage()) {
-				// Perform Pre-condition testing
-				final Status preStatus = build.getStatus();
-				if (product.getBuildConfiguration().isInputFilesFixesRequired()) {
-					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
-					doInputFileFixup(build);
-				}
-				final Status newStatus = runPreconditionChecks(build);
-				dao.updatePreConditionCheckReport(build);
-				if (newStatus != preStatus) {
-					dao.updateStatus(build, newStatus);
-				}
-			}
 		} catch (Exception e) {
 			String msg = "Failed to create build for product " + productKey;
 			LOGGER.error(msg, e);
@@ -216,7 +203,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException, ProcessingException {
+	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException {
 		// Due to design choices made in the terminology server, we may see input files with null SCTIDs in the
 		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
 		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
@@ -264,13 +251,13 @@ public class BuildServiceImpl implements BuildService {
 	@Override
 	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, Boolean enableTelemetryStream) throws BusinessServiceException {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
+		LOGGER.info("Trigger product", productKey, buildId);
 		Build build;
 		try {
 			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
 				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 			}
-
 			try {
 				dao.loadConfiguration(build);
 			} catch (final IOException e) {
@@ -278,7 +265,32 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.error(msg, e);
 				throw new BusinessServiceException(msg, e);
 			}
-			LOGGER.info("Trigger product", productKey, buildId);
+			if (!build.getConfiguration().isJustPackage()) {
+				// Perform Pre-condition testing
+				final Status preStatus = build.getStatus();
+				if (build.getConfiguration().isInputFilesFixesRequired()) {
+					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
+					try {
+						doInputFileFixup(build);
+					} catch (IOException | TransformationException| NoSuchAlgorithmException  e) {
+						String msg = String.format("Error while doing input file fix up. Message: %s", e.getMessage());
+						LOGGER.error(msg, e);
+						throw new BusinessServiceException(msg, e);
+					}
+				}
+				final Status newStatus = runPreconditionChecks(build);
+				try {
+					dao.updatePreConditionCheckReport(build);
+				} catch (IOException e) {
+					String msg = String.format("Failed to update Pre condition Check Report. Message: %s", e.getMessage());
+					LOGGER.error(msg, e);
+					throw new BusinessServiceException(msg, e);
+				}
+				if (newStatus != preStatus) {
+					dao.updateStatus(build, newStatus);
+				}
+			}
+
 			boolean isAbandoned = false;
 			try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
 				//check source file prepare report
