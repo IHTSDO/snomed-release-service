@@ -174,9 +174,6 @@ public class BuildServiceImpl implements BuildService {
 				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 				dao.save(build);
 				LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
-				// Copy all files from Product input and manifest directory to Build input and manifest directory
-				dao.copyAll(product, build);
-				LOGGER.info("Input and manifest files are copied to build {}", build.getId());
 			}
 		} catch (Exception e) {
 			String msg = "Failed to create build for product " + productKey;
@@ -203,38 +200,51 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void doInputFileFixup(final Build build) throws IOException, TransformationException, NoSuchAlgorithmException {
+	private void doInputFileFixup(final Build build) throws BusinessServiceException {
 		// Due to design choices made in the terminology server, we may see input files with null SCTIDs in the
 		// stated relationship file. These can be resolved as we would for the post-classified inferred relationship files
 		// ie look up the previous file and if not found, try the IDGen Service using a predicted UUID
-		LOGGER.debug("Performing fixup on input file prior to input file validation");
-		final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
-		final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
-		if (statedRelationshipInputFile == null) {
-			LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
-			return;
+		File tempDir = null;
+		File tempFile = null;
+		try {
+			LOGGER.debug("Performing fixup on input file prior to input file validation");
+			final TransformationFactory transformationFactory = transformationService.getTransformationFactory(build);
+			final String statedRelationshipInputFile = getStatedRelationshipInputFile(build);
+			if (statedRelationshipInputFile == null) {
+				LOGGER.debug("Stated Relationship Input Delta file not present for potential fix-up.");
+				return;
+			}
+			InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
+
+			// We can't replace the file while we're reading it, so use a temp file
+			tempDir = Files.createTempDir();
+			tempFile = new File(tempDir, statedRelationshipInputFile);
+			final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
+
+			// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
+			// groups.
+
+			final StreamingFileTransformation steamingFileTransformation = transformationFactory
+					.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
+
+			// Apply transformations
+			steamingFileTransformation.transformFile(statedRelationshipInputFileStream, tempOutputStream, statedRelationshipInputFile,
+					build.getBuildReport());
+
+			// Overwrite the original file, and delete local temp copy
+			dao.putInputFile(build, tempFile, false);
+		} catch (IOException | NoSuchAlgorithmException | TransformationException e ) {
+			String msg = String.format("Error while doing input file fix up. Message: %s", e.getMessage());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
+		} finally {
+			if (tempFile != null) {
+				tempFile.delete();
+			}
+			if (tempDir != null) {
+				tempDir.delete();
+			}
 		}
-		InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
-
-		// We can't replace the file while we're reading it, so use a temp file
-		final File tempDir = Files.createTempDir();
-		final File tempFile = new File(tempDir, statedRelationshipInputFile);
-		final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
-
-		// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
-		// groups.
-
-		final StreamingFileTransformation steamingFileTransformation = transformationFactory
-				.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
-
-		// Apply transformations
-		steamingFileTransformation.transformFile(statedRelationshipInputFileStream, tempOutputStream, statedRelationshipInputFile,
-				build.getBuildReport());
-
-		// Overwrite the original file, and delete local temp copy
-		dao.putInputFile(build, tempFile, false);
-		tempFile.delete();
-		tempDir.delete();
 	}
 
 	private String getStatedRelationshipInputFile(Build build) {
@@ -258,37 +268,21 @@ public class BuildServiceImpl implements BuildService {
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
 				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 			}
-			try {
-				dao.loadConfiguration(build);
-			} catch (final IOException e) {
-				String msg = String.format("Failed to load configuration for build %s", build.getId());
-				LOGGER.error(msg, e);
-				throw new BusinessServiceException(msg, e);
-			}
+
+			// Copy all files from Product input and manifest directory to Build input and manifest directory
+			copyFilesFromProductToBuild(build);
+
+			// Get build configurations from S3
+			getBuildConfigurations(build);
+
 			if (!build.getConfiguration().isJustPackage()) {
 				// Perform Pre-condition testing
 				final Status preStatus = build.getStatus();
 				if (build.getConfiguration().isInputFilesFixesRequired()) {
-					// Removed try/catch If this is needed and fails, then we can't go further due to blank sctids
-					try {
-						doInputFileFixup(build);
-					} catch (IOException | TransformationException| NoSuchAlgorithmException  e) {
-						String msg = String.format("Error while doing input file fix up. Message: %s", e.getMessage());
-						LOGGER.error(msg, e);
-						throw new BusinessServiceException(msg, e);
-					}
+					doInputFileFixup(build);
 				}
-				final Status newStatus = runPreconditionChecks(build);
-				try {
-					dao.updatePreConditionCheckReport(build);
-				} catch (IOException e) {
-					String msg = String.format("Failed to update Pre condition Check Report. Message: %s", e.getMessage());
-					LOGGER.error(msg, e);
-					throw new BusinessServiceException(msg, e);
-				}
-				if (newStatus != preStatus) {
-					dao.updateStatus(build, newStatus);
-				}
+
+				performPreConditionsCheck(build, preStatus);
 			}
 
 			boolean isAbandoned = false;
@@ -349,6 +343,20 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return build;
+	}
+
+	private void performPreConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {
+		final Status newStatus = runPreconditionChecks(build);
+		try {
+			dao.updatePreConditionCheckReport(build);
+		} catch (IOException e) {
+			String msg = String.format("Failed to update Pre condition Check Report. Message: %s", e.getMessage());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
+		}
+		if (newStatus != preStatus) {
+			dao.updateStatus(build, newStatus);
+		}
 	}
 
 	@Override
@@ -466,6 +474,27 @@ public class BuildServiceImpl implements BuildService {
 		}
 		LOGGER.info("End of Pre-condition checks");
 		return buildStatus;
+	}
+
+	private void getBuildConfigurations(Build build) throws BusinessServiceException {
+		try {
+			dao.loadConfiguration(build);
+		} catch (final IOException e) {
+			String msg = String.format("Failed to load configuration for build %s", build.getId());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
+		}
+	}
+
+	private void copyFilesFromProductToBuild(Build build) throws BusinessServiceException {
+		try {
+			dao.copyAll(build.getProduct(), build);
+			LOGGER.info("Input and manifest files are copied to build {}", build.getId());
+		} catch (IOException e) {
+			String msg = String.format("Failed to copy files from Product input and manifest directory to Build input and manifest directory. Error: %s", e.getMessage());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
+		}
 	}
 
 	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
