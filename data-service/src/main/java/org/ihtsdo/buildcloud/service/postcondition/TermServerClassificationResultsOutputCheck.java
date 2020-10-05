@@ -37,15 +37,15 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 	@Autowired
 	private ExternalRF2ClassifierRestClient classifierRestClient;
 
-	private static final String REFSET_OWL_DELTA = ".*_sRefset_OWL.*Delta.*";
+	private static final String REFSET_OWL_DELTA_PATTERN  = ".*_sRefset_OWL.*Delta.*";
 
 	private static final String DER2_MRCM_ATTRIBUTE_DOMAIN_DELTA = "der2_cissccRefset_MRCMAttributeDomainDelta";
 
-	private static final String SCT_2_CONCEPT_DELTA = "sct2_Concept_Delta";
+	private static final String SCT_2_CONCEPT_DELTA_PATTERN  = ".*sct2_Concept_.*Delta.*";
 
-	private static final String SCT_2_RELATIONSHIP_DELTA = "sct2_Relationship_Delta";
+	private static final String SCT_2_RELATIONSHIP_DELTA_PATTERN = ".*sct2_Relationship_.*Delta.*";
 
-	private static final String SCT_2_STATED_RELATIONSHIP_DELTA = "sct2_StatedRelationship_Delta";
+	private static final String SCT_2_STATED_RELATIONSHIP_DELTA_PATTERN = ".*sct2_StatedRelationship_.*Delta.*";
 
 	private static final String REFSET = "Refset_";
 
@@ -115,7 +115,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 		for (String fileName : buildDAO.listOutputFilePaths(build)) {
 			if (!isRequiredFileForClassification(fileName)) continue;
 			LOGGER.info("Prepare {} for archiving", fileName);
-			String rename = (fileName.contains(REFSET) && !fileName.matches(REFSET_OWL_DELTA)) ? fileName.replace(INPUT_FILE_PREFIX, DER2) : fileName.replace(INPUT_FILE_PREFIX, SCT2);
+			String rename = fileName.startsWith("x") ? fileName.substring(1) : fileName;
 			LOGGER.info("Rename {} to {} for archiving", fileName, rename);
 			final File localFile = new File(deltaTempDir, rename);
 			InputStream inputFileStream = buildDAO.getOutputFileInputStream(build, fileName);
@@ -173,8 +173,8 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 	}
 
 	private boolean isRequiredFileForClassification(String filename) {
-		return filename.contains(SCT_2_CONCEPT_DELTA) || filename.contains(SCT_2_STATED_RELATIONSHIP_DELTA) || filename.contains(SCT_2_RELATIONSHIP_DELTA)
-				|| filename.contains(DER2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(REFSET_OWL_DELTA);
+		return filename.matches(SCT_2_CONCEPT_DELTA_PATTERN) || filename.matches(SCT_2_STATED_RELATIONSHIP_DELTA_PATTERN) || filename.matches(SCT_2_RELATIONSHIP_DELTA_PATTERN)
+				|| filename.contains(DER2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(REFSET_OWL_DELTA_PATTERN);
 	}
 
 }
