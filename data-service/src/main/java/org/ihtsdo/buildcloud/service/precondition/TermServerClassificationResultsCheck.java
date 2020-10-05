@@ -48,11 +48,11 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 
 	private static final String REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA = "rel2_cissccRefset_MRCMAttributeDomainDelta";
 
-	private static final String REL2_CONCEPT = "rel2_Concept_Delta";
+	private static final String REL2_CONCEPT_PATTERN = ".*rel2_Concept_.*Delta.*";
 
-	private static final String REL2_RELATIONSHIP = "rel2_Relationship_Delta";
+	private static final String REL2_RELATIONSHIP_PATTERN = ".*rel2_Relationship_.*Delta.*";
 
-	private static final String REL2_STATED_RELATIONSHIP = "rel2_StatedRelationship_Delta";
+	private static final String REL2_STATED_RELATIONSHIP_PATTERN = ".*rel2_StatedRelationship_.*Delta.*";
 
 	private static final String REFSET = "Refset_";
 
@@ -177,7 +177,7 @@ public class TermServerClassificationResultsCheck extends PreconditionCheck impl
 	}
 
 	private boolean isRequiredFileForClassification(String filename) {
-		return filename.contains(REL2_CONCEPT) || filename.contains(REL2_STATED_RELATIONSHIP) || filename.contains(REL2_RELATIONSHIP)
+		return filename.matches(REL2_CONCEPT_PATTERN) || filename.matches(REL2_STATED_RELATIONSHIP_PATTERN) || filename.matches(REL2_RELATIONSHIP_PATTERN)
 				|| filename.contains(REL2_MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
 	}
 
