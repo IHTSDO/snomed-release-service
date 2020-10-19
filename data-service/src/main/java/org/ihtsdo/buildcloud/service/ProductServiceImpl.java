@@ -126,7 +126,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                         propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
 
                         if (metaData.containsKey("previousPackage")) {
-                            propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
+                            //propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
                         }
                         else {
                             propertyValues.put(FIRST_TIME_RELEASE, TRUE);
