@@ -160,6 +160,12 @@ public class ReleaseServiceImpl implements ReleaseService {
         }
     }
 
+    @Override
+    public void clearConcurrentCache(String releaseCenterKey, String productKey) {
+        Product product = productService.find(releaseCenterKey, productKey);
+        concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
+    }
+
     private void validateProductConfiguration(Product product) throws BadRequestException {
         BuildConfiguration configuration = product.getBuildConfiguration();
         QATestConfig qaTestConfig = product.getQaTestConfig();
