@@ -148,4 +148,12 @@ public class ProductController {
 		return new ResponseEntity(newBuild, HttpStatus.CREATED);
 	}
 
+	@RequestMapping(value = "/{productKey}/release/clear-concurrent-cache", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	@ApiOperation(value = "Clear in-memory concurrent cache")
+	public ResponseEntity clearConcurrentCache(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException {
+		releaseService.clearConcurrentCache(releaseCenterKey, productKey);
+		return new ResponseEntity(HttpStatus.OK);
+	}
+
 }

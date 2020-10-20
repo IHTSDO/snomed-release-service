@@ -13,4 +13,5 @@ public interface ReleaseService {
 
     void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication) throws BusinessServiceException;
 
+    void clearConcurrentCache(String releaseCenterKey, String productKey);
 }
