@@ -721,8 +721,10 @@ public class BuildServiceImpl implements BuildService {
 									List<FileType> fileTypes = subFolderType3.getFile();
 									for (FileType fileType : fileTypes) {
 										ContainsReferenceSetsType refset = fileType.getContainsReferenceSets();
-										for (RefsetType refsetType : refset.getRefset()) {
-											languagesRefsets.add(refsetType);
+										if (refset != null) {
+											for (RefsetType refsetType : refset.getRefset()) {
+												languagesRefsets.add(refsetType);
+											}
 										}
 									}
 									break;
