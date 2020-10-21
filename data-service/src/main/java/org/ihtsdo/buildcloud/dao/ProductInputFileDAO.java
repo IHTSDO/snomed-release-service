@@ -37,4 +37,10 @@ public interface ProductInputFileDAO {
 	void persistSourcesGatherReport(Product product, InputGatherReport inputGatherReport) throws IOException;
 
 	InputStream getInputGatherReport(Product product);
+
+	void deleteInputPrepareReport(Product product);
+
+	void deleteInputGatherReport(Product product);
+
+
 }
