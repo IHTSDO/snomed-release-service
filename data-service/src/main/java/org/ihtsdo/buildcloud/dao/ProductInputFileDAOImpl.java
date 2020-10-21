@@ -142,4 +142,16 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
 		return fileHelper.getFileStream(reportPath);
 	}
+
+	@Override
+	public void deleteInputPrepareReport(Product product) {
+		String reportPath = s3PathHelper.getInputFilePrepareLogPath(product);
+		fileHelper.deleteFile(reportPath);
+	}
+
+	@Override
+	public void deleteInputGatherReport(Product product) {
+		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
+		fileHelper.deleteFile(reportPath);
+	}
 }
