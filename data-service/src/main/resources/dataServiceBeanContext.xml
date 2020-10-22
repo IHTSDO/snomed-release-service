@@ -48,6 +48,7 @@
 
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
+	<bean class="org.ihtsdo.buildcloud.dao.ExtensionConfigDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductInputFileDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>

@@ -79,6 +79,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.io.Files;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import us.monoid.web.JSONResource;
 import us.monoid.web.Resty;
 
@@ -150,7 +151,7 @@ public class BuildServiceImpl implements BuildService {
 	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
-		validateBuildConfig(product.getBuildConfiguration());
+		validateBuildConfig(product.getBuildConfiguration(), branchPath);
 		Build build;
 		try {
 			synchronized (product) {
@@ -185,17 +186,17 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void validateBuildConfig(BuildConfiguration buildConfiguration) throws BadConfigurationException {
+	private void validateBuildConfig(BuildConfiguration buildConfiguration, String branchPath) throws BadConfigurationException {
 		if (buildConfiguration.getEffectiveTime() == null) {
 			throw new BadConfigurationException("The effective time must be set before a build is created.");
 		}
 		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
 		if (extensionConfig != null) {
 			if (extensionConfig.getModuleId() == null || extensionConfig.getModuleId().isEmpty()) {
-				throw new BadConfigurationException("The module id must be set for an extension build.");
+				throw new BadConfigurationException("The module id must be set for " + (StringUtils.isEmpty(branchPath) ? "a derivative product." : "an extension build."));
 			}
 			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
-				throw new BadConfigurationException("The namespace must be set for an extension build.");
+				throw new BadConfigurationException("The namespace must be set for " + (StringUtils.isEmpty(branchPath) ? "a derivative product." : "an extension build."));
 			}
 		}
 	}
