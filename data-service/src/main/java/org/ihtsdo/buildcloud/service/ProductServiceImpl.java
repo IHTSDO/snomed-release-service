@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.*;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.ihtsdo.buildcloud.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.entity.*;
@@ -35,6 +36,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
     @Autowired
     private ProductDAO productDAO;
+
+    @Autowired
+    private ExtensionConfigDAO extensionConfigDAO;
 
     @Autowired
     private ReleaseCenterDAO releaseCenterDAO;
@@ -219,7 +223,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         if (newPropertyValues.containsKey(ENABLE_MRCM)) {
             qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
         }
-
         if (newPropertyValues.containsKey(ENABLE_GOOGLE_SHEET_DROOL_REPORT)) {
             qaTestConfig.setEnableGoogleSheetDroolReport(TRUE.equals(newPropertyValues.get(ENABLE_GOOGLE_SHEET_DROOL_REPORT)));
         }
@@ -244,142 +247,82 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         if (newPropertyValues.containsKey(JUST_PACKAGE)) {
             configuration.setJustPackage(TRUE.equals(newPropertyValues.get(JUST_PACKAGE)));
         }
-
         if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
             configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
         }
-
         if (newPropertyValues.containsKey(BETA_RELEASE)) {
             configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(BETA_RELEASE)));
         }
-
         if (newPropertyValues.containsKey(WORKBENCH_DATA_FIXES_REQUIRED)) {
             configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
         }
-
         if (newPropertyValues.containsKey(INPUT_FILES_FIXES_REQUIRED)) {
             configuration.setInputFilesFixesRequired(TRUE.equals(newPropertyValues.get(INPUT_FILES_FIXES_REQUIRED)));
         }
-
         if (newPropertyValues.containsKey(CREATE_LEGACY_IDS)) {
             configuration.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
         }
-
         if (newPropertyValues.containsKey(CLASSIFY_OUTPUT_FILES)) {
             configuration.setClassifyOutputFiles(TRUE.equals(newPropertyValues.get(CLASSIFY_OUTPUT_FILES)));
         }
-
         if (newPropertyValues.containsKey(LICENSE_STATEMENT)) {
             configuration.setLicenceStatement(newPropertyValues.get(LICENSE_STATEMENT));
         }
-
         if (newPropertyValues.containsKey(CONCEPT_PREFERRED_TERMS)) {
             configuration.setConceptPreferredTerms(newPropertyValues.get(CONCEPT_PREFERRED_TERMS));
         }
-
         if (newPropertyValues.containsKey(RELEASE_INFORMATION_FIELDS)) {
             configuration.setReleaseInformationFields(newPropertyValues.get(RELEASE_INFORMATION_FIELDS));
         }
-
         if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
             configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
         }
-
         if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
             configuration.setDefaultBranchPath(newPropertyValues.get(DEFAULT_BRANCH_PATH));
         }
-
         if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
             final ReleaseCenter releaseCenter = product.getReleaseCenter();
             final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
-            //Validate that a file of that name actually exists
-            boolean pppExists = false;
-            Exception rootCause = new Exception("No further information");
-            try {
-                pppExists = publishService.exists(releaseCenter, pPP);
-            } catch (final Exception e) {
-                rootCause = e;
-            }
-
-            if (pppExists) {
-                configuration.setPreviousPublishedPackage(pPP);
+            if (StringUtils.isEmpty(pPP)) {
+                configuration.setPreviousPublishedPackage(null);
             } else {
-                throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
-            }
-        }
-
-        if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)) {
-            final ReleaseCenter releaseCenter = new ReleaseCenter();
-            releaseCenter.setShortName("International");
-            final String dependencyReleasePackage = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
-            //Validate that a file of that name actually exists
-            boolean pppExists = false;
-            Exception rootCause = new Exception("No further information");
-            try {
-                pppExists = publishService.exists(releaseCenter, dependencyReleasePackage);
-            } catch (final Exception e) {
-                rootCause = e;
-            }
-
-            if (pppExists) {
-                if (configuration.getExtensionConfig() == null) {
-                    ExtensionConfig extConfig = new ExtensionConfig();
-                    configuration.setExtensionConfig(extConfig);
-                    extConfig.setBuildConfiguration(configuration);
+                //Validate that a file of that name actually exists
+                boolean pppExists = false;
+                Exception rootCause = new Exception("No further information");
+                try {
+                    pppExists = publishService.exists(releaseCenter, pPP);
+                } catch (final Exception e) {
+                    rootCause = e;
                 }
-                configuration.getExtensionConfig().setDependencyRelease(dependencyReleasePackage);
-            } else {
-                throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyReleasePackage, rootCause);
+
+                if (pppExists) {
+                    configuration.setPreviousPublishedPackage(pPP);
+                } else {
+                    throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
+                }
             }
-        }
-
-        if (newPropertyValues.containsKey(MODULE_ID)) {
-            if (configuration.getExtensionConfig() == null) {
-                ExtensionConfig extConfig = new ExtensionConfig();
-                configuration.setExtensionConfig(extConfig);
-                extConfig.setBuildConfiguration(configuration);
-            }
-            configuration.getExtensionConfig().setModuleId(newPropertyValues.get(MODULE_ID));
-
-        }
-
-        if (newPropertyValues.containsKey(NAMESPACE_ID)) {
-            if (configuration.getExtensionConfig() == null) {
-                ExtensionConfig extConfig = new ExtensionConfig();
-                configuration.setExtensionConfig(extConfig);
-                extConfig.setBuildConfiguration(configuration);
-            }
-            configuration.getExtensionConfig().setNamespaceId(newPropertyValues.get(NAMESPACE_ID));
-
-        }
-
-        if (newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
-            if (configuration.getExtensionConfig() == null) {
-                ExtensionConfig extConfig = new ExtensionConfig();
-                configuration.setExtensionConfig(extConfig);
-                extConfig.setBuildConfiguration(configuration);
-            }
-            configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(newPropertyValues.get(RELEASE_AS_AN_EDITION)));
         }
 
         if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
             final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
             try {
                 final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
-                final String[] split = refsetCompositeKeyIndexes.split("\\|");
-                for (String refsetKeyAndIndexes : split) {
-                    refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
-                    if (!refsetKeyAndIndexes.isEmpty()) {
-                        final String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
-                        final String refsetKey = keyAndIndexes[0].trim();
-                        final List<Integer> indexes = new ArrayList<>();
-                        final String value = keyAndIndexes[1];
-                        final String[] indexStrings = value.split(",");
-                        for (final String indexString : indexStrings) {
-                            final String trim = indexString.trim();
-                            indexes.add(Integer.parseInt(trim));
+                if (!StringUtils.isEmpty(refsetCompositeKeyIndexes)) {
+                    final String[] split = refsetCompositeKeyIndexes.split("\\|");
+                    for (String refsetKeyAndIndexes : split) {
+                        refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
+                        if (!refsetKeyAndIndexes.isEmpty()) {
+                            final String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
+                            final String refsetKey = keyAndIndexes[0].trim();
+                            final List<Integer> indexes = new ArrayList<>();
+                            final String value = keyAndIndexes[1];
+                            final String[] indexStrings = value.split(",");
+                            for (final String indexString : indexStrings) {
+                                final String trim = indexString.trim();
+                                indexes.add(Integer.parseInt(trim));
+                            }
+                            refsetCompositeKeyMap.put(refsetKey, indexes);
                         }
-                        refsetCompositeKeyMap.put(refsetKey, indexes);
                     }
                 }
             } catch (final NumberFormatException e) {
@@ -404,6 +347,81 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
         if (newPropertyValues.containsKey(INCLUDED_PREV_RELEASE_FILES)) {
             configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
+        }
+
+        setExtensionConfig(newPropertyValues, configuration);
+    }
+
+    private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) {
+        if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)
+            || newPropertyValues.containsKey(MODULE_ID)
+            || newPropertyValues.containsKey(NAMESPACE_ID)
+            || newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
+            String dependencyPackageRelease = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
+            String moduleID = newPropertyValues.get(MODULE_ID);
+            String namespaceID = newPropertyValues.get(NAMESPACE_ID);
+            String releaseAsEdition = newPropertyValues.get(RELEASE_AS_AN_EDITION);
+
+            if (StringUtils.isEmpty(dependencyPackageRelease)
+                && StringUtils.isEmpty(moduleID)
+                && StringUtils.isEmpty(namespaceID)
+                && (StringUtils.isEmpty(releaseAsEdition) || !TRUE.equals(releaseAsEdition))) {
+                if (configuration.getExtensionConfig() != null) {
+                    ExtensionConfig extensionConfig = configuration.getExtensionConfig();
+                    extensionConfig.setBuildConfiguration(configuration);
+                    extensionConfigDAO.delete(extensionConfig);
+                    configuration.setExtensionConfig(null);
+                }
+            } else {
+                if (configuration.getExtensionConfig() == null) {
+                    ExtensionConfig extConfig = new ExtensionConfig();
+                    configuration.setExtensionConfig(extConfig);
+                    extConfig.setBuildConfiguration(configuration);
+                }
+
+                if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)) {
+                    if (StringUtils.isEmpty(dependencyPackageRelease)) {
+                        configuration.getExtensionConfig().setDependencyRelease(null);
+                    } else {
+                        final ReleaseCenter releaseCenter = new ReleaseCenter();
+                        releaseCenter.setShortName("International");
+                        //Validate that a file of that name actually exists
+                        boolean pppExists = false;
+                        Exception rootCause = new Exception("No further information");
+                        try {
+                            pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
+                        } catch (final Exception e) {
+                            rootCause = e;
+                        }
+                        if (pppExists) {
+
+                            configuration.getExtensionConfig().setDependencyRelease(dependencyPackageRelease);
+                        } else {
+                            throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
+                        }
+                    }
+                }
+
+                if (newPropertyValues.containsKey(MODULE_ID)) {
+                    if (StringUtils.isEmpty(moduleID)) {
+                        configuration.getExtensionConfig().setModuleId(null);
+                    } else {
+                        configuration.getExtensionConfig().setModuleId(moduleID);
+                    }
+                }
+
+                if (newPropertyValues.containsKey(NAMESPACE_ID)) {
+                    if (StringUtils.isEmpty(namespaceID)) {
+                        configuration.getExtensionConfig().setNamespaceId(null);
+                    } else {
+                        configuration.getExtensionConfig().setNamespaceId(namespaceID);
+                    }
+                }
+
+                if (newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
+                    configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(releaseAsEdition));
+                }
+            }
         }
     }
 
