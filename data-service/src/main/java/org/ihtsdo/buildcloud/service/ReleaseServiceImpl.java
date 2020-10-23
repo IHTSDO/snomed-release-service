@@ -180,6 +180,14 @@ public class ReleaseServiceImpl implements ReleaseService {
         final ReleaseCenter releaseCenter = product.getReleaseCenter();
 
         if (configuration != null) {
+            if (StringUtils.isEmpty(configuration.getReadmeHeader())) {
+                throw new BadRequestException("Readme Header must not be empty.");
+            }
+
+            if (StringUtils.isEmpty(configuration.getReadmeEndDate())) {
+                throw new BadRequestException("Readme End Date must not be empty.");
+            }
+
             if (!StringUtils.isEmpty(configuration.getPreviousPublishedPackage())) {
                 try {
                     if (!publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
@@ -200,6 +208,8 @@ public class ReleaseServiceImpl implements ReleaseService {
                     }
                 }
             }
+        } else {
+            throw new BadRequestException("Build configurations must not be null.");
         }
 
         if (qaTestConfig != null) {
