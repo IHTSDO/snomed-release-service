@@ -23,11 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ManifestCheck extends PreconditionCheck {
 
 	private static final String COMMA = ",";
-	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have " 
+	private static final String HYPHEN = "_";
+	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have "
 			+ "the same release date as configured in the product:%s.";
 	private static final String INVALID_RELEASE_FILE_FORMAT_MSG = "The following file names specified in the manifest:%s don't follow naming convention:%s.";
 	private static final String FILE_NAME_CONVENTION = "<FileType>_<ContentType>_<ContentSubType>_<Country|Namespace>_<VersionDate>.<Extension>";
-	
+
 	private static final String DER1 = "der1";
 	private static final String SCT1 = "sct1";
 	private static final String EMPTY_FILE_NAME_MSG = "Total number of files with no file name specified: %d";
@@ -99,7 +100,7 @@ public class ManifestCheck extends PreconditionCheck {
 				}
 				continue;
 			}
-			// check RF1 and RF2 file name convention 
+			// check RF1 and RF2 file name convention
 			if (fileName.startsWith(SCT2) || fileName.startsWith(DER2) || fileName.startsWith(SCT1) || fileName.startsWith(DER1)) {
 				final String[] tokens = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 				if (tokens.length != 5) {
@@ -146,19 +147,19 @@ public class ManifestCheck extends PreconditionCheck {
 			List<String> fileNames = ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderName);
 			List<String> invalidFileNames;
 			if (RF2Constants.DELTA.equals(folderName)) {
-				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.SNAPSHOT, RF2Constants.FULL);
+				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.SNAPSHOT + HYPHEN, RF2Constants.FULL + HYPHEN);
 				if (!invalidFileNames.isEmpty()) {
-					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.DELTA, String.join(",", invalidFileNames)));
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.DELTA, String.join(COMMA, invalidFileNames)));
 				}
 			} else if (RF2Constants.SNAPSHOT.equals(folderName)) {
-				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.FULL);
+				invalidFileNames = getFileNamesContainsAny(fileNames, RF2Constants.DELTA + HYPHEN, RF2Constants.FULL + HYPHEN);
 				if (!invalidFileNames.isEmpty()) {
-					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.SNAPSHOT, String.join(",", invalidFileNames)));
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.SNAPSHOT, String.join(COMMA, invalidFileNames)));
 				}
 			} else if (RF2Constants.FULL.equals(folderName)) {
-				invalidFileNames =  getFileNamesContainsAny(fileNames, RF2Constants.DELTA, RF2Constants.SNAPSHOT);
+				invalidFileNames =  getFileNamesContainsAny(fileNames, RF2Constants.DELTA + HYPHEN, RF2Constants.SNAPSHOT + HYPHEN);
 				if (!invalidFileNames.isEmpty()) {
-					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.FULL, String.join(",", invalidFileNames)));
+					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.FULL, String.join(COMMA, invalidFileNames)));
 				}
 			} else  {
 				// do nothing
