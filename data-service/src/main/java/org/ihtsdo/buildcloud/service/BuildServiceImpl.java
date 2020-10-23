@@ -537,8 +537,9 @@ public class BuildServiceImpl implements BuildService {
 		}
 
 		// Generate release package information
-		if (configuration.getReleaseInformationFields() != null && !configuration.getReleaseInformationFields().isEmpty()) {
-			generateReleasePackageFile(build,configuration.getReleaseInformationFields());
+		String releaseFilename = getReleaseFilename(build);
+		if (!StringUtils.isEmpty(releaseFilename) &&  !StringUtils.isEmpty(configuration.getReleaseInformationFields())) {
+			generateReleasePackageFile(build,configuration.getReleaseInformationFields(), releaseFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -591,7 +592,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void generateReleasePackageFile(Build build, String releaseInfoFields) throws BusinessServiceException {
+	private void generateReleasePackageFile(Build build, String releaseInfoFields, String releaseFilename) throws BusinessServiceException {
 		String[] fields = releaseInfoFields.split(",");
 		BuildConfiguration buildConfig = build.getConfiguration();
 		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
@@ -600,18 +601,39 @@ public class BuildServiceImpl implements BuildService {
 		ReleasePackageInformation release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap, preferredTermMap);
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
+
+			File releasePackageInfor = null;
+			try {
+				releasePackageInfor =  new File(releaseFilename);
+				ObjectMapper objectMapper = new ObjectMapper();
+				objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+				objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+				objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
+				dao.putOutputFile(build, releasePackageInfor);
+			} finally {
+				if (releasePackageInfor != null) {
+					releasePackageInfor.delete();
+				}
+			}
+		} catch (IOException e) {
+			throw new BusinessServiceException("Failed to generate release package information file.", e);
+		}
+	}
+
+	private String getReleaseFilename(Build build) {
+		String releaseFilename = null;
+		try {
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			final InputStream manifestStream = dao.getManifestStream(build);
 			final ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
 
-			String releaseFilename = null;
 			if (manifestListing != null) {
 				final FolderType rootFolder = manifestListing.getFolder();
 				if (rootFolder != null) {
 					final List<FileType> files = rootFolder.getFile();
 					for (final FileType file : files) {
 						final String filename = file.getName();
-						if (file.getName().startsWith(RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RELEASE_INFORMATION_FILENAME_EXTENSION)) {
+						if (filename != null && filename.toLowerCase().startsWith(RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RELEASE_INFORMATION_FILENAME_EXTENSION)) {
 							releaseFilename = filename;
 							break;
 						}
@@ -620,32 +642,16 @@ public class BuildServiceImpl implements BuildService {
 			} else {
 				LOGGER.warn("Can not generate release package information file, manifest listing is null.");
 			}
-			if (releaseFilename != null) {
-				File releasePackageInfor = null;
-				try {
-					releasePackageInfor =  new File(releaseFilename);
-					ObjectMapper objectMapper = new ObjectMapper();
-					objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-					objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-					objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
-					dao.putOutputFile(build, releasePackageInfor);
-				} finally {
-					if (releasePackageInfor != null) {
-						releasePackageInfor.delete();
-					}
-				}
-			} else {
-				LOGGER.warn("Can not generate release package file, no file found in manifest root directory starting with '{}' and ending with '{}'",
-						RELEASE_INFORMATION_FILENAME_PREFIX, RELEASE_INFORMATION_FILENAME_EXTENSION);
-			}
-		} catch (IOException | JAXBException e) {
-			throw new BusinessServiceException("Failed to generate release package information file.", e);
+		} catch (JAXBException e) {
+			e.printStackTrace();
 		}
+
+		return releaseFilename;
 	}
 
 	private Map<String, String> getPreferredTermMap(Build build) {
 		Map<String, String> result = new HashMap<>();
-		if (build.getConfiguration().getConceptPreferredTerms() != null) {
+		if (!StringUtils.isEmpty(build.getConfiguration().getConceptPreferredTerms())) {
 			String[] conceptIdAndTerms =  build.getConfiguration().getConceptPreferredTerms().split(",");
 			for (String conceptIdAndTerm : conceptIdAndTerms) {
 				String[] arr = conceptIdAndTerm.split(Pattern.quote("|"));
