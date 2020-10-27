@@ -85,8 +85,8 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			while (!isDone) {
 			 try {
 				 synchronized (LOCK) {
-					 if ( token != null) {
-						 LOGGER.info("ID service rest client is already logged in with token:" + token);
+					 if (token != null) {
+						 LOGGER.debug("ID service rest client is already logged in.");
 					 } 
 					 //validate token
 
@@ -125,7 +125,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			jsonObject.put("username", this.userName);
 			jsonObject.put("password", this.password);
 			securityToken = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content(jsonObject)).get(TOKEN);
-			LOGGER.info("Security token is acquired successfully:" + securityToken );
+			LOGGER.debug("Security token is acquired successfully.");
 		} catch (Exception e) {
 			throw new RestClientException("Failed to login for user name:" + this.userName, e);
 		}
@@ -145,11 +145,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				if (HttpStatus.SC_OK == (response.getHTTPStatus())) {
 					isValid = true;
 				} else {
-					LOGGER.info("Inavlid token with failure reason from id server:" + response.get(MESSAGE));
+					LOGGER.info("Invalid token with failure reason from id server:" + response.get(MESSAGE));
 				}
 			}
 		} catch (Exception e) {
-			LOGGER.error("Failed to valid token:" + token, e);
+			LOGGER.error("Failed to log in", e);
 		}
 		return isValid;
 	}
@@ -195,7 +195,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						try {
 							Thread.sleep(retryDelaySeconds * 1000);
 						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry dealy interrupted.",e);
+							LOGGER.warn("Retry delay interrupted.",e);
 						}
 					} else {
 						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
@@ -232,7 +232,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						try {
 							Thread.sleep(retryDelaySeconds * 1000);
 						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry dealy interrupted.",e);
+							LOGGER.warn("Retry delay interrupted.",e);
 						}
 					} else {
 						throw new RestClientException("Failed to create sctId for uuid:" + componentUuid.toString(), e);
@@ -337,7 +337,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						throw new RestClientException(getFailureMessage(response));
 					}
 				} catch (Exception e) {
-					String message = "Bulk job getOrCreateSchemeIds failed for schemetype:" + schemeType;
+					String message = "Bulk job getOrCreateSchemeIds failed for schemeType:" + schemeType;
 					LOGGER.error(message, e);
 					throw new RestClientException(message, e);
 				}
@@ -415,13 +415,13 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		currentSessions.getAndDecrement();
 		synchronized (LOCK) {
 			if (token != null) {
-				LOGGER.info("Total current sessions:" + currentSessions.get());
+				LOGGER.debug("Total current sessions:" + currentSessions.get());
 				if (currentSessions.get() == 0) {
 					try {
 						JSONObject jsonObject = new JSONObject();
 						jsonObject.put(TOKEN, token);
 						resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
-						LOGGER.info("Id service rest client logs out successfully with token:" + token );
+						LOGGER.info("Id service rest client logs out successfully.");
 						token = null;
 					} catch (Exception e) {
 						throw new RestClientException("Failed to login out " + this.userName, e);
