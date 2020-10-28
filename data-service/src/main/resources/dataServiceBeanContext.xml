@@ -277,9 +277,8 @@
 		<constructor-arg value="${external.classifier.password}" />
 		<property name="timeoutInSeconds" value="${external.classifier.timeoutInSeconds:300}"/>
 	</bean>
-	
-	<bean class="org.ihtsdo.buildcloud.service.RF2ClassifierService"/>
-	<bean class="org.ihtsdo.buildcloud.service.classifier.ExternalRF2Classifier"/>
+
+	<bean class="org.ihtsdo.buildcloud.service.RF2ClassificationService"/>
 
 	<bean factory-bean="uuIdGeneratorFactory" factory-method="getInstance">
 		<constructor-arg value="${offlineMode}" />

@@ -69,7 +69,6 @@ import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.telemetry.client.TelemetryStream;
-import org.ihtsdo.telemetry.core.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,9 +130,6 @@ public class BuildServiceImpl implements BuildService {
 	private Boolean localRvf;
 
 	@Autowired
-	private RF2ClassifierService rf2ClassifierService;
-
-	@Autowired
 	private String buildBucketName;
 
 	@Autowired
@@ -144,7 +140,7 @@ public class BuildServiceImpl implements BuildService {
 
 	public enum RVF_STATE {
 		QUEUED, RUNNING, COMPLETE, FAILED, UNKNOWN
-	};
+	}
 
 
 	@Override
@@ -538,9 +534,9 @@ public class BuildServiceImpl implements BuildService {
 
 			//filter out additional relationships from the transformed delta
 			if (dao.isBuildCancelRequested(build)) return;
-			String inferedDelta = getInferredDeltaFromInput(inputFileSchemaMap);
-			if (inferedDelta != null) {
-				String transformedDelta = inferedDelta.replace(INPUT_FILE_PREFIX, SCT2);
+			String inferredDelta = getInferredDeltaFromInput(inputFileSchemaMap);
+			if (inferredDelta != null) {
+				String transformedDelta = inferredDelta.replace(INPUT_FILE_PREFIX, SCT2);
 				transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
 				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
 			}
@@ -700,9 +696,9 @@ public class BuildServiceImpl implements BuildService {
 						List<ConceptMini> list = new ArrayList<>();
 						for (String moduleId : extensionModule.split(",")) {
 							ConceptMini conceptMini = new ConceptMini();
-							String moudleId = String.valueOf(moduleId).trim();
-							conceptMini.setId(moudleId);
-							conceptMini.setTerm(preferredTermMap.containsKey(moudleId) ? preferredTermMap.get(moudleId) : "");
+							moduleId = moduleId.trim();
+							conceptMini.setId(moduleId);
+							conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
 							list.add(conceptMini);
 						}
 						release.setIncludedModules(list);
@@ -970,7 +966,7 @@ public class BuildServiceImpl implements BuildService {
 					isFinalState = true;
 					break;
 				default:
-					throw new ProcessingException("RVF Reponse was not recognised: " + currentState);
+					throw new ProcessingException("RVF Response was not recognised: " + currentState);
 			}
 
 			if (msElapsed > maxElapsedTime) {
@@ -981,7 +977,7 @@ public class BuildServiceImpl implements BuildService {
 
 	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
-			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specifield.");
+			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specified.");
 		}
 		if (!buildConfig.isJustPackage() && !buildConfig.isFirstTimeRelease()) {
 			if (buildConfig.getExtensionConfig() == null && qaTestConfig.getPreviousInternationalRelease() == null) {
@@ -991,7 +987,7 @@ public class BuildServiceImpl implements BuildService {
 				if (buildConfig.getExtensionConfig().isReleaseAsAnEdition()) {
 					LOGGER.warn("This edition does not have dependency release. Empty dependency release will be used for testing");
 				} else {
-					throw new ConfigurationException("No extention dependency release is configured for extension testing.");
+					throw new ConfigurationException("No extension dependency release is configured for extension testing.");
 				}
 			}
 
