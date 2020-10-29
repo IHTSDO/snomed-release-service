@@ -28,20 +28,20 @@ import us.monoid.json.JSONException;
 import us.monoid.web.BinaryResource;
 import us.monoid.web.JSONResource;
 
-public class ExternalRF2ClassifierRestClient {
+public class ClassificationServiceRestClient {
 	private String classificationServiceUrl;
 	private String username;
 	private String password;
 	public static final String ANY_CONTENT_TYPE = "*/*";
 	protected static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
 	private RestyHelper resty;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ExternalRF2ClassifierRestClient.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClassificationServiceRestClient.class);
 	private static final String STATUS = "status";
 	//default to 5 mins
 	private int timeoutInSeconds = 300;
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-	public ExternalRF2ClassifierRestClient (String serviceUrl, String username, String password) throws BusinessServiceException {
+	public ClassificationServiceRestClient(String serviceUrl, String username, String password) throws BusinessServiceException {
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		this.classificationServiceUrl = serviceUrl;
 		this.username = username;

@@ -271,7 +271,7 @@
 		</constructor-arg>
 	</bean>
 	
-	<bean id="externalClassifier" class="org.ihtsdo.buildcloud.service.classifier.ExternalRF2ClassifierRestClient">
+	<bean id="externalClassifier" class="org.ihtsdo.buildcloud.service.classifier.ClassificationServiceRestClient">
 		<constructor-arg value="${external.classifier.url}" />
 		<constructor-arg value="${external.classifier.username}" />
 		<constructor-arg value="${external.classifier.password}" />

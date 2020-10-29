@@ -4,15 +4,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.Arrays;
 
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ExternalRF2ClassifierRestClientTestHarness {
+public class ClassificationServiceRestClientTestHarness {
 	
-	private ExternalRF2ClassifierRestClient client;
+	private ClassificationServiceRestClient client;
 	
 	private String classificationServiceUrl = "http://localhost:8081/classification-service";
 	private String userName = "classification";
@@ -20,7 +19,7 @@ public class ExternalRF2ClassifierRestClientTestHarness {
 	
 	@Before
 	public void setUp() throws BusinessServiceException {
-		client = new ExternalRF2ClassifierRestClient(classificationServiceUrl, userName, password);
+		client = new ClassificationServiceRestClient(classificationServiceUrl, userName, password);
 		client.setTimeoutInSeconds(300);
 	}
 	
