@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.mapping.JacksonObjectMapperFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,14 +17,14 @@ import org.junit.Test;
 public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
     private static final String TEST_DATA = "test_input_files.zip";
-	private IntegrationTestHelper integrationTestHelper;
+    private IntegrationTestHelper integrationTestHelper;
     private static final String REFSET_TOOL = "reference-set-tool";
     private static final String MAPPING_TOOLS = "mapping-tools";
     private static final String MANUAL = "manual";
     private static final String TERMINOLOGY_SERVER = "terminology-server";
     private static final String MANIFEST_DIR = "manifest/";
     private static final String SPLITTING_TEST_FILE = "test_splitting.zip";
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new JacksonObjectMapperFactory().createObjectMapper();
 
     @Override
     @Before

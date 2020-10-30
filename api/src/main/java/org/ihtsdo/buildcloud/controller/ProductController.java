@@ -92,7 +92,7 @@ public class ProductController {
 		notes = "creates a new Product with a name as specified in  the request "
 				+ "and returns the new product object" )
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterKey,
-			@RequestBody(required = false) Map<String, String> json,
+			@RequestBody Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
 
 		if (json == null) {
@@ -106,12 +106,12 @@ public class ProductController {
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, currentResource, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.ALL_VALUE)
+	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	@ApiOperation( value = "Update a product", notes = "Update an existing product with new details "
 			+ "and returns updated product" )
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-			@RequestBody(required = false) Map<String, String> json,
+			@RequestBody Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
 
 		Product product = productService.update(releaseCenterKey, productKey, json);
@@ -124,11 +124,11 @@ public class ProductController {
 	// Writing clients in Java we find that the standard Java libraries don't support PATCH so, we need
 	// a new end point that uses a more common HTTP method.
 	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
-	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.ALL_VALUE)
+	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-			@RequestBody(required = false) Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
+			@RequestBody Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
 		Product product = productService.update(releaseCenterKey, productKey, json);
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " + productKey);

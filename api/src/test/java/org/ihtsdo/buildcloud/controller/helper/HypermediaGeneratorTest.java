@@ -88,7 +88,7 @@ public class HypermediaGeneratorTest {
 		final Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
 
 		Assert.assertNotNull(hypermedia);
-//		System.out.println(toString(hypermedia));
+		System.out.println(toString(hypermedia));
 		Assert.assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
 	}
 
