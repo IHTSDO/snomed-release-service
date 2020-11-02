@@ -19,6 +19,7 @@
 					<file Name="sct2_Description_Full-en_INT_20140731.txt"/>
 					<file Name="sct2_TextDefinition_Full-en_INT_20140731.txt"/>
 					<file Name="sct2_Relationship_Full_INT_20140731.txt"/>
+					<file Name="sct2_RelationshipConcreteValues_Full_INT_20140731.txt"/>
 					<file Name="sct2_StatedRelationship_Full_INT_20140731.txt"/>
 					<file Name="sct2_sRefset_OWLOntologyFull_INT_20140731.txt"/>
 				</folder>
@@ -40,6 +41,7 @@
 					<file Name="sct2_Description_Snapshot-en_INT_20140731.txt"/>
 					<file Name="sct2_TextDefinition_Snapshot-en_INT_20140731.txt"/>
 					<file Name="sct2_Relationship_Snapshot_INT_20140731.txt"/>
+					<file Name="sct2_RelationshipConcreteValues_Snapshot_INT_20140731.txt"/>
 					<file Name="sct2_StatedRelationship_Snapshot_INT_20140731.txt"/>
 					<file Name="sct2_sRefset_OWLOntologySnapshot_INT_20140731.txt"/>
 				</folder>
@@ -61,6 +63,7 @@
 					<file Name="sct2_Description_Delta-en_INT_20140731.txt"/>
 					<file Name="sct2_TextDefinition_Delta-en_INT_20140731.txt"/>
 					<file Name="sct2_Relationship_Delta_INT_20140731.txt"/>
+					<file Name="sct2_RelationshipConcreteValues_Delta_INT_20140731.txt"/>
 					<file Name="sct2_StatedRelationship_Delta_INT_20140731.txt"/>
 					<file Name="sct2_sRefset_OWLOntologyDelta_INT_20140731.txt"/>
 				</folder>
