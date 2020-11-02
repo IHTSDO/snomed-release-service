@@ -76,6 +76,7 @@ public class TransformationFactory {
 				transformation = getStatedRelationshipFileTransformation();
 				break;
 			case RELATIONSHIP:
+			case RELATIONSHIP_CONCRETE_VALUES:
 				transformation = getInferredRelationshipFileTransformation();
 				break;
 			case IDENTIFIER:
