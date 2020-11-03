@@ -20,7 +20,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 @Service
@@ -143,9 +142,15 @@ public class RF2ClassificationService {
 		if (classifierResult.exists() && classifierResult.isDirectory()) {
 			ZipFileUtils.extractFilesFromZipToOneFolder(classificationResults, classifierResult.getAbsolutePath());
 		} else {
-			throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult);
+			throw new BusinessServiceException("Failed to create folder to extract classification results:" + classifierResult.getAbsolutePath());
 		}
-		for (File file : classifierResult.listFiles()) {
+
+		File [] resultFiles = classifierResult.listFiles();
+		if (resultFiles == null ) {
+			throw new BusinessServiceException("No files found in the extracted classification result folder:"
+					+ classifierResult.getAbsolutePath());
+		}
+		for (File file : resultFiles) {
 			if (file.getName().endsWith(TXT_FILE_EXTENSION)) {
 				if (file.getName().startsWith(RELASHIONSHIP_DELTA_PREFIX)) {
 					List<String> results = FileUtils.readLines(file);
