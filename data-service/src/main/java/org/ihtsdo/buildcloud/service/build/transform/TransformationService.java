@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -330,7 +329,7 @@ public class TransformationService {
 						// Split column values
 						final String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
 						
-						Long conceptId = new Long(columnValues[0]);
+						Long conceptId = Long.valueOf(columnValues[0]);
 						String moduleId = columnValues[3];
 						if (!conceptsInPreviousSnapshot.contains(conceptId)) {
 							if(moduleIdAndConceptMap.containsKey(moduleId)) {
@@ -359,36 +358,11 @@ public class TransformationService {
 				} else {
 					// Split column values
 					final String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
-					result.add(new Long(columnValues[0]));
+					result.add(Long.valueOf(columnValues[0]));
 				}
 			}
 		}
 		return result;
-	}
-
-	public void transformInferredRelationshipFile(final Build build, FileInputStream localClassifierResultInputStream, final String relationshipFilename,
-			Map<String, String> existingUuidToSctidMap, Map<String, String> conceptToModuleIdMap) throws BusinessServiceException {
-		try {
-			logInIdServiceRestClient();
-			final TransformationFactory transformationFactory = getTransformationFactory(build);
-			transformationFactory.setExistingUuidToSctidMap(existingUuidToSctidMap);
-			transformationFactory.setConceptToModuleIdMap(conceptToModuleIdMap);
-			try (AsyncPipedStreamBean outputFileOutputStream = dao.getTransformedFileOutputStream(build, relationshipFilename)) {
-				final StreamingFileTransformation fileTransformation = transformationFactory.getSteamingFileTransformation(
-						new TableSchema(ComponentType.RELATIONSHIP, relationshipFilename));
-				final BuildReport report = build.getBuildReport();
-				fileTransformation.transformFile(
-						localClassifierResultInputStream,
-						outputFileOutputStream.getOutputStream(),
-						relationshipFilename,
-						report);
-			} catch (IOException | TransformationException | FileRecognitionException | NoSuchAlgorithmException e) {
-				dao.renameTransformedFile(build, relationshipFilename, relationshipFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
-				LOGGER.error("Failed to transform inferred relationship file.", e);
-			}
-		} finally {
-			logOutIdServiceClient();
-		}
 	}
 
 	public TransformationFactory getTransformationFactory(Build build) {
@@ -401,7 +375,7 @@ public class TransformationService {
 			moduleId = extConfig.getModuleId();
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
-		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries.intValue(), idGenRetryDelaySeconds.intValue());
+		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries, idGenRetryDelaySeconds);
 
 		return new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, moduleId, modelModuleSctid, transformBufferSize);

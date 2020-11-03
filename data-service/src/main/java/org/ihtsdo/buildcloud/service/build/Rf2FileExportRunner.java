@@ -50,7 +50,6 @@ public class Rf2FileExportRunner {
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
 		final List<String> transformedFiles = getTransformedDeltaFiles();
-		final BuildConfiguration configuration = build.getConfiguration();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
 		for ( String thisFile : transformedFiles) {
@@ -128,7 +127,7 @@ public class Rf2FileExportRunner {
 					if (intDeltaInputStream != null) {
 						rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
 					} else {
-						LOGGER.info("No equivalent file found in the international release for delta file:" + transformedDeltaDataFile);
+						LOGGER.info("No equivalent file found in the international release for delta file {}", transformedDeltaDataFile);
 					}
 				} else {
 					LOGGER.warn("No equivalent file in International Dependency package will be loaded for this Edition release as it is not configured");
@@ -296,8 +295,7 @@ public class Rf2FileExportRunner {
 
 	private boolean isNetworkRelated(final Throwable cause) {
 		boolean isNetworkRelated = false;
-		if (cause != null &&
-				(cause instanceof IOException || cause instanceof AmazonServiceException || cause instanceof AmazonClientException)) {
+		if (cause instanceof IOException || cause instanceof AmazonClientException) {
 			isNetworkRelated = true;
 		}
 		return isNetworkRelated;
@@ -305,7 +303,7 @@ public class Rf2FileExportRunner {
 
 	/**
 	 * @return the transformed delta file name exception if not found.
-	 * @throws ReleaseFileGenerationException
+	 * @throws ReleaseFileGenerationException ReleaseFileGenerationException
 	 */
 	private List<String> getTransformedDeltaFiles() throws ReleaseFileGenerationException {
 		final List<String> transformedFilePaths = buildDao.listTransformedFilePaths(build);
