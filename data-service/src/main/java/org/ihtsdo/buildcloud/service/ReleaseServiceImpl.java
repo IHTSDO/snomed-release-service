@@ -1,21 +1,13 @@
 package org.ihtsdo.buildcloud.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.LogManager;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
-import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.*;
-import org.ihtsdo.buildcloud.service.helper.InMemoryLogAppender;
-import org.ihtsdo.buildcloud.service.helper.LogOutputMessage;
-import org.ihtsdo.buildcloud.service.helper.LogOutputMessageList;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.exception.*;
@@ -31,9 +23,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,235 +31,206 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ReleaseServiceImpl implements ReleaseService {
 
-    private static final String TRACKER_ID = "trackerId";
+	private static final String TRACKER_ID = "trackerId";
 
-    private static final String PATTERN_ALL_FILES = "*.*";
+	private static final String PATTERN_ALL_FILES = "*.*";
 
-    private static Map concurrentReleaseBuildMap = new ConcurrentHashMap();
+	private static final Map<String, String> concurrentReleaseBuildMap = new ConcurrentHashMap<>();
 
 	@Autowired
 	private BuildDAO buildDAO;
 
-    @Autowired
-    private ProductInputFileDAO productInputFileDAO;
+	@Autowired
+	private ProductInputFileDAO productInputFileDAO;
 
-    @Autowired
-    private ProductInputFileService productInputFileService;
+	@Autowired
+	private ProductInputFileService productInputFileService;
 
-    @Autowired
-    private BuildService buildService;
+	@Autowired
+	private BuildService buildService;
 
-    @Autowired
-    private AuthenticationService authenticationService;
+	@Autowired
+	private ProductService productService;
 
-    @Autowired
-    private S3Client s3Client;
+	@Autowired
+	private TermServerService termServerService;
 
-    @Autowired
-    private String buildBucketName;
+	@Autowired
+	private PublishService publishService;
 
-    @Autowired
-    private BuildS3PathHelper s3PathHelper;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
-    @Autowired
-    private ProductService productService;
+	@Override
+	public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
+		// Checking in-progress build for product
+		if (concurrentReleaseBuildMap.containsKey(productKey)) {
+			throw new EntityAlreadyExistsException("Product " + concurrentReleaseBuildMap.get(productKey) + " in release center " + releaseCenter + " has already a in-progress build");
+		}
 
-    @Autowired
-    private TermServerService termServerService;
+		validateBuildRequest(gatherInputRequestPojo);
 
-    @Autowired
-    private PublishService publishService;
+		Product product = productService.find(releaseCenter, productKey);
+		if (product == null) {
+			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
+			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
+		}
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
+		validateProductConfiguration(product);
 
-    @Override
-    public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
-        // Checking in-progress build for product
-        if (concurrentReleaseBuildMap.containsKey(productKey)) {
-            throw new EntityAlreadyExistsException("Product " + concurrentReleaseBuildMap.get(productKey) + " in release center " + releaseCenter + " has already a in-progress build");
-        }
+		findManifestFileOrThrow(releaseCenter, productKey);
 
-        validateBuildRequest(gatherInputRequestPojo);
+		//Create new build
+		Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+		String branchPath = gatherInputRequestPojo.getBranchPath();
+		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
+		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
+		String buildName = gatherInputRequestPojo.getBuildName();
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport);
+	}
 
-        Product product = productService.find(releaseCenter, productKey);
-        if (product == null) {
-            LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
-            throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
-        }
+	@Override
+	@Async("securityContextAsyncTaskExecutor")
+	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
+		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
+		Product product = build.getProduct();
+		concurrentReleaseBuildMap.putIfAbsent(productKey, product.getName());
 
-        validateProductConfiguration(product);
+		try {
+			MDC.put(TRACKER_ID, releaseCenter + "|" + product.getBusinessKey() + "|" + build.getId());
 
-        findManifestFileOrThrow(releaseCenter, productKey);
+			// Add build URL to log
+			LOGGER.info("Build URL: " + rootURL + "/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
 
-        //Create new build
-        Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
-        String branchPath = gatherInputRequestPojo.getBranchPath();
-        String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
-        String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
-        String buildName = gatherInputRequestPojo.getBuildName();
-        return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport);
-    }
+			// clean up input-gather report and input-prepare report for product which were generated by previous build
+			productInputFileDAO.deleteInputGatherReport(build.getProduct());
+			productInputFileDAO.deleteInputPrepareReport(build.getProduct());
 
-    @Override
-    @Async("securityContextAsyncTaskExecutor")
-    public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication) throws BusinessServiceException {
-        TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
-        Product product = build.getProduct();
-        concurrentReleaseBuildMap.putIfAbsent(productKey, product.getName());
+			//Gather all files in term server and externally maintain buckets if specified to source directories
+			SecurityContext securityContext = new SecurityContextImpl();
+			securityContext.setAuthentication(authentication);
+			InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), gatherInputRequestPojo, securityContext);
+			if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
+				LOGGER.error("Error occurred when gathering source files: ");
+				for (String source : inputGatherReport.getDetails().keySet()) {
+					InputGatherReport.Details details = inputGatherReport.getDetails().get(source);
+					if (InputGatherReport.Status.ERROR.equals(details.getStatus())) {
+						LOGGER.error("Source: {} -> Error Details: {}", source, details.getMessage());
+						buildDAO.updateStatus(build, Build.Status.FAILED);
+						throw new BusinessServiceRuntimeException("Failed when gathering source files. Please check input gather report for details");
+					}
+				}
+			}
+			// After gathering all sources, start to transform and put them into input directories
+			if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
+				productInputFileService.deleteFilesByPattern(releaseCenter, product.getBusinessKey(), PATTERN_ALL_FILES);
+				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), true);
+				if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
+					LOGGER.error("Error occurred when processing input files");
+					List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
+					for (FileProcessingReportDetail errorDetail : errorDetails) {
+						LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
+					}
+					if (!errorDetails.isEmpty()) {
+						buildDAO.updateStatus(build, Build.Status.FAILED);
+						throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
+					}
+				}
+			}
 
-        try {
-            MDC.put(TRACKER_ID, releaseCenter + "|" + product.getBusinessKey() + "|" + build.getId());
+			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+			// trigger build
+			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
+			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, false);
+			LOGGER.info("Build {} is triggered {}", build.getProduct(), build.getId());
+		} catch (IOException e) {
+			LOGGER.error("Encounter error while creating package. Build process stopped.", e);
+		} finally {
+			MDC.remove(TRACKER_ID);
+			concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
+			TelemetryStream.finish(LOGGER);
+		}
+	}
 
-            // clean up input-gather report and input-prepare report for product which were generated by previous build
-            productInputFileDAO.deleteInputGatherReport(build.getProduct());
-            productInputFileDAO.deleteInputPrepareReport(build.getProduct());
+	@Override
+	public void clearConcurrentCache(String releaseCenterKey, String productKey) {
+		Product product = productService.find(releaseCenterKey, productKey);
+		concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
+	}
 
-            //Gather all files in term server and externally maintain buckets if specified to source directories
-            SecurityContext securityContext = new SecurityContextImpl();
-            securityContext.setAuthentication(authentication);
-            InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), gatherInputRequestPojo, securityContext);
-            if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
-                LOGGER.error("Error occurred when gathering source files: ");
-                for (String source : inputGatherReport.getDetails().keySet()) {
-                    InputGatherReport.Details details = inputGatherReport.getDetails().get(source);
-                    if (InputGatherReport.Status.ERROR.equals(details.getStatus())) {
-                        LOGGER.error("Source: {} -> Error Details: {}", source, details.getMessage());
-                        buildDAO.updateStatus(build, Build.Status.FAILED);
-                        throw new BusinessServiceRuntimeException("Failed when gathering source files. Please check input gather report for details");
-                    }
-                }
-            }
-            //After gathering all sources, start to transform and put them into input directories
-            if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
-                productInputFileService.deleteFilesByPattern(releaseCenter, product.getBusinessKey(), PATTERN_ALL_FILES);
-                SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), true);
-                if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
-                    LOGGER.error("Error occurred when processing input files");
-                    List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
-                    for (FileProcessingReportDetail errorDetail : errorDetails) {
-                        LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
-                        buildDAO.updateStatus(build, Build.Status.FAILED);
-                        throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
-                    }
-                }
-            }
+	private void validateProductConfiguration(Product product) throws BadRequestException {
+		BuildConfiguration configuration = product.getBuildConfiguration();
+		QATestConfig qaTestConfig = product.getQaTestConfig();
 
-            Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
-            // trigger build
-            LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
-            buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, false);
-            LOGGER.info("Build process ends", build.getStatus().name());
-        } catch (IOException e) {
-            LOGGER.error("Encounter error while creating package. Build process stopped.", e);
-        } finally {
-            MDC.remove(TRACKER_ID);
-            concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
-            TelemetryStream.finish(LOGGER);
-        }
-    }
+		final ReleaseCenter internationalReleaseCenter = new ReleaseCenter();
+		internationalReleaseCenter.setShortName("International");
 
-    @Override
-    public void clearConcurrentCache(String releaseCenterKey, String productKey) {
-        Product product = productService.find(releaseCenterKey, productKey);
-        concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
-    }
+		final ReleaseCenter releaseCenter = product.getReleaseCenter();
 
-    private void validateProductConfiguration(Product product) throws BadRequestException {
-        BuildConfiguration configuration = product.getBuildConfiguration();
-        QATestConfig qaTestConfig = product.getQaTestConfig();
-        final ReleaseCenter releaseCenter = product.getReleaseCenter();
+		if (configuration != null) {
+			if (StringUtils.isEmpty(configuration.getReadmeHeader())) {
+				throw new BadRequestException("Readme Header must not be empty.");
+			}
 
-        if (configuration != null) {
-            if (StringUtils.isEmpty(configuration.getReadmeHeader())) {
-                throw new BadRequestException("Readme Header must not be empty.");
-            }
+			if (StringUtils.isEmpty(configuration.getReadmeEndDate())) {
+				throw new BadRequestException("Readme End Date must not be empty.");
+			}
 
-            if (StringUtils.isEmpty(configuration.getReadmeEndDate())) {
-                throw new BadRequestException("Readme End Date must not be empty.");
-            }
+			if (!StringUtils.isEmpty(configuration.getPreviousPublishedPackage()) && !publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
+				throw new ResourceNotFoundException("Could not find previously published package: " + configuration.getPreviousPublishedPackage());
+			}
 
-            if (!StringUtils.isEmpty(configuration.getPreviousPublishedPackage())) {
-                try {
-                    if (!publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
-                        throw new ResourceNotFoundException("Could not find previously published package: " + configuration.getPreviousPublishedPackage());
-                    }
-                } catch (ResourceNotFoundException e) {
-                }
-            }
+			ExtensionConfig extensionConfig = configuration.getExtensionConfig();
+			if (extensionConfig != null && !StringUtils.isEmpty(extensionConfig.getDependencyRelease())
+					&& !publishService.exists(internationalReleaseCenter, extensionConfig.getDependencyRelease())) {
+					throw new ResourceNotFoundException("Could not find dependency release package: " + extensionConfig.getDependencyRelease());
+			}
+		} else {
+			throw new BadRequestException("Build configurations must not be null.");
+		}
 
-            ExtensionConfig extensionConfig = configuration.getExtensionConfig();
-            if (extensionConfig != null) {
-                if (!StringUtils.isEmpty(extensionConfig.getDependencyRelease())) {
-                    try {
-                        if (!publishService.exists(releaseCenter, extensionConfig.getDependencyRelease())) {
-                            throw new ResourceNotFoundException("Could not find dependency release package: " + extensionConfig.getDependencyRelease());
-                        }
-                    } catch (ResourceNotFoundException e) {
-                    }
-                }
-            }
-        } else {
-            throw new BadRequestException("Build configurations must not be null.");
-        }
+		if (qaTestConfig != null) {
+			if (StringUtils.isEmpty(qaTestConfig.getAssertionGroupNames())) {
+				throw new BadRequestException("RVF Assertion group name must not be empty.");
+			}
+			if (qaTestConfig.isEnableDrools() && StringUtils.isEmpty(qaTestConfig.getDroolsRulesGroupNames())) {
+				throw new BadRequestException("Drool rule assertion group Name must not be empty.");
+			}
+			if (!StringUtils.isEmpty(qaTestConfig.getPreviousExtensionRelease()) && !publishService.exists(releaseCenter, qaTestConfig.getPreviousExtensionRelease())) {
+				throw new ResourceNotFoundException("Could not find previous extension release package: " + qaTestConfig.getPreviousExtensionRelease());
+			}
+			if (!StringUtils.isEmpty(qaTestConfig.getExtensionDependencyRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getExtensionDependencyRelease())) {
+				throw new ResourceNotFoundException("Could not find extension dependency release package: " + qaTestConfig.getExtensionDependencyRelease());
+			}
+			if (!StringUtils.isEmpty(qaTestConfig.getPreviousInternationalRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getPreviousInternationalRelease())) {
+				throw new ResourceNotFoundException("Could not find previous international release package: " + qaTestConfig.getPreviousInternationalRelease());
+			}
+		}
+	}
 
-        if (qaTestConfig != null) {
-            if (StringUtils.isEmpty(qaTestConfig.getAssertionGroupNames())) {
-                throw new BadRequestException("RVF Assertion group name must not be empty.");
-            }
-            if (qaTestConfig.isEnableDrools() && StringUtils.isEmpty(qaTestConfig.getDroolsRulesGroupNames())) {
-                throw new BadRequestException("Drool rule assertion group Name must not be empty.");
-            }
-            if (!StringUtils.isEmpty(qaTestConfig.getPreviousExtensionRelease())) {
-                try {
-                    if (!publishService.exists(releaseCenter, qaTestConfig.getPreviousExtensionRelease())) {
-                        throw new ResourceNotFoundException("Could not find previous extension release package: " + qaTestConfig.getPreviousExtensionRelease());
-                    }
-                } catch (ResourceNotFoundException e) {
-                }
-            }
-            if (!StringUtils.isEmpty(qaTestConfig.getExtensionDependencyRelease())) {
-                try {
-                    if (!publishService.exists(releaseCenter, qaTestConfig.getExtensionDependencyRelease())) {
-                        throw new ResourceNotFoundException("Could not find extension dependency release package: " + qaTestConfig.getExtensionDependencyRelease());
-                    }
-                } catch (ResourceNotFoundException e) {
-                }
-            }
-            if (!StringUtils.isEmpty(qaTestConfig.getPreviousInternationalRelease())) {
-                try {
-                    if (!publishService.exists(releaseCenter, qaTestConfig.getPreviousInternationalRelease())) {
-                        throw new ResourceNotFoundException("Could not find previous international release package: " + qaTestConfig.getPreviousInternationalRelease());
-                    }
-                } catch (ResourceNotFoundException e) {
-                }
-            }
-        }
-    }
+	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo) throws BadRequestException {
+		if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
+			throw new BadRequestException("Effective Date must not be empty.");
+		}
+		if (gatherInputRequestPojo.isLoadTermServerData()) {
+			if (StringUtils.isEmpty(gatherInputRequestPojo.getBranchPath())) {
+				throw new BadRequestException("Branch path must not be empty.");
+			} else {
+				try {
+					Branch branch = termServerService.getBranch(gatherInputRequestPojo.getBranchPath());
+					if (branch == null) {
+						throw new BadRequestException("Branch path does not exist.");
+					}
+				} catch (RestClientException e) {
+					LOGGER.error("Error occurred when getting branch {}. Error: {}", gatherInputRequestPojo.getBranchPath(), e.getMessage());
+				}
+			}
+		}
+	}
 
-    private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo) throws BadRequestException {
-        if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
-            throw new BadRequestException("Effective Date must not be empty.");
-        }
-        if (gatherInputRequestPojo.isLoadTermServerData()) {
-            if (StringUtils.isEmpty(gatherInputRequestPojo.getBranchPath())) {
-                throw new BadRequestException("Branch path must not be empty.");
-            } else {
-                try {
-                    Branch branch = termServerService.getBranch(gatherInputRequestPojo.getBranchPath());
-                    if (branch == null) {
-                        throw new BadRequestException("Branch path does not exist.");
-                    }
-                } catch (RestClientException e) {
-                    LOGGER.error("Error occurred when getting branch {}. Error: {}", gatherInputRequestPojo.getBranchPath(), e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void findManifestFileOrThrow(String releaseCenter, String productKey) {
-        String manifestFileName = productInputFileService.getManifestFileName(releaseCenter, productKey);
-        if (StringUtils.isEmpty(manifestFileName)) {
-            throw new ResourceNotFoundException("The manifest file does not exist.");
-        }
-    }
+	private void findManifestFileOrThrow(String releaseCenter, String productKey) {
+		String manifestFileName = productInputFileService.getManifestFileName(releaseCenter, productKey);
+		if (StringUtils.isEmpty(manifestFileName)) {
+			throw new ResourceNotFoundException("The manifest file does not exist.");
+		}
+	}
 }

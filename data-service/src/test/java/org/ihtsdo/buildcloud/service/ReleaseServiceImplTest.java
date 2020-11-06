@@ -13,7 +13,6 @@ import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,7 +69,7 @@ public class ReleaseServiceImplTest {
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
         Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
-        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
     @Test(expected = BadRequestException.class)
@@ -84,7 +83,7 @@ public class ReleaseServiceImplTest {
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
         Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
-        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
 

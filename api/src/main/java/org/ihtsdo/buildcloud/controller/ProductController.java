@@ -141,10 +141,12 @@ public class ProductController {
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
 	public ResponseEntity createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													@RequestBody GatherInputRequestPojo buildConfig) throws BusinessServiceException {
+													@RequestBody GatherInputRequestPojo buildConfig,
+											   HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
+		final String rootURL = hypermediaGenerator.getRootURL(request);
 		Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, currentUser);
-		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext().getAuthentication());
+		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext().getAuthentication(), rootURL);
 		return new ResponseEntity(newBuild, HttpStatus.CREATED);
 	}
 
