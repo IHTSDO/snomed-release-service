@@ -57,6 +57,11 @@ public class HypermediaGenerator {
 		return getEntityHypermedia(entity, true, url, apiRootUrl, entityLinks);
 	}
 
+	public String getRootURL(HttpServletRequest request) {
+		String url = getUrl(request);
+		return getApiRootUrl(url, request);
+	}
+
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
