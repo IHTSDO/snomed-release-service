@@ -1,12 +1,10 @@
 package org.ihtsdo.buildcloud.service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,4 +58,5 @@ public interface ProductService extends EntityService<Product> {
 
 	Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
 
+	void delete(String releaseCenterKey, String productKey, Boolean removeAllFilesFromS3);
 }
