@@ -87,8 +87,23 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 
-	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-	@ApiOperation( value = "Create a product", 
+	@RequestMapping( value = "/{productKey}", method = RequestMethod.DELETE)
+	@ApiOperation( value = "Delete a product", notes = "Delete a single product object for a given product key" )
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> deleteProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+											 @RequestParam(required = false, defaultValue = "true") boolean removeAllFilesFromS3) {
+		Product product = productService.find(releaseCenterKey, productKey);
+
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
+		}
+		productService.delete(releaseCenterKey, productKey, removeAllFilesFromS3);
+
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
+	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ApiOperation( value = "Create a product",
 		notes = "creates a new Product with a name as specified in  the request "
 				+ "and returns the new product object" )
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterKey,

@@ -3,13 +3,16 @@ package org.ihtsdo.buildcloud.service;
 import java.text.ParseException;
 import java.util.*;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.dao.ProductDAO;
 import org.ihtsdo.buildcloud.dao.ReleaseCenterDAO;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
@@ -35,6 +38,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     private static final Logger LOGGER = LoggerFactory.getLogger(ProductServiceImpl.class);
 
     @Autowired
+    private S3Client s3Client;
+
+    @Autowired
     private ProductDAO productDAO;
 
     @Autowired
@@ -48,6 +54,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
     @Autowired
     BuildService buildService;
+
+    @Autowired
+    private BuildS3PathHelper pathHelper;
+
+    @Autowired
+    private String buildBucketName;
 
     @Autowired
     private TermServerService termServerService;
@@ -112,7 +124,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
             Map<String, String> propertyValues = new HashMap<>();
             propertyValues.put(EFFECTIVE_TIME, "1970-01-01");
-            propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
             propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
             propertyValues.put(CLASSIFY_OUTPUT_FILES, TRUE);
             propertyValues.put(ENABLE_DROOLS, TRUE);
@@ -181,6 +192,25 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         updateProductQaTestConfig(newPropertyValues, product);
         productDAO.update(product);
         return product;
+    }
+
+    @Override
+    public void delete(String releaseCenterKey, String productKey, Boolean removeAllFilesFromS3) {
+        final Product product = find(releaseCenterKey, productKey);
+        if (product == null) {
+            throw new ResourceNotFoundException("No product found for product key:" + productKey);
+        }
+
+        // clean up files in S3 bucket
+        if (Boolean.TRUE.equals(removeAllFilesFromS3)) {
+            String productDirectoryPath = pathHelper.getProductPath(product).toString();
+            for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, productDirectoryPath).getObjectSummaries()) {
+                s3Client.deleteObject(buildBucketName, file.getKey());
+            }
+        }
+
+        // Delete product from database
+        delete(product);
     }
 
     private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) {
