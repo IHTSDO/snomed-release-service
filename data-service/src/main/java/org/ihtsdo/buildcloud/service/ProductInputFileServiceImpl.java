@@ -350,12 +350,12 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		try {
 			Product product = getProduct(centerKey, productKey);
 			dao.persistSourcesGatherReport(product, inputGatherReport);
-			deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
-			deleteSourceFile(centerKey, productKey, null, SRC_EXT_MAINTAINED);
 			if (requestConfig.isLoadTermServerData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
 				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport, securityContext);
 			}
 			if (requestConfig.isLoadExternalRefsetData()) {
+				deleteSourceFile(centerKey, productKey, null, SRC_EXT_MAINTAINED);
 				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
