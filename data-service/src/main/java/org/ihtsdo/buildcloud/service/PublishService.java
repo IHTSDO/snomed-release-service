@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.service.helper.ProcessingStatus;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 
 /**
@@ -16,6 +17,10 @@ public interface PublishService {
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
 	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
+
+	void publishBuildAsync(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
+
+	ProcessingStatus getPublishingBuildStatus(Build build);
 
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 

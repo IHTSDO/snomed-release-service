@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -26,6 +27,7 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -43,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -62,6 +65,8 @@ public class PublishServiceImpl implements PublishService {
 	private final FileHelper publishedFileHelper;
 
 	private final String publishedBucketName;
+
+	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
 	@Value("${snomedInternationalBucket}")
 	private String snomedInternationalBucket;
@@ -85,6 +90,9 @@ public class PublishServiceImpl implements PublishService {
 	
 	private static final int MAX_FAILURE = 100;
 
+	public static enum Status {
+		RUNNING, FAILED, COMPLETED
+	}
 
 	@Autowired
 	public PublishServiceImpl(final String buildBucketName, final String publishedBucketName,
@@ -92,14 +100,6 @@ public class PublishServiceImpl implements PublishService {
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-	}
-
-	private String getPublishDirPath(final ReleaseCenter releaseCenter) {
-		return releaseCenter.getBusinessKey() + SEPARATOR;
-	}
-
-	private String getPublishFilePath(final ReleaseCenter releaseCenter, final String releaseFileName) {
-		return getPublishDirPath(releaseCenter) + releaseFileName;
 	}
 
 	@Override
@@ -115,8 +115,34 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
+	@Async("securityContextAsyncTaskExecutor")
+	public void publishBuildAsync(Build build, boolean publishComponentIds, String env) throws BusinessServiceException {
+		this.publishBuild(build, publishComponentIds, env);
+	}
+
+	@Override
+	public ProcessingStatus getPublishingBuildStatus(Build build) {
+		if (concurrentPublishingBuildStatus.containsKey(getBuildUniqueKey(build))) {
+			synchronized (concurrentPublishingBuildStatus) {
+				ProcessingStatus status = concurrentPublishingBuildStatus.get(getBuildUniqueKey(build));
+				if (status != null && Status.RUNNING.name().equals(status.getStatus())) {
+					return status;
+				}
+				return concurrentPublishingBuildStatus.remove(getBuildUniqueKey(build));
+			}
+		}
+		return null;
+	}
+
+	@Override
 	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
+
+		ProcessingStatus currentStatus = concurrentPublishingBuildStatus.get(getBuildUniqueKey(build));
+		if (currentStatus != null && Status.RUNNING.name().equals(currentStatus.getStatus())) {
+			return;
+		}
+		concurrentPublishingBuildStatus.putIfAbsent(getBuildUniqueKey(build), new ProcessingStatus(Status.RUNNING.name(), null));
 		try {
 			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
 			List<String> filesFound = buildFileHelper.listFiles(pkgOutPutDir);
@@ -135,7 +161,9 @@ public class PublishServiceImpl implements PublishService {
 
 			ReleaseCenter releaseCenter = build.getProduct().getReleaseCenter();
 			if (releaseFileName == null) {
-				LOGGER.error("No zip file found for build:{}", build.getUniqueId());
+				String errorMessage = "No zip file found for build: " + build.getUniqueId();
+				LOGGER.error(errorMessage);
+				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
 			} else {
 				String fileLock = releaseFileName.intern();
 				synchronized (fileLock) {
@@ -149,7 +177,9 @@ public class PublishServiceImpl implements PublishService {
 					}
 					//Does a published file already exist for this product?
 					if (exists(releaseCenter, releaseFileName)) {
-						throw new EntityAlreadyExistsException(releaseFileName + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")");
+						String errorMessage = releaseFileName + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")";
+						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
+						throw new EntityAlreadyExistsException(errorMessage);
 					}
 
 					String outputFileFullPath = buildS3PathHelper.getBuildOutputFilePath(build, releaseFileName);
@@ -174,37 +204,16 @@ public class PublishServiceImpl implements PublishService {
 				//mark the build as Published
 				buildDao.addTag(build, Build.Tag.PUBLISHED);
 				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
+				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} catch (IOException e) {
+			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
-
 	}
 
-	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) {
-		try {
-			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
-			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
-			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
-			outputPathBuilder.append(releaseFileName);
-			buildFileHelper.copyFile(releaseFileFullPath, snomedInternationalBucket, outputPathBuilder.toString());
-		} catch (Exception e) {
-			LOGGER.error("Failed to copy release file to versioned contents repository because of error: {}", e);
-		}
-	}
-
-	private void backupPublishedBuild(Build build, String publishedBucketName) {
-		String orginalBuildPath = buildS3PathHelper.getBuildPath(build).toString();
-		List<String> buildFiles =  buildFileHelper.listFiles(orginalBuildPath);
-		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + PUBLISHED_BUILD + SEPARATOR 
-				+ build.getProduct().getBusinessKey() + SEPARATOR + build.getId() + SEPARATOR;
-		for (String filename : buildFiles) {
-			buildFileHelper.copyFile(orginalBuildPath + filename , publishedBucketName, buildBckUpPath  + filename);
-		}
-	}
-	
 	@Override
 	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException {
 		//We're expecting a zip file only
@@ -518,5 +527,39 @@ public class PublishServiceImpl implements PublishService {
 			}
 		} 
 		return sctIds;
+	}
+
+	private String getPublishDirPath(final ReleaseCenter releaseCenter) {
+		return releaseCenter.getBusinessKey() + SEPARATOR;
+	}
+
+	private String getPublishFilePath(final ReleaseCenter releaseCenter, final String releaseFileName) {
+		return getPublishDirPath(releaseCenter) + releaseFileName;
+	}
+
+	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) {
+		try {
+			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
+			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
+			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
+			outputPathBuilder.append(releaseFileName);
+			buildFileHelper.copyFile(releaseFileFullPath, snomedInternationalBucket, outputPathBuilder.toString());
+		} catch (Exception e) {
+			LOGGER.error("Failed to copy release file to versioned contents repository because of error: {}", e);
+		}
+	}
+
+	private void backupPublishedBuild(Build build, String publishedBucketName) {
+		String orginalBuildPath = buildS3PathHelper.getBuildPath(build).toString();
+		List<String> buildFiles =  buildFileHelper.listFiles(orginalBuildPath);
+		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + PUBLISHED_BUILD + SEPARATOR
+				+ build.getProduct().getBusinessKey() + SEPARATOR + build.getId() + SEPARATOR;
+		for (String filename : buildFiles) {
+			buildFileHelper.copyFile(orginalBuildPath + filename , publishedBucketName, buildBckUpPath  + filename);
+		}
+	}
+
+	private String getBuildUniqueKey(Build build) {
+		return build.getProduct().getReleaseCenter().getBusinessKey() + "|" + build.getProduct().getBusinessKey() + "|" + build.getId();
 	}
 }

@@ -17,7 +17,7 @@ import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
+import org.ihtsdo.buildcloud.service.helper.ProcessingStatus;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -259,7 +259,23 @@ public class BuildController {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		publishService.publishBuild(build, true, environment);
+		publishService.publishBuildAsync(build, true, environment);
+	}
+
+	@RequestMapping(value = "/{buildId}/publish/status", method = RequestMethod.GET)
+	@ResponseBody
+	@ApiOperation( value = "Get publishing release status",
+			notes = "Get publishing release status for given build id")
+	public ResponseEntity<ProcessingStatus> getPublishingBuildStatus(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+																	 @PathVariable final String buildId) {
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
+		ifBuildIsNullThrow(productKey, buildId, build);
+		ProcessingStatus status = publishService.getPublishingBuildStatus(build);
+		if (status != null) {
+			return new ResponseEntity<>(status, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		}
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
