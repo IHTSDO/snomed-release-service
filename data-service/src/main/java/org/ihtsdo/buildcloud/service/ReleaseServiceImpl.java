@@ -133,6 +133,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 			}
 			// After gathering all sources, start to transform and put them into input directories
 			if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
+				LOGGER.debug(gatherInputRequestPojo.toString());
 				productInputFileService.deleteFilesByPattern(releaseCenter, product.getBusinessKey(), PATTERN_ALL_FILES);
 				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), true);
 				if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
