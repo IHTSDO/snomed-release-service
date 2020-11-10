@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -24,9 +25,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.DATE_FORMAT;
 
 @Service
 public class ReleaseServiceImpl implements ReleaseService {
@@ -85,7 +90,13 @@ public class ReleaseServiceImpl implements ReleaseService {
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
 		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
 		String buildName = gatherInputRequestPojo.getBuildName();
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport);
+		Date effectiveTime = null;
+		try {
+			effectiveTime = DATE_FORMAT.parse(gatherInputRequestPojo.getEffectiveDate());
+		} catch (ParseException e) {
+			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
+		}
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport, effectiveTime);
 	}
 
 	@Override

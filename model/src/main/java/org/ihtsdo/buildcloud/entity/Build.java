@@ -53,6 +53,7 @@ public class Build {
 		this.productBusinessKey = productBusinessKey;
 		this.creationTime = creationTime;
 		this.configuration = configuration;
+		this.qaTestConfig = qaTestConfig;
 	}
 
 	public Build(final String creationTime, final String productBusinessKey, final String statusString) {
