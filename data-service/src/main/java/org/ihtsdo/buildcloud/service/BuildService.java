@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import java.io.InputStream;
+import java.util.Date;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.entity.Build;
@@ -14,14 +15,14 @@ public interface BuildService {
 
 	String MDC_BUILD_KEY = "build";
 
-	Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException;
+	Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, Date effectiveTime) throws BusinessServiceException;
 
 	/**
 	 * Synchronous method which runs the build.
 	 * @param releaseCenterKey
 	 * @param productKey
 	 * @param buildId
-	 * @param failureExportMax 
+	 * @param failureExportMax
 	 * @return
 	 * @throws BusinessServiceException
 	 */

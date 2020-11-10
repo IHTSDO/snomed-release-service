@@ -148,10 +148,10 @@ public class BuildServiceImpl implements BuildService {
 
 
 	@Override
-	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, Date effectiveTime) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
-		validateBuildConfig(product.getBuildConfiguration(), branchPath);
+		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, branchPath);
 		Build build;
 		try {
 			synchronized (product) {
@@ -161,14 +161,24 @@ public class BuildServiceImpl implements BuildService {
 					throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
 				}
 				build = new Build(creationDate, product);
+				ObjectMapper objectMapper = new ObjectMapper();
 				if (build.getConfiguration() != null) {
-					build.getConfiguration().setBranchPath(branchPath);
-					build.getConfiguration().setExportType(exportType);
-					build.getConfiguration().setBuildName(buildName);
+					BuildConfiguration configuration = objectMapper.readValue(objectMapper.writeValueAsString(build.getConfiguration()), BuildConfiguration.class);
+					configuration.setBranchPath(branchPath);
+					configuration.setExportType(exportType);
+					configuration.setBuildName(buildName);
+
+					if (effectiveTime != null) {
+						configuration.setEffectiveTime(effectiveTime);
+					}
+					build.setConfiguration(configuration);
 				}
 				build.setQaTestConfig(product.getQaTestConfig());
 				if (build.getQaTestConfig() != null) {
-					build.getQaTestConfig().setMaxFailureExport(maxFailureExport);
+					QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
+					qaTestConfig.setMaxFailureExport(maxFailureExport);
+
+					build.setQaTestConfig(qaTestConfig);
 				}
 				build.setBuildUser(user);
 				// save build with config
@@ -186,8 +196,8 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void validateBuildConfig(BuildConfiguration buildConfiguration, String branchPath) throws BadConfigurationException {
-		if (buildConfiguration.getEffectiveTime() == null) {
+	private void validateBuildConfig(BuildConfiguration buildConfiguration, Date buildEffectiveTime, String branchPath) throws BadConfigurationException {
+		if (buildEffectiveTime == null && buildConfiguration.getEffectiveTime() == null) {
 			throw new BadConfigurationException("The effective time must be set before a build is created.");
 		}
 		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
