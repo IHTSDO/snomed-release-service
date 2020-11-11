@@ -17,9 +17,9 @@ public interface BuildDAO {
 
 	void save(Build build) throws IOException;
 
-	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL);
+	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag);
 
-	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL);
+	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag);
 
 	void delete(Product product, String buildId);
 	
@@ -119,4 +119,6 @@ public interface BuildDAO {
 	String putClassificationResultOutputFile(Build build, File file) throws IOException;
 
 	InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath);
+
+	void updateVisibility(Build build, boolean visibility);
 }

@@ -52,6 +52,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.entity.Build.Tag;
 
@@ -141,15 +142,15 @@ public class BuildDAOImpl implements BuildDAO {
     }
 
     @Override
-    public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
+    public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
         final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-        return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+        return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
     }
 
     @Override
-    public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
+    public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
         final String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-        final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+        final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
         if (!builds.isEmpty()) {
             return builds.get(0);
         } else {
@@ -490,10 +491,11 @@ public class BuildDAOImpl implements BuildDAO {
         }
     }
 
-    private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
-        final List<Build> builds = new ArrayList<>();
+    private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
+        List<Build> builds = new ArrayList<>();
         final List<String> userPaths = new ArrayList<>();
         final List<String> tagPaths = new ArrayList<>();
+        final List<String> visibilityPaths = new ArrayList<>();
         LOGGER.info("List s3 objects {}, {}", buildBucketName, productDirectoryPath);
 
         // Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
@@ -512,11 +514,21 @@ public class BuildDAOImpl implements BuildDAO {
                 objectListing = s3Client.listNextBatchOfObjects(objectListing);
             }
             final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-            findBuilds(product, objectSummaries, builds, userPaths, tagPaths);
+            findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
             firstPass = false;
         }
 
-        // populate user, tag  and rvfURL for builds
+        // Filter the build out when the visibility flag is set to false
+        if (Boolean.TRUE.equals(useVisibilityFlag) && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
+            List<String> invisibleBuildIds = getInvisibleBuilds(visibilityPaths);
+            if (!invisibleBuildIds.isEmpty()) {
+                builds = builds.stream()
+                        .filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // populate user, tag  and rvfURL to builds
         if (!builds.isEmpty()) {
             builds.forEach(build -> {
                 build.setBuildUser(getBuildUser(build, userPaths));
@@ -562,7 +574,7 @@ public class BuildDAOImpl implements BuildDAO {
         return builds;
     }
 
-    private void findBuilds(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths) {
+    private void findBuilds(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String>  visibilityPaths) {
         for (final S3ObjectSummary objectSummary : objectSummaries) {
             final String key = objectSummary.getKey();
             if (key.contains("/status:")) {
@@ -577,6 +589,8 @@ public class BuildDAOImpl implements BuildDAO {
                 tagPaths.add(key);
             } else if (key.contains("/user:")) {
                 userPaths.add(key);
+            } else if (key.contains("/visibility:")) {
+                visibilityPaths.add(key);
             } else {
                 // do nothing
             }
@@ -603,6 +617,20 @@ public class BuildDAOImpl implements BuildDAO {
             }
         }
         return null;
+    }
+
+    private  List<String> getInvisibleBuilds(final List<String> visibilityPaths) {
+        List<String> result = new ArrayList<>();
+        for (final String key : visibilityPaths) {
+            final String[] keyParts = key.split("/");
+            final String dateString = keyParts[2];
+            final boolean visibility = Boolean.valueOf(keyParts[3].split(":")[1]);
+            if (!visibility) {
+                result.add(dateString);
+            }
+        }
+
+        return result;
     }
 
     private AsyncPipedStreamBean getFileAsOutputStream(final String buildOutputFilePath) throws IOException {
@@ -784,5 +812,18 @@ public class BuildDAOImpl implements BuildDAO {
     public InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath) {
         final String path = pathHelper.getClassificationResultOutputPath(build, relativeFilePath);
         return buildFileHelper.getFileStream(path);
+    }
+
+    @Override
+    public void updateVisibility(Build build, boolean visibility) {
+        // Deleting old regardless the visibility is true or false, or not being set yet
+        String origStatusFilePath = pathHelper.getVisibilityFilePath(build, true);
+        s3Client.deleteObject(buildBucketName, origStatusFilePath);
+        origStatusFilePath = pathHelper.getVisibilityFilePath(build, false);
+        s3Client.deleteObject(buildBucketName, origStatusFilePath);
+
+        // Put new visibility
+        final String newStatusFilePath = pathHelper.getVisibilityFilePath(build, visibility);
+        putFile(newStatusFilePath, BLANK);
     }
 }
