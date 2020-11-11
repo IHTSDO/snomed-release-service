@@ -77,7 +77,7 @@ public class BuildController {
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
@@ -95,7 +95,7 @@ public class BuildController {
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true);
+		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, true);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
@@ -105,7 +105,7 @@ public class BuildController {
 	notes = "Returns a single build object for given key" )
 	public Map<String, Object> getBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, true);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, true, true);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
@@ -250,6 +250,15 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 
+	@RequestMapping(value = "/{buildId}/visibility", method = RequestMethod.POST)
+	@ResponseBody
+	@ApiOperation( value = "Update visibility for build", notes = "Update an existing build with the visibility flag")
+	public ResponseEntity updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+										   @PathVariable final String buildId, @RequestParam(required = true, defaultValue = "true") boolean visibility) {
+		buildService.updateVisibility(releaseCenterKey, productKey, buildId, visibility);
+		return new ResponseEntity(HttpStatus.OK);
+	}
+
 	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
 	@ResponseBody
 	@ApiOperation( value = "Publish a release for given build id",
@@ -257,7 +266,7 @@ public class BuildController {
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
 		publishService.publishBuildAsync(build, true, environment);
 	}
@@ -268,7 +277,7 @@ public class BuildController {
 			notes = "Get publishing release status for given build id")
 	public ResponseEntity<ProcessingStatus> getPublishingBuildStatus(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 																	 @PathVariable final String buildId) {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
 		ProcessingStatus status = publishService.getPublishingBuildStatus(build);
 		if (status != null) {

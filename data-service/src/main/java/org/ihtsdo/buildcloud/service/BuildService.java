@@ -28,9 +28,9 @@ public interface BuildService {
 	 */
 	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax, Boolean enableTelemetryStream) throws BusinessServiceException;
 
-	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException;
+	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException;
 
-	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) throws ResourceNotFoundException;
+	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException;
 
 	void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
@@ -65,4 +65,8 @@ public interface BuildService {
     List<String> getClassificationResultOutputFilePaths(String releaseCenterKey, String productKey, String buildId);
 
 	InputStream getClassificationResultOutputFile(String releaseCenterKey, String productKey, String buildId, String inputFileName) throws ResourceNotFoundException;
+
+	void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility);
+
+	void updateVisibility(Build build, boolean visibility);
 }

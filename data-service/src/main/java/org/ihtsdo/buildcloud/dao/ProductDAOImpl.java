@@ -27,10 +27,12 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
     @Override
     @SuppressWarnings("unchecked")
     public Page<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, Pageable pageable) {
-        String filter = "";
+        String filter = "product.visibility = 'Y' ";
         if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
+            if (!filter.isEmpty()) {
+                filter += " and ";
+            }
             filter += " ( removed = 'N' or removed is null) ";
-
         }
         if (filterOptions == null || !filterOptions.contains(FilterOption.INCLUDE_LEGACY)) {
             if (!filter.isEmpty()) {

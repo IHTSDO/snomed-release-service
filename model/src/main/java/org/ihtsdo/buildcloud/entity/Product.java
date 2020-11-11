@@ -53,6 +53,10 @@ public class Product {
 	@Column(name = "legacy_product")
 	private boolean isLegacyProduct;
 
+	@Type(type="yes_no")
+	@Column(name = "visibility")
+	private boolean visibility;
+
 	public Product() {
 	}
 
@@ -143,7 +147,15 @@ public class Product {
 	public void setLegacyProduct(boolean legacyProduct) {
 		isLegacyProduct = legacyProduct;
 	}
-	
+
+	public boolean isVisibility() {
+		return visibility;
+	}
+
+	public void setVisibility(boolean visibility) {
+		this.visibility = visibility;
+	}
+
 	@Override
 	public String toString() {
 		return "Product [id=" + id + ", name=" + name + ", businessKey="

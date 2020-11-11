@@ -9,6 +9,7 @@ public class BuildS3PathHelper {
 	public static final String SEPARATOR = "/";
 	private static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
+	private static final String VISIBILITY_PREFIX = "visibility:";
 	private static final String TAG_PREFIX = "tag:";
 	private static final String USER_PREFIX = "user:";
 	private static final String OUTPUT_FILES = "output-files";
@@ -90,6 +91,10 @@ public class BuildS3PathHelper {
 
 	public String getStatusFilePath(final Build build, final Build.Status status) {
 		return getBuildPath(build).append(STATUS_PREFIX).append(status.toString()).toString();
+	}
+
+	public String getVisibilityFilePath(final Build build, final boolean visibility) {
+		return getBuildPath(build).append(VISIBILITY_PREFIX).append(visibility).toString();
 	}
 
 	public String getTagFilePath(final Build build, final String tag) {

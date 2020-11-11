@@ -97,6 +97,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         }
 
         final Product product = new Product(productName);
+        product.setVisibility(true);
         releaseCenter.addProduct(product);
         productDAO.save(product);
 
@@ -181,6 +182,24 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         updateProductQaTestConfig(newPropertyValues, product);
         productDAO.update(product);
         return product;
+    }
+
+    @Override
+    public void updateVisibility(final String releaseCenterKey, final String productKey, final boolean visibility) {
+        Product product = find(releaseCenterKey, productKey);
+        if (product == null) {
+            throw new ResourceNotFoundException("No product found for product key:" + productKey);
+        }
+
+        product.setVisibility(visibility);
+        productDAO.update(product);
+
+        // Mark all builds shown/hidden
+        List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey(), null, null, null, null);
+        product.setLatestBuildStatus(!CollectionUtils.isEmpty(builds) ? builds.get(0).getStatus() : Build.Status.UNKNOWN);
+        for (Build build : builds) {
+            buildService.updateVisibility(build, visibility);
+        }
     }
 
     private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) {
@@ -426,7 +445,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     }
 
     private void setLatestBuildStatusAndTag(String releaseCenterKey, Product product) {
-        List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey(), null, null, null);
+        List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey(), null, null, null, null);
         product.setLatestBuildStatus(!CollectionUtils.isEmpty(builds) ? builds.get(0).getStatus() : Build.Status.UNKNOWN);
         for (Build build : builds) {
             if (build.getTag() != null) {

@@ -158,4 +158,12 @@ public class ProductController {
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
+	@RequestMapping(value = "/{productKey}/visibility", method = RequestMethod.POST)
+	@ResponseBody
+	@ApiOperation( value = "Update visibility for product", notes = "Update an existing product with the visibility flag")
+	public ResponseEntity updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+													   @RequestParam(required = true, defaultValue = "true") boolean visibility) throws BusinessServiceException {
+		productService.updateVisibility(releaseCenterKey, productKey, visibility);
+		return new ResponseEntity(HttpStatus.OK);
+	}
 }
