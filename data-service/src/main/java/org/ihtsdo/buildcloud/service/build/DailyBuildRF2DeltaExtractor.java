@@ -86,13 +86,21 @@ public class DailyBuildRF2DeltaExtractor {
 	
 	private void uploadDailyBuildToS3(Build build, File zipPackage, ResourceManager resourceManager) throws IOException {
 		String codeSystem = RF2Constants.SNOMEDCT;
-		String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
-		if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
-			codeSystem += "-" + businessKey;
+		String branchPath = build.getConfiguration().getBranchPath();
+		if (branchPath != null) {
+			String[] splits = branchPath.split("/");
+			if (splits.length >= 2) {
+				codeSystem = splits[1];
+			}
+		} else {
+			String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
+			if (!INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
+				codeSystem += "-" + businessKey;
+			}
 		}
 		String dateStr = DateUtils.now(DAILY_BUILD_TIME_FORMAT);
-		String targetFilePath = codeSystem.toUpperCase() + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
+		String targetFilePath = codeSystem + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
 		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
-		LOGGER.info("Daily build package {} is uploaded as {}", zipPackage.getName(), targetFilePath);
+		LOGGER.info("Daily build package {} is uploaded to S3 {}", zipPackage.getName(), targetFilePath);
 	}
 }
