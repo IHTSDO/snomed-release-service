@@ -141,10 +141,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 					for (FileProcessingReportDetail errorDetail : errorDetails) {
 						LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
 					}
-					if (!errorDetails.isEmpty()) {
-						buildDAO.updateStatus(build, Build.Status.FAILED);
-						throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
-					}
+//					if (!errorDetails.isEmpty()) {
+//						buildDAO.updateStatus(build, Build.Status.FAILED);
+//						throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
+//					}
 				}
 			}
 
