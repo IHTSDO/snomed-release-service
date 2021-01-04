@@ -259,6 +259,16 @@ public class BuildController {
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
+	@RequestMapping(value = "/{buildId}/tags", method = RequestMethod.POST)
+	@ResponseBody
+	@ApiOperation( value = "Update tags for build", notes = "Update an existing build with the tags")
+	public ResponseEntity updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+										   @PathVariable final String buildId, @RequestParam(required = true) List<Build.Tag> tags) {
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
+		buildService.saveTags(build, tags);
+		return new ResponseEntity(HttpStatus.OK);
+	}
+
 	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
 	@ResponseBody
 	@ApiOperation( value = "Publish a release for given build id",
@@ -403,7 +413,6 @@ public class BuildController {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
 		response.setStatus(HttpStatus.OK.value());
 	}
-
 
 	@RequestMapping(value = "/{buildId}/buildLogs", method = RequestMethod.GET)
 	@ApiOperation(value = "Get the full logs of the build process")

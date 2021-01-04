@@ -21,7 +21,7 @@ public class Build {
 
 	private Status status;
 
-	private Tag tag;
+	private List<Tag> tags;
 
 	private String buildUser;
 
@@ -45,7 +45,7 @@ public class Build {
 	}
 
 	public static enum Tag {
-		PUBLISHED
+		ALPHA, BETA, PRE_PROD, PUBLISHED, NOT_TO_BE_USED;
 	}
 
 	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {
@@ -90,12 +90,12 @@ public class Build {
 		this.status = status;
 	}
 
-	public Tag getTag() {
-		return tag;
+	public List<Tag> getTags() {
+		return tags;
 	}
 
-	public void setTag(Tag tag) {
-		this.tag = tag;
+	public void setTags(List<Tag> tags) {
+		this.tags = tags;
 	}
 
 	public String getUniqueId() {

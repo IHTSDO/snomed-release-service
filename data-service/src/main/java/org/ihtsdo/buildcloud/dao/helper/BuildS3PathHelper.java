@@ -97,8 +97,8 @@ public class BuildS3PathHelper {
 		return getBuildPath(build).append(VISIBILITY_PREFIX).append(visibility).toString();
 	}
 
-	public String getTagFilePath(final Build build, final String tag) {
-		return getBuildPath(build).append(TAG_PREFIX).append(tag).toString();
+	public String getTagFilePath(final Build build, final String tags) {
+		return getBuildPath(build).append(TAG_PREFIX).append(tags).toString();
 	}
 
 	public String getBuildUserFilePath(final Build build, final String user) {

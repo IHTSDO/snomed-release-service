@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.ByteArrayInputStream;
@@ -206,8 +207,28 @@ public class BuildDAOImpl implements BuildDAO {
 
     @Override
     public void addTag(Build build, Tag tag) {
-        build.setTag(tag);
-        final String newTagFilePath = pathHelper.getTagFilePath(build, tag.name());
+        List<Tag> tags = build.getTags();
+        if (CollectionUtils.isEmpty(tags)) {
+            tags = new ArrayList<>();
+        } else {
+            String oldTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+            s3Client.deleteObject(buildBucketName, oldTagFilePath);
+        }
+        tags.add(tag);
+        build.setTags(tags);
+        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+        putFile(newTagFilePath, BLANK);
+    }
+
+    @Override
+    public void saveTags(Build build, List<Tag> tags) {
+        List<Tag> oldTags = build.getTags();
+        if (!CollectionUtils.isEmpty(oldTags)) {
+            String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+            s3Client.deleteObject(buildBucketName, oldTagFilePath);
+        }
+        build.setTags(tags);
+        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
         putFile(newTagFilePath, BLANK);
     }
 
@@ -532,7 +553,7 @@ public class BuildDAOImpl implements BuildDAO {
         if (!builds.isEmpty()) {
             builds.forEach(build -> {
                 build.setBuildUser(getBuildUser(build, userPaths));
-                build.setTag(getTag(build, tagPaths));
+                build.setTags(getTags(build, tagPaths));
                 if (Boolean.TRUE.equals(includeRvfURL) &&
                         (build.getStatus().equals(Build.Status.BUILT)
                         || build.getStatus().equals(Build.Status.RVF_RUNNING)
@@ -597,12 +618,18 @@ public class BuildDAOImpl implements BuildDAO {
         }
     }
 
-    private Tag getTag(Build build, final List<String> tagPaths) {
+    private List<Tag> getTags(Build build, final List<String> tagPaths) {
         for (final String key : tagPaths) {
             final String[] keyParts = key.split("/");
             final String dateString = keyParts[2];
             if (build.getCreationTime().equals(dateString)) {
-                return Build.Tag.valueOf(keyParts[3].split(":")[1]);
+                String tagsStr = keyParts[3].split(":")[1];
+                String[] tagArr = tagsStr.split(",");
+                List<Tag> tags = new ArrayList<>();
+                for (String tag : tagArr) {
+                    tags.add(Build.Tag.valueOf(tag));
+                }
+                return tags;
             }
         }
         return null;

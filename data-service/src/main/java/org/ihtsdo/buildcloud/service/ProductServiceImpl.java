@@ -448,8 +448,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         List<Build> builds = buildService.findAllDesc(releaseCenterKey, product.getBusinessKey(), null, null, null, null);
         product.setLatestBuildStatus(!CollectionUtils.isEmpty(builds) ? builds.get(0).getStatus() : Build.Status.UNKNOWN);
         for (Build build : builds) {
-            if (build.getTag() != null) {
-                product.setLatestTag(build.getTag());
+            if (!CollectionUtils.isEmpty(build.getTags())) {
+                product.setLatestTag(build.getTags().get(build.getTags().size() - 1));
                 break;
             }
         }
