@@ -1169,4 +1169,9 @@ public class BuildServiceImpl implements BuildService {
 	public void updateVisibility(Build build, boolean visibility) {
 		dao.updateVisibility(build, visibility);
 	}
+
+	@Override
+	public void saveTags(Build build, List<Build.Tag> tags) {
+		dao.saveTags(build, tags);
+	}
 }

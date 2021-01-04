@@ -69,4 +69,6 @@ public interface BuildService {
 	void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility);
 
 	void updateVisibility(Build build, boolean visibility);
+
+	void saveTags(Build build, List<Build.Tag> tags);
 }

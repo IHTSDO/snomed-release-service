@@ -31,6 +31,8 @@ public interface BuildDAO {
 
 	void addTag(Build build, Build.Tag tag);
 
+	void saveTags(Build build, List<Build.Tag> tags);
+
 	void assertStatus(Build build, Build.Status ensureStatus) throws BadConfigurationException;
 
 	InputStream getOutputFileStream(Build build, String filePath);
