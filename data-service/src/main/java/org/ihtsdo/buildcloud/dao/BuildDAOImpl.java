@@ -48,6 +48,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -211,12 +212,12 @@ public class BuildDAOImpl implements BuildDAO {
         if (CollectionUtils.isEmpty(tags)) {
             tags = new ArrayList<>();
         } else {
-            String oldTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+            String oldTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
             s3Client.deleteObject(buildBucketName, oldTagFilePath);
         }
         tags.add(tag);
         build.setTags(tags);
-        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
         putFile(newTagFilePath, BLANK);
     }
 
@@ -224,12 +225,14 @@ public class BuildDAOImpl implements BuildDAO {
     public void saveTags(Build build, List<Tag> tags) {
         List<Tag> oldTags = build.getTags();
         if (!CollectionUtils.isEmpty(oldTags)) {
-            String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
+            String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
             s3Client.deleteObject(buildBucketName, oldTagFilePath);
         }
         build.setTags(tags);
-        final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().map(t -> t.name()).collect(Collectors.joining(",")));
-        putFile(newTagFilePath, BLANK);
+        if (!CollectionUtils.isEmpty(tags)) {
+            final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
+            putFile(newTagFilePath, BLANK);
+        }
     }
 
     @Override

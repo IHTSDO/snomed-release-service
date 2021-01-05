@@ -45,7 +45,17 @@ public class Build {
 	}
 
 	public static enum Tag {
-		ALPHA, BETA, PRE_PROD, PUBLISHED, NOT_TO_BE_USED;
+		ALPHA(1), BETA(2), PRE_PROD(3), PUBLISHED(4), NOT_TO_BE_USED(5);
+
+		private int order;
+
+		Tag (int order) {
+			this.order = order;
+		}
+
+		public int getOrder() {
+			return order;
+		}
 	}
 
 	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {
