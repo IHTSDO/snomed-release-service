@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.termserver;
 
 
+import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 
 import java.util.Set;
@@ -15,6 +16,7 @@ public class GatherInputRequestPojo {
 	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
+	private QATestConfig.CharacteristicType mrcmValidationForm;
 	
 	public GatherInputRequestPojo() {
 	}
@@ -83,6 +85,14 @@ public class GatherInputRequestPojo {
 		this.maxFailuresExport = maxFailuresExport;
 	}
 
+	public QATestConfig.CharacteristicType getMrcmValidationForm() {
+		return mrcmValidationForm;
+	}
+
+	public void setMrcmValidationForm(QATestConfig.CharacteristicType mrcmValidationForm) {
+		this.mrcmValidationForm = mrcmValidationForm;
+	}
+
 	@Override
 	public String toString() {
 		return "TermserverReleaseRequestPojo{" +
@@ -93,6 +103,7 @@ public class GatherInputRequestPojo {
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +
+				", mrcmValidationForm=" + mrcmValidationForm +
 				'}';
 	}
 

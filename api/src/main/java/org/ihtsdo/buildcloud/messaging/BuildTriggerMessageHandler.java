@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.messaging;
 import javax.jms.TextMessage;
 
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.QATestConfig;
 import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.AuthenticationService;
 import org.ihtsdo.buildcloud.service.BuildService;
@@ -23,6 +24,7 @@ public class BuildTriggerMessageHandler {
 	public static final String PRODUCT_KEY = "productKey";
 	public static final String BUILD_ID = "buildId";
 	public static final String PROPERTY_IS_REQUIRED = " property is required";
+	public static final String MRCM_VALIDATION_FORM = "mrcmValidationForm";
 
 	@Autowired
 	private BuildService buildService;
@@ -57,7 +59,10 @@ public class BuildTriggerMessageHandler {
 
 			String failureExportMax = incomingMessage.getStringProperty(RVF_FAILURE_EXPORT_MAX);
 			Integer exportMax = failureExportMax == null ? null : Integer.valueOf(failureExportMax);
-			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, exportMax, true);
+
+			String mrcmValidationForm = incomingMessage.getStringProperty(MRCM_VALIDATION_FORM);
+			QATestConfig.CharacteristicType form = mrcmValidationForm == null ? QATestConfig.CharacteristicType.stated : QATestConfig.CharacteristicType.valueOf(mrcmValidationForm);
+			final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, exportMax, form, true);
 
 			messagingHelper.sendResponse(incomingMessage, build);
 		} catch (Exception e) {

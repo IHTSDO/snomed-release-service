@@ -86,6 +86,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 		//Create new build
 		Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+		QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 		String branchPath = gatherInputRequestPojo.getBranchPath();
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
 		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
@@ -96,7 +97,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		} catch (ParseException e) {
 			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
 		}
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport, effectiveTime);
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
 	}
 
 	@Override
@@ -149,9 +150,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 			}
 
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
+			QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 			// trigger build
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
-			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, false);
+			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
 			LOGGER.info("Build {} is triggered {}", build.getProduct(), build.getId());
 		} catch (IOException e) {
 			LOGGER.error("Encounter error while creating package. Build process stopped.", e);

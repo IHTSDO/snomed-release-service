@@ -64,7 +64,7 @@ public class BuildController {
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null, null);
+		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null, null, null);
 
 		final boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
@@ -244,9 +244,10 @@ public class BuildController {
 	@ResponseBody
 	@ApiIgnore
 	public Map<String, Object> triggerProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId, @RequestParam(value = "failureExportMax", required = false) final Integer failureExportMax, final HttpServletRequest request) throws BusinessServiceException {
+											  @PathVariable final String buildId, @RequestParam(value = "failureExportMax", required = false) final Integer failureExportMax,
+											  @RequestParam(value = "mrcmValidationForm", required = false, defaultValue = "stated") final QATestConfig.CharacteristicType mrcmValidationForm, HttpServletRequest request) throws BusinessServiceException {
 		//when failureExportMax is set to less than zero means exporting all results. The default value is 10 when not set
-		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax,true);
+		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax, mrcmValidationForm,true);
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 

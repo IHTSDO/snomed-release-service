@@ -62,6 +62,11 @@ public class QATestConfig {
 	@Transient
 	private Integer maxFailureExport;
 
+	public enum CharacteristicType { inferred, stated }
+
+	@Transient
+	private CharacteristicType mrcmValidationForm;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -140,6 +145,14 @@ public class QATestConfig {
 
 	public void setReportingStage(String reportingStage) {
 		this.reportingStage = reportingStage;
+	}
+
+	public CharacteristicType getMrcmValidationForm() {
+		return mrcmValidationForm;
+	}
+
+	public void setMrcmValidationForm(CharacteristicType mrcmValidationForm) {
+		this.mrcmValidationForm = mrcmValidationForm;
 	}
 
 	@Override

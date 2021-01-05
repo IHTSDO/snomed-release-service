@@ -148,7 +148,7 @@ public class BuildServiceImpl implements BuildService {
 
 
 	@Override
-	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, Date effectiveTime) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, QATestConfig.CharacteristicType mrcmValidationForm, Date effectiveTime) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 
@@ -182,6 +182,7 @@ public class BuildServiceImpl implements BuildService {
 				if (build.getQaTestConfig() != null) {
 					QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
 					qaTestConfig.setMaxFailureExport(maxFailureExport);
+					qaTestConfig.setMrcmValidationForm(mrcmValidationForm);
 
 					build.setQaTestConfig(qaTestConfig);
 				}
@@ -275,7 +276,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, Boolean enableTelemetryStream) throws BusinessServiceException {
+	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) throws BusinessServiceException {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		LOGGER.info("Trigger product", productKey, buildId);
 		Build build;
@@ -329,7 +330,7 @@ public class BuildServiceImpl implements BuildService {
 				String resultMessage = "Process completed successfully";
 				try {
 					updateStatusWithChecks(build, status);
-					executeBuild(build, failureExportMax);
+					executeBuild(build, failureExportMax, mrcmValidationForm);
 					status = Status.RELEASE_COMPLETE;
 				} catch (final Exception e) {
 					resultStatus = "fail";
@@ -513,7 +514,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void executeBuild(final Build build, Integer failureExportMax) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
+	private void executeBuild(final Build build, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
@@ -582,7 +583,7 @@ public class BuildServiceImpl implements BuildService {
 			if (!offlineMode || localRvf) {
 				try {
 					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
-					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax);
+					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
 					if (rvfResultMsg == null) {
 						rvfStatus = "Failed to run";
 					} else {
@@ -893,7 +894,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) throws IOException,
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws IOException,
 			PostConditionException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath,  failureExportMax);
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
@@ -925,6 +926,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
+			request.setMrcmValidationForm(mrcmValidationForm);
 			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
 	}
