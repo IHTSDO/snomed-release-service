@@ -33,6 +33,8 @@ public class RVFClient implements Closeable {
 
 	private static final String ENABLE_MRCM_VALIDATION = "enableMRCMValidation";
 
+	private static final String MRCM_VALIDATION_FORM = "mrcmValidationForm";
+
 	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
 
 	private static final String PRODUCT_NAME = "productName";
@@ -216,6 +218,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
 		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
+		multiPartBuilder.addTextBody(MRCM_VALIDATION_FORM, qaTestConfig.getMrcmValidationForm().name());
 
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
