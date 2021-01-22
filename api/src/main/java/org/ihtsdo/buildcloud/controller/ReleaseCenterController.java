@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,7 +59,8 @@ public class ReleaseCenterController {
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ApiOperation( value = "Creates a new Release Center for a logged in user",
+	@PreAuthorize("hasPermission('ADMIN','global')")
+	@ApiOperation( value = "Creates a new Release Center",
 		notes = " Creates a new Release Center and returns the newly created release center." )
 	public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
 			HttpServletRequest request) throws IOException, EntityAlreadyExistsException {

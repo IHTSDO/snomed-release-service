@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.test;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.User;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -13,8 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class TestUtils {
-
-	public static final User TEST_USER = new User(1L, "test");
 
 	@Autowired
 	private BuildS3PathHelper pathHelper;
@@ -37,10 +33,6 @@ public class TestUtils {
 			s3Client.deleteObject(buildBucketName, directoryPath);
 		} catch (Exception e) {
 		}  //That's fine if the thing to delete doesn't exist.
-	}
-
-	public static void setTestUser() {
-		SecurityHelper.setUser(TEST_USER);
 	}
 
 	public static String readStream(InputStream inputStream) throws IOException {

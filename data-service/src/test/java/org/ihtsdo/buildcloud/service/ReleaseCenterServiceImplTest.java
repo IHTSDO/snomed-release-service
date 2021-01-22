@@ -24,7 +24,7 @@ public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 
 	@Before
 	public void setup() {
-		TestUtils.setTestUser();
+//		TestUtils.setTestUser();
 	}
 
 	@Test

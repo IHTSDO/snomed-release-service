@@ -26,8 +26,6 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.junit.After;
@@ -74,7 +72,7 @@ public class ProductInputFileServiceImplTest extends TestEntityGenerator{
     public void setup() throws Exception {
         String testFile = getClass().getResource(TEST_ARCHIVE_FILE).getFile();
         testArchive = new File(testFile);
-        SecurityHelper.setUser(TestUtils.TEST_USER);
+//        SecurityHelper.setUser(TestUtils.TEST_USER);
         product = productDAO.find(1L);
         if(product.getBuildConfiguration() == null) {
             product.setBuildConfiguration(new BuildConfiguration());

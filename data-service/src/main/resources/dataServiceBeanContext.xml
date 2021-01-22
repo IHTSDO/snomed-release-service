@@ -50,8 +50,6 @@
 	<bean class="org.ihtsdo.buildcloud.dao.ProductDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ExtensionConfigDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.ProductInputFileDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.UserDAOImpl"/>
-	<bean class="org.ihtsdo.buildcloud.dao.ReleaseCenterMembershipDAOImpl"/>
 	<bean class="org.ihtsdo.buildcloud.dao.BuildDAOImpl">
 		<property name="buildBucketName" ref="buildBucketName"/>
 	</bean>
@@ -72,18 +70,13 @@
 		</property>
 	</bean>
 	
-	<bean class="org.ihtsdo.buildcloud.dao.helper.DevDatabasePrimerDAO"/>
-	<bean class="org.ihtsdo.buildcloud.dao.AuthTokenDAOImpl"/>
 
-	<bean class="org.ihtsdo.buildcloud.service.UserServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ReleaseCenterServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ProductServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.BuildServiceImpl">
 		<property name="fileProcessingFailureMaxRetry" ref="fileProcessingFailureMaxRetry"/>
 	</bean>
-	<bean class="org.ihtsdo.buildcloud.service.DevDatabasePrimerService"/>
-	<bean class="org.ihtsdo.buildcloud.service.AuthenticationServiceImpl"/>
 	<bean class="org.ihtsdo.buildcloud.service.PublishServiceImpl">
 		<constructor-arg name="buildBucketName" ref="buildBucketName"/>
 		<constructor-arg name="publishedBucketName" ref="publishedBucketName"/>
@@ -236,7 +229,7 @@
 	<bean class="org.ihtsdo.snomed.util.rf2.schema.SchemaFactory"/>
 	<bean class="org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService"/>
 	<bean class="org.ihtsdo.buildcloud.service.build.transform.TransformationService"/>
-
+	<bean class="org.ihtsdo.buildcloud.service.PermissionService"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService">
 		<constructor-arg value="${snomed.modelModuleSctid}"/>
