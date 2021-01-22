@@ -14,7 +14,6 @@ import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.helper.ProcessingStatus;
@@ -64,7 +63,7 @@ public class BuildController {
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser != null ? currentUser : User.ANONYMOUS_USER, null, null, null, null, null);
+		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser, null, null, null, null, null);
 
 		final boolean currentResource = false;
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);

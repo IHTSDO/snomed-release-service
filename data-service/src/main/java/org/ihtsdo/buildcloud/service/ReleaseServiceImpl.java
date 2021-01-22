@@ -88,7 +88,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 		QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 		String branchPath = gatherInputRequestPojo.getBranchPath();
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
-		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
 		String buildName = gatherInputRequestPojo.getBuildName();
 		Date effectiveTime = null;
 		try {
@@ -96,12 +95,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 		} catch (ParseException e) {
 			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
 		}
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
 	}
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
+	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, SecurityContext securityContext, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
 		concurrentReleaseBuildMap.putIfAbsent(productKey, product.getName());
@@ -117,8 +116,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 			productInputFileDAO.deleteInputPrepareReport(build.getProduct());
 
 			//Gather all files in term server and externally maintain buckets if specified to source directories
-			SecurityContext securityContext = new SecurityContextImpl();
-			securityContext.setAuthentication(authentication);
 			InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), gatherInputRequestPojo, securityContext);
 			if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 				LOGGER.error("Error occurred when gathering source files: ");

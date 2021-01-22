@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -50,7 +51,7 @@ public class IntegrationTestHelper {
 	private final String productBusinessKey;
 
 	public static final String COMPLETION_STATUS = "completed";
-
+	protected static SecureRandom random = new SecureRandom();
 	public IntegrationTestHelper(final MockMvc mockMvc, final String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
@@ -60,19 +61,10 @@ public class IntegrationTestHelper {
 	}
 
 	public void loginAsManager() throws Exception {
-		final MvcResult loginResult = mockMvc.perform(
-				post("/login")
-						.param("username", "manager")
-						.param("password", "test123")
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
-				.andExpect(jsonPath("$.authenticationToken", notNullValue()))
-				.andReturn();
+		long longToken = Math.abs( random.nextLong() );
+		String random = Long.toString( longToken, 16 );
 
-		final String authenticationToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.authenticationToken");
-		basicDigestHeaderValue = "Basic " + new String(Base64.encodeBase64((authenticationToken + ":").getBytes()));
+		basicDigestHeaderValue = "Basic " + random;
 	}
 
 	public void createTestProductStructure() throws Exception {
