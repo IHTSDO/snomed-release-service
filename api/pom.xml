@@ -14,7 +14,7 @@
 
 	<properties>
 		<packageName>${project.parent.artifactId}-${project.artifactId}</packageName>
-		<webapp-runner.version>8.5.11.3</webapp-runner.version>
+		<webapp-runner.version>9.0.27.1</webapp-runner.version>
 	</properties>
 
 	<dependencies>

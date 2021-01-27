@@ -9,7 +9,9 @@ import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,10 +44,9 @@ public class PermissionController {
             notes = "Returns a list of all roles visible to the currently logged in user.")
     @ResponseBody
     public ResponseEntity getCurrentRoles(HttpServletRequest request) {
-        SecurityContext context = SecurityContextHolder.getContext();
-        Authentication authentication = context != null ? context.getAuthentication() : null;
-        if (authentication == null) {
-            throw new AuthenticationException("User is not logged in.");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication() ;
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("Access is denied");
         }
 
         return new ResponseEntity(permissionService.getRolesForLoggedInUser(authentication), HttpStatus.OK);
