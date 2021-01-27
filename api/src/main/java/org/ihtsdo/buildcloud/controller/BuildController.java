@@ -14,6 +14,9 @@ import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.QATestConfig;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdmin;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManager;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrUser;
 import org.ihtsdo.buildcloud.service.BuildService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.helper.ProcessingStatus;
@@ -57,6 +60,7 @@ public class BuildController {
 	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
 	@RequestMapping( method = RequestMethod.POST )
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ApiOperation( value = "Create a build",
 		notes = "Create a build for given product key and release center key and returns build id" )
 	@ResponseBody
@@ -70,6 +74,7 @@ public class BuildController {
 	}
 
 	@RequestMapping( value = "/{buildId}", method = RequestMethod.DELETE )
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ApiOperation( value = "Delete a build",
 			notes = "" +
 					"Delete a build for given product key and release center key and build id" )
@@ -86,6 +91,7 @@ public class BuildController {
 	}
 
 	@RequestMapping( method = RequestMethod.GET )
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Returns a list all builds for a logged in user",
 		notes = "Returns a list all builds visible to the currently logged in user, "
 			+ "so this could potentially span across Release Centres" )
@@ -99,6 +105,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}", method = RequestMethod.GET )
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Get a build id",
 	notes = "Returns a single build object for given key" )
@@ -113,6 +120,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves configuration details",
 		notes = "Retrieves configuration details for given product key, release center key, and build id" )
@@ -128,6 +136,7 @@ public class BuildController {
 	
 	
 	@RequestMapping(value = "/{buildId}/qaTestConfig", produces = "application/json", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves QA test configuration details",
 		notes = "Retrieves configuration details for given product key, release center key, and build id" )
@@ -143,6 +152,7 @@ public class BuildController {
 	
 	
 	@RequestMapping(value = "/{buildId}/buildReport", produces = "application/json", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves build report details",
 		notes = "Retrieves buildReport details for given product key, release center key, and build id" )
@@ -159,6 +169,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/inputfiles", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves list of input file names",
 		notes = "Retrieves list of input file names for given release center, product key and build id" )
@@ -170,6 +181,7 @@ public class BuildController {
 	}
 	
 	@RequestMapping(value = "/{buildId}/inputPrepareReport", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves the report for preparing input source files.",
 		notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
@@ -186,6 +198,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/inputGatherReport", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves the report for gathering input source files.",
 			notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
@@ -203,6 +216,7 @@ public class BuildController {
 
 
 	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Download a specific file",
 		notes = "Download a specific file content for given release center, product key, build id and given input file name combination" )
 	public void getPackageInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
@@ -215,6 +229,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/outputfiles", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of file names from output directory",
 		notes = "Retrieves a list of file names from output directory for given release center, "
@@ -227,6 +242,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Download a specific file from output directory",
 		notes = "Download a specific file from output directory for given release center, "
 			+ "product key, build id and file name combination" )
@@ -240,6 +256,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/trigger", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiIgnore
 	public Map<String, Object> triggerProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -251,6 +268,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/visibility", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Update visibility for build", notes = "Update an existing build with the visibility flag")
 	public ResponseEntity updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -260,6 +278,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/tags", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Update tags for build", notes = "Update an existing build with the tags")
 	public ResponseEntity updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -270,6 +289,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdmin
 	@ResponseBody
 	@ApiOperation( value = "Publish a release for given build id",
 	notes = "Publish release for given build id to make it available in repository for wider usages" )
@@ -282,6 +302,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/publish/status", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdmin
 	@ResponseBody
 	@ApiOperation( value = "Get publishing release status",
 			notes = "Get publishing release status for given build id")
@@ -298,6 +319,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of build log file names",
 		notes = "Retrieves a list of build log file names for given release center, product key, and build id" )
@@ -308,6 +330,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Download a specific build log file",
 		notes = "Download a specific log file for given release center, "
 		+ "product key, build id and file name combination" )
@@ -324,6 +347,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.HEAD)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation(value = "Download a specific build log file", notes = "Download a specific log file for given release center, "
 			+ "product key, build id and file name combination")
 	public void getBuildLogHead(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -337,6 +361,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/preConditionCheckReports", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves Pre-Condition Check Report",
 			notes = "Retrieves configuration details for given product key, release center key, and build id" )
@@ -353,6 +378,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/postConditionCheckReports", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves Post-Condition Check Report",
 			notes = "Retrieves configuration details for given product key, release center key, and build id" )
@@ -369,6 +395,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves classification results for output files",
 			notes = "Retrieves configuration details for given product key, release center key, and build id" )
@@ -379,6 +406,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Download a specific file",
 			notes = "Download a specific file content for given release center, product key, build id and given file name combination" )
 	public void getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
@@ -407,6 +435,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ApiOperation(value = "Cancel a running build job")
 	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
@@ -415,6 +444,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/buildLogs", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation(value = "Get the full logs of the build process")
 	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								   @PathVariable final String buildId, HttpServletResponse response) throws IOException {
