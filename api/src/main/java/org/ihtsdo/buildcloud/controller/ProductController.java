@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.controller;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManager;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrUser;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.ReleaseService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
@@ -49,6 +51,7 @@ public class ProductController {
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
 	@RequestMapping( method = RequestMethod.GET )
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Returns a list of products",
 	notes = "Returns a list of products for the extension specified in the URL" )
 	@ResponseBody
@@ -74,6 +77,7 @@ public class ProductController {
 	}
 
 	@RequestMapping( value = "/{productKey}", method = RequestMethod.GET)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrUser
 	@ApiOperation( value = "Returns a product", notes = "Returns a single product object for a given product key" )
 	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
@@ -88,6 +92,7 @@ public class ProductController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ApiOperation( value = "Create a product",
 		notes = "creates a new Product with a name as specified in  the request "
 				+ "and returns the new product object" )
@@ -107,6 +112,7 @@ public class ProductController {
 	}
 
 	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Update a product", notes = "Update an existing product with new details "
 			+ "and returns updated product" )
@@ -125,6 +131,7 @@ public class ProductController {
 	// a new end point that uses a more common HTTP method.
 	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
 	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
@@ -138,6 +145,7 @@ public class ProductController {
 
 
 	@RequestMapping(value = "/{productKey}/release", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
 	public ResponseEntity createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
@@ -151,6 +159,7 @@ public class ProductController {
 	}
 
 	@RequestMapping(value = "/{productKey}/release/clear-concurrent-cache", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation(value = "Clear in-memory concurrent cache")
 	public ResponseEntity clearConcurrentCache(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException {
@@ -159,6 +168,7 @@ public class ProductController {
 	}
 
 	@RequestMapping(value = "/{productKey}/visibility", method = RequestMethod.POST)
+	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Update visibility for product", notes = "Update an existing product with the visibility flag")
 	public ResponseEntity updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,

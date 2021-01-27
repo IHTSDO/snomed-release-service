@@ -36,13 +36,12 @@ public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
     public PermissionEvaluator permissionEvaluator(@Lazy PermissionService permissionService) {
         return new PermissionEvaluator() {
             @Override
-            public boolean hasPermission(Authentication authentication, Object role, Object branchObject) {
-                logger.info("Checking permission.......");
-                if (branchObject == null) {
-                    throw new SecurityException("Branch path is null, can not ascertain roles.");
+            public boolean hasPermission(Authentication authentication, Object role, Object releaseCenter) {
+                if (releaseCenter == null) {
+                    throw new SecurityException("Release center is null, can not ascertain roles.");
                 }
 
-                return false;
+                return permissionService.userHasRoleOnReleaseCenter((String) role, (String) releaseCenter, authentication);
             }
 
             @Override

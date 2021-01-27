@@ -6,6 +6,8 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +26,13 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 	}
 
 	@Override
+	@Cacheable("release-center-records")
 	public List<ReleaseCenter> findAll() {
 		return dao.findAll();
 	}
 
 	@Override
+	@Cacheable(value = "release-center", key = "#businessKey")
 	public ReleaseCenter find(String businessKey) throws ResourceNotFoundException {
 		ReleaseCenter releaseCenter = dao.find(businessKey);
 		if (releaseCenter != null) {
@@ -39,9 +43,8 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 	}
 
 	@Override
-	public ReleaseCenter create(String name, String shortName) throws EntityAlreadyExistsException {
-//		User user = SecurityHelper.getRequiredUser();
-
+	@CacheEvict(value = "release-center-records", allEntries = true)
+	public ReleaseCenter create(String name, String shortName, String codeSystem) throws EntityAlreadyExistsException {
 		//Check that we don't already have one of these
 		String releaseCenterBusinessKey = EntityHelper.formatAsBusinessKey(shortName);
 		ReleaseCenter existingRC = dao.find(releaseCenterBusinessKey);
@@ -55,4 +58,9 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 		return releaseCenter;
 	}
 
+	@Override
+	@CacheEvict(value = "release-center", key = "#entity.businessKey")
+	public void update(ReleaseCenter entity) {
+		super.update(entity);
+	}
 }

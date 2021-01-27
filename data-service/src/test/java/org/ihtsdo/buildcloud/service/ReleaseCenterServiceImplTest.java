@@ -35,7 +35,7 @@ public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 		int before = releaseCenters.size();
 		//LOGGER.warn("Found " + before + " release centers");
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
-		rcs.create("my test releaseCenter name", "some short name");
+		rcs.create("my test releaseCenter name", "some short name", "code system");
 		int after = rcs.findAll().size();
 		//LOGGER.warn("After create, found " + after + " release centers");
 		Assert.assertEquals(before + 1, after);
