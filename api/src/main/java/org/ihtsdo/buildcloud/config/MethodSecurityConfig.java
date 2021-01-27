@@ -16,8 +16,6 @@ import org.springframework.security.core.Authentication;
 
 import java.io.Serializable;
 
-@Configuration
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
     private final Logger logger = LoggerFactory.getLogger(MethodSecurityConfig.class);
 
