@@ -56,7 +56,6 @@ public class PermissionService {
         Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
         rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN));
         rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER));
-
         rolesMap.put(Role.ADMIN, Collections.EMPTY_LIST);
         rolesMap.put(Role.RELEASE_MANAGER, Collections.EMPTY_LIST);
         rolesMap.put(Role.USER, Collections.EMPTY_LIST);
@@ -77,10 +76,6 @@ public class PermissionService {
         }
 
         return rolesMap;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(Role.ADMIN);
     }
 
     private String getUsername(Authentication authentication) {
