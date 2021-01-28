@@ -110,7 +110,7 @@ public class ReleaseCenterController {
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
             Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
-            if (!Boolean.valueOf(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString())) {
+            if (!Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
         }

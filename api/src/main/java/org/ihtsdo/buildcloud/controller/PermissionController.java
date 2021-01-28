@@ -54,7 +54,8 @@ public class PermissionController {
 
     @RequestMapping(value = "/clearCache", method = RequestMethod.POST)
     @PreAuthorize("hasPermission('ADMIN','global') || hasPermission('RELEASE_MANAGER','global')")
-    public void clearCache() {
+    public ResponseEntity clearCache(HttpServletRequest request) {
         permissionServiceCache.clearCache();
+        return new ResponseEntity(HttpStatus.OK);
     }
 }
