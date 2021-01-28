@@ -16,12 +16,12 @@
 	<servlet>
 		<servlet-name>DispatcherServlet</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-      <async-supported>true</async-supported>
 		<init-param>
 			<param-name>contextConfigLocation</param-name>
 			<param-value>classpath:DispatcherServletContext.xml</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
 		<multipart-config>
 			<max-file-size>1073741824</max-file-size><!-- 1GB - can be changed later -->
 		</multipart-config>

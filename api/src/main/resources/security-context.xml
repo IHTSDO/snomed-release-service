@@ -18,10 +18,6 @@
       <http-basic />
    </http>
 
-   <global-method-security pre-post-annotations="enabled" secured-annotations="enabled" proxy-target-class="true">
-      <expression-handler ref="expressionHandler"/>
-   </global-method-security>
-
    <!-- Basic Authentication -->
    <authentication-manager>
       <authentication-provider>
@@ -33,11 +29,6 @@
 
    <!-- SSO Authentication -->
    <beans:bean id="authenticationDecorator" class="org.ihtsdo.sso.integration.RequestHeaderAuthenticationDecorator" />
-
-   <beans:bean id="expressionHandler" class="org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler">
-      <beans:property name="permissionEvaluator" ref="methodSecurityConfig"/>
-   </beans:bean>
-   <beans:bean id="methodSecurityConfig" class="org.ihtsdo.buildcloud.config.MethodSecurityConfig" />
 
    <beans:bean id="http403EntryPoint" class="org.springframework.security.web.authentication.Http403ForbiddenEntryPoint" />
 </beans:beans>

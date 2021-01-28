@@ -55,6 +55,12 @@ public class ReleaseCenter {
 		setShortName(shortName);
 	}
 
+	public ReleaseCenter(final String name, final String shortName, final String codeSystem) {
+		this();
+		this.name = name;
+		setShortName(shortName);
+	}
+
 	public void addProduct(final Product product) {
 		products.add(product);
 		product.setReleaseCenter(this);
