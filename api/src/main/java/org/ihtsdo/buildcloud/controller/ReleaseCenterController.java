@@ -18,7 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
@@ -57,19 +60,23 @@ public class ReleaseCenterController {
     private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
 
     @RequestMapping(method = RequestMethod.GET)
-    @IsAuthenticatedAsAdminOrReleaseManagerOrUser
     @ApiOperation(value = "Returns a list all release center for a logged in user",
             notes = "Returns a list of all release centers visible to the currently logged in user.")
     @ResponseBody
     public List<Map<String, Object>> getReleaseCenters(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            throw new AccessDeniedException("Access is denied");
+        }
+
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
         centers = centers.stream().filter(center ->
                 Boolean.getBoolean(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())
                         || (Boolean.getBoolean(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString()) && !StringUtils.isEmpty(center.getCodeSystem()))
-                        || ((Set<String>) rolesMap.get(ADMIN)).contains(center.getCodeSystem())
-                        || ((Set<String>) rolesMap.get(RELEASE_MANAGER)).contains(center.getCodeSystem())
-                        || ((Set<String>) rolesMap.get(USER)).contains(center.getCodeSystem())
+                        || ((Set) rolesMap.get(ADMIN)).contains(center.getCodeSystem())
+                        || ((Set) rolesMap.get(RELEASE_MANAGER)).contains(center.getCodeSystem())
+                        || ((Set) rolesMap.get(USER)).contains(center.getCodeSystem())
         ).collect(Collectors.toList());
 
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
