@@ -69,8 +69,8 @@ public class ReleaseCenterController {
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
         centers = centers.stream().filter(center ->
-                Boolean.getBoolean(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())
-                        || (Boolean.getBoolean(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString()) && !StringUtils.isEmpty(center.getCodeSystem()))
+                Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())
+                        || (Boolean.valueOf(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString()) && !StringUtils.isEmpty(center.getCodeSystem()))
                         || ((Set) rolesMap.get(ADMIN)).contains(center.getCodeSystem())
                         || ((Set) rolesMap.get(RELEASE_MANAGER)).contains(center.getCodeSystem())
                         || ((Set) rolesMap.get(USER)).contains(center.getCodeSystem())
@@ -110,7 +110,7 @@ public class ReleaseCenterController {
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
             Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
-            if (!Boolean.getBoolean(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString())) {
+            if (!Boolean.valueOf(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
         }
