@@ -52,7 +52,7 @@ public class PermissionController {
         return new ResponseEntity(permissionService.getRolesForLoggedInUser(authentication), HttpStatus.OK);
     }
 
-    @RequestMapping(value = "clearCache", method = RequestMethod.POST)
+    @RequestMapping(value = "/clearCache", method = RequestMethod.POST)
     @PreAuthorize("hasPermission('ADMIN','global') || hasPermission('RELEASE_MANAGER','global')")
     public void clearCache() {
         permissionServiceCache.clearCache();
