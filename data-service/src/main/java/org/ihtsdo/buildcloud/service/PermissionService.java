@@ -56,20 +56,15 @@ public class PermissionService {
         Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
         rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN));
         rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER));
-        rolesMap.put(Role.ADMIN, Collections.EMPTY_LIST);
-        rolesMap.put(Role.RELEASE_MANAGER, Collections.EMPTY_LIST);
-        rolesMap.put(Role.USER, Collections.EMPTY_LIST);
+        rolesMap.put(Role.ADMIN, Collections.EMPTY_SET);
+        rolesMap.put(Role.RELEASE_MANAGER, Collections.EMPTY_SET);
+        rolesMap.put(Role.USER, Collections.EMPTY_SET);
         if (!rolesToCodeSystemMap.isEmpty()) {
             rolesToCodeSystemMap.forEach(
                     (codeSystem, roles) -> {
-                        rolesMap.compute(Role.ADMIN, (key, val)
-                                -> roles.contains(Role.ADMIN) ? (!((Set<String>) val).contains(codeSystem) ? ((Set<String>) val).add(codeSystem) : val) : val);
-
-                        rolesMap.compute(Role.RELEASE_MANAGER, (key, val)
-                                -> roles.contains(Role.RELEASE_MANAGER) ? (!((Set<String>) val).contains(codeSystem) ? ((Set<String>) val).add(codeSystem) : val) : val);
-
-                        rolesMap.compute(Role.USER, (key, val)
-                                -> roles.contains(Role.USER) ? (!((Set<String>) val).contains(codeSystem) ? ((Set<String>) val).add(codeSystem) : val) : val);
+                        rolesMap.compute(Role.ADMIN, (key, val) -> roles.contains(Role.ADMIN) ? ((Set) val).add(codeSystem) : val);
+                        rolesMap.compute(Role.RELEASE_MANAGER, (key, val) -> roles.contains(Role.RELEASE_MANAGER) ? ((Set) val).add(codeSystem) : val);
+                        rolesMap.compute(Role.USER, (key, val) -> roles.contains(Role.USER) ? ((Set) val).add(codeSystem) : val);
                     }
             );
 
