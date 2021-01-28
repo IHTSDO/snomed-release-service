@@ -6,6 +6,7 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdmin;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrUser;
 import org.ihtsdo.buildcloud.service.PermissionService;
 import org.ihtsdo.buildcloud.service.PublishService;
@@ -99,16 +100,23 @@ public class ReleaseCenterController {
     @ResponseBody
     public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterKey,
                                                    @RequestBody(required = false) Map<String, String> json,
-                                                   HttpServletRequest request) throws ResourceNotFoundException {
+                                                   HttpServletRequest request) throws ResourceNotFoundException, BusinessServiceException {
 
         ReleaseCenter center = releaseCenterService.find(releaseCenterKey);
+        String codeSystem = json.get("codeSystem");
+        if (codeSystem != center.getCodeSystem()) {
+            Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
+            if (!Boolean.getBoolean(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString())) {
+                throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
+            }
+        }
         center.setName(json.get("name"));
         center.setShortName(json.get("shortName"));
-        center.setCodeSystem(json.get("codeSystem"));
+        center.setCodeSystem(codeSystem);
         center.setRemoved("true".equalsIgnoreCase(json.get("removed")));
+
         releaseCenterService.update(center);
-        boolean currentResource = false;
-        return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
+        return hypermediaGenerator.getEntityHypermedia(center, false, request, RELEASE_CENTER_LINKS);
     }
 
     @RequestMapping(value = "/{releaseCenterKey}", method = RequestMethod.GET)
@@ -118,13 +126,11 @@ public class ReleaseCenterController {
     @ResponseBody
     public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterKey, HttpServletRequest request) throws ResourceNotFoundException {
         ReleaseCenter center = getReleaseCenterRequired(releaseCenterKey);
-
-        boolean currentResource = true;
-        return hypermediaGenerator.getEntityHypermedia(center, currentResource, request, RELEASE_CENTER_LINKS);
+        return hypermediaGenerator.getEntityHypermedia(center, true, request, RELEASE_CENTER_LINKS);
     }
 
     @RequestMapping(value = "/{releaseCenterKey}/published", method = RequestMethod.GET)
-    @IsAuthenticatedAsAdmin
+    @IsAuthenticatedAsAdminOrReleaseManager
     @ApiOperation(value = "Returns a list published releases names",
             notes = "Returns a list published releases names for a given release center")
     @ResponseBody

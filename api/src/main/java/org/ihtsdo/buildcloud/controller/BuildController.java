@@ -79,6 +79,10 @@ public class BuildController {
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
+		if (build.getTags().contains(Build.Tag.PUBLISHED)) {
+			throw new BusinessServiceException("You can not delete the PUBLISHED build");
+		}
+
 		buildService.delete(releaseCenterKey, productKey, buildId);
 
 		return new ResponseEntity<>(HttpStatus.OK);
