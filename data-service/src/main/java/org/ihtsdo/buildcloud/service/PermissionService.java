@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class PermissionService {
@@ -22,7 +19,7 @@ public class PermissionService {
     public static final String GLOBAL_ROLE_SCOPE = "global";
 
     public enum Role {
-        ADMIN, RELEASE_MANAGER, USER
+        ADMIN, RELEASE_MANAGER, USER, AUTHOR
     }
 
     @Autowired
@@ -54,20 +51,25 @@ public class PermissionService {
         Map rolesMap = new HashMap();
         Set<String> globalRoles = permissionServiceCache.getGlobalRoles(authentication.getCredentials().toString());
         Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
-        rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN));
-        rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER));
-        rolesMap.put(Role.ADMIN, Collections.EMPTY_SET);
-        rolesMap.put(Role.RELEASE_MANAGER, Collections.EMPTY_SET);
-        rolesMap.put(Role.USER, Collections.EMPTY_SET);
+        rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN.name()));
+        rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER.name()));
+        rolesMap.put(Role.ADMIN, new HashSet<>());
+        rolesMap.put(Role.RELEASE_MANAGER, new HashSet<>());
+        rolesMap.put(Role.USER, new HashSet<>());
         if (!rolesToCodeSystemMap.isEmpty()) {
             rolesToCodeSystemMap.forEach(
                     (codeSystem, roles) -> {
-                        rolesMap.compute(Role.ADMIN, (key, val) -> roles.contains(Role.ADMIN) ? ((Set) val).add(codeSystem) : val);
-                        rolesMap.compute(Role.RELEASE_MANAGER, (key, val) -> roles.contains(Role.RELEASE_MANAGER) ? ((Set) val).add(codeSystem) : val);
-                        rolesMap.compute(Role.USER, (key, val) -> roles.contains(Role.USER) ? ((Set) val).add(codeSystem) : val);
+                        if (roles.contains(Role.ADMIN.name())) {
+                            ((Set) rolesMap.get(Role.ADMIN)).add(codeSystem);
+                        }
+                        if (roles.contains(Role.RELEASE_MANAGER.name())) {
+                            ((Set) rolesMap.get(Role.RELEASE_MANAGER)).add(codeSystem);
+                        }
+                        if (roles.contains(Role.USER.name()) || roles.contains(Role.AUTHOR.name()) ) {
+                            ((Set) rolesMap.get(Role.USER)).add(codeSystem);
+                        }
                     }
             );
-
         }
 
         return rolesMap;
