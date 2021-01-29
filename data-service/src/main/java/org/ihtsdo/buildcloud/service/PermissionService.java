@@ -37,8 +37,13 @@ public class PermissionService {
         } else {
             ReleaseCenter releaseCenter = releaseCenterService.find(releaseCenterKey);
             Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
-            if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && rolesToCodeSystemMap.containsKey(role)) {
-                contains = rolesToCodeSystemMap.get(role).contains(releaseCenter.getCodeSystem());
+            if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && rolesToCodeSystemMap.containsKey(releaseCenter.getCodeSystem())) {
+                Set<String> roles = rolesToCodeSystemMap.get(releaseCenter.getCodeSystem());
+                if (Role.USER.name().equalsIgnoreCase(role)) {
+                    contains = roles.contains(Role.USER.name()) || roles.contains(Role.AUTHOR.name());
+                } else {
+                    contains = roles.contains(role);
+                }
             }
         }
 
