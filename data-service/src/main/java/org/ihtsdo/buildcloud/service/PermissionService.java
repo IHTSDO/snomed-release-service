@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -36,8 +37,8 @@ public class PermissionService {
         } else {
             ReleaseCenter releaseCenter = releaseCenterService.find(releaseCenterKey);
             Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
-            if (rolesToCodeSystemMap.containsKey(releaseCenter.getCodeSystem().toUpperCase())) {
-                contains = rolesToCodeSystemMap.get(releaseCenter.getCodeSystem().toUpperCase()).contains(role);
+            if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && rolesToCodeSystemMap.containsKey(role)) {
+                contains = rolesToCodeSystemMap.get(role).contains(releaseCenter.getCodeSystem());
             }
         }
 
