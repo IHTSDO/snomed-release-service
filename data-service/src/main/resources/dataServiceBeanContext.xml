@@ -285,11 +285,4 @@
 			<bean class="org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator"/>
 		</constructor-arg>
 	</bean>
-	<bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
-		<property name="caches">
-			<set>
-				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="srs"/>
-			</set>
-		</property>
-	</bean>
 </beans>
