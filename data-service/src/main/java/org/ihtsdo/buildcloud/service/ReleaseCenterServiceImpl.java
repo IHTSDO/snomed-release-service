@@ -53,7 +53,7 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
             throw new EntityAlreadyExistsException(name + " already exists.");
         }
 
-        ReleaseCenter releaseCenter = new ReleaseCenter(name, shortName);
+        ReleaseCenter releaseCenter = new ReleaseCenter(name, shortName, codeSystem);
         dao.save(releaseCenter);
 
         return releaseCenter;

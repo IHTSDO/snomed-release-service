@@ -59,6 +59,7 @@ public class ReleaseCenter {
 		this();
 		this.name = name;
 		setShortName(shortName);
+		setCodeSystem(codeSystem);
 	}
 
 	public void addProduct(final Product product) {
