@@ -2,6 +2,7 @@
 	   xmlns:context="http://www.springframework.org/schema/context"
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xmlns:security="http://www.springframework.org/schema/security"
+	   xmlns:cache="http://www.springframework.org/schema/cache"
 	   xsi:schemaLocation="
         http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -10,7 +11,9 @@
         http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
 		http://www.springframework.org/schema/security
-        http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+        http://www.springframework.org/schema/security/spring-security-3.2.xsd
+        http://www.springframework.org/schema/cache
+        http://www.springframework.org/schema/cache/spring-cache-3.2.xsd">
 
 	<context:component-scan base-package="org.ihtsdo.buildcloud.config,org.ihtsdo.buildcloud.controller" />
 
@@ -22,6 +25,18 @@
 		<property name="permissionEvaluator" ref="customPermissionEvaluator"/>
 	</bean>
 	<bean id="customPermissionEvaluator" class="org.ihtsdo.buildcloud.config.MethodSecurityConfig" name="customPermissionEvaluator" autowire="byName"/>
+
+	<cache:annotation-driven />
+
+	<bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
+		<property name="caches">
+			<set>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="release-center-records"/>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="global-roles"/>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="code-system-roles"/>
+			</set>
+		</property>
+	</bean>
 
 	<import resource="servletContext.xml"/>
 	<import resource="swaggerContext.xml"/>

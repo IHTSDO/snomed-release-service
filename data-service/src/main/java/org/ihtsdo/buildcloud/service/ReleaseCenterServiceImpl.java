@@ -33,7 +33,6 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
     }
 
     @Override
-    @Cacheable(value = "release-center", key = "#businessKey")
     public ReleaseCenter find(String businessKey) throws ResourceNotFoundException {
         ReleaseCenter releaseCenter = dao.find(businessKey);
         if (releaseCenter != null) {
@@ -60,10 +59,7 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict("release-center-records"),
-            @CacheEvict(value = "release-center", key = "#entity.businessKey")
-    })
+    @CacheEvict(value = "release-center-records", allEntries = true)
     public void update(ReleaseCenter entity) {
         super.update(entity);
     }
