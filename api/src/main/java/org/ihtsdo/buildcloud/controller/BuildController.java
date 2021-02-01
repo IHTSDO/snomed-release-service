@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -79,7 +80,7 @@ public class BuildController {
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
-		if (build.getTags().contains(Build.Tag.PUBLISHED)) {
+		if (!CollectionUtils.isEmpty(build.getTags()) && build.getTags().contains(Build.Tag.PUBLISHED)) {
 			throw new BusinessServiceException("You can not delete the PUBLISHED build");
 		}
 
