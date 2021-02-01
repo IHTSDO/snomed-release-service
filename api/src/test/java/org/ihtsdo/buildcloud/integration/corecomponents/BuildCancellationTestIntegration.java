@@ -22,7 +22,6 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
 
     @Test
     public void testCancelBuild() throws Exception {
-        integrationTestHelper.loginAsManager();
         integrationTestHelper.createTestProductStructure();
 
         //config assertion tests

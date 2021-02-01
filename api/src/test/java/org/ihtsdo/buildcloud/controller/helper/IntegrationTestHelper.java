@@ -1,14 +1,19 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.jayway.jsonpath.JsonPath;
+import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.test.StreamTestUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Assert;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,22 +29,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.codec.binary.Base64;
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.service.ProductService;
-import org.ihtsdo.buildcloud.test.StreamTestUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.junit.Assert;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-
-import com.jayway.jsonpath.JsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class IntegrationTestHelper {
 
@@ -58,13 +51,6 @@ public class IntegrationTestHelper {
 		
 		//We'll work with a product and package that are specific to this test
 		this.productBusinessKey = EntityHelper.formatAsBusinessKey(testName + "_Product");
-	}
-
-	public void loginAsManager() throws Exception {
-		long longToken = Math.abs( random.nextLong() );
-		String random = Long.toString( longToken, 16 );
-
-		basicDigestHeaderValue = "Basic " + random;
 	}
 
 	public void createTestProductStructure() throws Exception {

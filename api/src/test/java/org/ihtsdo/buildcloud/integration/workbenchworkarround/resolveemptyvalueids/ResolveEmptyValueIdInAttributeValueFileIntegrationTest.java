@@ -20,7 +20,6 @@ public class ResolveEmptyValueIdInAttributeValueFileIntegrationTest extends Abst
 
 	@Test
 	public void testMultipleReleases() throws Exception {
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release

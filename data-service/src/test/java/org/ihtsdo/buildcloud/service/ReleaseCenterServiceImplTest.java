@@ -22,11 +22,6 @@ public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 	@Autowired
 	private ReleaseCenterService rcs;
 
-	@Before
-	public void setup() {
-//		TestUtils.setTestUser();
-	}
-
 	@Test
 	public void testCreate() throws Exception{
 

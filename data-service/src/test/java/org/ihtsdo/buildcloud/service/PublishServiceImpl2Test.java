@@ -68,7 +68,6 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 
 	@Before
 	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
-//		TestUtils.setTestUser();
 
 		releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 
