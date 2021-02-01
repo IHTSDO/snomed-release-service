@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +30,14 @@ public class PermissionService {
     @Autowired
     private ReleaseCenterService releaseCenterService;
 
-    public boolean userHasRoleOnReleaseCenter(String role, String releaseCenterKey, Authentication authentication) {
+    public boolean userHasRoleOnReleaseCenter(String role, String releaseCenterKey) {
         boolean contains = false;
         if (releaseCenterKey.equalsIgnoreCase(GLOBAL_ROLE_SCOPE)) {
-            Set<String> globalRoles = permissionServiceCache.getGlobalRoles(authentication.getCredentials().toString());
+            Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
             contains = globalRoles.contains(role);
         } else {
             ReleaseCenter releaseCenter = releaseCenterService.find(releaseCenterKey);
-            Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
+            Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
             if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && rolesToCodeSystemMap.containsKey(releaseCenter.getCodeSystem())) {
                 Set<String> roles = rolesToCodeSystemMap.get(releaseCenter.getCodeSystem());
                 if (Role.USER.name().equalsIgnoreCase(role)) {
@@ -48,15 +49,15 @@ public class PermissionService {
         }
 
         if (!contains) {
-            logger.info("User '{}' does not have required role '{}' on release center '{}'.", getUsername(authentication), role, releaseCenterKey);
+            logger.info("User '{}' does not have required role '{}' on release center '{}'.", SecurityUtil.getUsername(), role, releaseCenterKey);
         }
         return contains;
     }
 
-    public Map getRolesForLoggedInUser(Authentication authentication) {
+    public Map getRolesForLoggedInUser() {
         Map rolesMap = new HashMap();
-        Set<String> globalRoles = permissionServiceCache.getGlobalRoles(authentication.getCredentials().toString());
-        Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(authentication.getCredentials().toString());
+        Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
+        Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
         rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN.name()));
         rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER.name()));
         rolesMap.put(Role.ADMIN, new HashSet<>());
@@ -79,15 +80,5 @@ public class PermissionService {
         }
 
         return rolesMap;
-    }
-
-    private String getUsername(Authentication authentication) {
-        if (authentication != null) {
-            Object principal = authentication.getPrincipal();
-            if (principal != null) {
-                return principal.toString();
-            }
-        }
-        return null;
     }
 }
