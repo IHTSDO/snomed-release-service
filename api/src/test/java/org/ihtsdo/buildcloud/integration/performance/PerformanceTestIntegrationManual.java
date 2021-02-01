@@ -37,7 +37,6 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 	@Test
 	public void testMultipleReleases() throws Exception {
 
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 
 		memoryRecordings.add(getStats("Start mem used"));

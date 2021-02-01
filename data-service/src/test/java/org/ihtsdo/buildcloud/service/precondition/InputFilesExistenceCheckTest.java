@@ -21,7 +21,6 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	public void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager().preconditionChecks(inputFilesCheck);
-//		TestUtils.setTestUser();
 	}
 
 	@Test

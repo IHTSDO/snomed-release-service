@@ -29,7 +29,6 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 	@Ignore
 	public void testFirstRelease() throws Exception {
 		
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 		
 		//config assertion tests

@@ -31,7 +31,6 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
     public void setup() throws Exception {
         super.setup();
         integrationTestHelper = new IntegrationTestHelper(mockMvc, "FileProcessingTest");
-        integrationTestHelper.loginAsManager();
         integrationTestHelper.createTestProductStructure();
     }
 

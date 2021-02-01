@@ -52,7 +52,6 @@ public class ReleaseServiceImplTest {
 
     @Before
     public void setup() {
-//        SecurityHelper.setUser(TestUtils.TEST_USER);
         MockitoAnnotations.initMocks(this);
     }
 

@@ -31,7 +31,6 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 
 	@Before
 	public void setup() {
-//		TestUtils.setTestUser();
 		releaseCenterKey = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 	}
 	
