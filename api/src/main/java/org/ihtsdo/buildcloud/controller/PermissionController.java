@@ -49,7 +49,7 @@ public class PermissionController {
             throw new AccessDeniedException("Access is denied");
         }
 
-        return new ResponseEntity(permissionService.getRolesForLoggedInUser(authentication), HttpStatus.OK);
+        return new ResponseEntity(permissionService.getRolesForLoggedInUser(), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/clearCache", method = RequestMethod.POST)

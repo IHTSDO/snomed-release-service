@@ -31,7 +31,10 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.service.PermissionService.GLOBAL_SUFFIX;
@@ -67,7 +70,7 @@ public class ReleaseCenterController {
         }
 
         List<ReleaseCenter> centers = releaseCenterService.findAll();
-        Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
+        Map rolesMap = permissionService.getRolesForLoggedInUser();
         centers = centers.stream().filter(center ->
                 Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())
                         || (Boolean.valueOf(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString()) && !StringUtils.isEmpty(center.getCodeSystem()))
@@ -109,7 +112,7 @@ public class ReleaseCenterController {
         ReleaseCenter center = releaseCenterService.find(releaseCenterKey);
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
-            Map rolesMap = permissionService.getRolesForLoggedInUser(SecurityContextHolder.getContext().getAuthentication());
+            Map rolesMap = permissionService.getRolesForLoggedInUser();
             if (!Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
