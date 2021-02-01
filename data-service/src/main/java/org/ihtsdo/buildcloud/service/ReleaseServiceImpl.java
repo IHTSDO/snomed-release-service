@@ -100,7 +100,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, SecurityContext securityContext, String rootURL) throws BusinessServiceException {
+	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
 		concurrentReleaseBuildMap.putIfAbsent(productKey, product.getName());
@@ -116,6 +116,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 			productInputFileDAO.deleteInputPrepareReport(build.getProduct());
 
 			//Gather all files in term server and externally maintain buckets if specified to source directories
+			SecurityContext securityContext = new SecurityContextImpl();
+			securityContext.setAuthentication(authentication);
 			InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), gatherInputRequestPojo, securityContext);
 			if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 				LOGGER.error("Error occurred when gathering source files: ");

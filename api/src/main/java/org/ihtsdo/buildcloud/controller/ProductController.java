@@ -152,7 +152,7 @@ public class ProductController {
 		final String currentUser = SecurityUtil.getUsername();
 		final String rootURL = hypermediaGenerator.getRootURL(request);
 		Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, currentUser);
-		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext(), rootURL);
+		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext().getAuthentication(), rootURL);
 		return new ResponseEntity(newBuild, HttpStatus.CREATED);
 	}
 
