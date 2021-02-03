@@ -66,15 +66,16 @@ public class PermissionServiceTest {
 
         Map roleMap = permissionService.getRolesForLoggedInUser();
 
-        Assert.assertTrue(Boolean.valueOf(roleMap.get("ADMIN_GLOBAL").toString()));
-        Assert.assertTrue(Boolean.valueOf(roleMap.get("RELEASE_MANAGER_GLOBAL").toString()));
-        Assert.assertEquals(1, ((Set) roleMap.get(PermissionService.Role.RELEASE_MANAGER)).size());
-        Assert.assertTrue(((Set) roleMap.get(PermissionService.Role.RELEASE_MANAGER)).contains("SNOMEDCT-DK"));
-        Assert.assertEquals(1, ((Set) roleMap.get(PermissionService.Role.ADMIN)).size());
-        Assert.assertTrue(((Set) roleMap.get(PermissionService.Role.ADMIN)).contains("SNOMEDCT"));
-        Assert.assertEquals(1, ((Set) roleMap.get(PermissionService.Role.RELEASE_MANAGER)).size());
-        Assert.assertTrue(((Set) roleMap.get(PermissionService.Role.RELEASE_MANAGER)).contains("SNOMEDCT-DK"));
-        Assert.assertEquals(1, ((Set) roleMap.get(PermissionService.Role.USER)).size());
-        Assert.assertTrue(((Set) roleMap.get(PermissionService.Role.USER)).contains("SNOMEDCT-BE"));
+        Assert.assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.ADMIN.name()));
+        Assert.assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
+
+        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT")).size());
+        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT")).contains(PermissionService.Role.ADMIN.name()));
+
+        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT-DK")).size());
+        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT-DK")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
+
+        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT-BE")).size());
+        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT-BE")).contains(PermissionService.Role.USER.name()));
     }
 }

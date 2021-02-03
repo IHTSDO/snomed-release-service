@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.ihtsdo.buildcloud.service.PermissionService.GLOBAL_SUFFIX;
+import static org.ihtsdo.buildcloud.service.PermissionService.GLOBAL_ROLE;
 import static org.ihtsdo.buildcloud.service.PermissionService.Role.*;
 
 @Controller
@@ -72,11 +72,14 @@ public class ReleaseCenterController {
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser();
         centers = centers.stream().filter(center ->
-                Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())
-                        || (Boolean.valueOf(rolesMap.get(RELEASE_MANAGER + GLOBAL_SUFFIX).toString()) && !StringUtils.isEmpty(center.getCodeSystem()))
-                        || ((Set) rolesMap.get(ADMIN)).contains(center.getCodeSystem())
-                        || ((Set) rolesMap.get(RELEASE_MANAGER)).contains(center.getCodeSystem())
-                        || ((Set) rolesMap.get(USER)).contains(center.getCodeSystem())
+                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(ADMIN.name()))
+                        || (!StringUtils.isEmpty(center.getCodeSystem()) &&
+                            ((rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())) ||
+                                (rolesMap.containsKey(center.getCodeSystem()) &&
+                                        (((Set) rolesMap.get(center.getCodeSystem())).contains(ADMIN.name()) ||
+                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_MANAGER.name()) ||
+                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(USER.name()) ||
+                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name())))))
         ).collect(Collectors.toList());
 
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
@@ -113,7 +116,7 @@ public class ReleaseCenterController {
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
             Map rolesMap = permissionService.getRolesForLoggedInUser();
-            if (!Boolean.valueOf(rolesMap.get(ADMIN + GLOBAL_SUFFIX).toString())) {
+            if (!((Set) rolesMap.get(GLOBAL_ROLE)).contains(ADMIN.name())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
         }

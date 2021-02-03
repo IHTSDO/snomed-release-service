@@ -16,7 +16,7 @@ public class PermissionService {
 
     private final Logger logger = LoggerFactory.getLogger(PermissionService.class);
 
-    public final static String GLOBAL_SUFFIX = "_GLOBAL";
+    public final static String GLOBAL_ROLE = "GLOBAL";
 
     public static final String GLOBAL_ROLE_SCOPE = "global";
 
@@ -37,9 +37,9 @@ public class PermissionService {
             contains = globalRoles.contains(role);
         } else {
             ReleaseCenter releaseCenter = releaseCenterService.find(releaseCenterKey);
-            Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
-            if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && rolesToCodeSystemMap.containsKey(releaseCenter.getCodeSystem())) {
-                Set<String> roles = rolesToCodeSystemMap.get(releaseCenter.getCodeSystem());
+            Map<String, Set<String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+            if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && codeSystemToRolesMap.containsKey(releaseCenter.getCodeSystem())) {
+                Set<String> roles = codeSystemToRolesMap.get(releaseCenter.getCodeSystem());
                 if (Role.USER.name().equalsIgnoreCase(role)) {
                     contains = roles.contains(Role.USER.name()) || roles.contains(Role.AUTHOR.name());
                 } else {
@@ -57,26 +57,10 @@ public class PermissionService {
     public Map getRolesForLoggedInUser() {
         Map rolesMap = new HashMap();
         Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
-        Map<String, Set<String>> rolesToCodeSystemMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
-        rolesMap.put(Role.ADMIN + GLOBAL_SUFFIX, globalRoles.contains(Role.ADMIN.name()));
-        rolesMap.put(Role.RELEASE_MANAGER + GLOBAL_SUFFIX, globalRoles.contains(Role.RELEASE_MANAGER.name()));
-        rolesMap.put(Role.ADMIN, new HashSet<>());
-        rolesMap.put(Role.RELEASE_MANAGER, new HashSet<>());
-        rolesMap.put(Role.USER, new HashSet<>());
-        if (!rolesToCodeSystemMap.isEmpty()) {
-            rolesToCodeSystemMap.forEach(
-                    (codeSystem, roles) -> {
-                        if (roles.contains(Role.ADMIN.name())) {
-                            ((Set) rolesMap.get(Role.ADMIN)).add(codeSystem);
-                        }
-                        if (roles.contains(Role.RELEASE_MANAGER.name())) {
-                            ((Set) rolesMap.get(Role.RELEASE_MANAGER)).add(codeSystem);
-                        }
-                        if (roles.contains(Role.USER.name()) || roles.contains(Role.AUTHOR.name()) ) {
-                            ((Set) rolesMap.get(Role.USER)).add(codeSystem);
-                        }
-                    }
-            );
+        Map<String, Set<String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+        rolesMap.put(GLOBAL_ROLE, globalRoles);
+        if (!codeSystemToRolesMap.isEmpty()) {
+            codeSystemToRolesMap.forEach((codeSystem, roles) -> { rolesMap.put(codeSystem, roles); });
         }
 
         return rolesMap;

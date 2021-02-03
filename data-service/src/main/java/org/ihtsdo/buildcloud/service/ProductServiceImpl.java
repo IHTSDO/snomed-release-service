@@ -312,7 +312,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                         .filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
                         .findAny()
                         .orElse(null);
-                if (!newDefaultBranchPath.toUpperCase().startsWith(codeSystem.getBranchPath())) {
+                if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
                     throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
                 }
             }
