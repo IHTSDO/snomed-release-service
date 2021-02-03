@@ -5,29 +5,18 @@
       xmlns:beans="http://www.springframework.org/schema/beans"
       xmlns:context="http://www.springframework.org/schema/context"
       xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
- 	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+ 	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
    <context:property-placeholder location="file:${srsConfigLocation:/tmp}/api.properties" order="-1"/>
    <http pattern="/**/api-doc.html" security="none"/>
    <http pattern="/**/api-docs/**" security="none"/>
    <http pattern="/**/static/**" security="none"/>
    <http pattern="/**/webjars/**" security="none"/>
-   <http pattern="/" security="none"/>
-   <http pattern="/ws/**" security="none"/>
-   <http pattern="/api/v1/ws/**" security="none"/>
-   <!-- REST should have no state, each request is re-authenticated -->
+
    <http create-session="stateless" auto-config="false" use-expressions="false">
       <custom-filter ref="authenticationDecorator" after="BASIC_AUTH_FILTER" />
-      <intercept-url pattern="/**" method="GET" access="ROLE_${srs.role.release-manager}" />
-      <intercept-url pattern="/**" method="HEAD" access="ROLE_${srs.role.release-manager}" />
-      <intercept-url pattern="/**" method="POST" access="ROLE_${srs.role.release-manager}" />
-      <intercept-url pattern="/**" method="PUT" access="ROLE_${srs.role.release-manager}" />
-      <intercept-url pattern="/**" method="PATCH" access="ROLE_${srs.role.release-manager}" />
-      <intercept-url pattern="/**" method="DELETE" access="ROLE_${srs.role.release-manager}" />
       <http-basic />
    </http>
-
-   <global-method-security pre-post-annotations="enabled" secured-annotations="enabled" proxy-target-class="true" />
 
    <!-- Basic Authentication -->
    <authentication-manager>
@@ -42,5 +31,4 @@
    <beans:bean id="authenticationDecorator" class="org.ihtsdo.sso.integration.RequestHeaderAuthenticationDecorator" />
 
    <beans:bean id="http403EntryPoint" class="org.springframework.security.web.authentication.Http403ForbiddenEntryPoint" />
-
 </beans:beans>

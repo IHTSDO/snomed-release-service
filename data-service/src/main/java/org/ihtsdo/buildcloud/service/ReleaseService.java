@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 
 public interface ReleaseService {
 

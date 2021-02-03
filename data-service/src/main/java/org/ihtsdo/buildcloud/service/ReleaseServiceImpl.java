@@ -88,7 +88,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 		QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 		String branchPath = gatherInputRequestPojo.getBranchPath();
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
-		String user = currentUser != null ? currentUser : User.ANONYMOUS_USER;
 		String buildName = gatherInputRequestPojo.getBuildName();
 		Date effectiveTime = null;
 		try {
@@ -96,7 +95,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		} catch (ParseException e) {
 			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
 		}
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, user, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
 	}
 
 	@Override

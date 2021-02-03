@@ -36,6 +36,9 @@ public class ReleaseCenter {
 	@Column(name="short_name")
 	private String shortName;
 
+	@Column(name="code_system")
+	private String codeSystem;
+
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
 	private final List<Product> products;
@@ -50,6 +53,13 @@ public class ReleaseCenter {
 		this();
 		this.name = name;
 		setShortName(shortName);
+	}
+
+	public ReleaseCenter(final String name, final String shortName, final String codeSystem) {
+		this();
+		this.name = name;
+		setShortName(shortName);
+		setCodeSystem(codeSystem);
 	}
 
 	public void addProduct(final Product product) {
@@ -96,5 +106,13 @@ public class ReleaseCenter {
 
 	public void setRemoved(final boolean removed) {
 		this.removed = removed;
+	}
+
+	public String getCodeSystem() {
+		return codeSystem;
+	}
+
+	public void setCodeSystem(String codeSystem) {
+		this.codeSystem = codeSystem;
 	}
 }

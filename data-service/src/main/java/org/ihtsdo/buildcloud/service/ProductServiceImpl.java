@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import static org.ihtsdo.buildcloud.service.PermissionServiceCache.BRANCH_ROOT;
+
 @Service
 @Transactional
 public class ProductServiceImpl extends EntityServiceImpl<Product> implements ProductService {
@@ -51,6 +53,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
     @Autowired
     private TermServerService termServerService;
+
+    @Autowired
+    private ReleaseCenterService releaseCenterService;
 
     @Autowired
     private Boolean offlineMode;
@@ -89,6 +94,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
             throw new ResourceNotFoundException("Unable to find Release Center: " + releaseCenterKey);
         }
 
+        if (StringUtils.isEmpty(releaseCenter.getCodeSystem())) {
+            throw new BusinessServiceException(String.format("Could not create new product as no code system specified for release center %s. Contact Admin Global for support", releaseCenterKey));
+        }
+
         // Check that we don't already have one of these
         final String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
         final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey);
@@ -104,10 +113,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         // auto-discover product configurations form code-system
         if (!offlineMode) {
             List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-            String shortName = INTERNATIONAL.equals(releaseCenter.getBusinessKey()) ? SNOMEDCT : SNOMEDCT + "-" + releaseCenter.getBusinessKey().toUpperCase();
 
             CodeSystem codeSystem = codeSystems.stream()
-                    .filter(c -> shortName.equals(c.getShortName()))
+                    .filter(c -> c.getShortName().equals(releaseCenter.getCodeSystem()))
                     .findAny()
                     .orElse(null);
 
@@ -147,9 +155,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
                             propertyValues.put(ASSERTION_GROUP_NAMES, assertionGroupNames);
                             propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
                         }
-
                     }
-                    branch = termServerService.getBranch("MAIN");
+
+                    branch = termServerService.getBranch(BRANCH_ROOT);
                     if (branch.getMetadata() != null) {
                         Map<String, Object> metaData = branch.getMetadata();
                         if (metaData.containsKey("previousPackage")) {
@@ -248,7 +256,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     }
 
     private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
-            throws ResourceNotFoundException, BadRequestException, BadConfigurationException {
+            throws ResourceNotFoundException, BusinessServiceException {
         BuildConfiguration configuration = product.getBuildConfiguration();
         if (configuration == null) {
             configuration = new BuildConfiguration();
@@ -296,8 +304,19 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
         if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
             configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
         }
-        if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
-            configuration.setDefaultBranchPath(newPropertyValues.get(DEFAULT_BRANCH_PATH));
+        if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH) && configuration.getDefaultBranchPath() != newPropertyValues.get(DEFAULT_BRANCH_PATH).toUpperCase()) {
+            String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
+            if (!StringUtils.isEmpty(newDefaultBranchPath)) {
+                List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+                CodeSystem codeSystem = codeSystems.stream()
+                        .filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
+                        .findAny()
+                        .orElse(null);
+                if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
+                    throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+                }
+            }
+            configuration.setDefaultBranchPath(newDefaultBranchPath.toUpperCase());
         }
         if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
             final ReleaseCenter releaseCenter = product.getReleaseCenter();

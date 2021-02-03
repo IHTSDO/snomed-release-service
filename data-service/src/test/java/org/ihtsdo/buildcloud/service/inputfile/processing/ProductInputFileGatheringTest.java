@@ -7,9 +7,7 @@ import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl;
 import org.ihtsdo.buildcloud.service.TermServerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessWorkflowException;
@@ -64,7 +62,6 @@ public class ProductInputFileGatheringTest {
 
 	@Before
 	public void setup() throws Exception {
-		SecurityHelper.setUser(TestUtils.TEST_USER);
 		MockitoAnnotations.initMocks(this);
 		String testFile = getClass().getResource(INPUT_SOURCE_TEST_DATA_ZIP).getFile();
 		String failedExportFile = getClass().getResource(FAILED_EXPORT_DATA_ZIP).getFile();

@@ -1,32 +1,9 @@
 package org.ihtsdo.buildcloud.service;
 
-import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
-
-import java.io.*;
-import java.net.URLConnection;
-import java.security.NoSuchAlgorithmException;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.text.ParseException;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
-
-import javax.naming.ConfigurationException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.io.Files;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -57,12 +34,7 @@ import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
-import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
-import org.ihtsdo.otf.rest.exception.PostConditionException;
-import org.ihtsdo.otf.rest.exception.ProcessingException;
-import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
@@ -75,12 +47,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.google.common.io.Files;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import us.monoid.web.JSONResource;
 import us.monoid.web.Resty;
+
+import javax.naming.ConfigurationException;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
+import java.io.*;
+import java.net.URLConnection;
+import java.security.NoSuchAlgorithmException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+import java.text.ParseException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
+
+import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
 @Service
 @Transactional
@@ -596,7 +583,9 @@ public class BuildServiceImpl implements BuildService {
 			report.add("rvf_response", rvfResultMsg);
 			LOGGER.info("End of running build {}", build.getUniqueId());
 			dao.persistReport(build);
-			waitForRvfComplete(build, rvfResultMsg);
+			if (!offlineMode) {
+				waitForRvfComplete(build, rvfResultMsg);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Failure during getting RVF results", e);
 		} finally {

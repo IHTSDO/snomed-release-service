@@ -24,7 +24,6 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 
 	@Test
 	public void testMultipleReleases() throws Exception {
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 
 		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_20140131.txt", getClass());

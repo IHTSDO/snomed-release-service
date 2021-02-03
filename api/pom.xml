@@ -14,7 +14,7 @@
 
 	<properties>
 		<packageName>${project.parent.artifactId}-${project.artifactId}</packageName>
-		<webapp-runner.version>8.5.11.3</webapp-runner.version>
+		<webapp-runner.version>9.0.27.1</webapp-runner.version>
 	</properties>
 
 	<dependencies>
@@ -79,13 +79,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
-			<version>3.2.5.RELEASE</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-websocket</artifactId>
-			<version>4.1.3.RELEASE</version>
+			<version>${spring-security.version}</version>
 		</dependency>
 
 		<dependency>

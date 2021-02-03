@@ -18,12 +18,12 @@ public class TestEntityGenerator {
 					"ICPC2 Map Technical Preview",
 					"Spanish Release"};
 
-	protected ReleaseCenter createTestReleaseCenter(String fullName, String shortName) {
-		return new ReleaseCenter(fullName, shortName);
+	protected ReleaseCenter createTestReleaseCenter(String fullName, String shortName, String codeSystem) {
+		return new ReleaseCenter(fullName, shortName, codeSystem);
 	}
 
-	protected ReleaseCenter createTestReleaseCenterWithProducts(String fullName, String shortName) {
-		ReleaseCenter releaseCenter = createTestReleaseCenter(fullName, shortName);
+	protected ReleaseCenter createTestReleaseCenterWithProducts(String fullName, String shortName, String codeSystem) {
+		ReleaseCenter releaseCenter = createTestReleaseCenter(fullName, shortName, codeSystem);
 		addProductsToReleaseCenter(releaseCenter);
 		return releaseCenter;
 	}

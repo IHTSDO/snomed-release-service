@@ -1,10 +1,24 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+	   xmlns:cache="http://www.springframework.org/schema/cache"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd http://www.springframework.org/schema/cache
+        http://www.springframework.org/schema/cache/spring-cache-3.2.xsd">
 
 	<import resource="../dataServiceBeanContext.xml"/>
 	<bean class="org.ihtsdo.buildcloud.test.TestUtils"/>
 
 	<bean class="org.ihtsdo.buildcloud.service.precondition.ManifestCheck"/>
 	<bean class="org.ihtsdo.buildcloud.service.precondition.InputFilesExistenceCheck"/>
+
+	<cache:annotation-driven />
+
+	<bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
+		<property name="caches">
+			<set>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="release-center-records"/>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="global-roles"/>
+				<bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean" name="code-system-roles"/>
+			</set>
+		</property>
+	</bean>
 </beans>

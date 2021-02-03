@@ -43,7 +43,6 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 	}
 
 	private void setupProduct() throws Exception {
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
