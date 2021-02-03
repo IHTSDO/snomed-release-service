@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class PermissionServiceCache {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionServiceCache.class);
 
     public static final String BRANCH_ROOT = "MAIN";
 
@@ -35,6 +38,7 @@ public class PermissionServiceCache {
                 return branch.getGlobalUserRoles();
             }
         } catch (RestClientException e) {
+            LOGGER.debug("Error while retrieving MAIN. Message: " + e.getMessage());
             return Collections.emptySet();
         }
         return Collections.emptySet();
