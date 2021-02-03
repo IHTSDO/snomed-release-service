@@ -17,8 +17,6 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 
 	@Test
 	public void testPublishUpload() throws Exception {
-		integrationTestHelper.loginAsManager();
-
 		//publish test file
 		integrationTestHelper.publishFile("/three_readmes.zip", getClass(), HttpStatus.CREATED);
 

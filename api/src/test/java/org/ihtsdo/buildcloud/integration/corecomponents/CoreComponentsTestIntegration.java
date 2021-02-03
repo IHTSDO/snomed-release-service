@@ -109,7 +109,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	}
 
 	private void firstTimeRelease() throws Exception {
-		integrationTestHelper.loginAsManager();
 		integrationTestHelper.createTestProductStructure();
 		//config assertion tests
 		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");

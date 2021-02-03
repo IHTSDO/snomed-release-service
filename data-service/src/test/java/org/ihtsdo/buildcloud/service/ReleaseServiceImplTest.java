@@ -2,14 +2,11 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.User;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.service.security.SecurityHelper;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -40,9 +37,6 @@ public class ReleaseServiceImplTest {
     BuildService buildService;
 
     @Mock
-    AuthenticationService authenticationService;
-
-    @Mock
     S3Client s3Client;
 
     @Mock
@@ -58,7 +52,6 @@ public class ReleaseServiceImplTest {
 
     @Before
     public void setup() {
-        SecurityHelper.setUser(TestUtils.TEST_USER);
         MockitoAnnotations.initMocks(this);
     }
 
@@ -68,7 +61,7 @@ public class ReleaseServiceImplTest {
         inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
-        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
+        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), null);
         releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
@@ -82,7 +75,7 @@ public class ReleaseServiceImplTest {
         fileProcessingReportDetail.setType(ReportType.ERROR);
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
-        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), User.ANONYMOUS_USER);
+        Build build = releaseService.createBuild("center", "product", new GatherInputRequestPojo(), null);
         releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
