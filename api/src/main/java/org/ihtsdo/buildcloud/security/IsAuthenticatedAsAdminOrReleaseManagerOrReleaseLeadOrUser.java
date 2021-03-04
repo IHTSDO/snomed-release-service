@@ -6,8 +6,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("hasPermission('ADMIN', 'global') || hasPermission('ADMIN', #releaseCenterKey) || " +
+@PreAuthorize("hasPermission('RAD_ADMIN', 'global') || hasPermission('RAD_ADMIN', #releaseCenterKey) || " +
         "hasPermission('RELEASE_MANAGER', 'global') || hasPermission('RELEASE_MANAGER', #releaseCenterKey) || " +
+        "hasPermission('RELEASE_LEAD', 'global') || hasPermission('RELEASE_LEAD', #releaseCenterKey) || " +
         "hasPermission('USER', #releaseCenterKey)")
-public @interface IsAuthenticatedAsAdminOrReleaseManagerOrUser {
+public @interface IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser {
 }

@@ -6,6 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("hasPermission('RAD_ADMIN', 'global') || hasPermission('RAD_ADMIN', #releaseCenterKey)")
-public @interface IsAuthenticatedAsAdmin {
+@PreAuthorize("hasPermission('RAD_ADMIN', 'global')")
+public @interface IsAuthenticatedAsGlobalAdmin {
 }

@@ -5,9 +5,7 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdmin;
-import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManager;
-import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrUser;
+import org.ihtsdo.buildcloud.security.*;
 import org.ihtsdo.buildcloud.service.PermissionService;
 import org.ihtsdo.buildcloud.service.PublishService;
 import org.ihtsdo.buildcloud.service.ReleaseCenterService;
@@ -72,21 +70,23 @@ public class ReleaseCenterController {
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser();
         centers = centers.stream().filter(center ->
-                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(ADMIN.name()))
+                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RAD_ADMIN.name()))
                         || (!StringUtils.isEmpty(center.getCodeSystem()) &&
-                            ((rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())) ||
-                                (rolesMap.containsKey(center.getCodeSystem()) &&
-                                        (((Set) rolesMap.get(center.getCodeSystem())).contains(ADMIN.name()) ||
-                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_MANAGER.name()) ||
-                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(USER.name()) ||
-                                        ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name())))))
+                            ((rolesMap.containsKey(GLOBAL_ROLE) && (((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())
+                                                                    || ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_LEAD.name())))
+                            || (rolesMap.containsKey(center.getCodeSystem()) &&
+                                        (((Set) rolesMap.get(center.getCodeSystem())).contains(RAD_ADMIN.name()) ||
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_MANAGER.name()) ||
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_LEAD.name()) ||
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(RAD_USER.name()) ||
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name())))))
         ).collect(Collectors.toList());
 
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasPermission('ADMIN','global')")
+    @IsAuthenticatedAsGlobalAdmin
     @ApiOperation(value = "Creates a new Release Center",
             notes = " Creates a new Release Center and returns the newly created release center.")
     public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
@@ -116,7 +116,7 @@ public class ReleaseCenterController {
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
             Map rolesMap = permissionService.getRolesForLoggedInUser();
-            if (!((Set) rolesMap.get(GLOBAL_ROLE)).contains(ADMIN.name())) {
+            if (!((Set) rolesMap.get(GLOBAL_ROLE)).contains(RAD_ADMIN.name())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
         }
@@ -130,7 +130,7 @@ public class ReleaseCenterController {
     }
 
     @RequestMapping(value = "/{releaseCenterKey}", method = RequestMethod.GET)
-    @IsAuthenticatedAsAdminOrReleaseManagerOrUser
+    @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @ApiOperation(value = "Returns a single release center",
             notes = "Returns a single release center for a given releaseCenterBusinessKey")
     @ResponseBody
@@ -140,7 +140,7 @@ public class ReleaseCenterController {
     }
 
     @RequestMapping(value = "/{releaseCenterKey}/published", method = RequestMethod.GET)
-    @IsAuthenticatedAsAdminOrReleaseManager
+    @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @ApiOperation(value = "Returns a list published releases names",
             notes = "Returns a list published releases names for a given release center")
     @ResponseBody
@@ -155,7 +155,7 @@ public class ReleaseCenterController {
     }
 
     @RequestMapping(value = "/{releaseCenterKey}/published", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
-    @IsAuthenticatedAsAdmin
+    @IsAuthenticatedAsAdminOrReleaseManager
     @ResponseBody
     @ApiIgnore
     public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterKey,
