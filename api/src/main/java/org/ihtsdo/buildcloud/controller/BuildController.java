@@ -228,7 +228,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/outputfiles", method = RequestMethod.GET)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of file names from output directory",
 		notes = "Retrieves a list of file names from output directory for given release center, "
@@ -241,7 +241,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}", method = RequestMethod.GET)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Download a specific file from output directory",
 		notes = "Download a specific file from output directory for given release center, "
 			+ "product key, build id and file name combination" )
@@ -318,7 +318,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of build log file names",
 		notes = "Retrieves a list of build log file names for given release center, product key, and build id" )
@@ -329,7 +329,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.GET)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Download a specific build log file",
 		notes = "Download a specific log file for given release center, "
 		+ "product key, build id and file name combination" )
@@ -346,7 +346,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.HEAD)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Download a specific build log file", notes = "Download a specific log file for given release center, "
 			+ "product key, build id and file name combination")
 	public void getBuildLogHead(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -443,7 +443,7 @@ public class BuildController {
 	}
 
 	@RequestMapping(value = "/{buildId}/buildLogs", method = RequestMethod.GET)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Get the full logs of the build process")
 	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								   @PathVariable final String buildId, HttpServletResponse response) throws IOException {
