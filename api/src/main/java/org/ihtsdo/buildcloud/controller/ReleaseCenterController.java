@@ -70,15 +70,15 @@ public class ReleaseCenterController {
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser();
         centers = centers.stream().filter(center ->
-                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RAD_ADMIN.name()))
+                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_ADMIN.name()))
                         || (!StringUtils.isEmpty(center.getCodeSystem()) &&
                             ((rolesMap.containsKey(GLOBAL_ROLE) && (((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())
                                                                     || ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_LEAD.name())))
                             || (rolesMap.containsKey(center.getCodeSystem()) &&
-                                        (((Set) rolesMap.get(center.getCodeSystem())).contains(RAD_ADMIN.name()) ||
+                                        (((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_ADMIN.name()) ||
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_MANAGER.name()) ||
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_LEAD.name()) ||
-                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(RAD_USER.name()) ||
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_USER.name()) ||
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name())))))
         ).collect(Collectors.toList());
 
@@ -116,7 +116,7 @@ public class ReleaseCenterController {
         String codeSystem = json.get("codeSystem");
         if (codeSystem != center.getCodeSystem()) {
             Map rolesMap = permissionService.getRolesForLoggedInUser();
-            if (!((Set) rolesMap.get(GLOBAL_ROLE)).contains(RAD_ADMIN.name())) {
+            if (!((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_ADMIN.name())) {
                 throw new BusinessServiceException("You are not allowed to change Code System. Only Admin Global role has possibility to do this.");
             }
         }

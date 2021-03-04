@@ -24,7 +24,7 @@ public class PermissionService {
     public static final String GLOBAL_ROLE_SCOPE = "global";
 
     public enum Role {
-        RAD_ADMIN, RELEASE_MANAGER, RELEASE_LEAD, RAD_USER, AUTHOR
+        RELEASE_ADMIN, RELEASE_MANAGER, RELEASE_LEAD, RELEASE_USER, AUTHOR
     }
 
     @Autowired
@@ -44,7 +44,7 @@ public class PermissionService {
             if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && codeSystemToRolesMap.containsKey(releaseCenter.getCodeSystem())) {
                 Set <String> roles = codeSystemToRolesMap.get(releaseCenter.getCodeSystem());
                 if (USER_ROLE.equalsIgnoreCase(role)) {
-                    contains = roles.contains(Role.RAD_USER.name()) || roles.contains(Role.AUTHOR.name());
+                    contains = roles.contains(Role.RELEASE_USER.name()) || roles.contains(Role.AUTHOR.name());
                 } else {
                     contains = roles.contains(role);
                 }
@@ -63,7 +63,7 @@ public class PermissionService {
         Map <String, Set <String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
         if (!globalRoles.isEmpty()) {
             globalRoles = globalRoles.stream()
-                    .filter(line -> Role.RAD_ADMIN.name().equals(line)
+                    .filter(line -> Role.RELEASE_ADMIN.name().equals(line)
                             || Role.RELEASE_MANAGER.name().equals(line)
                             || Role.RELEASE_LEAD.name().equals(line))
                     .collect(Collectors.toSet());
@@ -74,10 +74,10 @@ public class PermissionService {
             codeSystemToRolesMap.forEach((codeSystem, roles) -> {
                 if (!roles.isEmpty()) {
                     roles = roles.stream()
-                            .filter(line -> Role.RAD_ADMIN.name().equals(line)
+                            .filter(line -> Role.RELEASE_ADMIN.name().equals(line)
                                     || Role.RELEASE_MANAGER.name().equals(line)
                                     || Role.RELEASE_LEAD.name().equals(line)
-                                    || Role.RAD_USER.name().equals(line)
+                                    || Role.RELEASE_USER.name().equals(line)
                                     || Role.AUTHOR.name().equals(line))
                             .collect(Collectors.toSet());
                 }
