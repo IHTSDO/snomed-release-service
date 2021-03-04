@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.controller;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.security.IsAuthenticatedAsGlobalAdmin;
 import org.ihtsdo.buildcloud.service.PermissionService;
 import org.ihtsdo.buildcloud.service.PermissionServiceCache;
 import org.ihtsdo.otf.rest.exception.AuthenticationException;
@@ -53,7 +54,7 @@ public class PermissionController {
     }
 
     @RequestMapping(value = "/clearCache", method = RequestMethod.POST)
-    @PreAuthorize("hasPermission('ADMIN','global') || hasPermission('RELEASE_MANAGER','global')")
+    @IsAuthenticatedAsGlobalAdmin
     public ResponseEntity clearCache(HttpServletRequest request) {
         permissionServiceCache.clearCache();
         return new ResponseEntity(HttpStatus.OK);

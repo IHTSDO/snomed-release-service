@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PermissionService {
@@ -18,10 +19,12 @@ public class PermissionService {
 
     public final static String GLOBAL_ROLE = "GLOBAL";
 
+    public final static String USER_ROLE = "USER";
+
     public static final String GLOBAL_ROLE_SCOPE = "global";
 
     public enum Role {
-        ADMIN, RELEASE_MANAGER, USER, AUTHOR
+        RAD_ADMIN, RELEASE_MANAGER, RELEASE_LEAD, RAD_USER, AUTHOR
     }
 
     @Autowired
@@ -33,15 +36,15 @@ public class PermissionService {
     public boolean userHasRoleOnReleaseCenter(String role, String releaseCenterKey) {
         boolean contains = false;
         if (releaseCenterKey.equalsIgnoreCase(GLOBAL_ROLE_SCOPE)) {
-            Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
+            Set <String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
             contains = globalRoles.contains(role);
         } else {
             ReleaseCenter releaseCenter = releaseCenterService.find(releaseCenterKey);
-            Map<String, Set<String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+            Map <String, Set <String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
             if (!StringUtils.isEmpty(releaseCenter.getCodeSystem()) && codeSystemToRolesMap.containsKey(releaseCenter.getCodeSystem())) {
-                Set<String> roles = codeSystemToRolesMap.get(releaseCenter.getCodeSystem());
-                if (Role.USER.name().equalsIgnoreCase(role)) {
-                    contains = roles.contains(Role.USER.name()) || roles.contains(Role.AUTHOR.name());
+                Set <String> roles = codeSystemToRolesMap.get(releaseCenter.getCodeSystem());
+                if (USER_ROLE.equalsIgnoreCase(role)) {
+                    contains = roles.contains(Role.RAD_USER.name()) || roles.contains(Role.AUTHOR.name());
                 } else {
                     contains = roles.contains(role);
                 }
@@ -56,11 +59,30 @@ public class PermissionService {
 
     public Map getRolesForLoggedInUser() {
         Map rolesMap = new HashMap();
-        Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
-        Map<String, Set<String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+        Set <String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
+        Map <String, Set <String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+        if (!globalRoles.isEmpty()) {
+            globalRoles = globalRoles.stream()
+                    .filter(line -> Role.RAD_ADMIN.name().equals(line)
+                            || Role.RELEASE_MANAGER.name().equals(line)
+                            || Role.RELEASE_LEAD.name().equals(line))
+                    .collect(Collectors.toSet());
+        }
         rolesMap.put(GLOBAL_ROLE, globalRoles);
+
         if (!codeSystemToRolesMap.isEmpty()) {
-            codeSystemToRolesMap.forEach((codeSystem, roles) -> { rolesMap.put(codeSystem, roles); });
+            codeSystemToRolesMap.forEach((codeSystem, roles) -> {
+                if (!roles.isEmpty()) {
+                    roles = roles.stream()
+                            .filter(line -> Role.RAD_ADMIN.name().equals(line)
+                                    || Role.RELEASE_MANAGER.name().equals(line)
+                                    || Role.RELEASE_LEAD.name().equals(line)
+                                    || Role.RAD_USER.name().equals(line)
+                                    || Role.AUTHOR.name().equals(line))
+                            .collect(Collectors.toSet());
+                }
+                rolesMap.put(codeSystem, roles);
+            });
         }
 
         return rolesMap;
