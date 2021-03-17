@@ -48,7 +48,7 @@ public class ProductController {
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
-	@RequestMapping( method = RequestMethod.GET )
+	@GetMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a list of products",
 	notes = "Returns a list of products for the extension specified in the URL" )
@@ -74,7 +74,7 @@ public class ProductController {
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), page.getTotalElements());
 	}
 
-	@RequestMapping( value = "/{productKey}", method = RequestMethod.GET)
+	@GetMapping( value = "/{productKey}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a product", notes = "Returns a single product object for a given product key" )
 	@ResponseBody
@@ -89,7 +89,7 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 
-	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Create a product",
 		notes = "creates a new Product with a name as specified in  the request "
@@ -109,7 +109,7 @@ public class ProductController {
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, currentResource, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/{productKey}", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PatchMapping(value = "/{productKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Update a product", notes = "Update an existing product with new details "
@@ -128,7 +128,7 @@ public class ProductController {
 	// Writing clients in Java we find that the standard Java libraries don't support PATCH so, we need
 	// a new end point that uses a more common HTTP method.
 	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
-	@RequestMapping(value = "/{productKey}/configuration", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(value = "/{productKey}/configuration", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
@@ -142,21 +142,22 @@ public class ProductController {
 	}
 
 
-	@RequestMapping(value = "/{productKey}/release", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/{productKey}/release", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
-	public ResponseEntity createReleasePackage(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													@RequestBody GatherInputRequestPojo buildConfig,
-											   HttpServletRequest request) throws BusinessServiceException {
-		final String currentUser = SecurityUtil.getUsername();
-		final String rootURL = hypermediaGenerator.getRootURL(request);
-		Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, currentUser);
-		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig, SecurityContextHolder.getContext().getAuthentication(), rootURL);
-		return new ResponseEntity(newBuild, HttpStatus.CREATED);
+	public ResponseEntity<Build> createReleasePackage(
+			@PathVariable final String releaseCenterKey,
+			@PathVariable final String productKey,
+			@RequestBody final GatherInputRequestPojo buildConfig,
+			final HttpServletRequest request) throws BusinessServiceException {
+		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
+		releaseService.triggerBuildAsync(releaseCenterKey, productKey, newBuild, buildConfig,
+				SecurityContextHolder.getContext().getAuthentication(), hypermediaGenerator.getRootURL(request));
+		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/{productKey}/release/clear-concurrent-cache", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation(value = "Clear in-memory concurrent cache")
@@ -165,7 +166,7 @@ public class ProductController {
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/{productKey}/visibility", method = RequestMethod.POST)
+	@PostMapping(value = "/{productKey}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Update visibility for product", notes = "Update an existing product with the visibility flag")

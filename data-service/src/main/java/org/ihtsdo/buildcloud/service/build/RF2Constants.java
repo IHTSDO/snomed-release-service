@@ -59,6 +59,13 @@ public class RF2Constants {
 	public static final String 	DAILY_BUILD_TIME_FORMAT = "yyyy-MM-dd-HHmmss";
 	public static final String REFSET = "Refset";
 	public static final String LANGUAGE = "Language";
+	public static final String USERNAME = "username";
+	public static final String RVF_FAILURE_EXPORT_MAX = "RvfFailureExportMax";
+	public static final String RELEASE_CENTER_KEY = "releaseCenterKey";
+	public static final String PRODUCT_KEY = "productKey";
+	public static final String BUILD_ID = "buildId";
+	public static final String PROPERTY_IS_REQUIRED = " property is required";
+	public static final String MRCM_VALIDATION_FORM = "mrcmValidationForm";
 
 	public enum RelationshipFileType {
 		STATED, INFERRED
