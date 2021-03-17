@@ -57,7 +57,7 @@ public class ReleaseCenterController {
 
     private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     @ApiOperation(value = "Returns a list all release center for a logged in user",
             notes = "Returns a list of all release centers visible to the currently logged in user.")
     @ResponseBody
@@ -85,7 +85,7 @@ public class ReleaseCenterController {
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     @IsAuthenticatedAsGlobalAdmin
     @ApiOperation(value = "Creates a new Release Center",
             notes = " Creates a new Release Center and returns the newly created release center.")
@@ -102,7 +102,7 @@ public class ReleaseCenterController {
         return new ResponseEntity<>(entityHypermedia, HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = "/{releaseCenterKey}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{releaseCenterKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @IsAuthenticatedAsAdmin
     @ApiOperation(value = "Updates a release center details",
             notes = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed.   "
@@ -129,7 +129,7 @@ public class ReleaseCenterController {
         return hypermediaGenerator.getEntityHypermedia(center, false, request, RELEASE_CENTER_LINKS);
     }
 
-    @RequestMapping(value = "/{releaseCenterKey}", method = RequestMethod.GET)
+    @GetMapping(value = "/{releaseCenterKey}")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @ApiOperation(value = "Returns a single release center",
             notes = "Returns a single release center for a given releaseCenterBusinessKey")
@@ -139,7 +139,7 @@ public class ReleaseCenterController {
         return hypermediaGenerator.getEntityHypermedia(center, true, request, RELEASE_CENTER_LINKS);
     }
 
-    @RequestMapping(value = "/{releaseCenterKey}/published", method = RequestMethod.GET)
+    @GetMapping(value = "/{releaseCenterKey}/published")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @ApiOperation(value = "Returns a list published releases names",
             notes = "Returns a list published releases names for a given release center")
@@ -154,7 +154,7 @@ public class ReleaseCenterController {
         return hypermediaGenerator.getEntityHypermedia(representation, true, request);
     }
 
-    @RequestMapping(value = "/{releaseCenterKey}/published", method = RequestMethod.POST, consumes = MediaType.ALL_VALUE)
+    @PostMapping(value = "/{releaseCenterKey}/published", consumes = MediaType.ALL_VALUE)
     @IsAuthenticatedAsAdminOrReleaseManager
     @ResponseBody
     @ApiIgnore

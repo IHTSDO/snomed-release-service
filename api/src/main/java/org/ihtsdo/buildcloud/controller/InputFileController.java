@@ -52,7 +52,7 @@ public class InputFileController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 
-	@RequestMapping(value = "/manifest", method = RequestMethod.POST)
+	@PostMapping(value = "/manifest")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Stores a manifest file",
 		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
@@ -71,7 +71,7 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/manifest", method = RequestMethod.GET)
+	@GetMapping(value = "/manifest")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a manifest file name",
 		notes = "Returns a manifest file name for given release center and product" )
@@ -88,7 +88,7 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/manifest/file", produces = "application/xml", method = RequestMethod.GET)
+	@GetMapping(value = "/manifest/file", produces = "application/xml")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a specified manifest file",
 		notes = "Returns the content of the manifest file as xml" )
@@ -108,7 +108,7 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/inputfiles", method = RequestMethod.POST)
+	@PostMapping(value = "/inputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Store or Replace a file",
 		notes = "Stores or replaces a file with its original name against the package specified in the URL" )
@@ -135,7 +135,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
-	@RequestMapping(value = "/inputfiles", method = RequestMethod.GET)
+	@GetMapping(value = "/inputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a list of file names",
 		notes = "Returns a list of file names for the package specified in the URL" )
@@ -152,7 +152,7 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/inputfiles/{inputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a specified file",
 		notes = "Returns the content of the specified file." )
@@ -175,7 +175,7 @@ public class InputFileController {
 
 	// Using Regex to match variable name here due to problems with .txt getting truncated
 	// See http://stackoverflow.com/questions/16332092/spring-mvc-pathvariable-with-dot-is-getting-truncated
-	@RequestMapping(value = "/inputfiles/{inputFileNamePattern:.+}", method = RequestMethod.DELETE)
+	@DeleteMapping(value = "/inputfiles/{inputFileNamePattern:.+}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Returns a specified file",
 		notes = "Deletes the specified file, if found. "
@@ -192,7 +192,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.POST)
+	@PostMapping(value = "/sourcefiles/{source}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Store or Replace a file in specified source",
 			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
@@ -213,7 +213,7 @@ public class InputFileController {
 		throw new IllegalArgumentException("No input source file specified.");
 	}
 
-	@RequestMapping(value = "/sourcefiles", method = RequestMethod.GET)
+	@GetMapping(value = "/sourcefiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a list of file names in source directories",
 			notes = "Returns a list of file names for the package specified in the URL" )
@@ -230,7 +230,7 @@ public class InputFileController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/sourcefiles/{source}/{sourceFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/sourcefiles/{source}/{sourceFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a specified file",
 		notes = "Returns the content of the specified file." )
@@ -251,7 +251,7 @@ public class InputFileController {
 	}
 	
 
-	@RequestMapping(value = "/sourcefiles/{source}", method = RequestMethod.DELETE)
+	@DeleteMapping(value = "/sourcefiles/{source}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Returns a specified file",
 			notes = "Deletes the specified file, if found. "
@@ -263,7 +263,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	@RequestMapping(value = "/sourcefiles", method = RequestMethod.DELETE)
+	@DeleteMapping(value = "/sourcefiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Returns a specified file",
 			notes = "Deletes the files with specified pattern in specified sources, if found. "
@@ -275,7 +275,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	@RequestMapping(value = "/inputfiles/prepare", method = RequestMethod.POST)
+	@PostMapping(value = "/inputfiles/prepare")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
 			notes = "Create or replace files in input file directories")
@@ -287,7 +287,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 	
-	@RequestMapping(value = "/inputfiles/prepareReport", produces = "application/json", method = RequestMethod.GET)
+	@GetMapping(value = "/inputfiles/prepareReport", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves latest report of input files preparation process",
@@ -304,7 +304,7 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/inputfiles/gather", method = RequestMethod.POST)
+	@PostMapping(value = "/inputfiles/gather")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
 	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -313,7 +313,7 @@ public class InputFileController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	@RequestMapping(value = "/inputfiles/gatherReport", method = RequestMethod.GET)
+	@GetMapping(value = "/inputfiles/gatherReport")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation(value = "Return report of input files gather")
 	public void  getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, final HttpServletResponse response) throws IOException {
@@ -326,7 +326,7 @@ public class InputFileController {
 		}
 	}
 
-	@RequestMapping(value = "/buildLogs", method = RequestMethod.GET)
+	@GetMapping(value = "/buildLogs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation(value = "Get the full logs of the build process")
 	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -335,7 +335,7 @@ public class InputFileController {
 		response.sendRedirect(logUrl);
 	}
 
-	@RequestMapping(value = "/buildLogs/details", method = RequestMethod.GET)
+	@GetMapping(value = "/buildLogs/details")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation(value = "Return report of input files gather")
 	public void getFullBuildLogFromProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,

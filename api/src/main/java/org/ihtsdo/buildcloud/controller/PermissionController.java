@@ -6,25 +6,20 @@ import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsGlobalAdmin;
 import org.ihtsdo.buildcloud.service.PermissionService;
 import org.ihtsdo.buildcloud.service.PermissionServiceCache;
-import org.ihtsdo.otf.rest.exception.AuthenticationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 @Controller
 @RequestMapping("/permissions")
@@ -40,7 +35,7 @@ public class PermissionController {
     @Autowired
     private PermissionServiceCache permissionServiceCache;
 
-    @RequestMapping(value = "/roles", method = RequestMethod.GET)
+    @GetMapping(value = "/roles")
     @ApiOperation(value = "Returns a list all roles for a logged in user",
             notes = "Returns a list of all roles visible to the currently logged in user.")
     @ResponseBody
@@ -53,7 +48,7 @@ public class PermissionController {
         return new ResponseEntity(permissionService.getRolesForLoggedInUser(), HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/clearCache", method = RequestMethod.POST)
+    @PostMapping(value = "/clearCache")
     @IsAuthenticatedAsGlobalAdmin
     public ResponseEntity clearCache(HttpServletRequest request) {
         permissionServiceCache.clearCache();

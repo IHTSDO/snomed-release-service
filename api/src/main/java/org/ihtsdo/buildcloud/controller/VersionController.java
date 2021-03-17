@@ -5,8 +5,8 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,7 +29,7 @@ public class VersionController {
 
 	private String versionString;
 
-	@RequestMapping( method = RequestMethod.GET )
+	@GetMapping
 	@ApiOperation( value = "Returns version of current deployment",
 		notes = "Returns the software-build version as captured during installation (deployment using ansible)" )
 	@ResponseBody

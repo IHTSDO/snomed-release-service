@@ -54,7 +54,7 @@ public class BuildController {
 
 	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
-	@RequestMapping( method = RequestMethod.POST )
+	@PostMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Create a build",
 		notes = "Create a build for given product key and release center key and returns build id" )
@@ -68,7 +68,7 @@ public class BuildController {
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS), HttpStatus.CREATED);
 	}
 
-	@RequestMapping( value = "/{buildId}", method = RequestMethod.DELETE )
+	@DeleteMapping(value = "/{buildId}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Delete a build",
 			notes = "" +
@@ -89,7 +89,7 @@ public class BuildController {
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
-	@RequestMapping( method = RequestMethod.GET )
+	@GetMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a list all builds for a logged in user",
 		notes = "Returns a list all builds visible to the currently logged in user, "
@@ -103,7 +103,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
-	@RequestMapping(value = "/{buildId}", method = RequestMethod.GET )
+	@GetMapping(value = "/{buildId}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Get a build id",
@@ -118,7 +118,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
 	}
 
-	@RequestMapping(value = "/{buildId}/configuration", produces = "application/json", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/configuration", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves configuration details",
@@ -134,7 +134,7 @@ public class BuildController {
 	}
 	
 	
-	@RequestMapping(value = "/{buildId}/qaTestConfig", produces = "application/json", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/qaTestConfig", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves QA test configuration details",
@@ -150,7 +150,7 @@ public class BuildController {
 	}
 	
 	
-	@RequestMapping(value = "/{buildId}/buildReport", produces = "application/json", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/buildReport", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves build report details",
@@ -167,7 +167,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/inputfiles", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/inputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves list of input file names",
@@ -179,7 +179,7 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 	
-	@RequestMapping(value = "/{buildId}/inputPrepareReport", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/inputPrepareReport")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves the report for preparing input source files.",
@@ -196,7 +196,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/inputGatherReport", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/inputGatherReport")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves the report for gathering input source files.",
@@ -214,7 +214,7 @@ public class BuildController {
 	}
 
 
-	@RequestMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/inputfiles/{inputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Download a specific file",
 		notes = "Download a specific file content for given release center, product key, build id and given input file name combination" )
@@ -227,7 +227,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/outputfiles", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/outputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of file names from output directory",
@@ -240,7 +240,7 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/outputfiles/{outputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Download a specific file from output directory",
 		notes = "Download a specific file from output directory for given release center, "
@@ -254,7 +254,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/trigger", method = RequestMethod.POST)
+	@PostMapping(value = "/{buildId}/trigger")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiIgnore
@@ -266,7 +266,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 
-	@RequestMapping(value = "/{buildId}/visibility", method = RequestMethod.POST)
+	@PostMapping(value = "/{buildId}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Update visibility for build", notes = "Update an existing build with the visibility flag")
@@ -276,7 +276,7 @@ public class BuildController {
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/{buildId}/tags", method = RequestMethod.POST)
+	@PostMapping(value = "/{buildId}/tags")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Update tags for build", notes = "Update an existing build with the tags")
@@ -287,7 +287,7 @@ public class BuildController {
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/{buildId}/publish", method = RequestMethod.POST)
+	@PostMapping(value = "/{buildId}/publish")
 	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Publish a release for given build id",
@@ -300,7 +300,7 @@ public class BuildController {
 		publishService.publishBuildAsync(build, true, environment);
 	}
 
-	@RequestMapping(value = "/{buildId}/publish/status", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/publish/status")
 	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Get publishing release status",
@@ -317,7 +317,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/logs" , method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/logs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Retrieves a list of build log file names",
@@ -328,7 +328,7 @@ public class BuildController {
 		return convertFileListToEntities(request, buildService.getLogFilePaths(releaseCenterKey, productKey, buildId));
 	}
 
-	@RequestMapping(value = "/{buildId}/logs/{logFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/logs/{logFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Download a specific build log file",
 		notes = "Download a specific log file for given release center, "
@@ -359,7 +359,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/preConditionCheckReports", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/preConditionCheckReports")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves Pre-Condition Check Report",
@@ -376,7 +376,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/postConditionCheckReports", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/postConditionCheckReports")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves Post-Condition Check Report",
@@ -393,7 +393,7 @@ public class BuildController {
 		}
 	}
 
-	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/classificationResultsOutputFiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
 	@ApiOperation( value = "Retrieves classification results for output files",
@@ -404,7 +404,7 @@ public class BuildController {
 		return convertFileListToEntities(request, relativeFilePaths);
 	}
 
-	@RequestMapping(value = "/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Download a specific file",
 			notes = "Download a specific file content for given release center, product key, build id and given file name combination" )
@@ -433,7 +433,7 @@ public class BuildController {
 		return hypermediaGenerator.getEntityCollectionHypermedia(files, request);
 	}
 
-	@RequestMapping(value = "/{buildId}/cancel", method = RequestMethod.POST)
+	@PostMapping(value = "/{buildId}/cancel")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Cancel a running build job")
 	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
@@ -442,7 +442,7 @@ public class BuildController {
 		response.setStatus(HttpStatus.OK.value());
 	}
 
-	@RequestMapping(value = "/{buildId}/buildLogs", method = RequestMethod.GET)
+	@GetMapping(value = "/{buildId}/buildLogs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Get the full logs of the build process")
 	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
