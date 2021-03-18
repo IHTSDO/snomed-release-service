@@ -33,6 +33,7 @@ import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -233,7 +234,7 @@ public class BuildServiceImpl implements BuildService {
 
 			// Overwrite the original file, and delete local temp copy
 			dao.putInputFile(build, tempFile, false);
-		} catch (IOException | NoSuchAlgorithmException | TransformationException e ) {
+		} catch (IOException | NoSuchAlgorithmException | TransformationException e) {
 			String msg = String.format("Error while doing input file fix up. Message: %s", e.getMessage());
 			LOGGER.error(msg, e);
 			throw new BusinessServiceException(msg, e);
@@ -275,36 +276,9 @@ public class BuildServiceImpl implements BuildService {
 			// Get build configurations from S3
 			getBuildConfigurations(build);
 
-			if (!build.getConfiguration().isJustPackage()) {
-				// Perform Pre-condition testing
-				final Status preStatus = build.getStatus();
-				if (build.getConfiguration().isInputFilesFixesRequired()) {
-					doInputFileFixup(build);
-				}
+			performPreconditionTesting(build);
 
-				performPreConditionsCheck(build, preStatus);
-			}
-
-			boolean isAbandoned = false;
-			try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
-				//check source file prepare report
-				if (reportStream != null) {
-					ObjectMapper objectMapper = new ObjectMapper();
-					SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
-					if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
-						isAbandoned = true;
-						updateStatusWithChecks(build, Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION);
-						LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
-								+ "Please see detailed failures via the inputPrepareReport_url link listed.");
-					}
-				} else {
-					LOGGER.warn("No source file prepare report found.");
-				}
-			} catch (IOException e) {
-				updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
-				LOGGER.error("Failed to read source file processing report", e);
-				isAbandoned = true;
-			}
+			boolean isAbandoned = checkSourceFile(build);
 			// execute build
 			if (!isAbandoned) {
 				Status status = Status.BUILDING;
@@ -333,19 +307,7 @@ public class BuildServiceImpl implements BuildService {
 					LOGGER.error(resultMessage, e);
 					status = Status.FAILED;
 				}
-				if (dao.isBuildCancelRequested(build)) {
-					report.add("Progress Status", "cancelled");
-					report.add("Message", "Build was cancelled");
-					dao.persistReport(build);
-					dao.updateStatus(build, Status.CANCELLED);
-					dao.deleteOutputFiles(build);
-					LOGGER.info("Build has been canceled");
-				} else {
-					report.add("Progress Status", resultStatus);
-					report.add("Message", resultMessage);
-					dao.persistReport(build);
-					updateStatusWithChecks(build, status);
-				}
+				setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
 			}
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
@@ -354,6 +316,88 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return build;
+	}
+
+	@Override
+	public Build triggerBuild(final Build build) throws BusinessServiceException {
+		LOGGER.info("Trigger build '{}'", build.getId());
+		copyFilesFromProductToBuild(build);
+		getBuildConfigurations(build);
+		performPreconditionTesting(build);
+		executeBuild(build, checkSourceFile(build));
+		return build;
+	}
+
+	private void performPreconditionTesting(final Build build) throws BusinessServiceException {
+		if (!build.getConfiguration().isJustPackage()) {
+			final Status preStatus = build.getStatus();
+			if (build.getConfiguration().isInputFilesFixesRequired()) {
+				doInputFileFixup(build);
+			}
+			performPreConditionsCheck(build, preStatus);
+		}
+	}
+
+	private boolean checkSourceFile(final Build build) throws BadConfigurationException {
+		boolean isAbandoned = false;
+		try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
+			//check source file prepare report
+			if (reportStream != null) {
+				ObjectMapper objectMapper = new ObjectMapper();
+				SourceFileProcessingReport sourceFilePrepareReport = objectMapper.readValue(reportStream, SourceFileProcessingReport.class);
+				if (sourceFilePrepareReport.getDetails() != null && sourceFilePrepareReport.getDetails().containsKey(ReportType.ERROR)) {
+					isAbandoned = true;
+					updateStatusWithChecks(build, Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION);
+					LOGGER.error("Errors found in the source file prepare report therefore the build is abandoned. "
+							+ "Please see detailed failures via the inputPrepareReport_url link listed.");
+				}
+			} else {
+				LOGGER.warn("No source file prepare report found.");
+			}
+		} catch (IOException e) {
+			updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
+			LOGGER.error("Failed to read source file processing report", e);
+			isAbandoned = true;
+		}
+		return isAbandoned;
+	}
+
+	private void executeBuild(final Build build, final boolean isAbandoned) throws BadConfigurationException {
+		if (!isAbandoned) {
+			Status status = Status.BUILDING;
+			String resultStatus = "completed";
+			String resultMessage = "Process completed successfully";
+			try {
+				updateStatusWithChecks(build, status);
+				final QATestConfig qaTestConfig = build.getQaTestConfig();
+				executeBuild(build, qaTestConfig.getMaxFailureExport(), qaTestConfig.getMrcmValidationForm());
+				status = Status.RELEASE_COMPLETE;
+			} catch (final Exception e) {
+				resultStatus = "fail";
+				resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
+						+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+				LOGGER.error(resultMessage, e);
+				status = Status.FAILED;
+			}
+			setReportStatusAndPersist(build, status, build.getBuildReport(), resultStatus, resultMessage);
+		}
+	}
+
+	private void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
+			final String resultMessage) throws BadConfigurationException {
+		if (dao.isBuildCancelRequested(build)) {
+			report.add("Progress Status", "cancelled");
+			report.add("Message", "Build was cancelled");
+			dao.persistReport(build);
+			dao.updateStatus(build, Status.CANCELLED);
+			dao.deleteOutputFiles(build);
+			LOGGER.info("Build has been canceled");
+		} else {
+			report.add("Progress Status", resultStatus);
+			report.add("Message", resultMessage);
+			dao.persistReport(build);
+			updateStatusWithChecks(build, status);
+		}
 	}
 
 	private void performPreConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {
@@ -426,10 +470,10 @@ public class BuildServiceImpl implements BuildService {
 	private void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
 		// Assert status workflow position
 		switch (newStatus) {
-			case BUILDING :
+			case BUILDING:
 				dao.assertStatus(build, Status.BEFORE_TRIGGER);
 				break;
-			case BUILT :
+			case BUILT:
 				dao.assertStatus(build, Status.BUILDING);
 				break;
 			case RELEASE_COMPLETE_WITH_WARNINGS:
@@ -481,8 +525,8 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build.Status runPreconditionChecks(final Build build) {
-	    LOGGER.info("Start of Pre-condition checks");
-	    Build.Status buildStatus = build.getStatus();
+		LOGGER.info("Start of Pre-condition checks");
+		Build.Status buildStatus = build.getStatus();
 		final List<PreConditionCheckReport> preConditionReports = preconditionManager.runPreconditionChecks(build);
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
@@ -576,10 +620,16 @@ public class BuildServiceImpl implements BuildService {
 		}
 		if (dao.isBuildCancelRequested(build)) return;
 
+		if (!offlineMode) {
+			LOGGER.info("Start classification cross check");
+			List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
+			dao.updatePostConditionCheckReport(build, reports);
+		}
+
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
-		if (!StringUtils.isEmpty(releaseFilename) &&  !StringUtils.isEmpty(configuration.getReleaseInformationFields())) {
-			generateReleasePackageFile(build,configuration.getReleaseInformationFields(), releaseFilename);
+		if (!StringUtils.isEmpty(releaseFilename) && !StringUtils.isEmpty(configuration.getReleaseInformationFields())) {
+			generateReleasePackageFile(build, configuration.getReleaseInformationFields(), releaseFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -654,7 +704,7 @@ public class BuildServiceImpl implements BuildService {
 
 			File releasePackageInfor = null;
 			try {
-				releasePackageInfor =  new File(releaseFilename);
+				releasePackageInfor = new File(releaseFilename);
 				ObjectMapper objectMapper = new ObjectMapper();
 				objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 				objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -702,7 +752,7 @@ public class BuildServiceImpl implements BuildService {
 	private Map<String, String> getPreferredTermMap(Build build) {
 		Map<String, String> result = new HashMap<>();
 		if (!StringUtils.isEmpty(build.getConfiguration().getConceptPreferredTerms())) {
-			String[] conceptIdAndTerms =  build.getConfiguration().getConceptPreferredTerms().split(",");
+			String[] conceptIdAndTerms = build.getConfiguration().getConceptPreferredTerms().split(",");
 			for (String conceptIdAndTerm : conceptIdAndTerms) {
 				String[] arr = conceptIdAndTerm.split(Pattern.quote("|"));
 				if (arr.length != 0) {
@@ -710,7 +760,7 @@ public class BuildServiceImpl implements BuildService {
 				}
 			}
 		}
-		return  result;
+		return result;
 	}
 
 	private ReleasePackageInformation buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap, Map<String, String> preferredTermMap) {
@@ -768,7 +818,7 @@ public class BuildServiceImpl implements BuildService {
 			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			final ListingType listingType = parser.parse(manifestInputSteam);
 			FolderType folderType = listingType.getFolder();
-			List<FolderType>  folderTypes = folderType.getFolder();
+			List<FolderType> folderTypes = folderType.getFolder();
 			for (FolderType subFolderType1 : folderTypes) {
 				if (subFolderType1.getName().equalsIgnoreCase(DELTA)) {
 					for (FolderType subFolderType2 : subFolderType1.getFolder()) {
@@ -824,24 +874,25 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	/** Manifest.xml can have delta, snapshot or Full only and all three combined.
+	/**
+	 * Manifest.xml can have delta, snapshot or Full only and all three combined.
 	 *
 	 * @param build
 	 * @return
 	 */
 	private List<String> rf2DeltaFilesSpecifiedByManifest(Build build) {
-		List<String> result =  new ArrayList<>();
+		List<String> result = new ArrayList<>();
 		try (InputStream manifestInputSteam = dao.getManifestStream(build)) {
 			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
 			final ListingType listingType = parser.parse(manifestInputSteam);
 			Set<String> filesRequested = new HashSet<>();
-			for ( String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
+			for (String fileName : ManifestFileListingHelper.listAllFiles(listingType)) {
 				if (fileName != null && fileName.endsWith(TXT_FILE_EXTENSION)) {
-					if (fileName.contains(DELTA + FILE_NAME_SEPARATOR) || fileName.contains(DELTA + HYPHEN) ) {
+					if (fileName.contains(DELTA + FILE_NAME_SEPARATOR) || fileName.contains(DELTA + HYPHEN)) {
 						filesRequested.add(fileName);
-					} else if (fileName.contains(SNAPSHOT + FILE_NAME_SEPARATOR) || fileName.contains(SNAPSHOT + HYPHEN) ) {
+					} else if (fileName.contains(SNAPSHOT + FILE_NAME_SEPARATOR) || fileName.contains(SNAPSHOT + HYPHEN)) {
 						filesRequested.add(fileName.replace(SNAPSHOT, DELTA));
-					} else if (fileName.contains(FULL + FILE_NAME_SEPARATOR) || fileName.contains(FULL + HYPHEN) ) {
+					} else if (fileName.contains(FULL + FILE_NAME_SEPARATOR) || fileName.contains(FULL + HYPHEN)) {
 						filesRequested.add(fileName.replace(FULL, DELTA));
 					}
 				}
@@ -851,15 +902,15 @@ public class BuildServiceImpl implements BuildService {
 				String[] splits = delta.split(FILE_NAME_SEPARATOR);
 				splits[0] = INPUT_FILE_PREFIX;
 				StringBuilder relFileBuilder = new StringBuilder();
-				for (int i=0; i< splits.length; i++ ) {
+				for (int i = 0; i < splits.length; i++) {
 					if (i > 0) {
 						relFileBuilder.append(FILE_NAME_SEPARATOR);
 					}
 					relFileBuilder.append(splits[i]);
 				}
 				String relFileName = relFileBuilder.toString();
-				if (!Normalizer.isNormalized(relFileName,Form.NFC)) {
-					relFileName = Normalizer.normalize(relFileBuilder.toString(),Form.NFC);
+				if (!Normalizer.isNormalized(relFileName, Form.NFC)) {
+					relFileName = Normalizer.normalize(relFileBuilder.toString(), Form.NFC);
 				}
 				result.add(relFileName);
 			}
@@ -875,26 +926,26 @@ public class BuildServiceImpl implements BuildService {
 		String additionalRelsDelta = inferedDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
 		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
 		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, additionalRelsDelta).getOutputStream();
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-		final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
-		if (inputStream != null) {
-			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-				String line;
-				boolean isFirstLine = true;
-				while ((line = reader.readLine()) != null) {
-					if (isFirstLine){
-						writer.write(line);
-						writer.write(LINE_ENDING);
-						isFirstLine = false;
-					}
-					String[] columnValues = line.split(COLUMN_SEPARATOR);
-					if (ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && BOOLEAN_FALSE.equals(columnValues[2])) {
-						writer.write(line);
-						writer.write(LINE_ENDING);
+			 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+			final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
+			if (inputStream != null) {
+				try (final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+					String line;
+					boolean isFirstLine = true;
+					while ((line = reader.readLine()) != null) {
+						if (isFirstLine) {
+							writer.write(line);
+							writer.write(LINE_ENDING);
+							isFirstLine = false;
+						}
+						String[] columnValues = line.split(COLUMN_SEPARATOR);
+						if (ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && BOOLEAN_FALSE.equals(columnValues[2])) {
+							writer.write(line);
+							writer.write(LINE_ENDING);
+						}
 					}
 				}
 			}
-		}
 		} catch (final IOException e) {
 			throw new BusinessServiceException("Error occurred when reading original relationship delta transformed file:" + originalDelta, e);
 		}
@@ -912,7 +963,7 @@ public class BuildServiceImpl implements BuildService {
 				return inputFilename;
 			}
 		}
-			return null;
+		return null;
 	}
 
 	private void checkManifestPresent(final Build build) throws BusinessServiceException {
@@ -930,7 +981,7 @@ public class BuildServiceImpl implements BuildService {
 
 	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws IOException,
 			PostConditionException, ConfigurationException {
-		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath,  failureExportMax);
+		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
@@ -965,11 +1016,12 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private  void waitForRvfComplete(Build build, String pollURL) throws Exception  {
+	private void waitForRvfComplete(Build build, String pollURL) throws Exception {
 		Resty resty = new Resty(new Resty.Option[]{new Resty.Option() {
 			public void apply(URLConnection aConnection) {
 				aConnection.addRequestProperty("Accept", "*/*");
-			}}});
+			}
+		}});
 		dao.updateStatus(build, Status.RVF_RUNNING);
 		boolean isFinalState = false;
 		long msElapsed = 0;
@@ -990,10 +1042,10 @@ public class BuildServiceImpl implements BuildService {
 			try {
 				currentState = RVF_STATE.valueOf(responseState.toString());
 			} catch (Exception e) {
-				throw new ProcessingException ("Failed to determine RVF Status from response: " + json.object().toString(2));
+				throw new ProcessingException("Failed to determine RVF Status from response: " + json.object().toString(2));
 			}
 
-			switch (currentState){
+			switch (currentState) {
 				case QUEUED:
 				case RUNNING:
 					Thread.sleep(pollPeriod);
@@ -1056,14 +1108,14 @@ public class BuildServiceImpl implements BuildService {
 			final TableSchema schemaBean;
 			try {
 				String filename = FileUtils.getFilenameFromPath(buildInputFilePath);
-				if (!Normalizer.isNormalized(filename,Form.NFC)) {
-					filename = Normalizer.normalize(filename,Form.NFC);
+				if (!Normalizer.isNormalized(filename, Form.NFC)) {
+					filename = Normalizer.normalize(filename, Form.NFC);
 				}
 				//Filtered out any files not required by Manifest.xml
 				if (rf2DeltaFilesFromManifest.contains(filename)) {
 					schemaBean = schemaFactory.createSchemaBean(filename);
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
-					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean!= null ? schemaBean.getTableName() : null);
+					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean != null ? schemaBean.getTableName() : null);
 				} else {
 					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
 				}
@@ -1145,7 +1197,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public InputStream getBuildReportFile(String releaseCenterKey,String productKey, String buildId) throws ResourceNotFoundException {
+	public InputStream getBuildReportFile(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildReportFileStream(build);
 	}

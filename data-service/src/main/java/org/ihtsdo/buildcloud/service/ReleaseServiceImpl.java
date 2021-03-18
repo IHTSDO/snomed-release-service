@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.*;
+import org.ihtsdo.buildcloud.entity.Build.Status;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -16,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.JmsException;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -23,6 +26,8 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.jms.Destination;
+import javax.jms.Queue;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
@@ -62,6 +67,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Autowired
 	private PublishService publishService;
 
+	@Autowired
+	private JmsTemplate jmsTemplate;
+
+	@Autowired
+	private Queue queue;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	@Override
@@ -99,6 +110,21 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
+	public Build queueBuild(final Build build) throws BusinessServiceException {
+		convertAndSend(build);
+		buildDAO.updateStatus(build, Status.QUEUED);
+		return build;
+	}
+
+	private void convertAndSend(final Build build) throws BusinessServiceException {
+		try {
+			jmsTemplate.convertAndSend(queue, build);
+		} catch (JmsException e) {
+			throw new BusinessServiceException("Failed to send serialized build to the build queue. BuildID: " + build.getId(), e);
+		}
+	}
+
+	@Override
 	@Async("securityContextAsyncTaskExecutor")
 	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
@@ -125,7 +151,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 					InputGatherReport.Details details = inputGatherReport.getDetails().get(source);
 					if (InputGatherReport.Status.ERROR.equals(details.getStatus())) {
 						LOGGER.error("Source: {} -> Error Details: {}", source, details.getMessage());
-						buildDAO.updateStatus(build, Build.Status.FAILED);
+						buildDAO.updateStatus(build, Status.FAILED);
 						throw new BusinessServiceRuntimeException("Failed when gathering source files. Please check input gather report for details");
 					}
 				}
