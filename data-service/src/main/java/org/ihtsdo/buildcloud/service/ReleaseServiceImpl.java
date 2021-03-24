@@ -73,7 +73,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 		validateBuildRequest(gatherInputRequestPojo);
 
-		Product product = productService.find(releaseCenter, productKey);
+		Product product = productService.find(releaseCenter, productKey, false);
 		if (product == null) {
 			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
 			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
@@ -165,7 +165,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	@Override
 	public void clearConcurrentCache(String releaseCenterKey, String productKey) {
-		Product product = productService.find(releaseCenterKey, productKey);
+		Product product = productService.find(releaseCenterKey, productKey, false);
 		concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
 	}
 

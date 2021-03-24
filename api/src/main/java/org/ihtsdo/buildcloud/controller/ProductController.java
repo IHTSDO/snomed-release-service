@@ -80,7 +80,7 @@ public class ProductController {
 	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
-		Product product = productService.find(releaseCenterKey, productKey);
+		Product product = productService.find(releaseCenterKey, productKey, true);
 		
 		if (product == null) {
 			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
