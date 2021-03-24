@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import org.hibernate.annotations.Type;
+import org.ihtsdo.snomed.util.rf2.schema.RF2SchemaConstants;
 
 @Entity
 @Table(name="build_config")
@@ -181,6 +182,12 @@ public class BuildConfiguration {
 				if (!Normalizer.isNormalized(newInputile, Form.NFC)) {
 					newInputile = Normalizer.normalize(newInputile, Form.NFC);
 				}
+
+				if (newInputile.startsWith("x")) {
+					newInputile = newInputile.replaceFirst("x", "");
+				}
+				newInputile = newInputile.replace("der2", "rel2").replace("sct2", "rel2");
+
 				files.add(newInputile);
 			}
 		}
