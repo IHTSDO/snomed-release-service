@@ -52,11 +52,11 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	}
 	
 	@Test
-	public final void checkManifestWithNotMachedDate() throws Exception {
+	public final void checkManifestWithNotMatchedDate() throws Exception {
 		loadManifest("august_release_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
 		final State actualResult = report.getResult();
-		Assert.assertEquals(State.FAIL, actualResult);
+		Assert.assertEquals(State.WARNING, actualResult);
 		final String expectedMsg = "The following file names specified in the manifest:SnomedCT_Release_INT_20140831,Readme_en_20140831.txt,der2_Refset_SimpleFull_INT_20140831.txt,"
 				+ "der2_Refset_SimpleSnapshot_INT_20140831.txt,der2_Refset_SimpleDelta_INT_20140831.txt don't have the same release date as configured in the product:20140731.";
 		Assert.assertEquals(expectedMsg, report.getMessage());
@@ -89,7 +89,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		loadManifest("manifest_with_rf1_wrong_release_date.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
 		final State actualResult = report.getResult();
-		Assert.assertEquals(State.FAIL, actualResult);
+		Assert.assertEquals(State.WARNING, actualResult);
 		final String expectedMsg = "The following file names specified in the manifest:der1_SubsetMembers_es_INT_20140131.txt,der1_Subsets_es_INT_20140131.txt,sct1_Concepts_Core_INT_20140131.txt "
 				+ "don't have the same release date as configured in the product:20140731.";
 		Assert.assertEquals(expectedMsg, report.getMessage());

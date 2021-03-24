@@ -31,6 +31,11 @@ public abstract class PreconditionCheck {
 		this.responseMessage = msg;
 	}
 
+	protected void warning(String msg) {
+		this.state = State.WARNING;
+		this.responseMessage = msg;
+	}
+
 	protected void fatalError(String error) {
 		state = State.FATAL;
 		responseMessage = error;

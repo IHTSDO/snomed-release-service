@@ -19,6 +19,7 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 public class ManifestCheck extends PreconditionCheck {
 
@@ -49,14 +50,20 @@ public class ManifestCheck extends PreconditionCheck {
 			final String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				String invalidFileNamesInFolderMsg = validateFileNamesAgainstFolder(manifestListing);
-				if (invalidFileNamesInFolderMsg.length() > 0) {
+				if (!StringUtils.isEmpty(invalidFileNamesInFolderMsg)) {
 					fatalError(invalidFileNamesInFolderMsg);
 					return;
 				}
 
 				final String errorMsg = validate(manifestListing, releaseVersion);
-				if (errorMsg != null) {
+				if (!StringUtils.isEmpty(errorMsg)) {
 					fail(errorMsg);
+					return;
+				}
+
+				String invalidReleaseVersionMsg = validateReleaseVersion(manifestListing, releaseVersion);
+				if (!StringUtils.isEmpty(invalidReleaseVersionMsg)) {
+					warning(invalidReleaseVersionMsg);
 					return;
 				}
 			}
@@ -69,13 +76,7 @@ public class ManifestCheck extends PreconditionCheck {
 	}
 
 	private String validate(final ListingType manifestListing, final String releaseVersion) {
-		final StringBuilder releaseVersionMsgBuilder = new StringBuilder();
 		final StringBuilder invalidFileNameMsgBuilder = new StringBuilder();
-		//check the root folder/zip file name has the correct date
-		final String zipFileName = manifestListing.getFolder().getName();
-		if (!zipFileName.contains(releaseVersion)) {
-			releaseVersionMsgBuilder.append(zipFileName);
-		}
 		//check that sct2 and der2 file names have got the same date as the release date/version
 		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
 		boolean isReadmeFound = false;
@@ -90,14 +91,6 @@ public class ManifestCheck extends PreconditionCheck {
 			if (!isReadmeFound && fileName.startsWith(RF2Constants.README_FILENAME_PREFIX) && fileName.endsWith(RF2Constants.README_FILENAME_EXTENSION)) {
 				//Readme_20140831.txt
 				isReadmeFound = true;
-				if (fileName.split(RF2Constants.FILE_NAME_SEPARATOR).length >= 2) {
-					if (!fileName.contains(releaseVersion)) {
-						if (releaseVersionMsgBuilder.length() > 0) {
-							releaseVersionMsgBuilder.append(COMMA);
-						}
-						releaseVersionMsgBuilder.append(fileName);
-					}
-				}
 				continue;
 			}
 			// check RF1 and RF2 file name convention
@@ -109,12 +102,6 @@ public class ManifestCheck extends PreconditionCheck {
 					}
 					invalidFileNameMsgBuilder.append(fileName);
 				}
-				if (!tokens[tokens.length - 1].contains(releaseVersion)) {
-					if (releaseVersionMsgBuilder.length() > 0) {
-						releaseVersionMsgBuilder.append(COMMA);
-					}
-					releaseVersionMsgBuilder.append(fileName);
-				}
 				continue;
 			}
 		}
@@ -123,9 +110,6 @@ public class ManifestCheck extends PreconditionCheck {
 		final StringBuilder result = new StringBuilder();
 		if (invalidFileNameMsgBuilder.length() > 0) {
 			result.append(String.format(INVALID_RELEASE_FILE_FORMAT_MSG,invalidFileNameMsgBuilder.toString(), FILE_NAME_CONVENTION));
-		}
-		if (releaseVersionMsgBuilder.length() > 0) {
-			result.append(String.format(RELEASE_DATE_NOT_MATCHED_MSG, releaseVersionMsgBuilder.toString(), releaseVersion));
 		}
 		if (!isReadmeFound) {
 			result.append(README_FILE_NOT_FOUND_MSG);
@@ -139,6 +123,54 @@ public class ManifestCheck extends PreconditionCheck {
 		return null;
 	}
 
+	private String validateReleaseVersion(final ListingType manifestListing, final String releaseVersion) {
+		final StringBuilder releaseVersionMsgBuilder = new StringBuilder();
+
+		final String zipFileName = manifestListing.getFolder().getName();
+		if (!zipFileName.contains(releaseVersion)) {
+			releaseVersionMsgBuilder.append(zipFileName);
+		}
+		//check that sct2 and der2 file names have got the same date as the release date/version
+		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
+		for (final String fileName : fileNames) {
+			//check file name is not empty
+			if (fileName == null || fileName.trim().length() == 0) {
+				continue;
+			}
+			if (fileName.startsWith(RF2Constants.README_FILENAME_PREFIX) && fileName.endsWith(RF2Constants.README_FILENAME_EXTENSION)) {
+				if (fileName.split(RF2Constants.FILE_NAME_SEPARATOR).length >= 2) {
+					if (!fileName.contains(releaseVersion)) {
+						if (releaseVersionMsgBuilder.length() > 0) {
+							releaseVersionMsgBuilder.append(COMMA);
+						}
+						releaseVersionMsgBuilder.append(fileName);
+					}
+				}
+				continue;
+			}
+			// check RF1 and RF2 file name convention
+			if (fileName.startsWith(SCT2) || fileName.startsWith(DER2) || fileName.startsWith(SCT1) || fileName.startsWith(DER1)) {
+				final String[] tokens = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
+				if (!tokens[tokens.length - 1].contains(releaseVersion)) {
+					if (releaseVersionMsgBuilder.length() > 0) {
+						releaseVersionMsgBuilder.append(COMMA);
+					}
+					releaseVersionMsgBuilder.append(fileName);
+				}
+				continue;
+			}
+		}
+
+
+		final StringBuilder result = new StringBuilder();
+		if (releaseVersionMsgBuilder.length() > 0) {
+			result.append(String.format(RELEASE_DATE_NOT_MATCHED_MSG, releaseVersionMsgBuilder.toString(), releaseVersion));
+		}
+		if (result.length() > 0) {
+			return result.toString();
+		}
+		return null;
+	}
 	private String validateFileNamesAgainstFolder(final ListingType manifestListing) {
 		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
 		final StringBuilder result = new StringBuilder();
