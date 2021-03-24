@@ -77,9 +77,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     }
 
     @Override
-    public Product find(final String releaseCenterKey, final String productKey) {
+    public Product find(final String releaseCenterKey, final String productKey, final boolean includedLatestBuildStatusAndTags) {
         Product product = productDAO.find(releaseCenterKey, productKey);
-        if (product != null) {
+        if (includedLatestBuildStatusAndTags && product != null) {
             setLatestBuildStatusAndTag(releaseCenterKey, product);
         }
         return product;
@@ -182,7 +182,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     @Override
     public Product update(final String releaseCenterKey, final String productKey, final Map<String, String> newPropertyValues) throws BusinessServiceException {
         LOGGER.info("update product, newPropertyValues: {}", newPropertyValues);
-        final Product product = find(releaseCenterKey, productKey);
+        final Product product = find(releaseCenterKey, productKey, false);
         if (product == null) {
             throw new ResourceNotFoundException("No product found for product key:" + productKey);
         }
@@ -194,7 +194,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
     @Override
     public void updateVisibility(final String releaseCenterKey, final String productKey, final boolean visibility) {
-        Product product = find(releaseCenterKey, productKey);
+        Product product = find(releaseCenterKey, productKey, false);
         if (product == null) {
             throw new ResourceNotFoundException("No product found for product key:" + productKey);
         }

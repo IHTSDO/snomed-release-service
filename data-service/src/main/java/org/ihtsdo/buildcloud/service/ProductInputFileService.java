@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service;
 
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
@@ -21,6 +22,8 @@ public interface ProductInputFileService {
 	InputStream getManifestStream(String centerKey, String productKey) throws ResourceNotFoundException;
 
 	void putInputFile(String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException;
+
+	void putInputFile(String centerKey, Product product, InputStream inputStream, String filename, long fileSize) throws IOException;
 
 	InputStream getFileInputStream(String centerKey, String productKey, String filename) throws ResourceNotFoundException;
 

@@ -54,7 +54,7 @@ public interface ProductService extends EntityService<Product> {
 	
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable);
 
-	Product find(String releaseCenterKey, String productKey);
+	Product find(String releaseCenterKey, String productKey, boolean includedLatestBuildStatusAndTags);
 
 	Product create(String releaseCenterKey, String name) throws BusinessServiceException;
 

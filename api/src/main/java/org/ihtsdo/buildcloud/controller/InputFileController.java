@@ -4,10 +4,13 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -38,6 +41,9 @@ public class InputFileController {
 
 	@Autowired
 	private ProductInputFileService productInputFileService;
+
+	@Autowired
+	private ProductService productService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -114,7 +120,18 @@ public class InputFileController {
 		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 		}
-		productInputFileService.putInputFile(releaseCenterKey, productKey, file.getInputStream(),inputFileName,file.getSize());
+		Product product = productService.find(releaseCenterKey, productKey, false);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+		}
+		if (product.getBuildConfiguration() != null && !product.getBuildConfiguration().isJustPackage()) {
+			if (file.getName().startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
+				inputFileName = inputFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
+			}
+			inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
+		}
+
+		productInputFileService.putInputFile(releaseCenterKey, product, file.getInputStream(),inputFileName,file.getSize());
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 

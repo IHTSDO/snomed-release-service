@@ -115,6 +115,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	}
 
 	@Override
+	public void putInputFile(String centerKey, final Product product, final InputStream inputStream, final String filename, final long fileSize) throws IOException {
+		String productInputFilesPath = s3PathHelper.getProductInputFilesPath(product);
+		putFile(filename, inputStream, productInputFilesPath, fileSize);
+
+	}
+
+	@Override
 	public InputStream getFileInputStream(String centerKey, final String productKey, final String filename) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
 		return getFileInputStream(product, filename);
