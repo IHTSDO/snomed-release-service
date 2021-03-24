@@ -6,7 +6,7 @@ package org.ihtsdo.buildcloud.entity;
  */
 public class PreConditionCheckReport {
     
-    public enum State { NOT_RUN("NotRun"), PASS("Pass"), FAIL("Fail"),FATAL("Fatal");
+    public enum State { NOT_RUN("NotRun"), PASS("Pass"), FAIL("Fail"), WARNING("Warning"),FATAL("Fatal");
 	private final String value;
 	private State (String value) {
 		this.value = value;
