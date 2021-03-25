@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -57,10 +58,10 @@ public abstract class AbstractControllerTest {
 	@Autowired
 	private IdServiceRestClient idRestClient;
 
-	@Autowired
+	@Value("${buildBucketName}")
 	private String buildBucketName;
 
-	@Autowired
+	@Value("${publishedBucketName}")
 	private String publishedBucketName;
 
 	@Before

@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MultiValueMap;
@@ -41,7 +42,8 @@ public class InputSourceFileProcessorTest {
 	private static final String TERMINOLOGY_SERVER = "terminology-server";
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
-	@Autowired
+
+	@Value("${buildBucketName}")
 	private String buildBucketName;
 	
 	@Autowired
@@ -61,9 +63,6 @@ public class InputSourceFileProcessorTest {
 		ReleaseCenter releaseCenter = new ReleaseCenter("International", "int");
 		product.setReleaseCenter(releaseCenter);
 	}
-	
-	
-	
 	
 	@Test
 	public void testLoadingDKManifestWithMultipleLanguageCodesInDescriptionFile() throws Exception {

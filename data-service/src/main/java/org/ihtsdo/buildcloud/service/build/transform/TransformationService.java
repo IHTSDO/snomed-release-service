@@ -38,7 +38,10 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
+@Service
 public class TransformationService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransformationService.class);
@@ -61,19 +64,19 @@ public class TransformationService {
 	@Autowired
 	private ModuleResolverService moduleResolverService;
 
-	@Autowired
+	@Value("${snomed.coreModuleSctid}")
 	private String coreModuleSctid;
 
-	@Autowired
+	@Value("${snomed.modelModuleSctid}")
 	private String modelModuleSctid;
 
-	@Autowired
+	@Value("${transformBufferSize}")
 	private Integer transformBufferSize;
 
-	@Autowired
+	@Value("${idGenerator.maxTries}")
 	private Integer idGenMaxTries;
 
-	@Autowired
+	@Value("${idGenerator.retryDelaySeconds}")
 	private Integer idGenRetryDelaySeconds;
 
 	@Autowired
@@ -81,7 +84,6 @@ public class TransformationService {
 	
 	public TransformationService() {
 		executorService = Executors.newCachedThreadPool();
-		
 	}
 
 	/**

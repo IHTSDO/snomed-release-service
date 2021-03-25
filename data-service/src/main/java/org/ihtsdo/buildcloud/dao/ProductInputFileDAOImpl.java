@@ -12,6 +12,8 @@ import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@Service
 public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProductInputFileDAOImpl.class);
@@ -29,7 +32,9 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileDAOImpl(final String buildBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+	public ProductInputFileDAOImpl(@Value("${buildBucketName}") final String buildBucketName,
+			final S3Client s3Client,
+			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
 

@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 
@@ -58,6 +60,7 @@ import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.entity.Build.Tag;
 
+@Service
 public class BuildDAOImpl implements BuildDAO {
 
     private static final String BLANK = "";
@@ -84,17 +87,19 @@ public class BuildDAOImpl implements BuildDAO {
     @Autowired
     private BuildS3PathHelper pathHelper;
 
-    @Autowired
     private String buildBucketName;
 
     @Autowired
     private ProductInputFileDAO productInputFileDAO;
 
-    @Autowired
+    @Value("${fileProcessing.failureMaxRetry}")
     private Integer fileProcessingFailureMaxRetry;
 
     @Autowired
-    public BuildDAOImpl(final String buildBucketName, final String publishedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+    public BuildDAOImpl(@Value("${buildBucketName}") final String buildBucketName,
+            @Value("${publishedBucketName}") final String publishedBucketName,
+            final S3Client s3Client,
+            final S3ClientHelper s3ClientHelper) {
         executorService = Executors.newCachedThreadPool();
         buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
         publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);

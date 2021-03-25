@@ -5,11 +5,12 @@ import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,10 +18,8 @@ public class PermissionService {
 
     private final Logger logger = LoggerFactory.getLogger(PermissionService.class);
 
-    public final static String GLOBAL_ROLE = "GLOBAL";
-
-    public final static String USER_ROLE = "USER";
-
+    public static final String GLOBAL_ROLE = "GLOBAL";
+    public static final String USER_ROLE = "USER";
     public static final String GLOBAL_ROLE_SCOPE = "global";
 
     public enum Role {

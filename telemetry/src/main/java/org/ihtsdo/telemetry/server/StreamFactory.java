@@ -7,23 +7,29 @@ import org.ihtsdo.telemetry.core.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 
+@Service
 public class StreamFactory {
 
-	private String tempDirectoryPath = "/tmp/telemetry-tmp";
-	private final Boolean offlineMode;
-	private final TransferManager transferManager;
-	private final Logger logger = LoggerFactory.getLogger(StreamFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(StreamFactory.class);
 
-	@Autowired
-	public StreamFactory(TransferManager transferManager, Boolean offlineMode) {
+	private static final String TEMP_DIRECTORY_PATH = "/tmp/telemetry-tmp";
+
+	private final Boolean offlineMode;
+
+	private final TransferManager transferManager;
+
+	public StreamFactory(@Autowired TransferManager transferManager,
+			@Value("${offlineMode}") Boolean offlineMode) {
 		this.transferManager = transferManager;
 		this.offlineMode = offlineMode;
-		new File(tempDirectoryPath).mkdirs();
+		new File(TEMP_DIRECTORY_PATH).mkdirs();
 		if (offlineMode) {
-			logger.info("Offline mode - Streams destined for S3 will not be uploaded but left in temp directory {}", tempDirectoryPath);
+			LOGGER.info("Offline mode - Streams destined for S3 will not be uploaded but left in temp directory {}", TEMP_DIRECTORY_PATH);
 		}
 	}
 
@@ -39,17 +45,14 @@ public class StreamFactory {
 			final String bucketName = split1[0];
 			final String objectKey = split1[1];
 
-			String tempFilePath = tempDirectoryPath + "/" + correlationID;
+			String tempFilePath = TEMP_DIRECTORY_PATH + "/" + correlationID;
 
 			final File tempFile = new File(tempFilePath);
-			return new BufferedWriterTaskOnClose(new FileWriter(tempFile), new Task() {
-				@Override
-				public void run() throws InterruptedException {
-					if (!offlineMode) {
-						Upload upload = transferManager.upload(bucketName, objectKey, tempFile);
-						upload.waitForUploadResult();
-						tempFile.delete();
-					}
+			return new BufferedWriterTaskOnClose(new FileWriter(tempFile), () -> {
+				if (!offlineMode) {
+					Upload upload = transferManager.upload(bucketName, objectKey, tempFile);
+					upload.waitForUploadResult();
+					tempFile.delete();
 				}
 			});
 		} else {
@@ -80,7 +83,7 @@ public class StreamFactory {
 		}
 	}
 
-	private static interface Task {
+	private interface Task {
 
 		void run() throws InterruptedException;
 

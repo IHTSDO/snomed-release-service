@@ -44,7 +44,7 @@ public class TermServerServiceImpl implements TermServerService {
     @Value("${snowstorm.path}")
     private String snowstormPath;
 
-    @Autowired
+    @Value("${termServer.url}")
     private String termServerUrl;
 
     private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);

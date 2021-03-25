@@ -5,12 +5,14 @@ import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
+@Service
 public class ReadmeGenerator {
 
 	private static final String INDENTATION = "    ";

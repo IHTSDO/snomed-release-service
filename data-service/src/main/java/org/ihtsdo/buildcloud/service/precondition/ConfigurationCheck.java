@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.List;
  * configured.
  *
  */
+@Service
 public class ConfigurationCheck extends PreconditionCheck {
 
 	private static final String NO_README_HEADER_DETECTED = "No Readme Header detected.";

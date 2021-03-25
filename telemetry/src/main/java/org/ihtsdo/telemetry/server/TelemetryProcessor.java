@@ -9,52 +9,57 @@ import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.PostConstruct;
 import javax.jms.IllegalStateException;
 import javax.jms.*;
 
+@Service
 public class TelemetryProcessor {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryProcessor.class);
+	
 	private static final int ONE_SECOND = 1000;
 
 	private final Session jmsSession;
 	private final Map<String, BufferedWriter> streamWriters;
 	private Boolean shutdown;
 	private final MessageConsumer consumer;
-	private Logger logger = LoggerFactory.getLogger(TelemetryProcessor.class);
 	private final StreamFactory streamFactory;
-	static private String defaultEmailToAddr;
-	static private String emailFromAddr;
-	static private EmailSender emailSender;
-
+	private static String defaultEmailToAddr;
+	private static String emailFromAddr;
+	private static EmailSender emailSender;
 
 	@Autowired
-	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
-			final String smtpUsername,
-			final String smtpPassword, final String smtpHost, final Integer smtpPort, final Boolean smtpSsl) throws JMSException {
-
+	public TelemetryProcessor(@Autowired final StreamFactory streamFactory,
+			@Value("${telemetry.email.address.to.default}") final String defaultEmailToAddr,
+			@Value("${telemetry.email.address.from}") final String emailFromAddr,
+			@Value("${telemetry.smtp.username}") final String smtpUsername,
+			@Value("${telemetry.smtp.password}") final String smtpPassword,
+			@Value("${telemetry.smtp.host}") final String smtpHost,
+			@Value("${telemetry.smtp.port}") final Integer smtpPort,
+			@Value("${telemetry.smtp.ssl}") final Boolean smtpSsl) throws JMSException {
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
 		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
-			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort.intValue(), smtpUsername, smtpPassword,
-					smtpSsl.booleanValue());
-			logger.info("Telemetry server configured to use SMTP " + TelemetryProcessor.emailSender.toString());
-
+			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort, smtpUsername, smtpPassword, smtpSsl);
+			LOGGER.info("Telemetry server configured to use SMTP " + TelemetryProcessor.emailSender.toString());
 		} else {
-			logger.info("Telemetry server has not been given SMTP connection details.  Email connectivity disabled.");
+			LOGGER.info("Telemetry server has not been given SMTP connection details.  Email connectivity disabled.");
 			TelemetryProcessor.emailSender = null;
 		}
-
 	}
 
 	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
 			EmailSender emailSender) throws JMSException {
 		this(streamFactory, defaultEmailToAddr, emailFromAddr);
-		logger.info("Telemetry server using pre-configured " + emailSender.toString());
+		LOGGER.info("Telemetry server using pre-configured " + emailSender.toString());
 
 		TelemetryProcessor.emailSender = emailSender;
 	}
@@ -72,24 +77,24 @@ public class TelemetryProcessor {
 		TelemetryProcessor.emailFromAddr = emailFromAddr;
 	}
 
+	@PostConstruct
 	public void startup() {
-
 		Thread messageConsumerThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				boolean printedWaiting = false;
-				logger.info("Telemetry server starting up.");
+				LOGGER.info("Telemetry server starting up.");
 				while (!shutdown) {
 					try {
 						if (!printedWaiting) {
-							logger.debug("Waiting for message");
+							LOGGER.debug("Waiting for message");
 							printedWaiting = true;
 						}
 						TextMessage message = (TextMessage) consumer.receive(ONE_SECOND);
 
 						if (message != null) {
 							printedWaiting = false;
-							logger.debug("Got message '{}', correlationID {}", message.getText(), message.getJMSCorrelationID());
+							LOGGER.debug("Got message '{}', correlationID {}", message.getText(), message.getJMSCorrelationID());
 							String text = message.getText();
 							String correlationID = message.getJMSCorrelationID();
 							if (correlationID != null) {
@@ -104,7 +109,7 @@ public class TelemetryProcessor {
 										writer.close();
 										streamWriters.remove(correlationID);
 									} else {
-										logger.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
+										LOGGER.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
 									}
 								} else {
 									BufferedWriter writer = streamWriters.get(correlationID);
@@ -118,7 +123,7 @@ public class TelemetryProcessor {
 										// We need output to disk to be up to the minute, so flush each line
 										writer.flush();
 									} else {
-										logger.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
+										LOGGER.error("Attempting to write to stream but no open stream for correlationID {}", correlationID);
 									}
 								}
 							}
@@ -133,23 +138,23 @@ public class TelemetryProcessor {
 									if (message.propertyExists(Constants.EXCEPTION)) {
 										msg += "\n" + message.getStringProperty(Constants.EXCEPTION);
 									}
-									logger.error("Unable to send email alert to report: " + msg, e);
+									LOGGER.error("Unable to send email alert to report: " + msg, e);
 								}
 							}
 						}
 					} catch (IllegalStateException e) {
-						logger.info("Connection closed. Shutting down telemetry consumer.");
+						LOGGER.info("Connection closed. Shutting down telemetry consumer.");
 						shutdown = true;
 					} catch (JMSException e) {
 						Exception linkedException = e.getLinkedException();
 						if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {
-							logger.info("Transport disposed. Shutting down telemetry consumer.");
+							LOGGER.info("Transport disposed. Shutting down telemetry consumer.");
 							shutdown = true;
 						} else {
-							logger.error("JMSException", e);
+							LOGGER.error("JMSException", e);
 						}
 					} catch (IOException e) {
-						logger.error("Problem with output writer.", e);
+						LOGGER.error("Problem with output writer.", e);
 					}
 				}
 			}
@@ -158,7 +163,7 @@ public class TelemetryProcessor {
 				// Do we have an EmailSender configured?
 				if (TelemetryProcessor.emailSender == null || TelemetryProcessor.defaultEmailToAddr == null
 						|| TelemetryProcessor.defaultEmailToAddr.isEmpty()) {
-					logger.info("EmailSender not configured.  Unable to report error message: " + message.getText());
+					LOGGER.info("EmailSender not configured.  Unable to report error message: " + message.getText());
 					return;
 				}
 				EmailRequest emailRequest = new EmailRequest();

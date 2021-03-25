@@ -24,12 +24,15 @@ import org.ihtsdo.otf.rest.client.RestClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class LegacyIdTransformationService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
 
 	private static final String REFSET_SIMPLE_MAP_DELTA_FILE_PREFIX = "der2_sRefset_SimpleMapDelta_INT_";
 	private static final String TAB = "\t";
-	private static final Logger LOGGER = LoggerFactory.getLogger(LegacyIdTransformationService.class);
 	private static final String CORE_MODULE_ID = "900000000000207008";
 	//suppress the generation of SNOMED RT as it is deprecated from the international 20170731 release onwards.
 	private static final boolean SUPPRESS_SNOMED_ID = true;

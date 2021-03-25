@@ -4,12 +4,15 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+@Service
 public class TestUtils {
 
 	@Autowired
@@ -18,7 +21,7 @@ public class TestUtils {
 	@Autowired
 	private S3Client s3Client;
 
-	@Autowired
+	@Value("${buildBucketName}")
 	private String buildBucketName;
 
 	/**

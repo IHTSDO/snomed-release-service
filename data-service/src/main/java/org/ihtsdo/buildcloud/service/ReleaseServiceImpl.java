@@ -26,7 +26,6 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.jms.Destination;
 import javax.jms.Queue;
 import java.io.IOException;
 import java.text.ParseException;
@@ -71,7 +70,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private JmsTemplate jmsTemplate;
 
 	@Autowired
-	private Queue queue;
+	private Queue srsQueue;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
@@ -118,7 +117,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	private void convertAndSend(final Build build) throws BusinessServiceException {
 		try {
-			jmsTemplate.convertAndSend(queue, build);
+			jmsTemplate.convertAndSend(srsQueue, build);
 		} catch (JmsException e) {
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. BuildID: " + build.getId(), e);
 		}

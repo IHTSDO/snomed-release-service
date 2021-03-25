@@ -10,11 +10,15 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
 
+@Service
 public class TermServerClassificationResultsOutputCheck extends PostconditionCheck implements NetworkRequired {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(TermServerClassificationResultsOutputCheck.class);
 
 	public static final String SKIP_MESSAGE = "Skipped TermServer Classification Results Check. Reason: This product is a derivative product";
 
@@ -23,9 +27,6 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 
 	@Autowired
 	private RF2ClassificationService rf2ClassificationService;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(TermServerClassificationResultsOutputCheck.class);
-
 
 	@Override
 	public void runCheck(Build build) {

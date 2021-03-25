@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -90,13 +91,15 @@ public class PublishServiceImpl implements PublishService {
 	
 	private static final int MAX_FAILURE = 100;
 
-	public static enum Status {
+	public enum Status {
 		RUNNING, FAILED, COMPLETED
 	}
 
 	@Autowired
-	public PublishServiceImpl(final String buildBucketName, final String publishedBucketName,
-			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+	public PublishServiceImpl(@Value("${buildBucketName}") final String buildBucketName,
+			@Value("${publishedBucketName}") final String publishedBucketName,
+			final S3Client s3Client,
+			final S3ClientHelper s3ClientHelper) {
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
@@ -104,13 +107,9 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
-		List<String> packages = new ArrayList<>();
+		List<String> packages;
 		List<String> allFiles = publishedFileHelper.listFiles(getPublishDirPath(releaseCenter));
-		for (String file : allFiles) {
-			if (file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-				packages.add(file);
-			}
-		}
+		packages = allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
 		return packages;
 	}
 

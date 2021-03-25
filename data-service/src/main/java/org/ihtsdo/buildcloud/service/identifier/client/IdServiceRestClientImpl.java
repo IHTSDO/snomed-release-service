@@ -16,12 +16,16 @@ import org.ihtsdo.otf.rest.client.resty.RestyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import us.monoid.web.JSONResource;
 
+@Service
 public class IdServiceRestClientImpl implements IdServiceRestClient {
+
 	private static final String TOKEN = "token";
 	private static final String MESSAGE = "message";
 	private static final String STATUS = "status";
@@ -48,15 +52,25 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
 	
 	private static AtomicInteger currentSessions = new AtomicInteger();
+
+	private final String userName;
+	private final String password;
+
+	@Value("${idGenerator.timeoutInSeconds:300}")
+	private int timeOutInSeconds;
+
+	@Value("${idGenerator.maxTries:3}")
+	private int maxTries;
+
+	@Value("${idGenerator.retryDelaySeconds:30}")
+	private int retryDelaySeconds;
+
+	@Value("${idGenerator.batchSize:500}")
+	private int batchSize;
 	
-	private int timeOutInSeconds = 300;
-	private int maxTries=3;
-	private int retryDelaySeconds=30;
-	private String userName;
-	private String password;
-	private int batchSize = 500;
-	
-	public IdServiceRestClientImpl(String idServiceUrl, String username, String password) {
+	public IdServiceRestClientImpl(@Value("${idGenerator.url}") final String idServiceUrl,
+			@Value("${idGenerator.userName}") final String username,
+			@Value("${idGenerator.password}") final String password) {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);

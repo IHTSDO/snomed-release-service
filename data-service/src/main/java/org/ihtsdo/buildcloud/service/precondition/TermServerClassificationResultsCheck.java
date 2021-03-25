@@ -9,20 +9,22 @@ import org.ihtsdo.buildcloud.service.RF2ClassificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 
-
+@Service
 public class TermServerClassificationResultsCheck extends PreconditionCheck implements NetworkRequired {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(TermServerClassificationResultsCheck.class);
+
+	public static final String SKIP_MESSAGE = "Skipped TermServer Classification Results Check. Reason: This product is a derivative product";
 
 	@Autowired
 	private RF2ClassificationService rf2ClassificationService;
 
 	@Autowired
 	private BuildDAO buildDAO;
-
-	public static final String SKIP_MESSAGE = "Skipped TermServer Classification Results Check. Reason: This product is a derivative product";
-	private static final Logger LOGGER = LoggerFactory.getLogger(TermServerClassificationResultsCheck.class);
 
 	@Override
 	public void runCheck(Build build) {

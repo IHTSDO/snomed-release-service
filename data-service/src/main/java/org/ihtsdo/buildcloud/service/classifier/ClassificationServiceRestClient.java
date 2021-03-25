@@ -20,6 +20,8 @@ import org.ihtsdo.otf.rest.client.resty.RestyServiceHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.base.Strings;
@@ -28,20 +30,24 @@ import us.monoid.json.JSONException;
 import us.monoid.web.BinaryResource;
 import us.monoid.web.JSONResource;
 
+@Service
 public class ClassificationServiceRestClient {
-	private String classificationServiceUrl;
-	private String username;
-	private String password;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClassificationServiceRestClient.class);
+
+	private final String classificationServiceUrl;
+	private final String username;
+	private final String password;
 	public static final String ANY_CONTENT_TYPE = "*/*";
 	protected static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
-	private RestyHelper resty;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClassificationServiceRestClient.class);
+	private final RestyHelper resty;
 	private static final String STATUS = "status";
-	//default to 5 mins
+
+	@Value("${external.classifier.timeoutInSeconds:300}")
 	private int timeoutInSeconds = 300;
-	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-	public ClassificationServiceRestClient(String serviceUrl, String username, String password) throws BusinessServiceException {
+	public ClassificationServiceRestClient(@Value("${external.classifier.url}") final String serviceUrl,
+			@Value("${external.classifier.username}") final String username, @Value("${external.classifier.password}") final String password) {
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		this.classificationServiceUrl = serviceUrl;
 		this.username = username;
@@ -58,7 +64,7 @@ public class ClassificationServiceRestClient {
 			builder.queryParam("dependencyPackage", dependencyPackage);
 		}
 		URI uri = builder.build().toUri();
-		logger.info("External classifier request url=" + uri.toString());
+		LOGGER.info("External classifier request url=" + uri.toString());
 		MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
 		multipartEntityBuilder.addBinaryBody("rf2Delta", rf2DeltaZipFile, ContentType.create(CONTENT_TYPE_MULTIPART), rf2DeltaZipFile.getName());
 		multipartEntityBuilder.setCharset(Charset.forName("UTF-8"));
@@ -72,7 +78,7 @@ public class ClassificationServiceRestClient {
 			JSONResource response = resty.json(uri, new HttpEntityContent(httpEntity));
 			RestyServiceHelper.ensureSuccessfull(response);
 			statusUrl = response.http().getHeaderField("location");
-			logger.info("classification request is submitted." + statusUrl );
+			LOGGER.info("classification request is submitted." + statusUrl );
 		} catch (IOException | JSONException e) {
 			throw new BusinessServiceException("Failed to send classification request.", e);
 		}
@@ -88,11 +94,11 @@ public class ClassificationServiceRestClient {
 			// retrieve results when status is completed
 			String classificationId = getClassificationId(statusUrl);
 			String resultUrl = classificationServiceUrl + "/classifications/" + classificationId + "/results/rf2";
-			logger.info("Classification result:" + resultUrl);
+			LOGGER.info("Classification result:" + resultUrl);
 			File archive = File.createTempFile("result_", classificationId + ".zip");
 			BinaryResource archiveResults = resty.bytes(resultUrl);
 			archiveResults.save(archive);
-			logger.info("Result is archived " + archive.getAbsolutePath());
+			LOGGER.info("Result is archived " + archive.getAbsolutePath());
 			return archive;
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to download classification result via " + uri, e);

@@ -33,7 +33,6 @@ import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
-import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -45,6 +44,7 @@ import org.ihtsdo.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,19 +105,19 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private TransformationService transformationService;
 
-	@Autowired
+	@Value("${fileProcessing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
-	@Autowired
+	@Value("${releaseValidationFramework.url}")
 	private String releaseValidationFrameworkUrl;
 
-	@Autowired
+	@Value("${offlineMode}")
 	private Boolean offlineMode;
 
-	@Autowired
+	@Value("${localRvf}")
 	private Boolean localRvf;
 
-	@Autowired
+	@Value("${buildBucketName}")
 	private String buildBucketName;
 
 	@Autowired
@@ -129,7 +129,6 @@ public class BuildServiceImpl implements BuildService {
 	public enum RVF_STATE {
 		QUEUED, RUNNING, COMPLETE, FAILED, UNKNOWN
 	}
-
 
 	@Override
 	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, QATestConfig.CharacteristicType mrcmValidationForm, Date effectiveTime) throws BusinessServiceException {

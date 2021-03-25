@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.service.workbenchdatafix;
 import org.ihtsdo.otf.rest.exception.BadInputFileException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class ModuleResolverService {
 
 	private final Pattern existingFileRowPattern;
@@ -19,7 +22,8 @@ public class ModuleResolverService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleResolverService.class);
 
-	public ModuleResolverService(String modelModuleSctid, String isASctid) {
+	public ModuleResolverService(@Value("${snomed.modelModuleSctid}") final String modelModuleSctid,
+			@Value("${snomed.isARelationshipTypeSctid}") final String isASctid) {
 		// RF2 Relationship fields:
 		// id effectiveTime active moduleId sourceId destinationId relationshipGroup typeId characteristicTypeId modifierId
 

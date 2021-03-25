@@ -3,7 +3,9 @@ package org.ihtsdo.buildcloud.dao.helper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
+import org.springframework.stereotype.Service;
 
+@Service
 public class BuildS3PathHelper {
 
 	public static final String SEPARATOR = "/";

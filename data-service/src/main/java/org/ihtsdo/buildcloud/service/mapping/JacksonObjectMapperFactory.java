@@ -2,18 +2,21 @@ package org.ihtsdo.buildcloud.service.mapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 public class JacksonObjectMapperFactory {
 
 	/**
-	 * Creates the Jackson ObjectMapper with the options we want.
+	 * Creates the Jackson {@code ObjectMapper} with the relevant options
+	 * enabled - {@link SerializationFeature#INDENT_OUTPUT}.
 	 *
-	 * @return
+	 * @return {@code ObjectMapper} with the relevant options enabled  -
+	 * {@link SerializationFeature#INDENT_OUTPUT}.
 	 */
+	@Bean
 	public ObjectMapper createObjectMapper() {
-		ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-		return objectMapper;
+		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 	}
-
 }

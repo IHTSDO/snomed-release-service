@@ -6,16 +6,21 @@ import org.ihtsdo.buildcloud.service.NetworkRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+@Service
 public class PreconditionManager {
 
 	private List<PreconditionCheck> preconditionChecks;
+
 	private boolean onlineMode;
 
-	@Autowired
+	@Value("${localRvf}")
 	private Boolean localRvf;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
@@ -44,9 +49,7 @@ public class PreconditionManager {
 
 	public PreconditionManager preconditionChecks(PreconditionCheck... preconditionCheckArray) {
 		List<PreconditionCheck> preconditionChecks = new ArrayList<>();
-		for (PreconditionCheck check : preconditionCheckArray) {
-			preconditionChecks.add(check);
-		}
+		Collections.addAll(preconditionChecks, preconditionCheckArray);
 		this.preconditionChecks = preconditionChecks;
 		return this;
 	}
@@ -55,7 +58,7 @@ public class PreconditionManager {
 		this.preconditionChecks = preconditionChecks;
 	}
 
-	public void setOfflineMode(boolean offlineMode) {
+	public void setOfflineMode(@Value("${offlineMode}") boolean offlineMode) {
 		this.onlineMode = !offlineMode;
 	}
 

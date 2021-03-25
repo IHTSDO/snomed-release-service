@@ -12,13 +12,16 @@ import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
+@Service
 public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired {
 
 	@Autowired
 	private BuildDAO buildDAO;
 
-	@Autowired
+	@Value("${releaseValidationFramework.url}")
 	private String releaseValidationFrameworkUrl;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2FilesCheck.class);

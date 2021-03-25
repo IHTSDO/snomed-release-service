@@ -2,22 +2,16 @@ package org.ihtsdo.buildcloud.service.postcondition;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PostConditionCheckReport;
-import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
-import org.ihtsdo.buildcloud.service.NetworkRequired;
-import org.ihtsdo.buildcloud.service.precondition.PreconditionCheck;
-import org.ihtsdo.buildcloud.service.precondition.RF2FilesCheck;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+@Service
 public class PostconditionManager {
 
 	private List<PostconditionCheck> postconditionChecks;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(PostconditionManager.class);
 
 	public List<PostConditionCheckReport> runPostconditionChecks(final Build build) {
 		List<PostConditionCheckReport> checkReports = new ArrayList<>();
@@ -34,9 +28,7 @@ public class PostconditionManager {
 
 	public PostconditionManager postconditionChecks(PostconditionCheck... postconditionCheckArray) {
 		List<PostconditionCheck> postconditionChecks = new ArrayList<>();
-		for (PostconditionCheck check : postconditionCheckArray) {
-			postconditionChecks.add(check);
-		}
+		Collections.addAll(postconditionChecks, postconditionCheckArray);
 		this.postconditionChecks = postconditionChecks;
 		return this;
 	}

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class PermissionServiceCache {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PermissionServiceCache.class);
 
     public static final String BRANCH_ROOT = "MAIN";

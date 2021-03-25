@@ -17,6 +17,7 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
 
@@ -34,6 +35,7 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.*;
  * Resources:
  * zres2_icRefset_OrderedTypeFull_INT_20110731.txt
  */
+@Service
 public class InputFilesExistenceCheck extends PreconditionCheck {
 
 	private static final String MISSING_STATED_RELATIONSHIP_FILE = "No stated relationship file is found in the input file directory.";

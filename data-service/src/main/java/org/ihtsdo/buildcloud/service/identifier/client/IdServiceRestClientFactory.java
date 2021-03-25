@@ -1,23 +1,17 @@
 package org.ihtsdo.buildcloud.service.identifier.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-
-
+@Configuration
 public class IdServiceRestClientFactory {
 
-	private final IdServiceRestClient onlineImplementation;
-	private final IdServiceRestClient offlineImplementation;
-
-	public IdServiceRestClientFactory(final IdServiceRestClient onlineImplementation, final IdServiceRestClient offlineImplementation) {
-		this.onlineImplementation = onlineImplementation;
-		this.offlineImplementation = offlineImplementation;
-	}
-
-	public IdServiceRestClient getInstance(final boolean offlineMode) {
-		if (offlineMode) {
-			return offlineImplementation;
-		} else {
-			return onlineImplementation;
-		}
+	@Bean
+	public IdServiceRestClient idRestClient(@Autowired final IdServiceRestClientImpl onlineImplementation,
+			@Autowired final IdServiceRestClientOfflineDemoImpl offlineImplementation,
+			@Value("${offlineMode}") final boolean offlineMode) {
+		return offlineMode ? offlineImplementation : onlineImplementation;
 	}
 }

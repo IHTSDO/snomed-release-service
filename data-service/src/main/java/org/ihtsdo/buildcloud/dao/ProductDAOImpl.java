@@ -3,13 +3,11 @@ package org.ihtsdo.buildcloud.dao;
 import org.hibernate.Query;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.springframework.data.domain.*;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Repository

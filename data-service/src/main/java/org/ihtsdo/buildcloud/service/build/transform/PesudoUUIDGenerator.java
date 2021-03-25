@@ -1,8 +1,11 @@
 package org.ihtsdo.buildcloud.service.build.transform;
 
+import org.springframework.stereotype.Service;
+
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Service
 public class PesudoUUIDGenerator implements UUIDGenerator {
 
 	private static final String SEED = "5f16e2d7-16d7-41d9-8fdc-8505bff0fc0f";

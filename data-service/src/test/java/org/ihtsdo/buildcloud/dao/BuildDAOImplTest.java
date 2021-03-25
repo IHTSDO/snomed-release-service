@@ -44,7 +44,7 @@ public class BuildDAOImplTest {
 	protected BuildDAOImpl buildDAO;
 
 	@Autowired
-	private S3ClientFactory factory;
+	private S3ClientFactory s3ClientFactory;
 
 	@Autowired
 	protected ProductDAO productDAO;
@@ -184,7 +184,7 @@ public class BuildDAOImplTest {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		final boolean offlineMode = true;
-		final S3Client s3Client1 = factory.getClient(offlineMode);
+		final S3Client s3Client1 = s3ClientFactory.getClient(offlineMode);
 		buildDAO.setS3Client(s3Client1);
 		final String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/build/"+ TEST_FILE_NAME).getFile();
 

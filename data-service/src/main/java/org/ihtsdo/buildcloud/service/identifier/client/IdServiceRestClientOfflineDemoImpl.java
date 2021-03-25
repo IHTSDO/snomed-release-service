@@ -10,8 +10,11 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.ihtsdo.buildcloud.service.build.transform.UUIDGenerator;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
+
 	//Only for test purpose
 	private static final String CTV3ID_PREFIX = "XUsW";
 

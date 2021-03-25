@@ -22,6 +22,7 @@ import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -43,8 +44,6 @@ import java.util.zip.ZipInputStream;
 
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.ERROR;
 import static org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType.WARNING;
-
-
 
 @Service
 @Transactional
@@ -72,13 +71,15 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	private TermServerService termServerService;
 
-	@Autowired
+	@Value("${fileProcessing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
-	private String buildBucketName;
+	private final String buildBucketName;
 
 	@Autowired
-	public ProductInputFileServiceImpl(final String buildBucketName, final String externallyMaintainedBucketName, final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+	public ProductInputFileServiceImpl(@Value("${buildBucketName}") final String buildBucketName,
+			@Value("${externallyMaintainedBucketName}") final String externallyMaintainedBucketName,
+			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.buildBucketName = buildBucketName;
 		externallyMaintainedFileHelper = new FileHelper(externallyMaintainedBucketName, s3Client, s3ClientHelper);
