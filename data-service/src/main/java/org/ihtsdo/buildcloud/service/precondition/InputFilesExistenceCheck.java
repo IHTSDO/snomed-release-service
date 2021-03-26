@@ -80,6 +80,8 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				errorMsgBuilder.append(ERROR_MSG);
 				errorMsgBuilder.append(msgBuilder.toString());
 				errorMsgBuilder.append(".");
+				fatalError(errorMsgBuilder.toString());
+				return;
 			}
 			//check stated relationship delta file present
 			if (!justPackage) {
