@@ -30,7 +30,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
 				+ " rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
@@ -44,7 +44,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
 				+ " rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
@@ -91,7 +91,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_core_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 	}
 	
 	
@@ -100,7 +100,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("manifest_with_rf1.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 	}
 
 	@Test
@@ -111,7 +111,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_manifest_betaRelease.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
@@ -136,7 +136,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_manifest_betaRelease.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml:"
 				+ " xder2_Refset_SimpleSnapshot_INT_20140731.txt,xder2_Refset_SimpleFull_INT_20140731.txt,xder2_Refset_SimpleDelta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
@@ -155,9 +155,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("valid_core_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		assertEquals(State.FAIL, actualResult);
-		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt."
-				+ " No stated relationship file is found in the input file directory.";
+		assertEquals(State.FATAL, actualResult);
+		final String expectedMsg = "The input files directory doesn't contain the following files required by the manifest.xml: rel2_StatedRelationship_Delta_INT_20140731.txt.";
 		assertEquals(expectedMsg, report.getMessage());
 	}
 
