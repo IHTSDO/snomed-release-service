@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsGlobalAdmin;
 import org.ihtsdo.buildcloud.service.PermissionService;

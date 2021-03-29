@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.controller;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.service.TermServerService;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +29,7 @@ public class CodeSystemController {
     private TermServerService termServerService;
 
     @GetMapping
-    @ApiOperation(value = "List code systems",
-            notes = "List all code systems.")
+    @ApiOperation(value = "List code systems", notes = "List all code systems.")
     @ResponseBody
     public ResponseEntity listCodeSystems(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
