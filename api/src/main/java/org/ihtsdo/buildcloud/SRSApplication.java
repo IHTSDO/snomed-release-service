@@ -26,7 +26,6 @@ import static springfox.documentation.builders.PathSelectors.regex;
 @PropertySources({
 		@PropertySource(value = "classpath:application.properties"),
 		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
-@EnableConfigurationProperties
 public class SRSApplication extends ApiConfig {
 
 	@Autowired(required = false)
