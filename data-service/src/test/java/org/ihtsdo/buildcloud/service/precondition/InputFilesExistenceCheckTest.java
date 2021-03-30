@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
+
 	@Autowired
 	private InputFilesExistenceCheck inputFilesCheck;
 

@@ -1,5 +1,42 @@
 package org.ihtsdo.buildcloud.dao;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.codec.binary.Base64;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.easymock.MockType;
+import org.easymock.internal.MocksControl;
+import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
+import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.config.S3ClientFactoryConfiguration;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.Product;
+import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.S3ClientFactory;
+import org.ihtsdo.otf.dao.s3.S3ClientImpl;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,33 +45,15 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base64;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-import org.easymock.MockType;
-import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.entity.Build;
-import org.ihtsdo.buildcloud.entity.Product;
-import org.ihtsdo.buildcloud.test.TestUtils;
-import org.ihtsdo.otf.dao.s3.S3Client;
-import org.ihtsdo.otf.dao.s3.S3ClientFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-
+@EnableConfigurationProperties(value = S3ClientFactoryConfiguration.class)
+@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
+@TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = {LocalSessionFactoryBeanConfiguration.class,
+		HibernateTransactionManagerConfiguration.class, S3ClientFactoryConfiguration.class,
+		BuildDAOImpl.class, S3ClientFactory.class, ProductDAOImpl.class, OfflineS3ClientImpl.class,
+		BasicAWSCredentials.class, String.class, S3ClientHelper.class,
+		ObjectMapper.class, BuildS3PathHelper.class, ProductInputFileDAOImpl.class})
 @Transactional
 public class BuildDAOImplTest {
 	
@@ -44,7 +63,7 @@ public class BuildDAOImplTest {
 	protected BuildDAOImpl buildDAO;
 
 	@Autowired
-	private S3ClientFactory s3ClientFactory;
+	private S3ClientFactoryConfiguration s3ClientFactoryConfiguration;
 
 	@Autowired
 	protected ProductDAO productDAO;
@@ -184,7 +203,7 @@ public class BuildDAOImplTest {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		final boolean offlineMode = true;
-		final S3Client s3Client1 = s3ClientFactory.getClient(offlineMode);
+		final S3Client s3Client1 = s3ClientFactoryConfiguration.getS3Client(offlineMode);
 		buildDAO.setS3Client(s3Client1);
 		final String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/build/"+ TEST_FILE_NAME).getFile();
 

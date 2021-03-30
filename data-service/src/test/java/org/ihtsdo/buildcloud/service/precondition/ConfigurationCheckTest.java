@@ -5,10 +5,12 @@ import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.ParseException;
 
+@Ignore
 public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	private static final String README_HEADER = "readmeHeader";

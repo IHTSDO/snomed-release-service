@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import java.io.FileNotFoundException;
-
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.junit.Assert;

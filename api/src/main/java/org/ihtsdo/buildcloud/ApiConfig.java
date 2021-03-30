@@ -19,8 +19,8 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 
 @Configuration
 @PropertySources({
-		@PropertySource(value = "classpath:application.properties"),
-		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
+		@PropertySource(value = "classpath:api-application.properties"),
+		@PropertySource(value = "file:${data.service.config.location}/api-application.properties", ignoreResourceNotFound=true)})
 @EnableConfigurationProperties
 public class ApiConfig {
 

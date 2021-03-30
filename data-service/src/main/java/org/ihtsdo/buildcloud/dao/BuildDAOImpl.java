@@ -100,6 +100,7 @@ public class BuildDAOImpl implements BuildDAO {
             @Value("${publishedBucketName}") final String publishedBucketName,
             final S3Client s3Client,
             final S3ClientHelper s3ClientHelper) {
+        this.buildBucketName = buildBucketName;
         executorService = Executors.newCachedThreadPool();
         buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
         publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);

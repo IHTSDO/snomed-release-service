@@ -7,20 +7,38 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.EnumSet;
 
-import org.ihtsdo.buildcloud.dao.BuildDAOImpl;
-import org.ihtsdo.buildcloud.dao.ProductDAO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
+import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
+import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.dao.*;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
+import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService;
+import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
+import org.ihtsdo.buildcloud.service.precondition.InputFilesExistenceCheck;
+import org.ihtsdo.buildcloud.service.precondition.ManifestCheck;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,14 +46,26 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+@EnableConfigurationProperties
+@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
+@TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = {BuildDAOImpl.class, ProductServiceImpl.class, BuildServiceImpl.class,
+		PublishServiceImpl.class, ProductDAOImpl.class, OfflineS3ClientImpl.class, S3ClientHelper.class,
+		ObjectMapper.class, BuildS3PathHelper.class, ProductInputFileDAOImpl.class, LocalSessionFactoryBeanConfiguration.class,
+		HibernateTransactionManagerConfiguration.class, ExtensionConfigDAOImpl.class, ReleaseCenterDAOImpl.class,
+		IdServiceRestClientOfflineDemoImpl.class, SchemaFactory.class, PreconditionManager.class, PostconditionManager.class,
+		ReadmeGenerator.class, TransformationService.class, PesudoUUIDGenerator.class, ModuleResolverService.class,
+		LegacyIdTransformationService.class, DailyBuildResourceConfig.class, TermServerServiceImpl.class, ReleaseCenterServiceImpl.class})
 @Transactional
 public class PublishServiceImpl2Test extends TestEntityGenerator {
 
@@ -62,7 +92,7 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	Build build = null;
 
 	private static final String TEST_FILENAME = "test.zip";
-	
+
 	private static final String BETA_TEST_FILENAME = "xBetaTest.zip";
 	private String releaseCenterName;
 
@@ -72,12 +102,12 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 
 		//Tidyup in case we've run this test already today
-		((TestS3Client)s3Client).freshBucketStore();
+		((TestS3Client) s3Client).freshBucketStore();
 
 		//Packages get looked up using a product composite key (ie include the unique ID)
 		//so first lets find the first product for a known product, and use that
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_LEGACY);
-		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0,10));
+		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0, 10));
 		Product product = page.getContent().get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
 		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), null, null, null, null, null, null, null);
@@ -118,14 +148,14 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			public void run() {
 				try {
 					service.publishBuild(build, true, null);
-					LOGGER.info("Publishing complete in thread " +threadName );
+					LOGGER.info("Publishing complete in thread " + threadName);
 				} catch (Exception e) {
 					if (expectedExceptionClass == null) {
-						throw new RuntimeException ("Unexpected exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
+						throw new RuntimeException("Unexpected exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
 					}
 
 					if (expectedExceptionClass != null && e.getClass() != expectedExceptionClass) {
-						throw new RuntimeException ("Incorrect exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
+						throw new RuntimeException("Incorrect exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
 					}
 				}
 			}
@@ -133,11 +163,11 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		thread.start();
 		return thread;
 	}
-	
+
 	@Test
 	public void testPublishingAdhocFile() {
 		InputStream inputStream = ClassLoader.getSystemResourceAsStream(BETA_TEST_FILENAME);
-		long size =1000;
+		long size = 1000;
 		ReleaseCenter releaseCenter = new ReleaseCenter();
 		releaseCenter.setShortName(releaseCenterName);
 		try {
@@ -147,12 +177,12 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 			Assert.fail("Should not result in exception");
 		}
 	}
-	
+
 	@Test
 	public void testPublishingOwlAxiom() {
 		String fileToPublish = "test_axiom.zip";
 		InputStream inputStream = ClassLoader.getSystemResourceAsStream(fileToPublish);
-		long size =1000;
+		long size = 1000;
 		ReleaseCenter releaseCenter = new ReleaseCenter();
 		releaseCenter.setShortName(releaseCenterName);
 		try {

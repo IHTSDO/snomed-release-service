@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.inputfile.prepare;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.DecoderException;
 
 import static org.junit.Assert.assertEquals;
@@ -19,20 +20,37 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
+import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
+import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.dao.*;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.*;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService;
+import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +60,20 @@ import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+@EnableConfigurationProperties
+@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
+@TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = {BuildDAOImpl.class, ProductServiceImpl.class, BuildServiceImpl.class,
+        PublishServiceImpl.class, ProductDAOImpl.class, OfflineS3ClientImpl.class, S3ClientHelper.class,
+        ObjectMapper.class, BuildS3PathHelper.class, ProductInputFileDAOImpl.class, LocalSessionFactoryBeanConfiguration.class,
+        HibernateTransactionManagerConfiguration.class, ExtensionConfigDAOImpl.class, ReleaseCenterDAOImpl.class,
+        IdServiceRestClientOfflineDemoImpl.class, SchemaFactory.class, PreconditionManager.class, PostconditionManager.class,
+        ReadmeGenerator.class, TransformationService.class, PesudoUUIDGenerator.class, ModuleResolverService.class,
+        LegacyIdTransformationService.class, DailyBuildResourceConfig.class, TermServerServiceImpl.class, ReleaseCenterServiceImpl.class,
+        ProductInputFileServiceImpl.class})
 @Transactional
-public class ProductInputFileServiceImplTest extends TestEntityGenerator{
+public class ProductInputFileServiceImplTest extends TestEntityGenerator {
 
     @Autowired
     protected ProductDAO productDAO;

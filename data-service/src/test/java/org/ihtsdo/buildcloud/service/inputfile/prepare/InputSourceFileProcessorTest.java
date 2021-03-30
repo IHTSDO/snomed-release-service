@@ -7,33 +7,61 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
+import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
+import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.dao.*;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.manifest.FolderType;
 import org.ihtsdo.buildcloud.manifest.ListingType;
 import org.ihtsdo.buildcloud.manifest.ManifestValidator;
+import org.ihtsdo.buildcloud.service.*;
+import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService;
+import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientOfflineDemoImpl;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingConfig;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.InputSourceFileProcessor;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
+import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import static org.junit.Assert.*;
+
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MultiValueMap;
 
+@EnableConfigurationProperties
+@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
+@TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = {BuildDAOImpl.class, ProductServiceImpl.class, BuildServiceImpl.class,
+		PublishServiceImpl.class, ProductDAOImpl.class, OfflineS3ClientImpl.class, S3ClientHelper.class,
+		ObjectMapper.class, BuildS3PathHelper.class, ProductInputFileDAOImpl.class, LocalSessionFactoryBeanConfiguration.class,
+		HibernateTransactionManagerConfiguration.class, ExtensionConfigDAOImpl.class, ReleaseCenterDAOImpl.class,
+		IdServiceRestClientOfflineDemoImpl.class, SchemaFactory.class, PreconditionManager.class, PostconditionManager.class,
+		ReadmeGenerator.class, TransformationService.class, PesudoUUIDGenerator.class, ModuleResolverService.class,
+		LegacyIdTransformationService.class, DailyBuildResourceConfig.class, TermServerServiceImpl.class, ReleaseCenterServiceImpl.class,
+		ProductInputFileServiceImpl.class})
 public class InputSourceFileProcessorTest {
 	
 	private static final String DA = "da";

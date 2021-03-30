@@ -18,7 +18,7 @@ import static org.ihtsdo.buildcloud.entity.Build.Status;
 public class Product {
 	public static final String SNOMED_DATE_FORMAT = "yyyyMMdd";
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	@Column(name="id")
 	private long id;

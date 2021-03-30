@@ -1,25 +1,22 @@
 package org.ihtsdo.buildcloud.service.precondition;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-
-import org.ihtsdo.buildcloud.dao.BuildDAO;
-import org.ihtsdo.buildcloud.dao.ProductDAO;
-import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
+import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.dao.*;
+import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.ProductInputFileService;
+import org.ihtsdo.buildcloud.service.ProductInputFileServiceImpl;
+import org.ihtsdo.buildcloud.service.TermServerServiceImpl;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.test.TestUtils;
+import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
+import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,12 +24,31 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+@EnableConfigurationProperties
+@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
+@TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = {ManifestCheck.class, BuildDAOImpl.class,
+		OfflineS3ClientImpl.class, S3ClientHelper.class, ObjectMapper.class,
+		BuildS3PathHelper.class, ProductInputFileDAOImpl.class, ProductInputFileServiceImpl.class,
+		ProductDAOImpl.class, LocalSessionFactoryBeanConfiguration.class,
+		HibernateTransactionManagerConfiguration.class, TermServerServiceImpl.class,
+		TestUtils.class, InputFilesExistenceCheck.class})
 @Transactional
 public abstract class PreconditionCheckTest {
 
