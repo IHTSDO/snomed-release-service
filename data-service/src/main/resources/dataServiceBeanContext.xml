@@ -212,6 +212,7 @@
 		<property name="postconditionChecks">
 			<list>
 				<bean class="org.ihtsdo.buildcloud.service.postcondition.TermServerClassificationResultsOutputCheck"/>
+				<bean class="org.ihtsdo.buildcloud.service.postcondition.ReleasePackageCheck"/>
 			</list>
 		</property>
 	</bean>

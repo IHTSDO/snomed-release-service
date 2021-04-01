@@ -529,11 +529,6 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		if (dao.isBuildCancelRequested(build)) return;
-		if (!offlineMode) {
-			LOGGER.info("Start classification cross check");
-			List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
-			dao.updatePostConditionCheckReport(build, reports);
-		}
 
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
@@ -558,6 +553,13 @@ public class BuildServiceImpl implements BuildService {
 				}
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
+			}
+			if (dao.isBuildCancelRequested(build)) return;
+
+			if (!offlineMode) {
+				LOGGER.info("Start classification cross check");
+				List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
+				dao.updatePostConditionCheckReport(build, reports);
 			}
 
 			if (dao.isBuildCancelRequested(build)) return;
