@@ -6,6 +6,8 @@ import static org.ihtsdo.buildcloud.service.build.RF2Constants.SCT2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBException;
 
@@ -61,9 +63,19 @@ public class ManifestCheck extends PreconditionCheck {
 					return;
 				}
 
-				String invalidReleaseVersionMsg = validateReleaseVersion(manifestListing, releaseVersion);
-				if (!StringUtils.isEmpty(invalidReleaseVersionMsg)) {
-					warning(invalidReleaseVersionMsg);
+				String invalidReleaseVersionMsg = validateReleaseDate(manifestListing, releaseVersion);
+				boolean validReleasePackageName = validatePackageName(manifestListing);
+				if (!StringUtils.isEmpty(invalidReleaseVersionMsg) || !validReleasePackageName) {
+					String warningMsg = "";
+					if (!StringUtils.isEmpty(invalidReleaseVersionMsg)) {
+						warningMsg = invalidReleaseVersionMsg;
+					}
+					if (!validReleasePackageName) {
+						String invalidReleasePackageNameWarningMsg = "The package name does not follow the packaging conventions: "
+								+ "[x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
+						warningMsg = !StringUtils.isEmpty(invalidReleaseVersionMsg) ? warningMsg + " " + invalidReleasePackageNameWarningMsg : invalidReleasePackageNameWarningMsg;
+					}
+					warning(warningMsg);
 					return;
 				}
 			}
@@ -123,7 +135,7 @@ public class ManifestCheck extends PreconditionCheck {
 		return null;
 	}
 
-	private String validateReleaseVersion(final ListingType manifestListing, final String releaseVersion) {
+	private String validateReleaseDate(final ListingType manifestListing, final String releaseVersion) {
 		final StringBuilder releaseVersionMsgBuilder = new StringBuilder();
 
 		final String zipFileName = manifestListing.getFolder().getName();
@@ -171,6 +183,15 @@ public class ManifestCheck extends PreconditionCheck {
 		}
 		return null;
 	}
+
+	private boolean validatePackageName(ListingType manifestListing) {
+		String packageName = manifestListing.getFolder().getName();
+		String fileNamePattern = "^x?SnomedCT_[^_]+(Edition|Extension)?(RF1|RF2)?_(ALPHA|BETA|PREPRODUCTION|PRODUCTION)_\\d{8}T\\d{6}Z$";
+		Pattern pattern = Pattern.compile(fileNamePattern);
+		Matcher matcher = pattern.matcher(packageName);
+		return matcher.matches();
+	}
+
 	private String validateFileNamesAgainstFolder(final ListingType manifestListing) {
 		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
 		final StringBuilder result = new StringBuilder();
