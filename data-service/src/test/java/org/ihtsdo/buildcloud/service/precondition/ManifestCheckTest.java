@@ -57,7 +57,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
 		final State actualResult = report.getResult();
 		Assert.assertEquals(State.WARNING, actualResult);
-		final String expectedMsg = "The following file names specified in the manifest:SnomedCT_Release_INT_20140831,Readme_en_20140831.txt,der2_Refset_SimpleFull_INT_20140831.txt,"
+		final String expectedMsg = "The following file names specified in the manifest:SnomedCT_ReleaseRF2_PRODUCTION_20140831T120000Z,Readme_en_20140831.txt,der2_Refset_SimpleFull_INT_20140831.txt,"
 				+ "der2_Refset_SimpleSnapshot_INT_20140831.txt,der2_Refset_SimpleDelta_INT_20140831.txt don't have the same release date as configured in the product:20140731.";
 		Assert.assertEquals(expectedMsg, report.getMessage());
 	}
@@ -92,6 +92,16 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		Assert.assertEquals(State.WARNING, actualResult);
 		final String expectedMsg = "The following file names specified in the manifest:der1_SubsetMembers_es_INT_20140131.txt,der1_Subsets_es_INT_20140131.txt,sct1_Concepts_Core_INT_20140131.txt "
 				+ "don't have the same release date as configured in the product:20140731.";
+		Assert.assertEquals(expectedMsg, report.getMessage());
+	}
+
+	@Test
+	public void checkInvalidReleasePackageName() throws Exception {
+		loadManifest("manifest_with_invalid_release_package_name.xml");
+		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
+		final State actualResult = report.getResult();
+		Assert.assertEquals(State.WARNING, actualResult);
+		final String expectedMsg = "The package name does not follow the packaging conventions: [x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
 		Assert.assertEquals(expectedMsg, report.getMessage());
 	}
 	
