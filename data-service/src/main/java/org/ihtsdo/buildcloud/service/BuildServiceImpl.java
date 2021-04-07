@@ -314,7 +314,18 @@ public class BuildServiceImpl implements BuildService {
 				try {
 					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax, mrcmValidationForm);
-					status = Status.RELEASE_COMPLETE;
+
+					// Check warnings if any
+					boolean hasWarnings = false;
+					if (build.getPreConditionCheckReports() != null) {
+						for (PreConditionCheckReport conditionCheckReport : build.getPreConditionCheckReports()) {
+							if (conditionCheckReport.getResult() == State.WARNING) {
+								hasWarnings = true;
+								break;
+							}
+						}
+					}
+					status = hasWarnings ? Status.RELEASE_COMPLETE_WITH_WARNINGS : Status.RELEASE_COMPLETE;
 				} catch (final Exception e) {
 					resultStatus = "fail";
 					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
@@ -421,6 +432,7 @@ public class BuildServiceImpl implements BuildService {
 			case BUILT :
 				dao.assertStatus(build, Status.BUILDING);
 				break;
+			case RELEASE_COMPLETE_WITH_WARNINGS:
 			case RELEASE_COMPLETE:
 				dao.assertStatus(build, offlineMode ? Status.BUILDING : Status.RVF_RUNNING);
 				break;
