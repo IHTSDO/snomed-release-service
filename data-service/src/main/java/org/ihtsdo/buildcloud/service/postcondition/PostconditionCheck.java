@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.postcondition;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PostConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PostConditionCheckReport.State;
+import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 
 public abstract class PostconditionCheck {
 
@@ -29,6 +30,11 @@ public abstract class PostconditionCheck {
 	protected void fail(String msg) {
 		this.state = State.FAILED;
 		this.responseMessage = msg;
+	}
+
+	protected void fatalError(String error) {
+		state = State.FATAL;
+		this.responseMessage = error;
 	}
 
 	protected void notRun(String msg) {

@@ -8,7 +8,7 @@ package org.ihtsdo.buildcloud.entity;
 public class PostConditionCheckReport {
 
     public enum State {
-        NOT_RUN("NotRun"), PASS("Pass"), FAILED("Failed");
+        NOT_RUN("NotRun"), PASS("Pass"), FAILED("Failed"), FATAL("Fatal");
         private final String value;
 
         private State(String value) {
