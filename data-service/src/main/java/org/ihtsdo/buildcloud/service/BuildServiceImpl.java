@@ -359,6 +359,13 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
+	private void performPostConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {
+		final Status newStatus = runPostconditionChecks(build);
+		if (newStatus != preStatus) {
+			dao.updateStatus(build, newStatus);
+		}
+	}
+
 	@Override
 	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
@@ -413,6 +420,9 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case BUILT :
 				dao.assertStatus(build, Status.BUILDING);
+				break;
+			case RELEASE_COMPLETE:
+				dao.assertStatus(build, offlineMode ? Status.BUILDING : Status.RVF_RUNNING);
 				break;
 			case CANCELLED:
 				dao.assertStatus(build, Status.CANCEL_REQUESTED);
@@ -473,6 +483,30 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		LOGGER.info("End of Pre-condition checks");
+		return buildStatus;
+	}
+
+	private Build.Status runPostconditionChecks(final Build build) throws BusinessServiceException {
+		LOGGER.info("Start of Post-condition checks");
+		Build.Status buildStatus = build.getStatus();
+		final List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
+		try {
+			dao.updatePostConditionCheckReport(build, reports);
+		} catch (IOException e) {
+			String msg = String.format("Failed to update Post condition Check Report. Message: %s", e.getMessage());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
+		}
+
+		// analyze report to check whether there is fatal error for all packages
+		for (final PostConditionCheckReport report : reports) {
+			if (report.getResult() == PostConditionCheckReport.State.FATAL) {
+				// Need to alert release manager of fatal post-condition check error.
+				buildStatus = Status.FAILED_POST_CONDITIONS;
+				break;
+			}
+		}
+		LOGGER.info("End of Post-condition checks");
 		return buildStatus;
 	}
 
@@ -557,9 +591,10 @@ public class BuildServiceImpl implements BuildService {
 			if (dao.isBuildCancelRequested(build)) return;
 
 			if (!offlineMode) {
-				LOGGER.info("Start classification cross check");
-				List<PostConditionCheckReport> reports  = postconditionManager.runPostconditionChecks(build);
-				dao.updatePostConditionCheckReport(build, reports);
+				performPostConditionsCheck(build, build.getStatus());
+				if (Status.FAILED_POST_CONDITIONS.equals(build.getStatus())) {
+					return;
+				}
 			}
 
 			if (dao.isBuildCancelRequested(build)) return;

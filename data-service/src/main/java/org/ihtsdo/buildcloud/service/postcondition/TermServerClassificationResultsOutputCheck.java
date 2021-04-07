@@ -64,7 +64,7 @@ public class TermServerClassificationResultsOutputCheck extends PostconditionChe
 
 	@Override
 	public String getTestName() {
-		return "classificationResultForOutput";
+		return "ClassificationResultForOutputCheck";
 	}
 
 }

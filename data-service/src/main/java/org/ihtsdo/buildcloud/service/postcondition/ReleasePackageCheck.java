@@ -34,7 +34,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
             try {
                 String errorMsg = validateBetaReleasePackage(build);
                 if (errorMsg != null) {
-                    fail("The following files are required starting with x for a Beta release: " + errorMsg);
+                    fatalError("The following files are required starting with x for a Beta release: " + errorMsg);
                     return;
                 }
             } catch (ResourceNotFoundException ex) {
