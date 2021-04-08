@@ -2,10 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
-import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
-import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
-import org.ihtsdo.buildcloud.config.SchemaFactoryConfiguration;
+import org.ihtsdo.buildcloud.config.DataServiceTestConfig;
 import org.ihtsdo.buildcloud.dao.*;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -38,19 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
 
-@EnableConfigurationProperties(value = HibernateTransactionManagerConfiguration.class)
 @PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
 @TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {LocalSessionFactoryBeanConfiguration.class,
-		HibernateTransactionManagerConfiguration.class, ProductServiceImpl.class, ProductDAOImpl.class,
-		ExtensionConfigDAOImpl.class, ReleaseCenterDAOImpl.class, PublishServiceImpl.class, OfflineS3ClientImpl.class,
-		BasicAWSCredentials.class, String.class, S3ClientHelper.class, BuildS3PathHelper.class,
-		IdServiceRestClientImpl.class, BuildDAOImpl.class, ObjectMapper.class, ProductInputFileDAOImpl.class,
-		SchemaFactoryConfiguration.class, BuildServiceImpl.class, PreconditionManager.class, PostconditionManager.class,
-		ReadmeGenerator.class, TransformationService.class, PesudoUUIDGenerator.class, ModuleResolverService.class,
-		LegacyIdTransformationService.class, DailyBuildResourceConfig.class, TermServerServiceImpl.class,
-		ReleaseCenterServiceImpl.class})
+@ContextConfiguration(classes = DataServiceTestConfig.class)
 @Transactional
 public class ProductServiceImplTest extends TestEntityGenerator {
 	

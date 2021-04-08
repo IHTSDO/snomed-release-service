@@ -13,9 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
-import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
-import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.controller.ApiTestConfig;
 import org.ihtsdo.buildcloud.controller.ProductController;
 import org.ihtsdo.buildcloud.dao.*;
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
@@ -53,14 +51,7 @@ import org.springframework.util.FileCopyUtils;
 @PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
 @TestConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {BuildDAOImpl.class, ProductServiceImpl.class, BuildServiceImpl.class,
-		PublishServiceImpl.class, ProductDAOImpl.class, OfflineS3ClientImpl.class, S3ClientHelper.class,
-		ObjectMapper.class, BuildS3PathHelper.class, ProductInputFileDAOImpl.class, LocalSessionFactoryBeanConfiguration.class,
-		HibernateTransactionManagerConfiguration.class, ExtensionConfigDAOImpl.class, ReleaseCenterDAOImpl.class,
-		IdServiceRestClientOfflineDemoImpl.class, SchemaFactory.class, PreconditionManager.class, PostconditionManager.class,
-		ReadmeGenerator.class, TransformationService.class, PesudoUUIDGenerator.class, ModuleResolverService.class,
-		LegacyIdTransformationService.class, DailyBuildResourceConfig.class, TermServerServiceImpl.class, ReleaseCenterServiceImpl.class,
-		ProductInputFileServiceImpl.class, HypermediaGenerator.class})
+@ContextConfiguration(classes = ApiTestConfig.class)
 public class HypermediaGeneratorTest {
 
 	@Autowired

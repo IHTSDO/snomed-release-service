@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.dao;
 
-import org.ihtsdo.buildcloud.config.HibernateTransactionManagerConfiguration;
-import org.ihtsdo.buildcloud.config.LocalSessionFactoryBeanConfiguration;
+import org.ihtsdo.buildcloud.config.DataServiceTestConfig;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
@@ -16,17 +15,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
 
-@EnableConfigurationProperties
-@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
-@TestConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {LocalSessionFactoryBeanConfiguration.class,
-		HibernateTransactionManagerConfiguration.class, ProductDAOImpl.class})
-@Transactional()
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = DataServiceTestConfig.class)
+@Transactional
 public class ProductDAOImplTest {
 
 	@Autowired
