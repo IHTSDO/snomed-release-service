@@ -104,6 +104,17 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 		final String expectedMsg = "The package name does not follow the packaging conventions: [x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
 		Assert.assertEquals(expectedMsg, report.getMessage());
 	}
+
+	@Test
+	public void checkInvalidFileNameAgainstBetaRelease() throws Exception {
+		final boolean isBetaRelease = true;
+		loadManifest("manifest_with_invalid_file_name_against_beta_release.xml", isBetaRelease);
+		final PreConditionCheckReport report = runPreConditionCheck(ManifestCheck.class);
+		final State actualResult = report.getResult();
+		Assert.assertEquals(State.FATAL, actualResult);
+		final String expectedMsg = "The following files which specified in the manifest are required starting with x for a Beta release: SnomedCT_ReleaseRF2_20140731T120000Z,der2_Refset_SimpleFull_INT_20140731.txt,der2_Refset_SimpleSnapshot_INT_20140731.txt,der2_Refset_SimpleDelta_INT_20140731.txt";
+		Assert.assertEquals(expectedMsg, report.getMessage());
+	}
 	
 	@Test
 	public void checkNoFileNamesSpecified() throws Exception {

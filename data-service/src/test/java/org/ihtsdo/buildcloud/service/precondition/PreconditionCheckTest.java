@@ -71,9 +71,12 @@ public abstract class PreconditionCheckTest {
 		}
 	}
 
-	protected void createNewBuild() throws IOException {
+	protected void createNewBuild(Boolean isBeta) throws IOException {
 		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, buildIdx++).getTime();
 		build = new Build(creationTime, product);
+		if (Boolean.TRUE.equals(isBeta)) {
+			build.getConfiguration().setBetaRelease(true);
+		}
 
 		// Because we're working with a unit test, that build will probably already exist on disk, so wipe
 		testUtils.scrubBuild(build);
@@ -86,7 +89,7 @@ public abstract class PreconditionCheckTest {
 
 		// Do we need an build? // TODO: remove this - we should always know the state of a test
 		if (build == null) {
-			createNewBuild();
+			createNewBuild(false);
 		}
 
 		// Create a manager for this test
@@ -115,7 +118,20 @@ public abstract class PreconditionCheckTest {
 		}
 
 		//When we load a manifest, we need that copied over to a new build
-		createNewBuild();
+		createNewBuild(false);
+	}
+
+	protected void loadManifest(final String filename, final boolean isBetaRelease) throws IOException {
+		if (filename != null) {
+			final String testFilePath = getClass().getResource(filename).getFile();
+			final File testManifest = new File(testFilePath);
+			productInputFileDAO.putManifestFile(product, new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+		} else {
+			productInputFileDAO.deleteManifest(product);
+		}
+
+		//When we load a manifest, we need that copied over to a new build
+		createNewBuild(isBetaRelease);
 	}
 
 	/**
