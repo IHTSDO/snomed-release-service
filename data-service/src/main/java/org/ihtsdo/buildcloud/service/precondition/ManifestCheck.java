@@ -29,6 +29,9 @@ public class ManifestCheck extends PreconditionCheck {
 	private static final String HYPHEN = "_";
 	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have "
 			+ "the same release date as configured in the product:%s.";
+	private static final String INVALID_RELEASE_PACKAGE_NAME_MSG = "The package name does not follow the packaging conventions: "
+			+ "[x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
+	private static final String INVALID_FILE_NAME_AGAINST_BETA_RELEASE_MSG = "The following files which specified in the manifest are required starting with x for a Beta release: %s";
 	private static final String INVALID_RELEASE_FILE_FORMAT_MSG = "The following file names specified in the manifest:%s don't follow naming convention:%s.";
 	private static final String FILE_NAME_CONVENTION = "<FileType>_<ContentType>_<ContentSubType>_<Country|Namespace>_<VersionDate>.<Extension>";
 
@@ -51,29 +54,36 @@ public class ManifestCheck extends PreconditionCheck {
 			final ListingType manifestListing = parser.parse(manifestInputSteam);
 			final String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
-				String invalidFileNamesInFolderMsg = validateFileNamesAgainstFolder(manifestListing);
+				final String invalidFileNamesInFolderMsg = validateFileNamesAgainstFolder(manifestListing);
 				if (!StringUtils.isEmpty(invalidFileNamesInFolderMsg)) {
 					fatalError(invalidFileNamesInFolderMsg);
 					return;
 				}
 
-				final String errorMsg = validate(manifestListing, releaseVersion);
-				if (!StringUtils.isEmpty(errorMsg)) {
-					fail(errorMsg);
+				if (build.getConfiguration().isBetaRelease()) {
+					final String invalidFileNamesAgainstBetaReleaseMsg = validateFileNamesAgainstBetaRelease(manifestListing);
+					if (!StringUtils.isEmpty(invalidFileNamesAgainstBetaReleaseMsg)) {
+						fatalError(invalidFileNamesAgainstBetaReleaseMsg);
+						return;
+					}
+				}
+
+				final String invalidFileFormatMsg = validateFileFormat(manifestListing, releaseVersion);
+				if (!StringUtils.isEmpty(invalidFileFormatMsg)) {
+					fail(invalidFileFormatMsg);
 					return;
 				}
 
-				String invalidReleaseVersionMsg = validateReleaseDate(manifestListing, releaseVersion);
-				boolean validReleasePackageName = validatePackageName(manifestListing);
+				final String invalidReleaseVersionMsg = validateReleaseDate(manifestListing, releaseVersion);
+				final boolean validReleasePackageName = validatePackageName(manifestListing);
 				if (!StringUtils.isEmpty(invalidReleaseVersionMsg) || !validReleasePackageName) {
 					String warningMsg = "";
 					if (!StringUtils.isEmpty(invalidReleaseVersionMsg)) {
 						warningMsg = invalidReleaseVersionMsg;
 					}
 					if (!validReleasePackageName) {
-						String invalidReleasePackageNameWarningMsg = "The package name does not follow the packaging conventions: "
-								+ "[x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
-						warningMsg = !StringUtils.isEmpty(invalidReleaseVersionMsg) ? warningMsg + " " + invalidReleasePackageNameWarningMsg : invalidReleasePackageNameWarningMsg;
+						warningMsg = !StringUtils.isEmpty(invalidReleaseVersionMsg) ?
+								warningMsg + " " + INVALID_RELEASE_PACKAGE_NAME_MSG : INVALID_RELEASE_PACKAGE_NAME_MSG;
 					}
 					warning(warningMsg);
 					return;
@@ -87,7 +97,33 @@ public class ManifestCheck extends PreconditionCheck {
 		}
 	}
 
-	private String validate(final ListingType manifestListing, final String releaseVersion) {
+	private String validateFileNamesAgainstBetaRelease(ListingType manifestListing) {
+		final StringBuilder invalidFileNameMsgBuilder = new StringBuilder();
+		final String zipFileName = manifestListing.getFolder().getName();
+
+		// check package name
+		if (!StringUtils.isEmpty(zipFileName) && !zipFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
+			invalidFileNameMsgBuilder.append(zipFileName);
+		}
+		//check that sct2 and der2 file names starting with X
+		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
+		for (final String fileName : fileNames) {
+			if (!fileName.startsWith(RF2Constants.README_FILENAME_PREFIX)
+				&& !fileName.startsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_PREFIX)
+				&& !fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
+				if (invalidFileNameMsgBuilder.length() > 0) {
+					invalidFileNameMsgBuilder.append(COMMA);
+				}
+				invalidFileNameMsgBuilder.append(fileName);
+			}
+		}
+		if (invalidFileNameMsgBuilder.length() > 0) {
+			return String.format(INVALID_FILE_NAME_AGAINST_BETA_RELEASE_MSG, invalidFileNameMsgBuilder.toString());
+		}
+		return "";
+	}
+
+	private String validateFileFormat(final ListingType manifestListing, final String releaseVersion) {
 		final StringBuilder invalidFileNameMsgBuilder = new StringBuilder();
 		//check that sct2 and der2 file names have got the same date as the release date/version
 		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
