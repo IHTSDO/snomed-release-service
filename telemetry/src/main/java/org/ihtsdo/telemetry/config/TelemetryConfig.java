@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class StreamFactoryConfiguration {
+public class TelemetryConfig {
 
 	@Bean
 	public TransferManager transferManager(@Value("${aws.key}") final String accessKey,

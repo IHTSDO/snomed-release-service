@@ -45,12 +45,10 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.FileCopyUtils;
 
-@EnableConfigurationProperties
-@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
-@TestConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @ContextConfiguration(classes = ApiTestConfig.class)
 public class HypermediaGeneratorTest {
 

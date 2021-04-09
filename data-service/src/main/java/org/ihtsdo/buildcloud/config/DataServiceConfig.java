@@ -23,6 +23,7 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -46,7 +47,7 @@ import java.util.Properties;
 @PropertySources({
 		@PropertySource(value = "classpath:application.properties"),
 		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
-@Primary
+@EnableJpaRepositories
 public class DataServiceConfig extends BaseConfiguration {
 
 	private static final String CLASSPATH_DATA_SERVICE_DEFAULTS_PROPERTIES_LOCATION = "classpath:application.properties";

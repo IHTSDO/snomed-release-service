@@ -29,6 +29,13 @@
 			<version>${activemq.version}</version>
 		</dependency>
 
+		<!-- TODO need to update the following to use the resource manager instead -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk</artifactId>
+			<version>1.11.982</version>
+		</dependency>
+
 		<!-- S3 -->
 		<dependency>
 			<!-- Adding in own right otherwise aws will pull incompatible version 1.3 -->

@@ -20,6 +20,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -28,13 +29,9 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.nio.charset.Charset;
 
-@EnableConfigurationProperties
-@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
-@TestConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @ContextConfiguration(classes = ApiTestConfig.class)
 @WebAppConfiguration
-@ComponentScan(basePackages = "org.ihtsdo.buildcloud.controller")
 public abstract class AbstractControllerTest {
 
 	public static final MediaType APPLICATION_JSON_UTF8 = new MediaType(MediaType.APPLICATION_JSON.getType(),

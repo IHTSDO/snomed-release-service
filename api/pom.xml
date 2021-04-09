@@ -29,7 +29,6 @@
 			<artifactId>activemq-kahadb-store</artifactId>
 			<version>${activemq.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.webjars</groupId>
 			<artifactId>swagger-ui</artifactId>

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-@Component
+//@Component
 public class TestMessageSender implements ApplicationListener {
 
 	@Autowired
