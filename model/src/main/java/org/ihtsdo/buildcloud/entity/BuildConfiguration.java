@@ -25,7 +25,7 @@ import org.ihtsdo.snomed.util.rf2.schema.RF2SchemaConstants;
 @Table(name="build_config")
 public class BuildConfiguration {
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	@Column(name="id")
 	private long id;

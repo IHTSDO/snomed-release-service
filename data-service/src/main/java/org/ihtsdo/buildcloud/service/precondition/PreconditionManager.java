@@ -16,6 +16,7 @@ import java.util.List;
 @Service
 public class PreconditionManager {
 
+	@Autowired
 	private List<PreconditionCheck> preconditionChecks;
 
 	private boolean onlineMode;

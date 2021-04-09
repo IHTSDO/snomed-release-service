@@ -15,7 +15,6 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-//@Component
 public class BuildTriggerMessageHandler {
 	private static final String USERNAME = "username";
 	private static final String RVF_FAILURE_EXPORT_MAX = "RvfFailureExportMax";

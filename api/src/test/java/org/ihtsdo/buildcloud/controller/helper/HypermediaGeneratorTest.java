@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,10 +47,13 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.context.ServletContextAware;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = ApiTestConfig.class)
+@WebAppConfiguration
 public class HypermediaGeneratorTest {
 
 	@Autowired
@@ -129,5 +133,4 @@ public class HypermediaGeneratorTest {
 		objectMapper.writeValue(stringWriter, hypermedia);
 		return stringWriter.toString();
 	}
-
 }

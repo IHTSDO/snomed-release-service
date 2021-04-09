@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.controller.helper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class HypermediaGenerator {
 
 	@Autowired

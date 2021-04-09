@@ -9,7 +9,7 @@ import org.hibernate.annotations.Type;
 @Table(name="qa_config")
 public class QATestConfig {
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	@Column(name="id")
 	private long id;

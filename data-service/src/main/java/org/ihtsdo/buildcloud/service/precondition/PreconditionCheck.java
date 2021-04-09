@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service.precondition;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport.State;
+import org.springframework.stereotype.Service;
 
 public abstract class PreconditionCheck {
 

@@ -17,7 +17,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @PropertySources({
 		@PropertySource(value = "classpath:api-application.properties"),
-		@PropertySource(value = "file:${data.service.config.location}/api-application.properties", ignoreResourceNotFound=true)})
+		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
 @EnableSwagger2
 public class ApiConfig {
 
