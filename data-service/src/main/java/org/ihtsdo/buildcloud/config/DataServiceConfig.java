@@ -219,7 +219,6 @@ public class DataServiceConfig extends BaseConfiguration {
 		return new ActiveMQQueue(queue);
 	}
 
-	@Bean
 	public Queue buildStatusQueue(final String queue) {
 		return new ActiveMQQueue(queue);
 	}
