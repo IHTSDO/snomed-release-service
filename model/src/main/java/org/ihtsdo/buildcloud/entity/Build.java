@@ -17,7 +17,7 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 @JsonPropertyOrder({"id", "name"})
 public class Build {
 
-	private final String creationTime;
+	private String creationTime;
 
 	private Status status;
 
@@ -29,7 +29,7 @@ public class Build {
 
 	private BuildConfiguration configuration;
 
-	private final String productBusinessKey;
+	private String productBusinessKey;
 
 	private List<PreConditionCheckReport> preConditionCheckReports;
 
@@ -56,6 +56,10 @@ public class Build {
 		public int getOrder() {
 			return order;
 		}
+	}
+
+	public Build() {
+
 	}
 
 	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {

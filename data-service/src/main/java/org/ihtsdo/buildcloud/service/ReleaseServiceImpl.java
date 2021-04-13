@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.*;
@@ -72,6 +74,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Autowired
 	private Queue srsQueue;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	@Override
@@ -117,8 +122,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	private void convertAndSend(final Build build) throws BusinessServiceException {
 		try {
-			jmsTemplate.convertAndSend(srsQueue, build);
-		} catch (JmsException e) {
+			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(build));
+		} catch (JmsException | JsonProcessingException e) {
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. BuildID: " + build.getId(), e);
 		}
 	}
