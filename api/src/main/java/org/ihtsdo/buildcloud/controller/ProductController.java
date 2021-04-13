@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.controller;
 
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.controller.helper.HypermediaGenerator;
@@ -16,6 +17,7 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +47,9 @@ public class ProductController {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
+
+	@Value("srs.manager")
+	private boolean srsManagerEnabled;
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
@@ -141,18 +146,22 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 
-
 	@PostMapping(value = "/{productKey}/release", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
-	public ResponseEntity<Build> createReleasePackage(
+	public ResponseEntity createReleasePackage(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@RequestBody final GatherInputRequestPojo buildConfig,
 			final HttpServletRequest request) throws BusinessServiceException {
-		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-		return new ResponseEntity<>(releaseService.queueBuild(newBuild), HttpStatus.CREATED);
+		if (srsManagerEnabled) {
+			final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
+			return new ResponseEntity<>(releaseService.queueBuild(newBuild), HttpStatus.CREATED);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+					.body(ImmutableMap.of("Response", "The SRS manager role must be enabled to create a release package."));
+		}
 	}
 
 	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)
