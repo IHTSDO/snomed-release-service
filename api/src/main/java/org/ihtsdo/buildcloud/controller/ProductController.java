@@ -48,7 +48,7 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	@Value("srs.manager")
+	@Value("${srs.manager}")
 	private boolean srsManagerEnabled;
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};

@@ -31,7 +31,7 @@ public class SRSWorkerService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@Value("srs.worker")
+	@Value("${srs.worker}")
 	private boolean srsWorkerEnabled;
 
 	@JmsListener(destination = "${srs.jms.job.queue}")
