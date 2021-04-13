@@ -3,7 +3,6 @@ target
 *.iml
 *.project
 *.classpath
-*data-service.properties
 *telemetry-server.properties
 rebel.xml
 tmp
