@@ -19,12 +19,11 @@ public class MethodSecurityConfig implements PermissionEvaluator  {
         if (releaseCenterKey == null) {
             throw new SecurityException("Release center is null, can not ascertain roles.");
         }
-
         return permissionService.userHasRoleOnReleaseCenter((String) role, (String) releaseCenterKey);
     }
 
     @Override
-    public boolean hasPermission(Authentication authentication, Serializable serializable, String s, Object o) {
+    public boolean hasPermission(Authentication authentication, Serializable targetId, String targetType, Object permission) {
         return false;
     }
 }

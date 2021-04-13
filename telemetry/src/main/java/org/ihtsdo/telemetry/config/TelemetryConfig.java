@@ -14,4 +14,5 @@ public class TelemetryConfig {
 			@Value("${aws.privateKey}") final String secretKey) {
 		return new TransferManager(new BasicAWSCredentials(accessKey, secretKey));
 	}
+
 }

@@ -8,14 +8,12 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
-@EnableConfigurationProperties
-@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
-@TestConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = DailyBuildResourceConfig.class)
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = DataServiceTestConfig.class)
 public class DailyBuildResourceConfigTest {
 
 	@Autowired

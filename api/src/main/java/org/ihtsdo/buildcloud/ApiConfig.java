@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud;
 import org.ihtsdo.sso.integration.RequestHeaderAuthenticationDecorator;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
@@ -16,8 +17,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication(exclude = HibernateJpaAutoConfiguration.class)
 @Configuration
 @PropertySources({
-		@PropertySource(value = "classpath:api-application.properties"),
-		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
+		@PropertySource(value = "classpath:api.properties"),
+		@PropertySource(value = "file:${srsConfigLocation}/api.properties", ignoreResourceNotFound=true)})
+@EnableConfigurationProperties
 @EnableSwagger2
 public class ApiConfig {
 
@@ -35,9 +37,8 @@ public class ApiConfig {
 							"/**/api-doc.html",
 							"/**/api-docs/**",
 							"/**/static/**",
-							"/**/webjars/**").permitAll()
-					.anyRequest().authenticated()
-					.and().httpBasic();
+							"/**/webjars/**").permitAll();
+//					.anyRequest().authenticated()
 			http.csrf().disable();
 			http.addFilterAfter(new RequestHeaderAuthenticationDecorator(), BasicAuthenticationFilter.class);
 		}

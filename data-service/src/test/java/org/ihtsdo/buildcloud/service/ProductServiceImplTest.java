@@ -8,36 +8,21 @@ import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.service.build.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.service.build.transform.LegacyIdTransformationService;
-import org.ihtsdo.buildcloud.service.build.transform.PesudoUUIDGenerator;
-import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.service.identifier.client.IdServiceRestClientImpl;
-import org.ihtsdo.buildcloud.service.postcondition.PostconditionManager;
-import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
-import org.ihtsdo.buildcloud.service.workbenchdatafix.ModuleResolverService;
-import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
 
-@PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
-@TestConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @ContextConfiguration(classes = DataServiceTestConfig.class)
 @Transactional
 public class ProductServiceImplTest extends TestEntityGenerator {

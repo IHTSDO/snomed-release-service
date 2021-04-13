@@ -6,7 +6,6 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
-import org.ihtsdo.context.OrderedPropertyPlaceholderConfigurer;
 import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
@@ -16,12 +15,11 @@ import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.Cache;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.*;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
@@ -41,29 +39,16 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Properties;
 
 @Configuration
 @PropertySources({
-		@PropertySource(value = "classpath:application.properties"),
-		@PropertySource(value = "file:${data.service.config.location}/application.properties", ignoreResourceNotFound=true)})
+		@PropertySource(value = "classpath:data-service.properties"),
+		@PropertySource(value = "file:${srsConfigLocation}/config.properties", ignoreResourceNotFound=true)})
 @EnableJpaRepositories
+@EnableConfigurationProperties
 public class DataServiceConfig extends BaseConfiguration {
 
-	private static final String CLASSPATH_DATA_SERVICE_DEFAULTS_PROPERTIES_LOCATION = "classpath:application.properties";
-	private static final String DATA_SERVICE_PROPERTIES_PATH_LOCATION = "+{dataServicePropertiesPath}";
-	private static final String LOCAL_RVF_PROPERTY_KEY = "localRvf";
-	private static final String LOCAL_RVF_PROPERTY_VALUE = "false";
-	private static final String S3_OFFLINE_DIRECTORY_KEY = "s3.offline.directory";
-	private static final String S3_OFFLINE_DIRECTORY_VALUE = "";
-	private static final String SYSTEM_PROPERTY_MODE_OVERRIDE = "SYSTEM_PROPERTIES_MODE_OVERRIDE";
-	private static final String PLACEHOLDER_PREFIX = "+{";
-	private static final String DATA_SERVICE_PROPERTIES_PATH_KEY = "dataServicePropertiesPath";
-	private static final String CLASSPATH_DATA_SERVICE_PROPERTIES_VALUE = "classpath:data-service.properties";
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
-
-	private static final boolean IGNORE_RESOURCE_NOT_FOUND_VALUE = true;
-	private static final boolean IGNORE_UNRESOLVABLE_PLACEHOLDER_VALUE = true;
 
 	private S3ClientFactory s3ClientFactory;
 
@@ -96,46 +81,6 @@ public class DataServiceConfig extends BaseConfiguration {
 		transactionManager.setDataSource(getBasicDataSource(driverClassName, url, username, password));
 		transactionManager.setSessionFactory(sessionFactory);
 		return transactionManager;
-	}
-
-	@Bean
-	public OrderedPropertyPlaceholderConfigurer configurer2() {
-		final OrderedPropertyPlaceholderConfigurer configurer = new OrderedPropertyPlaceholderConfigurer();
-		configurer.setLocations(getLocations());
-		configurer.setIgnoreResourceNotFound(IGNORE_RESOURCE_NOT_FOUND_VALUE);
-		configurer.setProperties(getProperties2());
-		return configurer;
-	}
-
-	private ClassPathResource[] getLocations() {
-		return new ClassPathResource[] {
-				new ClassPathResource(CLASSPATH_DATA_SERVICE_DEFAULTS_PROPERTIES_LOCATION),
-				new ClassPathResource(DATA_SERVICE_PROPERTIES_PATH_LOCATION)
-		};
-	}
-
-	private Properties getProperties2() {
-		final Properties properties = new Properties();
-		properties.setProperty(LOCAL_RVF_PROPERTY_KEY, LOCAL_RVF_PROPERTY_VALUE);
-		properties.setProperty(S3_OFFLINE_DIRECTORY_KEY, S3_OFFLINE_DIRECTORY_VALUE);
-		return properties;
-	}
-
-	@Bean
-	public PropertyPlaceholderConfigurer configurer1() {
-		final PropertyPlaceholderConfigurer configurer1 = new PropertyPlaceholderConfigurer();
-		configurer1.setSystemPropertiesModeName(SYSTEM_PROPERTY_MODE_OVERRIDE);
-		configurer1.setPlaceholderPrefix(PLACEHOLDER_PREFIX);
-		configurer1.setProperties(getProperties1());
-		configurer1.setIgnoreUnresolvablePlaceholders(IGNORE_UNRESOLVABLE_PLACEHOLDER_VALUE);
-		return configurer1;
-	}
-
-	private Properties getProperties1() {
-		final Properties properties = new Properties();
-		properties.setProperty(DATA_SERVICE_PROPERTIES_PATH_KEY,
-				CLASSPATH_DATA_SERVICE_PROPERTIES_VALUE);
-		return properties;
 	}
 
 	@Bean

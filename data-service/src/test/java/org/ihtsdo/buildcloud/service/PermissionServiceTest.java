@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.service;
 import com.google.common.collect.Sets;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
+import org.ihtsdo.buildcloud.config.DataServiceTestConfig;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.junit.Assert;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
-@ContextConfiguration(locations={"/test/testDataServiceContext.xml"})
+@ContextConfiguration(classes = DataServiceTestConfig.class)
 @Transactional
 public class PermissionServiceTest {
 
