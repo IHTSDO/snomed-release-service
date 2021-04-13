@@ -8,7 +8,6 @@ import org.ihtsdo.otf.jms.MessagingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Service;
@@ -32,9 +31,6 @@ public class SRSWorkerService {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-
-	@Value("${srs.worker}")
-	private boolean srsWorkerEnabled;
 
 	@JmsListener(destination = "${srs.jms.job.queue}")
 	public void consumeSRSJob(final TextMessage srsMessage) {
