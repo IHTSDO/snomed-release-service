@@ -164,17 +164,6 @@ public class DataServiceConfig extends BaseConfiguration {
 		return new ActiveMQQueue(queue);
 	}
 
-	public Queue buildStatusQueue(final String queue) {
-		return new ActiveMQQueue(queue);
-	}
-
-	@Bean
-	public ActiveMQTextMessage buildStatusTextMessage(@Value("${build.status.jms.job.queue}") final String queue) throws JMSException {
-		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
-		activeMQTextMessage.setJMSReplyTo(buildStatusQueue(queue));
-		return activeMQTextMessage;
-	}
-
 	@Bean
 	public MessageConverter jacksonJmsMessageConverter() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();

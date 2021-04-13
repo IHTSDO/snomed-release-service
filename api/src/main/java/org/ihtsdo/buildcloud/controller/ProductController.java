@@ -48,9 +48,6 @@ public class ProductController {
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	@Value("${srs.manager}")
-	private boolean srsManagerEnabled;
-
 	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
 
 	@GetMapping
@@ -155,13 +152,8 @@ public class ProductController {
 			@PathVariable final String productKey,
 			@RequestBody final GatherInputRequestPojo buildConfig,
 			final HttpServletRequest request) throws BusinessServiceException {
-		if (srsManagerEnabled) {
-			final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-			return new ResponseEntity<>(releaseService.queueBuild(newBuild), HttpStatus.CREATED);
-		} else {
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-					.body(ImmutableMap.of("Response", "The SRS manager role must be enabled to create a release package."));
-		}
+		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
+		return new ResponseEntity<>(releaseService.queueBuild(newBuild), HttpStatus.CREATED);
 	}
 
 	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)
