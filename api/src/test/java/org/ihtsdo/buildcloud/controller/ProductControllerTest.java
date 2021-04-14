@@ -4,7 +4,6 @@ import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.entity.helper.TestEntityGenerator;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -26,7 +25,7 @@ public class ProductControllerTest extends AbstractControllerTest {
 		mockMvc.perform(get(productsUrl))
 				.andExpect(status().isOk())
 				//.andDo(print())
-				.andExpect(content().contentType(APPLICATION_JSON_UTF8));
+				.andExpect(content().contentType(APPLICATION_JSON));
 				//.andExpect(jsonPath("$[" + random_product + "].url", is(ROOT_URL + productsUrl + businessKey)));
 	}
 

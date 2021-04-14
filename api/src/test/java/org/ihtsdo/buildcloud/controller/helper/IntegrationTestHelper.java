@@ -8,7 +8,6 @@ import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.runner.RunWith;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -77,7 +76,7 @@ public class IntegrationTestHelper {
 			)
 					.andDo(print())
 					.andExpect(status().isCreated())
-					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 		}
 
@@ -197,7 +196,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
 	}
 
 	private String getEffectiveDateWithSeparators(final String effectiveDate) {
@@ -267,7 +266,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8));
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
 	}
 
 	public String createBuild() throws Exception {
@@ -278,7 +277,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isCreated())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
@@ -293,7 +292,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
@@ -312,7 +311,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
@@ -352,7 +351,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
@@ -368,7 +367,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");

@@ -16,7 +16,7 @@ public class RootControllerTest extends AbstractControllerTest {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
 				.andDo(print())
-				.andExpect(content().contentType(APPLICATION_JSON_UTF8))
+				.andExpect(content().contentType(APPLICATION_JSON))
 				.andExpect(jsonPath("$.url", is(ROOT_URL)))
 				.andExpect(jsonPath("$.user_url", is(ROOT_URL + "/user")))
 				.andExpect(jsonPath("$.login_url", is(ROOT_URL + "/login")))

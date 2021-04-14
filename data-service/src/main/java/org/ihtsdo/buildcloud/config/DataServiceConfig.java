@@ -1,6 +1,9 @@
 package org.ihtsdo.buildcloud.config;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.integration.spring.SpringLiquibase;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -22,6 +25,7 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -35,9 +39,9 @@ import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
 @Configuration
@@ -51,6 +55,11 @@ public class DataServiceConfig extends BaseConfiguration {
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
 
 	private S3ClientFactory s3ClientFactory;
+
+	@Bean
+	public ObjectMapper createObjectMapper() {
+		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+	}
 
 	@Bean
 	public DelegatingSecurityContextAsyncTaskExecutor securityContextAsyncTaskExecutor(
@@ -101,6 +110,18 @@ public class DataServiceConfig extends BaseConfiguration {
 		return new OfflineS3ClientImpl(directory);
 	}
 
+
+	@Bean
+	public SpringLiquibase liquibase(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
+	                                 @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
+	                                 @Value("${srs.jdbc.password}") final String password,
+	                                 @Value("${srs.environment.shortname}") final String shortname) {
+		final SpringLiquibase springLiquibase = new SpringLiquibase();
+		springLiquibase.setDataSource(getBasicDataSource(driverClassName, url, username, password));
+		springLiquibase.setChangeLog(CHANGE_LOG_PATH);
+		springLiquibase.setContexts(shortname);
+		return springLiquibase;
+	}
 	@Bean
 	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
@@ -141,17 +162,6 @@ public class DataServiceConfig extends BaseConfiguration {
 
 	private Cache getCache(final String name) {
 		return new ConcurrentMapCache(name);
-	}
-
-	@Bean
-	public SpringLiquibase liquibase(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-			@Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-			@Value("${srs.jdbc.password}") final String password, @Value("${srs.environment.shortname}") final String shortname) {
-		final SpringLiquibase springLiquibase = new SpringLiquibase();
-		springLiquibase.setDataSource(getBasicDataSource(driverClassName, url, username, password));
-		springLiquibase.setChangeLog(CHANGE_LOG_PATH);
-		springLiquibase.setContexts(shortname);
-		return springLiquibase;
 	}
 
 	@Bean

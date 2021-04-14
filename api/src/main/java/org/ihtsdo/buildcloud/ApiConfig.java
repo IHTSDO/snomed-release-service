@@ -1,46 +1,21 @@
 package org.ihtsdo.buildcloud;
 
-import org.ihtsdo.sso.integration.RequestHeaderAuthenticationDecorator;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.aws.autoconfigure.context.ContextInstanceDataAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-@SpringBootApplication(exclude = HibernateJpaAutoConfiguration.class)
+@SpringBootApplication(exclude = {
+		ContextInstanceDataAutoConfiguration.class,
+		HibernateJpaAutoConfiguration.class}
+		)
 @Configuration
 @PropertySources({
 		@PropertySource(value = "classpath:api.properties"),
 		@PropertySource(value = "file:${srsConfigLocation}/api.properties", ignoreResourceNotFound=true)})
 @EnableConfigurationProperties
-@EnableSwagger2
 public class ApiConfig {
-
-	@Configuration
-	@EnableWebSecurity
-	@Order(1)
-	public static class ApiWebSecurityConfigurationAdapter extends WebSecurityConfigurerAdapter {
-		protected void configure(HttpSecurity http) throws Exception {
-			http.authorizeRequests()
-					.antMatchers("/swagger-ui.html",
-							"/swagger-resources/**",
-							"/v2/api-docs",
-							"/v2/**",
-							"/webjars/springfox-swagger-ui/**",
-							"/**/api-doc.html",
-							"/**/api-docs/**",
-							"/**/static/**",
-							"/**/webjars/**").permitAll();
-//					.anyRequest().authenticated()
-			http.csrf().disable();
-			http.addFilterAfter(new RequestHeaderAuthenticationDecorator(), BasicAuthenticationFilter.class);
-		}
-	}
 }
