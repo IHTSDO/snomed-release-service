@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.config;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.integration.spring.SpringLiquibase;
@@ -59,7 +60,8 @@ public class DataServiceConfig extends BaseConfiguration {
 
 	@Bean
 	public ObjectMapper createObjectMapper() {
-		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
 	@Bean
