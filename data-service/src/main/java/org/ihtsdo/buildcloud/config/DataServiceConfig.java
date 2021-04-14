@@ -39,6 +39,7 @@ import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -211,5 +212,12 @@ public class DataServiceConfig extends BaseConfiguration {
 	@Bean
 	public JmsTemplate jmsTemplate(@Autowired ConnectionFactory connectionFactory) {
 		return new JmsTemplate(connectionFactory);
+	}
+
+	@Bean
+	public ActiveMQTextMessage buildStatusTextMessage(@Value("${build.status.jms.job.queue}") final String queue) throws JMSException {
+		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
+		activeMQTextMessage.setJMSReplyTo(new ActiveMQQueue(queue));
+		return activeMQTextMessage;
 	}
 }

@@ -1,13 +1,11 @@
 package org.ihtsdo.buildcloud.entity;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.persistence.Transient;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
+
+import javax.persistence.Transient;
+import java.util.Date;
+import java.util.List;
 
 /**
  * A Build is a snapshot of a Product and may be used to run the release process.
@@ -140,7 +138,6 @@ public class Build {
 		this.buildReport = buildReport;
 	}
 
-	@JsonIgnore
 	public Product getProduct() {
 		return product;
 	}

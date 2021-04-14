@@ -10,6 +10,8 @@ public class JMSBrokerManager {
 		BrokerService broker = new BrokerService();
 		broker.addConnector("tcp://localhost:61616");
 		broker.setBrokerName("TelemetryJMSBroker");
+		broker.setSystemExitOnShutdown(true);
+		broker.setUseShutdownHook(false);
 		broker.start();
 	}
 }

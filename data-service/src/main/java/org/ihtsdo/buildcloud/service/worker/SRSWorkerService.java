@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.jms.TextMessage;
 
 @Service
-@ConditionalOnProperty(name = "${srs.worker}", havingValue = "true")
+@ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
 public class SRSWorkerService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
@@ -34,11 +34,13 @@ public class SRSWorkerService {
 
 	@JmsListener(destination = "${srs.jms.job.queue}")
 	public void consumeSRSJob(final TextMessage srsMessage) {
-		LOGGER.info("Product build request message {}", srsMessage);
+		LOGGER.info("Build has been picked up from the queue: {}", srsMessage);
 		try {
+			Thread.sleep(2000);
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.RUNNING);
 			buildService.triggerBuild(objectMapper.readValue(srsMessage.getText(), Build.class));
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.COMPLETED);
+			LOGGER.info("Build has successfully been executed.");
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.FAILED);

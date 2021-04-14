@@ -5,9 +5,13 @@ import java.util.zip.ZipFile;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
@@ -20,6 +24,30 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
+	}
+
+	@Test
+	@Ignore
+	public void testCreateReleasePackageUsingJmsQueue() throws Exception {
+		integrationTestHelper.createTestProductStructure();
+
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
+
+		integrationTestHelper.setEffectiveTime("20140131");
+		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2014-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2021");
+
+		integrationTestHelper.uploadManifest("core_manifest_20140131.xml", getClass());
+
+		final GatherInputRequestPojo gatherInputRequestPojo = new GatherInputRequestPojo();
+		gatherInputRequestPojo.setEffectiveDate("20140131");
+		gatherInputRequestPojo.setLoadTermServerData(false);
+
+		final String build = integrationTestHelper.createReleasePackage(gatherInputRequestPojo);
+
+		assertNotNull(build);
+
+		System.out.println(build);
 	}
 
 	@Test

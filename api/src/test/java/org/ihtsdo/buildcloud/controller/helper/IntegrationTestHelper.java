@@ -1,13 +1,17 @@
 package org.ihtsdo.buildcloud.controller.helper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -267,6 +271,20 @@ public class IntegrationTestHelper {
 				.andDo(print())
 				.andExpect(status().isOk())
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
+	}
+
+	public String createReleasePackage(final GatherInputRequestPojo gatherInputRequestPojo) throws Exception {
+		final MvcResult result = mockMvc.perform(post(CENTER_URL +
+				"/products/{productKey}/release", productBusinessKey)
+				.header("Authorization", getBasicDigestHeaderValue())
+				.content(new ObjectMapper().writeValueAsString(gatherInputRequestPojo))
+				.contentType(MediaType.APPLICATION_JSON))
+				.andDo(print())
+				.andExpect(status().isCreated())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andReturn();
+
+		return result.getResponse().getContentAsString();
 	}
 
 	public String createBuild() throws Exception {

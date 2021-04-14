@@ -25,20 +25,16 @@ public class Product {
 	@Column(name="name")
 	private String name;
 
-	@JsonIgnore
 	@Column(name="business_key", unique=true)
 	private String businessKey;
 
 	@ManyToOne
 	@JoinColumn(name="release_center_id")
-	@JsonIgnore
 	private ReleaseCenter releaseCenter;
 
-	@JsonIgnore
 	@Transient
 	private Status latestBuildStatus;
 
-	@JsonIgnore
 	@Transient
 	private Build.Tag latestTag;
 
@@ -48,7 +44,6 @@ public class Product {
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private QATestConfig qaTestConfig;
 
-	@JsonIgnore
 	@Type(type="yes_no")
 	@Column(name = "legacy_product")
 	private boolean isLegacyProduct;

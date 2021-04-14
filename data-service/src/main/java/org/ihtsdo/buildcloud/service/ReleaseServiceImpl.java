@@ -28,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
 import java.text.ParseException;
@@ -123,7 +124,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private void convertAndSend(final Build build) throws BusinessServiceException {
 		try {
 			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(build));
-		} catch (JmsException | JsonProcessingException e) {
+			LOGGER.info("Build {} has been sent to the {}.", build, srsQueue.getQueueName());
+		} catch (JmsException | JsonProcessingException | JMSException e) {
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. BuildID: " + build.getId(), e);
 		}
 	}
