@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
@@ -86,6 +87,7 @@ public class Build {
 		this.product = product;
 	}
 
+	@JsonProperty(value = "id")
 	public String getId() {
 		return creationTime;
 	}
