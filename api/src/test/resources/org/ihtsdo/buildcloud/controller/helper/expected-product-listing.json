@@ -1,6 +1,13 @@
 [ {
   "id" : "snomed_ct_release",
   "name" : "SNOMED CT Release",
+  "releaseCenter" : {
+    "id" : "international",
+    "name" : "International Release Center",
+    "shortName" : "International",
+    "codeSystem" : null,
+    "removed" : false
+  },
   "latestBuildStatus" : null,
   "latestTag" : null,
   "buildConfiguration" : {
