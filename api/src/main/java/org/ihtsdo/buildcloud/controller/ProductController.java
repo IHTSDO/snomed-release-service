@@ -154,7 +154,7 @@ public class ProductController {
 			final HttpServletRequest request) throws BusinessServiceException {
 		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
 		return new ResponseEntity<>(releaseService.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
-				buildConfig, hypermediaGenerator.getRootURL(request), (SecurityContextImpl) SecurityContextHolder.getContext())),
+				buildConfig, hypermediaGenerator.getRootURL(request), SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken())),
 				HttpStatus.CREATED);
 	}
 

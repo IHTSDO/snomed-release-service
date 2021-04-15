@@ -2,23 +2,24 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.springframework.security.core.context.SecurityContextImpl;
 
 public final class CreateReleasePackageBuildRequest {
 
 	private Build build;
 	private GatherInputRequestPojo gatherInputRequestPojo;
 	private String rootUrl;
-	private SecurityContextImpl securityContext;
+	private String username;
+	private String authenticationToken;
 
 	public CreateReleasePackageBuildRequest() {}
 
 	public CreateReleasePackageBuildRequest(final Build build, final GatherInputRequestPojo gatherInputRequestPojo,
-			final String rootUrl, final SecurityContextImpl securityContext) {
+			final String rootUrl, final String username, final String authenticationToken) {
 		this.build = build;
 		this.gatherInputRequestPojo = gatherInputRequestPojo;
 		this.rootUrl = rootUrl;
-		this.securityContext = securityContext;
+		this.username = username;
+		this.authenticationToken = authenticationToken;
 	}
 
 	public final Build getBuild() {
@@ -33,7 +34,11 @@ public final class CreateReleasePackageBuildRequest {
 		return rootUrl;
 	}
 
-	public final SecurityContextImpl getSecurityContext() {
-		return securityContext;
+	public String getUsername() {
+		return username;
+	}
+
+	public String getAuthenticationToken() {
+		return authenticationToken;
 	}
 }
