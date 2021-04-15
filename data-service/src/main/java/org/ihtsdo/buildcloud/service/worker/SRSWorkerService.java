@@ -1,11 +1,13 @@
 package org.ihtsdo.buildcloud.service.worker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.service.ReleaseServiceImpl;
+import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 
 import javax.jms.TextMessage;
@@ -46,7 +49,7 @@ public class SRSWorkerService {
 			final Product product = build.getProduct();
 			releaseService.triggerBuildAsync(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
-					createReleasePackageBuildRequest.getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
+					createReleasePackageBuildRequest.getSecurityContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.COMPLETED);
 			LOGGER.info("Build has successfully been executed.");
 		} catch (final Exception e) {
