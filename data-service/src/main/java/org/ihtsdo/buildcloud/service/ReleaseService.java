@@ -9,7 +9,7 @@ public interface ReleaseService {
 
     Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException;
 
-    Build queueBuild(Build build) throws BusinessServiceException;
+    CreateReleasePackageBuildRequest queueBuild(CreateReleasePackageBuildRequest build) throws BusinessServiceException;
 
     void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException;
 

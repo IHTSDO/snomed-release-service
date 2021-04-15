@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
+import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.service.ProductService;
 import org.ihtsdo.buildcloud.service.ReleaseService;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
@@ -150,7 +151,8 @@ public class ProductController {
 			@RequestBody final GatherInputRequestPojo buildConfig,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-		return new ResponseEntity<>(releaseService.queueBuild(newBuild), HttpStatus.CREATED);
+		return new ResponseEntity<>(releaseService.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
+				buildConfig, hypermediaGenerator.getRootURL(request))), HttpStatus.CREATED);
 	}
 
 	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)

@@ -115,18 +115,18 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
-	public Build queueBuild(final Build build) throws BusinessServiceException {
+	public CreateReleasePackageBuildRequest queueBuild(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
 		convertAndSend(build);
-		buildDAO.updateStatus(build, Status.QUEUED);
+		buildDAO.updateStatus(build.getBuild(), Status.QUEUED);
 		return build;
 	}
 
-	private void convertAndSend(final Build build) throws BusinessServiceException {
+	private void convertAndSend(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
 		try {
 			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(build));
 			LOGGER.info("Build {} has been sent to the {}.", build, srsQueue.getQueueName());
 		} catch (JmsException | JsonProcessingException | JMSException e) {
-			throw new BusinessServiceException("Failed to send serialized build to the build queue. BuildID: " + build.getId(), e);
+			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + build.getBuild().getId(), e);
 		}
 	}
 
