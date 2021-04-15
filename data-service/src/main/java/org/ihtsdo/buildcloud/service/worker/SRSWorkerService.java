@@ -46,7 +46,7 @@ public class SRSWorkerService {
 			final Product product = build.getProduct();
 			releaseService.triggerBuildAsync(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
-					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
+					createReleasePackageBuildRequest.getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.COMPLETED);
 			LOGGER.info("Build has successfully been executed.");
 		} catch (final Exception e) {
