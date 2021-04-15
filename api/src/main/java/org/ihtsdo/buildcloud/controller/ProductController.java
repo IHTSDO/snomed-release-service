@@ -153,9 +153,9 @@ public class ProductController {
 			@RequestBody final GatherInputRequestPojo buildConfig,
 			final HttpServletRequest request) throws BusinessServiceException {
 		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-		return new ResponseEntity<>(releaseService.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
-				buildConfig, hypermediaGenerator.getRootURL(request), SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken())),
-				HttpStatus.CREATED);
+		releaseService.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
+				buildConfig, hypermediaGenerator.getRootURL(request), SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
+		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
 	}
 
 	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)
