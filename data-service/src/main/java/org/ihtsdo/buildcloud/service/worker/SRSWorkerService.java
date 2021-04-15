@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.worker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.command.ActiveMQTextMessage;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
@@ -36,15 +37,20 @@ public class SRSWorkerService {
 	@Autowired
 	private ReleaseServiceImpl releaseService;
 
+	@Autowired
+	private BuildDAO buildDAO;
+
 	@JmsListener(destination = "${srs.jms.job.queue}")
 	public void consumeSRSJob(final TextMessage srsMessage) {
-		LOGGER.info("Build has been picked up from the queue: {}", srsMessage);
+		Build build = null;
 		try {
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.RUNNING);
 			final CreateReleasePackageBuildRequest createReleasePackageBuildRequest =
 					objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
-			final Build build = createReleasePackageBuildRequest.getBuild();
+			build = createReleasePackageBuildRequest.getBuild();
 			final Product product = build.getProduct();
+			LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getId());
+			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
 			final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
 					new PreAuthenticatedAuthenticationToken(createReleasePackageBuildRequest.getUsername(),
 							createReleasePackageBuildRequest.getAuthenticationToken());
@@ -54,10 +60,15 @@ public class SRSWorkerService {
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.COMPLETED);
-			LOGGER.info("Build has successfully been executed.");
+			LOGGER.info("Release build completed: {} for product: {}", build.getId(), product.getId());
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			messagingHelper.sendResponse(buildStatusTextMessage, SRSWorkerStatus.FAILED);
+			if (buildDAO != null) {
+				buildDAO.updateStatus(build, Build.Status.FAILED);
+			} else {
+				LOGGER.error("Can not update build status to failed due to the BuildDAO being null.");
+			}
 		}
 	}
 }
