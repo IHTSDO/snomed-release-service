@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service.postcondition;
 
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.PostConditionCheckReport;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 @Service
 public class PostconditionManager {
 
+	@Autowired
 	private List<PostconditionCheck> postconditionChecks;
 
 	public List<PostConditionCheckReport> runPostconditionChecks(final Build build) {
