@@ -133,7 +133,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
-	// @Async("securityContextAsyncTaskExecutor")
+	@Async("securityContextAsyncTaskExecutor")
 	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
