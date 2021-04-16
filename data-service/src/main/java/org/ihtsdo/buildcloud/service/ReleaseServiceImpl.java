@@ -116,8 +116,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	@Override
 	public CreateReleasePackageBuildRequest queueBuild(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
-		convertAndSend(build);
 		buildDAO.updateStatus(build.getBuild(), Status.QUEUED);
+		convertAndSend(build);
 		return build;
 	}
 
@@ -126,12 +126,14 @@ public class ReleaseServiceImpl implements ReleaseService {
 			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(build));
 			LOGGER.info("Build {} has been sent to the {}.", build, srsQueue.getQueueName());
 		} catch (JmsException | JsonProcessingException | JMSException e) {
+			buildDAO.updateStatus(build.getBuild(), Status.FAILED);
+			LOGGER.info("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + build.getBuild().getId(), e);
 		}
 	}
 
 	@Override
-	@Async("securityContextAsyncTaskExecutor")
+	// @Async("securityContextAsyncTaskExecutor")
 	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
