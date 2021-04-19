@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+	<appender name="console" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="trackerId=%X{trackerId} %d{yyyyMMdd_HH:mm:ss} %-5p %c{1} - %m%n"/>
+		</layout>
+		<param name="encoding" value="UTF-8" />
+	</appender>
+	<appender name="telemetry" class="org.ihtsdo.telemetry.client.TelemetryEventAppender">
+		<param name="Service" value="SRS"/>
+		<param name="Environment" value="${ENV_NAME}"/>
+		<param name="encoding" value="UTF-8" />
+	</appender>
+	<logger name="org.ihtsdo" additivity="false">
+		<level value="debug"/>
+		<appender-ref ref="console"/>
+		<appender-ref ref="telemetry"/>
+		<param name="encoding" value="UTF-8" />
+	</logger>
+	<!-- Telemetry classes should only use local appenders -->
+	<logger name="org.ihtsdo.telemetry" additivity="false">
+		<level value="info"/>
+		<appender-ref ref="console"/>
+		<param name="encoding" value="UTF-8" />
+	</logger>
+	<root>
+		<level value="info"/>
+		<appender-ref ref="console"/>
+		<param name="encoding" value="UTF-8" />
+	</root>
+</configuration>
