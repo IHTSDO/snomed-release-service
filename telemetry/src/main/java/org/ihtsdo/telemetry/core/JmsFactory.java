@@ -1,11 +1,14 @@
 package org.ihtsdo.telemetry.core;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
+@Service
 public class JmsFactory {
 
 	public Session createSession() throws JMSException {

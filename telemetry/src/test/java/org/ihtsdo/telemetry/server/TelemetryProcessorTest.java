@@ -79,7 +79,7 @@ public class TelemetryProcessorTest {
 			}
 		};
 
-		telemetryProcessor = new TelemetryProcessor(streamFactory, "foo@bar.com", null, emailSender);
+		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), streamFactory, "foo@bar.com", null, emailSender);
 		telemetryProcessor.startup();
 		testStreamFile = new File("/tmp/" + streamFileName);
 		testStreamFile.delete();

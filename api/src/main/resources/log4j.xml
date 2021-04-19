@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<configuration>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration>
 	<appender name="console" class="org.apache.log4j.ConsoleAppender">
 		<param name="Target" value="System.out"/>
 		<layout class="org.apache.log4j.PatternLayout">
@@ -29,4 +30,4 @@
 		<appender-ref ref="console"/>
 		<param name="encoding" value="UTF-8" />
 	</root>
-</configuration>
+</log4j:configuration>

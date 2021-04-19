@@ -5,7 +5,6 @@ import org.apache.commons.mail.EmailException;
 import org.ihtsdo.commons.email.EmailRequest;
 import org.ihtsdo.commons.email.EmailSender;
 import org.ihtsdo.telemetry.core.Constants;
-import org.ihtsdo.telemetry.core.JmsFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +28,7 @@ public class TelemetryProcessor {
 	private static final int ONE_SECOND = 1000;
 
 	private final Session jmsSession;
+
 	private final Map<String, BufferedWriter> streamWriters;
 	private Boolean shutdown;
 	private final MessageConsumer consumer;
@@ -38,7 +38,8 @@ public class TelemetryProcessor {
 	private static EmailSender emailSender;
 
 	@Autowired
-	public TelemetryProcessor(@Autowired final StreamFactory streamFactory,
+	public TelemetryProcessor(@Autowired Session jmsSession,
+			@Autowired final StreamFactory streamFactory,
 			@Value("${telemetry.email.address.to.default}") final String defaultEmailToAddr,
 			@Value("${telemetry.email.address.from}") final String emailFromAddr,
 			@Value("${telemetry.smtp.username}") final String smtpUsername,
@@ -46,7 +47,7 @@ public class TelemetryProcessor {
 			@Value("${telemetry.smtp.host}") final String smtpHost,
 			@Value("${telemetry.smtp.port}") final Integer smtpPort,
 			@Value("${telemetry.smtp.ssl}") final Boolean smtpSsl) throws JMSException {
-		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		this(jmsSession, streamFactory, defaultEmailToAddr, emailFromAddr);
 		if (smtpHost != null && smtpUsername != null && defaultEmailToAddr != null) {
 			TelemetryProcessor.emailSender = new EmailSender(smtpHost, smtpPort, smtpUsername, smtpPassword, smtpSsl);
 			LOGGER.info("Telemetry server configured to use SMTP " + TelemetryProcessor.emailSender.toString());
@@ -56,21 +57,21 @@ public class TelemetryProcessor {
 		}
 	}
 
-	public TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
+	public TelemetryProcessor(final Session jmsSession, final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr,
 			EmailSender emailSender) throws JMSException {
-		this(streamFactory, defaultEmailToAddr, emailFromAddr);
+		this(jmsSession, streamFactory, defaultEmailToAddr, emailFromAddr);
 		LOGGER.info("Telemetry server using pre-configured " + emailSender.toString());
 
 		TelemetryProcessor.emailSender = emailSender;
 	}
 
 	// Common constructor
-	private TelemetryProcessor(final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr)
+	private TelemetryProcessor(final Session jmsSession, final StreamFactory streamFactory, final String defaultEmailToAddr, final String emailFromAddr)
 			throws JMSException {
 		this.shutdown = false;
 		this.streamWriters = new HashMap<>();
 		this.streamFactory = streamFactory;
-		this.jmsSession = new JmsFactory().createSession();
+		this.jmsSession = jmsSession;
 		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 
 		TelemetryProcessor.defaultEmailToAddr = defaultEmailToAddr;

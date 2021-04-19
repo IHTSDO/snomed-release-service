@@ -53,4 +53,8 @@ public class TestBroker {
 	public List<Message> getMessages() {
 		return messages;
 	}
+
+	public Session getSession() {
+		return session;
+	}
 }

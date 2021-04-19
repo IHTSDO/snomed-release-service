@@ -11,7 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 		HibernateJpaAutoConfiguration.class}
 		)
 @TestConfiguration
-@ComponentScan("org.ihtsdo.buildcloud.*")
+@ComponentScan(basePackages = {"org.ihtsdo.buildcloud"})
 public class DataServiceTestConfig extends DataServiceConfig {
 
 	// TODO To disable liquibase during tests
