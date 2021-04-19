@@ -17,7 +17,6 @@ import org.ihtsdo.telemetry.core.JmsFactory;
 import org.ihtsdo.telemetry.core.TelemetryRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.UUID;
 
 @Plugin(name = "TelemetryEventAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE)
-@Service
 public class TelemetryEventAppender extends AbstractAppender {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryEventAppender.class);
