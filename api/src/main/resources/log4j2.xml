@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration xmlns:xi="http://www.w3.org/2001/XInclude" packages="org.ihtsdo" status="info">
+	<Appenders>
+		<TelemetryEventAppender name="TelemetryEventAppender" env="${ENV_NAME}"/>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="trackerId=%X{trackerId} %d{yyyyMMdd_HH:mm:ss} %-5p %c{1} - %m%n"/>
+		</Console>
+	</Appenders>
+	<Loggers>
+		<logger name="org.ihtsdo" additivity="false" level="debug">
+			<AppenderRef ref="Console"/>
+		</logger>
+		<!-- Telemetry classes should only use local appenders -->
+		<logger name="telemetry" additivity="false" level="info">
+			<AppenderRef ref="Console"/>
+		</logger>
+		<Root level="info">
+			<AppenderRef ref="Console"/>
+		</Root>
+	</Loggers>
+</configuration>
