@@ -25,8 +25,6 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -43,14 +41,12 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
 @Configuration
 @PropertySources({
 		@PropertySource(value = "classpath:data-service.properties"),
 		@PropertySource(value = "file:${srsConfigLocation}/config.properties", ignoreResourceNotFound=true)})
-@EnableJpaRepositories
 @EnableConfigurationProperties
 public class DataServiceConfig extends BaseConfiguration {
 
@@ -79,16 +75,16 @@ public class DataServiceConfig extends BaseConfiguration {
 
 	@Bean(name = "sessionFactory")
 	public LocalSessionFactoryBean sessionFactory(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-			@Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-			@Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect) {
+	                                              @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
+	                                              @Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect) {
 		return getSessionFactory(driverClassName, url, username, password, dialect);
 	}
 
 	@Bean
 	public HibernateTransactionManager transactionManager(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-			@Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-			@Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect,
-			@Autowired SessionFactory sessionFactory) {
+	                                                      @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
+	                                                      @Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect,
+	                                                      @Autowired SessionFactory sessionFactory) {
 		final HibernateTransactionManager transactionManager = new HibernateTransactionManager();
 		transactionManager.setDataSource(getBasicDataSource(driverClassName, url, username, password));
 		transactionManager.setSessionFactory(sessionFactory);

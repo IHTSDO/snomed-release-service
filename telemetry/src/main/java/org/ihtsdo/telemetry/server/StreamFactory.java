@@ -23,8 +23,8 @@ public class StreamFactory {
 
 	private final TransferManager transferManager;
 
-	public StreamFactory(@Autowired TransferManager transferManager,
-			@Value("${offlineMode}") Boolean offlineMode) {
+	@Autowired
+	public StreamFactory(TransferManager transferManager, @Value("${offlineMode}") Boolean offlineMode) {
 		this.transferManager = transferManager;
 		this.offlineMode = offlineMode;
 		new File(TEMP_DIRECTORY_PATH).mkdirs();

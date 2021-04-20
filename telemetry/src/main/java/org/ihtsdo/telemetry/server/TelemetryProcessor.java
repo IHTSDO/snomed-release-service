@@ -27,19 +27,21 @@ public class TelemetryProcessor {
 	
 	private static final int ONE_SECOND = 1000;
 
+	@Autowired
 	private final Session jmsSession;
 
 	private final Map<String, BufferedWriter> streamWriters;
 	private Boolean shutdown;
 	private final MessageConsumer consumer;
+	@Autowired
 	private final StreamFactory streamFactory;
 	private static String defaultEmailToAddr;
 	private static String emailFromAddr;
 	private static EmailSender emailSender;
 
 	@Autowired
-	public TelemetryProcessor(@Autowired Session jmsSession,
-			@Autowired final StreamFactory streamFactory,
+	public TelemetryProcessor(Session jmsSession,
+			final StreamFactory streamFactory,
 			@Value("${telemetry.email.address.to.default}") final String defaultEmailToAddr,
 			@Value("${telemetry.email.address.from}") final String emailFromAddr,
 			@Value("${telemetry.smtp.username}") final String smtpUsername,
