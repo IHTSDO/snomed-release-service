@@ -19,7 +19,7 @@ public class PreconditionManager {
 	@Autowired
 	private List<PreconditionCheck> preconditionChecks;
 
-	private boolean onlineMode;
+	private boolean onlineMode = true;
 
 	@Value("${localRvf}")
 	private Boolean localRvf;
@@ -63,8 +63,7 @@ public class PreconditionManager {
 		this.preconditionChecks = preconditionChecks;
 	}
 
-
-	public void setOfflineMode(@Value("${offlineMode}") boolean offlineMode) {
+	public void setOfflineMode(boolean offlineMode) {
 		this.onlineMode = !offlineMode;
 	}
 
