@@ -1,0 +1,24 @@
+This is the readme for the second release © 2002-2015.
+Table of contents:
+
+    SnomedCT_Release_INTBadDelta_20140731
+        RF2Release
+            Full
+                Refset
+                    Language
+                        der2_cRefset_LanguageFull-en_INT_20140731.txt
+                Terminology
+                    sct2_Concept_Full_INT_20140731.txt
+            Snapshot
+                Refset
+                    Language
+                        der2_cRefset_LanguageSnapshot-en_INT_20140731.txt
+                Terminology
+                    sct2_Concept_Snapshot_INT_20140731.txt
+            Delta
+                Refset
+                    Language
+                        der2_cRefset_LanguageDelta-en_INT_20140731.txt
+                Terminology
+                    sct2_Concept_Delta_INT_20140731.txt
+        Readme_20140731.txt
