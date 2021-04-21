@@ -17,7 +17,7 @@ public class ManifestCheckTest extends PreconditionCheckTest {
 	@Before
 	public final void setup() throws Exception {
 		super.setup();
-		manager = new PreconditionManager().preconditionChecks(manifestCheck);
+		manager = new PreconditionManager(true).preconditionChecks(manifestCheck);
 	}
 
 	@Test

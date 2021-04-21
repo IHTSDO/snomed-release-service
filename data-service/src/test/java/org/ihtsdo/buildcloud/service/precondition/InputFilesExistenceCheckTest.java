@@ -21,7 +21,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		manager = new PreconditionManager().preconditionChecks(inputFilesCheck);
+		manager = new PreconditionManager(false).preconditionChecks(inputFilesCheck);
 	}
 
 	@Test

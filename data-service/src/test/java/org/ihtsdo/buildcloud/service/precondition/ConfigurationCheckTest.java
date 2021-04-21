@@ -22,7 +22,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		manager = new PreconditionManager().preconditionChecks(new ConfigurationCheck());
+		manager = new PreconditionManager(true).preconditionChecks(new ConfigurationCheck());
 	}
 
 	@Test

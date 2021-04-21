@@ -19,12 +19,16 @@ public class PreconditionManager {
 	@Autowired
 	private List<PreconditionCheck> preconditionChecks;
 
-	private boolean onlineMode = true;
+	private boolean onlineMode;
 
 	@Value("${localRvf}")
 	private Boolean localRvf;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
+
+	public PreconditionManager(@Value("${offlineMode}") boolean offlineMode) {
+		this.onlineMode = !offlineMode;
+	}
 
 	/**
 	 * Runs each PreconditionCheck which has been added to the manager.
@@ -66,5 +70,4 @@ public class PreconditionManager {
 	public void setOfflineMode(boolean offlineMode) {
 		this.onlineMode = !offlineMode;
 	}
-
 }
