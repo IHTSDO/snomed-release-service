@@ -79,9 +79,12 @@ public class SRSWorkerService {
 
 	public static class BuildStatusWithProduct {
 
-		private final BuildStatus buildStatus;
+		private BuildStatus buildStatus;
 
-		private final Product product;
+		private Product product;
+
+		public BuildStatusWithProduct() {
+		}
 
 		private BuildStatusWithProduct(final Builder builder) {
 			this.buildStatus = builder.buildStatus;
