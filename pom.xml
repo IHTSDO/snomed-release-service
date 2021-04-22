@@ -24,7 +24,7 @@
 		<activemq.version>5.15.9</activemq.version>
 		<spring-cloud.version>1.2.2.RELEASE</spring-cloud.version>
 		<spring-cloud-aws-version>2.2.6.RELEASE</spring-cloud-aws-version>
-		<packageName>${project.artifactId}-api</packageName>
+		<packageName>${project.artifactId}</packageName>
 	</properties>
 
 	<scm>
@@ -421,13 +421,6 @@
 	</dependencyManagement>
 
 	<build>
-		<finalName>${project.artifactId}</finalName>
-<!--		<resources>-->
-<!--			<resource>-->
-<!--				<directory>src/main/resources</directory>-->
-<!--				<filtering>true</filtering>-->
-<!--			</resource>-->
-<!--		</resources>-->
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -499,11 +492,11 @@
 									<dataSet>
 										<data>
 											<src>${project.build.directory}/${project.build.finalName}.jar</src>
-											<dst>app.jar</dst>
+											<dst>${packageName}.jar</dst>
 											<type>file</type>
 											<mapper>
 												<type>perm</type>
-												<prefix>/opt/${packageName}/lib/</prefix>
+												<prefix>/opt/${packageName}/</prefix>
 											</mapper>
 										</data>
 										<data>
