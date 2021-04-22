@@ -15,8 +15,6 @@ import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.commons.email.EmailRequest;
-import org.ihtsdo.buildcloud.commons.email.EmailSender;
 import org.ihtsdo.buildcloud.telemetry.TestService;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
 import org.junit.After;
@@ -49,9 +47,6 @@ public class TelemetryProcessorTest {
 	private static String streamFileDestination;
 	private static String streamS3Destination;
 
-	@Mocked
-	EmailSender emailSender;
-
 	@Before
 	public void setUp() throws Exception {
 		LogLog.setInternalDebugging(true);
@@ -73,13 +68,7 @@ public class TelemetryProcessorTest {
 
 		streamFactory = new StreamFactory(mockTransferManager, false);
 
-		new NonStrictExpectations() {
-			{
-				emailSender.send((EmailRequest) any);
-			}
-		};
-
-		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), streamFactory, "foo@bar.com", null, emailSender);
+		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), streamFactory);
 		telemetryProcessor.startup();
 		testStreamFile = new File("/tmp/" + streamFileName);
 		testStreamFile.delete();

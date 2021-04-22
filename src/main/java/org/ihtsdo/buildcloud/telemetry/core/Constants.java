@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.telemetry.core;
 
 public class Constants {
-	public static final String SYS_PROP_BROKER_URL = "org.ihtsdo.telemetry.brokerurl";
+	public static final String SYS_PROP_BROKER_URL = "org.ihtsdo.buildcloud.telemetry.brokerurl";
 	public static final String QUEUE_RELEASE_EVENTS = "release.events";
 	public static final String STREAM_URI = "streamURI";
 	public static final String STREAM_ID = "streamId";

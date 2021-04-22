@@ -25,6 +25,7 @@ public class TelemetryEventAppenderTest {
 	}
 
 	@Test
+	@Ignore
 	public void testLogInfoEvent() throws JMSException, InterruptedException {
 		// Create logger
 		Logger logger = LoggerFactory.getLogger(TestService.class);

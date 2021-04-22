@@ -9,8 +9,6 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.config.DataServiceConfig;
-import org.ihtsdo.buildcloud.config.DataServiceTestConfig;
 import org.ihtsdo.buildcloud.config.TestConfig;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
@@ -195,10 +193,7 @@ public class BuildDAOImplTest {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		final boolean offlineMode = true;
-		DataServiceConfig s3ClientFactoryConfiguration = new DataServiceConfig();
-		s3ClientFactoryConfiguration.s3Client(accessKey, privateKey, directory, this.offlineMode);
-		final S3Client s3Client1 = s3ClientFactoryConfiguration.getS3Client(offlineMode);
-		buildDAO.setS3Client(s3Client1);
+		buildDAO.setS3Client(s3Client);
 		final String testFile = getClass().getResource("/org/ihtsdo/buildcloud/service/build/"+ TEST_FILE_NAME).getFile();
 
 		final boolean calcMD5 = true;

@@ -33,6 +33,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -53,13 +54,13 @@ import java.util.Arrays;
 
 @SpringBootApplication(exclude = {
 		ContextInstanceDataAutoConfiguration.class,
-		HibernateJpaAutoConfiguration.class,
-		ActiveMQAutoConfiguration.class}
-		)
+		HibernateJpaAutoConfiguration.class}
+)
 @PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
 @EnableConfigurationProperties
 @ComponentScan(basePackages = {"org.ihtsdo.buildcloud"})
-public class Config extends BaseConfiguration {
+@EnableJpaRepositories
+public abstract class Config extends BaseConfiguration {
 
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
 
