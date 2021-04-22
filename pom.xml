@@ -24,7 +24,7 @@
 		<activemq.version>5.15.9</activemq.version>
 		<spring-cloud.version>1.2.2.RELEASE</spring-cloud.version>
 		<spring-cloud-aws-version>2.2.6.RELEASE</spring-cloud-aws-version>
-		<packageName>${project.artifactId}</packageName>
+		<packageName>${project.artifactId}-api</packageName>
 	</properties>
 
 	<scm>
