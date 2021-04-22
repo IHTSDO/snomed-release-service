@@ -498,7 +498,7 @@
 									<signPackage>false</signPackage>
 									<dataSet>
 										<data>
-											<src>${project.build.directory}/${project.artifactId}.${project.packaging}</src>
+											<src>${project.build.directory}/${project.build.finalName}.jar</src>
 											<dst>app.jar</dst>
 											<type>file</type>
 											<mapper>
