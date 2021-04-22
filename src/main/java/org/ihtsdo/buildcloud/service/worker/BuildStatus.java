@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.service.worker;
 
-public enum SRSWorkerStatus {
+public enum BuildStatus {
 
 	RUNNING,
 	FAILED,

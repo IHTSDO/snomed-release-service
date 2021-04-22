@@ -11,15 +11,18 @@ import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetai
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.service.worker.BuildStatus;
+import org.ihtsdo.buildcloud.service.worker.SRSWorkerService.BuildStatusWithProduct;
+import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.exception.*;
-import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.JmsException;
+import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
@@ -30,6 +33,7 @@ import org.springframework.util.StringUtils;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
+import javax.jms.TextMessage;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
@@ -115,10 +119,20 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
-	public CreateReleasePackageBuildRequest queueBuild(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
-		buildDAO.updateStatus(build.getBuild(), Status.QUEUED);
-		convertAndSend(build);
-		return build;
+	public CreateReleasePackageBuildRequest queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
+		queueBuildIfBuildNotNull(createReleasePackageBuildRequest, createReleasePackageBuildRequest.getBuild());
+		return createReleasePackageBuildRequest;
+	}
+
+	private void queueBuildIfBuildNotNull(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest, final Build build) throws BusinessServiceException {
+		if (build != null) {
+			buildDAO.updateStatus(createReleasePackageBuildRequest.getBuild(), Status.QUEUED);
+			final Product product = build.getProduct();
+			concurrentReleaseBuildMap.putIfAbsent(product.getBusinessKey(), product.getName());
+			convertAndSend(createReleasePackageBuildRequest);
+		} else {
+			LOGGER.info("Build can not be queued due to being null.");
+		}
 	}
 
 	private void convertAndSend(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
@@ -127,8 +141,27 @@ public class ReleaseServiceImpl implements ReleaseService {
 			LOGGER.info("Build {} has been sent to the {}.", build, srsQueue.getQueueName());
 		} catch (JmsException | JsonProcessingException | JMSException e) {
 			buildDAO.updateStatus(build.getBuild(), Status.FAILED);
-			LOGGER.info("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
+			LOGGER.error("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + build.getBuild().getId(), e);
+		}
+	}
+
+	@JmsListener(destination = "${build.status.jms.job.queue}")
+	public void consumeBuildStatus(final TextMessage srsMessage) {
+		try {
+			final BuildStatusWithProduct buildStatusWithProduct =
+					objectMapper.readValue(srsMessage.getText(), BuildStatusWithProduct.class);
+			if (buildStatusWithProduct != null) {
+				final BuildStatus buildStatus = buildStatusWithProduct.getBuildStatus();
+				if (buildStatus == BuildStatus.COMPLETED || buildStatus == BuildStatus.FAILED) {
+					final Product product = buildStatusWithProduct.getProduct();
+					if (product != null) {
+						concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
+					}
+				}
+			}
+		} catch (JsonProcessingException | JMSException e) {
+			LOGGER.error("Error occurred while trying to obtain the build status.", e);
 		}
 	}
 
@@ -137,7 +170,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 	public void triggerBuildAsync(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
-		concurrentReleaseBuildMap.putIfAbsent(productKey, product.getName());
 
 		try {
 			MDC.put(TRACKER_ID, releaseCenter + "|" + product.getBusinessKey() + "|" + build.getId());
@@ -175,10 +207,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 					for (FileProcessingReportDetail errorDetail : errorDetails) {
 						LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
 					}
-//					if (!errorDetails.isEmpty()) {
-//						buildDAO.updateStatus(build, Build.Status.FAILED);
-//						throw new BusinessServiceRuntimeException("Failed when processing source files into input files. Please check input prepare report for details");
-//					}
 				}
 			}
 
@@ -192,7 +220,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 			LOGGER.error("Encounter error while creating package. Build process stopped.", e);
 		} finally {
 			MDC.remove(TRACKER_ID);
-			concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
 			TelemetryStream.finish(LOGGER);
 		}
 	}
