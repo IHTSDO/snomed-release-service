@@ -42,7 +42,7 @@ public class SRSWorkerService {
 	@Autowired
 	private BuildDAO buildDAO;
 
-	@JmsListener(destination = "${srs.jms.job.queue}")
+	@JmsListener(destination = "${srs.build.job.queue}")
 	public void consumeSRSJob(final TextMessage srsMessage) {
 		Build build = null;
 		Builder buildStatusWithProductBuilder = null;

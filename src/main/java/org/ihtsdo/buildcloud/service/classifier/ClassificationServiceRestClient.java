@@ -44,11 +44,11 @@ public class ClassificationServiceRestClient {
 	private final RestyHelper resty;
 	private static final String STATUS = "status";
 
-	@Value("${external.classifier.timeoutInSeconds:300}")
+	@Value("${classification-service.timeoutInSeconds:300}")
 	private int timeoutInSeconds = 300;
 	
-	public ClassificationServiceRestClient(@Value("${external.classifier.url}") final String serviceUrl,
-			@Value("${external.classifier.username}") final String username, @Value("${external.classifier.password}") final String password) {
+	public ClassificationServiceRestClient(@Value("${classification-service.url}") final String serviceUrl,
+			@Value("${classification-service.username}") final String username, @Value("${classification-service.password}") final String password) {
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		this.classificationServiceUrl = serviceUrl;
 		this.username = username;

@@ -71,14 +71,14 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	private TermServerService termServerService;
 
-	@Value("${fileProcessing.failureMaxRetry}")
+	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
 	private final String buildBucketName;
 
 	@Autowired
-	public ProductInputFileServiceImpl(@Value("${buildBucketName}") final String buildBucketName,
-			@Value("${externallyMaintainedBucketName}") final String externallyMaintainedBucketName,
+	public ProductInputFileServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
+			@Value("${srs.build.externally-maintained-bucketName}") final String externallyMaintainedBucketName,
 			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.buildBucketName = buildBucketName;

@@ -53,6 +53,7 @@ public class RF2Constants {
 	public static final String BETA_RELEASE_PREFIX = "x";
 	public static final String INTERNATIONAL_CORE_MODULE_ID ="900000000000207008";
 	public static final String INTERNATIONAL_MODEL_COMPONENT_ID ="900000000000012004";
+	public static final String IS_A = "116680003";
 	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 	public static final String INT = "INT";
 	public static final String ADDITIONAL_TXT = "_additional.txt";

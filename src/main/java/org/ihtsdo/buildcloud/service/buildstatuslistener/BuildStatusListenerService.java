@@ -27,7 +27,7 @@ public class BuildStatusListenerService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@JmsListener(destination = "${build.status.jms.job.queue}")
+	@JmsListener(destination = "${srs.build.job.status.queue}")
 	public void consumeBuildStatus(final TextMessage textMessage) {
 		try {
 			final BuildStatusWithProductDetailsRequest buildStatusWithProductDetailsRequest =

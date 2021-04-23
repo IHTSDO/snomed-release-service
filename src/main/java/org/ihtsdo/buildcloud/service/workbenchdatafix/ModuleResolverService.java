@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.service.workbenchdatafix;
 
+import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.exception.BadInputFileException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,18 +23,17 @@ public class ModuleResolverService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleResolverService.class);
 
-	public ModuleResolverService(@Value("${snomed.modelModuleSctid}") final String modelModuleSctid,
-			@Value("${snomed.isARelationshipTypeSctid}") final String isASctid) {
+	public ModuleResolverService() {
 		// RF2 Relationship fields:
 		// id effectiveTime active moduleId sourceId destinationId relationshipGroup typeId characteristicTypeId modifierId
 
 		// Pattern for matching row which is active with a moduleId of model and a typeId of isA. Group for sourceId extraction.
-		existingFileRowPattern = Pattern.compile("[^\t]*\t[^\t]*\t1\t" + modelModuleSctid + "\t([^\t]*)\t[^\t]*\t[^\t]*\t" + isASctid + "\t.*");
+		existingFileRowPattern = Pattern.compile("[^\t]*\t[^\t]*\t1\t" + RF2Constants.INTERNATIONAL_MODEL_COMPONENT_ID + "\t([^\t]*)\t[^\t]*\t[^\t]*\t" + RF2Constants.IS_A + "\t.*");
 
 		// Pattern for matching row which is active with a typeId of isA.
 		// We can't match on moduleId here because it's wrong in input files coming out of workbench.
 		// Groups for sourceId and destinationId extraction.
-		inputFileRowPattern = Pattern.compile("[^\t]*\t[^\t]*\t1\t[^\t]*\t([^\t]*)\t([^\t]*)\t[^\t]*\t" + isASctid + "\t.*");
+		inputFileRowPattern = Pattern.compile("[^\t]*\t[^\t]*\t1\t[^\t]*\t([^\t]*)\t([^\t]*)\t[^\t]*\t" + RF2Constants.IS_A + "\t.*");
 	}
 
 	/**

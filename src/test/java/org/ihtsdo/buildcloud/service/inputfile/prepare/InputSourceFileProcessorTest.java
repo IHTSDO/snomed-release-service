@@ -38,7 +38,7 @@ public class InputSourceFileProcessorTest {
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
 
-	@Value("${buildBucketName}")
+	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 	
 	@Autowired

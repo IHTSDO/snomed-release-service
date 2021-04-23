@@ -20,7 +20,7 @@ public class ModuleResolverServiceTest {
 	public void setUp() throws Exception {
 		String testModelComponentModuleSctid = "900000000000012004";
 		String testIsASctid = "116680003";
-		resolverService = new ModuleResolverService(testModelComponentModuleSctid, testIsASctid);
+		resolverService = new ModuleResolverService();
 
 		statedRelationshipDelta = getClass().getResourceAsStream("sct2_StatedRelationship_Delta_20150131.txt");
 		statedRelationshipSnapshot = getClass().getResourceAsStream("sct2_StatedRelationship_Snapshot_20140731.txt");

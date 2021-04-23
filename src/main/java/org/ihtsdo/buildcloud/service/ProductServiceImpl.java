@@ -58,7 +58,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
     @Autowired
     private ReleaseCenterService releaseCenterService;
 
-    @Value("${offlineMode}")
+    @Value("${srs.build.offlineMode}")
     private Boolean offlineMode;
 
     @Autowired

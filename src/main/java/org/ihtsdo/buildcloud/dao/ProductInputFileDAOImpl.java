@@ -32,7 +32,7 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileDAOImpl(@Value("${buildBucketName}") final String buildBucketName,
+	public ProductInputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);

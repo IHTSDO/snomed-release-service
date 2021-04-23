@@ -19,15 +19,12 @@ public class PreconditionManager {
 	@Autowired
 	private List<PreconditionCheck> preconditionChecks;
 
-	private boolean onlineMode;
-
-	@Value("${localRvf}")
-	private Boolean localRvf;
+	private boolean offLineMode;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PreconditionManager.class);
 
-	public PreconditionManager(@Value("${offlineMode}") boolean offlineMode) {
-		this.onlineMode = !offlineMode;
+	public PreconditionManager(@Value("${srs.build.offlineMode}") boolean offlineMode) {
+		this.offLineMode = offlineMode;
 	}
 
 	/**
@@ -38,8 +35,8 @@ public class PreconditionManager {
 	public List<PreConditionCheckReport> runPreconditionChecks(final Build build) {
 		List<PreConditionCheckReport> checkReports = new ArrayList<>();
 		for (PreconditionCheck thisCheck : preconditionChecks) {
-			if (onlineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())
-					|| (RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()) && localRvf)) {
+			if (!offLineMode || !NetworkRequired.class.isAssignableFrom(thisCheck.getClass())
+					|| (RF2FilesCheck.class.isAssignableFrom(thisCheck.getClass()))) {
 				if (thisCheck instanceof TermServerClassificationResultsCheck && !build.getConfiguration().useClassifierPreConditionChecks() ) {
 					continue;
 				}
@@ -64,6 +61,6 @@ public class PreconditionManager {
 	}
 
 	public void setOfflineMode(boolean offlineMode) {
-		this.onlineMode = !offlineMode;
+		this.offLineMode = !offlineMode;
 	}
 }

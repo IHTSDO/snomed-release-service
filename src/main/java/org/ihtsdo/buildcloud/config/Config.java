@@ -106,7 +106,7 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public S3ClientFactory s3ClientFactory(@Value("${aws.key}") final String accessKey,
 	                                       @Value("${aws.privateKey}") final String privateKey,
-	                                       @Value("${s3.offline.directory}") final String directory) throws IOException {
+	                                       @Value("${srs.build.s3.offline.directory}") final String directory) throws IOException {
 		s3ClientFactory = new S3ClientFactory();
 		s3ClientFactory.setOnlineImplementation(getOnlineImplementation(accessKey, privateKey));
 		s3ClientFactory.setOfflineImplementation(getOfflineImplementation(directory));
@@ -137,8 +137,8 @@ public abstract class Config extends BaseConfiguration {
 	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
 	                         @Value("${aws.privateKey}") final String privateKey,
-	                         @Value("${s3.offline.directory}") final String directory,
-	                         @Value("${offlineMode}") final boolean offlineMode) throws IOException {
+	                         @Value("${srs.build.s3.offline.directory}") final String directory,
+	                         @Value("${srs.build.offlineMode}") final boolean offlineMode) throws IOException {
 		s3ClientFactory = new S3ClientFactory();
 		s3ClientFactory.setOnlineImplementation(getOnlineImplementation(accessKey, privateKey));
 		s3ClientFactory.setOfflineImplementation(getOfflineImplementation(directory));
@@ -153,8 +153,8 @@ public abstract class Config extends BaseConfiguration {
 	@DependsOn("s3ClientFactory")
 	public S3ClientHelper s3ClientHelper(@Value("${aws.key}") final String accessKey,
 	                                     @Value("${aws.privateKey}") final String privateKey,
-	                                     @Value("${s3.offline.directory}") final String directory,
-	                                     @Value("${offlineMode}") final boolean offlineMode) throws IOException {
+	                                     @Value("${srs.build.s3.offline.directory}") final String directory,
+	                                     @Value("${srs.build.offlineMode}") final boolean offlineMode) throws IOException {
 		return new S3ClientHelper(s3Client(accessKey, privateKey, directory, offlineMode));
 	}
 
@@ -181,7 +181,7 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public Queue srsQueue(@Value("${srs.jms.job.queue}") final String queue) {
+	public Queue srsQueue(@Value("${srs.build.job.queue}") final String queue) {
 		return new ActiveMQQueue(queue);
 	}
 
@@ -199,8 +199,8 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Value("${orchestration.jms.url}") final String brokerUrl,
-	                                                                     @Value("${orchestration.jms.username}") final String username, @Value("${orchestration.jms.password}") final String password) {
+	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
+	                                                                     @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
 		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory =
 				new SimpleJmsListenerContainerFactory();
 		simpleJmsListenerContainerFactory.setConnectionFactory(new ActiveMQConnectionFactory(username, password, brokerUrl));
@@ -208,14 +208,14 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public ActiveMQConnectionFactory jmsConnectionFactory(@Value("${orchestration.jms.url}") final String brokerUrl,
-	                                                      @Value("${orchestration.jms.username}") final String username, @Value("${orchestration.jms.password}") final String password) {
+	public ActiveMQConnectionFactory jmsConnectionFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
+	                                                      @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
 		return new ActiveMQConnectionFactory(username, password, brokerUrl);
 	}
 
 	@Bean
-	public ConnectionFactory connectionFactory(@Value("${orchestration.jms.url}") final String brokerUrl,
-	                                           @Value("${orchestration.jms.username}") final String username, @Value("${orchestration.jms.password}") final String password) {
+	public ConnectionFactory connectionFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
+	                                           @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
 		return new CachingConnectionFactory(jmsConnectionFactory(brokerUrl, username, password));
 	}
 
@@ -225,7 +225,7 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public ActiveMQTextMessage buildStatusTextMessage(@Value("${build.status.jms.job.queue}") final String queue) throws JMSException {
+	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.build.job.status.queue}") final String queue) throws JMSException {
 		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
 		activeMQTextMessage.setJMSReplyTo(new ActiveMQQueue(queue));
 		return activeMQTextMessage;

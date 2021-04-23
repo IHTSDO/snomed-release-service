@@ -11,7 +11,7 @@ public class IdServiceRestClientFactory {
 	@Bean
 	public IdServiceRestClient idRestClient(@Autowired final IdServiceRestClientImpl onlineImplementation,
 			@Autowired final IdServiceRestClientOfflineDemoImpl offlineImplementation,
-			@Value("${offlineMode}") final boolean offlineMode) {
+			@Value("${srs.build.offlineMode}") final boolean offlineMode) {
 		return offlineMode ? offlineImplementation : onlineImplementation;
 	}
 }

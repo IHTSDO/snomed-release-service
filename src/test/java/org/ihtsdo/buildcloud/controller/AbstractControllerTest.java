@@ -45,10 +45,10 @@ public abstract class AbstractControllerTest {
 	@Autowired
 	private IdServiceRestClient idRestClient;
 
-	@Value("${buildBucketName}")
+	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 
-	@Value("${publishedBucketName}")
+	@Value("${srs.build.published-bucketName}")
 	private String publishedBucketName;
 
 	@Before

@@ -21,7 +21,7 @@ public class TestUtils {
 	@Autowired
 	private S3Client s3Client;
 
-	@Value("${buildBucketName}")
+	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 
 	/**

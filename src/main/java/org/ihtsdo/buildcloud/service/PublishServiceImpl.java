@@ -69,10 +69,10 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
-	@Value("${snomedInternationalBucket}")
-	private String snomedInternationalBucket;
+	@Value("${srs.build.versioned-content.bucketName}")
+	private String versionedContentBucket;
 
-	@Value("${versionedContent.path}")
+	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
 
 	@Autowired
@@ -96,8 +96,8 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Autowired
-	public PublishServiceImpl(@Value("${buildBucketName}") final String buildBucketName,
-			@Value("${publishedBucketName}") final String publishedBucketName,
+	public PublishServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
+			@Value("${srs.build.published-bucketName}") final String publishedBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
@@ -542,7 +542,7 @@ public class PublishServiceImpl implements PublishService {
 			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
 			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
 			outputPathBuilder.append(releaseFileName);
-			buildFileHelper.copyFile(releaseFileFullPath, snomedInternationalBucket, outputPathBuilder.toString());
+			buildFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
 		} catch (Exception e) {
 			LOGGER.error("Failed to copy release file to versioned contents repository because of error: {}", e);
 		}

@@ -52,7 +52,7 @@ public class ZipperTest {
 	@Autowired
 	private BuildDAOImpl buildDAO;
 
-	@Value("${buildBucketName}")
+	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 	
 	@Autowired 

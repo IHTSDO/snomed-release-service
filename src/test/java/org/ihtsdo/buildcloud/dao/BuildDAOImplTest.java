@@ -55,10 +55,10 @@ public class BuildDAOImplTest {
 	@Value("${aws.privateKey}")
 	private String privateKey;
 
-	@Value("${s3.offline.directory}")
+	@Value("${srs.build.s3.offline.directory}")
 	private String directory;
 
-	@Value("${offlineMode}")
+	@Value("${srs.build.offlineMode}")
 	private boolean offlineMode;
 
 	private Product product;

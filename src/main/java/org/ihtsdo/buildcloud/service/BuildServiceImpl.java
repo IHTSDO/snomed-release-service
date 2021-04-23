@@ -105,19 +105,16 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private TransformationService transformationService;
 
-	@Value("${fileProcessing.failureMaxRetry}")
+	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
-	@Value("${releaseValidationFramework.url}")
+	@Value("${rvf.url}")
 	private String releaseValidationFrameworkUrl;
 
-	@Value("${offlineMode}")
+	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
 
-	@Value("${localRvf}")
-	private Boolean localRvf;
-
-	@Value("${buildBucketName}")
+	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 
 	@Autowired
@@ -661,7 +658,7 @@ public class BuildServiceImpl implements BuildService {
 			if (dao.isBuildCancelRequested(build)) return;
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
-			if (!offlineMode || localRvf) {
+			if (!offlineMode) {
 				try {
 					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
 					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);

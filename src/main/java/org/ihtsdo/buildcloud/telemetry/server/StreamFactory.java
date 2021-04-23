@@ -24,7 +24,7 @@ public class StreamFactory {
 	private final TransferManager transferManager;
 
 	@Autowired
-	public StreamFactory(TransferManager transferManager, @Value("${offlineMode}") Boolean offlineMode) {
+	public StreamFactory(TransferManager transferManager, @Value("${srs.build.offlineMode}") Boolean offlineMode) {
 		this.transferManager = transferManager;
 		this.offlineMode = offlineMode;
 		new File(TEMP_DIRECTORY_PATH).mkdirs();

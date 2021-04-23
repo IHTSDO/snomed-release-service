@@ -56,21 +56,21 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private final String userName;
 	private final String password;
 
-	@Value("${idGenerator.timeoutInSeconds:300}")
+	@Value("${cis.timeoutInSeconds:300}")
 	private int timeOutInSeconds;
 
-	@Value("${idGenerator.maxTries:3}")
+	@Value("${cis.maxTries:3}")
 	private int maxTries;
 
-	@Value("${idGenerator.retryDelaySeconds:30}")
+	@Value("${cis.retryDelaySeconds:30}")
 	private int retryDelaySeconds;
 
-	@Value("${idGenerator.batchSize:500}")
+	@Value("${cis.batchSize:500}")
 	private int batchSize;
 	
-	public IdServiceRestClientImpl(@Value("${idGenerator.url}") final String idServiceUrl,
-			@Value("${idGenerator.userName}") final String username,
-			@Value("${idGenerator.password}") final String password) {
+	public IdServiceRestClientImpl(@Value("${cis.url}") final String idServiceUrl,
+			@Value("${cis.userName}") final String username,
+			@Value("${cis.password}") final String password) {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);
 		this.resty = new RestyHelper(ANY_CONTENT_TYPE);

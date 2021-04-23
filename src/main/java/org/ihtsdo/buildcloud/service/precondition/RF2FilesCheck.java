@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.service.precondition;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import com.google.common.base.Strings;
 import org.ihtsdo.buildcloud.service.NetworkRequired;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
@@ -20,14 +22,18 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 	@Autowired
 	private BuildDAO buildDAO;
 
-	@Value("${releaseValidationFramework.url}")
-	private String releaseValidationFrameworkUrl;
+	@Value("${rvf.url}")
+	private String rvfUrl;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2FilesCheck.class);
 
 	@Override
 	public void runCheck(final Build build) {
-		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
+		if (Strings.isNullOrEmpty(rvfUrl)) {
+			LOGGER.warn("No rvf url is specified and RF2FilesCheck will be skipped");
+			return;
+		}
+		try (RVFClient rvfClient = new RVFClient(rvfUrl)) {
 			for (String inputFile : buildDAO.listInputFileNames(build)) {
 				if (inputFile.startsWith(RF2Constants.INPUT_FILE_PREFIX) && inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 					InputStream inputFileStream = buildDAO.getInputFileStream(build, inputFile);

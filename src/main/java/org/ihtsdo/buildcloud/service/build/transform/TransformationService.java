@@ -64,19 +64,13 @@ public class TransformationService {
 	@Autowired
 	private ModuleResolverService moduleResolverService;
 
-	@Value("${snomed.coreModuleSctid}")
-	private String coreModuleSctid;
-
-	@Value("${snomed.modelModuleSctid}")
-	private String modelModuleSctid;
-
-	@Value("${transformBufferSize}")
+	@Value("${srs.file-processing.transformBufferSize}")
 	private Integer transformBufferSize;
 
-	@Value("${idGenerator.maxTries}")
+	@Value("${cis.maxTries}")
 	private Integer idGenMaxTries;
 
-	@Value("${idGenerator.retryDelaySeconds}")
+	@Value("${cis.retryDelaySeconds}")
 	private Integer idGenRetryDelaySeconds;
 
 	@Autowired
@@ -371,7 +365,7 @@ public class TransformationService {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 		Integer namespaceId = RF2Constants.INTERNATIONAL_NAMESPACE_ID;
 		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
-		String moduleId = coreModuleSctid;
+		String moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
 		if (extConfig != null) {
 			namespaceId = Integer.valueOf(extConfig.getNamespaceId());
 			moduleId = extConfig.getModuleId();
@@ -380,7 +374,7 @@ public class TransformationService {
 		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries, idGenRetryDelaySeconds);
 
 		return new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
-				uuidGenerator, moduleId, modelModuleSctid, transformBufferSize);
+				uuidGenerator, moduleId, RF2Constants.INTERNATIONAL_MODEL_COMPONENT_ID, transformBufferSize);
 	}
 	
 	private boolean isPreProcessType(final ComponentType componentType) {

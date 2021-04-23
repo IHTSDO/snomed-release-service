@@ -93,12 +93,12 @@ public class BuildDAOImpl implements BuildDAO {
     @Autowired
     private ProductInputFileDAO productInputFileDAO;
 
-    @Value("${fileProcessing.failureMaxRetry}")
+    @Value("${srs.file-processing.failureMaxRetry}")
     private Integer fileProcessingFailureMaxRetry;
 
     @Autowired
-    public BuildDAOImpl(@Value("${buildBucketName}") final String buildBucketName,
-            @Value("${publishedBucketName}") final String publishedBucketName,
+    public BuildDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
+            @Value("${srs.build.published-bucketName}") final String publishedBucketName,
             final S3Client s3Client,
             final S3ClientHelper s3ClientHelper) {
         this.buildBucketName = buildBucketName;
