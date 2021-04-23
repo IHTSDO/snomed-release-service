@@ -30,9 +30,7 @@ public class TelemetryConfig {
 		broker.setBrokerName("TelemetryJMSBroker");
 		broker.setSystemExitOnShutdown(true);
 		broker.setUseShutdownHook(false);
-		if (!broker.isStarted()) {
-			broker.start();
-		}
+		broker.start();
 		return broker;
 	}
 
