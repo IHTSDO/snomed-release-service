@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.service;
 
 import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusListenerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
@@ -38,6 +39,9 @@ public class ReleaseServiceImplTest {
 
     @Mock
     S3Client s3Client;
+
+    @Mock
+    BuildStatusListenerService buildStatusListenerService;
 
     @Mock
     BuildS3PathHelper s3PathHelper;
