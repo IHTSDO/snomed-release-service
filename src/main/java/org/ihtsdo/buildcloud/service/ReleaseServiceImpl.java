@@ -6,23 +6,24 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.dao.ProductInputFileDAO;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.entity.Build.Status;
+import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusListenerService;
 import org.ihtsdo.buildcloud.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
-import org.ihtsdo.buildcloud.service.worker.BuildStatus;
-import org.ihtsdo.buildcloud.service.worker.SRSWorkerService.BuildStatusWithProduct;
 import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
-import org.ihtsdo.otf.rest.exception.*;
+import org.ihtsdo.otf.rest.exception.BadRequestException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.JmsException;
-import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
@@ -33,13 +34,10 @@ import org.springframework.util.StringUtils;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
-import javax.jms.TextMessage;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ihtsdo.buildcloud.service.build.RF2Constants.DATE_FORMAT;
 
@@ -49,8 +47,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private static final String TRACKER_ID = "trackerId";
 
 	private static final String PATTERN_ALL_FILES = "*.*";
-
-	private static final Map<String, String> concurrentReleaseBuildMap = new ConcurrentHashMap<>();
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -80,16 +76,16 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private Queue srsQueue;
 
 	@Autowired
+	private BuildStatusListenerService buildStatusListenerService;
+
+	@Autowired
 	private ObjectMapper objectMapper;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	@Override
 	public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
-		// Checking in-progress build for product
-		if (concurrentReleaseBuildMap.containsKey(productKey)) {
-			throw new EntityAlreadyExistsException("Product " + concurrentReleaseBuildMap.get(productKey) + " in release center " + releaseCenter + " has already a in-progress build");
-		}
+		buildStatusListenerService.throwExceptionIfBuildIsInProgressForProduct(productKey, releaseCenter);
 
 		validateBuildRequest(gatherInputRequestPojo);
 
@@ -128,7 +124,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		if (build != null) {
 			buildDAO.updateStatus(createReleasePackageBuildRequest.getBuild(), Status.QUEUED);
 			final Product product = build.getProduct();
-			concurrentReleaseBuildMap.putIfAbsent(product.getBusinessKey(), product.getName());
+			buildStatusListenerService.addProductToConcurrentReleaseBuildMap(product.getBusinessKey(), product.getName());
 			convertAndSend(createReleasePackageBuildRequest);
 		} else {
 			LOGGER.info("Build can not be queued due to being null.");
@@ -143,25 +139,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 			buildDAO.updateStatus(build.getBuild(), Status.FAILED);
 			LOGGER.error("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + build.getBuild().getId(), e);
-		}
-	}
-
-	@JmsListener(destination = "${build.status.jms.job.queue}")
-	public void consumeBuildStatus(final TextMessage srsMessage) {
-		try {
-			final BuildStatusWithProduct buildStatusWithProduct =
-					objectMapper.readValue(srsMessage.getText(), BuildStatusWithProduct.class);
-			if (buildStatusWithProduct != null) {
-				final BuildStatus buildStatus = buildStatusWithProduct.getBuildStatus();
-				if (buildStatus == BuildStatus.COMPLETED || buildStatus == BuildStatus.FAILED) {
-					final Product product = buildStatusWithProduct.getProduct();
-					if (product != null) {
-						concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
-					}
-				}
-			}
-		} catch (JsonProcessingException | JMSException e) {
-			LOGGER.error("Error occurred while trying to obtain the build status.", e);
 		}
 	}
 
@@ -227,7 +204,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Override
 	public void clearConcurrentCache(String releaseCenterKey, String productKey) {
 		Product product = productService.find(releaseCenterKey, productKey, false);
-		concurrentReleaseBuildMap.remove(product.getBusinessKey(), product.getName());
+		buildStatusListenerService.removeProductFromConcurrentReleaseBuildMap(product.getBusinessKey(), product.getName());
 	}
 
 	private void validateProductConfiguration(Product product) throws BadRequestException {

@@ -7,7 +7,8 @@ import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.service.ReleaseServiceImpl;
-import org.ihtsdo.buildcloud.service.worker.SRSWorkerService.BuildStatusWithProduct.Builder;
+import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusWithProductDetailsRequest;
+import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusWithProductDetailsRequest.Builder;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,8 @@ public class SRSWorkerService {
 					objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
 			build = createReleasePackageBuildRequest.getBuild();
 			final Product product = build.getProduct();
-			buildStatusWithProductBuilder = BuildStatusWithProduct.newBuilder(product).withBuildStatus(BuildStatus.RUNNING);
+			buildStatusWithProductBuilder = BuildStatusWithProductDetailsRequest.newBuilder(product.getName())
+					.withProductBusinessKey(product.getBusinessKey()).withBuildStatus(BuildStatus.RUNNING);
 			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusWithProductBuilder.build());
 			LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
 			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
@@ -73,53 +75,6 @@ public class SRSWorkerService {
 				buildDAO.updateStatus(build, Build.Status.FAILED);
 			} else {
 				LOGGER.error("Can not update build status to failed due to the BuildDAO being null.");
-			}
-		}
-	}
-
-	public static class BuildStatusWithProduct {
-
-		private BuildStatus buildStatus;
-
-		private Product product;
-
-		public BuildStatusWithProduct() {
-		}
-
-		private BuildStatusWithProduct(final Builder builder) {
-			this.buildStatus = builder.buildStatus;
-			this.product = builder.product;
-		}
-
-		public final BuildStatus getBuildStatus() {
-			return buildStatus;
-		}
-
-		public final Product getProduct() {
-			return product;
-		}
-
-		public static Builder newBuilder(final Product product) {
-			return new Builder(product);
-		}
-
-		public static class Builder {
-
-			private BuildStatus buildStatus;
-
-			private final Product product;
-
-			private Builder(final Product product) {
-				this.product = product;
-			}
-
-			public final Builder withBuildStatus(final BuildStatus buildStatus) {
-				this.buildStatus = buildStatus;
-				return this;
-			}
-
-			public final BuildStatusWithProduct build() {
-				return new BuildStatusWithProduct(this);
 			}
 		}
 	}

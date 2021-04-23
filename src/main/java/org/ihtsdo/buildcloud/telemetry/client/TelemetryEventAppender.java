@@ -31,8 +31,6 @@ public class TelemetryEventAppender extends WriterAppender {
 	public TelemetryEventAppender() {
 		// Hardcoding pattern because should not be under host application control
 		super.setLayout(new PatternLayout(PATTERN));
-		logger.info("Telemetry Service: {}", service);
-		logger.info("Telemetry Environment: {}", environment);
 	}
 
 	@Override
