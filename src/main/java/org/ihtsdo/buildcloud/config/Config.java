@@ -10,7 +10,6 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
-import org.ihtsdo.buildcloud.config.BaseConfiguration;
 import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
@@ -21,7 +20,6 @@ import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.Cache;
@@ -34,6 +32,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -60,6 +59,7 @@ import java.util.Arrays;
 @EnableConfigurationProperties
 @ComponentScan(basePackages = {"org.ihtsdo.buildcloud"})
 @EnableJpaRepositories
+@EnableJms
 public abstract class Config extends BaseConfiguration {
 
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
@@ -74,7 +74,7 @@ public abstract class Config extends BaseConfiguration {
 
 	@Bean
 	public DelegatingSecurityContextAsyncTaskExecutor securityContextAsyncTaskExecutor(
-			@Value("${delegate.security.context.async.task.executor.thread.pool.size}") final int threadPoolSize) {
+			@Value("${delegate.security.context.async.task.executor.thread.pool.size:10}") final int threadPoolSize) {
 		return new DelegatingSecurityContextAsyncTaskExecutor(getAsyncTaskExecutor(threadPoolSize));
 	}
 
@@ -181,7 +181,7 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public Queue srsQueue(@Value("${srs.build.job.queue}") final String queue) {
+	public Queue srsQueue(@Value("${srs.jms.queue.prefix}.build-jobs") final String queue) {
 		return new ActiveMQQueue(queue);
 	}
 
@@ -225,7 +225,12 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.build.job.status.queue}") final String queue) throws JMSException {
+	public ActiveMQConnectionFactoryPrefetchCustomizer queuePrefetchCustomizer(@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
+		return new ActiveMQConnectionFactoryPrefetchCustomizer(queuePrefetch);
+	}
+
+	@Bean
+	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
 		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
 		activeMQTextMessage.setJMSReplyTo(new ActiveMQQueue(queue));
 		return activeMQTextMessage;
