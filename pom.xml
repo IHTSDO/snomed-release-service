@@ -248,6 +248,11 @@
 			<artifactId>spring-cloud-aws-context</artifactId>
 			<version>${spring-cloud-aws-version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-aws-core</artifactId>
+			<version>${spring-cloud-aws-version}</version>
+		</dependency>
 
 		<!-- H2 -->
 		<dependency>
