@@ -17,6 +17,7 @@ import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.telemetry.TestService;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
+import org.ihtsdo.otf.resourcemanager.ResourceConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
@@ -38,7 +40,8 @@ public class TelemetryProcessorTest {
 	private TestBroker testBroker;
 	private TelemetryProcessor telemetryProcessor;
 	private MocksControl mocksControl;
-	private StreamFactory streamFactory;
+	private ResourceConfiguration resourceConfiguration;
+	private ResourceLoader resourceLoader;
 	private TransferManager mockTransferManager;
 	private Upload mockUpload;
 	private File testStreamFile;
@@ -66,9 +69,10 @@ public class TelemetryProcessorTest {
 		// Set system property to override log4j appender default broker url
 		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
 
-		streamFactory = new StreamFactory(mockTransferManager, false);
+		resourceConfiguration = mocksControl.createMock(ResourceConfiguration.class);
+		resourceLoader = mocksControl.createMock(ResourceLoader.class);
 
-		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), streamFactory);
+		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), resourceConfiguration, resourceLoader);
 		telemetryProcessor.startup();
 		testStreamFile = new File("/tmp/" + streamFileName);
 		testStreamFile.delete();
