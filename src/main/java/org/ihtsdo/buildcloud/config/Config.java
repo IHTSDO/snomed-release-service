@@ -132,28 +132,11 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean(name = "s3ClientDuo")
-	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
 	                         @Value("${aws.privateKey}") final String privateKey,
 	                         @Value("${srs.build.s3.offline.directory}") final String directory,
 	                         @Value("${srs.build.offlineMode}") final boolean offlineMode) throws IOException {
-		s3ClientFactory = new S3ClientFactory();
-		s3ClientFactory.setOnlineImplementation(getOnlineImplementation(accessKey, privateKey));
-		s3ClientFactory.setOfflineImplementation(getOfflineImplementation(directory));
-		return s3ClientFactory.getClient(offlineMode);
-	}
-
-	public S3Client getS3Client(final boolean offlineMode) {
-		return s3ClientFactory.getClient(offlineMode);
-	}
-
-	@Bean
-	@DependsOn("s3ClientFactory")
-	public S3ClientHelper s3ClientHelper(@Value("${aws.key}") final String accessKey,
-	                                     @Value("${aws.privateKey}") final String privateKey,
-	                                     @Value("${srs.build.s3.offline.directory}") final String directory,
-	                                     @Value("${srs.build.offlineMode}") final boolean offlineMode) throws IOException {
-		return new S3ClientHelper(s3Client(accessKey, privateKey, directory, offlineMode));
+		return s3ClientFactory(accessKey, privateKey, directory).getClient(offlineMode);
 	}
 
 	@Bean
