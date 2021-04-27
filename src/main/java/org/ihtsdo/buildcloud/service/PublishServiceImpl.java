@@ -45,6 +45,7 @@ import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -98,7 +99,7 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	public PublishServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
 			@Value("${srs.build.published-bucketName}") final String publishedBucketName,
-			final S3Client s3Client,
+			@Qualifier(value = "s3ClientDuo") final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.publishedBucketName = publishedBucketName;

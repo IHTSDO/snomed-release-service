@@ -28,6 +28,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -99,7 +100,7 @@ public class BuildDAOImpl implements BuildDAO {
     @Autowired
     public BuildDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
             @Value("${srs.build.published-bucketName}") final String publishedBucketName,
-            final S3Client s3Client,
+            @Qualifier(value = "s3ClientDuo") final S3Client s3Client,
             final S3ClientHelper s3ClientHelper) {
         this.buildBucketName = buildBucketName;
         executorService = Executors.newCachedThreadPool();

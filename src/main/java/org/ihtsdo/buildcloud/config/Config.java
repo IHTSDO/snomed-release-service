@@ -131,8 +131,7 @@ public abstract class Config extends BaseConfiguration {
 		return springLiquibase;
 	}
 
-	@Primary
-	@Bean
+	@Bean(name = "s3ClientDuo")
 	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
 	                         @Value("${aws.privateKey}") final String privateKey,

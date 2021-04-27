@@ -22,6 +22,7 @@ import org.ihtsdo.otf.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -79,7 +80,8 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	public ProductInputFileServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
 			@Value("${srs.build.externally-maintained-bucketName}") final String externallyMaintainedBucketName,
-			final S3Client s3Client, final S3ClientHelper s3ClientHelper) {
+			@Qualifier(value = "s3ClientDuo") final S3Client s3Client,
+			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.buildBucketName = buildBucketName;
 		externallyMaintainedFileHelper = new FileHelper(externallyMaintainedBucketName, s3Client, s3ClientHelper);

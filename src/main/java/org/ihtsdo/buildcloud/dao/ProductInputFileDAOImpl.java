@@ -12,6 +12,7 @@ import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +34,7 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 
 	@Autowired
 	public ProductInputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			final S3Client s3Client,
+			@Qualifier(value = "s3ClientDuo") final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
