@@ -26,10 +26,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.cloud.aws.autoconfigure.context.ContextInstanceDataAutoConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
@@ -133,6 +130,8 @@ public abstract class Config extends BaseConfiguration {
 		springLiquibase.setContexts(shortname);
 		return springLiquibase;
 	}
+
+	@Primary
 	@Bean
 	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
