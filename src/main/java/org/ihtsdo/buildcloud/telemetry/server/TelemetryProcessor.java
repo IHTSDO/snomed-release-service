@@ -1,21 +1,25 @@
 package org.ihtsdo.buildcloud.telemetry.server;
 
 import org.apache.activemq.transport.TransportDisposedIOException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
+import org.ihtsdo.otf.resourcemanager.ManualResourceConfiguration;
 import org.ihtsdo.otf.resourcemanager.ResourceConfiguration;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.jms.IllegalStateException;
 import javax.jms.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,22 +30,30 @@ public class TelemetryProcessor {
 
 	private static final int ONE_SECOND = 1000;
 
-	private final Map<String, OutputStream> streamWriters;
+	private static final String TEMP_DIRECTORY_PATH = "/tmp/telemetry-tmp";
+
+	private final Map<String, BufferedWriter> streamWriters;
 
 	private boolean shutdown;
+	private final boolean isOffline;
 
 	private final MessageConsumer consumer;
 
-	private final ResourceManager resourceManager;
-
 	private final Session jmsSession;
 
+	private final ResourceLoader resourceLoader;
+
 	@Autowired
-	public TelemetryProcessor(final Session jmsSession, final ResourceConfiguration resourceConfiguration, final ResourceLoader resourceLoader) throws JMSException {
+	public TelemetryProcessor(final Session jmsSession, final ResourceLoader resourceLoader,
+			@Value("${srs.build.offlineMode}") final boolean isOffLine) throws JMSException {
 		this.streamWriters = new HashMap<>();
-		this.resourceManager = new ResourceManager(resourceConfiguration, resourceLoader);
 		this.jmsSession = jmsSession;
 		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
+		this.resourceLoader = resourceLoader;
+		this.isOffline = isOffLine;
+		if (isOffLine) {
+			new File(TEMP_DIRECTORY_PATH).mkdirs();
+		}
 	}
 
 	@PostConstruct
@@ -105,7 +117,7 @@ public class TelemetryProcessor {
 	}
 
 	private void writeMessageTextAndFlush(final TextMessage message, final String correlationID, final String text) throws IOException, JMSException {
-		final OutputStream writer = streamWriters.get(correlationID);
+		final BufferedWriter writer = streamWriters.get(correlationID);
 		if (writer != null) {
 			writeMessageText(message, text, writer);
 			// We need output to disk to be up to the minute, so flush each line
@@ -115,17 +127,17 @@ public class TelemetryProcessor {
 		}
 	}
 
-	private void writeMessageText(final TextMessage message, final String text, final OutputStream writer) throws IOException, JMSException {
-		writer.write(getBytes(text));
+	private void writeMessageText(final TextMessage message, final String text, final BufferedWriter writer) throws IOException, JMSException {
+		writer.write(text);
 		final String exception = message.getStringProperty(Constants.EXCEPTION);
 		if (exception != null) {
-			writer.write(getBytes(exception));
-			writer.write(getBytes(Constants.LINE_BREAK));
+			writer.write(exception);
+			writer.write(Constants.LINE_BREAK);
 		}
 	}
 
 	private void finishStream(final String correlationID) throws IOException {
-		final OutputStream writer = streamWriters.get(correlationID);
+		final BufferedWriter writer = streamWriters.get(correlationID);
 		if (writer != null) {
 			writer.close();
 			streamWriters.remove(correlationID);
@@ -137,8 +149,46 @@ public class TelemetryProcessor {
 	private void startStream(final TextMessage message, final String correlationID) throws JMSException, IOException {
 		final String streamUri = message.getStringProperty(Constants.STREAM_URI);
 		if (streamUri != null) {
-			streamWriters.put(correlationID, resourceManager.openWritableResourceStream(streamUri));
+			streamWriters.put(correlationID, createStreamWriter(correlationID, streamUri));
 		}
+	}
+
+	private BufferedWriter createStreamWriter(final String correlationID, final String streamUri) throws IOException {
+		final String[] split = streamUri.split("://", 2);
+		final String protocol = split[0];
+		final String path = split[1];
+
+		if (Constants.FILE.equals(protocol)) {
+			return new BufferedWriter(new FileWriter(path));
+		} else if (Constants.s3.equals(protocol)) {
+			return createS3StreamWriter(correlationID, path);
+		} else {
+			throw new NotImplementedException("Unrecognised stream URI protocol: " + protocol);
+		}
+	}
+
+	private BufferedWriterTaskOnClose createS3StreamWriter(final String correlationID, final String path) throws IOException {
+		final String[] split1 = path.split("/", 2);
+		final String bucketName = split1[0];
+		final String objectKey = split1[1];
+
+		final ResourceManager resourceManager =
+				new ResourceManager(new ManualResourceConfiguration(false, true,
+				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, objectKey)),
+				resourceLoader);
+
+		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + "/" + correlationID);
+
+		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile), () -> {
+			if (!isOffline) {
+				try {
+					resourceManager.writeResource(temporaryFile.getPath(), temporaryFile.toURI().toURL().openStream());
+					temporaryFile.delete();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	private void processJMSException(final JMSException e) {
@@ -149,10 +199,6 @@ public class TelemetryProcessor {
 		} else {
 			LOGGER.error("Error occurred while trying to receive the message.", e);
 		}
-	}
-
-	private byte[] getBytes(final String content) {
-		return content.getBytes(StandardCharsets.UTF_8);
 	}
 
 	public final void shutdown() throws JMSException {

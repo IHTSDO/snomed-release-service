@@ -40,8 +40,6 @@ public class TelemetryProcessorTest {
 	private TestBroker testBroker;
 	private TelemetryProcessor telemetryProcessor;
 	private MocksControl mocksControl;
-	private ResourceConfiguration resourceConfiguration;
-	private ResourceLoader resourceLoader;
 	private TransferManager mockTransferManager;
 	private Upload mockUpload;
 	private File testStreamFile;
@@ -69,10 +67,9 @@ public class TelemetryProcessorTest {
 		// Set system property to override log4j appender default broker url
 		System.setProperty(Constants.SYS_PROP_BROKER_URL, "vm://localhost?create=false");
 
-		resourceConfiguration = mocksControl.createMock(ResourceConfiguration.class);
-		resourceLoader = mocksControl.createMock(ResourceLoader.class);
+		final ResourceLoader resourceLoader = mocksControl.createMock(ResourceLoader.class);
 
-		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), resourceConfiguration, resourceLoader);
+		telemetryProcessor = new TelemetryProcessor(testBroker.getSession(), resourceLoader, true);
 		telemetryProcessor.startup();
 		testStreamFile = new File("/tmp/" + streamFileName);
 		testStreamFile.delete();
