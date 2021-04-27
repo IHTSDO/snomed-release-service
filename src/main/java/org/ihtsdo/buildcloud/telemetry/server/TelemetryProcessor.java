@@ -189,8 +189,6 @@ public class TelemetryProcessor {
 				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, objectKey)),
 				resourceLoader);
 
-		LOGGER.info("Resource Manager: {}", objectMapper.writeValueAsString(resourceManager));
-
 		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + "/" + correlationID);
 
 		LOGGER.info("Temporary File: {}", temporaryFile);
