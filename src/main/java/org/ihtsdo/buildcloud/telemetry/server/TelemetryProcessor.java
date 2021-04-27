@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.telemetry.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
@@ -33,6 +34,9 @@ public class TelemetryProcessor {
 	private static final String TEMP_DIRECTORY_PATH = "/tmp/telemetry-tmp";
 
 	private final Map<String, BufferedWriter> streamWriters;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	private boolean shutdown;
 	private final boolean isOffline;
@@ -154,13 +158,18 @@ public class TelemetryProcessor {
 	}
 
 	private BufferedWriter createStreamWriter(final String correlationID, final String streamUri) throws IOException {
+		LOGGER.info("Correlation ID: {}", correlationID);
+		LOGGER.info("Stream URI: {}", streamUri);
 		final String[] split = streamUri.split("://", 2);
 		final String protocol = split[0];
 		final String path = split[1];
 
+		LOGGER.info("Protocol: {}", protocol);
 		if (Constants.FILE.equals(protocol)) {
+			LOGGER.info("File Protocol");
 			return new BufferedWriter(new FileWriter(path));
 		} else if (Constants.s3.equals(protocol)) {
+			LOGGER.info("S3 Protocol");
 			return createS3StreamWriter(correlationID, path);
 		} else {
 			throw new NotImplementedException("Unrecognised stream URI protocol: " + protocol);
@@ -168,20 +177,30 @@ public class TelemetryProcessor {
 	}
 
 	private BufferedWriterTaskOnClose createS3StreamWriter(final String correlationID, final String path) throws IOException {
+		LOGGER.info("Path: {}", path);
 		final String[] split1 = path.split("/", 2);
 		final String bucketName = split1[0];
+		LOGGER.info("Bucket Name: {}", bucketName);
 		final String objectKey = split1[1];
+		LOGGER.info("Object Key: {}", objectKey);
 
 		final ResourceManager resourceManager =
 				new ResourceManager(new ManualResourceConfiguration(false, true,
 				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, objectKey)),
 				resourceLoader);
 
+		LOGGER.info("Resource Manager: {}", objectMapper.writeValueAsString(resourceManager));
+
 		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + "/" + correlationID);
 
+		LOGGER.info("Temporary File: {}", temporaryFile);
+
 		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile), () -> {
+			LOGGER.info("Offline Status: {}", isOffline);
 			if (!isOffline) {
 				try {
+					LOGGER.info("Temporary File Path: {}", temporaryFile.getPath());
+					LOGGER.info("Temporary File URL: {}", temporaryFile.toURI().toURL());
 					resourceManager.writeResource(temporaryFile.getPath(), temporaryFile.toURI().toURL().openStream());
 					temporaryFile.delete();
 				} catch (IOException e) {
