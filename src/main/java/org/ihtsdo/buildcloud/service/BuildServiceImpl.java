@@ -53,6 +53,7 @@ import org.springframework.util.StringUtils;
 import us.monoid.web.JSONResource;
 import us.monoid.web.Resty;
 
+import javax.annotation.PostConstruct;
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -123,8 +124,15 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private ResourceLoader cloudResourceLoader;
 
+	private ResourceManager dailyBuildResourceManager;
+
 	public enum RVF_STATE {
 		QUEUED, RUNNING, COMPLETE, FAILED, UNKNOWN
+	}
+
+	@PostConstruct
+	public void init() {
+		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
 	}
 
 	@Override
@@ -641,7 +649,7 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
 				if (build.getConfiguration().isDailyBuild()) {
 					DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
-					extractor.outputDailyBuildPackage(new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader));
+					extractor.outputDailyBuildPackage(dailyBuildResourceManager);
 				}
 			} catch (JAXBException | IOException | ResourceNotFoundException e) {
 				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);

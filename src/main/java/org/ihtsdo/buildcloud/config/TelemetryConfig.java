@@ -18,12 +18,6 @@ import javax.jms.Session;
 public class TelemetryConfig {
 
 	@Bean
-	public TransferManager transferManager(@Value("${aws.key}") final String accessKey,
-			@Value("${aws.privateKey}") final String secretKey) {
-		return new TransferManager(new BasicAWSCredentials(accessKey, secretKey));
-	}
-
-	@Bean
 	public BrokerService broker() throws Exception {
 		BrokerService broker = new BrokerService();
 		broker.addConnector("tcp://localhost:61616");
