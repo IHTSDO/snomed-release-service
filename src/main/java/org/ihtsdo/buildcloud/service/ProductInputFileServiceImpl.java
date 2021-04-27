@@ -80,7 +80,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Autowired
 	public ProductInputFileServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
 			@Value("${srs.build.externally-maintained-bucketName}") final String externallyMaintainedBucketName,
-			@Qualifier(value = "s3ClientDuo") final S3Client s3Client,
+			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		this.buildBucketName = buildBucketName;

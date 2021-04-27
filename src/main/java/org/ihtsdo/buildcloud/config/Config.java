@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.integration.spring.SpringLiquibase;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
@@ -118,7 +117,6 @@ public abstract class Config extends BaseConfiguration {
 		return new OfflineS3ClientImpl(directory);
 	}
 
-
 	@Bean
 	public SpringLiquibase liquibase(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
 	                                 @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
@@ -131,7 +129,8 @@ public abstract class Config extends BaseConfiguration {
 		return springLiquibase;
 	}
 
-	@Bean(name = "s3ClientDuo")
+	@Primary
+	@Bean
 	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
 	                         @Value("${aws.privateKey}") final String privateKey,
 	                         @Value("${srs.build.s3.offline.directory}") final String directory,

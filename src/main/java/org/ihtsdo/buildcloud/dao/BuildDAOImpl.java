@@ -100,7 +100,7 @@ public class BuildDAOImpl implements BuildDAO {
     @Autowired
     public BuildDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
             @Value("${srs.build.published-bucketName}") final String publishedBucketName,
-            @Qualifier(value = "s3ClientDuo") final S3Client s3Client,
+            final S3Client s3Client,
             final S3ClientHelper s3ClientHelper) {
         this.buildBucketName = buildBucketName;
         executorService = Executors.newCachedThreadPool();

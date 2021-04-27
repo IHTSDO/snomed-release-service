@@ -34,7 +34,7 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 
 	@Autowired
 	public ProductInputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			@Qualifier(value = "s3ClientDuo") final S3Client s3Client,
+			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
