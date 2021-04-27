@@ -35,9 +35,6 @@ public class TelemetryProcessor {
 
 	private final Map<String, BufferedWriter> streamWriters;
 
-	@Autowired
-	private ObjectMapper objectMapper;
-
 	private boolean shutdown;
 	private final boolean isOffline;
 
@@ -156,18 +153,13 @@ public class TelemetryProcessor {
 	}
 
 	private BufferedWriter createStreamWriter(final String correlationID, final String streamUri) throws IOException {
-		LOGGER.info("Correlation ID: {}", correlationID);
-		LOGGER.info("Stream URI: {}", streamUri);
 		final String[] split = streamUri.split("://", 2);
 		final String protocol = split[0];
 		final String path = split[1];
 
-		LOGGER.info("Protocol: {}", protocol);
 		if (Constants.FILE.equals(protocol)) {
-			LOGGER.info("File Protocol");
 			return new BufferedWriter(new FileWriter(path));
 		} else if (Constants.s3.equals(protocol)) {
-			LOGGER.info("S3 Protocol");
 			return createS3StreamWriter(correlationID, path);
 		} else {
 			throw new NotImplementedException("Unrecognised stream URI protocol: " + protocol);
@@ -175,12 +167,9 @@ public class TelemetryProcessor {
 	}
 
 	private BufferedWriterTaskOnClose createS3StreamWriter(final String correlationID, final String path) throws IOException {
-		LOGGER.info("Path: {}", path);
 		final String[] split1 = path.split("/", 2);
 		final String bucketName = split1[0];
-		LOGGER.info("Bucket Name: {}", bucketName);
 		final String objectKey = split1[1];
-		LOGGER.info("Object Key: {}", objectKey);
 
 		final ResourceManager resourceManager =
 				new ResourceManager(new ManualResourceConfiguration(false, true,
@@ -189,15 +178,10 @@ public class TelemetryProcessor {
 
 		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + "/" + correlationID);
 
-		LOGGER.info("Temporary File: {}", temporaryFile);
-
 		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile), () -> {
-			LOGGER.info("Offline Status: {}", isOffline);
 			if (!isOffline) {
 				try {
-					LOGGER.info("Temporary File Path: {}", temporaryFile.getPath());
-					LOGGER.info("Temporary File URL: {}", temporaryFile.toURI().toURL());
-					resourceManager.writeResource(objectKey, temporaryFile.toURI().toURL().openStream());
+					resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
 					temporaryFile.delete();
 				} catch (IOException e) {
 					e.printStackTrace();
