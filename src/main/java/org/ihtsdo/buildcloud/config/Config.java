@@ -140,6 +140,12 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
+	@DependsOn("s3ClientFactory")
+	public S3ClientHelper s3ClientHelper(@Value("${srs.build.offlineMode}") final boolean offlineMode) {
+		return new S3ClientHelper(s3ClientFactory.getClient(offlineMode));
+	}
+
+	@Bean
 	public SchemaFactory schemaFactory() {
 		return new SchemaFactory();
 	}
