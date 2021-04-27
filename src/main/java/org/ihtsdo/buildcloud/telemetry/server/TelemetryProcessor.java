@@ -55,9 +55,7 @@ public class TelemetryProcessor {
 		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 		this.resourceLoader = resourceLoader;
 		this.isOffline = isOffLine;
-		if (isOffLine) {
-			new File(TEMP_DIRECTORY_PATH).mkdirs();
-		}
+		new File(TEMP_DIRECTORY_PATH).mkdirs();
 	}
 
 	@PostConstruct
@@ -199,7 +197,7 @@ public class TelemetryProcessor {
 				try {
 					LOGGER.info("Temporary File Path: {}", temporaryFile.getPath());
 					LOGGER.info("Temporary File URL: {}", temporaryFile.toURI().toURL());
-					resourceManager.writeResource(temporaryFile.getPath(), temporaryFile.toURI().toURL().openStream());
+					resourceManager.writeResource(objectKey, temporaryFile.toURI().toURL().openStream());
 					temporaryFile.delete();
 				} catch (IOException e) {
 					e.printStackTrace();
