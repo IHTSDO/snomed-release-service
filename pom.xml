@@ -17,7 +17,7 @@
 		<slf4j.version>1.7.5</slf4j.version>
 		<liquibase.version>3.3.0</liquibase.version>
 		<otf-common.version>4.3.0</otf-common.version>
-		<snomed-utilities.version>1.4.0</snomed-utilities.version>
+		<snomed-utilities.version>1.4.1</snomed-utilities.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.13.1</junit.version>
 		<activemq.version>5.15.9 </activemq.version>
