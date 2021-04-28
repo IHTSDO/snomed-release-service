@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.integration.spring.SpringLiquibase;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
@@ -62,6 +63,8 @@ public abstract class Config extends BaseConfiguration {
 
 	private S3ClientFactory s3ClientFactory;
 
+	private ActiveMQConnectionFactory activeMQConnectionFactory;
+
 	@Bean
 	public ObjectMapper createObjectMapper() {
 		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
@@ -83,16 +86,20 @@ public abstract class Config extends BaseConfiguration {
 
 	@Bean(name = "sessionFactory")
 	public LocalSessionFactoryBean sessionFactory(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-	                                              @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-	                                              @Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect) {
+			@Value("${srs.jdbc.url}") final String url,
+			@Value("${srs.jdbc.username}") final String username,
+			@Value("${srs.jdbc.password}") final String password,
+			@Value("${srs.hibernate.dialect}") final String dialect) {
 		return getSessionFactory(driverClassName, url, username, password, dialect);
 	}
 
 	@Bean
 	public HibernateTransactionManager transactionManager(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-	                                                      @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-	                                                      @Value("${srs.jdbc.password}") final String password, @Value("${srs.hibernate.dialect}") final String dialect,
-	                                                      @Autowired SessionFactory sessionFactory) {
+			@Value("${srs.jdbc.url}") final String url,
+			@Value("${srs.jdbc.username}") final String username,
+			@Value("${srs.jdbc.password}") final String password,
+			@Value("${srs.hibernate.dialect}") final String dialect,
+			@Autowired SessionFactory sessionFactory) {
 		final HibernateTransactionManager transactionManager = new HibernateTransactionManager();
 		transactionManager.setDataSource(getBasicDataSource(driverClassName, url, username, password));
 		transactionManager.setSessionFactory(sessionFactory);
@@ -104,17 +111,9 @@ public abstract class Config extends BaseConfiguration {
 	                                       @Value("${aws.privateKey}") final String privateKey,
 	                                       @Value("${srs.build.s3.offline.directory}") final String directory) throws IOException {
 		s3ClientFactory = new S3ClientFactory();
-		s3ClientFactory.setOnlineImplementation(getOnlineImplementation(accessKey, privateKey));
-		s3ClientFactory.setOfflineImplementation(getOfflineImplementation(directory));
+		s3ClientFactory.setOnlineImplementation(new S3ClientImpl(new BasicAWSCredentials(accessKey, privateKey)));
+		s3ClientFactory.setOfflineImplementation(new OfflineS3ClientImpl(directory));
 		return s3ClientFactory;
-	}
-
-	private S3Client getOnlineImplementation(final String accessKey, final String privateKey) {
-		return new S3ClientImpl(new BasicAWSCredentials(accessKey, privateKey));
-	}
-
-	private S3Client getOfflineImplementation(final String directory) throws IOException {
-		return new OfflineS3ClientImpl(directory);
 	}
 
 	@Bean
@@ -131,17 +130,15 @@ public abstract class Config extends BaseConfiguration {
 
 	@Primary
 	@Bean
-	public S3Client s3Client(@Value("${aws.key}") final String accessKey,
-	                         @Value("${aws.privateKey}") final String privateKey,
-	                         @Value("${srs.build.s3.offline.directory}") final String directory,
-	                         @Value("${srs.build.offlineMode}") final boolean offlineMode) throws IOException {
-		return s3ClientFactory(accessKey, privateKey, directory).getClient(offlineMode);
+	@DependsOn("s3ClientFactory")
+	public S3Client s3Client(@Value("${srs.build.offlineMode}") final boolean offlineMode) {
+		return s3ClientFactory.getClient(offlineMode);
 	}
 
 	@Bean
 	@DependsOn("s3ClientFactory")
 	public S3ClientHelper s3ClientHelper(@Value("${srs.build.offlineMode}") final boolean offlineMode) {
-		return new S3ClientHelper(s3ClientFactory.getClient(offlineMode));
+		return new S3ClientHelper(s3Client(offlineMode));
 	}
 
 	@Bean
@@ -185,24 +182,29 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
-	                                                                     @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
-		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory =
-				new SimpleJmsListenerContainerFactory();
-		simpleJmsListenerContainerFactory.setConnectionFactory(new ActiveMQConnectionFactory(username, password, brokerUrl));
+	@DependsOn("jmsConnectionFactory")
+	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory() {
+		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory = new SimpleJmsListenerContainerFactory();
+		simpleJmsListenerContainerFactory.setConnectionFactory(activeMQConnectionFactory);
 		return simpleJmsListenerContainerFactory;
 	}
 
 	@Bean
 	public ActiveMQConnectionFactory jmsConnectionFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
-	                                                      @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
-		return new ActiveMQConnectionFactory(username, password, brokerUrl);
+			@Value("${srs.build.job.jms.username}") final String username,
+			@Value("${srs.build.job.jms.password}") final String password,
+			@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
+		activeMQConnectionFactory = new ActiveMQConnectionFactory(username, password, brokerUrl);
+		ActiveMQPrefetchPolicy prefetchPolicy = new ActiveMQPrefetchPolicy();
+		prefetchPolicy.setQueuePrefetch(queuePrefetch);
+		activeMQConnectionFactory.setPrefetchPolicy(prefetchPolicy);
+		return activeMQConnectionFactory;
 	}
 
 	@Bean
-	public ConnectionFactory connectionFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
-	                                           @Value("${srs.build.job.jms.username}") final String username, @Value("${srs.build.job.jms.password}") final String password) {
-		return new CachingConnectionFactory(jmsConnectionFactory(brokerUrl, username, password));
+	@DependsOn("jmsConnectionFactory")
+	public ConnectionFactory connectionFactory() {
+		return new CachingConnectionFactory(activeMQConnectionFactory);
 	}
 
 	@Bean
