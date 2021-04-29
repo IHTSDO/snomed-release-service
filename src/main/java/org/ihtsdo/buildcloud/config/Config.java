@@ -213,11 +213,6 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public ActiveMQConnectionFactoryPrefetchCustomizer queuePrefetchCustomizer(@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
-		return new ActiveMQConnectionFactoryPrefetchCustomizer(queuePrefetch);
-	}
-
-	@Bean
 	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
 		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
 		activeMQTextMessage.setJMSReplyTo(new ActiveMQQueue(queue));
