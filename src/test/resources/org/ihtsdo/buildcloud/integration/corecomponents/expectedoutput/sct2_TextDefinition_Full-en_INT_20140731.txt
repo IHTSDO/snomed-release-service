@@ -1,0 +1,3 @@
+id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId
+800035011	20140131	1	900000000000207008	609406000	en	900000000000550004	A non-immune hypersensitivity reaction directed towards a foreign substance, which results in tissue injury, which is usually transient. It is the manifestation of the pseudoallergic state.	900000000000017005
+800046011	20140731	1	900000000000207008	800036001	en	900000000000013009	Human leucocyte antigen C serotyping	900000000000020002

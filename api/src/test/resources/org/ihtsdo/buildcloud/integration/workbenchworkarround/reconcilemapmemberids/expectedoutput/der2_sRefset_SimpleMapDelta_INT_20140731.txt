@@ -1,2 +1,0 @@
-id	effectiveTime	active	moduleId	refsetId	referencedComponentId	mapTarget
-2dd53467-0a58-4672-ac4d-3eafa746e381	20140731	0	900000000000207008	700043003	235595009	104

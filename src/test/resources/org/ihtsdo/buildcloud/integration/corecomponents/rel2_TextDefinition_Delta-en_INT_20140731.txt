@@ -1,0 +1,2 @@
+id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId
+d1fb8fd8-a1a2-4d98-83b7-369dea3477d3	20140131	1	900000000000207008	27391a7f-5ee8-4ace-8744-f955cf0d1ba8	en	900000000000013009	Human leucocyte antigen C serotyping	900000000000020002
