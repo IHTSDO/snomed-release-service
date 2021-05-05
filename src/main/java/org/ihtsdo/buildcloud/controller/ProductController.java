@@ -9,7 +9,7 @@ import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrRe
 import org.ihtsdo.buildcloud.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
 import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.service.ProductService;
-import org.ihtsdo.buildcloud.service.ReleaseService;
+import org.ihtsdo.buildcloud.service.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
@@ -17,6 +17,7 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
 @Api(value = "Product", position = 2)
@@ -41,7 +43,7 @@ public class ProductController {
 	private ProductService productService;
 
 	@Autowired
-	private ReleaseService releaseService;
+	private ReleaseBuildManager releaseBuildManager;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -150,8 +152,8 @@ public class ProductController {
 			@PathVariable final String productKey,
 			@RequestBody final GatherInputRequestPojo buildConfig,
 			final HttpServletRequest request) throws BusinessServiceException {
-		final Build newBuild = releaseService.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-		releaseService.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
+		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
+		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
 				buildConfig, hypermediaGenerator.getRootURL(request), SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
 		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
 	}
@@ -161,7 +163,7 @@ public class ProductController {
 	@ResponseBody
 	@ApiOperation(value = "Clear in-memory concurrent cache")
 	public ResponseEntity clearConcurrentCache(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException {
-		releaseService.clearConcurrentCache(releaseCenterKey, productKey);
+		releaseBuildManager.clearConcurrentCache(releaseCenterKey, productKey);
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
