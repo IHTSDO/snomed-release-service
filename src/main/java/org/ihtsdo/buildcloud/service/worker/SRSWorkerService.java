@@ -6,7 +6,7 @@ import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.CreateReleasePackageBuildRequest;
-import org.ihtsdo.buildcloud.service.ReleaseServiceImpl;
+import org.ihtsdo.buildcloud.service.ReleaseService;
 import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusWithProductDetailsRequest;
 import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusWithProductDetailsRequest.Builder;
 import org.ihtsdo.otf.jms.MessagingHelper;
@@ -37,7 +37,7 @@ public class SRSWorkerService {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private ReleaseServiceImpl releaseService;
+	private ReleaseService releaseService;
 
 	@Autowired
 	private BuildDAO buildDAO;

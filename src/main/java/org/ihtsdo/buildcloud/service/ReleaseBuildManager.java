@@ -37,9 +37,6 @@ public class ReleaseBuildManager {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private ProductInputFileDAO productInputFileDAO;
-
-	@Autowired
 	private ProductInputFileService productInputFileService;
 
 	@Autowired
