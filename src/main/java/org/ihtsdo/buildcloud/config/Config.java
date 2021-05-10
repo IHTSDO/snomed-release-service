@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.integration.spring.SpringLiquibase;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
@@ -30,9 +28,6 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
-import org.springframework.jms.connection.CachingConnectionFactory;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
@@ -43,7 +38,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
@@ -64,8 +58,6 @@ public abstract class Config extends BaseConfiguration {
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
 
 	private S3ClientFactory s3ClientFactory;
-
-	private ActiveMQConnectionFactory activeMQConnectionFactory;
 
 	@Bean
 	public ObjectMapper createObjectMapper() {
@@ -184,34 +176,8 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	@DependsOn("jmsConnectionFactory")
-	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory() {
-		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory = new SimpleJmsListenerContainerFactory();
-		simpleJmsListenerContainerFactory.setConnectionFactory(activeMQConnectionFactory);
-		return simpleJmsListenerContainerFactory;
-	}
-
-	@Bean
-	public ActiveMQConnectionFactory jmsConnectionFactory(@Value("${srs.build.job.jms.url}") final String brokerUrl,
-			@Value("${srs.build.job.jms.username}") final String username,
-			@Value("${srs.build.job.jms.password}") final String password,
-			@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
-		activeMQConnectionFactory = new ActiveMQConnectionFactory(username, password, brokerUrl);
-		ActiveMQPrefetchPolicy prefetchPolicy = new ActiveMQPrefetchPolicy();
-		prefetchPolicy.setQueuePrefetch(queuePrefetch);
-		activeMQConnectionFactory.setPrefetchPolicy(prefetchPolicy);
-		return activeMQConnectionFactory;
-	}
-
-	@Bean
-	@DependsOn("jmsConnectionFactory")
-	public ConnectionFactory connectionFactory() {
-		return new CachingConnectionFactory(activeMQConnectionFactory);
-	}
-
-	@Bean
-	public JmsTemplate jmsTemplate(@Autowired ConnectionFactory connectionFactory) {
-		return new JmsTemplate(connectionFactory);
+	public ActiveMQConnectionFactoryPrefetchCustomizer queuePrefetchCustomizer(@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
+		return new ActiveMQConnectionFactoryPrefetchCustomizer(queuePrefetch);
 	}
 
 	@Bean
