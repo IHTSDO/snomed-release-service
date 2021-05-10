@@ -47,24 +47,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Autowired
 	private BuildService buildService;
 
-	@Autowired
-	private ProductService productService;
-
-	@Autowired
-	private TermServerService termServerService;
-
-	@Autowired
-	private PublishService publishService;
-
-	@Autowired
-	private JmsTemplate jmsTemplate;
-
-	@Autowired
-	private Queue srsQueue;
-
-	@Autowired
-	private ObjectMapper objectMapper;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	@Override

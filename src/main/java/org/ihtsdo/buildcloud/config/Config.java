@@ -38,6 +38,7 @@ import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
@@ -57,6 +58,7 @@ import java.util.Arrays;
 @ComponentScan(basePackages = {"org.ihtsdo.buildcloud"})
 @EnableJpaRepositories
 @EnableJms
+@EnableAsync
 public abstract class Config extends BaseConfiguration {
 
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
