@@ -28,6 +28,7 @@ import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
@@ -38,6 +39,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 
+import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
@@ -173,6 +175,13 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public MessagingHelper messagingHelper() {
 		return new MessagingHelper();
+	}
+
+	@Bean
+	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Autowired ConnectionFactory connectionFactory) {
+		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory = new SimpleJmsListenerContainerFactory();
+		simpleJmsListenerContainerFactory.setConnectionFactory(connectionFactory);
+		return simpleJmsListenerContainerFactory;
 	}
 
 	@Bean
