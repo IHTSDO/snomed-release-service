@@ -64,8 +64,7 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public ObjectMapper createObjectMapper() {
 		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-				.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
 	@Bean

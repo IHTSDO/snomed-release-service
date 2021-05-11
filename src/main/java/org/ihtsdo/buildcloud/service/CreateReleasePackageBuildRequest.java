@@ -41,4 +41,15 @@ public final class CreateReleasePackageBuildRequest {
 	public String getAuthenticationToken() {
 		return authenticationToken;
 	}
+
+	@Override
+	public String toString() {
+		return "CreateReleasePackageBuildRequest{" +
+				"build=" + build +
+				", gatherInputRequestPojo=" + gatherInputRequestPojo +
+				", rootUrl='" + rootUrl + '\'' +
+				", username='" + username + '\'' +
+				", authenticationToken='" + authenticationToken + '\'' +
+				'}';
+	}
 }
