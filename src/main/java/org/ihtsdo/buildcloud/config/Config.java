@@ -29,6 +29,7 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
@@ -187,6 +188,11 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public ActiveMQConnectionFactoryPrefetchCustomizer queuePrefetchCustomizer(@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
 		return new ActiveMQConnectionFactoryPrefetchCustomizer(queuePrefetch);
+	}
+
+	@Bean
+	public JmsTemplate jmsTemplate(@Autowired ConnectionFactory connectionFactory) {
+		return new JmsTemplate(connectionFactory);
 	}
 
 	@Bean
