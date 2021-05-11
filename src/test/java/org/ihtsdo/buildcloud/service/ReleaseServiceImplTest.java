@@ -69,7 +69,7 @@ public class ReleaseServiceImplTest {
         inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
         when(productInputFileService.gatherSourceFiles(Matchers.anyString(), Matchers.anyString(), any(GatherInputRequestPojo.class), any(SecurityContext.class))).thenReturn(inputGatherReport);
         Build build = releaseBuildManager.createBuild("center", "product", new GatherInputRequestPojo(), null);
-        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
+        releaseService.runReleaseBuild("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
     @Test(expected = BadRequestException.class)
@@ -83,7 +83,7 @@ public class ReleaseServiceImplTest {
         sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
         when(productInputFileService.prepareInputFiles(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean())).thenReturn(sourceFileProcessingReport);
         Build build = releaseBuildManager.createBuild("center", "product", new GatherInputRequestPojo(), null);
-        releaseService.triggerBuildAsync("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
+        releaseService.runReleaseBuild("center", "product", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication(), "http://localhost");
     }
 
 

@@ -42,7 +42,7 @@ public class SRSWorkerService {
 	@Autowired
 	private BuildDAO buildDAO;
 
-	@JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs")
+	@JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
 	public void consumeSRSJob(final TextMessage srsMessage) {
 		Build build = null;
 		Builder buildStatusWithProductBuilder = null;
@@ -61,7 +61,7 @@ public class SRSWorkerService {
 							createReleasePackageBuildRequest.getAuthenticationToken());
 			preAuthenticatedAuthenticationToken.setAuthenticated(true);
 			SecurityContextHolder.getContext().setAuthentication(preAuthenticatedAuthenticationToken);
-			releaseService.triggerBuildAsync(product.getReleaseCenter().getBusinessKey(),
+			releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
 			messagingHelper.sendResponse(buildStatusTextMessage,
