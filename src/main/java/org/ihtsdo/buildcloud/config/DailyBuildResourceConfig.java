@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix="srs.dailybuild.storage")
+@ConfigurationProperties(prefix="dailybuild.storage")
 public class DailyBuildResourceConfig extends ResourceConfiguration {
 	
 }
