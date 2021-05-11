@@ -47,11 +47,6 @@ public class SRSWorkerService {
 		Build build = null;
 		Builder buildStatusWithProductBuilder = null;
 		try {
-			LOGGER.info("**************************************************************************************");
-			LOGGER.info(srsMessage.getText());
-			LOGGER.info("**************************************************************************************");
-			LOGGER.info(objectMapper.toString());
-			LOGGER.info("**************************************************************************************");
 			final CreateReleasePackageBuildRequest createReleasePackageBuildRequest =
 					objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
 			build = createReleasePackageBuildRequest.getBuild();
