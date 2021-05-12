@@ -68,7 +68,7 @@ public class SRSWorkerService {
 					.withProductBusinessKey(product.getBusinessKey()).withBuildStatus(build.getStatus());
 			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusWithProductBuilder.build());
 			final Instant finish = Instant.now();
-			LOGGER.info("Release build {} completed in {} milliseconds for product: {}", build.getId(), Duration.between(start, finish).toMillis(), product.getId());
+			LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getId());
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			if (buildDAO != null && buildStatusWithProductBuilder != null) {
