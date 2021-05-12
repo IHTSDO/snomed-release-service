@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.service.buildstatuslistener;
 
-import org.ihtsdo.buildcloud.service.worker.BuildStatus;
+import org.ihtsdo.buildcloud.entity.Build;
 
 public class BuildStatusWithProductDetailsRequest {
 
-	private BuildStatus buildStatus;
+	private Build.Status buildStatus;
 
 	private String productBusinessKey;
 	private String productName;
@@ -18,7 +18,7 @@ public class BuildStatusWithProductDetailsRequest {
 		this.productName = builder.productName;
 	}
 
-	public final BuildStatus getBuildStatus() {
+	public final Build.Status getBuildStatus() {
 		return buildStatus;
 	}
 
@@ -36,7 +36,7 @@ public class BuildStatusWithProductDetailsRequest {
 
 	public static class Builder {
 
-		private BuildStatus buildStatus;
+		private Build.Status buildStatus;
 
 		private String productBusinessKey;
 		private final String productName;
@@ -45,7 +45,7 @@ public class BuildStatusWithProductDetailsRequest {
 			this.productName = productName;
 		}
 
-		public final Builder withBuildStatus(final BuildStatus buildStatus) {
+		public final Builder withBuildStatus(final Build.Status buildStatus) {
 			this.buildStatus = buildStatus;
 			return this;
 		}

@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.service.buildstatuslistener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.service.worker.BuildStatus;
+import org.ihtsdo.buildcloud.entity.Build;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +33,8 @@ public class BuildStatusListenerService {
 			final BuildStatusWithProductDetailsRequest buildStatusWithProductDetailsRequest =
 					objectMapper.readValue(textMessage.getText(), BuildStatusWithProductDetailsRequest.class);
 			if (buildStatusWithProductDetailsRequest != null) {
-				final BuildStatus buildStatus = buildStatusWithProductDetailsRequest.getBuildStatus();
-				if (buildStatus == BuildStatus.COMPLETED || buildStatus == BuildStatus.FAILED) {
+				final Build.Status buildStatus = buildStatusWithProductDetailsRequest.getBuildStatus();
+				if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
 					final String productBusinessKey = buildStatusWithProductDetailsRequest.getProductBusinessKey();
 					final String productName = buildStatusWithProductDetailsRequest.getProductName();
 					if (productBusinessKey != null && productName != null) {

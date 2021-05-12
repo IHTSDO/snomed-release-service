@@ -20,6 +20,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.stereotype.Service;
 
 import javax.jms.TextMessage;
+import java.time.Duration;
+import java.time.Instant;
 
 @Service
 @ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
@@ -47,13 +49,11 @@ public class SRSWorkerService {
 		Build build = null;
 		Builder buildStatusWithProductBuilder = null;
 		try {
+			final Instant start = Instant.now();
 			final CreateReleasePackageBuildRequest createReleasePackageBuildRequest =
 					objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
 			build = createReleasePackageBuildRequest.getBuild();
 			final Product product = build.getProduct();
-			buildStatusWithProductBuilder = BuildStatusWithProductDetailsRequest.newBuilder(product.getName())
-					.withProductBusinessKey(product.getBusinessKey()).withBuildStatus(BuildStatus.RUNNING);
-			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusWithProductBuilder.build());
 			LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
 			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
 			final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
@@ -64,14 +64,15 @@ public class SRSWorkerService {
 			releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
-			messagingHelper.sendResponse(buildStatusTextMessage,
-					buildStatusWithProductBuilder.withBuildStatus(BuildStatus.COMPLETED).build());
-			LOGGER.info("Release build completed: {} for product: {}", build.getId(), product.getId());
+			buildStatusWithProductBuilder = BuildStatusWithProductDetailsRequest.newBuilder(product.getName())
+					.withProductBusinessKey(product.getBusinessKey()).withBuildStatus(build.getStatus());
+			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusWithProductBuilder.build());
+			final Instant finish = Instant.now();
+			LOGGER.info("Release build {} completed in {} milliseconds for product: {}", build.getId(), Duration.between(start, finish).toMillis(), product.getId());
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			if (buildDAO != null && buildStatusWithProductBuilder != null) {
-				messagingHelper.sendResponse(buildStatusTextMessage,
-						buildStatusWithProductBuilder.withBuildStatus(BuildStatus.FAILED).build());
+				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusWithProductBuilder.withBuildStatus(build.getStatus()).build());
 				buildDAO.updateStatus(build, Build.Status.FAILED);
 			} else {
 				LOGGER.error("Can not update build status to failed due to the BuildDAO being null.");
