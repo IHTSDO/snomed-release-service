@@ -197,6 +197,10 @@ public abstract class Config extends BaseConfiguration {
 
 	@Bean
 	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
+		return getActiveMQTextMessage(queue);
+	}
+
+	private ActiveMQTextMessage getActiveMQTextMessage(final String queue) throws JMSException {
 		final ActiveMQTextMessage activeMQTextMessage = new ActiveMQTextMessage();
 		activeMQTextMessage.setJMSReplyTo(new ActiveMQQueue(queue));
 		return activeMQTextMessage;

@@ -122,8 +122,6 @@ public class ReleaseBuildManager {
 		}
 	}
 
-
-
 	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo) throws BadRequestException {
 		if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
 			throw new BadRequestException("Effective Date must not be empty.");

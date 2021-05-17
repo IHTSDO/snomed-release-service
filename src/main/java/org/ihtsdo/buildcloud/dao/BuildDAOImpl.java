@@ -7,7 +7,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
+import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -16,36 +18,26 @@ import org.ihtsdo.buildcloud.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.entity.*;
 import org.ihtsdo.buildcloud.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.service.file.Rf2FileNameTransformation;
+import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
-import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -85,6 +77,12 @@ public class BuildDAOImpl implements BuildDAO {
     private final Rf2FileNameTransformation rf2FileNameTransformation;
 
     private S3Client s3Client;
+
+    @Autowired
+    private MessagingHelper messagingHelper;
+
+    @Autowired
+    private ActiveMQTextMessage buildStatusTextMessage;
 
     @Autowired
     private BuildS3PathHelper pathHelper;
@@ -208,10 +206,20 @@ public class BuildDAOImpl implements BuildDAO {
         final String newStatusFilePath = pathHelper.getStatusFilePath(build, build.getStatus());
         // Put new status before deleting old to avoid there being none.
         putFile(newStatusFilePath, BLANK);
+        updateBuildStatusWithNewStatus(build);
         if (origStatus != null && origStatus != newStatus) {
             final String origStatusFilePath = pathHelper.getStatusFilePath(build, origStatus);
             s3Client.deleteObject(buildBucketName, origStatusFilePath);
         }
+    }
+
+    private void updateBuildStatusWithNewStatus(final Build build) {
+        final Product product = build.getProduct();
+        messagingHelper.sendResponse(buildStatusTextMessage,
+                ImmutableMap.of("releaseCenterKey", product.getReleaseCenter().getBusinessKey(),
+                        "productKey", product.getBusinessKey(),
+                        "buildId", build.getId(),
+                        "buildStatus", build.getStatus()));
     }
 
     @Override
