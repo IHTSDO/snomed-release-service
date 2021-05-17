@@ -327,7 +327,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-websocket</artifactId>
-			<version>5.3.7</version>
+			<version>5.2.8.RELEASE</version>
 		</dependency>
 		<!-- Testing -->
 		<dependency>
