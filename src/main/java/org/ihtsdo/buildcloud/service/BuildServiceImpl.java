@@ -3,7 +3,9 @@ package org.ihtsdo.buildcloud.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
+import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -25,6 +27,7 @@ import org.ihtsdo.buildcloud.service.build.transform.StreamingFileTransformation
 import org.ihtsdo.buildcloud.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.service.buildstatuslistener.BuildStatusListenerService;
 import org.ihtsdo.buildcloud.service.file.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
@@ -33,6 +36,7 @@ import org.ihtsdo.buildcloud.service.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.service.precondition.PreconditionManager;
 import org.ihtsdo.buildcloud.service.rvf.RVFClient;
 import org.ihtsdo.buildcloud.service.rvf.ValidationRequest;
+import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -48,10 +52,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import us.monoid.web.JSONResource;
-import us.monoid.web.Resty;
 
 import javax.annotation.PostConstruct;
 import javax.naming.ConfigurationException;
@@ -60,7 +61,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
-import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -126,9 +126,14 @@ public class BuildServiceImpl implements BuildService {
 
 	private ResourceManager dailyBuildResourceManager;
 
-	public enum RVF_STATE {
-		QUEUED, RUNNING, COMPLETE, FAILED, UNKNOWN
-	}
+	@Autowired
+	private MessagingHelper messagingHelper;
+
+	@Autowired
+	private ActiveMQTextMessage buildStatusTextMessage;
+
+	@Autowired
+	private BuildStatusListenerService buildStatusListenerService;
 
 	@PostConstruct
 	public void init() {
@@ -641,19 +646,16 @@ public class BuildServiceImpl implements BuildService {
 		if (dao.isBuildCancelRequested(build)) return;
 		File zipPackage = null;
 		try {
-			try {
-				final Zipper zipper = new Zipper(build, dao);
-				zipPackage = zipper.createZipFile(false);
-				LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
-				dao.putOutputFile(build, zipPackage, true);
-				LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
-				if (build.getConfiguration().isDailyBuild()) {
-					DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
-					extractor.outputDailyBuildPackage(dailyBuildResourceManager);
-				}
-			} catch (JAXBException | IOException | ResourceNotFoundException e) {
-				throw new BusinessServiceException("Failure in Zip creation caused by " + e.getMessage(), e);
+			final Zipper zipper = new Zipper(build, dao);
+			zipPackage = zipper.createZipFile(false);
+			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
+			dao.putOutputFile(build, zipPackage, true);
+			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
+			if (build.getConfiguration().isDailyBuild()) {
+				DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
+				extractor.outputDailyBuildPackage(dailyBuildResourceManager);
 			}
+
 			if (dao.isBuildCancelRequested(build)) return;
 
 			if (!offlineMode) {
@@ -686,9 +688,6 @@ public class BuildServiceImpl implements BuildService {
 			report.add("rvf_response", rvfResultMsg);
 			LOGGER.info("End of running build {}", build.getUniqueId());
 			dao.persistReport(build);
-			if (!offlineMode) {
-				waitForRvfComplete(build, rvfResultMsg);
-			}
 		} catch (Exception e) {
 			LOGGER.error("Failure during getting RVF results", e);
 		} finally {
@@ -1016,56 +1015,21 @@ public class BuildServiceImpl implements BuildService {
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
 			request.setMrcmValidationForm(mrcmValidationForm);
+			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
 	}
 
-	private void waitForRvfComplete(Build build, String pollURL) throws Exception {
-		Resty resty = new Resty(new Resty.Option() {
-			public void apply(URLConnection aConnection) {
-				aConnection.addRequestProperty("Accept", "*/*");
-			}
-		});
-		dao.updateStatus(build, Status.RVF_RUNNING);
-		boolean isFinalState = false;
-		long msElapsed = 0;
-		int pollPeriod = 60000;
-		int maxElapsedTime = 7200000;
-
-		Assert.notNull(pollURL, "Unable to check for RVF results - location not known.");
-
-		if (!pollURL.startsWith("http")) {
-			throw new ProcessingException("RVF location not available to check.  Instead we have: " + pollURL);
-		}
-
-		while (!isFinalState) {
-			JSONResource json = resty.json(pollURL);
-			Object responseState = json.get(JSON_FIELD_STATUS);
-			RVF_STATE currentState;
-
-			try {
-				currentState = RVF_STATE.valueOf(responseState.toString());
-			} catch (Exception e) {
-				throw new ProcessingException("Failed to determine RVF Status from response: " + json.object().toString(2));
-			}
-
-			switch (currentState) {
-				case QUEUED:
-				case RUNNING:
-					Thread.sleep(pollPeriod);
-					msElapsed += pollPeriod;
-					break;
-				case FAILED:
-				case COMPLETE:
-					isFinalState = true;
-					break;
-				default:
-					throw new ProcessingException("RVF Response was not recognised: " + currentState);
-			}
-
-			if (msElapsed > maxElapsedTime) {
-				throw new ProcessingException("RVF did not complete within the allotted time ");
-			}
+	private void sendMiniRvfValidationRequestToBuildStatusMessage(final Build build, final String runId) {
+		final Product product = build.getProduct();
+		if (product != null) {
+			messagingHelper.sendResponse(buildStatusTextMessage,
+					ImmutableMap.of("runId", Long.valueOf(runId),
+							"buildId", build.getId(),
+							"releaseCenterKey", product.getReleaseCenter().getBusinessKey(),
+							"productKey", product.getBusinessKey()));
+		} else {
+			LOGGER.info("Product is null when trying to send the build status message.");
 		}
 	}
 
