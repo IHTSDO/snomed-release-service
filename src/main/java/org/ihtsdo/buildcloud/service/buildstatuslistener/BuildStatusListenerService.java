@@ -60,18 +60,21 @@ public class BuildStatusListenerService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
 	public void consumeBuildStatus(final TextMessage textMessage) {
+		LOGGER.info("Received message: {}", textMessage);
 		try {
 			if (textMessage != null) {
-				if (propertiesExist(textMessage, CONCURRENT_RELEASE_BUILD_MAP_KEYS)) {
-					processConcurrentReleaseBuildMap(textMessage);
-				} else if (propertiesExist(textMessage, RVF_STATUS_MAP_KEYS)) {
-					processRVFStatus(textMessage);
-				} else if (propertiesExist(textMessage, STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS)) {
-					storeMiniRVFValidationRequest(textMessage);
-				} else if (propertiesExist(textMessage, UPDATE_STATUS_MAP_KEYS)) {
-					updateStatus(textMessage.getText());
+				final Map<String, Object> message = objectMapper.readValue(textMessage.getText(), Map.class);
+				if (propertiesExist(message, CONCURRENT_RELEASE_BUILD_MAP_KEYS)) {
+					processConcurrentReleaseBuildMap(message);
+				} else if (propertiesExist(message, RVF_STATUS_MAP_KEYS)) {
+					processRVFStatus(message);
+				} else if (propertiesExist(message, STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS)) {
+					storeMiniRVFValidationRequest(message);
+				} else if (propertiesExist(message, UPDATE_STATUS_MAP_KEYS)) {
+					updateStatus(message);
 				}
 			}
 		} catch (JMSException | JsonProcessingException e) {
@@ -79,37 +82,31 @@ public class BuildStatusListenerService {
 		}
 	}
 
-	private boolean propertiesExist(final TextMessage textMessage, final List<String> properties) throws JMSException {
-		for (final String property : properties) {
-			if (!textMessage.propertyExists(property)) {
-				return false;
-			}
-		}
-		return true;
+	private boolean propertiesExist(final Map<String, Object> message, final List<String> properties) {
+		return properties.stream().allMatch(message::containsKey);
 	}
 
-	private void processRVFStatus(final TextMessage textMessage) throws JMSException, JsonProcessingException {
-		LOGGER.info("RVF Message: {}", textMessage);
+	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException {
+		LOGGER.info("RVF Message: {}", message);
 		final MiniRVFValidationRequest miniRvfValidationRequest =
-				MINI_RVF_VALIDATION_REQUEST_MAP.get(textMessage.getLongProperty(RUN_ID_KEY));
+				MINI_RVF_VALIDATION_REQUEST_MAP.get((Long) message.get(RUN_ID_KEY));
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
-		final Build.Status buildStatus = getBuildStatusFromRVF(textMessage, build);
+		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
 		if (buildStatus != null) {
 			LOGGER.info("SRS Build Status: {}", buildStatus.name());
-			updateStatus(objectMapper.writeValueAsString(
-					ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
+			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 							PRODUCT_KEY, product.getBusinessKey(),
 							BUILD_ID_KEY, build.getId(),
-							BUILD_STATUS_KEY, buildStatus)));
+							BUILD_STATUS_KEY, buildStatus));
 		}
 	}
 
-	private Build.Status getBuildStatusFromRVF(final TextMessage textMessage, final Build build) throws JMSException {
-		final String state = textMessage.getStringProperty(STATE_KEY);
+	private Build.Status getBuildStatusFromRVF(final Map<String, Object> message, final Build build) {
+		final String state = (String) message.get(STATE_KEY);
 		LOGGER.info("State from RVF response: {}", state);
 		switch (state) {
 			case "QUEUED":
@@ -136,11 +133,11 @@ public class BuildStatusListenerService {
 		return hasWarnings ? Build.Status.RELEASE_COMPLETE_WITH_WARNINGS : Build.Status.RELEASE_COMPLETE;
 	}
 
-	private void processConcurrentReleaseBuildMap(final TextMessage textMessage) throws JMSException {
-		final Build.Status buildStatus = (Build.Status) textMessage.getObjectProperty(BUILD_STATUS_KEY);
+	private void processConcurrentReleaseBuildMap(final Map<String, Object> message) {
+		final Build.Status buildStatus = (Build.Status) message.get(BUILD_STATUS_KEY);
 		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
-			final String productBusinessKey = textMessage.getStringProperty(PRODUCT_KEY);
-			final String productName = textMessage.getStringProperty(PRODUCT_NAME_KEY);
+			final String productBusinessKey = (String) message.get(PRODUCT_KEY);
+			final String productName = (String) message.get(PRODUCT_NAME_KEY);
 			if (productBusinessKey != null && productName != null) {
 				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 			}
@@ -152,15 +149,15 @@ public class BuildStatusListenerService {
 	 *
 	 * @param message Being sent to the web socket.
 	 */
-	private void updateStatus(final String message) {
-		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", message);
+	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
+		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
 	}
 
-	private void storeMiniRVFValidationRequest(final TextMessage textMessage) throws JMSException {
-		MINI_RVF_VALIDATION_REQUEST_MAP.putIfAbsent(textMessage.getLongProperty(RUN_ID_KEY),
-				new MiniRVFValidationRequest(textMessage.getStringProperty(BUILD_ID_KEY),
-				textMessage.getStringProperty(RELEASE_CENTER_KEY),
-						textMessage.getStringProperty(PRODUCT_KEY)));
+	private void storeMiniRVFValidationRequest(final Map<String, Object> message) {
+		MINI_RVF_VALIDATION_REQUEST_MAP.putIfAbsent((Long) message.get(RUN_ID_KEY),
+				new MiniRVFValidationRequest((String) message.get(BUILD_ID_KEY),
+						(String) message.get(RELEASE_CENTER_KEY),
+						(String) message.get(PRODUCT_KEY)));
 	}
 
 	/**
