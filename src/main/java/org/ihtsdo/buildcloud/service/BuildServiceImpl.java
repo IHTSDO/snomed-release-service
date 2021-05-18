@@ -487,7 +487,9 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case RELEASE_COMPLETE_WITH_WARNINGS:
 			case RELEASE_COMPLETE:
-				dao.assertStatus(build, offlineMode ? Status.BUILDING : Status.RVF_RUNNING);
+				if (offlineMode) {
+					dao.assertStatus(build, Status.BUILDING);
+				}
 				break;
 			case CANCELLED:
 				dao.assertStatus(build, Status.CANCEL_REQUESTED);
