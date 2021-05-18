@@ -45,6 +45,8 @@ public class RVFClient implements Closeable {
 
 	private static final String INCLUDED_MODULES = "includedModules";
 
+	private static final String RESPONSE_QUEUE = "responseQueue";
+
 	private static final String EFFECTIVE_TIME = "effectiveTime";
 
 	private static final String STORAGE_LOCATION = "storageLocation";
@@ -256,6 +258,11 @@ public class RVFClient implements Closeable {
 		if (StringUtils.isNotBlank(request.getIncludedModuleId())) {
 			multiPartBuilder.addTextBody(INCLUDED_MODULES, request.getIncludedModuleId());
 		}
+
+		final String responseQueue = request.getResponseQueue();
+		if (StringUtils.isNoneBlank(responseQueue)) {
+			multiPartBuilder.addTextBody(RESPONSE_QUEUE, responseQueue);
+		}
 		
 		if (StringUtils.isNotBlank(qaTestConfig.getDroolsRulesGroupNames())) {
 			multiPartBuilder.addTextBody(DROOLS_RULES_GROUPS, qaTestConfig.getDroolsRulesGroupNames());
@@ -268,6 +275,7 @@ public class RVFClient implements Closeable {
 		if (StringUtils.isNotBlank(qaTestConfig.getReportingStage())) {
 			multiPartBuilder.addTextBody(REPORTING_STAGE, qaTestConfig.getReportingStage());
 		}
+
 		post.setEntity(multiPartBuilder.build());
 		return post;
 	}
