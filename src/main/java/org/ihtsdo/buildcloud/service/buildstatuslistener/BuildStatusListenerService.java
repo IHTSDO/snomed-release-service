@@ -134,7 +134,7 @@ public class BuildStatusListenerService {
 	}
 
 	private void processConcurrentReleaseBuildMap(final Map<String, Object> message) {
-		final Build.Status buildStatus = (Build.Status) message.get(BUILD_STATUS_KEY);
+		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
 		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
 			final String productBusinessKey = (String) message.get(PRODUCT_KEY);
 			final String productName = (String) message.get(PRODUCT_NAME_KEY);
