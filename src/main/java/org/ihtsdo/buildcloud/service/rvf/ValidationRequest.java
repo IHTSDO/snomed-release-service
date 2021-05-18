@@ -22,6 +22,8 @@ public class ValidationRequest {
 
 	private CharacteristicType mrcmValidationForm;
 
+	private String responseQueue;
+
 	public ValidationRequest(String runId) {
 		this.runId = runId;
 	}
@@ -92,5 +94,13 @@ public class ValidationRequest {
 
 	public void setMrcmValidationForm(CharacteristicType mrcmValidationForm) {
 		this.mrcmValidationForm = mrcmValidationForm;
+	}
+
+	public final String getResponseQueue() {
+		return responseQueue;
+	}
+
+	public final void setResponseQueue(final String responseQueue) {
+		this.responseQueue = responseQueue;
 	}
 }

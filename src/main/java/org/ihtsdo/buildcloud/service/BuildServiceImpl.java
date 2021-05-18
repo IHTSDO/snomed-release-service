@@ -118,6 +118,9 @@ public class BuildServiceImpl implements BuildService {
 	@Value("${srs.build.bucketName}")
 	private String buildBucketName;
 
+	@Value("${srs.jms.queue.prefix}.build-job-status")
+	private String queue;
+
 	@Autowired
 	private DailyBuildResourceConfig dailyBuildResourceConfig;
 
@@ -1017,6 +1020,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
 			request.setMrcmValidationForm(mrcmValidationForm);
+			request.setResponseQueue(queue);
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		}
