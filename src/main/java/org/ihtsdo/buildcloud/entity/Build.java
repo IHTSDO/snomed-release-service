@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.entity.helper.EntityHelper;
 
 import javax.persistence.Transient;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -40,7 +41,11 @@ public class Build {
 	private QATestConfig qaTestConfig;
 
 	public enum Status {
-		QUEUED, BEFORE_TRIGGER, FAILED_INPUT_PREPARE_REPORT_VALIDATION, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN, CANCEL_REQUESTED, CANCELLED, FAILED, RVF_QUEUED, RVF_RUNNING, RELEASE_COMPLETE, RELEASE_COMPLETE_WITH_WARNINGS, FAILED_POST_CONDITIONS
+		QUEUED, BEFORE_TRIGGER, FAILED_INPUT_PREPARE_REPORT_VALIDATION, FAILED_PRE_CONDITIONS, BUILDING, BUILT, UNKNOWN, CANCEL_REQUESTED, CANCELLED, FAILED, RVF_QUEUED, RVF_RUNNING, RELEASE_COMPLETE, RELEASE_COMPLETE_WITH_WARNINGS, FAILED_POST_CONDITIONS;
+
+		public static Status findBuildStatus(final String text) {
+			return Arrays.stream(Status.values()).filter(status -> status.name().equalsIgnoreCase(text)).findFirst().orElse(null);
+		}
 	}
 
 	public enum Tag {
