@@ -70,17 +70,23 @@ public class BuildStatusListenerService {
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
 	public void consumeBuildStatus(final TextMessage textMessage) {
-		LOGGER.info("Received message: {}", textMessage);
 		try {
 			if (textMessage != null) {
-				final Map<String, Object> message = objectMapper.readValue(textMessage.getText(), Map.class);
+				final String text = textMessage.getText();
+				LOGGER.info("Received message: {}", text);
+				final Map<String, Object> message = objectMapper.readValue(text, Map.class);
+				LOGGER.info("******* 1 *******");
 				if (propertiesExist(message, CONCURRENT_RELEASE_BUILD_MAP_KEYS)) {
+					LOGGER.info("******* 2 *******");
 					processConcurrentReleaseBuildMap(message);
 				} else if (propertiesExist(message, RVF_STATUS_MAP_KEYS)) {
+					LOGGER.info("******* 3 *******");
 					processRVFStatus(message);
 				} else if (propertiesExist(message, STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS)) {
+					LOGGER.info("******* 4 *******");
 					storeMiniRVFValidationRequest(message);
 				} else if (propertiesExist(message, UPDATE_STATUS_MAP_KEYS)) {
+					LOGGER.info("******* 5 *******");
 					updateStatus(message);
 				}
 			}
