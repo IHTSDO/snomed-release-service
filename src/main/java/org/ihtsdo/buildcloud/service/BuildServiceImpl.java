@@ -676,6 +676,11 @@ public class BuildServiceImpl implements BuildService {
 			}
 
 			if (dao.isBuildCancelRequested(build)) return;
+
+			if (!offlineMode) {
+				dao.updateStatus(build, Status.BUILT);
+			}
+
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode) {

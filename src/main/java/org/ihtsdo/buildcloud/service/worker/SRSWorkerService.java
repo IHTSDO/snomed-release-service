@@ -64,7 +64,8 @@ public class SRSWorkerService {
 			releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
-			buildStatusMap = ImmutableMap.of("productName", product.getName(), "productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus());
+			buildStatusMap = ImmutableMap.of("productName", product.getName(),
+					"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus());
 			LOGGER.info("Build Status Map: {}", buildStatusMap);
 			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
 			final Instant finish = Instant.now();
