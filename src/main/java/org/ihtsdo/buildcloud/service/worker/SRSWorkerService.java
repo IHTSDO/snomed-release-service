@@ -55,7 +55,6 @@ public class SRSWorkerService {
 			build = createReleasePackageBuildRequest.getBuild();
 			final Product product = build.getProduct();
 			LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
-			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
 			final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
 					new PreAuthenticatedAuthenticationToken(createReleasePackageBuildRequest.getUsername(),
 							createReleasePackageBuildRequest.getAuthenticationToken());

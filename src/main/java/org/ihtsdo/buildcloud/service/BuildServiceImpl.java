@@ -275,7 +275,7 @@ public class BuildServiceImpl implements BuildService {
 	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) throws BusinessServiceException {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		LOGGER.info("Trigger product", productKey, buildId);
-		Build build;
+		Build build = null;
 		try {
 			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
@@ -294,34 +294,40 @@ public class BuildServiceImpl implements BuildService {
 			// execute build
 			if (!isAbandoned) {
 				Status status = Status.BUILDING;
-				final BuildReport report = build.getBuildReport();
-				String resultStatus = "completed";
-				String resultMessage = "Process completed successfully";
-				try {
-					updateStatusWithChecks(build, status);
-					executeBuild(build, failureExportMax, mrcmValidationForm);
+				if (offlineMode) {
+					final BuildReport report = build.getBuildReport();
+					String resultStatus = "completed";
+					String resultMessage = "Process completed successfully";
+					try {
+						updateStatusWithChecks(build, status);
+						executeBuild(build, failureExportMax, mrcmValidationForm);
 
-					// TODO - remove this logic
-					// Check warnings if any
-					boolean hasWarnings = false;
-					if (build.getPreConditionCheckReports() != null) {
-						for (PreConditionCheckReport conditionCheckReport : build.getPreConditionCheckReports()) {
-							if (conditionCheckReport.getResult() == State.WARNING) {
-								hasWarnings = true;
-								break;
+						// Check warnings if any
+						boolean hasWarnings = false;
+						if (build.getPreConditionCheckReports() != null) {
+							for (PreConditionCheckReport conditionCheckReport : build.getPreConditionCheckReports()) {
+								if (conditionCheckReport.getResult() == State.WARNING) {
+									hasWarnings = true;
+									break;
+								}
 							}
 						}
+						status = hasWarnings ? Status.RELEASE_COMPLETE_WITH_WARNINGS : Status.RELEASE_COMPLETE;
+					} catch (final Exception e) {
+						resultStatus = "fail";
+						resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
+								+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+						LOGGER.error(resultMessage, e);
+						status = Status.FAILED;
 					}
-					status = hasWarnings ? Status.RELEASE_COMPLETE_WITH_WARNINGS : Status.RELEASE_COMPLETE;
-				} catch (final Exception e) {
-					resultStatus = "fail";
-					resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
-							+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-					LOGGER.error(resultMessage, e);
-					status = Status.FAILED;
+					setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
+				} else {
+					updateStatusWithChecks(build, status);
+					executeBuild(build, failureExportMax, mrcmValidationForm);
 				}
-				setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
 			}
+		} catch (NoSuchAlgorithmException | IOException e) {
+			LOGGER.error("Error occurred while trying to trigger the build.", e);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
@@ -396,7 +402,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
+	public void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
 			final String resultMessage) throws BadConfigurationException {
 		if (dao.isBuildCancelRequested(build)) {
 			report.add("Progress Status", "cancelled");
@@ -480,7 +486,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
+	public void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
 		// Assert status workflow position
 		switch (newStatus) {
 			case BUILDING:

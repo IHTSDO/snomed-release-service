@@ -127,6 +127,7 @@ public class BuildDAOImpl implements BuildDAO {
                 qaConfigJson.delete();
             }
         }
+        updateStatus(build, Build.Status.BEFORE_TRIGGER);
 
         // Save trigger user
         if (StringUtils.isNotEmpty(build.getBuildUser())) {
