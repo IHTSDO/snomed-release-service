@@ -92,6 +92,9 @@ public class BuildDAOImpl implements BuildDAO {
     @Autowired
     private ProductInputFileDAO productInputFileDAO;
 
+    @Value("${srs.build.offlineMode}")
+    private Boolean offlineMode;
+
     @Value("${srs.file-processing.failureMaxRetry}")
     private Integer fileProcessingFailureMaxRetry;
 
@@ -127,7 +130,9 @@ public class BuildDAOImpl implements BuildDAO {
                 qaConfigJson.delete();
             }
         }
-        updateStatus(build, Build.Status.BEFORE_TRIGGER);
+        if (offlineMode) {
+            updateStatus(build, Build.Status.BEFORE_TRIGGER);
+        }
 
         // Save trigger user
         if (StringUtils.isNotEmpty(build.getBuildUser())) {
