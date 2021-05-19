@@ -301,6 +301,7 @@ public class BuildServiceImpl implements BuildService {
 					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax, mrcmValidationForm);
 
+					// TODO - remove this logic
 					// Check warnings if any
 					boolean hasWarnings = false;
 					if (build.getPreConditionCheckReports() != null) {
@@ -490,9 +491,7 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case RELEASE_COMPLETE_WITH_WARNINGS:
 			case RELEASE_COMPLETE:
-				if (offlineMode) {
-					dao.assertStatus(build, Status.BUILDING);
-				}
+				dao.assertStatus(build, offlineMode ? Status.BUILDING : Status.RVF_RUNNING);
 				break;
 			case CANCELLED:
 				dao.assertStatus(build, Status.CANCEL_REQUESTED);
