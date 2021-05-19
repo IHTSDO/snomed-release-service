@@ -3,11 +3,15 @@ package org.ihtsdo.buildcloud.service.buildstatuslistener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import org.ihtsdo.buildcloud.dao.BuildDAO;
 import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.entity.BuildReport;
 import org.ihtsdo.buildcloud.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.entity.Product;
 import org.ihtsdo.buildcloud.service.BuildService;
+import org.ihtsdo.buildcloud.service.BuildServiceImpl;
 import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +56,9 @@ public class BuildStatusListenerService {
 	private BuildService buildService;
 
 	@Autowired
+	private BuildServiceImpl buildServiceImpl;
+
+	@Autowired
 	private ProductService productService;
 
 	@Autowired
@@ -77,7 +84,7 @@ public class BuildStatusListenerService {
 					updateStatus(message);
 				}
 			}
-		} catch (JMSException | JsonProcessingException e) {
+		} catch (JMSException | JsonProcessingException | BadConfigurationException e) {
 			LOGGER.error("Error occurred while trying to obtain the build status.", e);
 		}
 	}
@@ -86,7 +93,7 @@ public class BuildStatusListenerService {
 		return properties.stream().allMatch(message::containsKey);
 	}
 
-	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException {
+	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
 		LOGGER.info("RVF Message: {}", message);
 		final MiniRVFValidationRequest miniRvfValidationRequest =
 				MINI_RVF_VALIDATION_REQUEST_MAP.get((Long) message.get(RUN_ID_KEY));
@@ -96,7 +103,11 @@ public class BuildStatusListenerService {
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
+		String resultStatus = "completed";
+		String resultMessage = "Process completed successfully";
 		if (buildStatus != null) {
+			final BuildReport report = build.getBuildReport();
+			buildServiceImpl.setReportStatusAndPersist(build, buildStatus, report, resultStatus, resultMessage);
 			LOGGER.info("SRS Build Status: {}", buildStatus.name());
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 							PRODUCT_KEY, product.getBusinessKey(),
