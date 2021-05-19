@@ -152,10 +152,16 @@ public class BuildStatusListenerService {
 
 	private void processConcurrentReleaseBuildMap(final Map<String, Object> message) {
 		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
+		LOGGER.info("***** 1 Build Status: {}", buildStatus);
 		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
 			final String productBusinessKey = (String) message.get(PRODUCT_KEY);
+			LOGGER.info("***** 2 Product Business Key: {}", productBusinessKey);
 			final String productName = (String) message.get(PRODUCT_NAME_KEY);
+			LOGGER.info("***** 3 Product Name: {}", productName);
 			if (productBusinessKey != null && productName != null) {
+				if (CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) && CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
+					LOGGER.info("***** 4 HURRAY ********");
+				}
 				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 			}
 		}
