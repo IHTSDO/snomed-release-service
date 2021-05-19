@@ -50,7 +50,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	@Override
-	public void runReleaseBuild(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
+	public Build runReleaseBuild(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication, String rootURL) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
 
@@ -97,10 +97,11 @@ public class ReleaseServiceImpl implements ReleaseService {
 			QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 			// trigger build
 			LOGGER.info("BUILD_INFO::/centers/{}/products/{}/builds/{}", releaseCenter, product.getBusinessKey(), build.getId());
-			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
 			LOGGER.info("Build {} is triggered {}", build.getProduct(), build.getId());
+			return buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
 		} catch (IOException e) {
 			LOGGER.error("Encounter error while creating package. Build process stopped.", e);
+			return null;
 		} finally {
 			MDC.remove(TRACKER_ID);
 			TelemetryStream.finish(LOGGER);

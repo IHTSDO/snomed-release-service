@@ -61,15 +61,17 @@ public class SRSWorkerService {
 							createReleasePackageBuildRequest.getAuthenticationToken());
 			preAuthenticatedAuthenticationToken.setAuthenticated(true);
 			SecurityContextHolder.getContext().setAuthentication(preAuthenticatedAuthenticationToken);
-			releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
+			build = releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
 					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
-			buildStatusMap = ImmutableMap.of("productName", product.getName(),
-					"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus());
-			LOGGER.info("Build Status Map: {}", buildStatusMap);
-			messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
-			final Instant finish = Instant.now();
-			LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getId());
+			if (build != null) {
+				buildStatusMap = ImmutableMap.of("productName", product.getName(),
+						"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus());
+				LOGGER.info("Build Status Map: {}", buildStatusMap);
+				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
+				final Instant finish = Instant.now();
+				LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getId());
+			}
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			if (buildDAO != null && buildStatusMap != null) {
