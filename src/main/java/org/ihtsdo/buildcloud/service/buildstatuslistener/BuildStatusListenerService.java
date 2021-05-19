@@ -165,6 +165,7 @@ public class BuildStatusListenerService {
 	}
 
 	private void storeMiniRVFValidationRequest(final Map<String, Object> message) {
+		LOGGER.info("Message being stored inside RVF validation request map: {}", message);
 		MINI_RVF_VALIDATION_REQUEST_MAP.putIfAbsent((Long) message.get(RUN_ID_KEY),
 				new MiniRVFValidationRequest((String) message.get(BUILD_ID_KEY),
 						(String) message.get(RELEASE_CENTER_KEY),
