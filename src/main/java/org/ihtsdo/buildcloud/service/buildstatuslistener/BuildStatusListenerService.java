@@ -103,11 +103,14 @@ public class BuildStatusListenerService {
 		LOGGER.info("RVF Message: {}", message);
 		final MiniRVFValidationRequest miniRvfValidationRequest =
 				MINI_RVF_VALIDATION_REQUEST_MAP.get((Long) message.get(RUN_ID_KEY));
+		LOGGER.info("Mini RVF Validation Request: {}", miniRvfValidationRequest);
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
+		LOGGER.info("Product found from Mini RVF Validation Request: {}", product);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
+		LOGGER.info("Build found from Mini RVF Validation Request: {}", build);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
 		String resultStatus = "completed";
 		String resultMessage = "Process completed successfully";
