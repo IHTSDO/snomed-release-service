@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.service.buildstatuslistener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.ihtsdo.buildcloud.dao.BuildDAO;
@@ -170,14 +171,12 @@ public class BuildStatusListenerService {
 		return hasWarnings ? Build.Status.RELEASE_COMPLETE_WITH_WARNINGS : Build.Status.RELEASE_COMPLETE;
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build, final Product product) {
-		objectMapper.getTypeFactory().constructCollectionType(List.class, PreConditionCheckReport.class);
 		try (InputStream reportStream = buildService.getPreConditionChecksReport(
 				product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), build.getId())) {
 			if (reportStream != null) {
-				return objectMapper.readValue(reportStream, List.class);
+				return objectMapper.readValue(reportStream, new TypeReference<List<PreConditionCheckReport>>(){});
 			} else {
 				LOGGER.warn("No pre-condition checks report found.");
 			}
