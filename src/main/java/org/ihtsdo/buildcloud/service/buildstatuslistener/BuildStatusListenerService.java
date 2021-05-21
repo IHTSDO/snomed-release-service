@@ -140,8 +140,8 @@ public class BuildStatusListenerService {
 		LOGGER.info("PRE GET BUILD REPORT FILE: build id {}", build.getId());
 		LOGGER.info("PRE GET BUILD REPORT FILE: product release center key {}", product.getReleaseCenter().getBusinessKey());
 		LOGGER.info("PRE GET BUILD REPORT FILE: product key {}", product.getBusinessKey());
-		try (InputStream reportStream = buildService.getBuildReportFile(product.getReleaseCenter().getBusinessKey(),
-				product.getBusinessKey(), build.getId())) {
+		build.setProduct(product);
+		try (InputStream reportStream = buildService.getBuildReportFile(build)) {
 			LOGGER.info("Report Stream: {}", reportStream);
 			if (reportStream != null) {
 				final BuildReport buildReport = objectMapper.readValue(reportStream, BuildReport.class);
