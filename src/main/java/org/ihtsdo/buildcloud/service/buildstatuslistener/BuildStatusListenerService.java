@@ -109,11 +109,6 @@ public class BuildStatusListenerService {
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
 		if (buildStatus != null) {
 			final BuildReport report = build.getBuildReport();
-			report.add("post_validation_status","Completed");
-			report.add("rvf_response", build.getRvfURL());
-			LOGGER.info("End of running build {}", build.getUniqueId());
-			buildDAO.persistReport(build);
-
 			buildServiceImpl.setReportStatusAndPersist(build, buildStatus, report, "completed", "Process completed successfully");
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 							PRODUCT_KEY, product.getBusinessKey(),
