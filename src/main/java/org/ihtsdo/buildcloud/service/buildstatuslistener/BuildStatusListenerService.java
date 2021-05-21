@@ -109,14 +109,14 @@ public class BuildStatusListenerService {
 				false, true, true);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
 		if (buildStatus != null) {
-			//final BuildReport buildReport = getBuildReportFile(build, product);
-			//if (buildReport != null) {
-				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, build.getBuildReport(), "completed", "Process completed successfully");
-				updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
-						PRODUCT_KEY, product.getBusinessKey(),
-						BUILD_ID_KEY, build.getId(),
-						BUILD_STATUS_KEY, buildStatus));
-			//}
+			final BuildReport buildReport = getBuildReportFile(build, product);
+			if (buildReport != null) {
+				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
+			}
+			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
+					PRODUCT_KEY, product.getBusinessKey(),
+					BUILD_ID_KEY, build.getId(),
+					BUILD_STATUS_KEY, buildStatus));
 		}
 	}
 
