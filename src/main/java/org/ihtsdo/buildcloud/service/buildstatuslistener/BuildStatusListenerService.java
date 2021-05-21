@@ -23,7 +23,10 @@ import org.springframework.stereotype.Service;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +62,9 @@ public class BuildStatusListenerService {
 	private BuildServiceImpl buildServiceImpl;
 
 	@Autowired
+	private BuildDAO buildDAO;
+
+	@Autowired
 	private ProductService productService;
 
 	@Autowired
@@ -72,21 +78,14 @@ public class BuildStatusListenerService {
 	public void consumeBuildStatus(final TextMessage textMessage) {
 		try {
 			if (textMessage != null) {
-				final String text = textMessage.getText();
-				LOGGER.info("Received message: {}", text);
-				final Map<String, Object> message = objectMapper.readValue(text, Map.class);
-				LOGGER.info("******* 1 *******");
+				final Map<String, Object> message = objectMapper.readValue(textMessage.getText(), Map.class);
 				if (propertiesExist(message, CONCURRENT_RELEASE_BUILD_MAP_KEYS)) {
-					LOGGER.info("******* 2 *******");
 					processConcurrentReleaseBuildMap(message);
 				} else if (propertiesExist(message, RVF_STATUS_MAP_KEYS)) {
-					LOGGER.info("******* 3 *******");
 					processRVFStatus(message);
 				} else if (propertiesExist(message, STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS)) {
-					LOGGER.info("******* 4 *******");
 					storeMiniRVFValidationRequest(message);
 				} else if (propertiesExist(message, UPDATE_STATUS_MAP_KEYS)) {
-					LOGGER.info("******* 5 *******");
 					updateStatus(message);
 				}
 			}
@@ -100,24 +99,22 @@ public class BuildStatusListenerService {
 	}
 
 	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
-		LOGGER.info("RVF Message: {}", message);
 		final MiniRVFValidationRequest miniRvfValidationRequest =
 				MINI_RVF_VALIDATION_REQUEST_MAP.get((Long) message.get(RUN_ID_KEY));
-		LOGGER.info("Mini RVF Validation Request: {}", miniRvfValidationRequest);
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
-		LOGGER.info("Product found from Mini RVF Validation Request: {}", product);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
-		LOGGER.info("Build found from Mini RVF Validation Request: {}", build);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
-		String resultStatus = "completed";
-		String resultMessage = "Process completed successfully";
 		if (buildStatus != null) {
 			final BuildReport report = build.getBuildReport();
-			buildServiceImpl.setReportStatusAndPersist(build, buildStatus, report, resultStatus, resultMessage);
-			LOGGER.info("SRS Build Status: {}", buildStatus.name());
+			report.add("post_validation_status","Completed");
+			report.add("rvf_response", build.getRvfURL());
+			LOGGER.info("End of running build {}", build.getUniqueId());
+			buildDAO.persistReport(build);
+
+			buildServiceImpl.setReportStatusAndPersist(build, buildStatus, report, "completed", "Process completed successfully");
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 							PRODUCT_KEY, product.getBusinessKey(),
 							BUILD_ID_KEY, build.getId(),
@@ -127,7 +124,6 @@ public class BuildStatusListenerService {
 
 	private Build.Status getBuildStatusFromRVF(final Map<String, Object> message, final Build build) {
 		final String state = (String) message.get(STATE_KEY);
-		LOGGER.info("State from RVF response: {}", state);
 		switch (state) {
 			case "QUEUED":
 				return Build.Status.RVF_QUEUED;
@@ -144,26 +140,41 @@ public class BuildStatusListenerService {
 	}
 
 	private Build.Status processCompleteStatus(final Build build) {
+		build.setPreConditionCheckReports(getPreConditionChecksReport(build));
+
 		// Does not check post RVF results.
 		boolean hasWarnings = false;
 		if (build.getPreConditionCheckReports() != null) {
 			hasWarnings = build.getPreConditionCheckReports().stream().anyMatch(conditionCheckReport ->
 					conditionCheckReport.getResult() == PreConditionCheckReport.State.WARNING);
 		}
+
 		return hasWarnings ? Build.Status.RELEASE_COMPLETE_WITH_WARNINGS : Build.Status.RELEASE_COMPLETE;
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build) {
+		try (InputStream reportStream = buildService.getPreConditionChecksReport(
+				build.getProduct().getReleaseCenter().getBusinessKey(),
+				build.getProduct().getBusinessKey(), build.getId())) {
+			if (reportStream != null) {
+				return objectMapper.readValue(reportStream, List.class);
+			} else {
+				LOGGER.warn("No pre-condition checks report found.");
+			}
+		} catch (IOException e) {
+			LOGGER.error("Error occurred while trying to get the pre-condition checks report.", e);
+		}
+		return Collections.emptyList();
 	}
 
 	private void processConcurrentReleaseBuildMap(final Map<String, Object> message) {
 		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
-		LOGGER.info("***** 1 Build Status: {}", buildStatus);
 		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
 			final String productBusinessKey = (String) message.get(PRODUCT_BUSINESS_KEY);
-			LOGGER.info("***** 2 Product Business Key: {}", productBusinessKey);
 			final String productName = (String) message.get(PRODUCT_NAME_KEY);
-			LOGGER.info("***** 3 Product Name: {}", productName);
 			if (productBusinessKey != null && productName != null) {
 				if (CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) && CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
-					LOGGER.info("***** 4 HURRAY ********");
 				}
 				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 			}
