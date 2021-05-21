@@ -137,9 +137,15 @@ public class BuildStatusListenerService {
 	}
 
 	private BuildReport getBuildReportFile(final Build build, final Product product) {
+		LOGGER.info("PRE GET BUILD REPORT FILE: build id {}", build.getId());
+		LOGGER.info("PRE GET BUILD REPORT FILE: product release center key {}", product.getReleaseCenter().getBusinessKey());
+		LOGGER.info("PRE GET BUILD REPORT FILE: product key {}", product.getBusinessKey());
 		try (InputStream reportStream = buildService.getBuildReportFile(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), build.getId())) {
+			LOGGER.info("Report Stream: {}", reportStream);
 			if (reportStream != null) {
+				final BuildReport buildReport = objectMapper.readValue(reportStream, BuildReport.class);
+				LOGGER.info("Build Report: {}", buildReport);
 				return objectMapper.readValue(reportStream, BuildReport.class);
 			} else {
 				LOGGER.warn("No build report file.");
@@ -147,6 +153,7 @@ public class BuildStatusListenerService {
 		} catch (IOException e) {
 			LOGGER.error("Error occurred while trying to get the build report file.", e);
 		}
+		LOGGER.info("Report Stream is null.");
 		return null;
 	}
 
@@ -185,10 +192,10 @@ public class BuildStatusListenerService {
 		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
 			final String productBusinessKey = (String) message.get(PRODUCT_BUSINESS_KEY);
 			final String productName = (String) message.get(PRODUCT_NAME_KEY);
-			if (productBusinessKey != null && productName != null) {
-				if (CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) && CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
-					CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
-				}
+			if (productBusinessKey != null && productName != null &&
+					CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) &&
+					CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
+				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 			}
 		}
 	}
