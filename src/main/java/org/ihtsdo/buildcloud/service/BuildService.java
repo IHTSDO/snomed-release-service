@@ -52,6 +52,8 @@ public interface BuildService {
 
 	InputStream getLogFile(String releaseCenterKey, String productKey, String buildId, String logFileName) throws ResourceNotFoundException;
 
+	InputStream getBuildReportFile(Build build) throws ResourceNotFoundException;
+
 	InputStream getBuildReportFile(String releaseCenterKey, String productKey,String buildId) throws ResourceNotFoundException;
 
 	InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId);

@@ -190,4 +190,21 @@ public class Build {
 	public void setRvfURL(String rvfURL) {
 		this.rvfURL = rvfURL;
 	}
+
+	@Override
+	public String toString() {
+		return "Build{" +
+				"creationTime='" + creationTime + '\'' +
+				", status=" + status +
+				", tags=" + tags +
+				", buildUser='" + buildUser + '\'' +
+				", rvfURL='" + rvfURL + '\'' +
+				", configuration=" + configuration +
+				", productBusinessKey='" + productBusinessKey + '\'' +
+				", preConditionCheckReports=" + preConditionCheckReports +
+				", buildReport=" + buildReport +
+				", product=" + product +
+				", qaTestConfig=" + qaTestConfig +
+				'}';
+	}
 }
