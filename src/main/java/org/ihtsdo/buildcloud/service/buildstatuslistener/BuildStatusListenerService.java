@@ -187,8 +187,8 @@ public class BuildStatusListenerService {
 			final String productName = (String) message.get(PRODUCT_NAME_KEY);
 			if (productBusinessKey != null && productName != null) {
 				if (CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) && CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
+					CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 				}
-				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
 			}
 		}
 	}
