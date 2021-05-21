@@ -106,9 +106,9 @@ public class BuildStatusListenerService {
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
-		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
+		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
 		if (buildStatus != null) {
-			final BuildReport buildReport = getBuildReportFile(build);
+			final BuildReport buildReport = getBuildReportFile(build, product);
 			if (buildReport != null) {
 				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
 				updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
@@ -119,7 +119,7 @@ public class BuildStatusListenerService {
 		}
 	}
 
-	private Build.Status getBuildStatusFromRVF(final Map<String, Object> message, final Build build) {
+	private Build.Status getBuildStatusFromRVF(final Map<String, Object> message, final Build build, final Product product) {
 		final String state = (String) message.get(STATE_KEY);
 		switch (state) {
 			case "QUEUED":
@@ -127,7 +127,7 @@ public class BuildStatusListenerService {
 			case "RUNNING":
 				return Build.Status.RVF_RUNNING;
 			case "COMPLETE":
-				return processCompleteStatus(build);
+				return processCompleteStatus(build, product);
 			case "FAILED":
 				return Build.Status.FAILED;
 			default:
@@ -136,9 +136,9 @@ public class BuildStatusListenerService {
 		}
 	}
 
-	private BuildReport getBuildReportFile(final Build build) {
-		try (InputStream reportStream = buildService.getBuildReportFile(build.getProduct().getReleaseCenter().getBusinessKey(),
-				build.getProduct().getBusinessKey(), build.getId())) {
+	private BuildReport getBuildReportFile(final Build build, final Product product) {
+		try (InputStream reportStream = buildService.getBuildReportFile(product.getReleaseCenter().getBusinessKey(),
+				product.getBusinessKey(), build.getId())) {
 			if (reportStream != null) {
 				return objectMapper.readValue(reportStream, BuildReport.class);
 			} else {
@@ -150,8 +150,8 @@ public class BuildStatusListenerService {
 		return null;
 	}
 
-	private Build.Status processCompleteStatus(final Build build) {
-		build.setPreConditionCheckReports(getPreConditionChecksReport(build));
+	private Build.Status processCompleteStatus(final Build build, final Product product) {
+		build.setPreConditionCheckReports(getPreConditionChecksReport(build, product));
 
 		// Does not check post RVF results.
 		boolean hasWarnings = false;
@@ -164,11 +164,11 @@ public class BuildStatusListenerService {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build) {
+	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build, final Product product) {
 		objectMapper.getTypeFactory().constructCollectionType(List.class, PreConditionCheckReport.class);
 		try (InputStream reportStream = buildService.getPreConditionChecksReport(
-				build.getProduct().getReleaseCenter().getBusinessKey(),
-				build.getProduct().getBusinessKey(), build.getId())) {
+				product.getReleaseCenter().getBusinessKey(),
+				product.getBusinessKey(), build.getId())) {
 			if (reportStream != null) {
 				return objectMapper.readValue(reportStream, List.class);
 			} else {
