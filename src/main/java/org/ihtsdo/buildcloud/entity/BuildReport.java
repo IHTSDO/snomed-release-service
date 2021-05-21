@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ public class BuildReport {
 	public static final String FIRST_ERROR = "First Error";
 	public static final String FIRST_LINE = "First Line";
 
-	private final Map<String, Object> report;
+	private Map<String, Object> report;
 
 	BuildReport() {
 		report = new HashMap<>();
@@ -59,6 +60,11 @@ public class BuildReport {
 
 	public static BuildReport getDummyReport() {
 		return new BuildReport();
+	}
+
+	@JsonSetter
+	public void setReport(Map<String, Object> report) {
+		this.report = report;
 	}
 
 	// JsonUnwrapped doesn't work for maps apparently. See https://jira.codehaus.org/browse/JACKSON-765

@@ -748,7 +748,6 @@ public class BuildDAOImpl implements BuildDAO {
     @Override
     public InputStream getBuildReportFileStream(Build build) {
         final String reportFilePath = pathHelper.getReportPath(build);
-        LOGGER.info("Report File Path: {}", reportFilePath);
         return buildFileHelper.getFileStream(reportFilePath);
     }
 
