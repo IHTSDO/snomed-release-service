@@ -108,12 +108,14 @@ public class BuildStatusListenerService {
 				false, true, true);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build);
 		if (buildStatus != null) {
-			final BuildReport report = build.getBuildReport();
-			buildServiceImpl.setReportStatusAndPersist(build, buildStatus, report, "completed", "Process completed successfully");
-			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
-							PRODUCT_KEY, product.getBusinessKey(),
-							BUILD_ID_KEY, build.getId(),
-							BUILD_STATUS_KEY, buildStatus));
+			final BuildReport buildReport = getBuildReportFile(build);
+			if (buildReport != null) {
+				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
+				updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
+						PRODUCT_KEY, product.getBusinessKey(),
+						BUILD_ID_KEY, build.getId(),
+						BUILD_STATUS_KEY, buildStatus));
+			}
 		}
 	}
 
@@ -132,6 +134,20 @@ public class BuildStatusListenerService {
 				LOGGER.info("Unexpected build status state: {}", state);
 				return null;
 		}
+	}
+
+	private BuildReport getBuildReportFile(final Build build) {
+		try (InputStream reportStream = buildService.getBuildReportFile(build.getProduct().getReleaseCenter().getBusinessKey(),
+				build.getProduct().getBusinessKey(), build.getId())) {
+			if (reportStream != null) {
+				return objectMapper.readValue(reportStream, BuildReport.class);
+			} else {
+				LOGGER.warn("No build report file.");
+			}
+		} catch (IOException e) {
+			LOGGER.error("Error occurred while trying to get the build report file.", e);
+		}
+		return null;
 	}
 
 	private Build.Status processCompleteStatus(final Build build) {
