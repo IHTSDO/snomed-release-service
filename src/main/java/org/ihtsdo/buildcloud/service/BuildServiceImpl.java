@@ -681,14 +681,28 @@ public class BuildServiceImpl implements BuildService {
 				dao.updateStatus(build, Status.BUILT);
 			}
 
+			String rvfStatus = "N/A";
+			String rvfResultMsg = "RVF validation configured to not run.";
 			if (!offlineMode) {
 				try {
 					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
-					runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
+					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
+					if (rvfResultMsg == null) {
+						rvfStatus = "Failed to run";
+					} else {
+						rvfStatus = "Completed";
+					}
 				} catch (final Exception e) {
 					LOGGER.error("Failure during RVF Post Condition Testing", e);
+					rvfStatus = "Processing Failed.";
+					rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
 				}
 			}
+			final BuildReport report = build.getBuildReport();
+			report.add("post_validation_status", rvfStatus);
+			report.add("rvf_response", rvfResultMsg);
+			LOGGER.info("End of running build {}", build.getUniqueId());
+			dao.persistReport(build);
 		} catch (Exception e) {
 			LOGGER.error("Failure during getting RVF results", e);
 		} finally {
