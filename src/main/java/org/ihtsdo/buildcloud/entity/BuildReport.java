@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -15,7 +14,6 @@ public class BuildReport {
 	public static final String FIRST_ERROR = "First Error";
 	public static final String FIRST_LINE = "First Line";
 
-	@JsonIgnore
 	private final Map<String, Object> report;
 
 	BuildReport() {
