@@ -165,6 +165,7 @@ public class BuildStatusListenerService {
 
 	@SuppressWarnings("unchecked")
 	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build) {
+		objectMapper.getTypeFactory().constructCollectionType(List.class, PreConditionCheckReport.class);
 		try (InputStream reportStream = buildService.getPreConditionChecksReport(
 				build.getProduct().getReleaseCenter().getBusinessKey(),
 				build.getProduct().getBusinessKey(), build.getId())) {
