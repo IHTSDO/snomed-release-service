@@ -100,14 +100,19 @@ public class BuildStatusListenerService {
 	}
 
 	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
+		final Long runId = (Long) message.get(RUN_ID_KEY);
+		LOGGER.info("RVF Message: {} for run ID: {}", message, runId);
 		final MiniRVFValidationRequest miniRvfValidationRequest =
-				MINI_RVF_VALIDATION_REQUEST_MAP.get((Long) message.get(RUN_ID_KEY));
+				MINI_RVF_VALIDATION_REQUEST_MAP.get(runId);
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
+		LOGGER.info("Product: {} for run ID: {}", product, runId);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
+		LOGGER.info("Build: {} for run ID: {}", build, runId);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
+		LOGGER.info("Build status from RVF: {}", buildStatus);
 		if (buildStatus != null) {
 			build.setProduct(product);
 			final BuildReport buildReport = getBuildReportFile(build);
