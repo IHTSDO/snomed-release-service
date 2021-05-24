@@ -112,6 +112,7 @@ public class BuildStatusListenerService {
 			build.setProduct(product);
 			final BuildReport buildReport = getBuildReportFile(build);
 			if (buildReport != null) {
+				build.setBuildReport(buildReport);
 				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
 			}
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
