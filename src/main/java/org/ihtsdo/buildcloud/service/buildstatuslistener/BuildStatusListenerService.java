@@ -109,10 +109,9 @@ public class BuildStatusListenerService {
 				false, true, true);
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
 		if (buildStatus != null) {
-			final BuildReport buildReport = getBuildReportFile(build, product);
-			LOGGER.info("Build Report: {}", buildReport);
+			build.setProduct(product);
+			final BuildReport buildReport = getBuildReportFile(build);
 			if (buildReport != null) {
-				buildReport.getReport().forEach((key, value) -> LOGGER.info("Build Report - Key: {} Value: {}", key, value));
 				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
 			}
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
@@ -139,13 +138,8 @@ public class BuildStatusListenerService {
 		}
 	}
 
-	private BuildReport getBuildReportFile(final Build build, final Product product) {
-		LOGGER.info("PRE GET BUILD REPORT FILE: build id {}", build.getId());
-		LOGGER.info("PRE GET BUILD REPORT FILE: product release center key {}", product.getReleaseCenter().getBusinessKey());
-		LOGGER.info("PRE GET BUILD REPORT FILE: product key {}", product.getBusinessKey());
-		build.setProduct(product);
+	private BuildReport getBuildReportFile(final Build build) {
 		try (InputStream reportStream = buildService.getBuildReportFile(build)) {
-			LOGGER.info("Report Stream: {}", reportStream);
 			if (reportStream != null) {
 				return objectMapper.readValue(reportStream, BuildReport.class);
 			} else {
@@ -154,7 +148,6 @@ public class BuildStatusListenerService {
 		} catch (IOException e) {
 			LOGGER.error("Error occurred while trying to get the build report file.", e);
 		}
-		LOGGER.info("Report Stream is null.");
 		return null;
 	}
 
