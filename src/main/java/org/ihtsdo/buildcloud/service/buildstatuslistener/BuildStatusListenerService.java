@@ -145,8 +145,6 @@ public class BuildStatusListenerService {
 		try (InputStream reportStream = buildService.getBuildReportFile(build)) {
 			LOGGER.info("Report Stream: {}", reportStream);
 			if (reportStream != null) {
-				final BuildReport buildReport = objectMapper.readValue(reportStream, BuildReport.class);
-				LOGGER.info("Build Report: {}", buildReport);
 				return objectMapper.readValue(reportStream, BuildReport.class);
 			} else {
 				LOGGER.warn("No build report file.");
