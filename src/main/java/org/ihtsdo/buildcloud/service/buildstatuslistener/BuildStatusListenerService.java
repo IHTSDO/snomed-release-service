@@ -110,7 +110,6 @@ public class BuildStatusListenerService {
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
 		if (buildStatus != null) {
 			build.setProduct(product);
-			build.setStatus(buildStatus);
 			final BuildReport buildReport = getBuildReportFile(build);
 			if (buildReport != null) {
 				build.setBuildReport(buildReport);
