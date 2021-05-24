@@ -110,7 +110,9 @@ public class BuildStatusListenerService {
 		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
 		if (buildStatus != null) {
 			final BuildReport buildReport = getBuildReportFile(build, product);
+			LOGGER.info("Build Report: {}", buildReport);
 			if (buildReport != null) {
+				buildReport.getReport().forEach((key, value) -> LOGGER.info("Build Report - Key: {} Value: {}", key, value));
 				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
 			}
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),

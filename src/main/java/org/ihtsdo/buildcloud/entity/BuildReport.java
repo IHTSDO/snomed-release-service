@@ -73,6 +73,7 @@ public class BuildReport {
 		return report;
 	}
 
+	@Override
 	public String toString() {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -81,5 +82,4 @@ public class BuildReport {
 			return "Unable to persist Build Report due to " + e.getLocalizedMessage();
 		}
 	}
-
 }
