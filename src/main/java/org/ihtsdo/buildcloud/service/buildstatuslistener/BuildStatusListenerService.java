@@ -113,7 +113,6 @@ public class BuildStatusListenerService {
 		LOGGER.info("Build: {} for run ID: {}", build, runId);
 		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
 		LOGGER.info("Resolved build status with results from RVF: {}", buildStatus);
-		LOGGER.info("Build RVF Url: {}", build.getRvfURL());
 		if (buildStatus != null) {
 			build.setProduct(product);
 			final BuildReport buildReport = getBuildReportFile(build);
