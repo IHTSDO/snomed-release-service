@@ -111,8 +111,9 @@ public class BuildStatusListenerService {
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
 		LOGGER.info("Build: {} for run ID: {}", build, runId);
-		final Build.Status buildStatus = getBuildStatusFromRVF(message, build, product);
-		LOGGER.info("Build status from RVF: {}", buildStatus);
+		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
+		LOGGER.info("Resolved build status with results from RVF: {}", buildStatus);
+		LOGGER.info("Build RVF Url: {}", build.getRvfURL());
 		if (buildStatus != null) {
 			build.setProduct(product);
 			final BuildReport buildReport = getBuildReportFile(build);
@@ -127,7 +128,7 @@ public class BuildStatusListenerService {
 		}
 	}
 
-	private Build.Status getBuildStatusFromRVF(final Map<String, Object> message, final Build build, final Product product) {
+	private Build.Status resolveBuildStatusWithResultsFromRvf(final Map<String, Object> message, final Build build, final Product product) {
 		final String state = (String) message.get(STATE_KEY);
 		switch (state) {
 			case "QUEUED":
