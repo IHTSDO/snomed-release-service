@@ -210,11 +210,15 @@ public class BuildStatusListenerService {
 
 	private void removeFromConcurrentMapIfBuildStatusIsFailed(final Map<String, Object> message) {
 		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
-		final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
-		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
-		final Product product = productService.find(releaseCenterKey, productBusinessKey, true);
-		if (product != null && buildStatus == Build.Status.FAILED_PRE_CONDITIONS) {
-			removeProductFromConcurrentReleaseBuildMap(productBusinessKey, product.getName());
+		if (buildStatus == Build.Status.FAILED_PRE_CONDITIONS ||
+				buildStatus == Build.Status.FAILED_POST_CONDITIONS ||
+				buildStatus == Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION) {
+			final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
+			final String productBusinessKey = (String) message.get(PRODUCT_KEY);
+			final Product product = productService.find(releaseCenterKey, productBusinessKey, true);
+			if (product != null) {
+				removeProductFromConcurrentReleaseBuildMap(productBusinessKey, product.getName());
+			}
 		}
 	}
 
