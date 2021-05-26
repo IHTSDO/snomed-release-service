@@ -204,7 +204,18 @@ public class BuildStatusListenerService {
 	 * @param message Being sent to the web socket.
 	 */
 	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
+		removeFromConcurrentMapIfBuildStatusIsFailed(message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
+	}
+
+	private void removeFromConcurrentMapIfBuildStatusIsFailed(final Map<String, Object> message) {
+		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
+		final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
+		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
+		final Product product = productService.find(releaseCenterKey, productBusinessKey, true);
+		if (product != null && buildStatus == Build.Status.FAILED_PRE_CONDITIONS) {
+			removeProductFromConcurrentReleaseBuildMap(productBusinessKey, product.getName());
+		}
 	}
 
 	private void storeMiniRVFValidationRequest(final Map<String, Object> message) {
