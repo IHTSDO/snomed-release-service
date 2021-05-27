@@ -66,11 +66,11 @@ public class SRSWorkerService {
 					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
 			if (build != null) {
 				buildStatusMap = ImmutableMap.of("productName", product.getName(),
-						"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus());
+						"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus().name());
 				LOGGER.info("Build Status Map: {}", buildStatusMap);
 				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
 				final Instant finish = Instant.now();
-				LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getId());
+				LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getName());
 			}
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
