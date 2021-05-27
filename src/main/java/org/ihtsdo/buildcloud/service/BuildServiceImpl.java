@@ -135,9 +135,6 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private ActiveMQTextMessage buildStatusTextMessage;
 
-	@Autowired
-	private BuildStatusListenerService buildStatusListenerService;
-
 	@PostConstruct
 	public void init() {
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
