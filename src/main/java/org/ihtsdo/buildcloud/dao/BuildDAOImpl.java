@@ -223,7 +223,7 @@ public class BuildDAOImpl implements BuildDAO {
                 ImmutableMap.of("releaseCenterKey", product.getReleaseCenter().getBusinessKey(),
                         "productKey", product.getBusinessKey(),
                         "buildId", build.getId(),
-                        "buildStatus", build.getStatus()));
+                        "buildStatus", build.getStatus().name()));
     }
 
     @Override
