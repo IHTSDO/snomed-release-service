@@ -3,11 +3,6 @@ package org.ihtsdo.buildcloud.telemetry.server;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
-
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.integration.junit4.JMockit;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.helpers.LogLog;
 import org.easymock.Capture;
@@ -17,13 +12,7 @@ import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.telemetry.TestService;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
-import org.ihtsdo.otf.resourcemanager.ResourceConfiguration;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ResourceLoader;
@@ -32,9 +21,9 @@ import org.springframework.util.FileCopyUtils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.UUID;
 
-@RunWith(JMockit.class)
 public class TelemetryProcessorTest {
 
 	private TestBroker testBroker;
