@@ -14,9 +14,10 @@ public class ManifestValidatorTest {
 		assertNotNull(manifestStream);
 		String validationMsg = ManifestValidator.validate(manifestStream);
 		assertNotNull(validationMsg);
-		assertEquals("cvc-complex-type.2.4.a: Invalid content was found starting with element 'sources'. "
-				+ "One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":refset}' is expected. "
-				+ "The issue lies in the manifest.xml at line 8 and column 17",validationMsg);
+		assertEquals("cvc-complex-type.2.4.a: Invalid content was found" +
+				" starting with element '{\"http://release.ihtsdo.org/manifest/1.0.0\":sources}'." +
+				" One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":refset}' is expected. " +
+				"The issue lies in the manifest.xml at line 8 and column 17", validationMsg);
 	}
 	
 	@Test
@@ -25,10 +26,11 @@ public class ManifestValidatorTest {
 		assertNotNull(manifestStream);
 		String validationMsg = ManifestValidator.validate(manifestStream);
 		assertNotNull(validationMsg);
-		assertEquals("cvc-complex-type.2.4.a: Invalid content was found starting with element 'source'. "
-				+ "One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":contains-reference-sets, \"http://release.ihtsdo.org/manifest/1.0.0\":contains-language-codes, "
-				+ "\"http://release.ihtsdo.org/manifest/1.0.0\":contains-additional-fields, \"http://release.ihtsdo.org/manifest/1.0.0\":sources}' is expected. "
-				+ "The issue lies in the manifest.xml at line 7 and column 15", validationMsg);
+		assertEquals("cvc-complex-type.2.4.a: Invalid content was found starting with element " +
+				"'{\"http://release.ihtsdo.org/manifest/1.0.0\":source}'. One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":" +
+				"contains-reference-sets, \"http://release.ihtsdo.org/manifest/1.0.0\":contains-language-codes, " +
+				"\"http://release.ihtsdo.org/manifest/1.0.0\":contains-additional-fields, \"http://release.ihtsdo.org/manifest/1.0.0\"" +
+				":sources}' is expected. The issue lies in the manifest.xml at line 7 and column 15", validationMsg);
 	}
 	
 	@Test
@@ -37,9 +39,9 @@ public class ManifestValidatorTest {
 		assertNotNull(manifestStream);
 		String validationMsg = ManifestValidator.validate(manifestStream);
 		assertNotNull(validationMsg);
-		assertEquals("cvc-complex-type.2.4.a: Invalid content was found starting with element 'source'. "
-				+ "One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":sources}' is expected. "
-				+ "The issue lies in the manifest.xml at line 14 and column 17", validationMsg);
+		assertEquals("cvc-complex-type.2.4.a: Invalid content was found starting with element " +
+				"'{\"http://release.ihtsdo.org/manifest/1.0.0\":source}'. One of '{\"http://release.ihtsdo.org/manifest/1.0.0\":sources}' " +
+				"is expected. The issue lies in the manifest.xml at line 14 and column 17", validationMsg);
 	}
 	
 	@Test
