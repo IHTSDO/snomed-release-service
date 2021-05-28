@@ -75,7 +75,7 @@ public class SRSWorkerService {
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
 			if (buildDAO != null && buildStatusMap != null) {
-				buildStatusMap.put("buildStatus", build.getStatus());
+				buildStatusMap.put("buildStatus", build.getStatus().name());
 				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
 				buildDAO.updateStatus(build, Build.Status.FAILED);
 			} else {

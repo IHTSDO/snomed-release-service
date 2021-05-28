@@ -123,7 +123,7 @@ public class BuildStatusListenerService {
 			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 					PRODUCT_KEY, product.getBusinessKey(),
 					BUILD_ID_KEY, build.getId(),
-					BUILD_STATUS_KEY, buildStatus));
+					BUILD_STATUS_KEY, buildStatus.name()));
 		}
 	}
 
