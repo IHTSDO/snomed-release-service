@@ -106,11 +106,10 @@ public class BuildStatusListenerService {
 				MINI_RVF_VALIDATION_REQUEST_MAP.get(runId);
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
-		LOGGER.info("Product: {} for run ID: {}", product, runId);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
 				false, true, true);
-		LOGGER.info("Build: {} for run ID: {}", build, runId);
+		LOGGER.info("Product: {}, Build: {} for run ID: {}", product.getName(), build.getId(), runId);
 		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
 		LOGGER.info("Resolved build status with results from RVF: {}", buildStatus);
 		if (buildStatus != null) {
