@@ -210,7 +210,8 @@ public class BuildStatusListenerService {
 
 	private void removeFromConcurrentMapIfBuildStatusIsFailed(final Map<String, Object> message) {
 		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
-		if (buildStatus == Build.Status.FAILED_PRE_CONDITIONS ||
+		if (buildStatus == Build.Status.FAILED ||
+				buildStatus == Build.Status.FAILED_PRE_CONDITIONS ||
 				buildStatus == Build.Status.FAILED_POST_CONDITIONS ||
 				buildStatus == Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION) {
 			final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
