@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.config;
 
-import org.ihtsdo.buildcloud.service.PermissionService;
+import org.ihtsdo.buildcloud.core.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.access.PermissionEvaluator;

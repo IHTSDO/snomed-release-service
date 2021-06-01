@@ -2,8 +2,8 @@ package org.ihtsdo.buildcloud.integration.uuidrefsetid;
 
 import java.util.zip.ZipFile;
 
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
 import org.junit.Test;
 

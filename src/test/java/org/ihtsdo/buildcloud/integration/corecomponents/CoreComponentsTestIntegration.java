@@ -2,10 +2,10 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import java.util.zip.ZipFile;
 
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.service.ProductService;
-import org.ihtsdo.buildcloud.service.termserver.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;

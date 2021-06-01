@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.test;
 
-import org.ihtsdo.buildcloud.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 
 import java.io.BufferedReader;
 import java.io.IOException;

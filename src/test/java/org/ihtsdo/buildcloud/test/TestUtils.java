@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.test;
 
-import org.ihtsdo.buildcloud.dao.helper.BuildS3PathHelper;
-import org.ihtsdo.buildcloud.entity.Build;
+import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
