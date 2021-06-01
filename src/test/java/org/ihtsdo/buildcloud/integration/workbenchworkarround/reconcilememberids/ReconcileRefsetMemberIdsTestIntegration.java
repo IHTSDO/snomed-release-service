@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.integration.workbenchworkarround.reconcilememberids;
 
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
 import org.junit.Test;
 

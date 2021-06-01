@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.integration.corecomponents;
 
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.service.ProductService;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;

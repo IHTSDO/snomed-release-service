@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.integration.workbenchworkarround.moduleids;
 
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

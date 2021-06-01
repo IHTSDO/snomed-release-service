@@ -1,11 +1,10 @@
 package org.ihtsdo.buildcloud.config;
 
+import org.ihtsdo.buildcloud.config.Config;
+import org.ihtsdo.buildcloud.config.TelemetryConfig;
 import org.ihtsdo.buildcloud.telemetry.server.TestBroker;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.aws.autoconfigure.context.ContextInstanceDataAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;

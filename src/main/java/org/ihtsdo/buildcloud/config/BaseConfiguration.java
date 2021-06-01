@@ -16,7 +16,7 @@ public abstract class BaseConfiguration {
 	private static final String HIBERNATE_CONNECTION_CHARACTER_ENCODING_PROPERTY_VALUE = "utf8";
 	private static final String HIBERNATE_CONNECTION_USE_UNICODE_PROPERTY_KEY = "hibernate.connection.useUnicode";
 	private static final String HIBERNATE_CONNECTION_USE_UNICODE_PROPERTY_VALUE = "true";
-	private static final String PACKAGES_TO_SCAN_VALUE = "org.ihtsdo.buildcloud.entity";
+	private static final String PACKAGES_TO_SCAN_VALUE = "org.ihtsdo.buildcloud.core.entity";
 
 	protected BasicDataSource getBasicDataSource(final String driverClassName, final String url, final String username,
 			final String password) {

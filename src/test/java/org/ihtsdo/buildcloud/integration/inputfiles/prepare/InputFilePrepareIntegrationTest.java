@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.controller.AbstractControllerTest;
-import org.ihtsdo.buildcloud.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.FileProcessingReportDetail;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.ReportType;
-import org.ihtsdo.buildcloud.service.inputfile.prepare.SourceFileProcessingReport;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
+import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
+import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReportDetail;
+import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
+import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
