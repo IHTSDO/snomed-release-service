@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
@@ -26,6 +27,7 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Service
@@ -64,15 +66,16 @@ public class ReleaseBuildManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
 	public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
+		// check if there is an existing build in progress
 		buildStatusListenerService.throwExceptionIfBuildIsInProgressForProduct(productKey, releaseCenter);
-
-		validateBuildRequest(gatherInputRequestPojo);
 
 		Product product = productService.find(releaseCenter, productKey, false);
 		if (product == null) {
 			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
 			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
 		}
+
+		validateBuildRequest(gatherInputRequestPojo, product);
 
 		validateProductConfiguration(product);
 
@@ -120,22 +123,30 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo) throws BadRequestException {
+	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo, Product product) throws BadRequestException, BusinessServiceException {
 		if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
 			throw new BadRequestException("Effective Date must not be empty.");
 		}
 		if (gatherInputRequestPojo.isLoadTermServerData()) {
 			if (StringUtils.isEmpty(gatherInputRequestPojo.getBranchPath())) {
 				throw new BadRequestException("Branch path must not be empty.");
-			} else {
-				try {
-					Branch branch = termServerService.getBranch(gatherInputRequestPojo.getBranchPath());
-					if (branch == null) {
-						throw new BadRequestException("Branch path does not exist.");
-					}
-				} catch (RestClientException e) {
-					LOGGER.error("Error occurred when getting branch {}. Error: {}", gatherInputRequestPojo.getBranchPath(), e.getMessage());
+			}
+			try {
+				Branch branch = termServerService.getBranch(gatherInputRequestPojo.getBranchPath());
+				if (branch == null) {
+					throw new BadRequestException(String.format("Branch path %s does not exist.", gatherInputRequestPojo.getBranchPath()));
 				}
+				List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+				CodeSystem codeSystem = codeSystems.stream()
+						.filter(c -> c.getShortName().equals(product.getReleaseCenter().getCodeSystem()))
+						.findAny()
+						.orElse(null);
+				if (codeSystem != null && !branch.getPath().startsWith(codeSystem.getBranchPath())) {
+					throw new BadRequestException(String.format("The branch path must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+				}
+			} catch (RestClientException e) {
+				LOGGER.error("Error occurred when getting branch {}. Error: {}", gatherInputRequestPojo.getBranchPath(), e.getMessage());
+				throw new BusinessServiceException(e);
 			}
 		}
 	}
@@ -193,7 +204,7 @@ public class ReleaseBuildManager {
 	private void findManifestFileOrThrow(String releaseCenter, String productKey) {
 		String manifestFileName = productInputFileService.getManifestFileName(releaseCenter, productKey);
 		if (StringUtils.isEmpty(manifestFileName)) {
-			throw new ResourceNotFoundException("The manifest file does not exist.");
+			throw new ResourceNotFoundException(String.format("No manifest file found for product %s", productKey));
 		}
 	}
 
