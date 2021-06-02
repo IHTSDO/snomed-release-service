@@ -63,7 +63,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	private ProductDAO productDAO;
 
 	@Autowired
-	private ProductInputFileDAO dao;
+	private ProductInputFileDAO productInputFileDAO;
 
 	@Autowired
 	private BuildS3PathHelper s3PathHelper;
@@ -89,23 +89,17 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public void putManifestFile(String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		dao.putManifestFile(product, inputStream, originalFilename, fileSize);
+		productInputFileDAO.putManifestFile(product, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
 	public String getManifestFileName(String centerKey, final String productKey) throws ResourceNotFoundException {
-		StringBuilder manifestDirectoryPathSB = s3PathHelper.getProductManifestDirectoryPath(getProduct(centerKey, productKey));
-		List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
-		if (!files.isEmpty()) {
-			return files.iterator().next();
-		} else {
-			return null;
-		}
+		return productInputFileDAO.getManifestPath(getProduct(centerKey, productKey));
 	}
 
 	@Override
 	public InputStream getManifestStream(String centerKey, final String productKey) throws ResourceNotFoundException {
-		return dao.getManifestStream(getProduct(centerKey, productKey));
+		return productInputFileDAO.getManifestStream(getProduct(centerKey, productKey));
 	}
 
 	@Override
@@ -132,7 +126,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public List<String> listInputFilePaths(String centerKey, final String productKey) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		return dao.listRelativeInputFilePaths(product);
+		return productInputFileDAO.listRelativeInputFilePaths(product);
 	}
 
 	@Override
@@ -168,19 +162,19 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public List<String> listSourceFilePaths(String centerKey, String productKey) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		return dao.listRelativeSourceFilePaths(product);
+		return productInputFileDAO.listRelativeSourceFilePaths(product);
 	}
 
 	@Override
 	public List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, Set<String> subDirectories) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		return dao.listRelativeSourceFilePaths(product, subDirectories);
+		return productInputFileDAO.listRelativeSourceFilePaths(product, subDirectories);
 	}
 
 	@Override
 	public List<String> listSourceFilePathsFromSubDirectory(String centerKey, String productKey, String subDirectory) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		return dao.listRelativeSourceFilePaths(product, subDirectory);
+		return productInputFileDAO.listRelativeSourceFilePaths(product, subDirectory);
 	}
 
 	@Override
@@ -205,7 +199,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 					LOGGER.warn("Could not find {} to delete", filePath);
 				}
 			} else {
-				List<String> toDelete = dao.listRelativeSourceFilePaths(product,subDirectory);
+				List<String> toDelete = productInputFileDAO.listRelativeSourceFilePaths(product,subDirectory);
 				LOGGER.info("Found total {} files to delete in source folder {} for product {}", toDelete.size(), subDirectory, productKey);
 				String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
 				for (String filename : toDelete) {
@@ -247,7 +241,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		Product product = getProduct(centerKey, productKey);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
 		try {
-			try (InputStream manifestStream = dao.getManifestStream(product)) {
+			try (InputStream manifestStream = productInputFileDAO.getManifestStream(product)) {
 				if(manifestStream == null) {
 					report.add(ERROR, "Failed to load manifest");
 				} else {
@@ -256,7 +250,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 					if (validationMsg != null) {
 						report.add(ReportType.ERROR, "manifest.xml doesn't conform to the schema definition. " + validationMsg);
 					} else {
-						try (InputStream manifestInputStream = dao.getManifestStream(product)) {
+						try (InputStream manifestInputStream = productInputFileDAO.getManifestStream(product)) {
 							InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(manifestInputStream, fileHelper, s3PathHelper, product, copyFilesInManifest);
 							List<String> sourceFiles = listSourceFilePaths(centerKey, productKey);
 							if(sourceFiles != null && !sourceFiles.isEmpty()) {
@@ -279,7 +273,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			report.add(ReportType.ERROR, errorMsg);
 		} finally {
 			try {
-				dao.persistInputPrepareReport(product, report);
+				productInputFileDAO.persistInputPrepareReport(product, report);
 			} catch (IOException e) {
 				LOGGER.error("Failed to persist input file preparation report!", e);
 			}
@@ -290,7 +284,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException {
 		Product product = getProduct(centerKey, productKey);
-		return dao.getInputPrepareReport(product);
+		return productInputFileDAO.getInputPrepareReport(product);
 	}
 
 	private InputStream getFileInputStream(final Product product, final String filename) {
@@ -358,7 +352,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			Product product = getProduct(centerKey, productKey);
-			dao.persistSourcesGatherReport(product, inputGatherReport);
+			productInputFileDAO.persistSourcesGatherReport(product, inputGatherReport);
 			if (requestConfig.isLoadTermServerData()) {
 				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
 				gatherSourceFilesFromTermServer(centerKey, productKey, requestConfig, inputGatherReport, securityContext);
@@ -368,7 +362,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, requestConfig.getEffectiveDate(), inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			dao.persistSourcesGatherReport(product, inputGatherReport);
+			productInputFileDAO.persistSourcesGatherReport(product, inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
@@ -431,7 +425,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	@Override
 	public InputStream getInputGatherReport(String centerKey, String productKey) {
 		Product product = getProduct(centerKey, productKey);
-		return dao.getInputGatherReport(product);
+		return productInputFileDAO.getInputGatherReport(product);
 	}
 
 	@Override
