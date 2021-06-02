@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductInputFileDAOImpl implements ProductInputFileDAO {
@@ -58,20 +59,14 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	public String getManifestPath(final Product product) {
 		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product).toString();
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
-		final List<String> files = fileHelper.listFiles(manifestDirectoryPath);
-		//The first file in the manifest directory will be the manifest
-		if (!files.isEmpty()) {
-			if ( files.size() > 1 ) {
-				//Expecting just one manifest file but more than one file is found in the manifest folder.
-				LOGGER.warn("Expecting just one manifest file but more than one is found in the manifest folder: " + manifestDirectoryPath);
-			}
-			for (String fileName : files) {
-				if (fileName.endsWith(".xml")) {
-					return manifestDirectoryPath + fileName;
-				}
-			}
-		} 
-		return null;
+		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
+		if (xmlFiles.isEmpty()) {
+			return null;
+		}
+		if (xmlFiles.size() > 1) {
+			throw new IllegalStateException(String.format("Expecting just one manifest file but found %d in the manifest folder %s", xmlFiles.size(), manifestDirectoryPath));
+		}
+		return manifestDirectoryPath + xmlFiles.get(0);
 	}
 
 	@Override
