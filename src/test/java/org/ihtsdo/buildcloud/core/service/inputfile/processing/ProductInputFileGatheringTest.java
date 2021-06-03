@@ -67,7 +67,7 @@ public class ProductInputFileGatheringTest {
 		testArchive = new File(testFile);
 		failedExportArchive = new File(failedExportFile);
 		when(productDAO.find(anyString(), anyString())).thenReturn(new Product());
-		doNothing().when(productInputFileService).deleteSourceFile(anyString(), anyString(), anyString(), anyString());
+		doNothing().when(productInputFileService).deleteSourceFile(anyString(), anyString(), any(), anyString());
 		doNothing().when(productInputFileService).putSourceFile(anyString(), anyString(), anyString(), any(InputStream.class), anyString(), anyLong());
 	}
 
