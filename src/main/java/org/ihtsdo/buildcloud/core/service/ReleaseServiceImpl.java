@@ -48,6 +48,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
+	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build % for product %s";
+
 	@Override
 	public Build runReleaseBuild(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication) throws BusinessServiceException {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
@@ -93,11 +95,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 			Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
 			QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 			// trigger build
-			LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProduct());
+			LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProduct().getBusinessKey());
 			return buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
 		} catch (IOException e) {
-			throw new BusinessServiceException("Encounter error while creating package and the build process is stopped unexpectedly.", e);
-
+			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProduct().getBusinessKey());
+			LOGGER.error(msg, e);
+			throw new BusinessServiceException(msg, e);
 		} finally {
 			MDC.remove(TRACKER_ID);
 			TelemetryStream.finish(LOGGER);

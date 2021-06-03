@@ -32,21 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
+
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Service
 public class BuildStatusListenerService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildStatusListenerService.class);
-
-	private static final String PRODUCT_NAME_KEY = "productName";
-	private static final String PRODUCT_KEY = "productKey";
-	private static final String RELEASE_CENTER_KEY = "releaseCenterKey";
-	private static final String PRODUCT_BUSINESS_KEY = "productBusinessKey";
-	private static final String BUILD_STATUS_KEY = "buildStatus";
-	private static final String BUILD_ID_KEY = "buildId";
-	private static final String RUN_ID_KEY = "runId";
-	private static final String STATE_KEY = "state";
-
 	private static final List<String> CONCURRENT_RELEASE_BUILD_MAP_KEYS = Arrays.asList(PRODUCT_NAME_KEY, PRODUCT_BUSINESS_KEY, BUILD_STATUS_KEY);
 	private static final List<String> RVF_STATUS_MAP_KEYS = Arrays.asList(RUN_ID_KEY, STATE_KEY);
 	private static final List<String> STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS = Arrays.asList(RUN_ID_KEY, BUILD_ID_KEY, RELEASE_CENTER_KEY, PRODUCT_KEY);

@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 @Entity
 @JsonPropertyOrder({"id", "name"})
@@ -108,5 +109,13 @@ public class ReleaseCenter {
 
 	public void setCodeSystem(String codeSystem) {
 		this.codeSystem = codeSystem;
+	}
+
+	@Override
+	public String toString() {
+		return new StringJoiner(", ", ReleaseCenter.class.getSimpleName()
+				+ "[", "]").add("id=" + id).add("businessKey='" + businessKey + "'")
+				.add("name='" + name + "'").add("shortName='" + shortName + "'")
+				.add("codeSystem='" + codeSystem + "'").toString();
 	}
 }

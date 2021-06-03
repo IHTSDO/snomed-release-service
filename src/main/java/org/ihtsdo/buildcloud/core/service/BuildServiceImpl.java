@@ -459,6 +459,16 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
+	private Product constructProduct(String releaseCenterKey, String productKey) {
+		// use this instead of fetching from mysql for srs worker
+		Product product = new Product();
+		product.setBusinessKey(productKey);
+		ReleaseCenter releaseCenter = new ReleaseCenter();
+		releaseCenter.setShortName(releaseCenterKey);
+		product.setReleaseCenter(releaseCenter);
+		return product;
+	}
+
 	@Override
 	public void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
@@ -1106,9 +1116,9 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
-		final Build build = find(releaseCenterKey, productKey, buildId, null, null, null, null);
+		final Build build = dao.find(constructProduct(releaseCenterKey, productKey), buildId, null, null, null, null);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build for releaseCenterKey: " + releaseCenterKey + ", productKey: " + productKey + ", buildId: " + buildId);
+			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
 		}
 		return build;
 	}
