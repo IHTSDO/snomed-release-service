@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.core.service.worker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -56,17 +55,13 @@ public class SRSWorkerService {
 			final Product product = build.getProduct();
 			LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
 			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
-			final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
-					new PreAuthenticatedAuthenticationToken(createReleasePackageBuildRequest.getUsername(),
-							createReleasePackageBuildRequest.getAuthenticationToken());
-			preAuthenticatedAuthenticationToken.setAuthenticated(true);
-			SecurityContextHolder.getContext().setAuthentication(preAuthenticatedAuthenticationToken);
+			SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(createReleasePackageBuildRequest));
 			build = releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
-					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(),
-					SecurityContextHolder.getContext().getAuthentication(), createReleasePackageBuildRequest.getRootUrl());
+					product.getBusinessKey(), build, createReleasePackageBuildRequest.getGatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
 			if (build != null) {
-				buildStatusMap = ImmutableMap.of("productName", product.getName(),
-						"productBusinessKey", product.getBusinessKey(), "buildStatus", build.getStatus().name());
+				buildStatusMap = Map.of("productName", product.getName(),
+						"productBusinessKey", product.getBusinessKey(),
+						"buildStatus", build.getStatus().name());
 				LOGGER.info("Build Status Map: {}", buildStatusMap);
 				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
 				final Instant finish = Instant.now();
@@ -74,13 +69,18 @@ public class SRSWorkerService {
 			}
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
-			if (buildDAO != null && buildStatusMap != null) {
+			if (buildStatusMap != null) {
 				buildStatusMap.put("buildStatus", build.getStatus().name());
 				messagingHelper.sendResponse(buildStatusTextMessage, buildStatusMap);
 				buildDAO.updateStatus(build, Build.Status.FAILED);
-			} else {
-				LOGGER.error("Can not update build status to failed due to the BuildDAO being null.");
 			}
 		}
+	}
+
+	private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {
+		final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(buildRequest.getUsername(),
+						buildRequest.getAuthenticationToken());
+		preAuthenticatedAuthenticationToken.setAuthenticated(true);
+		return preAuthenticatedAuthenticationToken;
 	}
 }

@@ -209,6 +209,10 @@ public class InputSourceFileProcessor {
 
 	private File copySourceFilesToLocal(List <String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws IOException{
 		for (String sourceFilePath : sourceFileLists) {
+			if (sourceFilePath.trim().isEmpty()) {
+				// S3 creates zero byte file when copying files from other bucket.
+				continue;
+			}
 			 //Copy files from S3 to local for processing
 			String s3FilePath = buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString();
 			InputStream sourceFileStream = null;

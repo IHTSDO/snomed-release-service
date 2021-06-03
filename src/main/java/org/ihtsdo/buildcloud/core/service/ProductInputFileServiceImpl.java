@@ -4,6 +4,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
@@ -88,23 +89,23 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public void putManifestFile(String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		productInputFileDAO.putManifestFile(product, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
 	public String getManifestFileName(String centerKey, final String productKey) throws ResourceNotFoundException {
-		return productInputFileDAO.getManifestPath(getProduct(centerKey, productKey));
+		return productInputFileDAO.getManifestPath(constructProduct(centerKey, productKey));
 	}
 
 	@Override
 	public InputStream getManifestStream(String centerKey, final String productKey) throws ResourceNotFoundException {
-		return productInputFileDAO.getManifestStream(getProduct(centerKey, productKey));
+		return productInputFileDAO.getManifestStream(constructProduct(centerKey, productKey));
 	}
 
 	@Override
 	public void putInputFile(String centerKey, final String productKey, final InputStream inputStream, final String filename, final long fileSize) throws ResourceNotFoundException, IOException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		String productInputFilesPath = s3PathHelper.getProductInputFilesPath(product);
 		putFile(filename, inputStream, productInputFilesPath, fileSize);
 
@@ -119,19 +120,19 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public InputStream getFileInputStream(String centerKey, final String productKey, final String filename) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return getFileInputStream(product, filename);
 	}
 
 	@Override
 	public List<String> listInputFilePaths(String centerKey, final String productKey) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.listRelativeInputFilePaths(product);
 	}
 
 	@Override
 	public void deleteFile(String centerKey, final String productKey, final String filename) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		String inputFilePath = s3PathHelper.getProductInputFilesPath(product) + filename;
 		LOGGER.info("Deleting input file {}", inputFilePath);
 		fileHelper.deleteFile(inputFilePath);
@@ -152,7 +153,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public void putSourceFile(String sourceName, String centerKey, String productKey, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 		String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
@@ -161,25 +162,25 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public List<String> listSourceFilePaths(String centerKey, String productKey) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.listRelativeSourceFilePaths(product);
 	}
 
 	@Override
 	public List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, Set<String> subDirectories) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.listRelativeSourceFilePaths(product, subDirectories);
 	}
 
 	@Override
 	public List<String> listSourceFilePathsFromSubDirectory(String centerKey, String productKey, String subDirectory) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.listRelativeSourceFilePaths(product, subDirectory);
 	}
 
 	@Override
 	public void deleteSourceFile(String centerKey, String productKey, String fileName, String subDirectory) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		String filePath;
 		if (StringUtils.isBlank(subDirectory)) {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
@@ -225,7 +226,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			}
 		} else {
 			List<String> paths = listSourceFilePaths(centerKey, productKey);
-			Product product = getProduct(centerKey, productKey);
+			Product product = constructProduct(centerKey, productKey);
 			for (String path : paths) {
 				if(pattern.matcher(FilenameUtils.getName(path)).matches()) {
 					String filePath = s3PathHelper.getProductSourcesPath(product).append(path).toString();
@@ -238,7 +239,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, boolean copyFilesInManifest) {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		SourceFileProcessingReport report = new SourceFileProcessingReport();
 		try {
 			try (InputStream manifestStream = productInputFileDAO.getManifestStream(product)) {
@@ -283,7 +284,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public InputStream getInputPrepareReport(String centerKey, String productKey) throws ResourceNotFoundException {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.getInputPrepareReport(product);
 	}
 
@@ -291,11 +292,13 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 		return fileHelper.getFileStream(s3PathHelper.getProductInputFilesPath(product) + filename);
 	}
 
-	private Product getProduct(String centerKey,final String productKey) throws ResourceNotFoundException {
-		Product product = productDAO.find(centerKey, productKey);
-		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
-		}
+	private Product constructProduct(String centerKey, final String productKey) {
+		LOGGER.debug("ReleaseCenter=" + centerKey + " productKey =" + productKey);
+		ReleaseCenter releaseCenter = new ReleaseCenter();
+		releaseCenter.setShortName(centerKey);
+		Product product = new Product();
+		product.setReleaseCenter(releaseCenter);
+		product.setBusinessKey(productKey);
 		return product;
 	}
 
@@ -351,7 +354,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, GatherInputRequestPojo requestConfig, SecurityContext securityContext) {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
-			Product product = getProduct(centerKey, productKey);
+			Product product = constructProduct(centerKey, productKey);
 			productInputFileDAO.persistSourcesGatherReport(product, inputGatherReport);
 			if (requestConfig.isLoadTermServerData()) {
 				deleteSourceFile(centerKey, productKey, null, SRC_TERM_SERVER);
@@ -409,7 +412,7 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/"))
 				continue;
 			try {
-				Product product = getProduct(centerKey, productKey);
+				Product product = constructProduct(centerKey, productKey);
 				String sourceFilesPath = s3PathHelper.getProductSourceSubDirectoryPath(product, SRC_EXT_MAINTAINED).toString();
 				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
 				LOGGER.info("Successfully export file " + externalFile + " from Externally Maintained bucket and uploaded to source \"externally-maintained\"");
@@ -424,19 +427,19 @@ public class ProductInputFileServiceImpl implements ProductInputFileService {
 
 	@Override
 	public InputStream getInputGatherReport(String centerKey, String productKey) {
-		Product product = getProduct(centerKey, productKey);
+		Product product = constructProduct(centerKey, productKey);
 		return productInputFileDAO.getInputGatherReport(product);
 	}
 
 	@Override
 	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
-		Product product = getProduct(releaseCenterKey, productKey);
+		Product product = constructProduct(releaseCenterKey, productKey);
 		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
 	}
 
 	@Override
 	public InputStream getFullBuildLogFromProductIfExists(String releaseCenterKey, String productKey) {
-		Product product = getProduct(releaseCenterKey, productKey);
+		Product product = constructProduct(releaseCenterKey, productKey);
 		return fileHelper.getFileStream(s3PathHelper.getBuildFullLogJsonFromProduct(product));
 	}
 }
