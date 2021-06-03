@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildReport;
@@ -93,7 +92,7 @@ public class BuildStatusListenerService {
 
 	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
 		final Long runId = (Long) message.get(RUN_ID_KEY);
-		LOGGER.info("RVF Message: {} for run ID: {}", message, runId);
+		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
 		if (!MINI_RVF_VALIDATION_REQUEST_MAP.containsKey(runId)) {
 			// TODO Improve this to make it durable
 			LOGGER.warn("RunId {} is unknown. It maybe because SRS app has been restarted recently.", runId);
@@ -115,7 +114,7 @@ public class BuildStatusListenerService {
 				build.setBuildReport(buildReport);
 				buildServiceImpl.setReportStatusAndPersist(build, buildStatus, buildReport, "completed", "Process completed successfully");
 			}
-			updateStatus(ImmutableMap.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
+			updateStatus(Map.of(RELEASE_CENTER_KEY, product.getReleaseCenter().getBusinessKey(),
 					PRODUCT_KEY, product.getBusinessKey(),
 					BUILD_ID_KEY, build.getId(),
 					BUILD_STATUS_KEY, buildStatus.name()));
@@ -199,6 +198,7 @@ public class BuildStatusListenerService {
 	 * @param message Being sent to the web socket.
 	 */
 	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
+		LOGGER.info("Web socket status update {}", message);
 		removeFromConcurrentMapIfBuildStatusIsFailedOrCancelled(message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
 	}
