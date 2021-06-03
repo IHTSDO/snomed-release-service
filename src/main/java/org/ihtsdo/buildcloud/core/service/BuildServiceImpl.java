@@ -283,7 +283,10 @@ public class BuildServiceImpl implements BuildService {
 			getBuildConfigurations(build);
 
 			performPreconditionTesting(build);
-
+			// Stop processing when the pre_condition checks have failed
+			if (Status.FAILED_PRE_CONDITIONS == build.getStatus()) {
+				return build;
+			}
 			boolean isAbandoned = checkSourceFile(build);
 			// execute build
 			if (!isAbandoned) {
