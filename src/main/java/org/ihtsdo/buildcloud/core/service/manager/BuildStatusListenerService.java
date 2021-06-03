@@ -94,8 +94,12 @@ public class BuildStatusListenerService {
 	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
 		final Long runId = (Long) message.get(RUN_ID_KEY);
 		LOGGER.info("RVF Message: {} for run ID: {}", message, runId);
-		final MiniRVFValidationRequest miniRvfValidationRequest =
-				MINI_RVF_VALIDATION_REQUEST_MAP.get(runId);
+		if (!MINI_RVF_VALIDATION_REQUEST_MAP.containsKey(runId)) {
+			// TODO Improve this to make it durable
+			LOGGER.warn("RunId {} is unknown. It maybe because SRS app has been restarted recently.", runId);
+			return;
+		}
+		final MiniRVFValidationRequest miniRvfValidationRequest = MINI_RVF_VALIDATION_REQUEST_MAP.get(runId);
 		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
 				miniRvfValidationRequest.getProductKey(), true);
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
