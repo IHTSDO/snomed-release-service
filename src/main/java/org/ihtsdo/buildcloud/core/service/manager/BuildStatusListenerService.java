@@ -185,17 +185,11 @@ public class BuildStatusListenerService {
 		final String status = (String) message.get(BUILD_STATUS_KEY);
 
 		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productBusinessKey, buildId);
-		if (tracker != null) {
-			tracker.setStatus(status);
-			statusTrackerDao.update(tracker);
-		} else {
-			// create a tracker record here instead of throwing exception. It should be created when build is queued.
-			tracker = new BuildStatusTracker();
-			tracker.setBuildId(buildId);
-			tracker.setProductKey(productBusinessKey);
-			tracker.setStatus(status);
-			statusTrackerDao.save(tracker);
+		if (tracker == null) {
+			throw new IllegalStateException(String.format("No build status tracker exists for product %s and build id %s", productBusinessKey, buildId));
 		}
+		tracker.setStatus(status);
+		statusTrackerDao.update(tracker);
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
 	}
@@ -205,9 +199,9 @@ public class BuildStatusListenerService {
 		LOGGER.info("Message from SRS worker for RVF validation request map: {}", message);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String productKey = (String) message.get(PRODUCT_KEY);
-		final String rvfRunId = (String) message.get(RUN_ID_KEY);
+		final Long rvfRunId = (Long) message.get(RUN_ID_KEY);
 		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
-		tracker.setRvfRunId(rvfRunId);
+		tracker.setRvfRunId(String.valueOf(rvfRunId));
 		statusTrackerDao.update(tracker);
 	}
 }
