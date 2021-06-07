@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.jms.JMSException;
@@ -31,6 +32,7 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Service
+@Transactional
 public class ReleaseBuildManager {
 
 	@Autowired
