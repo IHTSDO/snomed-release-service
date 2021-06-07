@@ -39,6 +39,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.jms.ConnectionFactory;
@@ -57,6 +58,7 @@ import java.util.Arrays;
 @EnableJpaRepositories
 @EnableJms
 @EnableAsync
+@EnableTransactionManagement
 public abstract class Config extends BaseConfiguration {
 
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";

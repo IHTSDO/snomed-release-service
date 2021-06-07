@@ -85,9 +85,9 @@ public class BuildStatusListenerService {
 	}
 
 	private void processRVFStatusResponse(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
-		final String runId = (String) message.get(RUN_ID_KEY);
+		final Long runId = (Long) message.get(RUN_ID_KEY);
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
-		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunId(runId);
+		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunId(String.valueOf(runId));
 		if (tracker == null) {
 			throw new IllegalStateException("No build status tracker found with RVF run id " + runId);
 		}

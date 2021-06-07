@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.config;
 
-import org.ihtsdo.buildcloud.config.Config;
-import org.ihtsdo.buildcloud.config.TelemetryConfig;
 import org.ihtsdo.buildcloud.telemetry.server.TestBroker;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -13,6 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
+@PropertySource("classpath:application.properties")
 @PropertySource(value = "classpath:application-test.properties", encoding = "UTF-8")
 @EnableConfigurationProperties
 @TestConfiguration
