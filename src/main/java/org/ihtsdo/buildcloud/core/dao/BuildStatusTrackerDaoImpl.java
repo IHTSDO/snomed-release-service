@@ -14,14 +14,14 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 	}
 
 	@Override
-	public List<BuildStatusTracker> findByProductAndStatus(String productKey, String... statuses) {
+	public List<BuildStatusTracker> findByProductAndStatus(String productKey, String... status) {
 		Query query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.status in :statuses");
+						" and statusTracker.status in (:status)");
 		query.setParameter("productKey", productKey);
-		query.setParameterList("statuses", statuses);
+		query.setParameterList("status", status);
 		return query.list();
 	}
 
@@ -41,7 +41,7 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.buildId in :buildId");
+						" and statusTracker.buildId = :buildId");
 		query.setParameter("productKey", productKey);
 		query.setParameter("buildId", buildId);
 		return (BuildStatusTracker) query.uniqueResult();
