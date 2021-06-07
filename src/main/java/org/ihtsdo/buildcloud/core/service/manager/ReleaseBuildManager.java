@@ -101,13 +101,13 @@ public class ReleaseBuildManager {
 	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
 		Build build = createReleasePackageBuildRequest.getBuild();
 		if (build != null) {
-			buildDAO.updateStatus(build, QUEUED);
 			BuildStatusTracker tracker = new BuildStatusTracker();
 			tracker.setProductKey(build.getProduct().getBusinessKey());
 			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
 			tracker.setBuildId(build.getId());
 			tracker.setStatus(QUEUED.name());
 			statusTrackerDao.save(tracker);
+			buildDAO.updateStatus(build, QUEUED);
 			convertAndSend(createReleasePackageBuildRequest);
 		} else {
 			LOGGER.warn("Build can not be queued due to being null.");
