@@ -95,18 +95,21 @@ public class ReleaseBuildManager {
 		} catch (ParseException e) {
 			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
 		}
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
-	}
-
-	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
-		Build build = createReleasePackageBuildRequest.getBuild();
+		Build build = buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
+		// add build status tracker
 		if (build != null) {
 			BuildStatusTracker tracker = new BuildStatusTracker();
 			tracker.setProductKey(build.getProduct().getBusinessKey());
 			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
 			tracker.setBuildId(build.getId());
-			tracker.setStatus(QUEUED.name());
 			statusTrackerDao.save(tracker);
+		}
+		return build;
+	}
+
+	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
+		Build build = createReleasePackageBuildRequest.getBuild();
+		if (build != null) {
 			buildDAO.updateStatus(build, QUEUED);
 			convertAndSend(createReleasePackageBuildRequest);
 		} else {
