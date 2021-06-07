@@ -19,8 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = TestConfig.class)
@@ -40,7 +39,7 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 	@Test
 	public void testCreate() throws Exception{
 
-		Assert.assertNotNull(bs);
+		assertNotNull(bs);
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
 		filterOptions.add(FilterOption.INCLUDE_LEGACY);
 		Page<Product> page = bs.findAll(releaseCenterKey, filterOptions, PageRequest.of(0,20));

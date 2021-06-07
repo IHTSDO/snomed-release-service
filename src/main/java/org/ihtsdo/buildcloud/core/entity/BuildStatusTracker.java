@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import java.util.StringJoiner;
 
 @Entity
 @Table(name = "build_status_tracker")
@@ -75,5 +76,15 @@ public class BuildStatusTracker {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	@Override
+	public String toString() {
+		return new StringJoiner(", ", BuildStatusTracker.class.getSimpleName()
+				+ "[", "]").add("id=" + id).add("productKey='" + productKey + "'")
+				.add("releaseCenterKey='" + releaseCenterKey + "'")
+				.add("buildId='" + buildId + "'")
+				.add("rvfRunId='" + rvfRunId + "'")
+				.add("status='" + status + "'").toString();
 	}
 }
