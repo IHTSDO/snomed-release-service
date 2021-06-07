@@ -154,17 +154,8 @@ public class ProductController {
 			final HttpServletRequest request) throws BusinessServiceException {
 		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
-				buildConfig, hypermediaGenerator.getRootURL(request), SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
+				buildConfig, SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
 		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
-	}
-
-	@PostMapping(value = "/{productKey}/release/clear-concurrent-cache", consumes = MediaType.APPLICATION_JSON_VALUE)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
-	@ApiOperation(value = "Clear in-memory concurrent cache")
-	public ResponseEntity clearConcurrentCache(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException {
-		releaseBuildManager.clearConcurrentCache(releaseCenterKey, productKey);
-		return new ResponseEntity(HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/{productKey}/visibility")

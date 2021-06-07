@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.springframework.stereotype.Repository;
 
@@ -30,7 +30,7 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 						"from ReleaseCenter releaseCenter " +
 						"where releaseCenter.businessKey = :businessKey " +
 						"order by releaseCenter.id ");
-		query.setString("businessKey", businessKey);
+		query.setParameter("businessKey", businessKey);
 		return (ReleaseCenter) query.uniqueResult();
 	}
 

@@ -7,17 +7,15 @@ public final class CreateReleasePackageBuildRequest {
 
 	private Build build;
 	private GatherInputRequestPojo gatherInputRequestPojo;
-	private String rootUrl;
 	private String username;
 	private String authenticationToken;
 
 	public CreateReleasePackageBuildRequest() {}
 
 	public CreateReleasePackageBuildRequest(final Build build, final GatherInputRequestPojo gatherInputRequestPojo,
-			final String rootUrl, final String username, final String authenticationToken) {
+	                                        final String username, final String authenticationToken) {
 		this.build = build;
 		this.gatherInputRequestPojo = gatherInputRequestPojo;
-		this.rootUrl = rootUrl;
 		this.username = username;
 		this.authenticationToken = authenticationToken;
 	}
@@ -28,10 +26,6 @@ public final class CreateReleasePackageBuildRequest {
 
 	public final GatherInputRequestPojo getGatherInputRequestPojo() {
 		return gatherInputRequestPojo;
-	}
-
-	public final String getRootUrl() {
-		return rootUrl;
 	}
 
 	public String getUsername() {
@@ -47,7 +41,6 @@ public final class CreateReleasePackageBuildRequest {
 		return "CreateReleasePackageBuildRequest{" +
 				"build=" + build +
 				", gatherInputRequestPojo=" + gatherInputRequestPojo +
-				", rootUrl='" + rootUrl + '\'' +
 				", username='" + username + '\'' +
 				", authenticationToken='" + authenticationToken + '\'' +
 				'}';

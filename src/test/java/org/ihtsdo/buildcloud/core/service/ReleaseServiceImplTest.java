@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
@@ -46,7 +47,7 @@ public class ReleaseServiceImplTest {
 
 
 	@Mock
-	private BuildStatusListenerService buildStatusListenerService;
+	private BuildStatusTrackerDao buildStatusTrackerDao;
 
 	@Before
 	public void setup() {
