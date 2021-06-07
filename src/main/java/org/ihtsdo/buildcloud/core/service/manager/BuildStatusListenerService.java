@@ -4,15 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.BuildReport;
-import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
-import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
+import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +17,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
@@ -29,23 +27,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Service
+@Transactional
 public class BuildStatusListenerService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildStatusListenerService.class);
-	private static final List<String> CONCURRENT_RELEASE_BUILD_MAP_KEYS = Arrays.asList(PRODUCT_NAME_KEY, PRODUCT_BUSINESS_KEY, BUILD_STATUS_KEY);
 	private static final List<String> RVF_STATUS_MAP_KEYS = Arrays.asList(RUN_ID_KEY, STATE_KEY);
-	private static final List<String> STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS = Arrays.asList(RUN_ID_KEY, BUILD_ID_KEY, RELEASE_CENTER_KEY, PRODUCT_KEY);
+	private static final List<String> RVF_VALIDATION_REQUEST_MAP_KEYS = Arrays.asList(RUN_ID_KEY, BUILD_ID_KEY, RELEASE_CENTER_KEY, PRODUCT_KEY);
 	private static final List<String> UPDATE_STATUS_MAP_KEYS = Arrays.asList(RELEASE_CENTER_KEY, PRODUCT_KEY, BUILD_ID_KEY, BUILD_STATUS_KEY);
-
-	private static final Map<String, String> CONCURRENT_RELEASE_BUILD_MAP = new ConcurrentHashMap<>();
-
-	private static final Map<Long, MiniRVFValidationRequest> MINI_RVF_VALIDATION_REQUEST_MAP = new ConcurrentHashMap<>();
 
 	@Autowired
 	private BuildService buildService;
@@ -65,18 +58,19 @@ public class BuildStatusListenerService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@Autowired
+	private BuildStatusTrackerDao statusTrackerDao;
+
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
 	public void consumeBuildStatus(final TextMessage textMessage) {
 		try {
 			if (textMessage != null) {
 				final Map<String, Object> message = objectMapper.readValue(textMessage.getText(), Map.class);
-				if (propertiesExist(message, CONCURRENT_RELEASE_BUILD_MAP_KEYS)) {
-					processConcurrentReleaseBuildMap(message);
-				} else if (propertiesExist(message, RVF_STATUS_MAP_KEYS)) {
-					processRVFStatus(message);
-				} else if (propertiesExist(message, STORE_MINI_RVF_VALIDATION_REQUEST_MAP_KEYS)) {
-					storeMiniRVFValidationRequest(message);
+				if (propertiesExist(message, RVF_STATUS_MAP_KEYS)) {
+					processRVFStatusResponse(message);
+				} else if (propertiesExist(message, RVF_VALIDATION_REQUEST_MAP_KEYS)) {
+					processSrsWorkerRvfRequest(message);
 				} else if (propertiesExist(message, UPDATE_STATUS_MAP_KEYS)) {
 					updateStatus(message);
 				}
@@ -90,21 +84,21 @@ public class BuildStatusListenerService {
 		return properties.stream().allMatch(message::containsKey);
 	}
 
-	private void processRVFStatus(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
-		final Long runId = (Long) message.get(RUN_ID_KEY);
+	private void processRVFStatusResponse(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
+		final String runId = (String) message.get(RUN_ID_KEY);
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
-		if (!MINI_RVF_VALIDATION_REQUEST_MAP.containsKey(runId)) {
-			// TODO Improve this to make it durable
-			LOGGER.warn("RunId {} is unknown. It maybe because SRS app has been restarted recently.", runId);
-			return;
+		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunId(runId);
+		if (tracker == null) {
+			throw new IllegalStateException("No build status tracker found with RVF run id " + runId);
 		}
-		final MiniRVFValidationRequest miniRvfValidationRequest = MINI_RVF_VALIDATION_REQUEST_MAP.get(runId);
-		final Product product = productService.find(miniRvfValidationRequest.getReleaseCenterKey(),
-				miniRvfValidationRequest.getProductKey(), true);
+		final Product product = productService.find(tracker.getReleaseCenterKey(),
+				tracker.getProductKey(), true);
+
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
-				product.getBusinessKey(), miniRvfValidationRequest.getBuildId(), true,
+				product.getBusinessKey(), tracker.getBuildId(), false,
 				false, true, true);
-		LOGGER.info("Product: {}, Build: {} for run ID: {}", product.getName(), build.getId(), runId);
+
+		LOGGER.info("Product: {}, Build: {} for run ID: {}", build.getProduct().getBusinessKey(), build.getId(), runId);
 		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
 		LOGGER.info("Resolved build status with results from RVF: {}", buildStatus);
 		if (buildStatus != null) {
@@ -179,106 +173,41 @@ public class BuildStatusListenerService {
 		return Collections.emptyList();
 	}
 
-	private void processConcurrentReleaseBuildMap(final Map<String, Object> message) {
-		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
-		if (buildStatus != Build.Status.QUEUED && buildStatus != Build.Status.BEFORE_TRIGGER && buildStatus != Build.Status.BUILDING) {
-			final String productBusinessKey = (String) message.get(PRODUCT_BUSINESS_KEY);
-			final String productName = (String) message.get(PRODUCT_NAME_KEY);
-			if (productBusinessKey != null && productName != null &&
-					CONCURRENT_RELEASE_BUILD_MAP.containsKey(productBusinessKey) &&
-					CONCURRENT_RELEASE_BUILD_MAP.containsValue(productName)) {
-				CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
-			}
-		}
-	}
-
 	/**
 	 * Fires off message to the web socket.
 	 *
 	 * @param message Being sent to the web socket.
 	 */
 	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
+		LOGGER.info("Build status tracker update {}", message);
+		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
+		final String buildId = (String) message.get(BUILD_ID_KEY);
+		final String status = (String) message.get(BUILD_STATUS_KEY);
+
+		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productBusinessKey, buildId);
+		if (tracker != null) {
+			tracker.setStatus(status);
+			statusTrackerDao.update(tracker);
+		} else {
+			// create a tracker record here instead of throwing exception. It should be created when build is queued.
+			tracker = new BuildStatusTracker();
+			tracker.setBuildId(buildId);
+			tracker.setProductKey(productBusinessKey);
+			tracker.setStatus(status);
+			statusTrackerDao.save(tracker);
+		}
 		LOGGER.info("Web socket status update {}", message);
-		removeFromConcurrentMapIfBuildStatusIsFailedOrCancelled(message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
 	}
 
-	private void removeFromConcurrentMapIfBuildStatusIsFailedOrCancelled(final Map<String, Object> message) {
-		final Build.Status buildStatus = Build.Status.findBuildStatus((String) message.get(BUILD_STATUS_KEY));
-		if (buildStatus == Build.Status.FAILED ||
-				buildStatus == Build.Status.FAILED_PRE_CONDITIONS ||
-				buildStatus == Build.Status.FAILED_POST_CONDITIONS ||
-				buildStatus == Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION ||
-				buildStatus == Build.Status.CANCEL_REQUESTED ||
-				buildStatus == Build.Status.CANCELLED) {
-			final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
-			final String productBusinessKey = (String) message.get(PRODUCT_KEY);
-			final Product product = productService.find(releaseCenterKey, productBusinessKey, true);
-			if (product != null) {
-				removeProductFromConcurrentReleaseBuildMap(productBusinessKey, product.getName());
-			}
-		}
-	}
 
-	private void storeMiniRVFValidationRequest(final Map<String, Object> message) {
-		LOGGER.info("Message being stored inside RVF validation request map: {}", message);
-		MINI_RVF_VALIDATION_REQUEST_MAP.putIfAbsent((Long) message.get(RUN_ID_KEY),
-				new MiniRVFValidationRequest((String) message.get(BUILD_ID_KEY),
-						(String) message.get(RELEASE_CENTER_KEY),
-						(String) message.get(PRODUCT_KEY)));
-	}
-
-	/**
-	 * Adds the product to the {@code CONCURRENT_RELEASE_BUILD_MAP}. If either
-	 * the {@code productBusinessKey} or {@code productName} is null, then the operation will fail gracefully by
-	 * exiting the underlying method before the operation has been performed and will
-	 * log the relevant message.
-	 *
-	 * @param productBusinessKey Used as the key entry for the {@code productName} value.
-	 * @param productName        Value which will reside in the {@code CONCURRENT_RELEASE_BUILD_MAP}.
-	 */
-	public final void addProductToConcurrentReleaseBuildMap(final String productBusinessKey, final String productName) {
-		if (productBusinessKey == null || productName == null) {
-			LOGGER.info("Product business key or product name is null when attempting to add the product to the concurrent release build map.");
-			return;
-		}
-		CONCURRENT_RELEASE_BUILD_MAP.putIfAbsent(productBusinessKey, productName);
-	}
-
-	/**
-	 * Removes the product from the {@code CONCURRENT_RELEASE_BUILD_MAP}. If either
-	 * the {@code productBusinessKey} or {@code productName} is null, then the operation will fail gracefully by
-	 * exiting the underlying method before the operation has been performed and will
-	 * log the relevant message.
-	 *
-	 * @param productBusinessKey Used to find the product name so that it can be removed.
-	 * @param productName        Value inside the {@code CONCURRENT_RELEASE_BUILD_MAP} which is going
-	 *                           to be removed, given the {@code productBusinessKey} exists.
-	 */
-	public final void removeProductFromConcurrentReleaseBuildMap(final String productBusinessKey, final String productName) {
-		if (productBusinessKey == null || productName == null) {
-			LOGGER.info("Product business key or product name is null when attempting to remove the product from the concurrent release build map.");
-			return;
-		}
-		CONCURRENT_RELEASE_BUILD_MAP.remove(productBusinessKey, productName);
-	}
-
-	/**
-	 * Throws {@code EntityAlreadyExistsException} if a build is
-	 * already in progress for the given product.
-	 *
-	 * @param productKey    Used to determine whether the product already
-	 *                      exists inside the {@code CONCURRENT_RELEASE_BUILD_MAP}.
-	 * @param releaseCenter Used to indicate which product has already been started,
-	 *                      in which release center.
-	 * @throws EntityAlreadyExistsException If a build is already in progress for
-	 *                                      the given product.
-	 */
-	public final void throwExceptionIfBuildIsInProgressForProduct(final String productKey, final String releaseCenter)
-			throws EntityAlreadyExistsException {
-		if (productKey != null && CONCURRENT_RELEASE_BUILD_MAP.containsKey(productKey)) {
-			throw new EntityAlreadyExistsException("Product " + CONCURRENT_RELEASE_BUILD_MAP.get(productKey) +
-					" in release center " + releaseCenter + " has already a in-progress build");
-		}
+	private void processSrsWorkerRvfRequest(final Map<String, Object> message) {
+		LOGGER.info("Message from SRS worker for RVF validation request map: {}", message);
+		final String buildId = (String) message.get(BUILD_ID_KEY);
+		final String productKey = (String) message.get(PRODUCT_KEY);
+		final String rvfRunId = (String) message.get(RUN_ID_KEY);
+		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
+		tracker.setRvfRunId(rvfRunId);
+		statusTrackerDao.update(tracker);
 	}
 }

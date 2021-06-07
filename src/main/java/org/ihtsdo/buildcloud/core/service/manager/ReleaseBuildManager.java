@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.service.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
@@ -10,10 +11,7 @@ import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPoj
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
-import org.ihtsdo.otf.rest.exception.BadRequestException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
-import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +26,8 @@ import javax.jms.Queue;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
+
+import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Service
@@ -61,13 +61,13 @@ public class ReleaseBuildManager {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private BuildStatusListenerService buildStatusListenerService;
+	private BuildStatusTrackerDao statusTrackerDao;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
 	public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
 		// check if there is an existing build in progress
-		buildStatusListenerService.throwExceptionIfBuildIsInProgressForProduct(productKey, releaseCenter);
+		throwExceptionIfBuildIsInProgressForProduct(productKey, releaseCenter);
 
 		Product product = productService.find(releaseCenter, productKey, false);
 		if (product == null) {
@@ -96,19 +96,19 @@ public class ReleaseBuildManager {
 		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
 	}
 
-	public CreateReleasePackageBuildRequest queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
-		queueBuildIfBuildNotNull(createReleasePackageBuildRequest, createReleasePackageBuildRequest.getBuild());
-		return createReleasePackageBuildRequest;
-	}
-
-	private void queueBuildIfBuildNotNull(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest, final Build build) throws BusinessServiceException {
+	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
+		Build build = createReleasePackageBuildRequest.getBuild();
 		if (build != null) {
-			buildDAO.updateStatus(createReleasePackageBuildRequest.getBuild(), Build.Status.QUEUED);
-			final Product product = build.getProduct();
-			buildStatusListenerService.addProductToConcurrentReleaseBuildMap(product.getBusinessKey(), product.getName());
+			buildDAO.updateStatus(build, QUEUED);
+			BuildStatusTracker tracker = new BuildStatusTracker();
+			tracker.setProductKey(build.getProduct().getBusinessKey());
+			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
+			tracker.setBuildId(build.getId());
+			tracker.setStatus(QUEUED.name());
+			statusTrackerDao.save(tracker);
 			convertAndSend(createReleasePackageBuildRequest);
 		} else {
-			LOGGER.info("Build can not be queued due to being null.");
+			LOGGER.warn("Build can not be queued due to being null.");
 		}
 	}
 
@@ -208,9 +208,12 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	public void clearConcurrentCache(String releaseCenterKey, String productKey) {
-		Product product = productService.find(releaseCenterKey, productKey, false);
-		buildStatusListenerService.removeProductFromConcurrentReleaseBuildMap(product.getBusinessKey(), product.getName());
+	public final void throwExceptionIfBuildIsInProgressForProduct(final String productKey, final String releaseCenter)
+			throws EntityAlreadyExistsException {
+		List<BuildStatusTracker> statusTrackers = statusTrackerDao.findByProductAndStatus(productKey, QUEUED.name(), BEFORE_TRIGGER.name(), BUILDING.name());
+		if (statusTrackers != null && !statusTrackers.isEmpty()) {
+			throw new EntityAlreadyExistsException(String.format("Product %s in release center %s already has an in-progress build %s",
+					productKey, releaseCenter, statusTrackers.get(0).getBuildId()));
+		}
 	}
-
 }
