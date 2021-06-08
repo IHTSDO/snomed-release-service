@@ -221,7 +221,7 @@ public class ManifestCheck extends PreconditionCheck {
 
 	private boolean validatePackageName(ListingType manifestListing) {
 		String packageName = manifestListing.getFolder().getName();
-		String fileNamePattern = "^x?SnomedCT_[^_]+(Edition|Extension)?(RF1|RF2)?_(ALPHA|BETA|PREPRODUCTION|PRODUCTION)_\\d{8}T\\d{6}Z$";
+		String fileNamePattern = "^x?SnomedCT_[^_]+(Edition|Extension)?(RF1|RF2)?_(?i)(ALPHA|BETA|PREPRODUCTION|PRODUCTION)+([_].*)?_\\d{8}T\\d{6}Z$";
 		Pattern pattern = Pattern.compile(fileNamePattern);
 		Matcher matcher = pattern.matcher(packageName);
 		return matcher.matches();
