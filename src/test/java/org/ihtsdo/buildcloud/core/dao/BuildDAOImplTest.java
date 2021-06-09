@@ -1,9 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.codec.binary.Base64;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -87,13 +84,14 @@ public class BuildDAOImplTest {
 	public void testSave() throws IOException {
 		final Capture<String> configPathCapture = new Capture<>();
 		final Capture<InputStream> configJsonStreamCapture = new Capture<>();
-		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(configPathCapture), EasyMock.capture(configJsonStreamCapture), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(configPathCapture), EasyMock.capture(configJsonStreamCapture),
+				EasyMock.isA(ObjectMetadata.class), EasyMock.isA(Tag.class))).andReturn(null);
 		final Capture<String> qaConfigPathCapture = new Capture<>();
 		final Capture<InputStream> qaConfigJsonStreamCapture = new Capture<>();
-		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(qaConfigPathCapture), EasyMock.capture(qaConfigJsonStreamCapture), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+				EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(qaConfigPathCapture), EasyMock.capture(qaConfigJsonStreamCapture), EasyMock.isA(ObjectMetadata.class), EasyMock.isA(Tag.class))).andReturn(null);
 
 		final Capture<String> statusPathCapture = new Capture<>();
-		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(statusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class))).andReturn(null);
+		EasyMock.expect(mockS3Client.putObject(EasyMock.isA(String.class), EasyMock.capture(statusPathCapture), EasyMock.isA(InputStream.class), EasyMock.isA(ObjectMetadata.class), EasyMock.isA(Tag.class))).andReturn(null);
 
 		mocksControl.replay();
 		buildDAO.save(build);

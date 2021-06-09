@@ -63,6 +63,8 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private static final String INTERNATIONAL = "international";
 
+	private static final com.amazonaws.services.s3.model.Tag TAG_EXPIRATION = new com.amazonaws.services.s3.model.Tag("Expiration", "100");
+
 	private final ExecutorService executorService;
 
 	private final FileHelper buildFileHelper;
@@ -120,8 +122,12 @@ public class BuildDAOImpl implements BuildDAO {
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
 			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, new ObjectMetadata());
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, new ObjectMetadata());
+			String buildConfigFilePath = pathHelper.getBuildConfigFilePath(build);
+			String qaTestConfigFilePath = pathHelper.getQATestConfigFilePath(build);
+			LOGGER.info("buildConfig being put to {}.", buildConfigFilePath);
+			LOGGER.info("qaTestConfig being put to {}.", qaTestConfigFilePath);
+			s3Client.putObject(buildBucketName, buildConfigFilePath, buildConfigInputStream, new ObjectMetadata(), TAG_EXPIRATION);
+			s3Client.putObject(buildBucketName, qaTestConfigFilePath, qaConfigInputStream, new ObjectMetadata(), TAG_EXPIRATION);
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
@@ -306,7 +312,8 @@ public class BuildDAOImpl implements BuildDAO {
 	public void copyInputFileToOutputFile(final Build build, final String relativeFilePath) {
 		final String buildInputFilePath = pathHelper.getBuildInputFilePath(build, relativeFilePath);
 		final String buildOutputFilePath = pathHelper.getBuildOutputFilePath(build, relativeFilePath);
-		buildFileHelper.copyFile(buildInputFilePath, buildOutputFilePath);
+		LOGGER.info("Copying input file from {} to {}.", buildInputFilePath, buildOutputFilePath);
+		buildFileHelper.copyFile(buildInputFilePath, buildOutputFilePath, TAG_EXPIRATION);
 	}
 
 	@Override
@@ -317,7 +324,10 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
 		for (final String filePath : filePaths) {
 			try {
-				buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+				String sourcePath = productInputFilesPath + filePath;
+				String targetPath = buildInputFilesPath + filePath;
+				LOGGER.info("Copying file from {} to {}.", sourcePath, targetPath);
+				buildFileHelper.copyFile(sourcePath, targetPath, TAG_EXPIRATION);
 			} catch (AmazonS3Exception e) {
 				if (fileProcessingFailureMaxRetry != null) {
 					int attempt = 1;
@@ -330,7 +340,7 @@ public class BuildDAOImpl implements BuildDAO {
 							} catch (InterruptedException ex) {
 								LOGGER.warn("Retry delay interrupted.", e);
 							}
-							buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
+							buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath, TAG_EXPIRATION);
 							List<String> buildInputFileNames = listInputFileNames(build);
 							copiedSuccessfully = buildInputFileNames.contains(filePath);
 						} catch (AmazonS3Exception ex) {
@@ -348,19 +358,23 @@ public class BuildDAOImpl implements BuildDAO {
 		if (manifestPath != null) { // Let the packages with manifests product
 			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
-			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
+			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName, TAG_EXPIRATION);
 		}
 		//copy input-prepare-report.json if exists
 		try (InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(product)) {
 			if (inputReportStream != null) {
-				buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
+				buildFileHelper.putFile(
+						inputReportStream,
+						pathHelper.getBuildInputFilePrepareReportPath(build),
+						TAG_EXPIRATION
+				);
 			}
 		}
 
 		//copy sources-gather-report.json if exists
 		InputStream sourcesGatherStream = productInputFileDAO.getInputGatherReport(product);
 		if (sourcesGatherStream != null) {
-			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build));
+			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build), TAG_EXPIRATION);
 		}
 	}
 
@@ -374,8 +388,9 @@ public class BuildDAOImpl implements BuildDAO {
 	public String putOutputFile(final Build build, final File file, final boolean calcMD5) throws IOException {
 		final String filename = file.getName();
 		final String outputFilePath = pathHelper.getBuildOutputFilePath(build, filename);
+		LOGGER.info("Putting output file {} to {}.", filename, outputFilePath);
 		try {
-			return buildFileHelper.putFile(file, outputFilePath, calcMD5);
+			return buildFileHelper.putFile(file, outputFilePath, calcMD5, TAG_EXPIRATION);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
@@ -386,13 +401,13 @@ public class BuildDAOImpl implements BuildDAO {
 		return putOutputFile(build, file, false);
 	}
 
-
 	@Override
 	public String putInputFile(final Build build, final File file, final boolean calcMD5) throws IOException {
 		final String filename = file.getName();
 		final String inputFilePath = pathHelper.getBuildInputFilePath(build, filename);
+		LOGGER.info("Putting input file {} to {}.", filename, inputFilePath);
 		try {
-			return buildFileHelper.putFile(file, inputFilePath, calcMD5);
+			return buildFileHelper.putFile(file, inputFilePath, calcMD5, TAG_EXPIRATION);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
@@ -521,7 +536,8 @@ public class BuildDAOImpl implements BuildDAO {
 		// Get the build report as a string we can write to disk/S3 synchronously because it's small
 		String buildReportJSON = build.getBuildReport().toString();
 		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
-			buildFileHelper.putFile(is, buildReportJSON.length(), reportPath);
+			LOGGER.info("Saving build report to {}.", reportPath);
+			buildFileHelper.putFile(is, buildReportJSON.length(), reportPath, TAG_EXPIRATION);
 		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
 		}
@@ -695,7 +711,8 @@ public class BuildDAOImpl implements BuildDAO {
 		final Future<String> future = executorService.submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
-				buildFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+				LOGGER.info("Putting file to {}.", buildOutputFilePath);
+				buildFileHelper.putFile(pipedInputStream, buildOutputFilePath, TAG_EXPIRATION);
 				LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
 				return buildOutputFilePath;
 			}
@@ -705,8 +722,11 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private PutObjectResult putFile(final String filePath, final String contents) {
+		LOGGER.info("Putting file to {}.", filePath);
+
 		return s3Client.putObject(buildBucketName, filePath,
-				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
+				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata(), TAG_EXPIRATION);
+
 	}
 
 	@Required
@@ -810,7 +830,9 @@ public class BuildDAOImpl implements BuildDAO {
 		File preConditionChecksReport = null;
 		try {
 			preConditionChecksReport = toJson(build.getPreConditionCheckReports());
-			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), new FileInputStream(preConditionChecksReport), new ObjectMetadata());
+			String buildPreConditionCheckReportPath = pathHelper.getBuildPreConditionCheckReportPath(build);
+			LOGGER.info("Updating pre-condition-check-report at {}.", buildPreConditionCheckReportPath);
+			s3Client.putObject(buildBucketName, buildPreConditionCheckReportPath, new FileInputStream(preConditionChecksReport), new ObjectMetadata(), TAG_EXPIRATION);
 		} finally {
 			if (preConditionChecksReport != null) {
 				preConditionChecksReport.delete();
@@ -823,7 +845,9 @@ public class BuildDAOImpl implements BuildDAO {
 		File postConditionChecksReport = null;
 		try {
 			postConditionChecksReport = toJson(object);
-			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), new FileInputStream(postConditionChecksReport), new ObjectMetadata());
+			String postConditionCheckReportPath = pathHelper.getPostConditionCheckReportPath(build);
+			LOGGER.info("Updating post-condition-check-report at {}.", postConditionCheckReportPath);
+			s3Client.putObject(buildBucketName, postConditionCheckReportPath, new FileInputStream(postConditionChecksReport), new ObjectMetadata(), TAG_EXPIRATION);
 		} finally {
 			if (postConditionChecksReport != null) {
 				postConditionChecksReport.delete();
@@ -853,7 +877,8 @@ public class BuildDAOImpl implements BuildDAO {
 		final String filename = file.getName();
 		final String outputFilePath = pathHelper.getClassificationResultOutputPath(build, filename);
 		try {
-			return buildFileHelper.putFile(file, outputFilePath, false);
+			LOGGER.info("Putting classification-result-output-file to {}.", outputFilePath);
+			return buildFileHelper.putFile(file, outputFilePath, false, TAG_EXPIRATION);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}

@@ -24,12 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DailyBuildRF2DeltaExtractor {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(DailyBuildRF2DeltaExtractor.class);
 	private final Build build;
 	private final BuildDAO buildDAO;
 
-	
+
 	public DailyBuildRF2DeltaExtractor(Build build, BuildDAO dao) {
 		this.build = build;
 		this.buildDAO = dao;
@@ -56,7 +56,7 @@ public class DailyBuildRF2DeltaExtractor {
 	File filterContentWithEffectiveTime(File deltaZip, String effectiveTimeFormatted) throws IOException {
 		File updatedZip = new File(deltaZip.getParent(), deltaZip.getName().replace(".zip", "_updated.zip"));
 		try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(deltaZip));
-			ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(updatedZip), RF2Constants.UTF_8)) {
+			 ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(updatedZip), RF2Constants.UTF_8)) {
 			ZipEntry zipEntry = null;
 			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
 				zipOutputStream.putNextEntry(zipEntry);
@@ -80,7 +80,7 @@ public class DailyBuildRF2DeltaExtractor {
 		}
 		return updatedZip;
 	}
-	
+
 	private void uploadDailyBuildToS3(Build build, File zipPackage, ResourceManager resourceManager) throws IOException {
 		String codeSystem = RF2Constants.SNOMEDCT;
 		String branchPath = build.getConfiguration().getBranchPath();
