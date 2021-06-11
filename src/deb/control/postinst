@@ -7,7 +7,7 @@ echo $*
 APP_NAME=[[packageName]]
 
 # Record package version number
-echo [[version]] > /var/opt/snomed-release-service-api/version.txt
+echo [[version]] > /opt/snomed-release-service/version.txt
 
 supervisorctl update $APP_NAME || true
 supervisorctl start $APP_NAME || true

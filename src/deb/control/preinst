@@ -8,7 +8,7 @@ APP_NAME=[[packageName]]
 
 if ! getent passwd $APP_NAME >/dev/null; then
   adduser --quiet --system --no-create-home --group \
-    --home /var/opt/$APP_NAME --shell /bin/false $APP_NAME
+    --home /opt/$APP_NAME --shell /bin/false $APP_NAME
 fi
 
 supervisorctl stop $APP_NAME || true
