@@ -18,7 +18,6 @@ import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.Rf2FileNameTransformation;
-import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
@@ -211,14 +210,16 @@ public class BuildDAOImpl implements BuildDAO {
 		final String newStatusFilePath = pathHelper.getStatusFilePath(build, build.getStatus());
 		// Put new status before deleting old to avoid there being none.
 		putFile(newStatusFilePath, BLANK);
-		updateBuildStatusWithNewStatus(build);
+
 		if (origStatus != null && origStatus != newStatus) {
 			final String origStatusFilePath = pathHelper.getStatusFilePath(build, origStatus);
 			s3Client.deleteObject(buildBucketName, origStatusFilePath);
+			LOGGER.debug("Delete old status {} file in S3 for build id {}", origStatus.name(), build.getId());
 		}
+		sendStatusUpdateResponseMessage(build);
 	}
 
-	private void updateBuildStatusWithNewStatus(final Build build) {
+	private void sendStatusUpdateResponseMessage(final Build build) {
 		final Product product = build.getProduct();
 		messagingHelper.sendResponse(buildStatusTextMessage,
 				ImmutableMap.of("releaseCenterKey", product.getReleaseCenter().getBusinessKey(),

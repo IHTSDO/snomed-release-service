@@ -325,6 +325,7 @@ public class BuildServiceImpl implements BuildService {
 			}
 		} catch (NoSuchAlgorithmException | IOException e) {
 			LOGGER.error("Error occurred while trying to trigger the build.", e);
+			throw new BusinessServiceException(e);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
@@ -713,6 +714,7 @@ public class BuildServiceImpl implements BuildService {
 			dao.persistReport(build);
 		} catch (Exception e) {
 			LOGGER.error("Failure during getting RVF results", e);
+			throw new BusinessServiceException(e);
 		} finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
@@ -769,7 +771,7 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.warn("Can not generate release package information file, manifest listing is null.");
 			}
 		} catch (JAXBException e) {
-			e.printStackTrace();
+			throw new BusinessServiceRuntimeException("Failed to get filenames from the manifest.xml.", e);
 		}
 
 		return releaseFilename;

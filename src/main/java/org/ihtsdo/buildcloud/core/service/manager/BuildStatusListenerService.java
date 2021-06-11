@@ -47,9 +47,6 @@ public class BuildStatusListenerService {
 	private BuildServiceImpl buildServiceImpl;
 
 	@Autowired
-	private BuildDAO buildDAO;
-
-	@Autowired
 	private ProductService productService;
 
 	@Autowired

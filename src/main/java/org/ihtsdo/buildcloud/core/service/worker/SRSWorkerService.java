@@ -63,7 +63,9 @@ public class SRSWorkerService {
 			LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getName());
 		} catch (final Exception e) {
 			LOGGER.error("Error occurred while trying to consume the SRS message.", e);
-			buildDAO.updateStatus(build, Build.Status.FAILED);
+			if (build != null) {
+				buildDAO.updateStatus(build, Build.Status.FAILED);
+			}
 		}
 	}
 
