@@ -22,7 +22,7 @@
 		<liquibase.version>4.3.2</liquibase.version>
 		<otf-common.version>4.3.2</otf-common.version>
 		<snomed-utilities.version>1.4.1</snomed-utilities.version>
-		<junit.version>4.13</junit.version>
+		<junit.version>4.13.1</junit.version>
 		<activemq.version>5.15.9</activemq.version>
 		<spring-cloud.version>1.2.2.RELEASE</spring-cloud.version>
 		<spring-cloud-aws-version>2.2.6.RELEASE</spring-cloud-aws-version>
