@@ -11,8 +11,8 @@ case $1 in
 		if getent passwd $APP_NAME >/dev/null; then
   			userdel $APP_NAME
 		fi
-		if test -d /var/opt/$APP_NAME; then
-			rm -r /var/opt/$APP_NAME
+		if test -d /opt/$APP_NAME; then
+			rm -r /opt/$APP_NAME
 		fi
 	;;
 esac

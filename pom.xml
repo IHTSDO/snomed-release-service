@@ -499,6 +499,10 @@
 											<mapper>
 												<type>perm</type>
 												<prefix>/opt/${packageName}/</prefix>
+												<user>${packageName}</user>
+												<group>${packageName}</group>
+												<dirmode>0750</dirmode>
+												<filemode>0750</filemode>
 											</mapper>
 										</data>
 										<data>
@@ -509,31 +513,8 @@
 										<data>
 											<type>template</type>
 											<paths>
-												<path>/etc/opt/${packageName}</path>
 												<path>/opt/${packageName}</path>
 											</paths>
-										</data>
-										<data>
-											<type>template</type>
-											<paths>
-												<path>/var/opt/${packageName}</path>
-												<path>/var/opt/${packageName}/run</path>
-												<path>/var/opt/${packageName}/logs</path>
-												<path>/var/opt/${packageName}/offline_bucket</path>
-											</paths>
-											<mapper>
-												<type>perm</type>
-												<user>${packageName}</user>
-												<group>${packageName}</group>
-												<dirmode>0750</dirmode>
-												<filemode>0750</filemode>
-											</mapper>
-										</data>
-										<data>
-											<type>link</type>
-											<linkName>/var/log/${packageName}</linkName>
-											<linkTarget>/var/opt/${packageName}/log</linkTarget>
-											<symlink>true</symlink>
 										</data>
 									</dataSet>
 								</configuration>

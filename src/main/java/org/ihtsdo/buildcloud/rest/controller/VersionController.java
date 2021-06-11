@@ -22,7 +22,7 @@ import java.util.Map;
 @Api(value = "Version", position = 5)
 public class VersionController {
 
-	public static final String VERSION_FILE_PATH = "/var/opt/snomed-release-service-api/version.txt";
+	public static final String VERSION_FILE_PATH = "/opt/snomed-release-service/version.txt";
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
