@@ -214,7 +214,7 @@ public class BuildDAOImpl implements BuildDAO {
 		if (origStatus != null && origStatus != newStatus) {
 			final String origStatusFilePath = pathHelper.getStatusFilePath(build, origStatus);
 			s3Client.deleteObject(buildBucketName, origStatusFilePath);
-			LOGGER.debug("Delete old status {} file in S3 for build id {}", origStatus.name(), build.getId());
+			LOGGER.debug("Delete old status {} file and replace with {} in S3 for build id {}", origStatus.name(), newStatus.name(), build.getId());
 		}
 		sendStatusUpdateResponseMessage(build);
 	}

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
@@ -60,6 +59,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -71,9 +71,6 @@ import java.util.regex.Pattern;
 @Service
 @Transactional
 public class BuildServiceImpl implements BuildService {
-
-	private static final String JSON_FIELD_STATUS = "status";
-
 	private static final String HYPHEN = "-";
 
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
@@ -81,6 +78,7 @@ public class BuildServiceImpl implements BuildService {
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
+	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 
 	@Autowired
 	private BuildDAO dao;
@@ -149,43 +147,39 @@ public class BuildServiceImpl implements BuildService {
 		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, branchPath);
 		Build build;
 		try {
-			synchronized (product) {
-				// Do we already have an build for that date?
-				final Build existingBuild = getBuild(product, creationDate);
-				if (existingBuild != null) {
-					throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
-				}
-				build = new Build(creationDate, product);
-				ObjectMapper objectMapper = new ObjectMapper();
-				if (build.getConfiguration() != null) {
-					BuildConfiguration configuration = objectMapper.readValue(objectMapper.writeValueAsString(build.getConfiguration()), BuildConfiguration.class);
-					configuration.setBranchPath(branchPath);
-					configuration.setExportType(exportType);
-					configuration.setBuildName(buildName);
-
-					if (effectiveTime != null) {
-						configuration.setEffectiveTime(effectiveTime);
-					}
-					build.setConfiguration(configuration);
-				}
-				build.setQaTestConfig(product.getQaTestConfig());
-				if (build.getQaTestConfig() != null) {
-					QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
-					qaTestConfig.setMaxFailureExport(maxFailureExport);
-					qaTestConfig.setMrcmValidationForm(mrcmValidationForm);
-
-					build.setQaTestConfig(qaTestConfig);
-				}
-				build.setBuildUser(user);
-				// save build with config
-				MDC.put(MDC_BUILD_KEY, build.getUniqueId());
-				dao.save(build);
-				LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
+			// Do we already have an build for that date?
+			final Build existingBuild = getBuild(product, creationDate);
+			if (existingBuild != null) {
+				throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
 			}
+			build = new Build(creationDate, product);
+			ObjectMapper objectMapper = new ObjectMapper();
+			if (build.getConfiguration() != null) {
+				BuildConfiguration configuration = objectMapper.readValue(objectMapper.writeValueAsString(build.getConfiguration()), BuildConfiguration.class);
+				configuration.setBranchPath(branchPath);
+				configuration.setExportType(exportType);
+				configuration.setBuildName(buildName);
+
+				if (effectiveTime != null) {
+					configuration.setEffectiveTime(effectiveTime);
+				}
+				build.setConfiguration(configuration);
+			}
+			build.setQaTestConfig(product.getQaTestConfig());
+			if (build.getQaTestConfig() != null) {
+				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
+				qaTestConfig.setMaxFailureExport(maxFailureExport);
+				qaTestConfig.setMrcmValidationForm(mrcmValidationForm);
+
+				build.setQaTestConfig(qaTestConfig);
+			}
+			build.setBuildUser(user);
+			// save build with config
+			MDC.put(MDC_BUILD_KEY, build.getUniqueId());
+			dao.save(build);
+			LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
 		} catch (Exception e) {
-			String msg = "Failed to create build for product " + productKey;
-			LOGGER.error(msg, e);
-			throw new BusinessServiceException(msg, e);
+			throw new BusinessServiceException("Failed to create build for product " + productKey, e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
 		}
@@ -224,25 +218,24 @@ public class BuildServiceImpl implements BuildService {
 			InputStream statedRelationshipInputFileStream = dao.getInputFileStream(build, statedRelationshipInputFile);
 
 			// We can't replace the file while we're reading it, so use a temp file
-			tempDir = Files.createTempDir();
+			tempDir = Files.createTempDirectory("tmp").toFile();
 			tempFile = new File(tempDir, statedRelationshipInputFile);
-			final FileOutputStream tempOutputStream = new FileOutputStream(tempFile);
+			try (final FileOutputStream tempOutputStream = new FileOutputStream(tempFile)) {
+				// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
+				// groups.
 
-			// We will not reconcile relationships with previous as that can lead to duplicate SCTIDs as triples may have historically moved
-			// groups.
+				final StreamingFileTransformation steamingFileTransformation = transformationFactory
+						.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
 
-			final StreamingFileTransformation steamingFileTransformation = transformationFactory
-					.getPreProcessFileTransformation(ComponentType.RELATIONSHIP);
+				// Apply transformations
+				steamingFileTransformation.transformFile(statedRelationshipInputFileStream, tempOutputStream, statedRelationshipInputFile,
+						build.getBuildReport());
 
-			// Apply transformations
-			steamingFileTransformation.transformFile(statedRelationshipInputFileStream, tempOutputStream, statedRelationshipInputFile,
-					build.getBuildReport());
-
-			// Overwrite the original file, and delete local temp copy
-			dao.putInputFile(build, tempFile, false);
+				// Overwrite the original file, and delete local temp copy
+				dao.putInputFile(build, tempFile, false);
+			}
 		} catch (IOException | NoSuchAlgorithmException | TransformationException e) {
 			String msg = String.format("Error while doing input file fix up. Message: %s", e.getMessage());
-			LOGGER.error(msg, e);
 			throw new BusinessServiceException(msg, e);
 		} finally {
 			if (tempFile != null) {
@@ -266,16 +259,14 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) throws BusinessServiceException {
+	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
-		LOGGER.info("Trigger product", productKey, buildId);
-		Build build = null;
+		LOGGER.info("Trigger product{} build id {}", productKey, buildId);
+		Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
-			build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
 				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 			}
-
 			// Copy all files from Product input and manifest directory to Build input and manifest directory
 			copyFilesFromProductToBuild(build);
 
@@ -291,41 +282,16 @@ public class BuildServiceImpl implements BuildService {
 			// execute build
 			if (!isAbandoned) {
 				Status status = Status.BUILDING;
-				if (offlineMode) {
-					final BuildReport report = build.getBuildReport();
-					String resultStatus = "completed";
-					String resultMessage = "Process completed successfully";
-					try {
-						updateStatusWithChecks(build, status);
-						executeBuild(build, failureExportMax, mrcmValidationForm);
-
-						// Check warnings if any
-						boolean hasWarnings = false;
-						if (build.getPreConditionCheckReports() != null) {
-							for (PreConditionCheckReport conditionCheckReport : build.getPreConditionCheckReports()) {
-								if (conditionCheckReport.getResult() == State.WARNING) {
-									hasWarnings = true;
-									break;
-								}
-							}
-						}
-						status = hasWarnings ? Status.RELEASE_COMPLETE_WITH_WARNINGS : Status.RELEASE_COMPLETE;
-					} catch (final Exception e) {
-						resultStatus = "fail";
-						resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: "
-								+ e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
-						LOGGER.error(resultMessage, e);
-						status = Status.FAILED;
-					}
-					setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
+				if (Boolean.TRUE.equals(offlineMode)) {
+					peformOfflineBuild(failureExportMax, mrcmValidationForm, build, status);
 				} else {
 					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax, mrcmValidationForm);
 				}
 			}
-		} catch (NoSuchAlgorithmException | IOException e) {
-			LOGGER.error("Error occurred while trying to trigger the build.", e);
-			throw new BusinessServiceException(e);
+		} catch (Exception e) {
+			LOGGER.error("Error occurred while trying to trigger the build {}.", buildId, e);
+			dao.updateStatus(build, Status.FAILED);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
@@ -333,6 +299,34 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return build;
+	}
+
+	private void peformOfflineBuild(Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Build build, Status status) throws BadConfigurationException {
+		final BuildReport report = build.getBuildReport();
+		String resultStatus = "completed";
+		String resultMessage = "Process completed successfully";
+		try {
+			updateStatusWithChecks(build, status);
+			executeBuild(build, failureExportMax, mrcmValidationForm);
+
+			// Check warnings if any
+			boolean hasWarnings = false;
+			if (build.getPreConditionCheckReports() != null) {
+				for (PreConditionCheckReport conditionCheckReport : build.getPreConditionCheckReports()) {
+					if (conditionCheckReport.getResult() == State.WARNING) {
+						hasWarnings = true;
+						break;
+					}
+				}
+			}
+			status = hasWarnings ? Status.RELEASE_COMPLETE_WITH_WARNINGS : Status.RELEASE_COMPLETE;
+		} catch (final Exception e) {
+			resultStatus = "fail";
+			resultMessage = "Failure while processing build " + build.getUniqueId() + " due to: " + e.getClass().getSimpleName() + (e.getMessage() != null ? " - " + e.getMessage() : "");
+			LOGGER.error(resultMessage, e);
+			status = Status.FAILED;
+		}
+		setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
 	}
 
 	@Override
@@ -422,9 +416,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			dao.updatePreConditionCheckReport(build);
 		} catch (IOException e) {
-			String msg = String.format("Failed to update Pre condition Check Report. Message: %s", e.getMessage());
-			LOGGER.error(msg, e);
-			throw new BusinessServiceException(msg, e);
+			throw new BusinessServiceException("Failed to update Pre condition Check Report.", e);
 		}
 		if (newStatus != preStatus) {
 			dao.updateStatus(build, newStatus);
@@ -442,7 +434,7 @@ public class BuildServiceImpl implements BuildService {
 	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
 		return dao.findAllDesc(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
 	}
@@ -451,7 +443,7 @@ public class BuildServiceImpl implements BuildService {
 	public Build find(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
 
 		final Build build = dao.find(product, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
@@ -477,7 +469,7 @@ public class BuildServiceImpl implements BuildService {
 	public void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
 
 		dao.delete(product, buildId);
@@ -505,7 +497,7 @@ public class BuildServiceImpl implements BuildService {
 				break;
 			case RELEASE_COMPLETE_WITH_WARNINGS:
 			case RELEASE_COMPLETE:
-				dao.assertStatus(build, offlineMode ? Status.BUILDING : Status.RVF_RUNNING);
+				dao.assertStatus(build, Boolean.TRUE.equals(offlineMode) ? Status.BUILDING : Status.RVF_RUNNING);
 				break;
 			case CANCELLED:
 				dao.assertStatus(build, Status.CANCEL_REQUESTED);
@@ -522,7 +514,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public List<String> getOutputFilePaths(final String releaseCenterKey, final String productKey, final String buildId) throws BusinessServiceException {
+	public List<String> getOutputFilePaths(final String releaseCenterKey, final String productKey, final String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.listOutputFilePaths(build);
 	}
@@ -561,7 +553,7 @@ public class BuildServiceImpl implements BuildService {
 			if (report.getResult() == State.FATAL) {
 				// Need to alert release manager of fatal pre-condition check error.
 				buildStatus = Status.FAILED_PRE_CONDITIONS;
-				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report.toString(), build.getId());
+				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report, build.getId());
 				break;
 			}
 		}
@@ -576,9 +568,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			dao.updatePostConditionCheckReport(build, reports);
 		} catch (IOException e) {
-			String msg = String.format("Failed to update Post condition Check Report. Message: %s", e.getMessage());
-			LOGGER.error(msg, e);
-			throw new BusinessServiceException(msg, e);
+			throw new BusinessServiceException("Failed to update Post condition Check Report", e);
 		}
 
 		// analyze report to check whether there is fatal error for all packages
@@ -597,9 +587,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			dao.loadConfiguration(build);
 		} catch (final IOException e) {
-			String msg = String.format("Failed to load configuration for build %s", build.getId());
-			LOGGER.error(msg, e);
-			throw new BusinessServiceException(msg, e);
+			throw new BusinessServiceException(String.format("Failed to load configuration for build %s", build.getId()), e);
 		}
 	}
 
@@ -609,7 +597,6 @@ public class BuildServiceImpl implements BuildService {
 			LOGGER.info("Input and manifest files are copied to build {}", build.getId());
 		} catch (IOException e) {
 			String msg = String.format("Failed to copy files from Product input and manifest directory to Build input and manifest directory. Error: %s", e.getMessage());
-			LOGGER.error(msg, e);
 			throw new BusinessServiceException(msg, e);
 		}
 	}
@@ -647,7 +634,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 		if (dao.isBuildCancelRequested(build)) return;
 
-		if (!offlineMode) {
+		if (Boolean.FALSE.equals(offlineMode)) {
 			LOGGER.info("Start classification cross check");
 			List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
 			dao.updatePostConditionCheckReport(build, reports);
@@ -676,7 +663,7 @@ public class BuildServiceImpl implements BuildService {
 
 			if (dao.isBuildCancelRequested(build)) return;
 
-			if (!offlineMode) {
+			if (Boolean.FALSE.equals(offlineMode)) {
 				performPostConditionsCheck(build, build.getStatus());
 				if (Status.FAILED_POST_CONDITIONS.equals(build.getStatus())) {
 					return;
@@ -685,25 +672,19 @@ public class BuildServiceImpl implements BuildService {
 
 			if (dao.isBuildCancelRequested(build)) return;
 
-			if (!offlineMode) {
+			if (Boolean.FALSE.equals(offlineMode)) {
 				dao.updateStatus(build, Status.BUILT);
 			}
 
 			String rvfStatus = "N/A";
 			String rvfResultMsg = "RVF validation configured to not run.";
-			if (!offlineMode) {
-				try {
-					String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
-					rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
-					if (rvfResultMsg == null) {
-						rvfStatus = "Failed to run";
-					} else {
-						rvfStatus = "Completed";
-					}
-				} catch (final Exception e) {
-					LOGGER.error("Failure during RVF Post Condition Testing", e);
-					rvfStatus = "Processing Failed.";
-					rvfResultMsg = "Failure due to: " + e.getLocalizedMessage();
+			if (Boolean.FALSE.equals(offlineMode)) {
+				String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
+				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
+				if (rvfResultMsg == null) {
+					rvfStatus = "Failed to run";
+				} else {
+					rvfStatus = "Completed";
 				}
 			}
 			final BuildReport report = build.getBuildReport();
@@ -713,8 +694,7 @@ public class BuildServiceImpl implements BuildService {
 			LOGGER.info("End of running build {}", build.getUniqueId());
 			dao.persistReport(build);
 		} catch (Exception e) {
-			LOGGER.error("Failure during getting RVF results", e);
-			throw new BusinessServiceException(e);
+			throw new BusinessServiceException("Failure during getting RVF results", e);
 		} finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
@@ -834,6 +814,8 @@ public class BuildServiceImpl implements BuildService {
 				case "licenceStatement":
 					release.setLicenceStatement(buildConfig.getLicenceStatement());
 					break;
+				default:
+					break;
 			}
 		}
 
@@ -943,16 +925,16 @@ public class BuildServiceImpl implements BuildService {
 				result.add(relFileName);
 			}
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
-			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
+			LOGGER.error("Failed to parse manifest xml file.", e);
 		}
 		return result;
 	}
 
-	private void retrieveAdditionalRelationshipsInputDelta(final Build build, String inferedDelta) throws BusinessServiceException {
-		LOGGER.debug("Retrieving inactive additional relationship from transformed delta:" + inferedDelta);
-		String originalDelta = inferedDelta + "_original";
-		String additionalRelsDelta = inferedDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
-		dao.renameTransformedFile(build, inferedDelta, originalDelta, false);
+	private void retrieveAdditionalRelationshipsInputDelta(final Build build, String inferredDelta) throws BusinessServiceException {
+		LOGGER.debug("Retrieving inactive additional relationship from transformed delta {}", inferredDelta);
+		String originalDelta = inferredDelta + "_original";
+		String additionalRelsDelta = inferredDelta.replace(RF2Constants.TXT_FILE_EXTENSION, RF2Constants.ADDITIONAL_TXT);
+		dao.renameTransformedFile(build, inferredDelta, originalDelta, false);
 		try (final OutputStream outputStream = dao.getTransformedFileOutputStream(build, additionalRelsDelta).getOutputStream();
 			 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, RF2Constants.UTF_8))) {
 			final InputStream inputStream = dao.getTransformedFileAsInputStream(build, originalDelta);
@@ -1007,8 +989,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws IOException,
-			PostConditionException, ConfigurationException {
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws IOException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
@@ -1111,7 +1092,7 @@ public class BuildServiceImpl implements BuildService {
 					inputFileSchemaMap.put(buildInputFilePath, schemaBean);
 					LOGGER.debug("getInputFileSchemaMap {} - {}", filename, schemaBean != null ? schemaBean.getTableName() : null);
 				} else {
-					LOGGER.info("RF2 file name:" + filename + " has not been specified in the manifest.xml");
+					LOGGER.info("RF2 filename {} has not been specified in the manifest.xml", filename);
 				}
 			} catch (final FileRecognitionException e) {
 				throw new BusinessServiceException("Did not recognise input file '" + buildInputFilePath + "'", e);
@@ -1170,13 +1151,9 @@ public class BuildServiceImpl implements BuildService {
 				LOGGER.warn("Can not generate readme, no file found in manifest root directory starting with '{}' and ending with '{}'",
 						RF2Constants.README_FILENAME_PREFIX, RF2Constants.README_FILENAME_EXTENSION);
 			}
-		} catch (IOException | InterruptedException | ExecutionException | JAXBException e) {
+		} catch (IOException | ExecutionException | JAXBException | InterruptedException e) {
 			throw new BusinessServiceException("Failed to generate readme file.", e);
 		}
-	}
-
-	public void setFileProcessingFailureMaxRetry(final Integer fileProcessingFailureMaxRetry) {
-		this.fileProcessingFailureMaxRetry = fileProcessingFailureMaxRetry;
 	}
 
 	@Override

@@ -89,7 +89,7 @@ public class ReleaseBuildManager {
 		String branchPath = gatherInputRequestPojo.getBranchPath();
 		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
 		String buildName = gatherInputRequestPojo.getBuildName();
-		Date effectiveTime = null;
+		Date effectiveTime;
 		try {
 			effectiveTime = RF2Constants.DATE_FORMAT.parse(gatherInputRequestPojo.getEffectiveDate());
 		} catch (ParseException e) {
@@ -128,7 +128,7 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo, Product product) throws BadRequestException, BusinessServiceException {
+	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo, Product product) throws BusinessServiceException {
 		if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
 			throw new BadRequestException("Effective Date must not be empty.");
 		}
@@ -150,8 +150,7 @@ public class ReleaseBuildManager {
 					throw new BadRequestException(String.format("The branch path must be resided within the same code system branch %s", codeSystem.getBranchPath()));
 				}
 			} catch (RestClientException e) {
-				LOGGER.error("Error occurred when getting branch {}. Error: {}", gatherInputRequestPojo.getBranchPath(), e.getMessage());
-				throw new BusinessServiceException(e);
+				throw new BusinessServiceException(String.format("Error occurred when getting branch %s", gatherInputRequestPojo.getBranchPath()), e);
 			}
 		}
 	}

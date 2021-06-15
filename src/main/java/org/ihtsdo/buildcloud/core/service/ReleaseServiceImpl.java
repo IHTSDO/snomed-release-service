@@ -12,7 +12,6 @@ import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReport
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 
 
@@ -48,10 +46,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
-	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build % for product %s";
+	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
 
 	@Override
-	public Build runReleaseBuild(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication) throws BusinessServiceException {
+	public void runReleaseBuild(String releaseCenter, String productKey, Build build, GatherInputRequestPojo gatherInputRequestPojo, Authentication authentication) {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
 
@@ -80,7 +78,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 			}
 			// After gathering all sources, start to transform and put them into input directories
 			if (gatherInputRequestPojo.isLoadTermServerData() || gatherInputRequestPojo.isLoadExternalRefsetData()) {
-				LOGGER.debug(gatherInputRequestPojo.toString());
+				LOGGER.debug("GatherInputRequest {}", gatherInputRequestPojo);
 				productInputFileService.deleteFilesByPattern(releaseCenter, product.getBusinessKey(), PATTERN_ALL_FILES);
 				SourceFileProcessingReport sourceFileProcessingReport = productInputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), true);
 				if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
@@ -96,11 +94,11 @@ public class ReleaseServiceImpl implements ReleaseService {
 			QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 			// trigger build
 			LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProduct().getBusinessKey());
-			return buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
-		} catch (IOException e) {
+			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
+		} catch (Exception e) {
 			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProduct().getBusinessKey());
 			LOGGER.error(msg, e);
-			throw new BusinessServiceException(msg, e);
+			buildDAO.updateStatus(build, Status.FAILED);
 		} finally {
 			MDC.remove(TRACKER_ID);
 			TelemetryStream.finish(LOGGER);

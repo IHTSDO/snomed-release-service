@@ -26,7 +26,7 @@ public interface BuildService {
 	 * @return
 	 * @throws BusinessServiceException
 	 */
-	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) throws BusinessServiceException;
+	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream);
 
 	Build triggerBuild(Build build) throws BusinessServiceException;
 
