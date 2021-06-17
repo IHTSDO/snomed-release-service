@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 import java.util.StringJoiner;
 
 @Entity
@@ -29,6 +30,17 @@ public class BuildStatusTracker {
 
 	@Column(name = "status")
 	private String status;
+
+	@Column(name = "start_time")
+	private Timestamp startTime;
+
+	@Column(name = "last_updated_time")
+	private Timestamp lastUpdatedTime;
+
+
+	public BuildStatusTracker() {
+		this.startTime = new Timestamp(System.currentTimeMillis());
+	}
 
 	public long getId() {
 		return id;
@@ -76,6 +88,15 @@ public class BuildStatusTracker {
 
 	public void setStatus(String status) {
 		this.status = status;
+		this.lastUpdatedTime = new Timestamp(System.currentTimeMillis());
+	}
+
+	public Timestamp getStartTime() {
+		return startTime;
+	}
+
+	public Timestamp getLastUpdatedTime() {
+		return lastUpdatedTime;
 	}
 
 	@Override
@@ -85,6 +106,9 @@ public class BuildStatusTracker {
 				.add("releaseCenterKey='" + releaseCenterKey + "'")
 				.add("buildId='" + buildId + "'")
 				.add("rvfRunId='" + rvfRunId + "'")
-				.add("status='" + status + "'").toString();
+				.add("status='" + status + "'")
+				.add("startTime='" + startTime + "'")
+				.add("lastUpdatedTime='" + lastUpdatedTime + "'")
+				.toString();
 	}
 }
