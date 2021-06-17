@@ -11,6 +11,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
@@ -25,9 +27,9 @@ public class BuildStatusTrackerDaoImplTest {
 
 	private String buildId;
 
-	@Before
-	public void setUp() {
 
+	@Test
+	public void testCRUD() {
 		BuildStatusTracker tracker = new BuildStatusTracker();
 		productKey = "international_edition_releases";
 		tracker.setProductKey(productKey);
@@ -36,15 +38,16 @@ public class BuildStatusTrackerDaoImplTest {
 		tracker.setStatus(Build.Status.QUEUED.name());
 		tracker.setReleaseCenterKey("international");
 		buildStatusTrackerDao.save(tracker);
-	}
+		Timestamp startTime = tracker.getStartTime();
+		Timestamp lastUpdated = tracker.getLastUpdatedTime();
 
-	@Test
-	public void testCRUD() {
 		BuildStatusTracker result = buildStatusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
 		assertNotNull(result);
 		assertEquals(buildId, result.getBuildId());
 		assertEquals(productKey, result.getProductKey());
 		assertEquals("international", result.getReleaseCenterKey());
+		assertEquals(startTime, result.getStartTime());
+		assertEquals(lastUpdated, result.getLastUpdatedTime());
 
 		result.setStatus(Build.Status.BUILDING.name());
 		buildStatusTrackerDao.update(result);
@@ -52,6 +55,9 @@ public class BuildStatusTrackerDaoImplTest {
 		result = buildStatusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
 		assertNotNull(result);
 		assertEquals("BUILDING", result.getStatus());
+		assertEquals(startTime, result.getStartTime());
+		assertNotEquals(lastUpdated, tracker.getLastUpdatedTime());
+		assertTrue(tracker.getLastUpdatedTime().after(lastUpdated));
 
 		result.setRvfRunId("12345");
 		result.setStatus(Build.Status.RVF_RUNNING.name());
@@ -61,6 +67,7 @@ public class BuildStatusTrackerDaoImplTest {
 		assertNotNull(result);
 		assertEquals("12345", result.getRvfRunId());
 		assertEquals(Build.Status.RVF_RUNNING.name(), result.getStatus());
+		assertTrue(tracker.getLastUpdatedTime().after(lastUpdated));
 
 	}
 
