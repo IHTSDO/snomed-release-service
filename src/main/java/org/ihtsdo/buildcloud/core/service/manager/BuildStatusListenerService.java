@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE;
+import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE_WITH_WARNINGS;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
@@ -153,7 +155,7 @@ public class BuildStatusListenerService {
 					conditionCheckReport.getResult() == PreConditionCheckReport.State.WARNING);
 		}
 
-		return hasWarnings ? Build.Status.RELEASE_COMPLETE_WITH_WARNINGS : Build.Status.RELEASE_COMPLETE;
+		return hasWarnings ? RELEASE_COMPLETE_WITH_WARNINGS : RELEASE_COMPLETE;
 	}
 
 	private List<PreConditionCheckReport> getPreConditionChecksReport(final Build build, final Product product) {
@@ -186,8 +188,16 @@ public class BuildStatusListenerService {
 		if (tracker == null) {
 			throw new IllegalStateException(String.format("No build status tracker exists for product %s and build id %s", productBusinessKey, buildId));
 		}
+		String previousStatus = tracker.getStatus();
+		Timestamp lastUpdated = tracker.getLastUpdatedTime();
 		tracker.setStatus(status);
 		statusTrackerDao.update(tracker);
+		long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - lastUpdated.getTime())/(1000*60);
+		LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} status to {} status", buildId, timeTakenInMinutes, previousStatus, status);
+		if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
+			long totalTimeTaken = (tracker.getStartTime().getTime() - tracker.getLastUpdatedTime().getTime())/(1000*60);
+			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {} status", buildId, totalTimeTaken, status);
+		}
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
 	}
