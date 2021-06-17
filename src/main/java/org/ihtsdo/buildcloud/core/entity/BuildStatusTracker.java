@@ -40,6 +40,7 @@ public class BuildStatusTracker {
 
 	public BuildStatusTracker() {
 		this.startTime = new Timestamp(System.currentTimeMillis());
+		this.lastUpdatedTime = this.startTime;
 	}
 
 	public long getId() {
