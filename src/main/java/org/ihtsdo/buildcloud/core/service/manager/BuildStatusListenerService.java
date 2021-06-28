@@ -193,10 +193,12 @@ public class BuildStatusListenerService {
 		tracker.setStatus(status);
 		statusTrackerDao.update(tracker);
 		long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - lastUpdated.getTime())/(1000*60);
-		LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} status to {} status", buildId, timeTakenInMinutes, previousStatus, status);
+		if (previousStatus != null) {
+			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}", buildId, timeTakenInMinutes, previousStatus, status);
+		}
 		if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
 			long totalTimeTaken = (tracker.getStartTime().getTime() - tracker.getLastUpdatedTime().getTime())/(1000*60);
-			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {} status", buildId, totalTimeTaken, status);
+			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}", buildId, totalTimeTaken, status);
 		}
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
