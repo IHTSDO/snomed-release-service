@@ -1,21 +1,21 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.entity.Build;
 
 public final class CreateReleasePackageBuildRequest {
 
 	private Build build;
-	private GatherInputRequestPojo gatherInputRequestPojo;
+	private BuildRequestPojo buildRequestPojo;
 	private String username;
 	private String authenticationToken;
 
 	public CreateReleasePackageBuildRequest() {}
 
-	public CreateReleasePackageBuildRequest(final Build build, final GatherInputRequestPojo gatherInputRequestPojo,
-	                                        final String username, final String authenticationToken) {
+	public CreateReleasePackageBuildRequest(final Build build, final BuildRequestPojo buildRequestPojo,
+										final String username, final String authenticationToken) {
 		this.build = build;
-		this.gatherInputRequestPojo = gatherInputRequestPojo;
+		this.buildRequestPojo = buildRequestPojo;
 		this.username = username;
 		this.authenticationToken = authenticationToken;
 	}
@@ -24,8 +24,8 @@ public final class CreateReleasePackageBuildRequest {
 		return build;
 	}
 
-	public final GatherInputRequestPojo getGatherInputRequestPojo() {
-		return gatherInputRequestPojo;
+	public final BuildRequestPojo getBuildRequestPojo() {
+		return buildRequestPojo;
 	}
 
 	public String getUsername() {
@@ -40,7 +40,7 @@ public final class CreateReleasePackageBuildRequest {
 	public String toString() {
 		return "CreateReleasePackageBuildRequest{" +
 				"build=" + build +
-				", gatherInputRequestPojo=" + gatherInputRequestPojo +
+				", buildRequestPojo=" + buildRequestPojo +
 				", username='" + username + '\'' +
 				", authenticationToken='" + authenticationToken + '\'' +
 				'}';

@@ -23,9 +23,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class ProductInputFileDAOImpl implements ProductInputFileDAO {
+public class InputFileDAOImpl implements InputFileDAO {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProductInputFileDAOImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileDAOImpl.class);
 
 	private final FileHelper fileHelper;
 
@@ -33,9 +33,9 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	private BuildS3PathHelper s3PathHelper;
 
 	@Autowired
-	public ProductInputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			final S3Client s3Client,
-			final S3ClientHelper s3ClientHelper) {
+	public InputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
+							final S3Client s3Client,
+							final S3ClientHelper s3ClientHelper) {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 	}
 
@@ -49,15 +49,33 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 		}
 	}
 
+
 	@Override
-	public List<String> listRelativeInputFilePaths(final Product product) {
-		final String directoryPath = s3PathHelper.getProductInputFilesPath(product);
-		return fileHelper.listFiles(directoryPath);
+	public InputStream getManifestStream(final Product product, String buildId) {
+		final String manifestPath = getManifestPath(product, buildId);
+		if (manifestPath != null) {
+			return fileHelper.getFileStream(manifestPath);
+		} else {
+			return null;
+		}
 	}
 
 	@Override
 	public String getManifestPath(final Product product) {
 		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product).toString();
+		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
+		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
+		if (xmlFiles.isEmpty()) {
+			return null;
+		}
+		if (xmlFiles.size() > 1) {
+			throw new IllegalStateException(String.format("Expecting just one manifest file but found %d in the manifest folder %s", xmlFiles.size(), manifestDirectoryPath));
+		}
+		return manifestDirectoryPath + xmlFiles.get(0);
+	}
+
+	public String getManifestPath(final Product product, String buildId) {
+		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(product, buildId);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
 		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
 		if (xmlFiles.isEmpty()) {
@@ -78,6 +96,13 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
+
+	@Override
+	public void putManifestFile(final Product product, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) {
+		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(product, buildId) + "manifest.xml";
+		fileHelper.putFile(inputStream, fileSize, filePath);
+	}
+
 	@Override
 	public void deleteManifest(final Product product) {
 		final StringBuilder manifestDirectoryPathSB = s3PathHelper.getProductManifestDirectoryPath(product);
@@ -94,17 +119,17 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(final Product product) {
-		String sourcesPath = s3PathHelper.getProductSourcesPath(product).toString();
+	public List<String> listRelativeSourceFilePaths(final Product product, final String buildId) {
+		String sourcesPath = s3PathHelper.getBuildSourcesPath(product, buildId).toString();
 		return fileHelper.listFiles(sourcesPath);
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(final Product product, final Set<String> subDirectories) {
+	public List<String> listRelativeSourceFilePaths(final Product product, String buildId, final Set<String> subDirectories) {
 		List<String> filesPath = new ArrayList<>();
 		if(subDirectories != null && !subDirectories.isEmpty()) {
 			for (String subDirectory : subDirectories) {
-				String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
+				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(product, buildId, subDirectory).toString();
 				filesPath.addAll(fileHelper.listFiles(sourcePath));
 			}
 		}
@@ -112,7 +137,7 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(Product product, String subDirectory) {
+	public List<String> listRelativeSourceFilePaths(Product product, String buildId, String subDirectory) {
 		List<String> filesPath = new ArrayList<>();
 		String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
 		filesPath.addAll(fileHelper.listFiles(sourcePath));
@@ -120,38 +145,20 @@ public class ProductInputFileDAOImpl implements ProductInputFileDAO {
 	}
 
 	@Override
-	public void persistInputPrepareReport(final Product product, final SourceFileProcessingReport fileProcessingReport) throws IOException {
-		String reportPath = s3PathHelper.getInputFilePrepareLogPath(product);
+	public void persistInputPrepareReport(final Product product, String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
+		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(product, buildId);
 		fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
 	}
 
 	@Override
-	public InputStream getInputPrepareReport(Product product) {
-		String reportPath = s3PathHelper.getInputFilePrepareLogPath(product);
-		return fileHelper.getFileStream(reportPath);
-	}
-
-	@Override
-	public void persistSourcesGatherReport(Product product, InputGatherReport inputGatherReport) throws IOException {
+	public void persistSourcesGatherReport(Product product, String buildId, InputGatherReport inputGatherReport) throws IOException {
 		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
 		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
 	}
 
 	@Override
-	public InputStream getInputGatherReport(Product product) {
+	public InputStream getInputGatherReport(Product product, String buildId) {
 		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
 		return fileHelper.getFileStream(reportPath);
-	}
-
-	@Override
-	public void deleteInputPrepareReport(Product product) {
-		String reportPath = s3PathHelper.getInputFilePrepareLogPath(product);
-		fileHelper.deleteFile(reportPath);
-	}
-
-	@Override
-	public void deleteInputGatherReport(Product product) {
-		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
-		fileHelper.deleteFile(reportPath);
 	}
 }

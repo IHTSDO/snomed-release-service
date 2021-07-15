@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.log4j.MDC;
+import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.manifest.*;
@@ -79,6 +80,8 @@ public class BuildServiceImpl implements BuildService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
+	public static final String PROGRESS_STATUS = "Progress Status";
+	public static final String MESSAGE = "Message";
 
 	@Autowired
 	private BuildDAO dao;
@@ -130,6 +133,9 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private ActiveMQTextMessage buildStatusTextMessage;
 
+	@Autowired
+	private BuildStatusTrackerDao statusTrackerDao;
+
 	@PostConstruct
 	public void init() {
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
@@ -174,9 +180,19 @@ public class BuildServiceImpl implements BuildService {
 				build.setQaTestConfig(qaTestConfig);
 			}
 			build.setBuildUser(user);
+			// create build status tracker
+			BuildStatusTracker tracker = new BuildStatusTracker();
+			tracker.setProductKey(build.getProduct().getBusinessKey());
+			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
+			tracker.setBuildId(build.getId());
+			statusTrackerDao.save(tracker);
+
 			// save build with config
 			MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 			dao.save(build);
+
+			// copy manifest.xml
+			dao.copyManifestFileFromProduct(build);
 			LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to create build for product " + productKey, e);
@@ -267,9 +283,6 @@ public class BuildServiceImpl implements BuildService {
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
 				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
 			}
-			// Copy all files from Product input and manifest directory to Build input and manifest directory
-			copyFilesFromProductToBuild(build);
-
 			// Get build configurations from S3
 			getBuildConfigurations(build);
 
@@ -283,7 +296,7 @@ public class BuildServiceImpl implements BuildService {
 			if (!isAbandoned) {
 				Status status = Status.BUILDING;
 				if (Boolean.TRUE.equals(offlineMode)) {
-					peformOfflineBuild(failureExportMax, mrcmValidationForm, build, status);
+					performOfflineBuild(failureExportMax, mrcmValidationForm, build, status);
 				} else {
 					updateStatusWithChecks(build, status);
 					executeBuild(build, failureExportMax, mrcmValidationForm);
@@ -301,7 +314,7 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void peformOfflineBuild(Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Build build, Status status) throws BadConfigurationException {
+	private void performOfflineBuild(Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Build build, Status status) throws BadConfigurationException {
 		final BuildReport report = build.getBuildReport();
 		String resultStatus = "completed";
 		String resultMessage = "Process completed successfully";
@@ -327,16 +340,6 @@ public class BuildServiceImpl implements BuildService {
 			status = Status.FAILED;
 		}
 		setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
-	}
-
-	@Override
-	public Build triggerBuild(final Build build) throws BusinessServiceException {
-		LOGGER.info("Trigger build '{}'", build.getId());
-		copyFilesFromProductToBuild(build);
-		getBuildConfigurations(build);
-		performPreconditionTesting(build);
-		executeBuild(build, checkSourceFile(build));
-		return build;
 	}
 
 	private void performPreconditionTesting(final Build build) throws BusinessServiceException {
@@ -397,15 +400,15 @@ public class BuildServiceImpl implements BuildService {
 	public void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
 			final String resultMessage) throws BadConfigurationException {
 		if (dao.isBuildCancelRequested(build)) {
-			report.add("Progress Status", "cancelled");
-			report.add("Message", "Build was cancelled");
+			report.add(PROGRESS_STATUS, "cancelled");
+			report.add(MESSAGE, "Build was cancelled");
 			dao.persistReport(build);
 			dao.updateStatus(build, Status.CANCELLED);
 			dao.deleteOutputFiles(build);
 			LOGGER.info("Build has been canceled");
 		} else {
-			report.add("Progress Status", resultStatus);
-			report.add("Message", resultMessage);
+			report.add(PROGRESS_STATUS, resultStatus);
+			report.add(MESSAGE, resultMessage);
 			dao.persistReport(build);
 			updateStatusWithChecks(build, status);
 		}
@@ -588,16 +591,6 @@ public class BuildServiceImpl implements BuildService {
 			dao.loadConfiguration(build);
 		} catch (final IOException e) {
 			throw new BusinessServiceException(String.format("Failed to load configuration for build %s", build.getId()), e);
-		}
-	}
-
-	private void copyFilesFromProductToBuild(Build build) throws BusinessServiceException {
-		try {
-			dao.copyAll(build.getProduct(), build);
-			LOGGER.info("Input and manifest files are copied to build {}", build.getId());
-		} catch (IOException e) {
-			String msg = String.format("Failed to copy files from Product input and manifest directory to Build input and manifest directory. Error: %s", e.getMessage());
-			throw new BusinessServiceException(msg, e);
 		}
 	}
 

@@ -7,8 +7,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.transform.CachedSctidFactory;
-import org.ihtsdo.buildcloud.core.service.build.transform.SCTIDTransformation;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClientImpl;
 import org.junit.Before;

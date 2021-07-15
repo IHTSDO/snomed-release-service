@@ -51,6 +51,11 @@ public class BuildS3PathHelper {
 		return getBuildPath(build.getProduct(), build.getId()).append(INPUT_FILES).append(SEPARATOR);
 	}
 
+	public StringBuilder getBuildInputFilesPath(final Product product, String buildId) {
+		return getBuildPath(product, buildId).append(INPUT_FILES).append(SEPARATOR);
+	}
+
+
 	public String getBuildInputFilePath(final Build build, final String inputFile) {
 		return getBuildInputFilesPath(build).append(inputFile).toString();
 	}
@@ -139,16 +144,32 @@ public class BuildS3PathHelper {
 		return getBuildPath(build).append(MANIFEST).append(SEPARATOR).toString();
 	}
 
+	public String getBuildManifestDirectoryPath(final Product product, String buildId) {
+		return getBuildPath(product, buildId).append(MANIFEST).append(SEPARATOR).toString();
+	}
+
 	public StringBuilder getProductSourcesPath(final Product product) {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
+	}
+
+	public StringBuilder getBuildSourcesPath(final Build build) {
+		return getProductPath(build.getProduct()).append(build.getId()).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
+	}
+
+	public StringBuilder getBuildSourcesPath(final Product product, String buildId) {
+		return getProductPath(product).append(buildId).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
 	}
 
 	public StringBuilder getProductSourceSubDirectoryPath(final Product product, final String sourceName) {
 		return getProductSourcesPath(product).append(sourceName).append(SEPARATOR);
 	}
 
-	public String getInputFilePrepareLogPath(final Product product) {
-		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(INPUT_PREPARE_REPORT_DIR).append(SEPARATOR).append(INPUT_PREPARE_REPORT_JSON).toString();
+	public StringBuilder getBuildSourceSubDirectoryPath(final Product product, String buildId, final String sourceName) {
+		return getBuildSourcesPath(product, buildId).append(sourceName).append(SEPARATOR);
+	}
+
+	public String getBuildInputFilePrepareReportPath(final Product product, String buildId) {
+		return getBuildPath(product, buildId).append(INPUT_PREPARE_REPORT_JSON).toString();
 	}
 
 	public String getBuildInputFilePrepareReportPath(Build build) {

@@ -3,10 +3,12 @@ package org.ihtsdo.buildcloud.core.service.inputfile.prepare;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 
-import org.ihtsdo.buildcloud.config.TestConfig;
+import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
@@ -47,6 +49,7 @@ public class InputSourceFileProcessorTest {
 	private FileHelper fileHelper;
 	private InputSourceFileProcessor processor;
 	private Product product;
+	private Build build;
 	
 	@Before
 	public void setUp() {
@@ -54,14 +57,15 @@ public class InputSourceFileProcessorTest {
 		product = new Product(getClass().getName());
 		ReleaseCenter releaseCenter = new ReleaseCenter("International", "int");
 		product.setReleaseCenter(releaseCenter);
+		build = new Build(new Date(), product);
 	}
 	
 	@Test
 	public void testLoadingDKManifestWithMultipleLanguageCodesInDescriptionFile() throws Exception {
 		validateManifest("manifest_with_multiple_language_codes.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_multiple_language_codes.xml");
-		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		processor.loadFileProcessConfigsFromManifest();
+		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, true);
+		processor.loadFileProcessConfigsFromManifest(manifestStream);
 		//description configs
 		Map<String, FileProcessingConfig>  descriptionProcessingConfigs = processor.getDescriptionFileProcessingConfigs();
 		assertEquals(2,descriptionProcessingConfigs.keySet().size());
@@ -84,8 +88,8 @@ public class InputSourceFileProcessorTest {
 	public void testLoadingDKManifest() throws Exception {
 		validateManifest("manifest_ms_dk.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_ms_dk.xml");
-		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		processor.loadFileProcessConfigsFromManifest();
+		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, true);
+		processor.loadFileProcessConfigsFromManifest(manifestStream);
 		//description configs
 		Map<String, FileProcessingConfig>  descriptionProcessingConfigs = processor.getDescriptionFileProcessingConfigs();
 		assertEquals(2,descriptionProcessingConfigs.keySet().size());
@@ -210,8 +214,8 @@ public class InputSourceFileProcessorTest {
 		validateManifest("manifest_with_sources_in_fileType_and_refset.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
 		manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
-		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		SourceFileProcessingReport report = processor.processFiles(Collections.emptyList(), null);
+		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, true);
+		SourceFileProcessingReport report = processor.processFiles(manifestStream, Collections.emptyList(), build.getId(),null);
 		assertNotNull(report);
 		assertNull(report.getDetails().get(ReportType.ERROR));
 		Map<String,FileProcessingConfig> refsetProcessingConfig = processor.getRefsetFileProcessingConfigs();
@@ -236,8 +240,8 @@ public class InputSourceFileProcessorTest {
 		validateManifest("manifest_with_mixed_sources.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_mixed_sources.xml");
 		Product product = new Product();
-		processor = new InputSourceFileProcessor(manifestStream, fileHelper, s3PathHelper, product, true);
-		processor.loadFileProcessConfigsFromManifest();
+		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, true);
+		processor.loadFileProcessConfigsFromManifest(manifestStream);
 		
 		Map<String, FileProcessingConfig>  descriptionProcessingConfig = processor.getDescriptionFileProcessingConfigs();
 		assertEquals(1,descriptionProcessingConfig.keySet().size());

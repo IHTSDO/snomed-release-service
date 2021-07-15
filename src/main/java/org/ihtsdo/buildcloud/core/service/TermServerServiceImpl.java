@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.google.common.io.Files;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -45,21 +46,25 @@ public class TermServerServiceImpl implements TermServerService {
 
     @Override
     public File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
+        File tempDir = null;
         try {
             SnowstormRestClient snowstormRestClient = getSnowstormClient();
             Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
             File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
-            File extractDir = Files.createTempDir();
-            unzipFlat(export, extractDir);
-            renameFiles(extractDir, SNAPSHOT, DELTA);
-            enforceReleaseDate(extractDir, effectiveDate);
-            File tempDir = Files.createTempDir();
-            File newZipFile = new File(tempDir, "term-server.zip");
-            ZipFileUtils.zip(extractDir.getAbsolutePath(), newZipFile.getAbsolutePath());
+            tempDir = Files.createTempDirectory("export-temp").toFile();
+            unzipFlat(export, tempDir);
+            renameFiles(tempDir, SNAPSHOT, DELTA);
+            enforceReleaseDate(tempDir, effectiveDate);
+            File newZipFile = File.createTempFile("term-server-export",".zip");
+            ZipFileUtils.zip(tempDir.getAbsolutePath(), newZipFile.getAbsolutePath());
             return newZipFile;
         } catch (IOException e) {
             logger.error("Failed export data from term server.", e);
             throw new BusinessServiceException(e);
+        } finally {
+            if (tempDir != null) {
+                FileUtils.deleteQuietly(tempDir);
+            }
         }
     }
 
@@ -82,23 +87,20 @@ public class TermServerServiceImpl implements TermServerService {
             throw new BusinessServiceException(targetDir + " is not a viable directory in which to extract archive");
         }
 
-        ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));
-        ZipEntry ze = zis.getNextEntry();
-        try {
+        try (
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));) {
+            ZipEntry ze = zis.getNextEntry();
             while (ze != null) {
                 if (!ze.isDirectory()) {
                     Path p = Paths.get(ze.getName());
                     String extractedFileName = p.getFileName().toString();
                     File extractedFile = new File(targetDir, extractedFileName);
-                    OutputStream out = new FileOutputStream(extractedFile);
-                    IOUtils.copy(zis, out);
-                    IOUtils.closeQuietly(out);
+                    try (OutputStream out = new FileOutputStream(extractedFile);) {
+                        IOUtils.copy(zis, out);
+                    }
                 }
                 ze = zis.getNextEntry();
             }
-        } finally {
-            zis.closeEntry();
-            zis.close();
         }
     }
 
@@ -144,7 +146,7 @@ public class TermServerServiceImpl implements TermServerService {
             return dateMatcher.group();
         } else {
             if (optional) {
-                logger.warn("Did not find a date in: " + str);
+                logger.warn("Did not find a date in: {}", str);
             } else {
                 throw new BusinessServiceException("Unable to determine date from " + str);
             }

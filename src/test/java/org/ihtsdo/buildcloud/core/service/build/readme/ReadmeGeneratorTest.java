@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.readme;
 
-import org.ihtsdo.buildcloud.core.service.build.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.buildcloud.core.manifest.ListingType;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;

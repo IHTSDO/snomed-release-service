@@ -33,7 +33,5 @@ public class TestEntityGenerator {
 			releaseCenter.addProduct(new Product(productName));
 		}
 	}
-	
-
 
 }

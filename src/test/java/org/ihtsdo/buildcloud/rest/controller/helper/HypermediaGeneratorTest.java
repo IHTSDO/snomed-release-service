@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.config.TestConfig;
+import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.rest.controller.ProductController;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;

@@ -36,6 +36,7 @@ public class StreamingFileTransformationTest {
 		rf2File = tempFile.toFile();
 
 		tempOutputFile = Files.createTempFile(getClass().getName(), origRf2File.getName() + "output").toFile();
+		tempOutputFile.deleteOnExit();
 		report = BuildReport.getDummyReport();
 	}
 

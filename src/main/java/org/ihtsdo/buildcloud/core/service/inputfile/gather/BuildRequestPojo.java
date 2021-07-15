@@ -6,7 +6,7 @@ import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCa
 
 import java.util.Set;
 
-public class GatherInputRequestPojo {
+public class BuildRequestPojo {
 
 	private String effectiveDate;
 	private ExportCategory exportCategory;
@@ -17,8 +17,9 @@ public class GatherInputRequestPojo {
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
 	private QATestConfig.CharacteristicType mrcmValidationForm;
-	
-	public GatherInputRequestPojo() {
+	private boolean skipGatheringSourceFiles;
+
+	public BuildRequestPojo() {
 	}
 
 	public String getEffectiveDate() {
@@ -93,18 +94,26 @@ public class GatherInputRequestPojo {
 		this.mrcmValidationForm = mrcmValidationForm;
 	}
 
+	public void setSkipGatheringSourceFiles(boolean skipGatheringSourceFiles) {
+		this.skipGatheringSourceFiles = skipGatheringSourceFiles;
+	}
+
+	public boolean isSkipGatheringSourceFiles() {
+		return this.skipGatheringSourceFiles;
+	}
+
 	@Override
 	public String toString() {
-		return "TermserverReleaseRequestPojo{" +
+		return "BuildRequestPojo{" +
 				", effectiveDate='" + effectiveDate + '\'' +
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
+				", skipGatheringSourceFiles=" + skipGatheringSourceFiles +
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +
 				", mrcmValidationForm=" + mrcmValidationForm +
 				'}';
 	}
-
 }

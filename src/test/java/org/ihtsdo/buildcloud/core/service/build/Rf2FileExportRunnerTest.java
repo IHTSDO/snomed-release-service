@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.build;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,28 +13,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.ihtsdo.buildcloud.config.TestConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
-import org.ihtsdo.buildcloud.core.service.build.transform.PesudoUUIDGenerator;
+import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = TestConfig.class)
-public class Rf2FileExportRunnerTest {
+public class Rf2FileExportRunnerTest extends AbstractTest {
 
 	private static final String PREVIOUS_RELEASE = "previousRelease";
 	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
@@ -78,12 +70,12 @@ public class Rf2FileExportRunnerTest {
 	private S3Client s3Client;
 	private String transformedFileFullPath;
 	private String publishedPath;
-	private final PesudoUUIDGenerator uuidGenerator = new PesudoUUIDGenerator();
 	private Build build;
 	private BuildConfiguration buildConfiguration;
 
 	@Before
-	public void setUp() throws IOException {
+	public void setUp() throws Exception {
+		super.setup();
 		product = new Product("Test");
 		final ReleaseCenter releaseCenter = new ReleaseCenter("INTERNATIONAL", "INT");
 		product.setReleaseCenter(releaseCenter);
@@ -178,11 +170,5 @@ public class Rf2FileExportRunnerTest {
 
 	private File getFileByName(final String fileName) {
 		return new File(getClass().getResource("/org/ihtsdo/buildcloud/core/service/build/export/" + fileName).getFile());
-	}
-	
-	@After
-	public void tearDown() throws InterruptedException {
-		uuidGenerator.reset();
-		Thread.sleep(1000); // Delay to prevent build id overlap
 	}
 }

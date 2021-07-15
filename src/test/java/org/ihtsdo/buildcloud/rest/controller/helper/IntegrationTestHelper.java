@@ -2,10 +2,13 @@ package org.ihtsdo.buildcloud.rest.controller.helper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.PublishService;
+import org.ihtsdo.buildcloud.core.service.PublishServiceImpl;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,6 +34,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -44,9 +48,11 @@ public class IntegrationTestHelper {
 	private final String basicDigestHeaderValue;
 	private String productId;
 	private final String productBusinessKey;
+	private String buildId;
 
 	public static final String COMPLETION_STATUS = "completed";
 	protected static SecureRandom random = new SecureRandom();
+
 	public IntegrationTestHelper(final MockMvc mockMvc, final String testName) {
 		this.mockMvc = mockMvc;
 		basicDigestHeaderValue = "NOT_YET_AUTHENTICATED"; // initial value only
@@ -64,9 +70,7 @@ public class IntegrationTestHelper {
 		MvcResult productResult = mockMvc.perform(
 				get(CENTER_URL + "/products/" +  this.productBusinessKey)
 						.header("Authorization", getBasicDigestHeaderValue())
-		)
-				.andDo(print())
-				.andReturn();
+		).andReturn();
 		
 		if (productResult.getResponse().getStatus() == 404) {
 			// Create Product
@@ -87,13 +91,13 @@ public class IntegrationTestHelper {
 		final int idEndIndex = createProductResponseString.indexOf("\"", idStartIndex);
 		return createProductResponseString.substring(idStartIndex, idEndIndex);
 	}
-	
+
 	public void uploadDeltaInputFile(final String deltaFileName, final Class classpathResourceOwner) throws Exception {
 		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
 		Assert.assertNotNull(deltaFileName + " stream is null.", resourceAsStream);
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
-				fileUpload(getProductUrl() + "/inputfiles")
+				fileUpload(getBuildUrl() + "/inputfiles")
 						.file(deltaFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -106,7 +110,7 @@ public class IntegrationTestHelper {
 		Assert.assertNotNull(sourceFileName + " stream is null.", resourceAsStream);
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", sourceFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
-				fileUpload(getProductUrl() + "/sourcefiles/" + sourceName)
+				fileUpload(getBuildUrl() + "/sourcefiles/" + sourceName)
 						.file(deltaFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -116,30 +120,22 @@ public class IntegrationTestHelper {
 
 	public void prepareSourceFile() throws Exception {
 		mockMvc.perform(
-				post(getProductUrl() + "/inputfiles/prepare")
+				post(getBuildUrl() + "/inputfiles/prepare")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
 		).andDo(print()).andExpect(status().isNoContent());
 	}
 
-	public void deleteTxtSourceFiles() throws Exception {
-		mockMvc.perform(
-				request(HttpMethod.DELETE, getProductUrl() + "/sourcefiles")
-						.param("pattern", "*.txt")
-						.header("Authorization", getBasicDigestHeaderValue())
-		).andDo(print()).andExpect(status().isNoContent());
-	}
-
 	public String listSourceFiles() throws Exception {
 		MvcResult mvcResult = mockMvc.perform(
-				get(getProductUrl() + "/sourcefiles")
+				get(getBuildUrl() + "/sourcefiles")
 		).andDo(print()).andExpect(status().isOk()).andReturn();
 		return mvcResult.getResponse().getContentAsString();
 	}
 
 	public String getInputPrepareReport() throws Exception {
 		MvcResult mvcResult = mockMvc.perform(
-				get(getProductUrl() + "/inputfiles/prepareReport")
+				get(getBuildUrl() + "/inputPrepareReport")
 		).andDo(print()).andExpect(status().isOk()).andReturn();
 		return mvcResult.getResponse().getContentAsString();
 	}
@@ -157,7 +153,7 @@ public class IntegrationTestHelper {
 	
 	
 	public String getInputFile(String inputFileName) throws Exception {
-		String getInputFileUrl = getProductUrl() + "/inputfiles/" + inputFileName;
+		String getInputFileUrl = getBuildUrl() + "/inputfiles/" + inputFileName;
 		System.out.println(getInputFileUrl);
 		MvcResult mvcResult = mockMvc.perform(
 				request(HttpMethod.GET, getInputFileUrl)
@@ -166,15 +162,6 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk()).andReturn();
 		return mvcResult.getResponse().getContentAsString();
 		
-	}
-
-	public void deletePreviousTxtInputFiles() throws Exception {
-		mockMvc.perform(
-				request(HttpMethod.DELETE, getProductUrl() + "/inputfiles/*.txt")
-						.header("Authorization", getBasicDigestHeaderValue())
-		)
-				.andDo(print())
-				.andExpect(status().isNoContent());
 	}
 
 	public void uploadManifest(final String manifestFileName, final Class classpathResourceOwner) throws Exception {
@@ -186,6 +173,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isCreated());
+
 	}
 
 	public void setEffectiveTime(final String effectiveDate) throws Exception {
@@ -271,18 +259,83 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
 	}
 
-	public String createReleasePackage(final GatherInputRequestPojo gatherInputRequestPojo) throws Exception {
-		final MvcResult result = mockMvc.perform(post(CENTER_URL +
-				"/products/{productKey}/release", productBusinessKey)
+	public String createReleasePackage(final BuildRequestPojo buildRequestPojo) throws Exception {
+		final MvcResult result = mockMvc.perform(post(getProductUrl() + "/release", productBusinessKey)
 				.header("Authorization", getBasicDigestHeaderValue())
-				.content(new ObjectMapper().writeValueAsString(gatherInputRequestPojo))
+				.content(new ObjectMapper().writeValueAsString(buildRequestPojo))
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
 				.andExpect(status().isCreated())
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
-		return result.getResponse().getContentAsString();
+		buildId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+		return getProductUrl() + "/builds/" + buildId;
+	}
+
+
+	public void scheduleBuild(String buildUrl) throws Exception {
+		BuildRequestPojo buildRequestPojo = new BuildRequestPojo();
+		buildRequestPojo.setSkipGatheringSourceFiles(true);
+		scheduleBuild(buildRequestPojo, buildUrl);
+	}
+
+	public void scheduleBuild(final BuildRequestPojo buildRequestPojo, final String buildUrl) throws Exception {
+		final MvcResult result = mockMvc.perform(post(buildUrl + "/schedule")
+				.header("Authorization", getBasicDigestHeaderValue())
+				.content(new ObjectMapper().writeValueAsString(buildRequestPojo))
+				.contentType(MediaType.APPLICATION_JSON))
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andReturn();
+	}
+
+
+	public void waitUntilCompleted(String buildUrl) throws Exception {
+		boolean isDone = false;
+		MvcResult buildResult = null;
+		Build.Status buildStatus = null;
+
+		while (!isDone) {
+			Thread.sleep(1000);
+			buildResult = mockMvc.perform(
+					get(buildUrl)
+							.header("Authorization", getBasicDigestHeaderValue())
+							.contentType(MediaType.APPLICATION_JSON))
+					.andDo(print())
+					.andExpect(status().isOk())
+					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+					.andReturn();
+
+			final String statusString = JsonPath.read(buildResult.getResponse().getContentAsString(), "$.status");
+			buildStatus = Build.Status.valueOf(statusString);
+			System.out.println("Build status = " + buildStatus);
+			if (PENDING != buildStatus && QUEUED != buildStatus && BUILDING != buildStatus && BEFORE_TRIGGER != buildStatus) {
+				isDone = true;
+			}
+		}
+
+		if (FAILED_INPUT_PREPARE_REPORT_VALIDATION == buildStatus) {
+			printReport(buildUrl + "/inputPrepareReport");
+			Assert.fail("Failed to prepare input file");
+		} else if (FAILED_PRE_CONDITIONS == buildStatus) {
+			printReport(buildUrl + "/preConditionCheckReports");
+			Assert.fail("Errors found in preConditionCheckReports");
+		} else if (FAILED_POST_CONDITIONS == buildStatus) {
+			printReport(buildUrl + "/postConditionCheckReports");
+			Assert.fail("Errors found in postConditionCheckReports");
+		} else if (FAILED == buildStatus) {
+			printReport(buildUrl + "/buildLogs");
+			Assert.fail("The build didn't complete successfully!");
+		}
+	}
+
+	private void printReport(String reportUrl) throws Exception {
+		MvcResult report = mockMvc.perform(get(reportUrl)
+				.contentType(MediaType.APPLICATION_JSON))
+				.andReturn();
+		System.out.println(report.getResponse().getContentAsString());
 	}
 
 	public String createBuild() throws Exception {
@@ -296,28 +349,10 @@ public class IntegrationTestHelper {
 				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
-		final String buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
+		buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
 		return getProductUrl() + "/builds/" + buildId;
 	}
 
-	public void triggerBuild(final String buildURL) throws Exception {
-		final MvcResult triggerResult = mockMvc.perform(
-				post(buildURL + "/trigger")
-						.header("Authorization", getBasicDigestHeaderValue())
-						.contentType(MediaType.APPLICATION_JSON)
-		)
-				.andDo(print())
-				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
-				.andReturn();
-
-		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
-		final JSONObject jsonObject = new JSONObject(outputFileListJson);
-		final JSONObject buildReport = jsonObject.getJSONObject("buildReport");
-		final String status = buildReport.getString("Progress Status");
-		final String message = buildReport.getString("Message");
-		Assert.assertEquals("Build bad status. Message: " + message, COMPLETION_STATUS, status);
-	}
 
 	public void triggerBuildAndGotCancelled(final String buildURL) throws Exception {
 		final MvcResult triggerResult = mockMvc.perform(
@@ -346,6 +381,8 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk());
+
+		waitUntilPublishingCompleted(buildURL);
 	}
 
 	public List<String> getZipEntryPaths(final ZipFile zipFile) {
@@ -430,14 +467,13 @@ public class IntegrationTestHelper {
 				.andExpect(status().isOk())
 				.andReturn();
 
-		final Path tempFile = Files.createTempFile(classpathResourceOwner.getCanonicalName(), "output-file" );
-		try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile());
-			 FileOutputStream tmp = new FileOutputStream("/tmp/zip.zip")) {
+		final File tempFile = Files.createTempFile(classpathResourceOwner.getSimpleName(), "output-file.zip" ).toFile();
+		tempFile.deleteOnExit();
+		try (FileOutputStream tmp = new FileOutputStream(tempFile)) {
 			final byte[] contentAsByteArray = outputFileResult.getResponse().getContentAsByteArray();
-			fileOutputStream.write(contentAsByteArray);
 			tmp.write(contentAsByteArray);
 		}
-		return tempFile.toFile();
+		return tempFile;
 	}
 
 	public void assertZipContents(final String expectedOutputPackageName, final ZipFile zipFile, final Class classpathResourceOwner) throws IOException {
@@ -455,6 +491,14 @@ public class IntegrationTestHelper {
 
 	public String getProductUrl() {
 		return CENTER_URL + "/products/" + productId;
+	}
+
+	public String getBuildUrl() {
+		return getProductUrl() +  "/builds/" + buildId;
+	}
+
+	public String getLocalHostBuildUrl() {
+		return "http://localhost" + getProductUrl() +  "/builds/" + buildId;
 	}
 
 	public void configureAssertionGroups(final Map<String, String> assertionConfig, final String ... groupNames) {
@@ -503,4 +547,23 @@ public class IntegrationTestHelper {
 		return cancelBuildResult.getResponse().getStatus();
 	}
 
+	void waitUntilPublishingCompleted(String buildUrl) throws Exception {
+		boolean isDone = false;
+		MvcResult publishResult = null;
+		PublishServiceImpl.Status status = null;
+
+		while (!isDone) {
+			Thread.sleep(1000);
+			publishResult = mockMvc.perform(get(buildUrl + "/publish/status").contentType(MediaType.APPLICATION_JSON)).andDo(print()).andExpect(status().isOk()).andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON)).andReturn();
+
+			final String statusString = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.status");
+			status = PublishServiceImpl.Status.valueOf(statusString);
+			if (PublishServiceImpl.Status.RUNNING != status) {
+				isDone = true;
+			}
+			if (PublishServiceImpl.Status.FAILED == status) {
+				Assert.fail("Failed to publish build " + buildUrl);
+			}
+		}
+	}
 }
