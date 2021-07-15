@@ -99,11 +99,12 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 
 	private void executeAndVerfiyResults(final String releaseDate, final String expectedZipEntries) throws Exception {
 		final String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
-		final String expectedZipFilename = "SnomedCT_ManagedServiceSE1000052_"+releaseDate+".zip";
+		final String expectedZipFilename = "SnomedCT_ManagedServiceSE1000052_" + releaseDate + ".zip";
 		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass(), false);
 	}

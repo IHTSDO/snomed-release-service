@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.integration.workbenchworkarround.discardbaddelta;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.zip.ZipFile;
@@ -17,7 +18,7 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc, "DiscardBadDeltaTest");
+		integrationTestHelper = new IntegrationTestHelper(mockMvc, getClass().getSimpleName());
 	}
 
 	@Test
@@ -30,39 +31,40 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
-		loadDeltaFilesToInputDirectory("20140131");
 		executeAndVerifyResults("20140131");
 
 		Thread.sleep(1000);
 
-		//delete previous input files
-		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setEffectiveTime("20140731");
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
-		loadDeltaFilesToInputDirectory("20140731");
 		executeAndVerifyResults("20140731");
-
 	}
 
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
-		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
-		integrationTestHelper.publishOutput(buildURL1);
+		integrationTestHelper.uploadManifest("core_manifest_" + releaseDate + ".xml", getClass());
+
+		String buildURL = integrationTestHelper.createBuild();
+		loadDeltaFilesToInputDirectory(releaseDate);
+
+		integrationTestHelper.scheduleBuild(buildURL);
+
+		integrationTestHelper.waitUntilCompleted(buildURL);
 
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INTBadDelta_" + releaseDate + ".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
-		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL, expectedZipFilename, expectedZipEntries, getClass());
 
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass());
+
+		integrationTestHelper.publishOutput(buildURL);
 	}
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("core_manifest_" + releaseDate + ".xml", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + releaseDate + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate + ".txt", getClass());
 	}

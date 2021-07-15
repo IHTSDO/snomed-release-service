@@ -28,13 +28,10 @@ public class ResolveEmptyValueIdInAttributeValueFileIntegrationTest extends Abst
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
-		loadDeltaFilesToInputDirectory("20140131");
 		executeAndVerifyResults("20140131");
 
 		Thread.sleep(1000);
 
-		//delete previous input files
-		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setEffectiveTime("20140731");
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
@@ -47,8 +44,11 @@ public class ResolveEmptyValueIdInAttributeValueFileIntegrationTest extends Abst
 	}
 
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
+		integrationTestHelper.uploadManifest("complex_refset_manifest_" + releaseDate + ".xml", getClass());
 		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		loadDeltaFilesToInputDirectory(releaseDate);
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
@@ -60,7 +60,6 @@ public class ResolveEmptyValueIdInAttributeValueFileIntegrationTest extends Abst
 	}
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("complex_refset_manifest_" + releaseDate + ".xml", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_AttributeValueDelta_INT_" + releaseDate + ".txt", getClass());
 	}
 	

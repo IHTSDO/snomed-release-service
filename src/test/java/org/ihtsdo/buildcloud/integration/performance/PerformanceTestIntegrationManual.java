@@ -47,49 +47,45 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime(effectiveDate);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
-		uploadInputFiles(effectiveDate);
+		integrationTestHelper.uploadManifest("core_manifest_" + effectiveDate + ".xml", getClass());
+
+		String buildURL = integrationTestHelper.createBuild();
+
+		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + effectiveDate + ".txt", getClass());
 
 		memoryRecordings.add(getStats("After upload mem used"));
 
-		String buildURL1 = integrationTestHelper.createBuild();
-
+		integrationTestHelper.scheduleBuild(buildURL);
 		memoryRecordings.add(getStats("After create exec mem used"));
 
-
-		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL);
 
 		memoryRecordings.add(getStats("After trigger exec mem used"));
 		Runtime.getRuntime().gc();
 		memoryRecordings.add(getStats("After trigger exec mem used after GC"));
 
-		integrationTestHelper.publishOutput(buildURL1);
+		integrationTestHelper.publishOutput(buildURL);
 
 		memoryRecordings.add(getStats("After publish mem used"));
 
-		verfiyResults(effectiveDate, buildURL1);
+		verifyResults(effectiveDate, buildURL);
 
 		memoryRecordings.add(getStats("After verify mem used"));
 	}
 
 	@After
 	public void tearDown() {
-
+		super.tearDown();
 		LOGGER.info("MemoryRecordings:");
 		for (String memoryRecording : memoryRecordings) {
 			LOGGER.info("\t" + memoryRecording);
 		}
-
-		super.tearDown();
 	}
 
-	private void uploadInputFiles(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("core_manifest_"+releaseDate+".xml", getClass());
-		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate + ".txt", getClass());
-	}
 
-	private void verfiyResults(String releaseDate, String buildURL1) throws Exception {
+	private void verifyResults(String releaseDate, String buildURL1) throws Exception {
 		// Assert first release output expectations
-		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
+		String expectedZipFilename = "SnomedCT_Release_INT_" + releaseDate + ".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
 		integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 	}

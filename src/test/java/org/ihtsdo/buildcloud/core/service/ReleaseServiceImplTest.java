@@ -8,9 +8,8 @@ import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.core.service.manager.BuildStatusListenerService;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.junit.Before;
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class ReleaseServiceImplTest {
 
 	@Mock
-	ProductInputFileService productInputFileService;
+	InputFileService inputFileService;
 
 	@Mock
 	ProductService productService;
@@ -61,8 +60,8 @@ public class ReleaseServiceImplTest {
 		inputGatherReport.addDetails(InputGatherReport.Status.ERROR, "terminology-server","Failed export data from term server");
 		when(productService.find(anyString(), anyString(), anyBoolean()))
 				.thenReturn(createMockProduct("testProduct"));
-		Build build = releaseBuildManager.createBuild("international", "product", new GatherInputRequestPojo(), null);
-		releaseService.runReleaseBuild("center", "testProduct", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+		Build build = releaseBuildManager.createBuild("international", "product", new BuildRequestPojo(), null);
+		releaseService.runReleaseBuild("center", "testProduct", build, new BuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
 	}
 
 
@@ -76,8 +75,8 @@ public class ReleaseServiceImplTest {
 		sourceFileProcessingReport.addReportDetail(fileProcessingReportDetail);
 		when(productService.find(anyString(), anyString(), anyBoolean()))
 				.thenReturn(createMockProduct("test"));
-		Build build = releaseBuildManager.createBuild("International", "product", new GatherInputRequestPojo(), null);
-		releaseService.runReleaseBuild("International", "test", build, new GatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+		Build build = releaseBuildManager.createBuild("International", "product", new BuildRequestPojo(), null);
+		releaseService.runReleaseBuild("International", "test", build, new BuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
 	}
 
 	private Product createMockProduct(String productName) {

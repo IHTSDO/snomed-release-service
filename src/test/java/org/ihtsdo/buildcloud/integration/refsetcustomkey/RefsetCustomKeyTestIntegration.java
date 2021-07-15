@@ -35,21 +35,25 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 	}
 
 	private void runTest(String customRefsetCompositeKeys, String expectedOutputPackageName) throws Exception {
-		setupProduct();
-		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
-		String buildId = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildId);
-		assertOutput(expectedOutputPackageName, buildId);
-	}
-
-	private void setupProduct() throws Exception {
-		integrationTestHelper.createTestProductStructure();
-
-		// Perform first time release
 		String effectiveTime = "20140131";
+		setupProduct(effectiveTime);
+		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
+		String buildUrl = integrationTestHelper.createBuild();
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccRefset_ExtendedMapDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccsiRefset_UnknownFormatDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+
+		integrationTestHelper.scheduleBuild(buildUrl);
+
+		// wait until the build is completed
+		integrationTestHelper.waitUntilCompleted(buildUrl);
+
+		assertOutput(expectedOutputPackageName, buildUrl);
+	}
+
+	private void setupProduct(String effectiveTime) throws Exception {
+		integrationTestHelper.createTestProductStructure();
+		// Perform first time release
 		integrationTestHelper.uploadManifest("manifest.xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
@@ -57,7 +61,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeHeader("header");
 	}
 
-	private void assertOutput(String expectedOutputPackageName, String buildId) throws Exception {
+	private void assertOutput(String expectedOutputPackageName, String buildUrl) throws Exception {
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
@@ -67,7 +71,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccsiRefset_UnknownFormatFull_INT_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt";
-		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildId, expectedZipFilename, expectedZipEntries, getClass());
+		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildUrl, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents(expectedOutputPackageName, zipFileFirstRelease, getClass());
 	}
 

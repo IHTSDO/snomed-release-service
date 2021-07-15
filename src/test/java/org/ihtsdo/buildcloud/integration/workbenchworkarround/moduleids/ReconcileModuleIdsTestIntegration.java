@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.zip.ZipFile;
@@ -18,7 +19,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc, "ReconcileModuleIdsTest");
+		integrationTestHelper = new IntegrationTestHelper(mockMvc, getClass().getSimpleName());
 	}
 
 	@Test
@@ -31,13 +32,11 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
-		loadDeltaFilesToInputDirectory("20140131");
-		executeAndVerfiyResults("20140131");
+		executeAndVerifyResults("20140131");
 
 		Thread.sleep(1000);
 
 		//delete previous input files
-		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setEffectiveTime("20140731");
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
@@ -46,17 +45,19 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 		String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
 		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
-		loadDeltaFilesToInputDirectory("20140731");
-		executeAndVerfiyResults("20140731");
+		executeAndVerifyResults("20140731");
 	}
 
-	private void executeAndVerfiyResults(String releaseDate) throws Exception {
+	private void executeAndVerifyResults(String releaseDate) throws Exception {
+		integrationTestHelper.uploadManifest("core_manifest_" + releaseDate+".xml", getClass());
 		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		loadDeltaFilesToInputDirectory(releaseDate);
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
-		String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
+		String expectedZipFilename = "SnomedCT_Release_INT_" + releaseDate + ".zip";
 		String expectedZipEntries = createExpectedZipEntries(releaseDate);
 		ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
 
@@ -64,7 +65,6 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 	}
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("core_manifest_"+releaseDate+".xml", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + releaseDate + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_"+releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate +".txt", getClass());

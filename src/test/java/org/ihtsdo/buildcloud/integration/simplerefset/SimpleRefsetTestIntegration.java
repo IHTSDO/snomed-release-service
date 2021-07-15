@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.integration.simplerefset;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.zip.ZipFile;
@@ -24,13 +25,14 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Perform first time release
 		String effectiveTime = "20140131";
-		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadManifest("simple_refset_manifest_" + effectiveTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
 		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
@@ -58,15 +60,16 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		// Perform second release
 		String effectiveDateTime = "20140731";
-		integrationTestHelper.deletePreviousTxtInputFiles();
-		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
 		integrationTestHelper.uploadManifest("simple_refset_manifest_" + effectiveDateTime + ".xml", getClass());
 		integrationTestHelper.setEffectiveTime(effectiveDateTime);
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
+
 		String buildURL2 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL2);
+		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
+		integrationTestHelper.scheduleBuild(buildURL2);
+		integrationTestHelper.waitUntilCompleted(buildURL2);
 		integrationTestHelper.publishOutput(buildURL2);
 
 

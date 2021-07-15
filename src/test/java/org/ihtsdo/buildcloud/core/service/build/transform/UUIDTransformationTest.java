@@ -1,8 +1,6 @@
 package org.ihtsdo.buildcloud.core.service.build.transform;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.transform.RandomUUIDGenerator;
-import org.ihtsdo.buildcloud.core.service.build.transform.UUIDTransformation;
 import org.junit.Before;
 import org.junit.Test;
 

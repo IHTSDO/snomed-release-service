@@ -7,7 +7,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.EnumSet;
 
-import org.ihtsdo.buildcloud.config.TestConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
@@ -17,27 +16,24 @@ import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = TestConfig.class)
 @Transactional
-public class PublishServiceImpl2Test extends TestEntityGenerator {
+public class PublishServiceImpl2Test extends AbstractTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl2Test.class);
 
@@ -59,6 +55,8 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	@Autowired
 	private S3Client s3Client;
 
+	private TestEntityGenerator generator;
+
 	Build build = null;
 
 	private static final String TEST_FILENAME = "test.zip";
@@ -69,10 +67,8 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 	@Before
 	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
 
-		releaseCenterName = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
-
-		//Tidyup in case we've run this test already today
-		((TestS3Client) s3Client).freshBucketStore();
+		generator = new TestEntityGenerator();
+		releaseCenterName = EntityHelper.formatAsBusinessKey(generator.releaseCenterShortNames[0]);
 
 		//Packages get looked up using a product composite key (ie include the unique ID)
 		//so first lets find the first product for a known product, and use that
@@ -85,6 +81,11 @@ public class PublishServiceImpl2Test extends TestEntityGenerator {
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();
 		buildDAO.putOutputFile(build, new File(testFile), false);
+	}
+
+	@After
+	public void tearDown() throws IOException {
+		((TestS3Client) s3Client).freshBucketStore();
 	}
 
 	@Test

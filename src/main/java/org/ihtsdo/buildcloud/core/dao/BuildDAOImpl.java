@@ -90,7 +90,7 @@ public class BuildDAOImpl implements BuildDAO {
 	private String buildBucketName;
 
 	@Autowired
-	private ProductInputFileDAO productInputFileDAO;
+	private InputFileDAO inputFileDAO;
 
 	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
@@ -107,9 +107,20 @@ public class BuildDAOImpl implements BuildDAO {
 		executorService = Executors.newCachedThreadPool();
 		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
-		this.s3Client = s3Client;
 		this.tempDir = Files.createTempDir();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
+		this.s3Client = s3Client;
+	}
+
+	@Override
+	public void copyManifestFileFromProduct(Build build) {
+		// Copy manifest file
+		final String manifestPath = inputFileDAO.getManifestPath(build.getProduct());
+		if (manifestPath != null) {
+			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
+			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
+			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
+		}
 	}
 
 	@Override
@@ -130,9 +141,6 @@ public class BuildDAOImpl implements BuildDAO {
 				qaConfigJson.delete();
 			}
 		}
-		if (offlineMode) {
-			updateStatus(build, Build.Status.BEFORE_TRIGGER);
-		}
 
 		// Save trigger user
 		if (StringUtils.isNotEmpty(build.getBuildUser())) {
@@ -140,7 +148,12 @@ public class BuildDAOImpl implements BuildDAO {
 			// Put new status before deleting old to avoid there being none.
 			putFile(userFilePath, BLANK);
 		}
-		LOGGER.debug("Saved build {} with {} ", build.getId(), Build.Status.BEFORE_TRIGGER);
+
+		// save build status
+		final String newStatusFilePath = pathHelper.getStatusFilePath(build, build.getStatus());
+		// Put new status before deleting old to avoid there being none.
+		putFile(newStatusFilePath, BLANK);
+		LOGGER.debug("Saved build {}", build.getId());
 	}
 
 	protected File toJson(final Object obj) throws IOException {
@@ -307,61 +320,6 @@ public class BuildDAOImpl implements BuildDAO {
 		final String buildInputFilePath = pathHelper.getBuildInputFilePath(build, relativeFilePath);
 		final String buildOutputFilePath = pathHelper.getBuildOutputFilePath(build, relativeFilePath);
 		buildFileHelper.copyFile(buildInputFilePath, buildOutputFilePath);
-	}
-
-	@Override
-	public void copyAll(final Product product, final Build build) throws IOException {
-		// Copy input files
-		final String productInputFilesPath = pathHelper.getProductInputFilesPath(product);
-		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
-		final List<String> filePaths = productInputFileDAO.listRelativeInputFilePaths(product);
-		for (final String filePath : filePaths) {
-			try {
-				buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
-			} catch (AmazonS3Exception e) {
-				if (fileProcessingFailureMaxRetry != null) {
-					int attempt = 1;
-					boolean copiedSuccessfully = false;
-					do {
-						LOGGER.warn("Failed to copy file {} from S3 product input-files bucket {} to build input-file bucket {} on attempt {}. Waiting {} seconds before retrying.", filePath, productInputFilesPath, buildInputFilesPath, attempt, 10);
-						try {
-							try {
-								Thread.sleep(10000);
-							} catch (InterruptedException ex) {
-								LOGGER.warn("Retry delay interrupted.", e);
-							}
-							buildFileHelper.copyFile(productInputFilesPath + filePath, buildInputFilesPath + filePath);
-							List<String> buildInputFileNames = listInputFileNames(build);
-							copiedSuccessfully = buildInputFileNames.contains(filePath);
-						} catch (AmazonS3Exception ex) {
-							// do nothing
-						} finally {
-							attempt++;
-						}
-					} while (!copiedSuccessfully && attempt < fileProcessingFailureMaxRetry + 1);
-				}
-			}
-		}
-
-		// Copy manifest file
-		final String manifestPath = productInputFileDAO.getManifestPath(product);
-		if (manifestPath != null) { // Let the packages with manifests product
-			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
-			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
-		}
-		//copy input-prepare-report.json if exists
-		try (InputStream inputReportStream = productInputFileDAO.getInputPrepareReport(product)) {
-			if (inputReportStream != null) {
-				buildFileHelper.putFile(inputReportStream, pathHelper.getBuildInputFilePrepareReportPath(build));
-			}
-		}
-
-		//copy sources-gather-report.json if exists
-		InputStream sourcesGatherStream = productInputFileDAO.getInputGatherReport(product);
-		if (sourcesGatherStream != null) {
-			buildFileHelper.putFile(sourcesGatherStream, pathHelper.getBuildInputGatherReportPath(build));
-		}
 	}
 
 	@Override
@@ -718,12 +676,6 @@ public class BuildDAOImpl implements BuildDAO {
 		return new File(tempDir, transformedFilePath);
 	}
 
-	// Just for testing
-	protected void setS3Client(final S3Client s3Client) {
-		this.s3Client = s3Client;
-		this.buildFileHelper.setS3Client(s3Client);
-	}
-
 	@Override
 	public void loadConfiguration(final Build build) throws IOException {
 		loadBuildConfiguration(build);
@@ -876,5 +828,11 @@ public class BuildDAOImpl implements BuildDAO {
 		// Put new visibility
 		final String newStatusFilePath = pathHelper.getVisibilityFilePath(build, visibility);
 		putFile(newStatusFilePath, BLANK);
+	}
+
+	@Override
+	public void putManifestFile(Product product, String buildId, InputStream inputStream) {
+		final String filePath = pathHelper.getBuildManifestDirectoryPath(product, buildId);
+		buildFileHelper.putFile(inputStream, filePath + "manifest.xml");
 	}
 }

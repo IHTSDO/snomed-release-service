@@ -10,10 +10,14 @@ import org.springframework.http.HttpStatus;
 
 public class ProductControllerTestIntegration extends AbstractControllerTest {
 
-	@Autowired
-	private S3Client s3Client;
-
 	private IntegrationTestHelper integrationTestHelper;
+
+	@Override
+	@Before
+	public void setup() throws Exception {
+		super.setup();
+		integrationTestHelper = new IntegrationTestHelper(mockMvc, "ProductControllerTest");
+	}
 
 	@Test
 	public void testPublishUpload() throws Exception {
@@ -27,12 +31,6 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.publishFile("/invalid-file-test-defn.xsd", getClass(), HttpStatus.BAD_REQUEST);
 	}
 
-	@Override
-	@Before
-	public void setup() throws Exception {
-		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc, "ProductControllerTest");
-		((TestS3Client) s3Client).freshBucketStore();
-	}
+
 
 }

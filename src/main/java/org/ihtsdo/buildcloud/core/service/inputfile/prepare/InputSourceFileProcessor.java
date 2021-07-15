@@ -64,7 +64,6 @@ public class InputSourceFileProcessor {
 	private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
 	private static final String TXT_EXTENSION = ".txt";
 
-	private final InputStream manifestStream;
 	private final FileHelper fileHelper;
 	private final BuildS3PathHelper buildS3PathHelper;
 	private final Product product;
@@ -84,9 +83,8 @@ public class InputSourceFileProcessor {
 	private final MultiValueMap<String, String> filesToCopyFromSource;
 	private final MultiValueMap<String, String> refsetWithAdditionalFields;
   
-	public InputSourceFileProcessor(InputStream manifestStream, FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
-						 Product product, boolean copyFilesDefinedInManifest) {
-		this.manifestStream = manifestStream;
+	public InputSourceFileProcessor(FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
+	                                Product product, boolean copyFilesDefinedInManifest) {
 		this.fileHelper = fileHelper;
 		this.buildS3PathHelper = buildS3PathHelper;
 		this.product = product;
@@ -103,17 +101,17 @@ public class InputSourceFileProcessor {
 		this.fileOrKeyWithMultipleSources = new LinkedMultiValueMap<>();
 	}
 
-	public SourceFileProcessingReport processFiles(List<String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws BusinessServiceException {
+	public SourceFileProcessingReport processFiles(InputStream manifestInputStream, List<String> sourceFileLists, String buildId, Integer fileProcessingFailureMaxRetry) throws BusinessServiceException {
 		try {
 			initLocalDirs();
-			copySourceFilesToLocal(sourceFileLists, fileProcessingFailureMaxRetry);
-			loadFileProcessConfigsFromManifest();
+			copySourceFilesToLocal(sourceFileLists,  buildId, fileProcessingFailureMaxRetry);
+			loadFileProcessConfigsFromManifest(manifestInputStream);
 			prepareSourceFiles();
 			if (this.copyFilesDefinedInManifest) {
 			   fileProcessingReport.addReportDetails(copyFilesToOutputDir());
 			}
 			verifyRefsetFiles();
-			uploadOutFilesToProductInputFiles();
+			uploadOutFilesToBuildInputFiles(buildId);
 		} catch (Exception e) {
 			StringBuilder msgBuilder = new StringBuilder();
 			msgBuilder.append("Error encountered when preparing input files.");
@@ -133,6 +131,10 @@ public class InputSourceFileProcessor {
 		return fileProcessingReport;
 	}
 
+
+	public SourceFileProcessingReport getFileProcessingReport() {
+		return fileProcessingReport;
+	}
 	private void verifyRefsetFiles() {
 		File[] filesPrepared = outDir.listFiles();
 		Collection<FileProcessingConfig> configs = refsetFileProcessingConfigs.values();
@@ -207,14 +209,14 @@ public class InputSourceFileProcessor {
 		outDir.mkdir();
 	}
 
-	private File copySourceFilesToLocal(List <String> sourceFileLists, Integer fileProcessingFailureMaxRetry) throws IOException{
+	private File copySourceFilesToLocal(List <String> sourceFileLists, String buildId, Integer fileProcessingFailureMaxRetry) throws IOException{
 		for (String sourceFilePath : sourceFileLists) {
 			if (sourceFilePath.trim().isEmpty()) {
 				// S3 creates zero byte file when copying files from other bucket.
 				continue;
 			}
 			 //Copy files from S3 to local for processing
-			String s3FilePath = buildS3PathHelper.getProductSourcesPath(product).append(sourceFilePath).toString();
+			String s3FilePath = buildS3PathHelper.getBuildSourcesPath(product, buildId).append(sourceFilePath).toString();
 			InputStream sourceFileStream = null;
 			try {
 				sourceFileStream = fileHelper.getFileStream(s3FilePath);
@@ -261,7 +263,9 @@ public class InputSourceFileProcessor {
 				String errorMsg = String.format("Failed to copy source file %s to local disk", sourceFilePath);
 				fileProcessingReport.add(ReportType.ERROR, errorMsg);
 			} finally {
-				sourceFileStream.close();
+				if (sourceFileStream != null) {
+					sourceFileStream.close();
+				}
 			}
 		}
 		for (String sourceName : sourceFilesMap.keySet()) {
@@ -270,7 +274,7 @@ public class InputSourceFileProcessor {
 		return localDir;
 	}
 
-	 void loadFileProcessConfigsFromManifest() {
+	 void loadFileProcessConfigsFromManifest(InputStream manifestStream) {
 		if (manifestStream == null) {
 			fileProcessingReport.add(ReportType.ERROR, "Failed to load manifest");
 		}
@@ -700,7 +704,7 @@ public class InputSourceFileProcessor {
 		return result;
 	}
 
-	private void uploadOutFilesToProductInputFiles() {
+	private void uploadOutFilesToBuildInputFiles(String buildId) {
 		File[] files = outDir.listFiles();
 		List<String> filesPrepared = new ArrayList<>();
 		logger.debug("Found {} prepared files in directory {} to upload to the input-files folder in S3", files.length, outDir.getAbsolutePath());
@@ -714,7 +718,7 @@ public class InputSourceFileProcessor {
 			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 			}
-			String filePath =   buildS3PathHelper.getProductInputFilesPath(product) + inputFileName;
+			String filePath =   buildS3PathHelper.getBuildInputFilesPath(product, buildId).append(inputFileName).toString();
 			fileProcessingReport.add(ReportType.INFO,inputFileName, null, null, "Uploaded to product input files directory");
 			try {
 				fileHelper.putFile(file,filePath);

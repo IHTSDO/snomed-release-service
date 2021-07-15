@@ -15,6 +15,8 @@ import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 
 public interface BuildDAO {
 
+	void copyManifestFileFromProduct(Build build);
+
 	void save(Build build) throws IOException;
 
 	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag);
@@ -48,8 +50,6 @@ public interface BuildDAO {
 	AsyncPipedStreamBean getLogFileOutputStream(Build build, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
-
-	void copyAll(Product productSource, Build build) throws IOException;
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
@@ -123,4 +123,9 @@ public interface BuildDAO {
 	InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath);
 
 	void updateVisibility(Build build, boolean visibility);
+
+	void putManifestFile(Product product, String buildId, InputStream inputStream);
 }
+
+
+

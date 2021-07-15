@@ -3,19 +3,14 @@ package org.ihtsdo.buildcloud.rest.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
-import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
-import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
@@ -43,12 +38,9 @@ public class ProductController {
 	private ProductService productService;
 
 	@Autowired
-	private ReleaseBuildManager releaseBuildManager;
-
-	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
 
-	public static final String[] PRODUCT_LINKS = {"manifest", "inputfiles","sourcefiles","builds","buildLogs"};
+	public static final String[] PRODUCT_LINKS = {"manifest", "builds"};
 
 	@GetMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
@@ -106,9 +98,7 @@ public class ProductController {
 
 		String name = json.get(ProductService.NAME);
 		Product product = productService.create(releaseCenterKey, name);
-
-		boolean currentResource = false;
-		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, currentResource, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
+		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, false, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 
 	@PatchMapping(value = "/{productKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -143,27 +133,13 @@ public class ProductController {
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
 	}
 
-	@PostMapping(value = "/{productKey}/release", consumes = MediaType.APPLICATION_JSON_VALUE)
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
-	@ApiOperation(value = "Create a release package", notes = "Automatically gather, process input files and make a new build")
-	public ResponseEntity createReleasePackage(
-			@PathVariable final String releaseCenterKey,
-			@PathVariable final String productKey,
-			@RequestBody final GatherInputRequestPojo buildConfig,
-			final HttpServletRequest request) throws BusinessServiceException {
-		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildConfig, SecurityUtil.getUsername());
-		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild,
-				buildConfig, SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
-		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
-	}
 
 	@PostMapping(value = "/{productKey}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
 	@ApiOperation( value = "Update visibility for product", notes = "Update an existing product with the visibility flag")
 	public ResponseEntity updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													   @RequestParam(required = true, defaultValue = "true") boolean visibility) throws BusinessServiceException {
+													   @RequestParam(required = true, defaultValue = "true") boolean visibility) {
 		productService.updateVisibility(releaseCenterKey, productKey, visibility);
 		return new ResponseEntity(HttpStatus.OK);
 	}

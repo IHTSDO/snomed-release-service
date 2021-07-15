@@ -25,9 +25,11 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void checkInputFilesNotExisting() throws Exception {
+		loadManifest("valid_manifest.xml");
+
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
-		loadManifest("valid_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -38,10 +40,12 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void checkInputFilesNotMatchingManifest() throws Exception {
-		addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140731.txt");
-        addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
-		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		loadManifest("valid_manifest.xml");
+
+		addEmptyFileToInputDirectory("der2_Refset_SimpleDelta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
+		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -52,10 +56,12 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void checkInputFilesMatchingManifest() throws Exception {
+		loadManifest("august_release_manifest.xml");
+
 		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140831.txt");
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
-		loadManifest("august_release_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		Assert.assertEquals(State.PASS, actualResult);
@@ -63,6 +69,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void checkInputFilesMatchingCoreRefSetManifest() throws Exception {
+		loadManifest("valid_core_manifest.xml");
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
@@ -72,8 +79,10 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
-		loadManifest("valid_core_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
+		System.out.println("Build report");
+		System.out.println(report.getMessage());
 		final State actualResult = report.getResult();
 		assertEquals(State.PASS, actualResult);
 	}
@@ -81,6 +90,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void testMissingStatedRelationship() throws Exception {
 		product.getBuildConfiguration().setJustPackage(false);
+		loadManifest("valid_core_manifest.xml");
+
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
@@ -88,7 +99,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("zres2_icRefset_OrderedTypeFull_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
-		loadManifest("valid_core_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -106,9 +117,11 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesNotMatchingBetaManifest() throws Exception {
 		product.getBuildConfiguration().setBetaRelease(true);
+		loadManifest("valid_manifest_betaRelease.xml");
+
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
-		loadManifest("valid_manifest_betaRelease.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -119,10 +132,12 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	@Test
 	public void checkInputFilesMatchedBetaManifest() throws Exception {
 		product.getBuildConfiguration().setBetaRelease(true);
+		loadManifest("valid_manifest_betaRelease.xml");
+
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140731.txt");
-		loadManifest("valid_manifest_betaRelease.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.PASS, actualResult);
@@ -132,8 +147,10 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	public void missingInputFilesForJustPackage() throws Exception {
 		product.getBuildConfiguration().setBetaRelease(true);
 		product.getBuildConfiguration().setJustPackage(true);
-		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140731.txt");
 		loadManifest("valid_manifest_betaRelease.xml");
+
+		addEmptyFileToInputDirectory("rel2_Refset_SimpleDelta_INT_20140731.txt");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -144,6 +161,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	
 	@Test
 	public void testMissingStatedRelationshipWhenClassifierIsActive() throws Exception {
+		loadManifest("valid_core_manifest.xml");
+
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
@@ -152,7 +171,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("rel2_Relationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
-		loadManifest("valid_core_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FATAL, actualResult);
@@ -162,6 +181,8 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 	@Test
 	public void testMissingRelationshipWhenClassifierIsActive() throws Exception {
+		loadManifest("valid_core_manifest.xml");
+
 		addEmptyFileToInputDirectory("rel2_cRefset_LanguageDelta-en_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Concept_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("rel2_Description_Delta-en_INT_20140731.txt");
@@ -170,7 +191,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		addEmptyFileToInputDirectory("rel2_StatedRelationship_Delta_INT_20140731.txt");
 		addEmptyFileToInputDirectory("Readme_US_EN_20140731.txt");
 		addEmptyFileToInputDirectory("doc_SnomedCTReleaseNotes_Current-en-US_INT_20140731.pdf");
-		loadManifest("valid_core_manifest.xml");
+
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
 		assertEquals(State.FAIL, actualResult);
@@ -187,9 +208,6 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	}
 	@After
 	public void tearDown() throws ResourceNotFoundException {
-		deleteFilesFromInputFileByPattern("*.txt");
-		deleteFilesFromInputFileByPattern("*.pdf");
-		deleteFilesFromInputFileByPattern("*.owl");
 		product = null;
 	}
 

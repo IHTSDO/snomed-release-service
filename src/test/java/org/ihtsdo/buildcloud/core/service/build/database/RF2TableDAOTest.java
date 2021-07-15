@@ -1,11 +1,7 @@
 package org.ihtsdo.buildcloud.core.service.build.database;
 
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.core.service.build.database.hsql.RF2TableDAOHsqlImpl;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
-import org.ihtsdo.buildcloud.core.service.build.transform.PesudoUUIDGenerator;
-import org.ihtsdo.buildcloud.core.service.build.transform.UUIDGenerator;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.After;
 import org.junit.Assert;
@@ -14,7 +10,6 @@ import org.junit.Test;
 
 public class RF2TableDAOTest {
 
-	private UUIDGenerator uuidGenerator;
 	private RF2TableExportDAO rf2TableDAO;
 	private String rf2FullFilename;
 	private String rf2DeltaFilename;
@@ -25,7 +20,6 @@ public class RF2TableDAOTest {
 		rf2FullFilename = "der2_Refset_SimpleFull_INT_20130630.txt";
 		rf2DeltaFilename = "rel2_Refset_SimpleDelta_INT_20130930.txt";
 		rf2CoreFullFilename = "sct2_Description_Full-en_INT_20140131.txt";
-		uuidGenerator = new PesudoUUIDGenerator();
 	}
 
 	@Test

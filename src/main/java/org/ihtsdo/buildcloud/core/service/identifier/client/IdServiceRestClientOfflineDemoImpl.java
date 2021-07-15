@@ -20,16 +20,18 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 
 	private static final String SNOMED_ID_PREFIX = "R-F";
 
-	private Long sctid;
+	private static Long sctid;
 
 	private static final String BOGUS_CHECK_DIGIT = "1";
+
 	private static final NotImplementedException NOT_IMPLEMENTED_EXCEPTION = new NotImplementedException("Not implemented in the offline demo id generator.");
 
-	private int snomedIdCounter;
-	private int ctv3IdChar;
+	private static int snomedIdCounter;
+	private static int ctv3IdChar;
 	
 	private String idStatus;
-	@Autowired	
+
+	@Autowired
 	private UUIDGenerator uuidGenerator;
 
 	public IdServiceRestClientOfflineDemoImpl() {
@@ -46,7 +48,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	@Override
 	public HashMap<UUID, Long> getOrCreateSctIds(List<UUID> uuids, Integer namespaceId, String partitionId, String comment) {
 		final HashMap<UUID, Long> map = new HashMap<>();
-		for (final UUID uuid : uuids) {
+		for (UUID uuid : uuids) {
 			map.put(uuid, createNewId(partitionId));
 		}
 		return map;
@@ -154,9 +156,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	@Override
 	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
 		Map<Long, UUID> result = new HashMap<>();
-	
 		for (Long sctId : sctIds) {
-			
 			result.put(sctId, UUID.fromString(uuidGenerator.uuid()));
 		}
 		return result;
