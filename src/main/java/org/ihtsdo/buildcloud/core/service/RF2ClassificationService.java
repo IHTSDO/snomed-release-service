@@ -32,7 +32,7 @@ public class RF2ClassificationService {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private ProductInputFileService productInputFileService;
+	private InputFileService inputFileService;
 
 	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
 
@@ -98,8 +98,8 @@ public class RF2ClassificationService {
 			String rename = (downloadFilename.contains(REFSET) && !downloadFilename.matches(OWL_REFSET_FILE_PATTERN)) ? downloadFilename.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.DER2) : downloadFilename.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2);
 			LOGGER.info("Rename {} to {} for archiving", downloadFilename, rename);
 			final File localFile = new File(deltaTempDir, rename);
-			try (InputStream inputFileStream = productInputFileService.getFileInputStream(build.getProduct().getReleaseCenter().getBusinessKey()
-					, build.getProduct().getBusinessKey(), downloadFilename);
+
+			try (InputStream inputFileStream = buildDAO.getInputFileStream(build, downloadFilename);
 			FileOutputStream out = new FileOutputStream(localFile)) {
 				if (inputFileStream != null) {
 					StreamUtils.copy(inputFileStream, out);

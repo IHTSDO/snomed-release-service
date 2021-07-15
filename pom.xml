@@ -20,7 +20,7 @@
 		<spring-security.version>3.2.5.RELEASE</spring-security.version>
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<liquibase.version>4.3.2</liquibase.version>
-		<otf-common.version>4.3.2</otf-common.version>
+		<otf-common.version>5.0.0-SNAPSHOT</otf-common.version>
 		<snomed-utilities.version>1.4.1</snomed-utilities.version>
 		<junit.version>4.13.1</junit.version>
 		<activemq.version>5.15.9</activemq.version>

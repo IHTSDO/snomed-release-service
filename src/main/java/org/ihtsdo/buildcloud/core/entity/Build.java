@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import static org.ihtsdo.buildcloud.core.entity.Build.Status.PENDING;
+
 /**
  * A Build is a snapshot of a Product and may be used to run the release process.
  *
@@ -41,6 +43,7 @@ public class Build {
 	private QATestConfig qaTestConfig;
 
 	public enum Status {
+		PENDING,
 		QUEUED,
 		BEFORE_TRIGGER,
 		FAILED_INPUT_PREPARE_REPORT_VALIDATION,
@@ -89,7 +92,7 @@ public class Build {
 	}
 
 	public Build(final String creationTime, final String productBusinessKey, final String statusString) {
-		this(creationTime, productBusinessKey, null, null,statusString);
+		this(creationTime, productBusinessKey, null, null, statusString);
 	}
 
 	public Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig, final String statusString) {
@@ -102,7 +105,7 @@ public class Build {
 	}
 
 	public Build(final Date creationTime, final Product product) {
-		this(EntityHelper.formatAsIsoDateTime(creationTime), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
+		this(EntityHelper.formatAsIsoDateTime(creationTime), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig(), PENDING.name());
 		this.product = product;
 	}
 

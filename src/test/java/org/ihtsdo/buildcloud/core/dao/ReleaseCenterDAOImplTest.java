@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.core.dao;
 
 import java.util.List;
 
-import org.ihtsdo.buildcloud.config.TestConfig;
+import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.junit.Assert;
 import org.junit.Test;

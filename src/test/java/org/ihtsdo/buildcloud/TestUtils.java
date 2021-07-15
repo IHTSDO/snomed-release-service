@@ -23,7 +23,7 @@ public class TestUtils {
 			throw new FileNotFoundException(thisDir.getName() + " is not a valid Directory.");
 		}
 
-		LOGGER.debug("Examinining directory: " + thisDir.getName());
+		LOGGER.debug("Examining directory: " + thisDir.getName());
 		File[] files = thisDir.listFiles();
 
 		if (files != null) {

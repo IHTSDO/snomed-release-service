@@ -20,16 +20,16 @@ import java.util.TreeMap;
 public class SourceFileProcessingReport {
 
     private String executionTime;
-    private final Map<String, List<String>> soureFiles;
+    private final Map<String, List<String>> sourceFiles;
     private final SortedMap<ReportType, List<FileProcessingReportDetail>> details;
 
     public SourceFileProcessingReport() {
         this.details = new TreeMap<>(new ReportTypeComparator());
         executionTime = new DateTime().toDateTime(DateTimeZone.UTC).toString();
-        this.soureFiles = new HashMap<>();
+        this.sourceFiles = new HashMap<>();
     }
 
-    public Map<ReportType,List<FileProcessingReportDetail>> getDetails() {
+    public Map<ReportType, List<FileProcessingReportDetail>> getDetails() {
         return details;
     }
 
@@ -68,8 +68,8 @@ public class SourceFileProcessingReport {
         this.executionTime = executionTime;
     }
     
-    public Map<String, List<String>> getSoureFiles() {
-		return soureFiles;
+    public Map<String, List<String>> getSourceFiles() {
+		return sourceFiles;
 	}
 	
 	public void addSoureFiles(String sourceName, List<String> fileList) {
@@ -77,10 +77,10 @@ public class SourceFileProcessingReport {
 		for (String filename : fileList) {
 			fileNameWithoutPath.add(FilenameUtils.getName(filename));
 		}
-		if (this.soureFiles.containsKey(sourceName)) {
-			this.soureFiles.get(sourceName).addAll(fileNameWithoutPath);
+		if (this.sourceFiles.containsKey(sourceName)) {
+			this.sourceFiles.get(sourceName).addAll(fileNameWithoutPath);
 		} else {
-			this.soureFiles.put(sourceName,fileNameWithoutPath);
+			this.sourceFiles.put(sourceName,fileNameWithoutPath);
 		}
 	}
 

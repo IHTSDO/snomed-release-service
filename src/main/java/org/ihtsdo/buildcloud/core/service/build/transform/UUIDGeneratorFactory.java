@@ -14,7 +14,7 @@ public class UUIDGeneratorFactory {
 
 	@Bean
 	public UUIDGenerator uuidGenerator(@Autowired final RandomUUIDGenerator randomUUIDGenerator,
-			@Autowired final PesudoUUIDGenerator pseudoGenerator, @Value("${srs.build.offlineMode}") final boolean isOffLine) {
+	                                   @Autowired final PseudoUUIDGenerator pseudoGenerator, @Value("${srs.build.offlineMode}") final boolean isOffLine) {
 		if (isOffLine) {
 		    LOGGER.info("Offline mode and pseudo UUID generator is used instead of random generator.");
 			return pseudoGenerator;

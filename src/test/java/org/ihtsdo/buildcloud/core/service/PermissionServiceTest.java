@@ -3,7 +3,7 @@ package org.ihtsdo.buildcloud.core.service;
 import com.google.common.collect.Sets;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.config.TestConfig;
+import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.junit.Assert;

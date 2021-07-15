@@ -48,13 +48,16 @@ public class SRSWorkerService {
 
 		final Build build = buildRequest.getBuild();
 		final Product product = build.getProduct();
+		if (Build.Status.QUEUED != build.getStatus()) {
+			throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
+		}
 
 		LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
 		// build status response message is handled by buildDAO
 		buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
 		SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
 		releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
-				product.getBusinessKey(), build, buildRequest.getGatherInputRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+				product.getBusinessKey(), build, buildRequest.getBuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
 
 		final Instant finish = Instant.now();
 		LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getName());

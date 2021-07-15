@@ -1,9 +1,8 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import org.ihtsdo.buildcloud.config.TestConfig;
+import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

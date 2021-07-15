@@ -45,8 +45,8 @@ public class LegacyIdTransformationService {
 	public void transformLegacyIds(final Map<String,Collection<Long>> moduleIdAndNewConceptsMap, final Build build, final IdServiceRestClient idRestClient) throws TransformationException {
 		
 		List<Long> conceptIds = new ArrayList<>();
-		for (String moduelId : moduleIdAndNewConceptsMap.keySet()) {
-			conceptIds.addAll(moduleIdAndNewConceptsMap.get(moduelId));
+		for (String moduleId : moduleIdAndNewConceptsMap.keySet()) {
+			conceptIds.addAll(moduleIdAndNewConceptsMap.get(moduleId));
 		}
 		LOGGER.info("Total new concepts:" + conceptIds.size());
 		

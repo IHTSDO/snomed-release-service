@@ -36,21 +36,22 @@ public class ReconcileRefsetMemberIdsTestIntegration extends AbstractControllerT
 		Thread.sleep(1000);
 
 		//delete previous input files
-		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setEffectiveTime("20140731");
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
-		loadDeltaFilesToInputDirectory("20140731");
 		executeAndVerifyResults("20140731");
 
 	}
 
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
+		integrationTestHelper.uploadManifest("simple_refset_manifest_" + releaseDate + ".xml", getClass());
 		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		loadDeltaFilesToInputDirectory(releaseDate);
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations
@@ -62,7 +63,6 @@ public class ReconcileRefsetMemberIdsTestIntegration extends AbstractControllerT
 	}
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
-		integrationTestHelper.uploadManifest("simple_refset_manifest_" + releaseDate + ".xml", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + releaseDate + ".txt", getClass());
 	}
 

@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.integration.zipinput;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.zip.ZipFile;
@@ -15,7 +16,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 	@Before
 	public void setup() throws Exception {
 		super.setup();
-		integrationTestHelper = new IntegrationTestHelper(mockMvc,"zip_input_test");
+		integrationTestHelper = new IntegrationTestHelper(mockMvc, getClass().getSimpleName());
 	}
 
 	@Test
@@ -23,13 +24,14 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.createTestProductStructure();
 
 		// Perform first time release
-		integrationTestHelper.uploadDeltaInputFile("Archive.zip", getClass());
 		integrationTestHelper.uploadManifest("simple_refset_manifest_20140131.xml", getClass());
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
 		String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.triggerBuild(buildURL1);
+		integrationTestHelper.uploadDeltaInputFile("Archive.zip", getClass());
+		integrationTestHelper.scheduleBuild(buildURL1);
+		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
 
 		// Assert first release output expectations

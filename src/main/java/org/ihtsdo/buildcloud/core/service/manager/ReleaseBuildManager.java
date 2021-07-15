@@ -7,7 +7,7 @@ import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
@@ -39,7 +39,7 @@ public class ReleaseBuildManager {
 	private BuildDAO buildDAO;
 
 	@Autowired
-	private ProductInputFileService productInputFileService;
+	private InputFileService inputFileService;
 
 	@Autowired
 	private BuildService buildService;
@@ -67,44 +67,32 @@ public class ReleaseBuildManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
-	public Build createBuild(String releaseCenter, String productKey, GatherInputRequestPojo gatherInputRequestPojo, String currentUser) throws BusinessServiceException {
-		// check if there is an existing build in progress
-		throwExceptionIfBuildIsInProgressForProduct(productKey, releaseCenter);
-
+	public Build createBuild(String releaseCenter, String productKey, BuildRequestPojo buildRequestPojo, String currentUser) throws BusinessServiceException {
 		Product product = productService.find(releaseCenter, productKey, false);
 		if (product == null) {
 			LOGGER.error("Could not find product {} in release center {}", productKey, releaseCenter);
 			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenter);
 		}
 
-		validateBuildRequest(gatherInputRequestPojo, product);
+		validateBuildRequest(buildRequestPojo, product);
 
 		validateProductConfiguration(product);
 
 		findManifestFileOrThrow(releaseCenter, productKey);
 
 		//Create new build
-		Integer maxFailureExport = gatherInputRequestPojo.getMaxFailuresExport() != null ? gatherInputRequestPojo.getMaxFailuresExport() : 100;
-		QATestConfig.CharacteristicType mrcmValidationForm = gatherInputRequestPojo.getMrcmValidationForm() != null ? gatherInputRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
-		String branchPath = gatherInputRequestPojo.getBranchPath();
-		String exportType = gatherInputRequestPojo.getExportCategory() != null ? gatherInputRequestPojo.getExportCategory().name() : null;
-		String buildName = gatherInputRequestPojo.getBuildName();
+		Integer maxFailureExport = buildRequestPojo.getMaxFailuresExport() != null ? buildRequestPojo.getMaxFailuresExport() : 100;
+		QATestConfig.CharacteristicType mrcmValidationForm = buildRequestPojo.getMrcmValidationForm() != null ? buildRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
+		String branchPath = buildRequestPojo.getBranchPath();
+		String exportType = buildRequestPojo.getExportCategory() != null ? buildRequestPojo.getExportCategory().name() : null;
+		String buildName = buildRequestPojo.getBuildName();
 		Date effectiveTime;
 		try {
-			effectiveTime = RF2Constants.DATE_FORMAT.parse(gatherInputRequestPojo.getEffectiveDate());
+			effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequestPojo.getEffectiveDate());
 		} catch (ParseException e) {
 			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
 		}
-		Build build = buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
-		// add build status tracker
-		if (build != null) {
-			BuildStatusTracker tracker = new BuildStatusTracker();
-			tracker.setProductKey(build.getProduct().getBusinessKey());
-			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
-			tracker.setBuildId(build.getId());
-			statusTrackerDao.save(tracker);
-		}
-		return build;
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
 	}
 
 	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
@@ -128,18 +116,18 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	private void validateBuildRequest(GatherInputRequestPojo gatherInputRequestPojo, Product product) throws BusinessServiceException {
-		if (StringUtils.isEmpty(gatherInputRequestPojo.getEffectiveDate())) {
+	private void validateBuildRequest(BuildRequestPojo buildRequestPojo, Product product) throws BusinessServiceException {
+		if (StringUtils.isEmpty(buildRequestPojo.getEffectiveDate())) {
 			throw new BadRequestException("Effective Date must not be empty.");
 		}
-		if (gatherInputRequestPojo.isLoadTermServerData()) {
-			if (StringUtils.isEmpty(gatherInputRequestPojo.getBranchPath())) {
+		if (buildRequestPojo.isLoadTermServerData()) {
+			if (StringUtils.isEmpty(buildRequestPojo.getBranchPath())) {
 				throw new BadRequestException("Branch path must not be empty.");
 			}
 			try {
-				Branch branch = termServerService.getBranch(gatherInputRequestPojo.getBranchPath());
+				Branch branch = termServerService.getBranch(buildRequestPojo.getBranchPath());
 				if (branch == null) {
-					throw new BadRequestException(String.format("Branch path %s does not exist.", gatherInputRequestPojo.getBranchPath()));
+					throw new BadRequestException(String.format("Branch path %s does not exist.", buildRequestPojo.getBranchPath()));
 				}
 				List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 				CodeSystem codeSystem = codeSystems.stream()
@@ -150,7 +138,7 @@ public class ReleaseBuildManager {
 					throw new BadRequestException(String.format("The branch path must be resided within the same code system branch %s", codeSystem.getBranchPath()));
 				}
 			} catch (RestClientException e) {
-				throw new BusinessServiceException(String.format("Error occurred when getting branch %s", gatherInputRequestPojo.getBranchPath()), e);
+				throw new BusinessServiceException(String.format("Error occurred when getting branch %s", buildRequestPojo.getBranchPath()), e);
 			}
 		}
 	}
@@ -206,7 +194,7 @@ public class ReleaseBuildManager {
 	}
 
 	private void findManifestFileOrThrow(String releaseCenter, String productKey) {
-		String manifestFileName = productInputFileService.getManifestFileName(releaseCenter, productKey);
+		String manifestFileName = inputFileService.getManifestFileName(releaseCenter, productKey);
 		if (StringUtils.isEmpty(manifestFileName)) {
 			throw new ResourceNotFoundException(String.format("No manifest file found for product %s", productKey));
 		}

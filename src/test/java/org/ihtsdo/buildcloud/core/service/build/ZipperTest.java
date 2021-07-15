@@ -2,12 +2,12 @@ package org.ihtsdo.buildcloud.core.service.build;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
-import org.ihtsdo.buildcloud.config.TestConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -16,13 +16,10 @@ import org.ihtsdo.otf.utils.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.xml.bind.JAXBException;
@@ -36,10 +33,8 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringRunner.class)
-@ContextConfiguration(classes = TestConfig.class)
 @Transactional
-public class ZipperTest {
+public class ZipperTest  extends AbstractTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ZipperTest.class);
 
@@ -61,7 +56,8 @@ public class ZipperTest {
 	protected Build build;
 	
 	@Before
-	public void setup() throws NoSuchAlgorithmException, IOException, DecoderException, InterruptedException {
+	public void setup() throws Exception {
+		super.setup();
 		Product product = productDAO.find(1L);
 		Thread.sleep(1000);// Make build unique
 		build = new Build(new Date(), product);

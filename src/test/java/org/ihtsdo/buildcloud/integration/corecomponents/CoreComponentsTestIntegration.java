@@ -2,25 +2,26 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import java.util.zip.ZipFile;
 
-import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
-import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.GatherInputRequestPojo;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import static org.junit.Assert.assertNotNull;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	private static final String INTERNATIONAL_RELEASE = "SnomedCT_Release_INT_";
 
 	private IntegrationTestHelper integrationTestHelper;
+
+	@Autowired
+	private ReleaseBuildManager buildManager;
+
 
 	@Override
 	@Before
@@ -29,32 +30,33 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
 	}
 
+
+	@Override
+	@After
+	public void tearDown() {
+		super.tearDown();
+	}
+
 	@Test
 	public void testCoreMultipleReleases() throws Exception {
 		firstTimeRelease();
 
 		Thread.sleep(1000);
 
-		//delete previous input files
-		integrationTestHelper.deletePreviousTxtInputFiles();
 		integrationTestHelper.setFirstTimeRelease(false);
 		
 		final String effectiveTime2 = "20140731";
 		integrationTestHelper.setEffectiveTime(effectiveTime2);
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
-		integrationTestHelper.setReadmeEndDate("2015");
+		integrationTestHelper.setReadmeEndDate("2014");
 		//get previous published files
 		final String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
 		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		
 		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt|rel2_sRefset_OWLOntologyDelta_INT_20140731.txt|rel2_RelationshipConcreteValues_Delta_INT_20140731.txt");
-		loadDeltaFilesToInputDirectory(effectiveTime2, false);
-		//Change it for beta release testing
+		loadManifest(effectiveTime2, false);
 		integrationTestHelper.setBetaRelease(false);
-		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
-		integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_OWLOntologyDelta_INT_20140731.txt", getClass());
-		integrationTestHelper.uploadDeltaInputFile("rel2_RelationshipConcreteValues_Delta_INT_20140731.txt", getClass());
 
 		final String expectedZipEntries2 =
 			INTERNATIONAL_RELEASE + effectiveTime2 + "/\n" +
@@ -117,9 +119,9 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	private void firstTimeRelease() throws Exception {
 		integrationTestHelper.createTestProductStructure();
+
 		//config assertion tests
 		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20140731");
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
@@ -128,7 +130,9 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime(effectiveTime1);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2014");
-		loadDeltaFilesToInputDirectory(effectiveTime1, false);
+		// add manifest
+		loadManifest(effectiveTime1, false);
+
 		final String expectedZipEntries1 =
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime1 + "/Readme_" + effectiveTime1 + ".txt\n" +
@@ -173,22 +177,38 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	}
 
 	private void executeAndVerifyResults(final String releaseDate, final String expectedZipEntries, final boolean isBeta) throws Exception {
-		final String buildURL1 = integrationTestHelper.createBuild();
-		integrationTestHelper.printBuildConfig(buildURL1);
-		integrationTestHelper.triggerBuild(buildURL1);
+		// create a build
+		String buildUrl = integrationTestHelper.createBuild();
+
+		// load input files
+		loadDeltaFilesToInputDirectory(releaseDate);
+
+		BuildRequestPojo buildRequestPojo = new BuildRequestPojo();
+		buildRequestPojo.setLoadTermServerData(false);
+		buildRequestPojo.setLoadExternalRefsetData(false);
+		buildRequestPojo.setEffectiveDate(releaseDate);
+
+		integrationTestHelper.scheduleBuild(buildRequestPojo, buildUrl);
+
+		// wait until the build is completed
+		integrationTestHelper.waitUntilCompleted(buildUrl);
 		// Assert first release output expectations
-		final String expectedZipFilename = "SnomedCT_Release_INT_"+releaseDate+".zip";
-		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL1, expectedZipFilename, expectedZipEntries, getClass());
+		final String expectedZipFilename = "SnomedCT_Release_INT_" + releaseDate + ".zip";
+		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildUrl, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass(), isBeta);
-		integrationTestHelper.publishOutput(buildURL1);
+		integrationTestHelper.publishOutput(buildUrl);
 	}
 
-	private void loadDeltaFilesToInputDirectory(final String releaseDate, boolean isBeta) throws Exception {
+
+	private void loadManifest(final String releaseDate, boolean isBeta) throws Exception {
 		if (isBeta) {
 			integrationTestHelper.uploadManifest("core_manifest_" + "beta_" + releaseDate+".xml", getClass());
 		} else {
 			integrationTestHelper.uploadManifest("core_manifest_" + releaseDate+".xml", getClass());
 		}
+	}
+
+	private void loadDeltaFilesToInputDirectory(final String releaseDate) throws Exception {
 		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + releaseDate + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-en_INT_"+releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_TextDefinition_Delta-en_INT_"+releaseDate +".txt", getClass());
@@ -196,6 +216,13 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_SimpleMapDelta_INT_" + releaseDate +".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + releaseDate +".txt", getClass());
+
+		// The following files are for the second release build testing
+		if ("20140731".equals(releaseDate)) {
+			integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_20140731.txt", getClass());
+			integrationTestHelper.uploadDeltaInputFile("rel2_sRefset_OWLOntologyDelta_INT_20140731.txt", getClass());
+			integrationTestHelper.uploadDeltaInputFile("rel2_RelationshipConcreteValues_Delta_INT_20140731.txt", getClass());
+		}
 	}
 	
 }

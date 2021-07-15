@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.transform;
 
-import org.ihtsdo.buildcloud.core.service.build.transform.ReplaceValueLineTransformation;
 import org.junit.Assert;
 import org.junit.Test;
 
