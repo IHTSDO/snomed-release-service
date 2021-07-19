@@ -109,6 +109,7 @@ public class BuildDAOImplTest {
 				"\"previousPublishedPackage\":null," +
 				"\"newRF2InputFiles\":null," +
 				"\"justPackage\":false," +
+				"\"packageWithoutDeltaFiles\":false," +
 				"\"workbenchDataFixesRequired\":false," +
 				"\"inputFilesFixesRequired\":false," +
 				"\"createLegacyIds\":false," +
