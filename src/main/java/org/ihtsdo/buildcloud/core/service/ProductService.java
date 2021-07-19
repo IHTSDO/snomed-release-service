@@ -44,6 +44,7 @@ public interface ProductService extends EntityService<Product> {
 	String LICENSE_STATEMENT = "licenseStatement";
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
+	String PACKAGE_WITHOUT_DELTA_FILES = "packageWithoutDeltaFiles";
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
 	String ENABLE_GOOGLE_SHEET_DROOL_REPORT = "enableGoogleSheetDroolReport";
 	String DEFAULT_BRANCH_PATH = "defaultBranchPath";

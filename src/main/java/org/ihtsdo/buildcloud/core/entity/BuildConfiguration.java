@@ -45,12 +45,17 @@ public class BuildConfiguration {
 	
 	@Column(name="previous_published_release")
 	private String previousPublishedPackage;
+
 	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
 	
 	@Type(type="yes_no")
 	@Column(name="just_package")
 	private boolean justPackage = false;
+
+	@Type(type="yes_no")
+	@Column(name="package_without_delta_files")
+	private boolean packageWithoutDeltaFiles = false;
 	
 	@Type(type="yes_no")
 	@Column(name="require_wb_data_fix")
@@ -244,6 +249,14 @@ public class BuildConfiguration {
 
 	public void setWorkbenchDataFixesRequired(final boolean workbenchDataFixesRequired) {
 		this.workbenchDataFixesRequired = workbenchDataFixesRequired;
+	}
+
+	public void setPackageWithoutDeltaFiles(boolean packageWithoutDeltaFiles) {
+		this.packageWithoutDeltaFiles = packageWithoutDeltaFiles;
+	}
+
+	public boolean isPackageWithoutDeltaFiles() {
+		return packageWithoutDeltaFiles;
 	}
 
 	public boolean isJustPackage() {

@@ -304,6 +304,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
 			configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
 		}
+		if (newPropertyValues.containsKey(PACKAGE_WITHOUT_DELTA_FILES)) {
+			configuration.setPackageWithoutDeltaFiles(TRUE.equals(newPropertyValues.get(PACKAGE_WITHOUT_DELTA_FILES)));
+		}
 		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH) && configuration.getDefaultBranchPath() != newPropertyValues.get(DEFAULT_BRANCH_PATH).toUpperCase()) {
 			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
 			if (!StringUtils.isEmpty(newDefaultBranchPath)) {

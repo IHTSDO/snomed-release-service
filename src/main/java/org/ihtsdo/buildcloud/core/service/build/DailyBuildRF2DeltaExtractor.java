@@ -40,7 +40,7 @@ public class DailyBuildRF2DeltaExtractor {
 		try {
 			if (build.getConfiguration().isDailyBuild()) {
 				Zipper zipper = new Zipper(build, buildDAO);
-				deltaZip = zipper.createZipFile(true);
+				deltaZip = zipper.createZipFile(true, false);
 				ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();
 				// for edition release the international content is not required for the daily build browser import
 				if (extensionConfig != null && extensionConfig.isReleaseAsAnEdition()) {
