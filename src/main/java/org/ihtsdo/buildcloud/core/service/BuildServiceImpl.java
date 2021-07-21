@@ -1021,6 +1021,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
 			request.setMrcmValidationForm(mrcmValidationForm);
+			request.setPackageWithoutDeltaFiles(buildConfiguration.isPackageWithoutDeltaFiles());
 			request.setResponseQueue(queue);
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
