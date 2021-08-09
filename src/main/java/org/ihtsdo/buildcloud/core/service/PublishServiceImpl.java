@@ -115,8 +115,12 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	@Async("securityContextAsyncTaskExecutor")
-	public void publishBuildAsync(Build build, boolean publishComponentIds, String env) throws BusinessServiceException {
-		this.publishBuild(build, publishComponentIds, env);
+	public void publishBuildAsync(Build build, boolean publishComponentIds, String env) {
+		try {
+			this.publishBuild(build, publishComponentIds, env);
+		} catch (BusinessServiceException e) {
+			LOGGER.error("Failed to publish the build {}. Error message: ", build.getId(), e.getMessage());
+		}
 	}
 
 	@Override
@@ -168,11 +172,17 @@ public class PublishServiceImpl implements PublishService {
 				synchronized (fileLock) {
 					//publish component ids
 					if (publishComponentIds) {
-						LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
-						String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
-						boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
-						publishComponentIds(buildFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
-						LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+						try {
+							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+							String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
+							boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
+							publishComponentIds(buildFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
+							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+						} catch (BusinessServiceException e) {
+							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
+							throw e;
+						}
+
 					}
 					//Does a published file already exist for this product?
 					if (exists(releaseCenter, releaseFileName)) {
@@ -180,14 +190,18 @@ public class PublishServiceImpl implements PublishService {
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
 						throw new EntityAlreadyExistsException(errorMessage);
 					}
+					try {
+						String outputFileFullPath = buildS3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+						String publishedFilePath = getPublishFilePath(releaseCenter, releaseFileName);
+						buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
+						LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
+						publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
 
-					String outputFileFullPath = buildS3PathHelper.getBuildOutputFilePath(build, releaseFileName);
-					String publishedFilePath = getPublishFilePath(releaseCenter, releaseFileName);
-					buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-					LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-					publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
-
-					copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+						copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+					} catch (BusinessServiceException e) {
+						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
+						throw e;
+					}
 				}
 				// copy MD5 file if available
 				if (md5FileName != null) {
@@ -536,7 +550,7 @@ public class PublishServiceImpl implements PublishService {
 		return getPublishDirPath(releaseCenter) + releaseFileName;
 	}
 
-	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) {
+	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) throws BusinessServiceException {
 		try {
 			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
 			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
@@ -544,7 +558,8 @@ public class PublishServiceImpl implements PublishService {
 			outputPathBuilder.append(releaseFileName);
 			buildFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
 		} catch (Exception e) {
-			LOGGER.error("Failed to copy release file to versioned contents repository because of error: {}", e);
+			LOGGER.error("Failed to copy release file {} to versioned contents repository because of error: {}", releaseFileName, e.getMessage());
+			throw new BusinessServiceException(String.format("Failed to copy release file %s to versioned contents repository", releaseFileName), e);
 		}
 	}
 
