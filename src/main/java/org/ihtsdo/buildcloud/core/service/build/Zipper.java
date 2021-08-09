@@ -51,9 +51,9 @@ public class Zipper {
 		this.buildDAO = buildDAO;
 	}
 
-	public File createZipFile(boolean deltaOnly, boolean excludeDelta) throws JAXBException, IOException, ResourceNotFoundException {
+	public File createZipFile(boolean deltaOnly) throws JAXBException, IOException, ResourceNotFoundException {
 		loadManifest();
-		File zipFile = createArchive(deltaOnly, excludeDelta);
+		File zipFile = createArchive(deltaOnly);
 		return zipFile;
 	}
 
@@ -68,7 +68,7 @@ public class Zipper {
 	isInitialised = true;
 	}
 
-	private File createArchive(boolean deltaOnly, boolean excludeDelta) throws IOException {
+	private File createArchive(boolean deltaOnly) throws IOException {
 
 		assert (isInitialised);  //Would be a coding error if this tripped
 
@@ -85,13 +85,13 @@ public class Zipper {
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
 		ZipOutputStream zos = new ZipOutputStream(bos);
-		walkFolders(rootFolder, zos, "", deltaOnly, excludeDelta);
+		walkFolders(rootFolder, zos, "", deltaOnly);
 		zos.close();
 		LOGGER.debug("Finished: Zipping file structure {}", rootFolder.getName());
 		return zipFile;
 	}
 
-	private void walkFolders(final FolderType f, final ZipOutputStream zos, final String parentPath, boolean deltaOnly, boolean excludeDelta) throws IOException {
+	private void walkFolders(final FolderType f, final ZipOutputStream zos, final String parentPath, boolean deltaOnly) throws IOException {
 		//Create an entry for this folder
 		String thisFolder = parentPath + f.getName() + PATH_CHAR;
 		zos.putNextEntry(new ZipEntry(thisFolder));
@@ -100,9 +100,6 @@ public class Zipper {
 		for (FileType file : f.getFile()) {
 			String filename = file.getName();
 			if (deltaOnly && !filename.toLowerCase().contains(DELTA)) {
-				continue;
-			}
-			if (excludeDelta && filename.toLowerCase().contains(DELTA)) {
 				continue;
 			}
 			if (!Normalizer.isNormalized(filename,Form.NFC)) {
@@ -130,7 +127,7 @@ public class Zipper {
 			if (deltaOnly && (childFolder.getName().equalsIgnoreCase(SNAPSHOT) || childFolder.getName().equalsIgnoreCase(FULL))) {
 				continue;
 			}
-			walkFolders(childFolder, zos, thisFolder, deltaOnly, excludeDelta);
+			walkFolders(childFolder, zos, thisFolder, deltaOnly);
 		}
 	}
 

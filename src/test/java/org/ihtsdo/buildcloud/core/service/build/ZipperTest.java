@@ -83,7 +83,7 @@ public class ZipperTest {
 	public void testZipper() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
 
 		Zipper zipper = new Zipper(build, buildDAO);
-		File zipFile = zipper.createZipFile(false, false);
+		File zipFile = zipper.createZipFile(false);
 
 		Assert.assertNotNull(zipFile);
 		Assert.assertTrue(zipFile.exists());
@@ -112,7 +112,7 @@ public class ZipperTest {
 	public void testZipperDeltaOnly() throws JAXBException, IOException, NoSuchAlgorithmException, DecoderException, ResourceNotFoundException {
 
 		Zipper zipper = new Zipper(build, buildDAO);
-		File zipFile = zipper.createZipFile(true, false);
+		File zipFile = zipper.createZipFile(true);
 
 		assertNotNull(zipFile);
 		assertTrue(zipFile.exists());
