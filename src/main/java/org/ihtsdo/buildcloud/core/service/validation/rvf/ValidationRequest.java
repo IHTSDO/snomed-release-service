@@ -14,9 +14,7 @@ public class ValidationRequest {
 	
 	private String effectiveTime;
 	
-	private boolean releaseAsAnEdition;
-
-	private boolean packageWithoutDeltaFiles;
+	private boolean releaseAsAnEdition; 
 	
 	private String includedModuleId;
 
@@ -104,13 +102,5 @@ public class ValidationRequest {
 
 	public final void setResponseQueue(final String responseQueue) {
 		this.responseQueue = responseQueue;
-	}
-
-	public void setPackageWithoutDeltaFiles(boolean packageWithoutDeltaFiles) {
-		this.packageWithoutDeltaFiles = packageWithoutDeltaFiles;
-	}
-
-	public boolean isPackageWithoutDeltaFiles() {
-		return packageWithoutDeltaFiles;
 	}
 }
