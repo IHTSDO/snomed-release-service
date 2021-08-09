@@ -18,7 +18,7 @@ public interface PublishService {
 
 	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
 
-	void publishBuildAsync(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
+	void publishBuildAsync(Build build, boolean publishComponentIds, String env);
 
 	ProcessingStatus getPublishingBuildStatus(Build build);
 
