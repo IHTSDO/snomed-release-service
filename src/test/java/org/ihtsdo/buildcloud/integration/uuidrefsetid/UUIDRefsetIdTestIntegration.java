@@ -30,7 +30,7 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setWorkbenchDataFixesRequired(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
 
-		final String buildURL1 = integrationTestHelper.createBuild();
+		final String buildURL1 = integrationTestHelper.createBuild(effectiveTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
 
@@ -72,7 +72,7 @@ public class UUIDRefsetIdTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(false);
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
-		final String buildURL2 = integrationTestHelper.createBuild();
+		final String buildURL2 = integrationTestHelper.createBuild(effectiveDateTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
 
 		integrationTestHelper.scheduleBuild(buildURL2);

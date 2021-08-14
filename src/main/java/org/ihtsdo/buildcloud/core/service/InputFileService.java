@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
@@ -31,9 +32,7 @@ public interface InputFileService {
 
 	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, String buildId, boolean copyFilesInManifest) throws BusinessServiceException;
 
-	InputGatherReport gatherSourceFiles(String centerKey, String productKey, String buildId, BuildRequestPojo requestConfig, SecurityContext securityContext) throws BusinessServiceException, IOException;
-
-	void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String buildId, String effectiveDate, InputGatherReport inputGatherReport) throws IOException;
+	InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException, IOException;
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 

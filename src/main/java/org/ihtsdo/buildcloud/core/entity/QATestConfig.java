@@ -157,19 +157,24 @@ public class QATestConfig {
 
 	@Override
 	public String toString() {
-		return "QATestConfig [id=" + id + ", assertionGroupNames="
-				+ assertionGroupNames + ", droolsRulesGroupNames="
-				+ droolsRulesGroupNames + ", previousInternationalRelease="
-				+ previousInternationalRelease + ", previousExtensionRelease="
-				+ previousExtensionRelease + ", extensionDependencyRelease="
-				+ extensionDependencyRelease + ", storageLocation="
-				+ storageLocation + ", enableDrools="
-				+ enableDrools + ", jiraIssueCreationFlag="
-				+ jiraIssueCreationFlag + ", product_name="
-				+ productName + ", reporting_stage="
-				+ reportingStage + ", enableMRCMValidation="
-				+ enableMRCMValidation + ", enableGoogleSheetDroolReport="
-				+ enableGoogleSheetDroolReport + "]";
+		return "QATestConfig{" +
+				"id=" + id +
+				", product=" + product +
+				", assertionGroupNames='" + assertionGroupNames + '\'' +
+				", droolsRulesGroupNames='" + droolsRulesGroupNames + '\'' +
+				", previousInternationalRelease='" + previousInternationalRelease + '\'' +
+				", previousExtensionRelease='" + previousExtensionRelease + '\'' +
+				", extensionDependencyRelease='" + extensionDependencyRelease + '\'' +
+				", storageLocation='" + storageLocation + '\'' +
+				", enableDrools=" + enableDrools +
+				", enableGoogleSheetDroolReport=" + enableGoogleSheetDroolReport +
+				", jiraIssueCreationFlag=" + jiraIssueCreationFlag +
+				", productName='" + productName + '\'' +
+				", reportingStage='" + reportingStage + '\'' +
+				", enableMRCMValidation=" + enableMRCMValidation +
+				", maxFailureExport=" + maxFailureExport +
+				", mrcmValidationForm=" + mrcmValidationForm +
+				'}';
 	}
 
 	public String getStorageLocation() {

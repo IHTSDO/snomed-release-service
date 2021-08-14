@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
@@ -49,19 +50,20 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
 
 	@Override
-	public void runReleaseBuild(String releaseCenter, String productKey, Build build, BuildRequestPojo buildRequestPojo, Authentication authentication) {
+	public void runReleaseBuild(Build build, Authentication authentication) {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		Product product = build.getProduct();
 
 		try {
-			MDC.put(TRACKER_ID, releaseCenter + "|" + product.getBusinessKey() + "|" + build.getId());
-			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", releaseCenter, product.getBusinessKey(), build.getId());
+			MDC.put(TRACKER_ID, product.getReleaseCenter().getBusinessKey() + "|" + product.getBusinessKey() + "|" + build.getId());
+			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId());
 
 			//Gather all files in term server and externally maintain buckets if specified to source directories
 			SecurityContext securityContext = new SecurityContextImpl();
 			securityContext.setAuthentication(authentication);
-			if (!buildRequestPojo.isSkipGatheringSourceFiles()) {
-				InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(releaseCenter, product.getBusinessKey(), build.getId(), buildRequestPojo, securityContext);
+			BuildConfiguration buildConfiguration = build.getConfiguration();
+			if (!buildConfiguration.isSkipGatheringSourceFiles()) {
+				InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, securityContext);
 				if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 					LOGGER.error("Error occurred when gathering source files: ");
 					for (String source : inputGatherReport.getDetails().keySet()) {
@@ -75,9 +77,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 				}
 
 				// After gathering all sources, start to transform and put them into input directories
-				if (buildRequestPojo.isLoadTermServerData() || buildRequestPojo.isLoadExternalRefsetData()) {
-					LOGGER.debug("GatherInputRequest {}", buildRequestPojo);
-					SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(releaseCenter, product.getBusinessKey(), build.getId(), true);
+				if (buildConfiguration.isLoadTermServerData() || buildConfiguration.isLoadExternalRefsetData()) {
+					SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
 					if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
 						LOGGER.error("Error occurred when processing input files");
 						List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
@@ -88,11 +89,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 				}
 			}
 
-			Integer maxFailureExport = buildRequestPojo.getMaxFailuresExport() != null ? buildRequestPojo.getMaxFailuresExport() : 100;
-			QATestConfig.CharacteristicType mrcmValidationForm = buildRequestPojo.getMrcmValidationForm() != null ? buildRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
 			// trigger build
 			LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProduct().getBusinessKey());
-			buildService.triggerBuild(releaseCenter, product.getBusinessKey(), build.getId(), maxFailureExport, mrcmValidationForm, false);
+			buildService.triggerBuild(build, false);
 		} catch (Exception e) {
 			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProduct().getBusinessKey());
 			LOGGER.error(msg, e);

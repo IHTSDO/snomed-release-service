@@ -80,39 +80,26 @@ public class ReleaseBuildManager {
 
 		findManifestFileOrThrow(releaseCenter, productKey);
 
-		//Create new build
-		Integer maxFailureExport = buildRequestPojo.getMaxFailuresExport() != null ? buildRequestPojo.getMaxFailuresExport() : 100;
-		QATestConfig.CharacteristicType mrcmValidationForm = buildRequestPojo.getMrcmValidationForm() != null ? buildRequestPojo.getMrcmValidationForm() : QATestConfig.CharacteristicType.stated;
-		String branchPath = buildRequestPojo.getBranchPath();
-		String exportType = buildRequestPojo.getExportCategory() != null ? buildRequestPojo.getExportCategory().name() : null;
-		String buildName = buildRequestPojo.getBuildName();
-		Date effectiveTime;
-		try {
-			effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequestPojo.getEffectiveDate());
-		} catch (ParseException e) {
-			throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
-		}
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildName, currentUser, branchPath, exportType, maxFailureExport, mrcmValidationForm, effectiveTime);
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildRequestPojo, currentUser);
 	}
 
-	public void queueBuild(final CreateReleasePackageBuildRequest createReleasePackageBuildRequest) throws BusinessServiceException {
-		Build build = createReleasePackageBuildRequest.getBuild();
-		if (build != null) {
-			buildDAO.updateStatus(build, QUEUED);
-			convertAndSend(createReleasePackageBuildRequest);
+	public void queueBuild(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException {
+		if (buildRequest != null) {
+			buildDAO.updateStatus(buildRequest.getBuild(), QUEUED);
+			convertAndSend(buildRequest);
 		} else {
 			LOGGER.warn("Build can not be queued due to being null.");
 		}
 	}
 
-	private void convertAndSend(final CreateReleasePackageBuildRequest build) throws BusinessServiceException {
+	private void convertAndSend(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException {
 		try {
-			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(build));
-			LOGGER.info("Build {} has been sent to the {}.", build, srsQueue.getQueueName());
+			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(buildRequest));
+			LOGGER.info("Build {} has been sent to the {}.", buildRequest, srsQueue.getQueueName());
 		} catch (JmsException | JsonProcessingException | JMSException e) {
-			buildDAO.updateStatus(build.getBuild(), Build.Status.FAILED);
+			buildDAO.updateStatus(buildRequest.getBuild(), Build.Status.FAILED);
 			LOGGER.error("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
-			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + build.getBuild().getId(), e);
+			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + buildRequest.getBuild().getId(), e);
 		}
 	}
 

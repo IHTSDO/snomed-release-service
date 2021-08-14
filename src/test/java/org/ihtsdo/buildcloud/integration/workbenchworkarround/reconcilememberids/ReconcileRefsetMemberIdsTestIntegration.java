@@ -48,7 +48,7 @@ public class ReconcileRefsetMemberIdsTestIntegration extends AbstractControllerT
 
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
 		integrationTestHelper.uploadManifest("simple_refset_manifest_" + releaseDate + ".xml", getClass());
-		String buildURL1 = integrationTestHelper.createBuild();
+		String buildURL1 = integrationTestHelper.createBuild(releaseDate);
 		loadDeltaFilesToInputDirectory(releaseDate);
 		integrationTestHelper.scheduleBuild(buildURL1);
 		integrationTestHelper.waitUntilCompleted(buildURL1);

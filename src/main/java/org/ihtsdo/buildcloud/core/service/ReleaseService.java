@@ -6,6 +6,6 @@ import org.springframework.security.core.Authentication;
 
 public interface ReleaseService {
 
-    void runReleaseBuild(String releaseCenter, String productKey, Build build, BuildRequestPojo buildRequestPojo, Authentication authentication);
+    void runReleaseBuild(Build build, Authentication authentication);
 
 }

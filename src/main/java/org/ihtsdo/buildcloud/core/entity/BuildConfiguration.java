@@ -105,6 +105,18 @@ public class BuildConfiguration {
 	private String buildName;
 
 	@Transient
+	private Set<String> excludedModuleIds;
+
+	@Transient
+	private boolean skipGatheringSourceFiles;
+
+	@Transient
+	private boolean loadExternalRefsetData;
+
+	@Transient
+	private boolean loadTermServerData;
+
+	@Transient
 	private String exportType;
 
 	public BuildConfiguration() {
@@ -372,19 +384,38 @@ public class BuildConfiguration {
 
 	@Override
 	public String toString() {
-		return "BuildConfiguration [id=" + id + ", effectiveTime="
-				+ effectiveTime
-				+ ", readmeEndDate=" + readmeEndDate + ", firstTimeRelease="
-				+ firstTimeRelease + ", betaRelease=" + betaRelease
-				+ ", previousPublishedPackage=" + previousPublishedPackage
-				+ ", newRF2InputFiles=" + newRF2InputFiles + ", justPackage="
-				+ justPackage + ", workbenchDataFixesRequired="
-				+ workbenchDataFixesRequired + ", inputFilesFixesRequired = "
-				+ inputFilesFixesRequired + ", createLegacyIds="
-				+ createLegacyIds + ", includePrevReleaseFiles="
-				+ includePrevReleaseFiles + ", useClassifierPreConditionChecks="
-				+ useClassifierPreConditionChecks + ", classifyOutputFiles="
-				+ classifyOutputFiles + "]";
+		return "BuildConfiguration{" +
+				"id=" + id +
+				", product=" + product +
+				", effectiveTime=" + effectiveTime +
+				", readmeHeader='" + readmeHeader + '\'' +
+				", readmeEndDate='" + readmeEndDate + '\'' +
+				", firstTimeRelease=" + firstTimeRelease +
+				", betaRelease=" + betaRelease +
+				", previousPublishedPackage='" + previousPublishedPackage + '\'' +
+				", newRF2InputFiles='" + newRF2InputFiles + '\'' +
+				", justPackage=" + justPackage +
+				", workbenchDataFixesRequired=" + workbenchDataFixesRequired +
+				", inputFilesFixesRequired=" + inputFilesFixesRequired +
+				", createLegacyIds=" + createLegacyIds +
+				", refsetCompositeKeys=" + refsetCompositeKeys +
+				", extensionConfig=" + extensionConfig +
+				", includePrevReleaseFiles='" + includePrevReleaseFiles + '\'' +
+				", dailyBuild=" + dailyBuild +
+				", classifyOutputFiles=" + classifyOutputFiles +
+				", licenceStatement='" + licenceStatement + '\'' +
+				", releaseInformationFields='" + releaseInformationFields + '\'' +
+				", useClassifierPreConditionChecks=" + useClassifierPreConditionChecks +
+				", conceptPreferredTerms='" + conceptPreferredTerms + '\'' +
+				", defaultBranchPath='" + defaultBranchPath + '\'' +
+				", branchPath='" + branchPath + '\'' +
+				", buildName='" + buildName + '\'' +
+				", excludedModuleIds=" + excludedModuleIds +
+				", skipGatheringSourceFiles=" + skipGatheringSourceFiles +
+				", loadExternalRefsetData=" + loadExternalRefsetData +
+				", loadTermServerData=" + loadTermServerData +
+				", exportType='" + exportType + '\'' +
+				'}';
 	}
 
 	@Embeddable
@@ -452,5 +483,37 @@ public class BuildConfiguration {
 
 	public boolean isDailyBuild() {
 		return dailyBuild;
+	}
+
+	public void setExcludedModuleIds(Set<String> excludedModuleIds) {
+		this.excludedModuleIds = excludedModuleIds;
+	}
+
+	public Set<String> getExcludedModuleIds() {
+		return excludedModuleIds;
+	}
+
+	public void setSkipGatheringSourceFiles(boolean skipGatheringSourceFiles) {
+		this.skipGatheringSourceFiles = skipGatheringSourceFiles;
+	}
+
+	public boolean isSkipGatheringSourceFiles() {
+		return skipGatheringSourceFiles;
+	}
+
+	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
+		this.loadExternalRefsetData = loadExternalRefsetData;
+	}
+
+	public boolean isLoadExternalRefsetData() {
+		return loadExternalRefsetData;
+	}
+
+	public void setLoadTermServerData(boolean loadTermServerData) {
+		this.loadTermServerData = loadTermServerData;
+	}
+
+	public boolean isLoadTermServerData() {
+		return loadTermServerData;
 	}
 }

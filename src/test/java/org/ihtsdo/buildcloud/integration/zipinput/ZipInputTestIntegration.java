@@ -28,7 +28,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime("20140131");
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
-		String buildURL1 = integrationTestHelper.createBuild();
+		String buildURL1 = integrationTestHelper.createBuild("20140131");
 		integrationTestHelper.uploadDeltaInputFile("Archive.zip", getClass());
 		integrationTestHelper.scheduleBuild(buildURL1);
 		integrationTestHelper.waitUntilCompleted(buildURL1);

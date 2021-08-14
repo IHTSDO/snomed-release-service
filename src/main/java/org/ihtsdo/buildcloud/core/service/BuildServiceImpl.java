@@ -17,6 +17,7 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.core.service.build.Zipper;
 import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
@@ -142,7 +143,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, QATestConfig.CharacteristicType mrcmValidationForm, Date effectiveTime) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 
@@ -150,7 +151,16 @@ public class BuildServiceImpl implements BuildService {
 			throw new BusinessServiceException("Could not create build from invisible product with key: " + product.getBusinessKey());
 		}
 
-		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, branchPath);
+		Date effectiveTime = null;
+		if (buildRequest != null) {
+			try {
+				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
+			} catch (ParseException e) {
+				throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
+			}
+		}
+
+		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, buildRequest.getBranchPath());
 		Build build;
 		try {
 			// Do we already have an build for that date?
@@ -162,20 +172,32 @@ public class BuildServiceImpl implements BuildService {
 			ObjectMapper objectMapper = new ObjectMapper();
 			if (build.getConfiguration() != null) {
 				BuildConfiguration configuration = objectMapper.readValue(objectMapper.writeValueAsString(build.getConfiguration()), BuildConfiguration.class);
-				configuration.setBranchPath(branchPath);
-				configuration.setExportType(exportType);
-				configuration.setBuildName(buildName);
-
 				if (effectiveTime != null) {
 					configuration.setEffectiveTime(effectiveTime);
 				}
+
+				if (buildRequest != null) {
+					configuration.setBranchPath(buildRequest.getBranchPath());
+					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
+					configuration.setBuildName(buildRequest.getBuildName());
+					configuration.setExcludedModuleIds(buildRequest.getExcludedModuleIds());
+					configuration.setSkipGatheringSourceFiles(buildRequest.isSkipGatheringSourceFiles());
+					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
+					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
+				}
+
 				build.setConfiguration(configuration);
 			}
 			build.setQaTestConfig(product.getQaTestConfig());
 			if (build.getQaTestConfig() != null) {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
-				qaTestConfig.setMaxFailureExport(maxFailureExport);
-				qaTestConfig.setMrcmValidationForm(mrcmValidationForm);
+				if (buildRequest != null) {
+					qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
+					qaTestConfig.setMrcmValidationForm(buildRequest.getMrcmValidationForm());
+				} else {
+					qaTestConfig.setMaxFailureExport(100);
+					qaTestConfig.setMrcmValidationForm(QATestConfig.CharacteristicType.inferred);
+				}
 
 				build.setQaTestConfig(qaTestConfig);
 			}
@@ -275,10 +297,8 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(final String releaseCenterKey, final String productKey, final String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream) {
+	public Build triggerBuild(Build build, Boolean enableTelemetryStream) {
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
-		LOGGER.info("Trigger product{} build id {}", productKey, buildId);
-		Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		try {
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
 				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
@@ -296,14 +316,14 @@ public class BuildServiceImpl implements BuildService {
 			if (!isAbandoned) {
 				Status status = Status.BUILDING;
 				if (Boolean.TRUE.equals(offlineMode)) {
-					performOfflineBuild(failureExportMax, mrcmValidationForm, build, status);
+					performOfflineBuild(build, status);
 				} else {
 					updateStatusWithChecks(build, status);
-					executeBuild(build, failureExportMax, mrcmValidationForm);
+					executeBuild(build);
 				}
 			}
 		} catch (Exception e) {
-			LOGGER.error("Error occurred while trying to trigger the build {}.", buildId, e);
+			LOGGER.error("Error occurred while trying to trigger the build {}.", build.getId(), e);
 			dao.updateStatus(build, Status.FAILED);
 		} finally {
 			// Finish the telemetry stream. Logging on this thread will no longer be captured.
@@ -314,13 +334,13 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void performOfflineBuild(Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Build build, Status status) throws BadConfigurationException {
+	private void performOfflineBuild(Build build, Status status) throws BadConfigurationException {
 		final BuildReport report = build.getBuildReport();
 		String resultStatus = "completed";
 		String resultMessage = "Process completed successfully";
 		try {
 			updateStatusWithChecks(build, status);
-			executeBuild(build, failureExportMax, mrcmValidationForm);
+			executeBuild(build);
 
 			// Check warnings if any
 			boolean hasWarnings = false;
@@ -383,8 +403,7 @@ public class BuildServiceImpl implements BuildService {
 			String resultMessage = "Process completed successfully";
 			try {
 				updateStatusWithChecks(build, status);
-				final QATestConfig qaTestConfig = build.getQaTestConfig();
-				executeBuild(build, qaTestConfig.getMaxFailureExport(), qaTestConfig.getMrcmValidationForm());
+				executeBuild(build);
 				status = Status.RELEASE_COMPLETE;
 			} catch (final Exception e) {
 				resultStatus = "fail";
@@ -594,7 +613,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void executeBuild(final Build build, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
+	private void executeBuild(final Build build) throws BusinessServiceException, NoSuchAlgorithmException, IOException {
 		LOGGER.info("Start build {}", build.getUniqueId());
 		checkManifestPresent(build);
 
@@ -673,7 +692,8 @@ public class BuildServiceImpl implements BuildService {
 			String rvfResultMsg = "RVF validation configured to not run.";
 			if (Boolean.FALSE.equals(offlineMode)) {
 				String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
-				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), failureExportMax, mrcmValidationForm);
+				final QATestConfig qaTestConfig = build.getQaTestConfig();
+				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport(), qaTestConfig.getMrcmValidationForm());
 				if (rvfResultMsg == null) {
 					rvfStatus = "Failed to run";
 				} else {

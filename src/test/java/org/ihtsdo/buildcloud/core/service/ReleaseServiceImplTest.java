@@ -61,7 +61,7 @@ public class ReleaseServiceImplTest {
 		when(productService.find(anyString(), anyString(), anyBoolean()))
 				.thenReturn(createMockProduct("testProduct"));
 		Build build = releaseBuildManager.createBuild("international", "product", new BuildRequestPojo(), null);
-		releaseService.runReleaseBuild("center", "testProduct", build, new BuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+		releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
 	}
 
 
@@ -76,7 +76,7 @@ public class ReleaseServiceImplTest {
 		when(productService.find(anyString(), anyString(), anyBoolean()))
 				.thenReturn(createMockProduct("test"));
 		Build build = releaseBuildManager.createBuild("International", "product", new BuildRequestPojo(), null);
-		releaseService.runReleaseBuild("International", "test", build, new BuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+		releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
 	}
 
 	private Product createMockProduct(String productName) {
