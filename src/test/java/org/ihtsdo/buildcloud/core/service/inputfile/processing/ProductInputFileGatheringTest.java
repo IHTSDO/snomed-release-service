@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.core.service.inputfile.processing;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.InputFileServiceImpl;
 import org.ihtsdo.buildcloud.core.service.TermServerService;
@@ -74,12 +76,15 @@ public class ProductInputFileGatheringTest {
 	@Ignore
 	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
-		BuildRequestPojo requestPojo = new BuildRequestPojo();
-		requestPojo.setLoadTermServerData(true);
-		requestPojo.setLoadExternalRefsetData(false);
+		Build build = new Build();
+		BuildConfiguration buildConfiguration = new BuildConfiguration();
+		buildConfiguration.setLoadTermServerData(true);
+		buildConfiguration.setLoadExternalRefsetData(false);
+		build.setConfiguration(buildConfiguration);
+
 		FileInputStream fileInputStream = new FileInputStream(testArchive);
 		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
-				("centerkey", "productkey", "buildId", requestPojo, SecurityContextHolder.getContext());
+				("centerkey", "productkey", build, SecurityContextHolder.getContext());
 		verify(productInputFileService, times(1))
 				.putSourceFile(eq(TERMINOLOGY_SERVER), eq("centerkey"), eq("productkey"), eq("buildId"),
 						argThat(new InputStreamMatcher(fileInputStream)), eq(INPUT_SOURCE_TEST_DATA_ZIP), eq(testArchive.length()));
@@ -93,10 +98,11 @@ public class ProductInputFileGatheringTest {
 	@Ignore
 	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
-		BuildRequestPojo requestPojo = new BuildRequestPojo();
-		requestPojo.setLoadTermServerData(true);
+		Build build = new Build();
+		BuildConfiguration buildConfiguration = new BuildConfiguration();
+		buildConfiguration.setLoadTermServerData(true);
 		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
-				("centerkey", "productkey", "buildId", requestPojo, SecurityContextHolder.getContext());
+				("centerkey", "productkey", build, SecurityContextHolder.getContext());
 		verify(productInputFileService, times(0)).putSourceFile(anyString(), anyString(), anyString(), anyString(),
 				any(InputStream.class), anyString(), anyLong());
 

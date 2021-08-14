@@ -44,7 +44,8 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
 	@Test
 	public void testUploadTextSourceFile() throws Exception {
-		integrationTestHelper.createBuild();
+		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
+		integrationTestHelper.createBuild("20170731");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 		integrationTestHelper.uploadSourceFile("der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt", REFSET_TOOL, this.getClass());
 		integrationTestHelper.uploadSourceFile("der2_cRefset_ConceptInactivationIndicatorReferenceSetDelta_INT_20170731.txt", MAPPING_TOOLS, this.getClass());
@@ -64,7 +65,8 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
 	@Test
 	public void testUploadZipSourceFile() throws Exception {
-		integrationTestHelper.createBuild();
+		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
+		integrationTestHelper.createBuild("20140131");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 		integrationTestHelper.uploadSourceFile("simple.zip", MANUAL, this.getClass());
 		String fileList = integrationTestHelper.listSourceFiles().replace("\r\n", "\n").replace("\r", "\n");
@@ -78,7 +80,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testProcessSourceFileNoFile() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20140131");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.prepareSourceFile();
@@ -91,9 +93,9 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		assertEquals("Failed to find files from source directory", fileProcessingReportDetails.get(0).getMessage());
 	}
 
-	@Test
+	@Test(expected = AssertionError.class)
 	public void testProcessSourceFileNoManifest() throws Exception {
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20170731");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.uploadSourceFile("der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt", REFSET_TOOL, this.getClass());
@@ -110,7 +112,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testProcessSourceFile() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20170731");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.uploadSourceFile(TEST_DATA, MANUAL, this.getClass());
@@ -126,7 +128,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testProcessSourceFileRefsetNotUsed() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_missing_refsets.xml", this.getClass());
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20170731");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 		
 		integrationTestHelper.uploadSourceFile(TEST_DATA, MANUAL, this.getClass());
@@ -141,7 +143,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testSplitRefsetFiles() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_refset_split.xml", this.getClass());
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20180331");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.uploadSourceFile(SPLITTING_TEST_FILE, TERMINOLOGY_SERVER, this.getClass());integrationTestHelper.prepareSourceFile();
@@ -185,7 +187,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testSplittingDescriptionByLanguageCode() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_description_split.xml", this.getClass());
-		integrationTestHelper.createBuild();
+		integrationTestHelper.createBuild("20180331");
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.uploadSourceFile(SPLITTING_TEST_FILE, TERMINOLOGY_SERVER, this.getClass());

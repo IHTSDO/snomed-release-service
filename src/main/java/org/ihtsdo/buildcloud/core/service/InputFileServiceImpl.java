@@ -4,6 +4,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
@@ -18,6 +20,7 @@ import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
@@ -245,21 +248,22 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, String buildId, BuildRequestPojo requestConfig, SecurityContext securityContext) {
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			Product product = constructProduct(centerKey, productKey);
-			inputFileDAO.persistSourcesGatherReport(product, buildId, inputGatherReport);
-			if (!requestConfig.isSkipGatheringSourceFiles()) {
-				if (requestConfig.isLoadTermServerData()) {
-					gatherSourceFilesFromTermServer(centerKey, productKey, buildId, requestConfig, inputGatherReport, securityContext);
+			BuildConfiguration buildConfiguration = build.getConfiguration();
+			inputFileDAO.persistSourcesGatherReport(product, build.getId(), inputGatherReport);
+			if (!buildConfiguration.isSkipGatheringSourceFiles()) {
+				if (buildConfiguration.isLoadTermServerData()) {
+					gatherSourceFilesFromTermServer(centerKey, productKey, build, inputGatherReport, securityContext);
 				}
-				if (requestConfig.isLoadExternalRefsetData()) {
-					gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, buildId, requestConfig.getEffectiveDate(), inputGatherReport);
+				if (buildConfiguration.isLoadExternalRefsetData()) {
+					gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, build, inputGatherReport);
 				}
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			inputFileDAO.persistSourcesGatherReport(product, buildId, inputGatherReport);
+			inputFileDAO.persistSourcesGatherReport(product, build.getId(), inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
@@ -267,17 +271,18 @@ public class InputFileServiceImpl implements InputFileService {
 		return inputGatherReport;
 	}
 
-	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, String buildId, BuildRequestPojo requestConfig
+	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build
 			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
 		File fileExported = null;
 		try {
 			SecurityContextHolder.setContext(securityContext);
-			fileExported = termServerService.export(requestConfig.getBranchPath(), requestConfig.getEffectiveDate(),
-					requestConfig.getExcludedModuleIds(), requestConfig.getExportCategory());
+			BuildConfiguration buildConfiguration = build.getConfiguration();
+			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
+					buildConfiguration.getExcludedModuleIds(), SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
 			//Test whether the exported file is really a zip file
 			try (ZipFile zipFile = new ZipFile(fileExported);
 			FileInputStream fileInputStream = new FileInputStream(fileExported);) {
-				putSourceFile(SRC_TERM_SERVER, centerKey, productKey, buildId, fileInputStream, fileExported.getName(), fileExported.length());
+				putSourceFile(SRC_TERM_SERVER, centerKey, productKey, build.getId(), fileInputStream, fileExported.getName(), fileExported.length());
 				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, SRC_TERM_SERVER,
 						"Successfully export file " + fileExported.getName() + " from term server and upload to source \"terminology-server\"");
 				LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", fileExported.getName());
@@ -293,8 +298,9 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 
-	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, String buildId, String effectiveDate, InputGatherReport inputGatherReport) throws IOException {
-		String dirPath = centerKey + "/" + effectiveDate + "/";
+	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws IOException {
+		BuildConfiguration configuration = build.getConfiguration();
+		String dirPath = centerKey + "/" + configuration.getEffectiveTimeSnomedFormat() + "/";
 		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
 		LOGGER.info("Found {} files at {} in external maintained bucket", externalFiles.size(), dirPath);
 		for (String externalFile : externalFiles) {
@@ -304,11 +310,11 @@ public class InputFileServiceImpl implements InputFileService {
 			}
 			try {
 				Product product = constructProduct(centerKey, productKey);
-				String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, buildId, SRC_EXT_MAINTAINED).toString();
+				String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, build.getId(), SRC_EXT_MAINTAINED).toString();
 				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
 				LOGGER.info("Successfully export file " + externalFile + " from Externally Maintained bucket and uploaded to source \"externally-maintained\"");
 			} catch (Exception ex) {
-				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, effectiveDate, externalFile, ex);
+				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
 				throw ex;
 			}

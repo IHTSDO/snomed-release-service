@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.rest.controller.helper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.PublishService;
@@ -63,6 +65,9 @@ public class IntegrationTestHelper {
 
 	public void createTestProductStructure() throws Exception {
 		this.productId = findOrCreateProduct();
+		setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
+		setReadmeHeader("This is the readme.");
+		setReadmeEndDate("2014");
 	}
 	
 	private String findOrCreateProduct() throws Exception {
@@ -338,11 +343,23 @@ public class IntegrationTestHelper {
 		System.out.println(report.getResponse().getContentAsString());
 	}
 
-	public String createBuild() throws Exception {
+	public String createBuild(String effectiveDate) throws Exception {
+		BuildRequestPojo buildRequest = new BuildRequestPojo();
+		buildRequest.setLoadExternalRefsetData(false);
+		buildRequest.setLoadTermServerData(false);
+		buildRequest.setBuildName("Test");
+		buildRequest.setEffectiveDate(effectiveDate);
+
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
+		ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+		String requestJson = ow.writeValueAsString(buildRequest);
+
 		final MvcResult createBuildResult = mockMvc.perform(
 				post(getProductUrl() + "/builds")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
+						.content(requestJson)
 		)
 				.andDo(print())
 				.andExpect(status().isCreated())

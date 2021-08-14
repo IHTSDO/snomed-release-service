@@ -29,7 +29,6 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 		integrationTestHelper.createTestProductStructure();
 		
 		//config assertion tests
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
 		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20160731");
 
 		// Perform first time release
@@ -98,7 +97,7 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 	
 
 	private void executeAndVerfiyResults(final String releaseDate, final String expectedZipEntries) throws Exception {
-		final String buildURL1 = integrationTestHelper.createBuild();
+		final String buildURL1 = integrationTestHelper.createBuild(releaseDate);
 		integrationTestHelper.scheduleBuild(buildURL1);
 		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);

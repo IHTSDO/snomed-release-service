@@ -31,7 +31,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("Header");
 
-		String buildURL = integrationTestHelper.createBuild();
+		String buildURL = integrationTestHelper.createBuild("20140131");
 		integrationTestHelper.uploadDeltaInputFile("/der2_Refset_SimpleDelta_INT_20140131.txt", getClass());
 		integrationTestHelper.scheduleBuild(buildURL);
 		integrationTestHelper.waitUntilCompleted(buildURL);

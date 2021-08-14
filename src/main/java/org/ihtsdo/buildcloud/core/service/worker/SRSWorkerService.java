@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.core.service.worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
 import org.slf4j.Logger;
@@ -25,48 +25,47 @@ import java.time.Instant;
 @ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
 public class SRSWorkerService {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
 
-	@Autowired
-	private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-	@Autowired
-	private ReleaseService releaseService;
+    @Autowired
+    private ReleaseService releaseService;
 
-	@Autowired
-	private BuildDAO buildDAO;
+    @Autowired
+    private BuildDAO buildDAO;
 
-	@JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
-	public void consumeSRSJob(final TextMessage srsMessage) {
-		final Instant start = Instant.now();
-		CreateReleasePackageBuildRequest buildRequest;
-		try {
-			buildRequest = objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
-		} catch (JMSException | JsonProcessingException e) {
-			throw new IllegalStateException("Error occurred while trying to consume the SRS build request message.", e);
-		}
+    @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
+    public void consumeSRSJob(final TextMessage srsMessage) {
+        final Instant start = Instant.now();
+        CreateReleasePackageBuildRequest buildRequest;
+        try {
+            buildRequest = objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
+        } catch (JMSException | JsonProcessingException e) {
+            throw new IllegalStateException("Error occurred while trying to consume the SRS build request message.", e);
+        }
 
-		final Build build = buildRequest.getBuild();
-		final Product product = build.getProduct();
-		if (Build.Status.QUEUED != build.getStatus()) {
-			throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
-		}
+        final Build build = buildRequest.getBuild();
+        final Product product = build.getProduct();
+        if (Build.Status.QUEUED != build.getStatus()) {
+            throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
+        }
 
-		LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
-		// build status response message is handled by buildDAO
-		buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
-		SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
-		releaseService.runReleaseBuild(product.getReleaseCenter().getBusinessKey(),
-				product.getBusinessKey(), build, buildRequest.getBuildRequestPojo(), SecurityContextHolder.getContext().getAuthentication());
+        LOGGER.info("Starting release build: {} for product: {}", build.getId(), product.getName());
+        // build status response message is handled by buildDAO
+        buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
+        SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
+        releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
 
-		final Instant finish = Instant.now();
-		LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getName());
-	}
+        final Instant finish = Instant.now();
+        LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), product.getName());
+    }
 
-	private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {
-		final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(buildRequest.getUsername(),
-						buildRequest.getAuthenticationToken());
-		preAuthenticatedAuthenticationToken.setAuthenticated(true);
-		return preAuthenticatedAuthenticationToken;
-	}
+    private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {
+        final PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(buildRequest.getUsername(),
+                buildRequest.getAuthenticationToken());
+        preAuthenticatedAuthenticationToken.setAuthenticated(true);
+        return preAuthenticatedAuthenticationToken;
+    }
 }

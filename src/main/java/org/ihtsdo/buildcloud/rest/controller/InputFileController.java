@@ -3,6 +3,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
@@ -44,6 +46,9 @@ public class InputFileController {
 
 	@Autowired
 	private ProductService productService;
+
+	@Autowired
+	private BuildService buildService;
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -209,9 +214,9 @@ public class InputFileController {
 	@PostMapping(value = "/builds/{buildId}/inputfiles/gather")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
-	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
-								 @RequestBody BuildRequestPojo request) throws BusinessServiceException, IOException {
-		inputFileService.gatherSourceFiles(releaseCenterKey, productKey, buildId, request, SecurityContextHolder.getContext());
+	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId) throws BusinessServiceException, IOException {
+		Build build  = buildService.find(releaseCenterKey, productKey, buildId, true, true, false , false);
+		inputFileService.gatherSourceFiles(releaseCenterKey, productKey, build, SecurityContextHolder.getContext());
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 }

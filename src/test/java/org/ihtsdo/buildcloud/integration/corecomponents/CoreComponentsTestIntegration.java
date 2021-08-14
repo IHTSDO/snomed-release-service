@@ -120,9 +120,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 	private void firstTimeRelease() throws Exception {
 		integrationTestHelper.createTestProductStructure();
 
-		//config assertion tests
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
-
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setCreateLegacyIds(true);
@@ -178,7 +175,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 	private void executeAndVerifyResults(final String releaseDate, final String expectedZipEntries, final boolean isBeta) throws Exception {
 		// create a build
-		String buildUrl = integrationTestHelper.createBuild();
+		String buildUrl = integrationTestHelper.createBuild(releaseDate);
 
 		// load input files
 		loadDeltaFilesToInputDirectory(releaseDate);

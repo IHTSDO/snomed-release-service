@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
@@ -76,7 +77,13 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0, 10));
 		Product product = page.getContent().get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
-		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), null, null, null, null, null, null, null);
+
+		BuildRequestPojo buildRequest = new BuildRequestPojo();
+		buildRequest.setLoadExternalRefsetData(false);
+		buildRequest.setLoadTermServerData(false);
+		buildRequest.setBuildName("Test");
+		buildRequest.setEffectiveDate("20210731");
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), buildRequest, null);
 
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();

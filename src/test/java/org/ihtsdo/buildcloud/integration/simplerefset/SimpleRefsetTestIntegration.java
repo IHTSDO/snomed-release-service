@@ -29,7 +29,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setFirstTimeRelease(true);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
-		String buildURL1 = integrationTestHelper.createBuild();
+		String buildURL1 = integrationTestHelper.createBuild(effectiveTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.scheduleBuild(buildURL1);
 		integrationTestHelper.waitUntilCompleted(buildURL1);
@@ -66,7 +66,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setPreviousPublishedPackage(integrationTestHelper.getPreviousPublishedPackage());
 		integrationTestHelper.setReadmeHeader("This is the readme for the second release.\\nTable of contents:\\n");
 
-		String buildURL2 = integrationTestHelper.createBuild();
+		String buildURL2 = integrationTestHelper.createBuild(effectiveDateTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
 		integrationTestHelper.scheduleBuild(buildURL2);
 		integrationTestHelper.waitUntilCompleted(buildURL2);

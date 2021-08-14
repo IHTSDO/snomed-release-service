@@ -49,7 +49,7 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 		integrationTestHelper.setReadmeEndDate("2014");
 		integrationTestHelper.uploadManifest("core_manifest_" + effectiveDate + ".xml", getClass());
 
-		String buildURL = integrationTestHelper.createBuild();
+		String buildURL = integrationTestHelper.createBuild(effectiveDate);
 
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + effectiveDate + ".txt", getClass());
 

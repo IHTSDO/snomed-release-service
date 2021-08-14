@@ -75,8 +75,10 @@ public class BuildController {
 			@PathVariable final String productKey,
 			@RequestBody final BuildRequestPojo buildRequestPojo,
 			final HttpServletRequest request) throws BusinessServiceException {
-		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, SecurityUtil.getUsername());
-		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, buildRequestPojo, SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
+		final String username = SecurityUtil.getUsername();
+		final String authenticationToken = SecurityUtil.getAuthenticationToken();
+		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, username);
+		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
 		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
 	}
 
@@ -85,10 +87,12 @@ public class BuildController {
 	@ApiOperation( value = "Create a build",
 		notes = "Create a build for the given product key and release center key and returns build id" )
 	@ResponseBody
-	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			final HttpServletRequest request) throws BusinessServiceException {
+	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey,
+														   @PathVariable final String productKey,
+														   @RequestBody final BuildRequestPojo buildRequestPojo,
+															final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
-		final Build build = buildService.createBuildFromProduct(releaseCenterKey, productKey, null, currentUser, null, null, null, null, null);
+		final Build build = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, currentUser);
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, false, request, BUILD_LINKS), HttpStatus.CREATED);
 	}
 
@@ -100,11 +104,13 @@ public class BuildController {
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
-			@RequestBody final BuildRequestPojo buildRequestPojo,
 			final HttpServletRequest request) throws BusinessServiceException {
 
-		Build newBuild  = buildService.find(releaseCenterKey, productKey, buildId, true, true, false , false);
-		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, buildRequestPojo, SecurityUtil.getUsername(), SecurityUtil.getAuthenticationToken()));
+		// Verify if the build exists
+		Build newBuild  = buildService.find(releaseCenterKey, productKey, buildId, true, true, null , null);
+		final String username = SecurityUtil.getUsername();
+		final String authenticationToken = SecurityUtil.getAuthenticationToken();
+		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
 		return new ResponseEntity<>(newBuild, HttpStatus.OK);
 	}
 
@@ -156,19 +162,6 @@ public class BuildController {
 
 		final boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
-	}
-
-
-	@PostMapping(value = "/builds/{buildId}/trigger")
-	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
-	@ApiIgnore
-	public Map<String, Object> triggerProduct(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-	                                          @PathVariable final String buildId, @RequestParam(value = "failureExportMax", required = false) final Integer failureExportMax,
-	                                          @RequestParam(value = "mrcmValidationForm", required = false, defaultValue = "stated") final QATestConfig.CharacteristicType mrcmValidationForm, HttpServletRequest request) throws BusinessServiceException {
-		//when failureExportMax is set to less than zero means exporting all results. The default value is 10 when not set
-		final Build build = buildService.triggerBuild(releaseCenterKey, productKey, buildId, failureExportMax, mrcmValidationForm,true);
-		return hypermediaGenerator.getEntityHypermediaOfAction(build, request, BUILD_LINKS);
 	}
 
 	@GetMapping(value = "/builds/{buildId}/configuration", produces = "application/json")

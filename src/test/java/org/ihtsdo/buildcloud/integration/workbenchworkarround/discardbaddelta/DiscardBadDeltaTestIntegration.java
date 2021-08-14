@@ -47,7 +47,7 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	private void executeAndVerifyResults(String releaseDate) throws Exception {
 		integrationTestHelper.uploadManifest("core_manifest_" + releaseDate + ".xml", getClass());
 
-		String buildURL = integrationTestHelper.createBuild();
+		String buildURL = integrationTestHelper.createBuild(releaseDate);
 		loadDeltaFilesToInputDirectory(releaseDate);
 
 		integrationTestHelper.scheduleBuild(buildURL);

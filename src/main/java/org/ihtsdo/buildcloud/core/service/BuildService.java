@@ -7,6 +7,7 @@ import java.util.List;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
+import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -15,18 +16,15 @@ public interface BuildService {
 
 	String MDC_BUILD_KEY = "build";
 
-	Build createBuildFromProduct(String releaseCenterKey, String productKey, String buildName, String user, String branchPath, String exportType, Integer maxFailureExport, QATestConfig.CharacteristicType mrcmValidationForm, Date effectiveTime) throws BusinessServiceException;
+	Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user) throws BusinessServiceException;
 
 	/**
 	 * Synchronous method which runs the build.
-	 * @param releaseCenterKey
-	 * @param productKey
-	 * @param buildId
-	 * @param failureExportMax
+	 * @param build
 	 * @return
 	 * @throws BusinessServiceException
 	 */
-	Build triggerBuild(String releaseCenterKey, String productKey, String buildId, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm, Boolean enableTelemetryStream);
+	Build triggerBuild(Build build, Boolean enableTelemetryStream);
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) throws ResourceNotFoundException;
 

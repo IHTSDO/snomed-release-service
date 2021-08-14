@@ -38,7 +38,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 		String effectiveTime = "20140131";
 		setupProduct(effectiveTime);
 		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
-		String buildUrl = integrationTestHelper.createBuild();
+		String buildUrl = integrationTestHelper.createBuild(effectiveTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccRefset_ExtendedMapDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccsiRefset_UnknownFormatDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());

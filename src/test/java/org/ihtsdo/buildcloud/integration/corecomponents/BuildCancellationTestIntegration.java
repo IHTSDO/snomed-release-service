@@ -27,7 +27,6 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
         integrationTestHelper.createTestProductStructure();
 
         //config assertion tests
-        integrationTestHelper.setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
         integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20140731");
 
         // Perform first time release
@@ -35,10 +34,9 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
         integrationTestHelper.setCreateLegacyIds(true);
         final String effectiveTime1 = "20140131";
         integrationTestHelper.setEffectiveTime(effectiveTime1);
-        integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
-        integrationTestHelper.setReadmeEndDate("2014");
+
         loadDeltaFilesToInputDirectory(effectiveTime1, false);
-        final String buildURL1 = integrationTestHelper.createBuild();
+        final String buildURL1 = integrationTestHelper.createBuild(effectiveTime1);
 
         int cancelBuildStatus = integrationTestHelper.cancelBuild(buildURL1);
 
