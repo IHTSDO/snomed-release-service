@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.apache.commons.codec.CharEncoding;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
@@ -145,14 +146,16 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void persistInputPrepareReport(final Product product, String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
-		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(product, buildId);
+	public void persistInputPrepareReport(final Build build, final SourceFileProcessingReport fileProcessingReport) throws IOException {
+		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(build);
 		fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
 	}
 
 	@Override
-	public void persistSourcesGatherReport(Product product, String buildId, InputGatherReport inputGatherReport) throws IOException {
-		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
+	public void persistSourcesGatherReport(Build build, InputGatherReport inputGatherReport) throws IOException {
+
+		String reportPath = s3PathHelper.getBuildInputGatherReportPath(build);
+
 		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
 	}
 

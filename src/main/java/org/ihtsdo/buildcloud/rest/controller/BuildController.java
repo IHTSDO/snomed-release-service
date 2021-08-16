@@ -2,9 +2,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.Build;
@@ -31,7 +30,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -30,7 +29,7 @@ public interface InputFileService {
 
 	List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, Set<String> subDirectories, String buildId) throws ResourceNotFoundException;
 
-	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, String buildId, boolean copyFilesInManifest) throws BusinessServiceException;
+	SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, Build build, boolean copyFilesInManifest) throws BusinessServiceException;
 
 	InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException, IOException;
 

@@ -9,7 +9,6 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.InputFileServiceImpl;
 import org.ihtsdo.buildcloud.core.service.TermServerService;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.junit.Assert;

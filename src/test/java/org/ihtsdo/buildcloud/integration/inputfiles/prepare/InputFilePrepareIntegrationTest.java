@@ -80,7 +80,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	@Test
 	public void testProcessSourceFileNoFile() throws Exception {
 		integrationTestHelper.uploadManifest(MANIFEST_DIR + "manifest_all_sources.xml", this.getClass());
-		integrationTestHelper.createBuild("20140131");
+		integrationTestHelper.createBuild("20140131", true);
 		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
 		integrationTestHelper.prepareSourceFile();

@@ -14,7 +14,6 @@ import org.ihtsdo.buildcloud.core.service.InputFileService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -207,7 +206,11 @@ public class InputFileController {
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
 												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException {
 		// try avoid to throw exceptions so that build status
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(releaseCenterKey, productKey, buildId, copyFilesInManifest != null ? copyFilesInManifest : true);
+		Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, false, false);
+		if (build == null) {
+			throw new ResourceNotFoundException(String.format("Unable to find build id %s for productKey %s", buildId, productKey));
+		}
+		SourceFileProcessingReport report = inputFileService.prepareInputFiles(releaseCenterKey, productKey, build, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 

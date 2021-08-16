@@ -33,7 +33,6 @@
     "branchPath" : null,
     "buildName" : null,
     "excludedModuleIds" : null,
-    "skipGatheringSourceFiles" : false,
     "loadExternalRefsetData" : false,
     "loadTermServerData" : false,
     "exportType" : null,

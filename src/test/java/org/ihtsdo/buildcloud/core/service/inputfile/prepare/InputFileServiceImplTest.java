@@ -128,7 +128,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
 		addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), false);
+		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, false);
 		printReport(report);
 		assertNotNull(report.getDetails().get(ReportType.ERROR));
 		assertEquals(24, report.getDetails().get(ReportType.ERROR).size());
@@ -142,7 +142,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		File testManifest = new File(testManifestFile);
 		addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), false);
+		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, false);
 		printReport(report);
 		assertNull(report.getDetails().get(ReportType.ERROR));
 		List<String> inputFileList = buildDAO.listInputFileNames(build);
@@ -165,7 +165,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestArchiveFileToSourceDirectory(SRC_MAPPING_TOOL);
 		addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), false);
+		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, false);
 		printReport(report);
 
 		assertEquals(2, report.getDetails().get(ReportType.ERROR).size());
@@ -179,7 +179,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		File testManifest = new File(testManifestFile);
 		addTestArchiveFileToSourceDirectory(SRC_REFSET_TOOL);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport fileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(),false);
+		SourceFileProcessingReport fileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build,false);
 		verifyForFileProcessingMissingRefsets(fileProcessingReport);
 	}
 
@@ -190,7 +190,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		addEmptyFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED,"sct2_Concept_Delta_INT_20170731.txt");
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		printReport(report);
 		verifyResults();
 	}
@@ -201,7 +201,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		 File testManifest = new File(testManifestFile);
 		 addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		 buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		 SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		 SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		 printReport(report);
 		 List<String> inputFileList = buildDAO.listInputFileNames(build);
 		 assertNotNull(report.getDetails().get(ReportType.ERROR));
@@ -224,7 +224,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		 addTestArchiveFileToSourceDirectory(SRC_TERM_SERVER);
 		 addTestArchiveFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED);
 		 buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		 SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		 SourceFileProcessingReport report = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		 List<String> inputFileList = buildDAO.listInputFileNames(build);
 		 printReport(report);
 		 assertFileNameExist(inputFileList,"rel2_TextDefinition_Delta-sv_SE1000052_20170531.txt");
@@ -246,7 +246,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		File testArchive = new File(testFile);
 		addTestFileToSourceDirectory(SRC_TERM_SERVER,testArchive);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(),true);
+		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build,true);
 		List<String> inputFileList = buildDAO.listInputFileNames(build);
 		printReport(report);
 		assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_INT_20170731.txt");
@@ -287,7 +287,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestFileToSourceDirectory(SRC_TERM_SERVER, testArchive);
 		addTestFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, new File(getClass().getResource("externally-maintained-empty-delta.zip").getFile()));
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		List<String> inputFileList = buildDAO.listInputFileNames(build);
 		printReport(report);
 		String [] fileNames = {"rel2_Concept_Delta_DK1000005_20170731.txt",
@@ -316,7 +316,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestFileToSourceDirectory(SRC_TERM_SERVER, testArchive);
 		addTestFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, new File(getClass().getResource("externally-maintained-empty-delta.zip").getFile()));
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(),true);
+		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build,true);
 		List<String> inputFileList = buildDAO.listInputFileNames(build);
 		printReport(report);
 		String [] fileNames = {"rel2_Concept_Delta_INT_20170731.txt",
@@ -353,7 +353,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		File testArchive = new File(testFile);
 		addTestFileToSourceDirectory(SRC_TERM_SERVER, testArchive);
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		printReport(report);
 		assertNotNull(report.getDetails().get(ReportType.ERROR));
 		assertNotNull(report.getDetails().get(ReportType.ERROR).get(0).getMessage());
@@ -368,7 +368,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		addTestFileToSourceDirectory(SRC_TERM_SERVER, new File(getClass().getResource(TEST_ARCHIVE_FILE).getFile()));
 		addTestFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, new File(getClass().getResource(TEST_ARCHIVE_FILE).getFile()));
 		buildDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest));
-		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
+		SourceFileProcessingReport report =  inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
 		List<String> inputFileList = buildDAO.listInputFileNames(build);
 		printReport(report);
 		assertEquals(7, inputFileList.size());

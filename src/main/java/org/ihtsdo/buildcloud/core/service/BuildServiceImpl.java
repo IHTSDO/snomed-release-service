@@ -17,7 +17,7 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.core.service.build.Zipper;
 import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
@@ -181,7 +181,6 @@ public class BuildServiceImpl implements BuildService {
 					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
 					configuration.setBuildName(buildRequest.getBuildName());
 					configuration.setExcludedModuleIds(buildRequest.getExcludedModuleIds());
-					configuration.setSkipGatheringSourceFiles(buildRequest.isSkipGatheringSourceFiles());
 					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
 					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
 				}
