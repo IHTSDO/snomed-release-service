@@ -250,9 +250,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ENABLE_MRCM)) {
 			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
 		}
-		if (newPropertyValues.containsKey(ENABLE_GOOGLE_SHEET_DROOL_REPORT)) {
-			qaTestConfig.setEnableGoogleSheetDroolReport(TRUE.equals(newPropertyValues.get(ENABLE_GOOGLE_SHEET_DROOL_REPORT)));
-		}
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)

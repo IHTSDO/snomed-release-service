@@ -42,10 +42,6 @@ public class QATestConfig {
 	private boolean enableDrools = false;
 
 	@Type(type="yes_no")
-	@Column(name = "enable_google_sheet_drool_report")
-	private boolean enableGoogleSheetDroolReport = false;
-
-	@Type(type="yes_no")
 	@Column(name = "create_jira_issue")
 	private boolean jiraIssueCreationFlag = false;
 
@@ -61,11 +57,6 @@ public class QATestConfig {
 
 	@Transient
 	private Integer maxFailureExport;
-
-	public enum CharacteristicType { inferred, stated }
-
-	@Transient
-	private CharacteristicType mrcmValidationForm;
 
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
@@ -115,14 +106,6 @@ public class QATestConfig {
 		this.enableDrools = enableDrools;
 	}
 
-	public boolean isEnableGoogleSheetDroolReport() {
-		return enableGoogleSheetDroolReport;
-	}
-
-	public void setEnableGoogleSheetDroolReport(boolean enableGoogleSheetDroolReport) {
-		this.enableGoogleSheetDroolReport = enableGoogleSheetDroolReport;
-	}
-
 	public boolean isJiraIssueCreationFlag() {
 		return jiraIssueCreationFlag;
 	}
@@ -147,14 +130,6 @@ public class QATestConfig {
 		this.reportingStage = reportingStage;
 	}
 
-	public CharacteristicType getMrcmValidationForm() {
-		return mrcmValidationForm;
-	}
-
-	public void setMrcmValidationForm(CharacteristicType mrcmValidationForm) {
-		this.mrcmValidationForm = mrcmValidationForm;
-	}
-
 	@Override
 	public String toString() {
 		return "QATestConfig{" +
@@ -167,13 +142,11 @@ public class QATestConfig {
 				", extensionDependencyRelease='" + extensionDependencyRelease + '\'' +
 				", storageLocation='" + storageLocation + '\'' +
 				", enableDrools=" + enableDrools +
-				", enableGoogleSheetDroolReport=" + enableGoogleSheetDroolReport +
 				", jiraIssueCreationFlag=" + jiraIssueCreationFlag +
 				", productName='" + productName + '\'' +
 				", reportingStage='" + reportingStage + '\'' +
 				", enableMRCMValidation=" + enableMRCMValidation +
 				", maxFailureExport=" + maxFailureExport +
-				", mrcmValidationForm=" + mrcmValidationForm +
 				'}';
 	}
 

@@ -16,7 +16,6 @@ public class BuildRequestPojo {
 	private boolean loadExternalRefsetData = true;
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
-	private QATestConfig.CharacteristicType mrcmValidationForm;
 	private boolean skipGatheringSourceFiles;
 
 	public BuildRequestPojo() {
@@ -86,14 +85,6 @@ public class BuildRequestPojo {
 		this.maxFailuresExport = maxFailuresExport;
 	}
 
-	public QATestConfig.CharacteristicType getMrcmValidationForm() {
-		return mrcmValidationForm;
-	}
-
-	public void setMrcmValidationForm(QATestConfig.CharacteristicType mrcmValidationForm) {
-		this.mrcmValidationForm = mrcmValidationForm;
-	}
-
 	public void setSkipGatheringSourceFiles(boolean skipGatheringSourceFiles) {
 		this.skipGatheringSourceFiles = skipGatheringSourceFiles;
 	}
@@ -113,7 +104,6 @@ public class BuildRequestPojo {
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +
-				", mrcmValidationForm=" + mrcmValidationForm +
 				'}';
 	}
 }
