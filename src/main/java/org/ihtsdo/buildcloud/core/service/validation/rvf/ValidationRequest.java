@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.validation.rvf;
 
-import org.ihtsdo.buildcloud.core.entity.QATestConfig.CharacteristicType;
-
 public class ValidationRequest {
 	
 	private String buildBucketName;
@@ -19,8 +17,6 @@ public class ValidationRequest {
 	private String includedModuleId;
 
 	private final String runId;
-
-	private CharacteristicType mrcmValidationForm;
 
 	private String responseQueue;
 
@@ -86,14 +82,6 @@ public class ValidationRequest {
 
 	public void setIncludedModuleId(String includedModuleId) {
 		this.includedModuleId = includedModuleId;
-	}
-
-	public CharacteristicType getMrcmValidationForm() {
-		return mrcmValidationForm;
-	}
-
-	public void setMrcmValidationForm(CharacteristicType mrcmValidationForm) {
-		this.mrcmValidationForm = mrcmValidationForm;
 	}
 
 	public final String getResponseQueue() {

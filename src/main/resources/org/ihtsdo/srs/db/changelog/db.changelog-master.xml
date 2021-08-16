@@ -34,4 +34,5 @@
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-20.1.xml"/>
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-21.xml"/>
   <include file="org/ihtsdo/srs/db/changelog/db.changelog-22.xml"/>
+  <include file="org/ihtsdo/srs/db/changelog/db.changelog-23.xml"/>
 </databaseChangeLog>

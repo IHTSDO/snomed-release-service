@@ -193,10 +193,8 @@ public class BuildServiceImpl implements BuildService {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
 				if (buildRequest != null) {
 					qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
-					qaTestConfig.setMrcmValidationForm(buildRequest.getMrcmValidationForm());
 				} else {
 					qaTestConfig.setMaxFailureExport(100);
-					qaTestConfig.setMrcmValidationForm(QATestConfig.CharacteristicType.inferred);
 				}
 
 				build.setQaTestConfig(qaTestConfig);
@@ -693,7 +691,7 @@ public class BuildServiceImpl implements BuildService {
 			if (Boolean.FALSE.equals(offlineMode)) {
 				String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
 				final QATestConfig qaTestConfig = build.getQaTestConfig();
-				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport(), qaTestConfig.getMrcmValidationForm());
+				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
 				if (rvfResultMsg == null) {
 					rvfStatus = "Failed to run";
 				} else {
@@ -1002,7 +1000,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax, QATestConfig.CharacteristicType mrcmValidationForm) throws IOException, ConfigurationException {
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) throws IOException, ConfigurationException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
@@ -1022,7 +1020,6 @@ public class BuildServiceImpl implements BuildService {
 			if (extensionConfig != null) {
 				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
 				includedModuleId = extensionConfig.getModuleId();
-
 			}
 			String runId = Long.toString(System.currentTimeMillis());
 			ValidationRequest request = new ValidationRequest(runId);
@@ -1033,7 +1030,6 @@ public class BuildServiceImpl implements BuildService {
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
-			request.setMrcmValidationForm(mrcmValidationForm);
 			request.setResponseQueue(queue);
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);

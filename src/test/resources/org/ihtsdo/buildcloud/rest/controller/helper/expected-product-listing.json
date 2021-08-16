@@ -48,13 +48,11 @@
     "extensionDependencyRelease" : null,
     "storageLocation" : null,
     "enableDrools" : false,
-    "enableGoogleSheetDroolReport" : false,
     "jiraIssueCreationFlag" : false,
     "productName" : null,
     "reportingStage" : null,
     "enableMRCMValidation" : false,
-    "maxFailureExport" : null,
-    "mrcmValidationForm" : null
+    "maxFailureExport" : null
   },
   "visibility" : false,
   "legacyProduct" : false,

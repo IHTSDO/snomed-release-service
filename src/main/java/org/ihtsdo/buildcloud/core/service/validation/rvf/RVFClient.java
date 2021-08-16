@@ -33,8 +33,6 @@ public class RVFClient implements Closeable {
 
 	private static final String ENABLE_MRCM_VALIDATION = "enableMRCMValidation";
 
-	private static final String MRCM_VALIDATION_FORM = "mrcmValidationForm";
-
 	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
 
 	private static final String PRODUCT_NAME = "productName";
@@ -64,8 +62,6 @@ public class RVFClient implements Closeable {
 	private static final String GROUPS = "groups";
 
 	private static final String ENABLE_DROOLS = "enableDrools";
-
-	private static final String ENABLE_DROOLS_REPORT = "enableDroolsReport";
 
 	private static final String MANIFEST_FILE_S3_PATH = "manifestFileS3Path";
 
@@ -215,12 +211,10 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(RELEASE_FILE_S3_PATH, request.getReleaseZipFileS3Path());
 		multiPartBuilder.addTextBody(MANIFEST_FILE_S3_PATH, request.getManifestFileS3Path());
 		multiPartBuilder.addTextBody(ENABLE_DROOLS, Boolean.toString(qaTestConfig.isEnableDrools()));
-		multiPartBuilder.addTextBody(ENABLE_DROOLS_REPORT, Boolean.toString(qaTestConfig.isEnableGoogleSheetDroolReport()));
 		multiPartBuilder.addTextBody(CREATE_JIRA_ISSUE, Boolean.toString(qaTestConfig.isJiraIssueCreationFlag()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
 		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
-		multiPartBuilder.addTextBody(MRCM_VALIDATION_FORM, qaTestConfig.getMrcmValidationForm().name());
 
 		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
