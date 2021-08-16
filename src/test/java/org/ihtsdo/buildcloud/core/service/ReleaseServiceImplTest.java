@@ -9,7 +9,7 @@ import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReport
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.junit.Before;

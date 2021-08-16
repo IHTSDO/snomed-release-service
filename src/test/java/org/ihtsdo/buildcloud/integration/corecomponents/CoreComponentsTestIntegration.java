@@ -2,11 +2,10 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import java.util.zip.ZipFile;
 
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -185,7 +184,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		buildRequestPojo.setLoadExternalRefsetData(false);
 		buildRequestPojo.setEffectiveDate(releaseDate);
 
-		integrationTestHelper.scheduleBuild(buildRequestPojo, buildUrl);
+		integrationTestHelper.scheduleBuild(buildUrl);
 
 		// wait until the build is completed
 		integrationTestHelper.waitUntilCompleted(buildUrl);

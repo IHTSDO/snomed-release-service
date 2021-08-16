@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
+import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
@@ -33,9 +34,9 @@ public interface InputFileDAO {
 
 	List<String> listRelativeSourceFilePaths(Product product, String buildId, String subDirectory);
 
-	void persistInputPrepareReport(Product product, String buildId, SourceFileProcessingReport fileProcessingReport) throws IOException;
+	void persistInputPrepareReport(Build build, SourceFileProcessingReport fileProcessingReport) throws IOException;
 
-	void persistSourcesGatherReport(Product product, String buildId, InputGatherReport inputGatherReport) throws IOException;
+	void persistSourcesGatherReport(Build build, InputGatherReport inputGatherReport) throws IOException;
 
 	InputStream getInputGatherReport(Product product, String buildId);
 

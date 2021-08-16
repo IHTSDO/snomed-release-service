@@ -31,6 +31,7 @@ public class BuildS3PathHelper {
 	private static final String BUILD_RELEASE_LOG_JSON = "full-log.json";
 	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
 	private static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
+	public static final String BUILD_REPORT_JSON = "build_report.json";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -113,7 +114,7 @@ public class BuildS3PathHelper {
 	}
 
 	public String getOutputFilesPath(final Build build) {
-		return getBuildPath(build).append("output-files").append(SEPARATOR).toString();
+		return getBuildPath(build).append(OUTPUT_FILES).append(SEPARATOR).toString();
 	}
 
 	private String getFilePath(final Build build, final String relativePath) {
@@ -133,7 +134,7 @@ public class BuildS3PathHelper {
 	}
 
 	public String getReportPath(final Build build) {
-		return getBuildPath(build.getProduct(), build.getId()).append("build_report.json").toString();
+		return getBuildPath(build.getProduct(), build.getId()).append(BUILD_REPORT_JSON).toString();
 	}
 
 	public String getProductInputFilesPath(final Product product) {
@@ -168,10 +169,6 @@ public class BuildS3PathHelper {
 		return getBuildSourcesPath(product, buildId).append(sourceName).append(SEPARATOR);
 	}
 
-	public String getBuildInputFilePrepareReportPath(final Product product, String buildId) {
-		return getBuildPath(product, buildId).append(INPUT_PREPARE_REPORT_JSON).toString();
-	}
-
 	public String getBuildInputFilePrepareReportPath(Build build) {
 		return getBuildPath(build).append(INPUT_PREPARE_REPORT_JSON).toString();
 	}
@@ -179,6 +176,7 @@ public class BuildS3PathHelper {
 	public String getInputGatherReportLogPath(final Product product) {
 		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(INPUT_GATHER_REPORT_DIR).append(SEPARATOR).append(INPUT_GATHER_REPORT_JSON).toString();
 	}
+
 
 	public String getBuildInputGatherReportPath(Build build) {
 		return getBuildPath(build).append(INPUT_GATHER_REPORT_JSON).toString();
@@ -188,9 +186,6 @@ public class BuildS3PathHelper {
 		return getBuildLogFilePath(build, BUILD_RELEASE_LOG_JSON);
 	}
 
-	public String getBuildFullLogJsonFromProduct(Product product) {
-		return getProductPath(product).append(BUILD_FILES).append(SEPARATOR).append(LOG).append(SEPARATOR).append(BUILD_RELEASE_LOG_JSON).toString();
-	}
 
 	public String getBuildPreConditionCheckReportPath(Build build) {
 		return getBuildPath(build).append(PRE_CONDITION_CHECKS_REPORT).toString();

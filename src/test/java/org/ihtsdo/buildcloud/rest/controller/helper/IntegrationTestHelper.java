@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.PublishServiceImpl;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,7 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -279,16 +277,9 @@ public class IntegrationTestHelper {
 	}
 
 
-	public void scheduleBuild(String buildUrl) throws Exception {
-		BuildRequestPojo buildRequestPojo = new BuildRequestPojo();
-		buildRequestPojo.setSkipGatheringSourceFiles(true);
-		scheduleBuild(buildRequestPojo, buildUrl);
-	}
-
-	public void scheduleBuild(final BuildRequestPojo buildRequestPojo, final String buildUrl) throws Exception {
+	public void scheduleBuild(final String buildUrl) throws Exception {
 		final MvcResult result = mockMvc.perform(post(buildUrl + "/schedule")
 				.header("Authorization", getBasicDigestHeaderValue())
-				.content(new ObjectMapper().writeValueAsString(buildRequestPojo))
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
 				.andExpect(status().isOk())
@@ -343,9 +334,9 @@ public class IntegrationTestHelper {
 		System.out.println(report.getResponse().getContentAsString());
 	}
 
-	public String createBuild(String effectiveDate) throws Exception {
+	public String createBuild(String effectiveDate, boolean loadExternalRefsetData) throws Exception {
 		BuildRequestPojo buildRequest = new BuildRequestPojo();
-		buildRequest.setLoadExternalRefsetData(false);
+		buildRequest.setLoadExternalRefsetData(loadExternalRefsetData);
 		buildRequest.setLoadTermServerData(false);
 		buildRequest.setBuildName("Test");
 		buildRequest.setEffectiveDate(effectiveDate);
@@ -368,6 +359,10 @@ public class IntegrationTestHelper {
 
 		buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
 		return getProductUrl() + "/builds/" + buildId;
+	}
+
+	public String createBuild(String effectiveDate) throws Exception {
+		return createBuild(effectiveDate, false);
 	}
 
 

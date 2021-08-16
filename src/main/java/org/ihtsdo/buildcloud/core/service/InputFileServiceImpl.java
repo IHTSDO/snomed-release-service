@@ -9,7 +9,6 @@ import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
@@ -138,19 +137,22 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, String buildId, boolean copyFilesInManifest) throws BusinessServiceException {
+	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, Build build, boolean copyFilesInManifest) throws BusinessServiceException {
 		Product product = constructProduct(centerKey, productKey);
 		InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, copyFilesInManifest);
 		// check manifest file is present and valid
 		SourceFileProcessingReport report = fileProcessor.getFileProcessingReport();
-		checkAndValidateManifestFile(report, product, buildId);
+		checkAndValidateManifestFile(report, product, build.getId());
 		if (!report.getDetails().containsKey(ERROR)) {
-			try (InputStream manifestInputStream = inputFileDAO.getManifestStream(product, buildId)) {
-				List<String> sourceFiles = listSourceFilePaths(centerKey, productKey, buildId);
+			try (InputStream manifestInputStream = inputFileDAO.getManifestStream(product, build.getId())) {
+				List<String> sourceFiles = listSourceFilePaths(centerKey, productKey, build.getId());
 				if (sourceFiles != null && !sourceFiles.isEmpty()) {
-					fileProcessor.processFiles(manifestInputStream, sourceFiles, buildId, fileProcessingFailureMaxRetry);
+					fileProcessor.processFiles(manifestInputStream, sourceFiles, build.getId(), fileProcessingFailureMaxRetry);
 				} else {
-					report.add(ERROR, "Failed to find files from source directory");
+					if (build.getConfiguration().isLoadExternalRefsetData() || build.getConfiguration().isLoadTermServerData()) {
+						// add to error report as source files used but failed to find any
+						report.add(ERROR, "Failed to find files from source directory");
+					}
 				}
 				for (String source : fileProcessor.getSkippedSourceFiles().keySet()) {
 					for (String skippedFile : fileProcessor.getSkippedSourceFiles().get(source)) {
@@ -165,7 +167,7 @@ public class InputFileServiceImpl implements InputFileService {
 		}
 
 		try {
-			inputFileDAO.persistInputPrepareReport(product, buildId, report);
+			inputFileDAO.persistInputPrepareReport(build, report);
 		} catch (IOException e) {
 			throw new BusinessServiceException(e);
 		}
@@ -253,17 +255,15 @@ public class InputFileServiceImpl implements InputFileService {
 		try {
 			Product product = constructProduct(centerKey, productKey);
 			BuildConfiguration buildConfiguration = build.getConfiguration();
-			inputFileDAO.persistSourcesGatherReport(product, build.getId(), inputGatherReport);
-			if (!buildConfiguration.isSkipGatheringSourceFiles()) {
-				if (buildConfiguration.isLoadTermServerData()) {
-					gatherSourceFilesFromTermServer(centerKey, productKey, build, inputGatherReport, securityContext);
-				}
-				if (buildConfiguration.isLoadExternalRefsetData()) {
-					gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, build, inputGatherReport);
-				}
+			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
+			if (buildConfiguration.isLoadTermServerData()) {
+				gatherSourceFilesFromTermServer(centerKey, productKey, build, inputGatherReport, securityContext);
+			}
+			if (buildConfiguration.isLoadExternalRefsetData()) {
+				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, build, inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			inputFileDAO.persistSourcesGatherReport(product, build.getId(), inputGatherReport);
+			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);

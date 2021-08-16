@@ -6,8 +6,7 @@ import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.*;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
@@ -24,8 +23,6 @@ import org.springframework.util.StringUtils;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
-import java.text.ParseException;
-import java.util.Date;
 import java.util.List;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;

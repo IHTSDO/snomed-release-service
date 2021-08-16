@@ -1,7 +1,6 @@
-package org.ihtsdo.buildcloud.core.service.inputfile.gather;
+package org.ihtsdo.buildcloud.rest.pojo;
 
 
-import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 
 import java.util.Set;
@@ -12,11 +11,10 @@ public class BuildRequestPojo {
 	private ExportCategory exportCategory;
 	private String branchPath;
 	private String buildName;
-	private boolean loadTermServerData = true;
-	private boolean loadExternalRefsetData = true;
+	private boolean loadTermServerData;
+	private boolean loadExternalRefsetData;
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
-	private boolean skipGatheringSourceFiles;
 
 	public BuildRequestPojo() {
 	}
@@ -85,13 +83,6 @@ public class BuildRequestPojo {
 		this.maxFailuresExport = maxFailuresExport;
 	}
 
-	public void setSkipGatheringSourceFiles(boolean skipGatheringSourceFiles) {
-		this.skipGatheringSourceFiles = skipGatheringSourceFiles;
-	}
-
-	public boolean isSkipGatheringSourceFiles() {
-		return this.skipGatheringSourceFiles;
-	}
 
 	@Override
 	public String toString() {
@@ -100,7 +91,6 @@ public class BuildRequestPojo {
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
-				", skipGatheringSourceFiles=" + skipGatheringSourceFiles +
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +

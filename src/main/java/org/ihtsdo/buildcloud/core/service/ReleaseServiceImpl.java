@@ -3,8 +3,6 @@ package org.ihtsdo.buildcloud.core.service;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.entity.QATestConfig;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
@@ -58,34 +56,31 @@ public class ReleaseServiceImpl implements ReleaseService {
 			MDC.put(TRACKER_ID, product.getReleaseCenter().getBusinessKey() + "|" + product.getBusinessKey() + "|" + build.getId());
 			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId());
 
-			//Gather all files in term server and externally maintain buckets if specified to source directories
+			// Gather all files in term server and externally maintain buckets when required
 			SecurityContext securityContext = new SecurityContextImpl();
 			securityContext.setAuthentication(authentication);
 			BuildConfiguration buildConfiguration = build.getConfiguration();
-			if (!buildConfiguration.isSkipGatheringSourceFiles()) {
-				InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, securityContext);
-				if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
-					LOGGER.error("Error occurred when gathering source files: ");
-					for (String source : inputGatherReport.getDetails().keySet()) {
-						InputGatherReport.Details details = inputGatherReport.getDetails().get(source);
-						if (InputGatherReport.Status.ERROR.equals(details.getStatus())) {
-							LOGGER.error("Source: {} -> Error Details: {}", source, details.getMessage());
-							buildDAO.updateStatus(build, Status.FAILED);
-							throw new BusinessServiceRuntimeException("Failed when gathering source files. Please check input gather report for details");
-						}
+
+			InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, securityContext);
+			if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
+				LOGGER.error("Error occurred when gathering source files: ");
+				for (String source : inputGatherReport.getDetails().keySet()) {
+					InputGatherReport.Details details = inputGatherReport.getDetails().get(source);
+					if (InputGatherReport.Status.ERROR.equals(details.getStatus())) {
+						LOGGER.error("Source: {} -> Error Details: {}", source, details.getMessage());
+						buildDAO.updateStatus(build, Status.FAILED);
+						throw new BusinessServiceRuntimeException("Failed when gathering source files. Please check input gather report for details");
 					}
 				}
+			}
 
-				// After gathering all sources, start to transform and put them into input directories
-				if (buildConfiguration.isLoadTermServerData() || buildConfiguration.isLoadExternalRefsetData()) {
-					SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), true);
-					if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
-						LOGGER.error("Error occurred when processing input files");
-						List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
-						for (FileProcessingReportDetail errorDetail : errorDetails) {
-							LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
-						}
-					}
+			// Prepare input files from sources when available
+			SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
+			if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
+				LOGGER.error("Error occurred when processing input files");
+				List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
+				for (FileProcessingReportDetail errorDetail : errorDetails) {
+					LOGGER.error("File: {} -> Error Details: {}", errorDetail.getFileName(), errorDetail.getMessage());
 				}
 			}
 

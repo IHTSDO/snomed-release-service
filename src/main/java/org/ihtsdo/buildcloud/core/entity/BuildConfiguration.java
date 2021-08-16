@@ -21,6 +21,7 @@ public class BuildConfiguration {
 	@Column(name="id")
 	private long id;
 	public static final String BETA_PREFIX = "x";
+
 	@OneToOne
 	@JoinColumn(name="product_id")
 	@JsonIgnore
@@ -106,9 +107,6 @@ public class BuildConfiguration {
 
 	@Transient
 	private Set<String> excludedModuleIds;
-
-	@Transient
-	private boolean skipGatheringSourceFiles;
 
 	@Transient
 	private boolean loadExternalRefsetData;
@@ -386,9 +384,7 @@ public class BuildConfiguration {
 	public String toString() {
 		return "BuildConfiguration{" +
 				"id=" + id +
-				", product=" + product +
 				", effectiveTime=" + effectiveTime +
-				", readmeHeader='" + readmeHeader + '\'' +
 				", readmeEndDate='" + readmeEndDate + '\'' +
 				", firstTimeRelease=" + firstTimeRelease +
 				", betaRelease=" + betaRelease +
@@ -411,7 +407,6 @@ public class BuildConfiguration {
 				", branchPath='" + branchPath + '\'' +
 				", buildName='" + buildName + '\'' +
 				", excludedModuleIds=" + excludedModuleIds +
-				", skipGatheringSourceFiles=" + skipGatheringSourceFiles +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", loadTermServerData=" + loadTermServerData +
 				", exportType='" + exportType + '\'' +
@@ -491,14 +486,6 @@ public class BuildConfiguration {
 
 	public Set<String> getExcludedModuleIds() {
 		return excludedModuleIds;
-	}
-
-	public void setSkipGatheringSourceFiles(boolean skipGatheringSourceFiles) {
-		this.skipGatheringSourceFiles = skipGatheringSourceFiles;
-	}
-
-	public boolean isSkipGatheringSourceFiles() {
-		return skipGatheringSourceFiles;
 	}
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {

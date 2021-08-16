@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.entity.Build;
 
 public final class CreateReleasePackageBuildRequest {

@@ -16,7 +16,7 @@ import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.core.service.inputfile.gather.BuildRequestPojo;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
