@@ -33,46 +33,61 @@ import java.util.zip.ZipInputStream;
 @Service
 public class TermServerServiceImpl implements TermServerService {
 
-    @Value("${snowstorm.reasonerId}")
-    private String reasonerId;
+	@Value("${snowstorm.reasonerId}")
+	private String reasonerId;
 
-    @Value("${snowstorm.url}")
-    private String termServerUrl;
+	@Value("${snowstorm.url}" )
+	private String termServerUrl;
 
-    private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
+	@Value("${srs.file-export.max.retry:3}")
+	private int maxExportRetry;
 
-    private static final String DELTA = "Delta";
-    private static final String SNAPSHOT = "Snapshot";
+	@Value("${srs.file-export.retry.delay:20000}")
+	private long retryDelayInMillis;
 
-    @Override
-    public File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
-        File tempDir = null;
-        try {
-            SnowstormRestClient snowstormRestClient = getSnowstormClient();
-            Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
-            File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
-            tempDir = Files.createTempDirectory("export-temp").toFile();
-            unzipFlat(export, tempDir);
-            renameFiles(tempDir, SNAPSHOT, DELTA);
-            enforceReleaseDate(tempDir, effectiveDate);
-            File newZipFile = File.createTempFile("term-server-export",".zip");
-            ZipFileUtils.zip(tempDir.getAbsolutePath(), newZipFile.getAbsolutePath());
-            return newZipFile;
-        } catch (IOException e) {
-            logger.error("Failed export data from term server.", e);
-            throw new BusinessServiceException(e);
-        } finally {
-            if (tempDir != null) {
-                FileUtils.deleteQuietly(tempDir);
-            }
-        }
-    }
+	private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
 
-    @Override
-    public List<CodeSystem> getCodeSystems() {
-        SnowstormRestClient snowstormRestClient = getSnowstormClient();
-        return snowstormRestClient.getCodeSystems();
-    }
+	private static final String DELTA = "Delta";
+	private static final String SNAPSHOT = "Snapshot";
+
+	@Override
+	public File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
+		File tempDir = null;
+		try {
+			SnowstormRestClient snowstormRestClient = getSnowstormClient();
+			Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
+			int retryCount = 0;
+			while (retryCount++ < maxExportRetry) {
+				boolean isBranchLocked = snowstormRestClient.isBranchLocked(branchPath);
+				if (!isBranchLocked) {
+					break;
+				}
+				logger.info("Branch {} is locked. SRS will wait {} seconds and retry.", branchPath, retryDelayInMillis/1000);
+				Thread.sleep(retryDelayInMillis);
+			}
+			File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
+			tempDir = Files.createTempDirectory("export-temp").toFile();
+			unzipFlat(export, tempDir);
+			renameFiles(tempDir, SNAPSHOT, DELTA);
+			enforceReleaseDate(tempDir, effectiveDate);
+			File newZipFile = File.createTempFile("term-server-export",".zip");
+			ZipFileUtils.zip(tempDir.getAbsolutePath(), newZipFile.getAbsolutePath());
+			return newZipFile;
+		} catch (IOException | RestClientException | InterruptedException e) {
+			logger.error("Failed export data from term server.", e);
+			throw new BusinessServiceException(e);
+		} finally {
+			if (tempDir != null) {
+				FileUtils.deleteQuietly(tempDir);
+			}
+		}
+	}
+
+	@Override
+	public List<CodeSystem> getCodeSystems() {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.getCodeSystems();
+	}
 
 	@Override
 	public Branch getBranch(String branchPath) throws RestClientException {
@@ -81,93 +96,93 @@ public class TermServerServiceImpl implements TermServerService {
 	}
 
 
-    public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
+	public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
 
-        if (!targetDir.exists() || !targetDir.isDirectory()) {
-            throw new BusinessServiceException(targetDir + " is not a viable directory in which to extract archive");
-        }
+		if (!targetDir.exists() || !targetDir.isDirectory()) {
+			throw new BusinessServiceException(targetDir + " is not a viable directory in which to extract archive");
+		}
 
-        try (
-            ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));) {
-            ZipEntry ze = zis.getNextEntry();
-            while (ze != null) {
-                if (!ze.isDirectory()) {
-                    Path p = Paths.get(ze.getName());
-                    String extractedFileName = p.getFileName().toString();
-                    File extractedFile = new File(targetDir, extractedFileName);
-                    try (OutputStream out = new FileOutputStream(extractedFile);) {
-                        IOUtils.copy(zis, out);
-                    }
-                }
-                ze = zis.getNextEntry();
-            }
-        }
-    }
+		try (
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));) {
+			ZipEntry ze = zis.getNextEntry();
+			while (ze != null) {
+				if (!ze.isDirectory()) {
+					Path p = Paths.get(ze.getName());
+					String extractedFileName = p.getFileName().toString();
+					File extractedFile = new File(targetDir, extractedFileName);
+					try (OutputStream out = new FileOutputStream(extractedFile);) {
+						IOUtils.copy(zis, out);
+					}
+				}
+				ze = zis.getNextEntry();
+			}
+		}
+	}
 
-    private SnowstormRestClient getSnowstormClient() {
-        return new SnowstormRestClientFactory(termServerUrl, this.reasonerId).getClient();
-    }
+	private SnowstormRestClient getSnowstormClient() {
+		return new SnowstormRestClientFactory(termServerUrl, this.reasonerId).getClient();
+	}
 
-    private void renameFiles(File targetDirectory, String find, String replace) {
-        Assert.isTrue(targetDirectory.isDirectory(), targetDirectory.getAbsolutePath()
-                + " must be a directory in order to rename files from " + find + " to " + replace);
-        for (File thisFile : targetDirectory.listFiles()) {
-            renameFile(targetDirectory, thisFile, find, replace);
-        }
-    }
+	private void renameFiles(File targetDirectory, String find, String replace) {
+		Assert.isTrue(targetDirectory.isDirectory(), targetDirectory.getAbsolutePath()
+				+ " must be a directory in order to rename files from " + find + " to " + replace);
+		for (File thisFile : targetDirectory.listFiles()) {
+			renameFile(targetDirectory, thisFile, find, replace);
+		}
+	}
 
-    private void renameFile(File parentDir, File thisFile, String find, String replace) {
-        if (thisFile.exists() && !thisFile.isDirectory()) {
-            String currentName = thisFile.getName();
-            String newName = currentName.replace(find, replace);
-            if (!newName.equals(currentName)) {
-                File newFile = new File(parentDir, newName);
-                thisFile.renameTo(newFile);
-            }
-        }
-    }
+	private void renameFile(File parentDir, File thisFile, String find, String replace) {
+		if (thisFile.exists() && !thisFile.isDirectory()) {
+			String currentName = thisFile.getName();
+			String newName = currentName.replace(find, replace);
+			if (!newName.equals(currentName)) {
+				File newFile = new File(parentDir, newName);
+				thisFile.renameTo(newFile);
+			}
+		}
+	}
 
-    private void enforceReleaseDate(File extractDir, String enforcedReleaseDate) throws BusinessServiceException {
-        //Loop through all the files in the directory and change the release date if required
-        for (File thisFile : extractDir.listFiles()) {
-            if (thisFile.isFile()) {
-                String thisReleaseDate = findDateInString(thisFile.getName(), true);
-                if (thisReleaseDate != null && !thisReleaseDate.equals("_" + enforcedReleaseDate)) {
-                    logger.debug("Modifying releaseDate in " + thisFile.getName() + " to _" + enforcedReleaseDate);
-                    renameFile(extractDir, thisFile, thisReleaseDate, "_" + enforcedReleaseDate);
-                }
-            }
-        }
-    }
+	private void enforceReleaseDate(File extractDir, String enforcedReleaseDate) throws BusinessServiceException {
+		//Loop through all the files in the directory and change the release date if required
+		for (File thisFile : extractDir.listFiles()) {
+			if (thisFile.isFile()) {
+				String thisReleaseDate = findDateInString(thisFile.getName(), true);
+				if (thisReleaseDate != null && !thisReleaseDate.equals("_" + enforcedReleaseDate)) {
+					logger.debug("Modifying releaseDate in " + thisFile.getName() + " to _" + enforcedReleaseDate);
+					renameFile(extractDir, thisFile, thisReleaseDate, "_" + enforcedReleaseDate);
+				}
+			}
+		}
+	}
 
-    public String findDateInString(String str, boolean optional) throws BusinessServiceException {
-        Matcher dateMatcher = Pattern.compile("(_\\d{8})").matcher(str);
-        if (dateMatcher.find()) {
-            return dateMatcher.group();
-        } else {
-            if (optional) {
-                logger.warn("Did not find a date in: {}", str);
-            } else {
-                throw new BusinessServiceException("Unable to determine date from " + str);
-            }
-        }
-        return null;
-    }
+	public String findDateInString(String str, boolean optional) throws BusinessServiceException {
+		Matcher dateMatcher = Pattern.compile("(_\\d{8})").matcher(str);
+		if (dateMatcher.find()) {
+			return dateMatcher.group();
+		} else {
+			if (optional) {
+				logger.warn("Did not find a date in: {}", str);
+			} else {
+				throw new BusinessServiceException("Unable to determine date from " + str);
+			}
+		}
+		return null;
+	}
 
-    private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
-        // If any modules are excluded build a list of modules to include
-        Set<String> exportModuleIds = null;
-        if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
-            try {
-                Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
-                allModules.removeAll(excludedModuleIds);
-                exportModuleIds = new HashSet<>();
-                exportModuleIds.addAll(allModules);
-                logger.info("Excluded modules are {}, included modules are {} for release on {}", excludedModuleIds, exportModuleIds, branchPath);
-            } catch (RestClientException e) {
-                throw new BusinessServiceException("Failed to build list of modules for export.", e);
-            }
-        }
-        return exportModuleIds;
-    }
+	private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
+		// If any modules are excluded build a list of modules to include
+		Set<String> exportModuleIds = null;
+		if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
+			try {
+				Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
+				allModules.removeAll(excludedModuleIds);
+				exportModuleIds = new HashSet<>();
+				exportModuleIds.addAll(allModules);
+				logger.info("Excluded modules are {}, included modules are {} for release on {}", excludedModuleIds, exportModuleIds, branchPath);
+			} catch (RestClientException e) {
+				throw new BusinessServiceException("Failed to build list of modules for export.", e);
+			}
+		}
+		return exportModuleIds;
+	}
 }
