@@ -10,7 +10,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>4.1.0-SNAPSHOT</version>
+	<version>4.1.0</version>
 	<properties>
 		<java.version>11</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
@@ -20,7 +20,7 @@
 		<spring-security.version>3.2.5.RELEASE</spring-security.version>
 		<hazelcast.version>3.1.6</hazelcast.version>
 		<liquibase.version>4.3.2</liquibase.version>
-		<otf-common.version>5.0.0-SNAPSHOT</otf-common.version>
+		<otf-common.version>5.0.0</otf-common.version>
 		<snomed-utilities.version>1.4.1</snomed-utilities.version>
 		<junit.version>4.13.1</junit.version>
 		<activemq.version>5.15.9</activemq.version>
