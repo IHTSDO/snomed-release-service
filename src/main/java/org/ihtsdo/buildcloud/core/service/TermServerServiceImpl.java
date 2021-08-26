@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -52,20 +54,51 @@ public class TermServerServiceImpl implements TermServerService {
 
 	@Override
 	public File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
+		int counter = 0;
+		boolean isBranchLocked = false;
+		while (counter++ < maxExportRetry) {
+			try {
+				isBranchLocked = snowstormRestClient.isBranchLocked(branchPath);
+			} catch (RestClientException e) {
+				throw new BusinessServiceException(String.format("Failed to check branch lock status for %s", branchPath), e);
+			}
+			if (!isBranchLocked) {
+				break;
+			}
+			logger.info("Branch {} is locked. SRS will wait {} seconds and retry.", branchPath, retryDelayInMillis/1000);
+			try {
+				Thread.sleep(retryDelayInMillis);
+			} catch (InterruptedException e) {
+				logger.warn("Retry delay failed", e);
+			}
+		}
+
+		counter = 0;
+		File export = null;
+		boolean isSuccessful = false;
+		while (!isSuccessful && counter++ < maxExportRetry) {
+			try {
+				export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
+				isSuccessful = true;
+			} catch(Exception e) {
+				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, e);
+				if (counter == maxExportRetry) {
+					throw new BusinessServiceException(String.format("Failed to export from %s after retry %d times", branchPath, maxExportRetry), e);
+				} else {
+					logger.info("Retry will start in {} seconds", retryDelayInMillis/1000);
+					try {
+						Thread.sleep(retryDelayInMillis);
+					} catch (InterruptedException ie) {
+						logger.warn("Export retry delay failed", e);
+					}
+				}
+			}
+		}
+
 		File tempDir = null;
 		try {
-			SnowstormRestClient snowstormRestClient = getSnowstormClient();
-			Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
-			int retryCount = 0;
-			while (retryCount++ < maxExportRetry) {
-				boolean isBranchLocked = snowstormRestClient.isBranchLocked(branchPath);
-				if (!isBranchLocked) {
-					break;
-				}
-				logger.info("Branch {} is locked. SRS will wait {} seconds and retry.", branchPath, retryDelayInMillis/1000);
-				Thread.sleep(retryDelayInMillis);
-			}
-			File export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
 			tempDir = Files.createTempDirectory("export-temp").toFile();
 			unzipFlat(export, tempDir);
 			renameFiles(tempDir, SNAPSHOT, DELTA);
@@ -73,9 +106,8 @@ public class TermServerServiceImpl implements TermServerService {
 			File newZipFile = File.createTempFile("term-server-export",".zip");
 			ZipFileUtils.zip(tempDir.getAbsolutePath(), newZipFile.getAbsolutePath());
 			return newZipFile;
-		} catch (IOException | RestClientException | InterruptedException e) {
-			logger.error("Failed export data from term server.", e);
-			throw new BusinessServiceException(e);
+		} catch (IOException e) {
+			throw new BusinessServiceException("Failed to process export data from Snowstorm", e);
 		} finally {
 			if (tempDir != null) {
 				FileUtils.deleteQuietly(tempDir);
