@@ -658,10 +658,14 @@ public class BuildServiceImpl implements BuildService {
 		generateReadmeFile(build);
 
 		if (dao.isBuildCancelRequested(build)) return;
+
+		// create the final package
 		File zipPackage = null;
+		String packageName;
 		try {
 			final Zipper zipper = new Zipper(build, dao);
 			zipPackage = zipper.createZipFile(false);
+			packageName = zipPackage.getName();
 			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 			dao.putOutputFile(build, zipPackage, true);
 			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
@@ -669,45 +673,44 @@ public class BuildServiceImpl implements BuildService {
 				DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
 				extractor.outputDailyBuildPackage(dailyBuildResourceManager);
 			}
-
-			if (dao.isBuildCancelRequested(build)) return;
-
-			if (Boolean.FALSE.equals(offlineMode)) {
-				performPostConditionsCheck(build, build.getStatus());
-				if (Status.FAILED_POST_CONDITIONS.equals(build.getStatus())) {
-					return;
-				}
-			}
-
-			if (dao.isBuildCancelRequested(build)) return;
-
-			if (Boolean.FALSE.equals(offlineMode)) {
-				dao.updateStatus(build, Status.BUILT);
-			}
-
-			String rvfStatus = "N/A";
-			String rvfResultMsg = "RVF validation configured to not run.";
-			if (Boolean.FALSE.equals(offlineMode)) {
-				String s3ZipFilePath = dao.getOutputFilePath(build, zipPackage.getName());
-				final QATestConfig qaTestConfig = build.getQaTestConfig();
-				rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
-				if (rvfResultMsg == null) {
-					rvfStatus = "Failed to run";
-				} else {
-					rvfStatus = "Completed";
-				}
-			}
-			final BuildReport report = build.getBuildReport();
-			LOGGER.info("RVF Result: {}", rvfResultMsg);
-			report.add("post_validation_status", rvfStatus);
-			report.add("rvf_response", rvfResultMsg);
-			LOGGER.info("End of running build {}", build.getUniqueId());
-			dao.persistReport(build);
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failure during getting RVF results", e);
+			throw new BusinessServiceException("Failed to create zip file", e);
 		} finally {
 			org.apache.commons.io.FileUtils.deleteQuietly(zipPackage);
 		}
+
+		if (dao.isBuildCancelRequested(build)) return;
+
+		if (Boolean.FALSE.equals(offlineMode)) {
+			performPostConditionsCheck(build, build.getStatus());
+			if (Status.FAILED_POST_CONDITIONS.equals(build.getStatus())) {
+				return;
+			}
+			// all good so far
+			dao.updateStatus(build, Status.BUILT);
+		}
+
+		if (dao.isBuildCancelRequested(build)) return;
+
+		// run rvf validations
+		String rvfStatus = "N/A";
+		String rvfResultMsg = "RVF validation configured to not run.";
+		if (Boolean.FALSE.equals(offlineMode)) {
+			String s3ZipFilePath = dao.getOutputFilePath(build, packageName);
+			final QATestConfig qaTestConfig = build.getQaTestConfig();
+			rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
+			if (rvfResultMsg == null) {
+				rvfStatus = "Failed to run";
+			} else {
+				rvfStatus = "Completed";
+			}
+		}
+		final BuildReport report = build.getBuildReport();
+		LOGGER.info("RVF Result: {}", rvfResultMsg);
+		report.add("post_validation_status", rvfStatus);
+		report.add("rvf_response", rvfResultMsg);
+		LOGGER.info("End of running build {}", build.getUniqueId());
+		dao.persistReport(build);
 	}
 
 	private void generateReleasePackageFile(Build build, String releaseInfoFields, String releaseFilename) throws BusinessServiceException {
@@ -999,8 +1002,9 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) throws IOException, ConfigurationException {
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
+		String rvfResponse = null;
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
@@ -1031,8 +1035,12 @@ public class BuildServiceImpl implements BuildService {
 			request.setIncludedModuleId(includedModuleId);
 			request.setResponseQueue(queue);
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
-			return rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
+			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
+		} catch (IOException | BusinessServiceException | ConfigurationException e) {
+			LOGGER.error("Failed to run RVF validations.", e);
+			dao.updateStatus(build, Status.RVF_FAILED);
 		}
+		return rvfResponse;
 	}
 
 	private void sendMiniRvfValidationRequestToBuildStatusMessage(final Build build, final String runId) {

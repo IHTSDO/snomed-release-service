@@ -134,7 +134,7 @@ public class QATestConfig {
 	public String toString() {
 		return "QATestConfig{" +
 				"id=" + id +
-				", product=" + product +
+				", product=" + product.getBusinessKey() +
 				", assertionGroupNames='" + assertionGroupNames + '\'' +
 				", droolsRulesGroupNames='" + droolsRulesGroupNames + '\'' +
 				", previousInternationalRelease='" + previousInternationalRelease + '\'' +

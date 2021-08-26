@@ -83,7 +83,7 @@ public class TermServerServiceImpl implements TermServerService {
 				export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
 				isSuccessful = true;
 			} catch(Exception e) {
-				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, e);
+				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, ExceptionUtils.getRootCauseMessage(e));
 				if (counter == maxExportRetry) {
 					throw new BusinessServiceException(String.format("Failed to export from %s after retry %d times", branchPath, maxExportRetry), e);
 				} else {
