@@ -124,7 +124,7 @@ public class BuildStatusListenerService {
 			case "COMPLETE":
 				return processCompleteStatus(build, product);
 			case "FAILED":
-				return Build.Status.FAILED;
+				return Build.Status.RVF_FAILED;
 			default:
 				LOGGER.info("Unexpected build status state: {}", state);
 				return null;

@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -25,6 +26,7 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.otf.rest.exception.ApplicationWiringException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StreamUtils;
@@ -203,7 +205,7 @@ public class RVFClient implements Closeable {
 	public void close() throws IOException {
 		httpClient.close();
 	}
-	private HttpPost createHttpPostRequest(QATestConfig qaTestConfig, ValidationRequest request, String targetUrl) throws FileNotFoundException {
+	private HttpPost createHttpPostRequest(QATestConfig qaTestConfig, ValidationRequest request, String targetUrl) {
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
@@ -274,7 +276,7 @@ public class RVFClient implements Closeable {
 		return post;
 	}
 
-	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest) throws FileNotFoundException {
+	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest) throws BusinessServiceException {
 		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest, RUN_POST_VIA_S3);
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
 		String rvfResponse = "No result recovered from RVF";
@@ -287,29 +289,20 @@ public class RVFClient implements Closeable {
 					LOGGER.info("RVF result url:" + rvfResponse);
 					return rvfResponse;
 				}
-			} 
-			try (InputStream content = response.getEntity().getContent()) {
-				rvfResponse = IOUtils.toString(content);
-				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
-				if (200 == statusCode) {
-					// If all is good, expecting to find URL in the response
-					int urlStart = rvfResponse.indexOf("http");
-					if (urlStart != -1) {
-						int urlEnd = rvfResponse.indexOf("\"", urlStart);
-						rvfResponse = rvfResponse.substring(urlStart, urlEnd);
-					}
-					LOGGER.info("Asynchronous RVF post-condition check of {} initiated.  Clients should check for results at {}.",
-							validationRequest.getReleaseZipFileS3Path(), rvfResponse);
-				} else {
-					rvfResponse = " Received RVF response HTTP status code: " + statusCode + " with body: " + rvfResponse;
-					LOGGER.info("RVF Service failure: {}", rvfResponse);
-				}
 			}
-		} catch (Exception e) {
-			rvfResponse = "Exception detected while initiating RVF at: " + RUN_POST_VIA_S3 + 
+
+			try (InputStream content = response.getEntity().getContent()) {
+				rvfResponse = IOUtils.toString(content,"UTF-8" );
+				rvfResponse = StringEscapeUtils.unescapeJava(rvfResponse);
+				rvfResponse = " Received RVF response HTTP status code: " + statusCode + " with body: " + rvfResponse;
+				LOGGER.error("RVF Service failure: {}", rvfResponse);
+				throw new BusinessServiceException(rvfResponse);
+			}
+		} catch (IOException e) {
+			rvfResponse = "Exception detected while initiating RVF at: " + RUN_POST_VIA_S3 +
 					" to test: " + validationRequest.getReleaseZipFileS3Path() + " which said: " + e.getMessage();
 			LOGGER.error(rvfResponse, e);
+			throw new BusinessServiceException(rvfResponse);
 		}
-		return rvfResponse;
 	}
 }
