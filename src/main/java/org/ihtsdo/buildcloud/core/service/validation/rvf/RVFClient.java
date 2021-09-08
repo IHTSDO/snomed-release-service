@@ -139,7 +139,7 @@ public class RVFClient implements Closeable {
 				if (failDetail.getFailedCount() == 0) {
 					errorMessage = null;
 				} else {
-					errorMessage = "There were " + failDetail.getFailedCount() + " RVF " + checkType + " test failures: " + failDetail.getDetails();
+					errorMessage = "There were " + failDetail.getFailedCount() + " RVF " + checkType + " test failures for file "+ inputFileName + ": " + failDetail.getDetails();
 				}
 			} else {
 				errorMessage = "RVF response HTTP status code " + statusCode;
@@ -178,7 +178,7 @@ public class RVFClient implements Closeable {
 			boolean endOfValuesReached = false; // Optimisation so we don't inspect every line.
 			while ((line = responseReader.readLine()) != null) {
 				if (!line.isEmpty() && line.startsWith(FAILED)) {
-					failedDetails = failedDetails == null ? line : failedDetails + ", " + line;
+					failedDetails = failedDetails == null ? line.replaceAll("\t", " ") : failedDetails + ", " + line.replaceAll("\t", " ");
 				}
 				if (endOfValuesReached) {
 					if (line.startsWith(TOTAL_NUMBER_OF_FAILURES)) {

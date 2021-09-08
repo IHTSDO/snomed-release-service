@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired {
@@ -34,17 +35,21 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 			return;
 		}
 		try (RVFClient rvfClient = new RVFClient(rvfUrl)) {
+			String errorMessage = "";
 			for (String inputFile : buildDAO.listInputFileNames(build)) {
 				if (inputFile.startsWith(RF2Constants.INPUT_FILE_PREFIX) && inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 					InputStream inputFileStream = buildDAO.getInputFileStream(build, inputFile);
 					AsyncPipedStreamBean logFileOutputStream = buildDAO.getLogFileOutputStream(build, "precheck-rvf-" + inputFile + ".log");
-					String errorMessage = rvfClient.checkInputFile(inputFileStream, inputFile, logFileOutputStream);
-					if (errorMessage == null) {
-						pass();
-					} else {
-						fail(errorMessage);
+					String error = rvfClient.checkInputFile(inputFileStream, inputFile, logFileOutputStream);
+					if (error != null) {
+						errorMessage += error + ".";
 					}
 				}
+			}
+			if (!StringUtils.isEmpty(errorMessage)) {
+				fail(errorMessage);
+			} else {
+				pass();
 			}
 		} catch (IOException e) {
 			LOGGER.error("Failed to check any input files against RVF.", e);
