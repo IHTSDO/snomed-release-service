@@ -569,7 +569,7 @@ public class BuildServiceImpl implements BuildService {
 		build.setPreConditionCheckReports(preConditionReports);
 		// analyze report to check whether there is fatal error for all packages
 		for (final PreConditionCheckReport report : preConditionReports) {
-			if (report.getResult() == State.FATAL) {
+			if (report.getResult() == State.FATAL || report.getResult() == State.FAIL) {
 				// Need to alert release manager of fatal pre-condition check error.
 				buildStatus = Status.FAILED_PRE_CONDITIONS;
 				LOGGER.error("Fatal error occurred during pre-condition checks:{}, build {} will be halted.", report, build.getId());

@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.validation.rvf;
 
-import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,10 +26,10 @@ public class RVFClientTest {
 				"Total number of failures: 0\n" +
 				"Total number of successes: 37362\n";
 
-		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
+		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseNoFailures");
 
-		Assert.assertEquals(0, failureCount);
+		Assert.assertEquals(0, failDetail.getFailedCount());
 	}
 
 	@Test
@@ -41,9 +40,9 @@ public class RVFClientTest {
 				"Total number of failures: 2\n" +
 				"Total number of successes: 37360\n";
 
-		long failureCount = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
+		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseFailures");
 
-		Assert.assertEquals(2, failureCount);
+		Assert.assertEquals(2, failDetail.getFailedCount());
 	}
 }

@@ -1,0 +1,18 @@
+This is the readme for the first release © 2002-2014.
+Table of contents:
+
+    SnomedCT_Release_INT_20140131
+        RF2Release
+            Full
+                Refset
+                    Map
+                        der2_sRefset_SimpleMapFull_INT_20140131.txt
+            Snapshot
+                Refset
+                    Map
+                        der2_sRefset_SimpleMapSnapshot_INT_20140131.txt
+            Delta
+                Refset
+                    Map
+                        der2_sRefset_SimpleMapDelta_INT_20140131.txt
+        Readme_20140131.txt

@@ -38,10 +38,14 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 		String effectiveTime = "20140131";
 		setupProduct(effectiveTime);
 		integrationTestHelper.setCustomRefsetCompositeKeys(customRefsetCompositeKeys);
+		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2014");
 		String buildUrl = integrationTestHelper.createBuild(effectiveTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccRefset_ExtendedMapDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_iisssccsiRefset_UnknownFormatDelta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_" + effectiveTime + ".txt", getClass());
 
 		integrationTestHelper.scheduleBuild(buildUrl);
 
@@ -64,6 +68,7 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 	private void assertOutput(String expectedOutputPackageName, String buildUrl) throws Exception {
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
+				"SnomedCT_Release_INT_20140131/Readme_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
