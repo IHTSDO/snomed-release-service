@@ -61,11 +61,14 @@ public class ResolveEmptyValueIdInAttributeValueFileIntegrationTest extends Abst
 
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_AttributeValueDelta_INT_" + releaseDate + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + releaseDate + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_" + releaseDate + ".txt", getClass());
 	}
 	
 	private String createExpectedZipEntries(String effectiveTime) {
 		String expectedZipEntries =
 			INTERNATIONAL_RELEASE + effectiveTime + "/\n" +
+			INTERNATIONAL_RELEASE + effectiveTime + "/Readme_" + effectiveTime + ".txt\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/\n" +
 			INTERNATIONAL_RELEASE + effectiveTime + "/RF2Release/Full/Refset/\n" +

@@ -37,6 +37,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
+				"SnomedCT_Release_INT_20140131/Readme_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +

@@ -1,0 +1,18 @@
+This is the readme for the second release © 2002-2015.
+Table of contents:
+
+    SnomedCT_Release_INT_20140731
+        RF2Release
+            Full
+                Refset
+                    Content
+                        der2_Refset_SimpleFull_INT_20140731.txt
+            Snapshot
+                Refset
+                    Content
+                        der2_Refset_SimpleSnapshot_INT_20140731.txt
+            Delta
+                Refset
+                    Content
+                        der2_Refset_SimpleDelta_INT_20140731.txt
+        Readme_20140731.txt

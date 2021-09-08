@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.validation.rvf;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,7 +13,6 @@ import java.util.concurrent.ExecutionException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -77,6 +75,8 @@ public class RVFClient implements Closeable {
 
 	public static final String TOTAL_NUMBER_OF_FAILURES = "Total number of failures: ";
 
+	public static final String FAILED = "Failed";
+
 	private static final String ERROR_NO_LINES_RECEIVED_FROM_RVF = "Error - No lines received from RVF!";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RVFClient.class);
@@ -98,7 +98,7 @@ public class RVFClient implements Closeable {
 	}
 
 	private String checkFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream, final boolean preCheck) {
-		String errorMessage = "Check not complete.";
+		String errorMessage;
 
 		String fileType;
 		String checkType;
@@ -125,22 +125,21 @@ public class RVFClient implements Closeable {
 
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			final int statusCode = response.getStatusLine().getStatusCode();
-			long failureCount = 0;
+			RVFFailDetail failDetail;
 
 			try (InputStream content = response.getEntity().getContent();
 			     BufferedReader responseReader = new BufferedReader(new InputStreamReader(content, RF2Constants.UTF_8));
 			     BufferedWriter logWriter = new BufferedWriter(new OutputStreamWriter(logFileOutputStream.getOutputStream(), RF2Constants.UTF_8))) {
-
-				failureCount = processResponse(responseReader, logWriter, debugMsg);
+				 failDetail = processResponse(responseReader, logWriter, debugMsg);
 			} finally {
 				logFileOutputStream.waitForFinish();
 			}
 
 			if (200 == statusCode) {
-				if (failureCount == 0) {
+				if (failDetail.getFailedCount() == 0) {
 					errorMessage = null;
 				} else {
-					errorMessage = "There were " + failureCount + " RVF " + checkType + " test failures.";
+					errorMessage = "There were " + failDetail.getFailedCount() + " RVF " + checkType + " test failures: " + failDetail.getDetails();
 				}
 			} else {
 				errorMessage = "RVF response HTTP status code " + statusCode;
@@ -162,10 +161,12 @@ public class RVFClient implements Closeable {
 		return errorMessage;
 	}
 
-	protected long processResponse(final BufferedReader responseReader, final BufferedWriter logWriter, String debugMsg) throws IOException, RVFClientException {
+	protected RVFFailDetail processResponse(final BufferedReader responseReader, final BufferedWriter logWriter, String debugMsg) throws IOException, RVFClientException {
+		RVFFailDetail failDetail = new RVFFailDetail();
 		long failureCount = 0;
 		boolean foundFailureCount = false;
 		boolean noLinesReceived = false;
+		String failedDetails = null;
 
 		String line = responseReader.readLine(); // read header
 		if (line != null) {
@@ -176,6 +177,9 @@ public class RVFClient implements Closeable {
 			// read all other lines
 			boolean endOfValuesReached = false; // Optimisation so we don't inspect every line.
 			while ((line = responseReader.readLine()) != null) {
+				if (!line.isEmpty() && line.startsWith(FAILED)) {
+					failedDetails = failedDetails == null ? line : failedDetails + ", " + line;
+				}
 				if (endOfValuesReached) {
 					if (line.startsWith(TOTAL_NUMBER_OF_FAILURES)) {
 						failureCount = Integer.parseInt(line.substring(TOTAL_NUMBER_OF_FAILURES.length()));
@@ -195,7 +199,9 @@ public class RVFClient implements Closeable {
 		}
 
 		if (foundFailureCount) {
-			return failureCount;
+			failDetail.setFailedCount(failureCount);
+			failDetail.setDetails(failedDetails);
+			return failDetail;
 		} else {
 			throw new RVFClientException("Failure count not found in RVF response. " + (noLinesReceived?"No data received. ":"") + debugMsg);
 		}

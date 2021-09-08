@@ -31,6 +31,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release.\\nTable of contents:\\n");
 		String buildURL1 = integrationTestHelper.createBuild(effectiveTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.scheduleBuild(buildURL1);
 		integrationTestHelper.waitUntilCompleted(buildURL1);
 		integrationTestHelper.publishOutput(buildURL1);
@@ -38,6 +40,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		// Assert first release output expectations
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
 		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
+				"SnomedCT_Release_INT_20140131/Readme_20140131.txt\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
 				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
@@ -68,6 +71,8 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 
 		String buildURL2 = integrationTestHelper.createBuild(effectiveDateTime);
 		integrationTestHelper.uploadDeltaInputFile("rel2_Refset_SimpleDelta_INT_" + effectiveDateTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_" + effectiveTime + ".txt", getClass());
 		integrationTestHelper.scheduleBuild(buildURL2);
 		integrationTestHelper.waitUntilCompleted(buildURL2);
 		integrationTestHelper.publishOutput(buildURL2);
@@ -76,6 +81,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 		// Assert second release output expectations
 		expectedZipFilename = "SnomedCT_Release_INT_20140731.zip";
 		expectedZipEntries = "SnomedCT_Release_INT_20140731/\n" +
+				"SnomedCT_Release_INT_20140731/Readme_20140731.txt\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Full/\n" +
 				"SnomedCT_Release_INT_20140731/RF2Release/Full/Refset/\n" +

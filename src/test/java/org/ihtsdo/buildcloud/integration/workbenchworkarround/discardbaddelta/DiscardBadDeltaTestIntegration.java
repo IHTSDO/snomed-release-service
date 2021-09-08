@@ -67,6 +67,8 @@ public class DiscardBadDeltaTestIntegration extends AbstractControllerTest {
 	private void loadDeltaFilesToInputDirectory(String releaseDate) throws Exception {
 		integrationTestHelper.uploadDeltaInputFile("rel2_Concept_Delta_INT_" + releaseDate + ".txt", getClass());
 		integrationTestHelper.uploadDeltaInputFile("rel2_cRefset_LanguageDelta-en_INT_" + releaseDate + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_INT_" + releaseDate + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_INT_" + releaseDate + ".txt", getClass());
 	}
 
 	private String createExpectedZipEntries(String effectiveTime) {
