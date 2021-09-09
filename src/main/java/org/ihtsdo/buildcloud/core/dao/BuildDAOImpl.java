@@ -167,15 +167,15 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
+	public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-		return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
+		return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 	}
 
 	@Override
-	public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
+	public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-		final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
+		final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 		if (!builds.isEmpty()) {
 			return builds.get(0);
 		} else {
@@ -495,7 +495,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag) {
+	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		List<Build> builds = new ArrayList<>();
 		final List<String> userPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
@@ -522,14 +522,19 @@ public class BuildDAOImpl implements BuildDAO {
 			firstPass = false;
 		}
 
-		// Filter the build out when the visibility flag is set to false
-		if (Boolean.TRUE.equals(useVisibilityFlag) && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
+		// Filter the build out when the visibility flag is set
+		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
 			List<String> invisibleBuildIds = getInvisibleBuilds(visibilityPaths);
-			if (!invisibleBuildIds.isEmpty()) {
+			if (visibility) {
 				builds = builds.stream()
 						.filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
 						.collect(Collectors.toList());
+			} else {
+				builds = builds.stream()
+						.filter(build -> invisibleBuildIds.contains(build.getCreationTime()))
+						.collect(Collectors.toList());
 			}
+
 		}
 
 		// populate user, tag  and rvfURL to builds
