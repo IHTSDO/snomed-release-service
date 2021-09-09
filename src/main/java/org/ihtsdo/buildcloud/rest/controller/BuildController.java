@@ -142,8 +142,9 @@ public class BuildController {
 	public List<Map<String, Object>> getBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
+											   @RequestParam(required = false) Boolean visibility,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, true);
+		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility);
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
