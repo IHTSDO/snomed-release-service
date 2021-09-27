@@ -4,6 +4,7 @@ import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class BuildS3PathHelper {
@@ -32,6 +33,7 @@ public class BuildS3PathHelper {
 	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
 	private static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
 	public static final String BUILD_REPORT_JSON = "build_report.json";
+	public static final String BUILD_COMPARISON_REPORT = "build-comparison-reports";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -201,5 +203,13 @@ public class BuildS3PathHelper {
 
 	public String getClassificationResultOutputPath(final Build build, final String relativeFilePath) {
 		return getClassificationResultOutputFilePath(build).append(relativeFilePath).toString();
+	}
+
+	public String getBuildComparisonReportPath(Product product, String compareId) {
+		StringBuilder builder = getProductPath(product).append(BUILD_COMPARISON_REPORT).append(SEPARATOR);
+		if (!StringUtils.isEmpty(compareId)) {
+			builder.append(compareId).append(".json");
+		}
+		return builder.toString();
 	}
 }

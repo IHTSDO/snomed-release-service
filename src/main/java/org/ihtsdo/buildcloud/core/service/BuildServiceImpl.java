@@ -6,9 +6,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.log4j.MDC;
+import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
+import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.entity.Build.Status;
+import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
+import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.manifest.*;
 import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
 import org.ihtsdo.buildcloud.core.releaseinformation.ReleasePackageInformation;
@@ -16,26 +22,22 @@ import org.ihtsdo.buildcloud.core.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.Rf2FileExportRunner;
 import org.ihtsdo.buildcloud.core.service.build.Zipper;
-import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
-import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
-import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
-import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
-import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
-import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
-import org.ihtsdo.buildcloud.core.entity.Build.Status;
-import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
-import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationFactory;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.core.service.validation.postcondition.PostconditionManager;
 import org.ihtsdo.buildcloud.core.service.validation.precondition.ManifestFileListingHelper;
 import org.ihtsdo.buildcloud.core.service.validation.precondition.PreconditionManager;
+import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
+import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
+import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
@@ -44,7 +46,6 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1254,5 +1255,52 @@ public class BuildServiceImpl implements BuildService {
 	@Override
 	public void saveTags(Build build, List<Build.Tag> tags) {
 		dao.saveTags(build, tags);
+	}
+
+	@Override
+	public Build cloneBuild(final Build build, final String username) throws BusinessServiceException {
+		final Product product = build.getProduct();
+		final BuildConfiguration buildConfiguration =  build.getConfiguration();
+		final QATestConfig qaTestConfig =  build.getQaTestConfig();
+
+		final Date creationDate = new Date();
+		// Do we already have an build for that date?
+		final Build existingBuild = getBuild(product, creationDate);
+		if (existingBuild != null) {
+			throw new EntityAlreadyExistsException("An Build for product " + product.getBusinessKey() + " already exists with build id " + existingBuild.getId());
+		}
+
+		Build newBuild;
+		try {
+			newBuild = new Build(creationDate, product);
+			newBuild.setBuildUser(username);
+
+			// Copy build and qa configurations
+			buildConfiguration.setBuildName(build.getId() + " - clone");
+			buildConfiguration.setBranchPath(null);
+			buildConfiguration.setExportType(null);
+			buildConfiguration.setLoadExternalRefsetData(false);
+			buildConfiguration.setLoadTermServerData(false);
+
+			newBuild.setConfiguration(buildConfiguration);
+			newBuild.setQaTestConfig(qaTestConfig);
+
+			// create build status tracker
+			BuildStatusTracker tracker = new BuildStatusTracker();
+			tracker.setProductKey(newBuild.getProduct().getBusinessKey());
+			tracker.setReleaseCenterKey(newBuild.getProduct().getReleaseCenter().getBusinessKey());
+			tracker.setBuildId(newBuild.getId());
+			statusTrackerDao.save(tracker);
+
+			dao.save(newBuild);
+
+			// Copy input-files and manifest from the old build
+			dao.copyBuildToAnother(build, newBuild, "input-files");
+			dao.copyBuildToAnother(build, newBuild, "manifest");
+		} catch (Exception e) {
+			throw new BusinessServiceException("Failed to create build for product " + product.getBusinessKey(), e);
+		}
+
+		return newBuild;
 	}
 }

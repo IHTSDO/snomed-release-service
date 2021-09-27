@@ -2,19 +2,19 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
-import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
-import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
-import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
+import org.ihtsdo.buildcloud.core.service.BuildService;
+import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
+import org.ihtsdo.buildcloud.core.service.PublishService;
+import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
+import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
+import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
-import org.ihtsdo.buildcloud.core.service.BuildService;
-import org.ihtsdo.buildcloud.core.service.PublishService;
-import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -92,6 +92,25 @@ public class BuildController {
 		final String currentUser = SecurityUtil.getUsername();
 		final Build build = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, currentUser);
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, false, request, BUILD_LINKS), HttpStatus.CREATED);
+	}
+
+	@PostMapping(value = "/builds/{buildId}/clone")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+	@ResponseBody
+	@ApiOperation(value = "Clone a new release build from specific build", notes = "Clone from specific build and add the new one to the job queue")
+	public ResponseEntity cloneBuild(
+			@PathVariable final String releaseCenterKey,
+			@PathVariable final String productKey,
+			@PathVariable final String buildId,
+			final HttpServletRequest request) throws BusinessServiceException {
+		final String username = SecurityUtil.getUsername();
+		final String authenticationToken = SecurityUtil.getAuthenticationToken();
+
+		// Verify if the build exists
+		Build build  = buildService.find(releaseCenterKey, productKey, buildId, true, true, null , null);
+		Build newBuild = buildService.cloneBuild(build, username);
+		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
+		return new ResponseEntity<>(newBuild, HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/builds/{buildId}/schedule")

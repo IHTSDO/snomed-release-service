@@ -66,9 +66,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Page<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions, Pageable pageable) {
+	public Page<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags) {
 		Page<Product> page = productDAO.findAll(releaseCenterKey, filterOptions, pageable);
-		if (!CollectionUtils.isEmpty(page.getContent())) {
+		if (includedLatestBuildStatusAndTags && !CollectionUtils.isEmpty(page.getContent())) {
 			page.getContent().forEach(product -> {
 				setLatestBuildStatusAndTag(releaseCenterKey, product);
 			});

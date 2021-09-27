@@ -1,17 +1,12 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+
+import java.io.*;
+import java.util.List;
 
 public interface BuildDAO {
 
@@ -50,6 +45,8 @@ public interface BuildDAO {
 	AsyncPipedStreamBean getLogFileOutputStream(Build build, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
+
+	void copyBuildToAnother(Build sourceBuild, Build destBuild, String folder);
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
@@ -114,7 +111,11 @@ public interface BuildDAO {
 
 	InputStream getPreConditionCheckReportStream(Build build);
 
+	List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException;
+
     InputStream getPostConditionCheckReportStream(Build build);
+
+	List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException;
 
 	List<String> listClassificationResultOutputFileNames(Build build);
 
@@ -125,6 +126,12 @@ public interface BuildDAO {
 	void updateVisibility(Build build, boolean visibility);
 
 	void putManifestFile(Product product, String buildId, InputStream inputStream);
+
+    void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException;
+
+	List<String> listBuildComparisonReportPaths(Product product);
+
+	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
 }
 
 
