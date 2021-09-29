@@ -1,12 +1,12 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import com.github.difflib.text.DiffRow;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.AutomatedTestService;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.rest.controller.helper.ControllerHelper;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ public class AutomatedTestController {
     @Autowired
     private AutomatedTestService automatedTestService;
 
-    @GetMapping(value = "/test-reports")
+    @GetMapping(value = "/regression-test/test-reports")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
     @ResponseBody
     @ApiOperation(value = "Get all test report")
@@ -74,17 +75,34 @@ public class AutomatedTestController {
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
     @ResponseBody
     @ApiOperation(value = "Compare file from 2 builds", notes = "Compare 2 builds and put the report to product")
-    public List<DiffRow> compareFiles(
+    public ResponseEntity<Void> compareFiles(
             @PathVariable final String releaseCenterKey,
             @PathVariable final String productKey,
             @RequestParam final String leftBuildId,
             @RequestParam final String rightBuildId,
             @RequestParam final String fileName,
+            @RequestParam(required = false) String compareId,
             final HttpServletRequest request) throws BusinessServiceException {
         // Verify if the builds exist
         Build leftBuild  = buildService.find(releaseCenterKey, productKey, leftBuildId, false, false, false , null);
         Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
 
-        return automatedTestService.findDiff(leftBuild, rightBuild, fileName);
+        if (StringUtils.isEmpty(compareId)) {
+            compareId = UUID.randomUUID().toString();;
+        }
+        automatedTestService.compareFiles(leftBuild, rightBuild, fileName, compareId);
+        return ControllerHelper.getCreatedResponse(compareId);
+    }
+
+    @GetMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/files/find-diff/{compareId}")
+    @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+    @ResponseBody
+    public FileDiffReport getFileComparisonReport(
+            @PathVariable final String releaseCenterKey,
+            @PathVariable final String productKey,
+            @RequestParam final String compareId,
+            @RequestParam final String fileName,
+            final HttpServletRequest request) {
+        return automatedTestService.getFileDiffReport(releaseCenterKey, productKey, compareId, fileName);
     }
 }

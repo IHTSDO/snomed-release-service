@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 
 import java.io.*;
@@ -19,7 +20,7 @@ public interface BuildDAO {
 	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
 	void delete(Product product, String buildId);
-	
+
 	void loadConfiguration(Build build) throws IOException;
 
 	void loadBuildConfiguration(Build build) throws IOException;
@@ -84,7 +85,7 @@ public interface BuildDAO {
 	InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Build build);
-	
+
 	void renameTransformedFile(Build build, String sourceFileName, String targetFileName, boolean deleteOriginal);
 
 	void loadQaTestConfig(Build build) throws IOException;
@@ -113,7 +114,7 @@ public interface BuildDAO {
 
 	List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException;
 
-    InputStream getPostConditionCheckReportStream(Build build);
+	InputStream getPostConditionCheckReportStream(Build build);
 
 	List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException;
 
@@ -127,12 +128,13 @@ public interface BuildDAO {
 
 	void putManifestFile(Product product, String buildId, InputStream inputStream);
 
-    void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException;
+	void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException;
 
 	List<String> listBuildComparisonReportPaths(Product product);
 
 	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
+
+	void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException;
+
+	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException;
 }
-
-
-

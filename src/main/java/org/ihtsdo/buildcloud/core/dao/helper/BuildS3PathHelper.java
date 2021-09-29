@@ -34,6 +34,7 @@ public class BuildS3PathHelper {
 	private static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
 	public static final String BUILD_REPORT_JSON = "build_report.json";
 	public static final String BUILD_COMPARISON_REPORT = "build-comparison-reports";
+	public static final String FILE_COMPARISON_REPORT = "file-comparison-reports";
 
 	public StringBuilder getProductPath(final Product product) {
 		return getReleaseCenterPath(product.getReleaseCenter()).append(product.getBusinessKey()).append(SEPARATOR);
@@ -211,5 +212,10 @@ public class BuildS3PathHelper {
 			builder.append(compareId).append(".json");
 		}
 		return builder.toString();
+	}
+
+	public String getFileComparisonReportPath(Product product, String compareId, String fileName) {
+		return  getProductPath(product).append(FILE_COMPARISON_REPORT).append(SEPARATOR).append(compareId).append(SEPARATOR)
+				.append(fileName).toString();
 	}
 }

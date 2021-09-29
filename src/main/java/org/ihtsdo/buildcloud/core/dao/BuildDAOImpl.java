@@ -19,6 +19,7 @@ import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.core.service.helper.Rf2FileNameTransformation;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -886,7 +887,6 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException {
-		// Save config file
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
 			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(product, compareId), reportInputStream, new ObjectMetadata());
@@ -913,6 +913,37 @@ public class BuildDAOImpl implements BuildDAO {
 			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				report = jsonParser.readValueAs(BuildComparisonReport.class);
+			}
+		}
+
+		return report;
+	}
+
+	@Override
+	public void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException {
+		File reportFile = toJson(report);
+		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
+			String reportFileName = report.getFileName().replace(".txt", ".diff.json");
+			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(product, compareId, reportFileName), reportInputStream, new ObjectMetadata());
+		} finally {
+			if (reportFile != null) {
+				reportFile.delete();
+
+			}
+		}
+	}
+
+	@Override
+	public FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException {
+		FileDiffReport report = null;
+		String reportFileName = fileName.replace(".txt", ".diff.json");
+		String filePath = pathHelper.getFileComparisonReportPath(product, compareId, reportFileName);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				report = jsonParser.readValueAs(FileDiffReport.class);
 			}
 		}
 

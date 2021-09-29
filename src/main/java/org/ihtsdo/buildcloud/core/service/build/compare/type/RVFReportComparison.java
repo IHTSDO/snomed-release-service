@@ -35,17 +35,17 @@ public class RVFReportComparison extends ComponentComparison {
 
     @Override
     public String getTestName() {
-        return BuildComparisonManager.TestType.RVR_REPORT_TEST.getLabel();
+        return BuildComparisonManager.TestType.RVF_REPORT_TEST.getLabel();
     }
 
     @Override
     public String getTestNameShortname() {
-        return BuildComparisonManager.TestType.RVR_REPORT_TEST.name();
+        return BuildComparisonManager.TestType.RVF_REPORT_TEST.name();
     }
 
     @Override
     public int getTestOrder() {
-        return BuildComparisonManager.TestType.RVR_REPORT_TEST.getTestOrder();
+        return BuildComparisonManager.TestType.RVF_REPORT_TEST.getTestOrder();
     }
 
     @Override

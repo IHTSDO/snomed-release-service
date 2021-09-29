@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.HighLevelComparisonReport;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -65,9 +66,11 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Autowired
 	private BuildComparisonManager buildComparisonManager;
 
-	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>(1);
+	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>();
 
-	private ExecutorService executorService = Executors.newFixedThreadPool(1);
+	private final LinkedBlockingQueue<FileComparisonQueue> fileComparisonBlockingQueue = new LinkedBlockingQueue<>();
+
+	private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
 	@Override
 	public List<BuildComparisonReport> getAllTestReports() {
@@ -147,26 +150,43 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	}
 
 	@Override
-	 public synchronized List<DiffRow> findDiff(Build leftBuild, Build rightBuild, String fileName) throws BusinessServiceException {
-			try (InputStream leftInputStream = buildDAO.getOutputFileInputStream(leftBuild, fileName);
-				 InputStream rightInputStream = buildDAO.getOutputFileInputStream(rightBuild, fileName);) {
-				List<String> leftList = new BufferedReader(new InputStreamReader(leftInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
-				List<String> rightList = new BufferedReader(new InputStreamReader(rightInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+	@Async
+	 public void compareFiles(Build leftBuild, Build rightBuild, String fileName, String compareId) {
+		FileDiffReport report = null;
+		try {
+			report = buildDAO.getFileComparisonReport(leftBuild.getProduct(), compareId, fileName);
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+		if (report != null && (FileDiffReport.Status.RUNNING.equals(report.getStatus())
+							|| FileDiffReport.Status.COMPLETED.equals(report.getStatus()))) {
+			return;
+		}
+		try {
+			report = new FileDiffReport();
+			report.setStatus(FileDiffReport.Status.RUNNING);
+			report.setFileName(fileName);
+			report.setLeftBuildId(leftBuild.getId());
+			report.setRightBuildId(rightBuild.getId());
 
-				DiffRowGenerator generator = DiffRowGenerator.create()
-						.showInlineDiffs(false)
-						.inlineDiffByWord(true)
-						.reportLinesUnchanged(false)
-						.build();
-				List<DiffRow> diffRows = generator.generateDiffRows(leftList, rightList);
-				leftList.clear();
-				rightList.clear();
+			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report));
+			buildDAO.saveFileComparisonReport(leftBuild.getProduct(), compareId, report);
+			processFileComparisonJobs();
+		} catch (InterruptedException | IOException e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+	}
 
-				return diffRows;
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(), e);
-				throw new BusinessServiceException("Failed to compare file. Error message: " + e.getMessage());
-			}
+	@Override
+	public FileDiffReport getFileDiffReport(String releaseCenterKey, String productKey, String compareId, String fileName) {
+		Product product = productService.find(releaseCenterKey, productKey, false);
+		try {
+			return buildDAO.getFileComparisonReport(product, compareId, fileName);
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage(), e);
+		}
+
+		return null;
 	}
 
 	protected void processBuildComparisonJobs() {
@@ -202,6 +222,45 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 						LOGGER.error(ioe.getMessage(), ioe);
 					}
 				}
+			}
+		});
+	}
+
+	protected void processFileComparisonJobs() {
+		executorService.submit(() -> {
+			try {
+				FileComparisonQueue automatePromoteProcess = fileComparisonBlockingQueue.take();
+				Build leftBuild = automatePromoteProcess.getLeftBuild();
+				Build rightBuild = automatePromoteProcess.getRightBuild();
+				String fileName = automatePromoteProcess.getFileName();
+				LOGGER.info("Staring file comparison for: {}", fileName);
+				try (InputStream leftInputStream = buildDAO.getOutputFileInputStream(leftBuild, fileName);
+					 InputStream rightInputStream = buildDAO.getOutputFileInputStream(rightBuild, fileName);) {
+					List<String> leftList = new BufferedReader(new InputStreamReader(leftInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+					List<String> rightList = new BufferedReader(new InputStreamReader(rightInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
+
+					DiffRowGenerator generator = DiffRowGenerator.create()
+							.showInlineDiffs(false)
+							.inlineDiffByWord(true)
+							.reportLinesUnchanged(false)
+							.build();
+					List<DiffRow> diffRows = generator.generateDiffRows(leftList, rightList);
+					if (diffRows.size() > 0) {
+						diffRows = diffRows.stream().filter(diffRow -> !DiffRow.Tag.EQUAL.equals(diffRow.getTag())).collect(Collectors.toList());
+					}
+					leftList.clear();
+					rightList.clear();
+					FileDiffReport report = automatePromoteProcess.getReport();
+					report.setStatus(FileDiffReport.Status.COMPLETED);
+					report.setDiffRows(diffRows);
+					buildDAO.saveFileComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), report);
+					LOGGER.info("Completed file comparison for: {}", fileName);
+				} catch (Exception e) {
+					LOGGER.error(e.getMessage(), e);
+					throw new BusinessServiceException("Failed to compare file. Error message: " + e.getMessage());
+				}
+			} catch (Exception e) {
+				LOGGER.error(e.getMessage(), e);
 			}
 		});
 	}
@@ -263,6 +322,54 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		}
 
 		public BuildComparisonReport getReport() {
+			return report;
+		}
+	}
+
+	private class FileComparisonQueue {
+		final private String compareId;
+		final private String fileName;
+		private Build leftBuild;
+		private Build rightBuild;
+		private FileDiffReport report;
+
+		FileComparisonQueue(String compareId, String fileName, Build leftBuild, Build rightBuild, FileDiffReport report) {
+			this.compareId = compareId;
+			this.fileName = fileName;
+			this.leftBuild = leftBuild;
+			this.rightBuild = rightBuild;
+			this.report = report;
+		}
+
+		public String getCompareId() {
+			return compareId;
+		}
+
+		public String getFileName() {
+			return fileName;
+		}
+
+		public Build getLeftBuild() {
+			return leftBuild;
+		}
+
+		public void setLeftBuild(Build leftBuild) {
+			this.leftBuild = leftBuild;
+		}
+
+		public Build getRightBuild() {
+			return rightBuild;
+		}
+
+		public void setRightBuild(Build rightBuild) {
+			this.rightBuild = rightBuild;
+		}
+
+		public void setReport(FileDiffReport report) {
+			this.report = report;
+		}
+
+		public FileDiffReport getReport() {
 			return report;
 		}
 	}

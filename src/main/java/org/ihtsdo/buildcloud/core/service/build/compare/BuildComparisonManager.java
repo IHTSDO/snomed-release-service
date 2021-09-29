@@ -22,7 +22,7 @@ public class BuildComparisonManager {
         PRE_CONDITION_TEST("Pre-Condition Comparison", 2),
         POST_CONDITION_TEST("Post Condition Comparison", 3),
         RELEASE_PACKAGE_TEST("Release Package Comparison", 4),
-        RVR_REPORT_TEST("RVF Report Comparison", 5);
+        RVF_REPORT_TEST("RVF Report Comparison", 5);
 
         private final String label;
 
