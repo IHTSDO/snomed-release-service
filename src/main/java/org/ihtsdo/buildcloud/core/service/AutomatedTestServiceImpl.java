@@ -66,11 +66,13 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Autowired
 	private BuildComparisonManager buildComparisonManager;
 
-	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>(1);
+	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>();
 
-	private final LinkedBlockingQueue<FileComparisonQueue> fileComparisonBlockingQueue = new LinkedBlockingQueue<>(1);
+	private final LinkedBlockingQueue<FileComparisonQueue> fileComparisonBlockingQueue = new LinkedBlockingQueue<>();
 
-	private ExecutorService executorService = Executors.newFixedThreadPool(2);
+	private ExecutorService buildComparisonExecutorService = Executors.newFixedThreadPool(1);
+
+	private ExecutorService fileComparisonExecutorService = Executors.newFixedThreadPool(1);
 
 	@Override
 	public List<BuildComparisonReport> getAllTestReports() {
@@ -190,7 +192,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	}
 
 	protected void processBuildComparisonJobs() {
-		executorService.submit(() -> {
+		buildComparisonExecutorService.submit(() -> {
 			BuildComparisonQueue automatePromoteProcess = null;
 			try {
 				automatePromoteProcess = buildComparisonBlockingQueue.take();
@@ -227,7 +229,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	}
 
 	protected void processFileComparisonJobs() {
-		executorService.submit(() -> {
+		fileComparisonExecutorService.submit(() -> {
 			try {
 				FileComparisonQueue automatePromoteProcess = fileComparisonBlockingQueue.take();
 				Build leftBuild = automatePromoteProcess.getLeftBuild();
