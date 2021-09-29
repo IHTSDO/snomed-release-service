@@ -603,7 +603,6 @@ public class BuildDAOImpl implements BuildDAO {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
-				LOGGER.debug("Found status key {}", key);
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[2];
 				final String status = keyParts[3].split(":")[1];

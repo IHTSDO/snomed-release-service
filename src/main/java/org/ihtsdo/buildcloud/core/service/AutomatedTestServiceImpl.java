@@ -157,7 +157,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		FileDiffReport report = null;
 		try {
 			report = buildDAO.getFileComparisonReport(leftBuild.getProduct(), compareId, fileName);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 		if (report != null && (FileDiffReport.Status.RUNNING.equals(report.getStatus())
@@ -184,7 +184,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		Product product = productService.find(releaseCenterKey, productKey, false);
 		try {
 			return buildDAO.getFileComparisonReport(product, compareId, fileName);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 
