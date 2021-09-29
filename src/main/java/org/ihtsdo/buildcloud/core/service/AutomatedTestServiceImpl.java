@@ -66,9 +66,9 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Autowired
 	private BuildComparisonManager buildComparisonManager;
 
-	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<BuildComparisonQueue> buildComparisonBlockingQueue = new LinkedBlockingQueue<>(1);
 
-	private final LinkedBlockingQueue<FileComparisonQueue> fileComparisonBlockingQueue = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<FileComparisonQueue> fileComparisonBlockingQueue = new LinkedBlockingQueue<>(1);
 
 	private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
