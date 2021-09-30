@@ -51,7 +51,8 @@
     "productName" : null,
     "reportingStage" : null,
     "enableMRCMValidation" : false,
-    "maxFailureExport" : null
+    "maxFailureExport" : null,
+    "enableTraceabilityValidation" : false
   },
   "visibility" : false,
   "legacyProduct" : false,

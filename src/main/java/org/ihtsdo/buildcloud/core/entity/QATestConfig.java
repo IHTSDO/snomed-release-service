@@ -58,6 +58,9 @@ public class QATestConfig {
 	@Transient
 	private Integer maxFailureExport;
 
+	@Transient
+	private boolean enableTraceabilityValidation;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -172,5 +175,13 @@ public class QATestConfig {
 
 	public void setMaxFailureExport(Integer maxFailureExport) {
 		this.maxFailureExport = maxFailureExport;
+	}
+
+	public void setEnableTraceabilityValidation(boolean enableTraceabilityValidation) {
+		this.enableTraceabilityValidation = enableTraceabilityValidation;
+	}
+
+	public boolean isEnableTraceabilityValidation() {
+		return enableTraceabilityValidation;
 	}
 }
