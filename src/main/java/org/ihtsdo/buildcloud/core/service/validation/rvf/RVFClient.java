@@ -33,6 +33,10 @@ public class RVFClient implements Closeable {
 
 	private static final String ENABLE_MRCM_VALIDATION = "enableMRCMValidation";
 
+	private static final String ENABLE_TRACEABILITY_VALIDATION = "enableTraceabilityValidation";
+
+	private static final String BRANCH_PATH = "branchPath";
+
 	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
 
 	private static final String PRODUCT_NAME = "productName";
@@ -243,6 +247,10 @@ public class RVFClient implements Closeable {
 			if (previousIntRelease != null && !previousIntRelease.isEmpty() ) {
 				multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
 			}
+		}
+		if (qaTestConfig.isEnableTraceabilityValidation() && !StringUtils.isEmpty(request.getBranchPath())) {
+			multiPartBuilder.addTextBody(ENABLE_TRACEABILITY_VALIDATION, Boolean.toString(qaTestConfig.isEnableTraceabilityValidation()));
+			multiPartBuilder.addTextBody(BRANCH_PATH, request.getBranchPath());
 		}
 		
 		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );

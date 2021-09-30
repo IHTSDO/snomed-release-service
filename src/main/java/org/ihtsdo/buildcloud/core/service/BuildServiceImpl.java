@@ -193,6 +193,7 @@ public class BuildServiceImpl implements BuildService {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
 				if (buildRequest != null) {
 					qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
+					qaTestConfig.setEnableTraceabilityValidation(buildRequest.isEnableTraceabilityValidation());
 				} else {
 					qaTestConfig.setMaxFailureExport(100);
 				}
@@ -1035,6 +1036,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setIncludedModuleId(includedModuleId);
 			request.setResponseQueue(queue);
+			request.setBranchPath(buildConfiguration.getBranchPath());
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		} catch (IOException | BusinessServiceException | ConfigurationException e) {

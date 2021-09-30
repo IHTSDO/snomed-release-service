@@ -20,6 +20,8 @@ public class ValidationRequest {
 
 	private String responseQueue;
 
+	private String branchPath;
+
 	public ValidationRequest(String runId) {
 		this.runId = runId;
 	}
@@ -90,5 +92,13 @@ public class ValidationRequest {
 
 	public final void setResponseQueue(final String responseQueue) {
 		this.responseQueue = responseQueue;
+	}
+
+	public void setBranchPath(String branchPath) {
+		this.branchPath = branchPath;
+	}
+
+	public String getBranchPath() {
+		return branchPath;
 	}
 }

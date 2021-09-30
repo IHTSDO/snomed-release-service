@@ -13,6 +13,7 @@ public class BuildRequestPojo {
 	private String buildName;
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
+	private boolean enableTraceabilityValidation;
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
 
@@ -73,6 +74,14 @@ public class BuildRequestPojo {
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
 		this.loadExternalRefsetData = loadExternalRefsetData;
+	}
+
+	public void setEnableTraceabilityValidation(boolean enableTraceabilityValidation) {
+		this.enableTraceabilityValidation = enableTraceabilityValidation;
+	}
+
+	public boolean isEnableTraceabilityValidation() {
+		return enableTraceabilityValidation;
 	}
 
 	public Integer getMaxFailuresExport() {
