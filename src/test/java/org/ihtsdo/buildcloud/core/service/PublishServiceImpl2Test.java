@@ -74,7 +74,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		//Packages get looked up using a product composite key (ie include the unique ID)
 		//so first lets find the first product for a known product, and use that
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_LEGACY);
-		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0, 10));
+		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0, 10), false);
 		Product product = page.getContent().get(0);
 		product.getBuildConfiguration().setEffectiveTime(new Date());
 

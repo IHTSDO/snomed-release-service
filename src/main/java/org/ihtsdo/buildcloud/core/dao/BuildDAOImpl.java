@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
@@ -17,6 +18,8 @@ import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.core.service.helper.Rf2FileNameTransformation;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -323,6 +326,17 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
+	public void copyBuildToAnother(Build sourceBuild, Build destBuild, String folder) {
+		final String sourceFolder = pathHelper.getBuildPath(sourceBuild).toString() + folder;
+		final String destFolder = pathHelper.getBuildPath(destBuild).toString() + folder;
+
+		final List<String> buildInputFilePaths = buildFileHelper.listFiles(sourceFolder);
+		for (final String path : buildInputFilePaths) {
+			buildFileHelper.copyFile(sourceFolder + path, destFolder + path);
+		}
+	}
+
+	@Override
 	public InputStream getOutputFileInputStream(final Build build, final String name) {
 		final String path = pathHelper.getBuildOutputFilePath(build, name);
 		return buildFileHelper.getFileStream(path);
@@ -589,7 +603,6 @@ public class BuildDAOImpl implements BuildDAO {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
-				LOGGER.debug("Found status key {}", key);
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[2];
 				final String status = keyParts[3].split(":")[1];
@@ -793,10 +806,40 @@ public class BuildDAOImpl implements BuildDAO {
 		return buildFileHelper.getFileStream(reportFilePath);
 	}
 
+	public List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException {
+		List<PreConditionCheckReport> reports = new ArrayList<>();
+		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, reportFilePath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
+			}
+		}
+
+		return reports;
+	}
+
 	@Override
 	public InputStream getPostConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
 		return buildFileHelper.getFileStream(reportFilePath);
+	}
+
+	public List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException {
+		List<PostConditionCheckReport> reports = new ArrayList<>();
+		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, reportFilePath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
+			}
+		}
+
+		return reports;
 	}
 
 	@Override
@@ -839,5 +882,70 @@ public class BuildDAOImpl implements BuildDAO {
 	public void putManifestFile(Product product, String buildId, InputStream inputStream) {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(product, buildId);
 		buildFileHelper.putFile(inputStream, filePath + "manifest.xml");
+	}
+
+	@Override
+	public void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException {
+		File reportFile = toJson(report);
+		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
+			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(product, compareId), reportInputStream, new ObjectMetadata());
+		} finally {
+			if (reportFile != null) {
+				reportFile.delete();
+			}
+		}
+	}
+
+	@Override
+	public List<String> listBuildComparisonReportPaths(Product product) {
+		final String reportPath = pathHelper.getBuildComparisonReportPath(product, null);
+		return buildFileHelper.listFiles(reportPath);
+	}
+
+	@Override
+	public BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException {
+		BuildComparisonReport report = null;
+		String filePath = pathHelper.getBuildComparisonReportPath(product, compareId);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				report = jsonParser.readValueAs(BuildComparisonReport.class);
+			}
+		}
+
+		return report;
+	}
+
+	@Override
+	public void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException {
+		File reportFile = toJson(report);
+		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
+			String reportFileName = report.getFileName().replace(".txt", ".diff.json");
+			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(product, compareId, reportFileName), reportInputStream, new ObjectMetadata());
+		} finally {
+			if (reportFile != null) {
+				reportFile.delete();
+
+			}
+		}
+	}
+
+	@Override
+	public FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException {
+		FileDiffReport report = null;
+		String reportFileName = fileName.replace(".txt", ".diff.json");
+		String filePath = pathHelper.getFileComparisonReportPath(product, compareId, reportFileName);
+		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				report = jsonParser.readValueAs(FileDiffReport.class);
+			}
+		}
+
+		return report;
 	}
 }

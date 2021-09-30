@@ -50,7 +50,7 @@ public interface ProductService extends EntityService<Product> {
 	String INTERNATIONAL = "international";
 	String SNOMEDCT = "SNOMEDCT";
 	
-	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable);
+	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags);
 
 	Product find(String releaseCenterKey, String productKey, boolean includedLatestBuildStatusAndTags);
 

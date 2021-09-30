@@ -1,17 +1,13 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+
+import java.io.*;
+import java.util.List;
 
 public interface BuildDAO {
 
@@ -24,7 +20,7 @@ public interface BuildDAO {
 	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
 	void delete(Product product, String buildId);
-	
+
 	void loadConfiguration(Build build) throws IOException;
 
 	void loadBuildConfiguration(Build build) throws IOException;
@@ -50,6 +46,8 @@ public interface BuildDAO {
 	AsyncPipedStreamBean getLogFileOutputStream(Build build, String relativeFilePath) throws IOException;
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
+
+	void copyBuildToAnother(Build sourceBuild, Build destBuild, String folder);
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
@@ -87,7 +85,7 @@ public interface BuildDAO {
 	InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Build build);
-	
+
 	void renameTransformedFile(Build build, String sourceFileName, String targetFileName, boolean deleteOriginal);
 
 	void loadQaTestConfig(Build build) throws IOException;
@@ -114,7 +112,11 @@ public interface BuildDAO {
 
 	InputStream getPreConditionCheckReportStream(Build build);
 
-    InputStream getPostConditionCheckReportStream(Build build);
+	List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException;
+
+	InputStream getPostConditionCheckReportStream(Build build);
+
+	List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException;
 
 	List<String> listClassificationResultOutputFileNames(Build build);
 
@@ -125,7 +127,14 @@ public interface BuildDAO {
 	void updateVisibility(Build build, boolean visibility);
 
 	void putManifestFile(Product product, String buildId, InputStream inputStream);
+
+	void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException;
+
+	List<String> listBuildComparisonReportPaths(Product product);
+
+	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
+
+	void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException;
+
+	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException;
 }
-
-
-
