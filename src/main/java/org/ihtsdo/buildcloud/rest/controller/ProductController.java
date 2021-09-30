@@ -62,7 +62,7 @@ public class ProductController {
 		}
 
 
-		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize));
+		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize), true);
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), page.getTotalElements());

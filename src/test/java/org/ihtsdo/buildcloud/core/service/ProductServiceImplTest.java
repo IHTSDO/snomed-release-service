@@ -41,13 +41,13 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 		assertNotNull(bs);
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_REMOVED);
 		filterOptions.add(FilterOption.INCLUDE_LEGACY);
-		Page<Product> page = bs.findAll(releaseCenterKey, filterOptions, PageRequest.of(0,20));
+		Page<Product> page = bs.findAll(releaseCenterKey, filterOptions, PageRequest.of(0,20), false);
 		int before = page.getContent().size();
 		//LOGGER.warn("Found " + before + " products");
 		assertTrue(before > 0);  //Check our test data is in there.
 		bs.create(releaseCenterKey,
 				"my test product name");
-		int after = bs.findAll(releaseCenterKey, filterOptions,PageRequest.of(0,20)).getContent().size();
+		int after = bs.findAll(releaseCenterKey, filterOptions,PageRequest.of(0,20), false).getContent().size();
 		assertEquals(before + 1, after);
 		
 		//TODO Could add further tests to ensure that the new item was created at the correct point in the hierarchy
@@ -61,10 +61,10 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 		EnumSet<FilterOption> filterOff = EnumSet.noneOf(FilterOption.class);
 		EnumSet<FilterOption> filterOn = EnumSet.of(FilterOption.INCLUDE_REMOVED);
 		filterOn.add(FilterOption.INCLUDE_LEGACY);
-		Page<Product> page = bs.findAll(releaseCenterKey, filterOff, PageRequest.of(0,10));
+		Page<Product> page = bs.findAll(releaseCenterKey, filterOff, PageRequest.of(0,10), false);
 		assertEquals(0, page.getContent().size());
 
-		int includeRemovedCount = bs.findAll(releaseCenterKey, filterOn, PageRequest.of(0,10)).getContent().size();
+		int includeRemovedCount = bs.findAll(releaseCenterKey, filterOn, PageRequest.of(0,10), false).getContent().size();
 		assertTrue(includeRemovedCount > 0);
 		
 		//TODO When remove functionality is built, use it to remove a product and check

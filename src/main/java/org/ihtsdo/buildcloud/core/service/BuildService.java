@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -70,4 +71,6 @@ public interface BuildService {
 	void updateVisibility(Build build, boolean visibility);
 
 	void saveTags(Build build, List<Build.Tag> tags);
+
+	Build cloneBuild(Build build, String username) throws BusinessServiceException;
 }
