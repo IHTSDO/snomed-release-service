@@ -3,25 +3,23 @@ package org.ihtsdo.buildcloud.core.service.build.compare;
 import com.github.difflib.text.DiffRow.Tag;
 
 public class DiffRow {
-	private Tag tag;
 	private String oldLine;
 	private String newLine;
 
 	public DiffRow() {
 	}
 
-	public DiffRow(Tag tag, String oldLine, String newLine) {
-		this.tag = tag;
+	public DiffRow(String oldLine, String newLine) {
 		this.oldLine = oldLine;
 		this.newLine = newLine;
 	}
 
-	public com.github.difflib.text.DiffRow.Tag getTag() {
-		return tag;
+	public void setNewLine(String newLine) {
+		this.newLine = newLine;
 	}
 
-	public void setTag(com.github.difflib.text.DiffRow.Tag tag) {
-		this.tag = tag;
+	public void setOldLine(String oldLine) {
+		this.oldLine = oldLine;
 	}
 
 	public String getOldLine() {

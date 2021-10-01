@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import com.github.difflib.text.DiffRowGenerator;
+import org.apache.commons.collections.CollectionUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,6 +38,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	private final int pollPeriod = 60 * 1000; /// 1 minute
 
 	private final int maxPollPeriod = 4 * 60 * 60 * 1000; // 4 hours
+
+	private final String SPACE_OF_FOUR = "    ";
 
 	private Status[] BUILD_FINAL_STATE = { Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
 											Status.FAILED_PRE_CONDITIONS,
@@ -243,18 +247,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 							.reportLinesUnchanged(false)
 							.build();
 					List<com.github.difflib.text.DiffRow> diffRows = generator.generateDiffRows(leftList, rightList);
-					List<DiffRow> rows = new ArrayList<>();
-					if (diffRows.size() > 0) {
-						rows = diffRows.stream().filter(r -> !com.github.difflib.text.DiffRow.Tag.EQUAL.equals(r.getTag()))
-												.map(r -> new DiffRow(r.getTag(), r.getOldLine(), r.getNewLine()))
-												.collect(Collectors.toList());
-					}
 					leftList.clear();
 					rightList.clear();
-					FileDiffReport report = automatePromoteProcess.getReport();
-					report.setStatus(FileDiffReport.Status.COMPLETED);
-					report.setDiffRows(rows);
-					buildDAO.saveFileComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), report);
+
+					extractResults(automatePromoteProcess, leftBuild, diffRows);
 					LOGGER.info("Completed file comparison for: {}", fileName);
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(), e);
@@ -264,6 +260,68 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				LOGGER.error(e.getMessage(), e);
 			}
 		});
+	}
+
+	private void extractResults(FileComparisonQueue automatePromoteProcess, Build leftBuild, List<com.github.difflib.text.DiffRow> diffRows) throws IOException {
+		if (diffRows.size() > 0) {
+			diffRows = diffRows.stream().filter(r -> !com.github.difflib.text.DiffRow.Tag.EQUAL.equals(r.getTag()))
+									.collect(Collectors.toList());
+		} else {
+			diffRows = Collections.EMPTY_LIST;
+		}
+
+		Map<String, String> leftIdToLineMap = new HashMap<>();
+		Map<String, String> rightIdToLineMap = new HashMap<>();
+		diffRows.forEach(row -> {
+			if (!StringUtils.isEmpty(row.getOldLine())) {
+				String[] arr = row.getOldLine().split(SPACE_OF_FOUR);
+				if (!StringUtils.isEmpty(arr[0])) {
+					leftIdToLineMap.put(arr[0], row.getOldLine());
+				}
+			}
+			if (!StringUtils.isEmpty(row.getNewLine())) {
+				String[] arr = row.getNewLine().split(SPACE_OF_FOUR);
+				if (!StringUtils.isEmpty(arr[0])) {
+					rightIdToLineMap.put(arr[0], row.getNewLine());
+				}
+			}
+		});
+		Set<String> leftIds = leftIdToLineMap.keySet();
+		Set<String> rightIds = rightIdToLineMap.keySet();
+		List<String> deleteIds = (ArrayList<String>) CollectionUtils.subtract(leftIds, rightIds);
+		List<String> insertIds = (ArrayList<String>) CollectionUtils.subtract(rightIds, leftIds);
+		List<String> changeIds = (ArrayList<String>) CollectionUtils.intersection(leftIds, rightIds);
+
+		List<DiffRow> changeRows = new ArrayList<>();
+		List<DiffRow> deleteRows = new ArrayList<>();
+		List<DiffRow> insertRows = new ArrayList<>();
+		changeIds.forEach(id -> {
+			if (!leftIdToLineMap.get(id).equals(rightIdToLineMap.get(id))) {
+				changeRows.add(new DiffRow(leftIdToLineMap.get(id), rightIdToLineMap.get(id)));
+			}
+		});
+		deleteIds.forEach(id -> {
+			deleteRows.add(new DiffRow(leftIdToLineMap.get(id),""));
+		});
+		insertIds.forEach(id -> {
+			insertRows.add(new DiffRow("", rightIdToLineMap.get(id)));
+		});
+
+		FileDiffReport report = automatePromoteProcess.getReport();
+		report.setStatus(FileDiffReport.Status.COMPLETED);
+		report.setDeleteRows(deleteRows);
+		report.setInsertRows(insertRows);
+		report.setChangeRows(changeRows);
+		buildDAO.saveFileComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), report);
+
+		// clear temp list
+		deleteIds.clear();
+		insertIds.clear();
+		changeIds.clear();
+		leftIds.clear();
+		rightIds.clear();
+		leftIdToLineMap.clear();
+		rightIdToLineMap.clear();
 	}
 
 	private void waitForBuildCompleted(final Build build) throws InterruptedException, BusinessServiceException {

@@ -11,7 +11,9 @@ public class FileDiffReport {
 	private String leftBuildId;
 	private String rightBuildId;
 	private Status status;
-	private List<DiffRow> diffRows;
+	private List<DiffRow> deleteRows;
+	private List<DiffRow> insertRows;
+	private List<DiffRow> changeRows;
 
 	public String getFileName() {
 		return fileName;
@@ -45,11 +47,27 @@ public class FileDiffReport {
 		this.status = status;
 	}
 
-	public List<DiffRow> getDiffRows() {
-		return diffRows;
+	public List<DiffRow> getDeleteRows() {
+		return deleteRows;
 	}
 
-	public void setDiffRows(List<DiffRow> diffRows) {
-		this.diffRows = diffRows;
+	public void setDeleteRows(List<DiffRow> deleteRows) {
+		this.deleteRows = deleteRows;
+	}
+
+	public List<DiffRow> getInsertRows() {
+		return insertRows;
+	}
+
+	public void setInsertRows(List<DiffRow> insertRows) {
+		this.insertRows = insertRows;
+	}
+
+	public List<DiffRow> getChangeRows() {
+		return changeRows;
+	}
+
+	public void setChangeRows(List<DiffRow> changeRows) {
+		this.changeRows = changeRows;
 	}
 }

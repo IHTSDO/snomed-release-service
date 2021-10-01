@@ -173,8 +173,11 @@ public class BuildController {
 	@ApiOperation( value = "Get a build id",
 	notes = "Returns a single build object for given key" )
 	public Map<String, Object> getBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, true, true);
+										@RequestParam(required = false, defaultValue = "true") boolean includeBuildConfiguration,
+										@RequestParam(required = false, defaultValue = "true") boolean includeQAConfiguration,
+										@RequestParam(required = false) Boolean visibility,
+										@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, includeBuildConfiguration, includeQAConfiguration, true, visibility);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
