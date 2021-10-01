@@ -95,7 +95,7 @@ public class BuildStatusListenerService {
 
 		final Build build = buildService.find(product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), tracker.getBuildId(), false,
-				false, true, true);
+				false, true, null);
 
 		LOGGER.info("Product: {}, Build: {} for run ID: {}", build.getProduct().getBusinessKey(), build.getId(), runId);
 		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
