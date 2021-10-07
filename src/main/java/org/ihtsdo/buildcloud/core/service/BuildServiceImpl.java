@@ -1279,7 +1279,6 @@ public class BuildServiceImpl implements BuildService {
 
 			// Copy build and qa configurations
 			buildConfiguration.setBuildName(build.getId() + " - clone");
-			buildConfiguration.setBranchPath(null);
 			buildConfiguration.setExportType(null);
 			buildConfiguration.setLoadExternalRefsetData(false);
 			buildConfiguration.setLoadTermServerData(false);
