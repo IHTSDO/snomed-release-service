@@ -11,7 +11,7 @@ public interface AutomatedTestService {
 
 	BuildComparisonReport getTestReport(String releaseCenterKey, String productKey, String compareId);
 
-	void compareBuilds(String compareId, Build leftBuild, Build rightBuild);
+	void compareBuilds(String compareId, Build leftBuild, Build rightBuild, String username);
 
 	void compareFiles(Build leftBuild, Build rightBuild, String fileName, String compareId);
 

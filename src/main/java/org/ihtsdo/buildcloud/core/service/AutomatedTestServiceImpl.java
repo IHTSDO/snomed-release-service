@@ -113,10 +113,11 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 	@Override
 	@Async
-	public void compareBuilds(String compareId, Build leftBuild, Build rightBuild) {
+	public void compareBuilds(String compareId, Build leftBuild, Build rightBuild, String username) {
 		BuildComparisonReport report = new BuildComparisonReport();
 		report.setCompareId(compareId);
 		report.setStartDate(new Date());
+		report.setUsername(username);
 		report.setCenterKey(leftBuild.getProduct().getReleaseCenter().getBusinessKey());
 		report.setProductKey(leftBuild.getProduct().getBusinessKey());
 		report.setLeftBuildId(leftBuild.getId());
