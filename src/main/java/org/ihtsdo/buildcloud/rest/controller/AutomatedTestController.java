@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.rest.controller.helper.ControllerHelper;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +67,8 @@ public class AutomatedTestController {
         Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
 
         String compareId = UUID.randomUUID().toString();
-        automatedTestService.compareBuilds(compareId, leftBuild, rightBuild);
+        String username = SecurityUtil.getUsername();
+        automatedTestService.compareBuilds(compareId, leftBuild, rightBuild, username);
 
         return ControllerHelper.getCreatedResponse(compareId);
     }

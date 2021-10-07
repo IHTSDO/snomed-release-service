@@ -10,6 +10,8 @@ public class BuildComparisonReport {
 
     private String compareId;
 
+    private String username;
+
     private Status status;
 
     private String message;
@@ -24,6 +26,8 @@ public class BuildComparisonReport {
 
     private String rightBuildId;
 
+    private List<HighLevelComparisonReport> reports;
+
     public void setCompareId(String compareId) {
         this.compareId = compareId;
     }
@@ -32,7 +36,13 @@ public class BuildComparisonReport {
         return compareId;
     }
 
-    private List<HighLevelComparisonReport> reports;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return username;
+    }
 
     public void setRightBuildId(String rightBuildId) {
         this.rightBuildId = rightBuildId;
