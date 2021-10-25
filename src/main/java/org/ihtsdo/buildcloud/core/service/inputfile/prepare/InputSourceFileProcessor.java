@@ -484,10 +484,10 @@ public class InputSourceFileProcessor {
 					}
 				}
 			}
-		} catch (IOException e) {
-			String msg = "Failed to process input file " + inFileName;
+		} catch (Exception e) {
+			String msg = "Failed to process input file " + inFileName + ". Error message: " + e.getMessage();
 			logger.error(msg, e);
-			fileProcessingReport.add(ReportType.ERROR, msg);
+			fileProcessingReport.add(ReportType.ERROR, inputFilename, null, null , msg);
 		}
 	}
 
