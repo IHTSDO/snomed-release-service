@@ -41,7 +41,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 	private final String SPACE_OF_FOUR = "    ";
 
-	private Status[] BUILD_FINAL_STATE = { Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
+	private Status[] BUILD_FINAL_STATE = { 	Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
+											Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
 											Status.FAILED_PRE_CONDITIONS,
 											Status.FAILED_POST_CONDITIONS,
 											Status.CANCEL_REQUESTED,
