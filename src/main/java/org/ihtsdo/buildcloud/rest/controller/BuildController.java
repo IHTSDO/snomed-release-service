@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -162,8 +163,17 @@ public class BuildController {
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 											   @RequestParam(required = false) Boolean visibility,
+											   @RequestParam(defaultValue = "0") Integer pageNumber,
+											   @RequestParam(defaultValue = "10") Integer pageSize,
+											   @RequestParam(required = false) boolean page,
 			final HttpServletRequest request) throws ResourceNotFoundException {
-		final List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility);
+		List<Build> builds;
+		if (page) {
+			builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, PageRequest.of(pageNumber, pageSize));
+		} else {
+			builds = buildService.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility);
+		}
+
 		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
 	}
 
