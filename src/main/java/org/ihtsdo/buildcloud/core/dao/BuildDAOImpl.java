@@ -621,30 +621,34 @@ public class BuildDAOImpl implements BuildDAO {
 			return Collections.emptyList();
 		}
 
-		LOGGER.info("Finding page {} with size {}.", pageNumber, pageSize);
-		if (pageNumber == 0) {
-			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
-			ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-			List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			LOGGER.info("Found {} ObjectSummaries.", objectSummaries.size());
+		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
+		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 
-			// Find builds for desired page
-			findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
-		} else {
-			// Fast forward to page before page requested (i.e. scroll to page 9 if requested page 10)
-			ListObjectsRequest listObjectRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
-			for (int x = 0; x < pageNumber - 1; x++) {
-				ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
-				listObjectRequest.setMarker(objectListing.getMarker());
+		if (pageNumber > 0) {
+			// Fast forward through page(s) of builds.
+			int buildsToSkip = pageNumber == 1 ? pageSize : (pageNumber - 1) * pageSize;
+			boolean fastForward = true;
+			boolean firstPass = true;
+			while (fastForward && objectListing.isTruncated()) {
+				if (!firstPass) {
+					objectListing = s3Client.listNextBatchOfObjects(objectListing);
+				}
+
+				firstPass = false;
+				findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+
+				if (builds.size() >= buildsToSkip) {
+					fastForward = false;
+					builds = new ArrayList<>(); // Wipe builds of previous page(s).
+				}
 			}
-
-			// Find builds for desired page
-			ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
-			List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			LOGGER.info("Found {} ObjectSummaries.", objectSummaries.size());
-			findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
 		}
-		LOGGER.debug("Found {} Builds (before filter)", builds.size());
+
+		// Collect builds for desired page
+		while (builds.size() < pageSize && objectListing.isTruncated()) {
+			objectListing = s3Client.listNextBatchOfObjects(objectListing);
+			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+		}
 
 		// Filter the build out when the visibility flag is set
 		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
