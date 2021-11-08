@@ -625,9 +625,11 @@ public class BuildDAOImpl implements BuildDAO {
 		if (pageNumber == 0) {
 			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
 			ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
+			List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+			LOGGER.info("Found {} ObjectSummaries.", objectSummaries.size());
 
 			// Find builds for desired page
-			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+			findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
 		} else {
 			// Fast forward to page before page requested (i.e. scroll to page 9 if requested page 10)
 			ListObjectsRequest listObjectRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
@@ -638,7 +640,9 @@ public class BuildDAOImpl implements BuildDAO {
 
 			// Find builds for desired page
 			ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
-			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+			List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+			LOGGER.info("Found {} ObjectSummaries.", objectSummaries.size());
+			findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
 		}
 		LOGGER.debug("Found {} Builds (before filter)", builds.size());
 
