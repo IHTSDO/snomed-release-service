@@ -15,6 +15,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.ListHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
@@ -173,6 +175,13 @@ public class BuildDAOImpl implements BuildDAO {
 	public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
 		return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
+	}
+
+	@Override
+	public List<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility,
+									   PageRequest pageRequest) {
+		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
+		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, pageRequest);
 	}
 
 	@Override
@@ -510,11 +519,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
-		List<Build> builds = new ArrayList<>();
 		final List<String> userPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
-		LOGGER.info("List s3 objects {}, {}", buildBucketName, productDirectoryPath);
 
 		// Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
 		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
@@ -522,10 +529,43 @@ public class BuildDAOImpl implements BuildDAO {
 
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
+		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
+		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
+		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+		Collections.reverse(builds);
 
+		LOGGER.info("{} Builds being returned to client.", builds.size());
+		return builds;
+	}
+
+	private List<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
+		int pageNumber = pageRequest.getPageNumber();
+		int pageSize = pageRequest.getPageSize();
+		if (pageNumber < 0 || pageSize <= 0) {
+			LOGGER.debug("No builds found from negative/blank page request.");
+			return Collections.emptyList();
+		}
+
+		final List<String> userPaths = new ArrayList<>();
+		final List<String> tagPaths = new ArrayList<>();
+		final List<String> visibilityPaths = new ArrayList<>();
+
+		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
+		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
+		builds = pageBuilds(builds, pageNumber, pageSize);
+		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+
+		LOGGER.info("{} Builds being returned to client.", builds.size());
+		return builds;
+	}
+
+	private List<Build> getAllBuildsFromS3(String productDirectoryPath, Product product, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths) {
+		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, productDirectoryPath);
+		List<Build> builds = new ArrayList<>();
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-
 		boolean firstPass = true;
 		while (firstPass || objectListing.isTruncated()) {
 			if (!firstPass) {
@@ -536,22 +576,37 @@ public class BuildDAOImpl implements BuildDAO {
 			firstPass = false;
 		}
 
-		// Filter the build out when the visibility flag is set
+		LOGGER.debug("Found {} Builds in {}, {}.", builds.size(), buildBucketName, productDirectoryPath);
+		return builds;
+	}
+
+	private List<Build> removeInvisibleBuilds(Boolean visibility, List<String> visibilityPaths, List<Build> builds) {
+		LOGGER.debug("Removing invisible Builds.");
 		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
 			List<String> invisibleBuildIds = getInvisibleBuilds(visibilityPaths);
 			if (visibility) {
-				builds = builds.stream()
+				return builds.stream()
 						.filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
 						.collect(Collectors.toList());
 			} else {
-				builds = builds.stream()
+				return builds.stream()
 						.filter(build -> invisibleBuildIds.contains(build.getCreationTime()))
 						.collect(Collectors.toList());
 			}
-
 		}
 
-		// populate user, tag  and rvfURL to builds
+		LOGGER.debug("{} Builds remaining.", builds.size());
+		return builds;
+	}
+
+	private List<Build> pageBuilds(List<Build> builds, int pageNumber, int pageSize) {
+		LOGGER.debug("Fetching pageNumber {} with pageSize {} from {} Builds.", pageNumber, pageSize, builds.size());
+		Collections.reverse(builds);
+		return ListHelper.page(builds, pageNumber, pageSize);
+	}
+
+	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> tagPaths, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
+		LOGGER.info("Adding users, tags & build reports to Builds.");
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
 				build.setBuildUser(getBuildUser(build, userPaths));
@@ -566,7 +621,7 @@ public class BuildDAOImpl implements BuildDAO {
 					if (buildReportStream != null) {
 						JSONParser jsonParser = new JSONParser();
 						try {
-							JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse( new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+							JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
 							if (jsonObject.containsKey("rvf_response")) {
 								build.setRvfURL(jsonObject.get("rvf_response").toString());
 							}
@@ -593,10 +648,6 @@ public class BuildDAOImpl implements BuildDAO {
 				}
 			});
 		}
-
-		LOGGER.debug("Found {} Builds", builds.size());
-		Collections.reverse(builds);
-		return builds;
 	}
 
 	private void findBuilds(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String>  visibilityPaths) {
