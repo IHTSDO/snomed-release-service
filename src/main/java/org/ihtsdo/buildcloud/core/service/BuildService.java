@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -11,6 +10,7 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.springframework.data.domain.PageRequest;
 
 public interface BuildService {
 
@@ -27,6 +27,8 @@ public interface BuildService {
 	Build triggerBuild(Build build, Boolean enableTelemetryStream);
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
+
+	List<Build> findAllDescPage(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) throws ResourceNotFoundException;
 
 	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 

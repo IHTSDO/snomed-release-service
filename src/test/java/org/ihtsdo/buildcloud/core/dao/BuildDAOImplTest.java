@@ -6,12 +6,18 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Transactional
 public class BuildDAOImplTest extends AbstractTest {
@@ -74,6 +80,48 @@ public class BuildDAOImplTest extends AbstractTest {
 		//Now lets see if we can get that file back out again
 		final InputStream is = buildDAO.getOutputFileInputStream(build, TEST_FILE_NAME);
 		Assert.assertNotNull(is);
+	}
+
+	@Test
+	public void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingAll() throws IOException, InterruptedException {
+		// given
+		createBuild();
+		createBuild();
+		createBuild();
+		createBuild();
+
+		// when
+		List<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(0, 10));
+
+		// then
+		assertEquals(5, result.size());
+	}
+
+	@Test
+	public void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingSubPage() throws IOException, InterruptedException {
+		// given
+		Date build1 = createBuild();
+		Date build2 = createBuild();
+		Date build3 = createBuild();
+		Date build4 = createBuild();
+
+		// when
+		List<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(3, 1));
+
+		// then
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		String lhs = simpleDateFormat.format(build1);
+		String rhs = result.get(0).getCreationTime();
+		assertEquals(lhs, rhs);
+	}
+
+	private Date createBuild() throws InterruptedException, IOException {
+		Thread.sleep(1000); // Sleep for different time
+		Date date = new Date();
+		Build build4 = new Build(date, product);
+		buildDAO.save(build4);
+
+		return date;
 	}
 
 }

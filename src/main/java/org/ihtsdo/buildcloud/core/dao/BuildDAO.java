@@ -5,6 +5,7 @@ import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.springframework.data.domain.PageRequest;
 
 import java.io.*;
 import java.util.List;
@@ -16,6 +17,8 @@ public interface BuildDAO {
 	void save(Build build) throws IOException;
 
 	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
+
+	List<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest);
 
 	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
