@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
@@ -173,6 +174,13 @@ public class BuildDAOImpl implements BuildDAO {
 	public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
 		return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
+	}
+
+	@Override
+	public List<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility,
+									   PageRequest pageRequest) {
+		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
+		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, pageRequest);
 	}
 
 	@Override
@@ -567,6 +575,102 @@ public class BuildDAOImpl implements BuildDAO {
 						JSONParser jsonParser = new JSONParser();
 						try {
 							JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse( new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+							if (jsonObject.containsKey("rvf_response")) {
+								build.setRvfURL(jsonObject.get("rvf_response").toString());
+							}
+						} catch (IOException e) {
+							LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+						} catch (ParseException e) {
+							LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
+						}
+					}
+				}
+				if (Boolean.TRUE.equals(includeBuildConfiguration)) {
+					try {
+						this.loadBuildConfiguration(build);
+					} catch (IOException e) {
+						LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
+					}
+				}
+				if (Boolean.TRUE.equals(includeQAConfiguration)) {
+					try {
+						this.loadQaTestConfig(build);
+					} catch (IOException e) {
+						LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
+					}
+				}
+			});
+		}
+
+		LOGGER.debug("Found {} Builds", builds.size());
+		Collections.reverse(builds);
+		return builds;
+	}
+
+	private List<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
+		List<Build> builds = new ArrayList<>();
+		final List<String> userPaths = new ArrayList<>();
+		final List<String> tagPaths = new ArrayList<>();
+		final List<String> visibilityPaths = new ArrayList<>();
+		LOGGER.info("List s3 objects {}, {}", buildBucketName, productDirectoryPath);
+
+		int pageNumber = pageRequest.getPageNumber();
+		int pageSize = pageRequest.getPageSize();
+		if (pageNumber < 0 || pageSize <= 0) {
+			LOGGER.debug("Requesting negative/blank page; returning empty collection.");
+			return Collections.emptyList();
+		}
+
+		if (pageNumber == 0) {
+			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
+			ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
+
+			// Find builds for desired page
+			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+		} else {
+			// Fast forward to page before page requested (i.e. scroll to page 9 if requested page 10)
+			ListObjectsRequest listObjectRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
+			for (int x = 0; x < pageNumber - 1; x++) {
+				ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
+				listObjectRequest.setMarker(objectListing.getMarker());
+			}
+
+			// Find builds for desired page
+			ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
+			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
+		}
+
+		// Filter the build out when the visibility flag is set
+		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
+			List<String> invisibleBuildIds = getInvisibleBuilds(visibilityPaths);
+			if (visibility) {
+				builds = builds.stream()
+						.filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
+						.collect(Collectors.toList());
+			} else {
+				builds = builds.stream()
+						.filter(build -> invisibleBuildIds.contains(build.getCreationTime()))
+						.collect(Collectors.toList());
+			}
+
+		}
+
+		// populate user, tag  and rvfURL to builds
+		if (!builds.isEmpty()) {
+			builds.forEach(build -> {
+				build.setBuildUser(getBuildUser(build, userPaths));
+				build.setTags(getTags(build, tagPaths));
+				if (Boolean.TRUE.equals(includeRvfURL) &&
+						(build.getStatus().equals(Build.Status.BUILT)
+								|| build.getStatus().equals(Build.Status.RVF_QUEUED)
+								|| build.getStatus().equals(Build.Status.RVF_RUNNING)
+								|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
+								|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS))) {
+					InputStream buildReportStream = getBuildReportFileStream(build);
+					if (buildReportStream != null) {
+						JSONParser jsonParser = new JSONParser();
+						try {
+							JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
 							if (jsonObject.containsKey("rvf_response")) {
 								build.setRvfURL(jsonObject.get("rvf_response").toString());
 							}
