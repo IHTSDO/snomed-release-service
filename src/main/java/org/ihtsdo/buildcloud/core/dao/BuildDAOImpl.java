@@ -621,6 +621,7 @@ public class BuildDAOImpl implements BuildDAO {
 			return Collections.emptyList();
 		}
 
+		LOGGER.info("Finding page {} with size {}.", pageNumber, pageSize);
 		if (pageNumber == 0) {
 			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, pageSize);
 			ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
@@ -639,6 +640,7 @@ public class BuildDAOImpl implements BuildDAO {
 			ObjectListing objectListing = s3Client.listObjects(listObjectRequest);
 			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
 		}
+		LOGGER.debug("Found {} Builds (before filter)", builds.size());
 
 		// Filter the build out when the visibility flag is set
 		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
