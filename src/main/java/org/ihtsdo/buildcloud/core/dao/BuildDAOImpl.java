@@ -646,7 +646,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 		// Collect builds for desired page
-		while (builds.size() < pageSize && objectListing.isTruncated()) {
+		while (builds.size() <= pageSize && objectListing.isTruncated()) {
 			LOGGER.info("Builds before fetch: {}", builds.size());
 			objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
