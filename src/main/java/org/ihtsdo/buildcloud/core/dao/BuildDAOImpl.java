@@ -627,6 +627,7 @@ public class BuildDAOImpl implements BuildDAO {
 		if (pageNumber > 0) {
 			// Fast forward through page(s) of builds.
 			int buildsToSkip = pageNumber == 1 ? pageSize : (pageNumber - 1) * pageSize;
+			LOGGER.info("buildsToSkip: {}", buildsToSkip);
 			boolean fastForward = true;
 			boolean firstPass = true;
 			while (fastForward && objectListing.isTruncated()) {
@@ -646,6 +647,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 		// Collect builds for desired page
 		while (builds.size() < pageSize && objectListing.isTruncated()) {
+			LOGGER.info("Builds before fetch: {}", builds.size());
 			objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			findBuilds(product, objectListing.getObjectSummaries(), builds, userPaths, tagPaths, visibilityPaths);
 		}
