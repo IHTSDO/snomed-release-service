@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.telemetry.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.transport.TransportDisposedIOException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
@@ -11,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@ConditionalOnProperty(name = "srs.build.offlineMode", havingValue = "false")
 public class TelemetryProcessor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryProcessor.class);
