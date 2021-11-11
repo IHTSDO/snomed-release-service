@@ -22,6 +22,7 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.core.service.helper.Rf2FileNameTransformation;
+import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
@@ -178,8 +179,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility,
-									   PageRequest pageRequest) {
+	public BuildPage<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
 		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
 		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, pageRequest);
 	}
@@ -539,12 +539,13 @@ public class BuildDAOImpl implements BuildDAO {
 		return builds;
 	}
 
-	private List<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
+	private BuildPage<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
+										   Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
 		int pageNumber = pageRequest.getPageNumber();
 		int pageSize = pageRequest.getPageSize();
 		if (pageNumber < 0 || pageSize <= 0) {
 			LOGGER.debug("No builds found from negative/blank page request.");
-			return Collections.emptyList();
+			return BuildPage.empty();
 		}
 
 		final List<String> userPaths = new ArrayList<>();
@@ -552,13 +553,14 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> visibilityPaths = new ArrayList<>();
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
-		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
-		builds = pageBuilds(builds, pageNumber, pageSize);
-		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
+		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
+		addDataToBuilds(pagedBuilds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 
-		LOGGER.info("{} Builds being returned to client.", builds.size());
-		return builds;
+		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
+		LOGGER.info("{} Builds being returned to client. {} pages of Builds available.", pagedBuilds.size(), totalPages);
+		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
 	private List<Build> getAllBuildsFromS3(String productDirectoryPath, Product product, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths) {

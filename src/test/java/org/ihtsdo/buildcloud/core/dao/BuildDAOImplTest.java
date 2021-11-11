@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,6 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -91,10 +91,10 @@ public class BuildDAOImplTest extends AbstractTest {
 		createBuild();
 
 		// when
-		List<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(0, 10));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(0, 10));
 
 		// then
-		assertEquals(5, result.size());
+		assertEquals(5, result.getTotalElements());
 	}
 
 	@Test
@@ -106,12 +106,12 @@ public class BuildDAOImplTest extends AbstractTest {
 		Date build4 = createBuild();
 
 		// when
-		List<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(3, 1));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(3, 1));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		String lhs = simpleDateFormat.format(build1);
-		String rhs = result.get(0).getCreationTime();
+		String rhs = result.getContent().get(0).getCreationTime();
 		assertEquals(lhs, rhs);
 	}
 

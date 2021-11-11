@@ -11,6 +11,7 @@ import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
@@ -23,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -159,15 +162,17 @@ public class BuildController {
 		notes = "Returns a list all builds visible to the currently logged in user, "
 			+ "so this could potentially span across Release Centres" )
 	@ResponseBody
-	public List<Map<String, Object>> getBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	public Page<Map<String, Object>> getBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 											   @RequestParam(required = false) Boolean visibility,
 											   @RequestParam(defaultValue = "0") Integer pageNumber,
 											   @RequestParam(defaultValue = "10") Integer pageSize,
-			final HttpServletRequest request) throws ResourceNotFoundException {
-		List<Build> builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, PageRequest.of(pageNumber, pageSize));;
-		return hypermediaGenerator.getEntityCollectionHypermedia(builds, request, BUILD_LINKS);
+											   final HttpServletRequest request) throws ResourceNotFoundException {
+		BuildPage<Build> builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, PageRequest.of(pageNumber, pageSize));
+		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(builds.getContent(), request, BUILD_LINKS);
+
+		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), builds.getTotalElements());
 	}
 
 	@GetMapping(value = "/builds/{buildId}")

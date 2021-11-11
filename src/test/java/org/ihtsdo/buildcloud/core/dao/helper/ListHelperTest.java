@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.dao.helper;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -192,11 +193,96 @@ public class ListHelperTest {
 		}
 	}
 
+	@Test
+	public void getTotalPages_ShouldThrowException_WhenGivenIllegalInput() {
+		assertThrows(IllegalArgumentException.class, () -> ListHelper.getTotalPages(new ArrayList<>(), -1));
+		assertThrows(IllegalArgumentException.class, () -> ListHelper.getTotalPages(new ArrayList<>(), 0));
+	}
+
+	@Test
+	public void getTotalPages_ShouldReturnExpectedResults_WhenQueryingPage0() {
+		// given
+		List<Scenario> scenarios = List.of(
+				new Scenario(
+						1,
+						Collections.emptyList(),
+						0
+				),
+				new Scenario(
+						2,
+						List.of("1"),
+						1
+				),
+				new Scenario(
+						1,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						10
+				),
+				new Scenario(
+						2,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						5
+				),
+				new Scenario(
+						3,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						4
+				),
+				new Scenario(
+						4,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						3
+				),
+				new Scenario(
+						5,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						2
+				),
+				new Scenario(
+						6,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						2
+				),
+				new Scenario(
+						7,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						2
+				),
+				new Scenario(
+						8,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						2
+				),
+				new Scenario(
+						9,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						2
+				),
+				new Scenario(
+						10,
+						List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+						1
+				)
+		);
+
+		for (Scenario scenario : scenarios) {
+			// when
+			int result = ListHelper.getTotalPages(scenario.getSource(), scenario.getPageSize());
+
+			// then
+			assertResult(result, scenario.getExpectedTotalPages());
+		}
+	}
+
 	private void assertResult(List<String> result, List<String> expectedResult) {
 		assertEquals(expectedResult.size(), result.size(), "Size of assertions do not match.");
 		for (int x = 0; x < expectedResult.size(); x++) {
 			assertEquals(result.get(x), expectedResult.get(x), "Index of assertion does not match.");
 		}
+	}
+
+	private void assertResult(int actualResult, int expectedResult) {
+		assertEquals(expectedResult, actualResult, "Size of total pages do not match.");
 	}
 
 	private static class Scenario {
@@ -220,11 +306,31 @@ public class ListHelperTest {
 		 */
 		private final List<String> expectedResult;
 
+		/**
+		 * Expected returned total pages from helper in test.
+		 */
+		private final int expectedTotalPages;
+
+		/**
+		 * Scenario for asserting paging with expected elements returned.
+		 */
 		private Scenario(int pageNumber, int pageSize, List<String> source, List<String> expectedResult) {
 			this.pageNumber = pageNumber;
 			this.pageSize = pageSize;
 			this.source = source;
 			this.expectedResult = expectedResult;
+			this.expectedTotalPages = 0;
+		}
+
+		/**
+		 * Scenario for asserting paging with expected total pages returned.
+		 */
+		private Scenario(int pageSize, List<String> source, int expectedTotalPages) {
+			this.pageNumber = 0;
+			this.pageSize = pageSize;
+			this.source = source;
+			this.expectedResult = new ArrayList<>();
+			this.expectedTotalPages = expectedTotalPages;
 		}
 
 		public int getPageNumber() {
@@ -241,6 +347,10 @@ public class ListHelperTest {
 
 		public List<String> getExpectedResult() {
 			return expectedResult;
+		}
+
+		public int getExpectedTotalPages() {
+			return expectedTotalPages;
 		}
 	}
 }
