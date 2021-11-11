@@ -3,19 +3,19 @@ package org.ihtsdo.buildcloud.core.service;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
-import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.InputSourceFileProcessor;
-import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
+import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
@@ -31,10 +31,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -317,6 +315,47 @@ public class InputFileServiceImpl implements InputFileService {
 				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
 				throw ex;
+			}
+		}
+	}
+
+	@Override
+	public void copyExternallyMaintainedFiles(String centerKey, String source, String target, boolean includeContent) {
+		String sourcePath = centerKey + "/" + source + "/";
+		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(sourcePath);
+		for (String externalFile : externalFiles) {
+			// Skip if current object is a directory
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/")) {
+				continue;
+			}
+			try {
+				String sourceFilePath = sourcePath + externalFile;
+				String targetFilePath = centerKey + "/" + target + "/" + externalFile.replaceAll(source, target);
+				if (includeContent) {
+					externallyMaintainedFileHelper.copyFile(sourceFilePath, targetFilePath);
+				} else {
+					File tmpFile = File.createTempFile("sct2-file", ".txt");
+					try {
+						InputStream inputStream = externallyMaintainedFileHelper.getFileStream(sourceFilePath);
+						try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+							 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
+							String str = reader.readLine();
+							if (str != null) {
+								writer.println(str);
+								writer.println();
+							}
+						} catch (FileNotFoundException e) {
+							LOGGER.error(e.getMessage());
+						}
+						try (FileInputStream tempFileInputStream = new FileInputStream(tmpFile)) {
+							externallyMaintainedFileHelper.putFile(tempFileInputStream, tmpFile.length(), targetFilePath);
+						}
+					} finally {
+						org.apache.commons.io.FileUtils.forceDelete(tmpFile);
+					}
+				}
+			} catch (Exception ex) {
+				LOGGER.error(ex.getMessage());
 			}
 		}
 	}

@@ -35,4 +35,5 @@ public interface InputFileService {
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
 
+	void copyExternallyMaintainedFiles(String centerKey, String source, String target, boolean includeContent);
 }

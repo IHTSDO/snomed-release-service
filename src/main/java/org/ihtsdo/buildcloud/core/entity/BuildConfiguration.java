@@ -476,6 +476,10 @@ public class BuildConfiguration {
 		this.includePrevReleaseFiles = includePrevReleaseFiles;
 	}
 
+	public void setDailyBuild(boolean dailyBuild) {
+		this.dailyBuild = dailyBuild;
+	}
+
 	public boolean isDailyBuild() {
 		return dailyBuild;
 	}

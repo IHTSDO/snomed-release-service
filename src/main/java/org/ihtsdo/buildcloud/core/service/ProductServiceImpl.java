@@ -277,6 +277,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(BETA_RELEASE)) {
 			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(BETA_RELEASE)));
 		}
+		if (newPropertyValues.containsKey(DAILY_BUILD)) {
+			configuration.setDailyBuild(TRUE.equals(newPropertyValues.get(DAILY_BUILD)));
+		}
 		if (newPropertyValues.containsKey(WORKBENCH_DATA_FIXES_REQUIRED)) {
 			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
 		}
