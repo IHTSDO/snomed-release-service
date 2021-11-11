@@ -19,6 +19,12 @@ public class ListHelper {
 		}
 	}
 
+	private static void verifyParams(int pageSize) {
+		if (pageSize <= 0) {
+			throw new IllegalArgumentException("Invalid pageSize.");
+		}
+	}
+
 	private static <T> List<T> subList(List<T> source, int forwardToIndex) {
 		List<T> mutableList = new ArrayList<>(source);
 		mutableList.subList(0, forwardToIndex).clear();
@@ -62,5 +68,23 @@ public class ListHelper {
 		}
 
 		return subList.subList(0, pageSize); // Return sub list
+	}
+
+	/**
+	 * Return total number of pages available in given list.
+	 *
+	 * @param source   List to inspect for total pages.
+	 * @param pageSize Size of an individual page.
+	 * @param <T>      Type held in collection.
+	 * @return Total number of pages available in given list.
+	 */
+	public static <T> int getTotalPages(List<T> source, int pageSize) {
+		verifyParams(pageSize);
+
+		if (source == null || source.isEmpty()) {
+			return 0;
+		}
+
+		return ((source.size() - 1) / pageSize) + 1;
 	}
 }
