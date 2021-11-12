@@ -338,18 +338,22 @@ public class InputFileServiceImpl implements InputFileService {
 					try {
 						InputStream inputStream = externallyMaintainedFileHelper.getFileStream(sourceFilePath);
 						try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-							 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
-							String str = reader.readLine();
-							if (str != null) {
-								writer.println(str);
-								writer.println();
+							 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)))) {
+							String str;
+							boolean copyHeaderComplete = false;
+							while ((str = reader.readLine()) != null) {
+								if (str != null && !copyHeaderComplete) {
+									writer.println(str);
+									copyHeaderComplete = true;
+								}
 							}
 						} catch (FileNotFoundException e) {
 							LOGGER.error(e.getMessage());
 						}
-						try (FileInputStream tempFileInputStream = new FileInputStream(tmpFile)) {
-							externallyMaintainedFileHelper.putFile(tempFileInputStream, tmpFile.length(), targetFilePath);
+						if (externallyMaintainedFileHelper.exists(targetFilePath)) {
+							externallyMaintainedFileHelper.deleteFile(targetFilePath);
 						}
+						externallyMaintainedFileHelper.putFile(tmpFile, targetFilePath);
 					} finally {
 						org.apache.commons.io.FileUtils.forceDelete(tmpFile);
 					}
