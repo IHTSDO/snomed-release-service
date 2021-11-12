@@ -34,6 +34,4 @@ public interface InputFileService {
 	InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException, IOException;
 
 	InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName);
-
-	void copyExternallyMaintainedFiles(String centerKey, String source, String target, boolean includeContent);
 }

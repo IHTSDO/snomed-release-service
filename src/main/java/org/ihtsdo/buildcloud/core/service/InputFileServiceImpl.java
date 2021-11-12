@@ -320,51 +320,6 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void copyExternallyMaintainedFiles(String centerKey, String source, String target, boolean includeContent) {
-		String sourcePath = centerKey + "/" + source + "/";
-		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(sourcePath);
-		for (String externalFile : externalFiles) {
-			// Skip if current object is a directory
-			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/")) {
-				continue;
-			}
-			try {
-				String sourceFilePath = sourcePath + externalFile;
-				String targetFilePath = centerKey + "/" + target + "/" + externalFile.replaceAll(source, target);
-				if (includeContent) {
-					externallyMaintainedFileHelper.copyFile(sourceFilePath, targetFilePath);
-				} else {
-					File tmpFile = File.createTempFile("sct2-file", ".txt");
-					try {
-						InputStream inputStream = externallyMaintainedFileHelper.getFileStream(sourceFilePath);
-						try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-							 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)))) {
-							String str;
-							boolean copyHeaderComplete = false;
-							while ((str = reader.readLine()) != null) {
-								if (str != null && !copyHeaderComplete) {
-									writer.println(str);
-									copyHeaderComplete = true;
-								}
-							}
-						} catch (FileNotFoundException e) {
-							LOGGER.error(e.getMessage());
-						}
-						if (externallyMaintainedFileHelper.exists(targetFilePath)) {
-							externallyMaintainedFileHelper.deleteFile(targetFilePath);
-						}
-						externallyMaintainedFileHelper.putFile(tmpFile, targetFilePath);
-					} finally {
-						org.apache.commons.io.FileUtils.forceDelete(tmpFile);
-					}
-				}
-			} catch (Exception ex) {
-				LOGGER.error(ex.getMessage());
-			}
-		}
-	}
-
-	@Override
 	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
 		Product product = constructProduct(releaseCenterKey, productKey);
 		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
