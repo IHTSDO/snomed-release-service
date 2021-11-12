@@ -61,6 +61,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Autowired
 	private BuildService buildService;
 
+	@Autowired
+	private ExternalMaintainedRefsetsService externalMaintainedRefsetsService;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
 
 	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
@@ -117,10 +120,47 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
 			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
-			inputFileService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""), false);
+			copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""));
 			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
+		}
+	}
+
+	private void copyExternallyMaintainedFiles(String centerKey, String source, String target) {
+		String sourcePath = centerKey + "/" + source + "/";
+		List<String> externalFiles = externalMaintainedRefsetsService.listFiles(sourcePath);
+		for (String externalFile : externalFiles) {
+			// Skip if current object is a directory
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/")) {
+				continue;
+			}
+			try {
+				String sourceFilePath = sourcePath + externalFile;
+				String targetFilePath = centerKey + "/" + target + "/" + externalFile.replaceAll(source, target);
+				File tmpFile = File.createTempFile("sct2-file", ".txt");
+				try {
+					InputStream inputStream = externalMaintainedRefsetsService.getFileStream(sourceFilePath);
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+						 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)))) {
+						String str;
+						boolean copyHeaderComplete = false;
+						while ((str = reader.readLine()) != null) {
+							if (str != null && !copyHeaderComplete) {
+								writer.println(str);
+								copyHeaderComplete = true;
+							}
+						}
+					} catch (FileNotFoundException e) {
+						LOGGER.error(e.getMessage());
+					}
+					externalMaintainedRefsetsService.putFile(tmpFile, targetFilePath);
+				} finally {
+					org.apache.commons.io.FileUtils.forceDelete(tmpFile);
+				}
+			} catch (Exception ex) {
+				LOGGER.error(ex.getMessage());
+			}
 		}
 	}
 
