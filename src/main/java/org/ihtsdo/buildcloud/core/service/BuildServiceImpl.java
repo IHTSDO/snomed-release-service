@@ -463,12 +463,12 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public BuildPage<Build> findAllDescPage(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag, PageRequest pageRequest) throws ResourceNotFoundException {
+	public BuildPage<Build> findAllDescPage(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean useVisibilityFlag, View viewMode, PageRequest pageRequest) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
 			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
-		return dao.findAllDescPage(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag, pageRequest);
+		return dao.findAllDescPage(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag, viewMode, pageRequest);
 	}
 
 	@Override
