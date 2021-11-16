@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.apache.commons.codec.binary.Base64;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.junit.*;
@@ -91,7 +92,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(0, 10));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10));
 
 		// then
 		assertEquals(5, result.getTotalElements());
@@ -106,7 +107,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		Date build4 = createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, PageRequest.of(3, 1));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(3, 1));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

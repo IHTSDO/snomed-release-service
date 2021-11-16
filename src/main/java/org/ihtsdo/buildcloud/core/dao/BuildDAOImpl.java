@@ -18,6 +18,7 @@ import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.helper.ListHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
@@ -179,9 +180,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public BuildPage<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
+	public BuildPage<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
 		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, pageRequest);
+		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
 	}
 
 	@Override
@@ -540,7 +541,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private BuildPage<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
-										   Boolean includeRvfURL, Boolean visibility, PageRequest pageRequest) {
+												Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
 		int pageNumber = pageRequest.getPageNumber();
 		int pageSize = pageRequest.getPageSize();
 		if (pageNumber < 0 || pageSize <= 0) {
@@ -554,6 +555,8 @@ public class BuildDAOImpl implements BuildDAO {
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
 		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		Collections.reverse(allBuilds);
+		allBuilds = filterByViewMode(allBuilds, tagPaths, viewMode);
 		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
 		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
 		addDataToBuilds(pagedBuilds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
@@ -601,9 +604,40 @@ public class BuildDAOImpl implements BuildDAO {
 		return builds;
 	}
 
+	private List<Build> filterByViewMode(List<Build> allBuilds, List<String> tagPaths, BuildService.View viewMode) {
+		switch (viewMode) {
+			case PUBLISHED:
+				allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
+				break;
+			case UNPUBLISHED:
+				allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) == null || !getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
+				break;
+			case ALL_RELEASES:
+				break;
+			case DEFAULT:
+				Build latestPublishedBuild = null;
+				List<Build> publishedBuilds = new ArrayList<>();
+				for (int i = 0; i < allBuilds.size(); i++) {
+					Build build = allBuilds.get(i);
+					if (getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
+						if (latestPublishedBuild == null) {
+							latestPublishedBuild = build;
+						} else {
+							publishedBuilds.add(build);
+						}
+					}
+				}
+				if (latestPublishedBuild != null) {
+					allBuilds = allBuilds.subList(0, allBuilds.indexOf(latestPublishedBuild) + 1);
+					allBuilds.addAll(publishedBuilds);
+				}
+				break;
+		}
+		return allBuilds;
+	}
+
 	private List<Build> pageBuilds(List<Build> builds, int pageNumber, int pageSize) {
 		LOGGER.debug("Fetching pageNumber {} with pageSize {} from {} Builds.", pageNumber, pageSize, builds.size());
-		Collections.reverse(builds);
 		return ListHelper.page(builds, pageNumber, pageSize);
 	}
 

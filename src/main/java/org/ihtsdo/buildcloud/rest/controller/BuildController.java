@@ -166,10 +166,11 @@ public class BuildController {
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 											   @RequestParam(required = false) Boolean visibility,
+											   @RequestParam(defaultValue = "DEFAULT") BuildService.View viewMode,
 											   @RequestParam(defaultValue = "0") Integer pageNumber,
 											   @RequestParam(defaultValue = "10") Integer pageSize,
 											   final HttpServletRequest request) throws ResourceNotFoundException {
-		BuildPage<Build> builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, PageRequest.of(pageNumber, pageSize));
+		BuildPage<Build> builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, viewMode, PageRequest.of(pageNumber, pageSize));
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(builds.getContent(), request, BUILD_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), builds.getTotalElements());
