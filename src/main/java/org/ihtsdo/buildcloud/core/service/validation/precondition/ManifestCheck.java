@@ -18,6 +18,7 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,9 @@ public class ManifestCheck extends PreconditionCheck {
 
 	@Autowired
 	private BuildDAO buildDAO;
+
+	@Value("${srs.release.package.pattern}")
+	private String releasePackagePattern;
 
 	@Override
 	public void runCheck(final Build build) {
@@ -221,8 +225,7 @@ public class ManifestCheck extends PreconditionCheck {
 
 	private boolean validatePackageName(ListingType manifestListing) {
 		String packageName = manifestListing.getFolder().getName();
-		String fileNamePattern = "^x?SnomedCT_[^_]+(Edition|Extension)?(RF1|RF2)?_(?i)(ALPHA|BETA|PREPRODUCTION|PRODUCTION)+([_].*)?_\\d{8}T\\d{6}Z$";
-		Pattern pattern = Pattern.compile(fileNamePattern);
+		Pattern pattern = Pattern.compile(this.releasePackagePattern);
 		Matcher matcher = pattern.matcher(packageName);
 		return matcher.matches();
 	}
