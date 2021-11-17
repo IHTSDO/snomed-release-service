@@ -105,9 +105,12 @@ public class BuildDAOImpl implements BuildDAO {
 	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
+	@Value("${srs.build.published.releases.path}")
+	private String publishedReleasesPath;
+
 	@Autowired
 	public BuildDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			@Value("${srs.build.published-bucketName}") final String publishedBucketName,
+			@Value("${srs.build.published.bucketName}") final String publishedBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
 		this.buildBucketName = buildBucketName;
@@ -468,7 +471,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getPublishedFileArchiveEntry(final ReleaseCenter releaseCenter, final String targetFileName, final String previousPublishedPackage) throws IOException {
-		final String publishedZipPath = pathHelper.getPublishedFilePath(releaseCenter, previousPublishedPackage);
+		final String publishedZipPath = getPublishedFilePath(releaseCenter, previousPublishedPackage);
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
 		String targetFileNameStripped = targetFileName;
@@ -517,6 +520,18 @@ public class BuildDAOImpl implements BuildDAO {
 		if (deleteOriginal) {
 			buildFileHelper.deleteFile(soureFilePath);
 		}
+	}
+
+	// Get path to previously published package
+	private String getPublishedFilePath(ReleaseCenter releaseCenter, String publishedPackage) {
+		StringBuilder path = new StringBuilder(publishedReleasesPath);
+
+		if (!publishedReleasesPath.endsWith(pathHelper.SEPARATOR)) {
+			path.append(pathHelper.SEPARATOR);
+		}
+
+		path.append(pathHelper.getPublishedFilePath(releaseCenter, publishedPackage));
+		return path.toString();
 	}
 
 	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {

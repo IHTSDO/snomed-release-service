@@ -30,7 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Rf2FileExportRunnerTest extends AbstractTest {
 
 	private static final String PREVIOUS_RELEASE = "previousRelease";
-	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
+	private static final String PUBLISHED_BUCKET_NAME = "local.snomed.international.bucket";
+	private static final String PUBLISHED_RELEASES_PATH = "releases/published/";
 	private static final String BUILD_BUCKET_NAME = "local.build.bucket";
 	private static final String RELEASE_DATE = "20140731";
 
@@ -93,7 +94,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
 		transformedFileFullPath = "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
-		publishedPath = "int/" + PREVIOUS_RELEASE + "/";
+		publishedPath = PUBLISHED_RELEASES_PATH + "int/" + PREVIOUS_RELEASE + "/";
 	}
 	
 	@Test
@@ -120,7 +121,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		buildConfiguration.setPreviousPublishedPackage("20180731");
 		buildConfiguration.setBetaRelease(true);
 		buildConfiguration.setEffectiveTimeFormatted("2019-01-31");
-		String path = "int/20180731/";
+		String path = PUBLISHED_RELEASES_PATH + "int/20180731/";
 		Map<String, Set<String>> includedFileMap = new HashMap<>();
 		Set<String> includedFiles = new HashSet<>();
 		includedFiles.add(PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME);
