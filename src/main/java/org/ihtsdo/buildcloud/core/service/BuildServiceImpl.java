@@ -17,7 +17,6 @@ import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.manifest.*;
 import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
-import org.ihtsdo.buildcloud.core.releaseinformation.ReleasePackageInformation;
 import org.ihtsdo.buildcloud.core.service.build.DailyBuildRF2DeltaExtractor;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.Rf2FileExportRunner;
@@ -51,7 +50,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -664,8 +662,9 @@ public class BuildServiceImpl implements BuildService {
 
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
-		if (!StringUtils.isEmpty(releaseFilename) && !StringUtils.isEmpty(configuration.getReleaseInformationFields())) {
-			generateReleasePackageFile(build, configuration.getReleaseInformationFields(), releaseFilename);
+		if (!StringUtils.isEmpty(releaseFilename) && (!StringUtils.isEmpty(configuration.getReleaseInformationFields())
+													|| !StringUtils.isEmpty(configuration.getAdditionalReleaseInformationFields()))) {
+			generateReleasePackageFile(build, releaseFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -726,27 +725,21 @@ public class BuildServiceImpl implements BuildService {
 		dao.persistReport(build);
 	}
 
-	private void generateReleasePackageFile(Build build, String releaseInfoFields, String releaseFilename) throws BusinessServiceException {
-		String[] fields = releaseInfoFields.split(",");
-		BuildConfiguration buildConfig = build.getConfiguration();
-		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
-		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
-		Map<String, String> preferredTermMap = getPreferredTermMap(build);
-		ReleasePackageInformation release = buildReleasePackageInformation(fields, buildConfig, languagesRefsets, deltaFromAndToDateMap, preferredTermMap);
+	private void generateReleasePackageFile(Build build, String releaseFilename) throws BusinessServiceException {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
-
-			File releasePackageInfor = null;
+			Map releasePackageInformationMap = getReleasePackageInformationMap(build);
+			File releasePackageInfoFile = null;
 			try {
-				releasePackageInfor = new File(releaseFilename);
+				releasePackageInfoFile = new File(releaseFilename);
 				ObjectMapper objectMapper = new ObjectMapper();
 				objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 				objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-				objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfor, release);
-				dao.putOutputFile(build, releasePackageInfor);
+				objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfoFile, releasePackageInformationMap);
+				dao.putOutputFile(build, releasePackageInfoFile);
 			} finally {
-				if (releasePackageInfor != null) {
-					releasePackageInfor.delete();
+				if (releasePackageInfoFile != null) {
+					releasePackageInfoFile.delete();
 				}
 			}
 		} catch (IOException e) {
@@ -797,55 +790,73 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private ReleasePackageInformation buildReleasePackageInformation(String[] fields, BuildConfiguration buildConfig, List<RefsetType> languagesRefsets, Map<String, Integer> deltaFromAndToDateMap, Map<String, String> preferredTermMap) {
-		ReleasePackageInformation release = new ReleasePackageInformation();
-		for (String field : fields) {
-			switch (field) {
-				case "effectiveTime":
-					release.setEffectiveTime(buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
-					break;
-				case "deltaFromDate":
-					Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
-					release.setDeltaFromDate(deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
-					break;
-				case "deltaToDate":
-					Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
-					release.setDeltaToDate(deltaToDateInt != null ? deltaToDateInt.toString() : null);
-					break;
-				case "includedModules":
-					String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
-					if (extensionModule != null) {
+	private Map getReleasePackageInformationMap(Build build) {
+		Map<String, Object> releasePackageInformationMap = new LinkedHashMap();
+
+		BuildConfiguration buildConfig = build.getConfiguration();
+		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
+		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
+		Map<String, String> preferredTermMap = getPreferredTermMap(build);
+
+		if (!StringUtils.isEmpty(buildConfig.getReleaseInformationFields())) {
+			String[] fields = buildConfig.getReleaseInformationFields().trim().split(",");
+			for (String field : fields) {
+				switch (field.trim()) {
+					case "effectiveTime":
+						releasePackageInformationMap.put("effectiveTime", buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
+						break;
+					case "deltaFromDate":
+						Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
+						releasePackageInformationMap.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+						break;
+					case "deltaToDate":
+						Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
+						releasePackageInformationMap.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
+						break;
+					case "includedModules":
+						String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
+						if (extensionModule != null) {
+							List<ConceptMini> list = new ArrayList<>();
+							for (String moduleId : extensionModule.split(",")) {
+								ConceptMini conceptMini = new ConceptMini();
+								moduleId = moduleId.trim();
+								conceptMini.setId(moduleId);
+								conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
+								list.add(conceptMini);
+							}
+							releasePackageInformationMap.put("includedModules", list);
+						}
+						break;
+					case "languageRefsets":
 						List<ConceptMini> list = new ArrayList<>();
-						for (String moduleId : extensionModule.split(",")) {
+						for (RefsetType refsetType : languagesRefsets) {
 							ConceptMini conceptMini = new ConceptMini();
-							moduleId = moduleId.trim();
-							conceptMini.setId(moduleId);
-							conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
+							String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+							conceptMini.setId(languageRefsetId);
+							conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
 							list.add(conceptMini);
 						}
-						release.setIncludedModules(list);
-					}
-					break;
-				case "languageRefsets":
-					List<ConceptMini> list = new ArrayList<>();
-					for (RefsetType refsetType : languagesRefsets) {
-						ConceptMini conceptMini = new ConceptMini();
-						String languageRefsetId = String.valueOf(refsetType.getId()).trim();
-						conceptMini.setId(languageRefsetId);
-						conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
-						list.add(conceptMini);
-					}
-					release.setLanguageRefsets(list);
-					break;
-				case "licenceStatement":
-					release.setLicenceStatement(buildConfig.getLicenceStatement());
-					break;
-				default:
-					break;
+						releasePackageInformationMap.put("languageRefsets", list);
+						break;
+					case "licenceStatement":
+						releasePackageInformationMap.put("licenceStatement", buildConfig.getLicenceStatement());
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		if (!StringUtils.isEmpty(buildConfig.getAdditionalReleaseInformationFields())) {
+			String[] additionalFields = buildConfig.getAdditionalReleaseInformationFields().trim().split("\\|");
+			for (String pair : additionalFields) {
+				String[] keyValue = pair.split(":");
+				if (keyValue.length == 2) {
+					releasePackageInformationMap.put(keyValue[0], keyValue[1]);
+				}
 			}
 		}
 
-		return release;
+		return releasePackageInformationMap;
 	}
 
 	private List<RefsetType> getLanguageRefsets(Build build) {
