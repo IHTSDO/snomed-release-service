@@ -841,6 +841,9 @@ public class BuildServiceImpl implements BuildService {
 					case "licenceStatement":
 						releasePackageInformationMap.put("licenceStatement", buildConfig.getLicenceStatement());
 						break;
+					case "previousPublishedPackage":
+						releasePackageInformationMap.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
+						break;
 					default:
 						break;
 				}
