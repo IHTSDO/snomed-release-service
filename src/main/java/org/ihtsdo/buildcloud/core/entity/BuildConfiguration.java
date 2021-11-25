@@ -89,6 +89,9 @@ public class BuildConfiguration {
 	@Column(name="release_information_fields")
 	private String releaseInformationFields;
 
+	@Column(name="additional_release_information_fields")
+	private String additionalReleaseInformationFields;
+
 	@Type(type="yes_no")
 	@Column(name = "use_classifier_precondition_checks")
 	private boolean useClassifierPreConditionChecks;
@@ -326,6 +329,14 @@ public class BuildConfiguration {
 
 	public void setReleaseInformationFields(String releaseInformationFields) {
 		this.releaseInformationFields = releaseInformationFields;
+	}
+
+	public String getAdditionalReleaseInformationFields() {
+		return additionalReleaseInformationFields;
+	}
+
+	public void setAdditionalReleaseInformationFields(String additionalReleaseInformationFields) {
+		this.additionalReleaseInformationFields = additionalReleaseInformationFields;
 	}
 
 	public boolean useClassifierPreConditionChecks() {
