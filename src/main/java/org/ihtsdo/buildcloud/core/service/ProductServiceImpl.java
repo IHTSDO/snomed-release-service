@@ -19,6 +19,8 @@ import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -302,6 +304,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setReleaseInformationFields(newPropertyValues.get(RELEASE_INFORMATION_FIELDS));
 		}
 		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
+			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
+			if (!StringUtils.isEmpty(additionalFields) && !isJSONValid((additionalFields))) {
+				throw new BusinessServiceException(String.format("The additional release information is not valid JSON String"));
+			}
 			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
 		}
 		if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
@@ -475,5 +481,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				break;
 			}
 		}
+	}
+
+	public boolean isJSONValid(String test) {
+		try {
+			new JSONObject(test);
+		} catch (JSONException ex) {
+			return false;
+		}
+		return true;
 	}
 }

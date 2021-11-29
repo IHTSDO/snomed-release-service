@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
@@ -45,6 +47,8 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +74,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -729,14 +734,23 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map releasePackageInformationMap = getReleasePackageInformationMap(build);
+			FileWriter fileWriter = null;
 			File releasePackageInfoFile = null;
 			try {
 				releasePackageInfoFile = new File(releaseFilename);
-				ObjectMapper objectMapper = new ObjectMapper();
-				objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-				objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-				objectMapper.writerWithDefaultPrettyPrinter().writeValue(releasePackageInfoFile, releasePackageInformationMap);
-				dao.putOutputFile(build, releasePackageInfoFile);
+				fileWriter = new FileWriter(releasePackageInfoFile);
+
+				Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+				JsonElement je = JsonParser.parseString(mapToString(releasePackageInformationMap));
+				fileWriter.write(gson.toJson(je));
+			} finally {
+				fileWriter.flush();
+				fileWriter.close();
+			}
+			try {
+				if (releasePackageInfoFile != null) {
+					dao.putOutputFile(build, releasePackageInfoFile);
+				}
 			} finally {
 				if (releasePackageInfoFile != null) {
 					releasePackageInfoFile.delete();
@@ -745,6 +759,13 @@ public class BuildServiceImpl implements BuildService {
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to generate release package information file.", e);
 		}
+	}
+
+	private <K, V> String mapToString(Map<K, V> map) {
+		return map.entrySet()
+				.stream()
+				.map(entry -> entry.getKey() + ":" + (entry.getValue() instanceof String ? "\"" + entry.getValue() + "\"" : entry.getValue()))
+				.collect(Collectors.joining(", ", "{", "}"));
 	}
 
 	private String getReleaseFilename(Build build) {
@@ -791,7 +812,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Map getReleasePackageInformationMap(Build build) {
-		Map<String, Object> releasePackageInformationMap = new LinkedHashMap();
+		Map<String, Object> result = new LinkedHashMap();
 
 		BuildConfiguration buildConfig = build.getConfiguration();
 		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
@@ -803,15 +824,15 @@ public class BuildServiceImpl implements BuildService {
 			for (String field : fields) {
 				switch (field.trim()) {
 					case "effectiveTime":
-						releasePackageInformationMap.put("effectiveTime", buildConfig.getEffectiveTime() != null ? RF2Constants.DATE_FORMAT.format(buildConfig.getEffectiveTime()) : null);
+						result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
 						break;
 					case "deltaFromDate":
 						Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
-						releasePackageInformationMap.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+						result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
 						break;
 					case "deltaToDate":
 						Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
-						releasePackageInformationMap.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
+						result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
 						break;
 					case "includedModules":
 						String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
@@ -824,7 +845,7 @@ public class BuildServiceImpl implements BuildService {
 								conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
 								list.add(conceptMini);
 							}
-							releasePackageInformationMap.put("includedModules", list);
+							result.put("includedModules", list);
 						}
 						break;
 					case "languageRefsets":
@@ -836,13 +857,13 @@ public class BuildServiceImpl implements BuildService {
 							conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
 							list.add(conceptMini);
 						}
-						releasePackageInformationMap.put("languageRefsets", list);
+						result.put("languageRefsets", list);
 						break;
 					case "licenceStatement":
-						releasePackageInformationMap.put("licenceStatement", buildConfig.getLicenceStatement());
+						result.put("licenceStatement", buildConfig.getLicenceStatement());
 						break;
 					case "previousPublishedPackage":
-						releasePackageInformationMap.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
+						result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
 						break;
 					default:
 						break;
@@ -850,16 +871,19 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		if (!StringUtils.isEmpty(buildConfig.getAdditionalReleaseInformationFields())) {
-			String[] additionalFields = buildConfig.getAdditionalReleaseInformationFields().trim().split("\\|");
-			for (String pair : additionalFields) {
-				String[] keyValue = pair.split(":");
-				if (keyValue.length == 2) {
-					releasePackageInformationMap.put(keyValue[0], keyValue[1]);
-				}
-			}
+			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
+			jsonObject.keySet().forEach(keyStr -> result.put((String) keyStr, jsonObject.get((String) keyStr)));
 		}
 
-		return releasePackageInformationMap;
+		return result;
+	}
+
+	private JSONObject parseAdditionalReleaseInformationJSON(String additionalFields) {
+		try {
+			return new JSONObject(additionalFields);
+		} catch (JSONException ex) {
+			throw new BusinessServiceRuntimeException("Failed to parse the additional fields to JSON object.", ex);
+		}
 	}
 
 	private List<RefsetType> getLanguageRefsets(Build build) {

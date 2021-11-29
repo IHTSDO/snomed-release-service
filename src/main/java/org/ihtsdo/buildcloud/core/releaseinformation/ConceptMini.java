@@ -20,4 +20,12 @@ public class ConceptMini {
     public void setTerm(String term) {
         this.term = term;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "id='" + id + '\'' +
+                ", term='" + term + '\'' +
+                '}';
+    }
 }
