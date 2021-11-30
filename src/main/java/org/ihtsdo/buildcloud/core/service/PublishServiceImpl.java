@@ -23,7 +23,7 @@ import java.util.zip.ZipInputStream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -61,11 +61,7 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
-	private final FileHelper buildFileHelper;
-
-	private final FileHelper publishedFileHelper;
-
-	private final String publishedBucketName;
+	private final FileHelper srsFileHelper;
 
 	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
@@ -75,8 +71,11 @@ public class PublishServiceImpl implements PublishService {
 	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
 
+	@Value("${srs.publish.job.storage.path}")
+	private String publishJobStoragePath;
+
 	@Autowired
-	private BuildS3PathHelper buildS3PathHelper;
+	private S3PathHelper s3PathHelper;
 
 	@Autowired
 	private IdServiceRestClient idRestClient;
@@ -96,21 +95,16 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Autowired
-	public PublishServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			@Value("${srs.build.published-bucketName}") final String publishedBucketName,
+	public PublishServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
-		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
-		this.publishedBucketName = publishedBucketName;
-		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
+		srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
-		List<String> packages;
-		List<String> allFiles = publishedFileHelper.listFiles(getPublishDirPath(releaseCenter));
-		packages = allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
-		return packages;
+		List<String> allFiles = srsFileHelper.listFiles(getPublishDirPath(releaseCenter));
+		return allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
 	}
 
 	@Override
@@ -147,8 +141,8 @@ public class PublishServiceImpl implements PublishService {
 		}
 		concurrentPublishingBuildStatus.putIfAbsent(getBuildUniqueKey(build), new ProcessingStatus(Status.RUNNING.name(), null));
 		try {
-			String pkgOutPutDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
-			List<String> filesFound = buildFileHelper.listFiles(pkgOutPutDir);
+			String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
+			List<String> filesFound = srsFileHelper.listFiles(pkgOutPutDir);
 			String releaseFileName = null;
 			String md5FileName = null;
 			for (String fileName : filesFound) {
@@ -174,9 +168,9 @@ public class PublishServiceImpl implements PublishService {
 					if (publishComponentIds) {
 						try {
 							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
-							String buildOutputDir = buildS3PathHelper.getBuildOutputFilesPath(build).toString();
+							String buildOutputDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
 							boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
-							publishComponentIds(buildFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
+							publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
 							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
 						} catch (BusinessServiceException e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
@@ -191,11 +185,11 @@ public class PublishServiceImpl implements PublishService {
 						throw new EntityAlreadyExistsException(errorMessage);
 					}
 					try {
-						String outputFileFullPath = buildS3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+						String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
 						String publishedFilePath = getPublishFilePath(releaseCenter, releaseFileName);
-						buildFileHelper.copyFile(outputFileFullPath, publishedBucketName, publishedFilePath);
-						LOGGER.info("Release file:{} is copied to the published bucket:{}", releaseFileName, publishedBucketName);
-						publishExtractedVersionOfPackage(publishedFilePath, publishedFileHelper.getFileStream(publishedFilePath));
+						srsFileHelper.copyFile(outputFileFullPath, publishedFilePath);
+						LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishedFilePath);
+						publishExtractedVersionOfPackage(publishedFilePath, srsFileHelper.getFileStream(publishedFilePath));
 
 						copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
 					} catch (BusinessServiceException e) {
@@ -205,18 +199,17 @@ public class PublishServiceImpl implements PublishService {
 				}
 				// copy MD5 file if available
 				if (md5FileName != null) {
-					String source = buildS3PathHelper.getBuildOutputFilePath(build, md5FileName);
+					String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
 					String target = getPublishFilePath(releaseCenter, md5FileName);
-					buildFileHelper.copyFile(source, publishedBucketName, target);
-					LOGGER.info("MD5 file:{} is copied to the published bucket:{}", md5FileName, publishedBucketName);
+					srsFileHelper.copyFile(source, target);
+					LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
 				}
 				
-				//copy build info to published bucket
-				backupPublishedBuild(build,publishedBucketName);
+				// copy build info to published storage path
+				backupPublishedBuild(build);
 
-				//mark the build as Published
+				// mark the build as Published
 				buildDao.addTag(build, Build.Tag.PUBLISHED);
-				LOGGER.info("Build:{} is copied to the published bucket:{}", build.getProduct().getBusinessKey() + build.getId(), publishedBucketName);
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} catch (IOException e) {
@@ -254,7 +247,7 @@ public class PublishServiceImpl implements PublishService {
 				// Upload file
 				String publishFilePath = getPublishDirPath(releaseCenter) + originalFilename;
 				LOGGER.info("Uploading package to {}", publishFilePath);
-				publishedFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
+				srsFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
 				//Also upload the extracted version of the archive for random access performance improvements
 				publishExtractedVersionOfPackage(publishFilePath, new FileInputStream(tempZipFile));
 				
@@ -263,7 +256,7 @@ public class PublishServiceImpl implements PublishService {
 					boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
 					String publishFileExtractedDir = publishFilePath.replace(".zip", "/");
 					LOGGER.info("Start publishing component ids for published file {} ", originalFilename);
-					publishComponentIds(publishedFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename);
+					publishComponentIds(srsFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename);
 					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
 				}
 			}
@@ -282,8 +275,8 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
 		String path = getPublishDirPath(releaseCenter) + targetFileName;
-		LOGGER.info("Check published file exists or not for path:" + path + " in bucket:" + publishedBucketName);
-		return publishedFileHelper.exists(path);
+		LOGGER.info("Check if published file exists for path {} in storage bucket", path);
+		return srsFileHelper.exists(path);
 	}
 
 	// Publish extracted entries in a directory of the same name
@@ -305,7 +298,7 @@ public class PublishServiceImpl implements PublishService {
 
 					String targetFilePath = zipExtractPath + name;
 					try (FileInputStream tempEntryInputStream = new FileInputStream(tempFile)) {
-						publishedFileHelper.putFile(tempEntryInputStream, entry.getSize(), targetFilePath);
+						srsFileHelper.putFile(tempEntryInputStream, entry.getSize(), targetFilePath);
 					}
 					if (!tempFile.delete()) {
 						LOGGER.warn("Failed to delete file {}", tempFile.getAbsolutePath());
@@ -543,7 +536,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private String getPublishDirPath(final ReleaseCenter releaseCenter) {
-		return releaseCenter.getBusinessKey() + SEPARATOR;
+		return s3PathHelper.getPublishJobDirectoryPath(releaseCenter);
 	}
 
 	private String getPublishFilePath(final ReleaseCenter releaseCenter, final String releaseFileName) {
@@ -556,21 +549,22 @@ public class PublishServiceImpl implements PublishService {
 			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
 			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
 			outputPathBuilder.append(releaseFileName);
-			buildFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
+			srsFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
 		} catch (Exception e) {
 			LOGGER.error("Failed to copy release file {} to versioned contents repository because of error: {}", releaseFileName, e.getMessage());
 			throw new BusinessServiceException(String.format("Failed to copy release file %s to versioned contents repository", releaseFileName), e);
 		}
 	}
 
-	private void backupPublishedBuild(Build build, String publishedBucketName) {
-		String orginalBuildPath = buildS3PathHelper.getBuildPath(build).toString();
-		List<String> buildFiles =  buildFileHelper.listFiles(orginalBuildPath);
+	private void backupPublishedBuild(Build build) {
+		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
+		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
 		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + PUBLISHED_BUILD + SEPARATOR
 				+ build.getProduct().getBusinessKey() + SEPARATOR + build.getId() + SEPARATOR;
 		for (String filename : buildFiles) {
-			buildFileHelper.copyFile(orginalBuildPath + filename , publishedBucketName, buildBckUpPath  + filename);
+			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
 		}
+		LOGGER.info("Build: {} is copied to path: {}", build.getProduct().getBusinessKey() + build.getId(), buildBckUpPath);
 	}
 
 	private String getBuildUniqueKey(Build build) {

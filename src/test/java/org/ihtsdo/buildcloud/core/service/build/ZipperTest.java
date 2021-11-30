@@ -4,7 +4,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.test.AbstractTest;
@@ -39,7 +39,7 @@ public class ZipperTest  extends AbstractTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ZipperTest.class);
 
 	@Autowired
-	private BuildS3PathHelper pathHelper;
+	private S3PathHelper pathHelper;
 	
 	@Autowired
 	protected ProductDAO productDAO;
@@ -47,7 +47,7 @@ public class ZipperTest  extends AbstractTest {
 	@Autowired
 	private BuildDAOImpl buildDAO;
 
-	@Value("${srs.build.bucketName}")
+	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
 	
 	@Autowired 

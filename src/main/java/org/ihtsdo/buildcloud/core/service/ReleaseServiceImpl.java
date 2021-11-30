@@ -4,7 +4,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
@@ -38,19 +37,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @Service
 public class ReleaseServiceImpl implements ReleaseService {
 
 	private static final String TRACKER_ID = "trackerId";
 
-	private static final String PATTERN_ALL_FILES = "*.*";
-
 	@Autowired
 	private BuildDAO buildDAO;
-
-	@Autowired
-	private InputFileDAO inputFileDAO;
 
 	@Autowired
 	private InputFileService inputFileService;
@@ -120,47 +113,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
 			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
-			copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""));
+			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""), true);
 			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
-		}
-	}
-
-	private void copyExternallyMaintainedFiles(String centerKey, String source, String target) {
-		String sourcePath = centerKey + "/" + source + "/";
-		List<String> externalFiles = externalMaintainedRefsetsService.listFiles(sourcePath);
-		for (String externalFile : externalFiles) {
-			// Skip if current object is a directory
-			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/")) {
-				continue;
-			}
-			try {
-				String sourceFilePath = sourcePath + externalFile;
-				String targetFilePath = centerKey + "/" + target + "/" + externalFile.replaceAll(source, target);
-				File tmpFile = File.createTempFile("sct2-file", ".txt");
-				try {
-					InputStream inputStream = externalMaintainedRefsetsService.getFileStream(sourceFilePath);
-					try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-						 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)))) {
-						String str;
-						boolean copyHeaderComplete = false;
-						while ((str = reader.readLine()) != null) {
-							if (str != null && !copyHeaderComplete) {
-								writer.println(str);
-								copyHeaderComplete = true;
-							}
-						}
-					} catch (FileNotFoundException e) {
-						LOGGER.error(e.getMessage());
-					}
-					externalMaintainedRefsetsService.putFile(tmpFile, targetFilePath);
-				} finally {
-					org.apache.commons.io.FileUtils.forceDelete(tmpFile);
-				}
-			} catch (Exception ex) {
-				LOGGER.error(ex.getMessage());
-			}
 		}
 	}
 

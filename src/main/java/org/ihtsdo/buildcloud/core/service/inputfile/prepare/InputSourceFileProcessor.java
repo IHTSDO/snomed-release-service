@@ -20,7 +20,7 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.CharEncoding;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
@@ -65,7 +65,7 @@ public class InputSourceFileProcessor {
 	private static final String TXT_EXTENSION = ".txt";
 
 	private final FileHelper fileHelper;
-	private final BuildS3PathHelper buildS3PathHelper;
+	private final S3PathHelper s3PathHelper;
 	private final Product product;
 	private File localDir;
 	private File outDir;
@@ -84,10 +84,10 @@ public class InputSourceFileProcessor {
 	private final MultiValueMap<String, String> filesToCopyFromSource;
 	private final MultiValueMap<String, String> refsetWithAdditionalFields;
 
-	public InputSourceFileProcessor(FileHelper fileHelper, BuildS3PathHelper buildS3PathHelper,
+	public InputSourceFileProcessor(FileHelper fileHelper, S3PathHelper s3PathHelper,
 									Product product, boolean copyFilesDefinedInManifest) {
 		this.fileHelper = fileHelper;
-		this.buildS3PathHelper = buildS3PathHelper;
+		this.s3PathHelper = s3PathHelper;
 		this.product = product;
 		this.sourceFilesMap = new HashMap<>();
 		this.refsetFileProcessingConfigs = new HashMap<>();
@@ -217,7 +217,7 @@ public class InputSourceFileProcessor {
 				continue;
 			}
 			//Copy files from S3 to local for processing
-			String s3FilePath = buildS3PathHelper.getBuildSourcesPath(product, buildId).append(sourceFilePath).toString();
+			String s3FilePath = s3PathHelper.getBuildSourcesPath(product, buildId).append(sourceFilePath).toString();
 			InputStream sourceFileStream = null;
 			try {
 				sourceFileStream = fileHelper.getFileStream(s3FilePath);
@@ -730,7 +730,7 @@ public class InputSourceFileProcessor {
 			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 			}
-			String filePath =   buildS3PathHelper.getBuildInputFilesPath(product, buildId).append(inputFileName).toString();
+			String filePath =   s3PathHelper.getBuildInputFilesPath(product, buildId).append(inputFileName).toString();
 			fileProcessingReport.add(ReportType.INFO,inputFileName, null, null, "Uploaded to product input files directory");
 			try {
 				fileHelper.putFile(file,filePath);
