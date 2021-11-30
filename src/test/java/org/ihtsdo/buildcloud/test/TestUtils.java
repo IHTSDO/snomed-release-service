@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.test;
 
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +16,12 @@ import java.io.InputStreamReader;
 public class TestUtils {
 
 	@Autowired
-	private BuildS3PathHelper pathHelper;
+	private S3PathHelper pathHelper;
 
 	@Autowired
 	private S3Client s3Client;
 
-	@Value("${srs.build.bucketName}")
+	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
 
 	/**

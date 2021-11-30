@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.ihtsdo.buildcloud.TestConfig;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
@@ -35,9 +35,9 @@ public class InputSourceFileProcessorTest {
 	private static final String EXTERNALLY_MAINTAINED = "externally-maintained";
 	private static final String TERMINOLOGY_SERVER = "terminology-server";
 	@Autowired
-	private BuildS3PathHelper s3PathHelper;
+	private S3PathHelper s3PathHelper;
 
-	@Value("${srs.build.bucketName}")
+	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
 	
 	@Autowired

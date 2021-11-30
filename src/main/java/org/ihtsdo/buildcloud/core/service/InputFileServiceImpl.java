@@ -2,10 +2,8 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
@@ -53,23 +51,15 @@ public class InputFileServiceImpl implements InputFileService {
 
 	private final FileHelper fileHelper;
 
-	private final FileHelper externallyMaintainedFileHelper;
-
 	private static final String SRC_TERM_SERVER = "terminology-server";
 
 	private static final String SRC_EXT_MAINTAINED = "externally-maintained";
 
 	@Autowired
-	private ProductDAO productDAO;
-
-	@Autowired
-	private BuildDAO buildDAO;
-
-	@Autowired
 	private InputFileDAO inputFileDAO;
 
 	@Autowired
-	private BuildS3PathHelper s3PathHelper;
+	private S3PathHelper s3PathHelper;
 
 	@Autowired
 	private TermServerService termServerService;
@@ -77,16 +67,11 @@ public class InputFileServiceImpl implements InputFileService {
 	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
-	private final String buildBucketName;
-
 	@Autowired
-	public InputFileServiceImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-							@Value("${srs.build.externally-maintained-bucketName}") final String externallyMaintainedBucketName,
+	public InputFileServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 							final S3Client s3Client,
 							final S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
-		this.buildBucketName = buildBucketName;
-		externallyMaintainedFileHelper = new FileHelper(externallyMaintainedBucketName, s3Client, s3ClientHelper);
+		fileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -109,17 +94,15 @@ public class InputFileServiceImpl implements InputFileService {
 	public void putInputFile(final String centerKey, final Product product, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException {
 		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(product, buildId).toString();
 		putFile(filename, inputStream, buildInputFilesPath, fileSize);
-
 	}
 
 	@Override
 	public void putSourceFile(String sourceName, String centerKey, String productKey, String buildId, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
 		Product product = constructProduct(centerKey, productKey);
-		if(StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
+		if (StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 
 		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, buildId, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
-
 	}
 
 	@Override
@@ -190,7 +173,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	private Product constructProduct(String centerKey, final String productKey) {
-		LOGGER.debug("ReleaseCenter=" + centerKey + " productKey =" + productKey);
+		LOGGER.debug("ReleaseCenter = " + centerKey + " productKey = " + productKey);
 		ReleaseCenter releaseCenter = new ReleaseCenter();
 		releaseCenter.setShortName(centerKey);
 		Product product = new Product();
@@ -251,14 +234,13 @@ public class InputFileServiceImpl implements InputFileService {
 	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
-			Product product = constructProduct(centerKey, productKey);
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
 			if (buildConfiguration.isLoadTermServerData()) {
 				gatherSourceFilesFromTermServer(centerKey, productKey, build, inputGatherReport, securityContext);
 			}
 			if (buildConfiguration.isLoadExternalRefsetData()) {
-				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, build, inputGatherReport);
+				gatherSourceFilesFromExternallyMaintained(centerKey, productKey, build, inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
 		} catch (Exception ex) {
@@ -274,8 +256,7 @@ public class InputFileServiceImpl implements InputFileService {
 		return inputGatherReport;
 	}
 
-	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build
-			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
+	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
 		File fileExported = null;
 		try {
 			SecurityContextHolder.setContext(securityContext);
@@ -299,22 +280,21 @@ public class InputFileServiceImpl implements InputFileService {
 		}
 	}
 
-
-	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
+	private void gatherSourceFilesFromExternallyMaintained(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
 		BuildConfiguration configuration = build.getConfiguration();
-		String dirPath = centerKey + "/" + configuration.getEffectiveTimeSnomedFormat() + "/";
-		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
-		LOGGER.info("Found {} files at {} in external maintained bucket", externalFiles.size(), dirPath);
+		String externallyMaintainedPath = s3PathHelper.getExternallyMaintainedDirectoryPath(centerKey, configuration.getEffectiveTimeSnomedFormat());
+		List<String> externalFiles = fileHelper.listFiles(externallyMaintainedPath);
+		LOGGER.info("Found {} files at {} in storage bucket", externalFiles.size(), externallyMaintainedPath);
 		for (String externalFile : externalFiles) {
 			// Skip if current object is a directory
-			if (StringUtils.isBlank(externalFile) || externalFile.endsWith("/")) {
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith(S3PathHelper.SEPARATOR)) {
 				continue;
 			}
 			try {
 				Product product = constructProduct(centerKey, productKey);
 				String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, build.getId(), SRC_EXT_MAINTAINED).toString();
-				externallyMaintainedFileHelper.copyFile(dirPath + externalFile, buildBucketName, sourceFilesPath + FilenameUtils.getName(externalFile));
-				LOGGER.info("Successfully export file " + externalFile + " from Externally Maintained bucket and uploaded to source \"externally-maintained\"");
+				fileHelper.copyFile(externallyMaintainedPath + externalFile, sourceFilesPath + FilenameUtils.getName(externalFile));
+				LOGGER.info("Successfully exported file " + externalFile + " from " + externallyMaintainedPath + " and uploaded to source \"externally-maintained\"");
 			} catch (Exception ex) {
 				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
@@ -326,7 +306,6 @@ public class InputFileServiceImpl implements InputFileService {
 	@Override
 	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
 		Product product = constructProduct(releaseCenterKey, productKey);
-		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + BuildS3PathHelper.SEPARATOR + sourceFileName);
+		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + S3PathHelper.SEPARATOR + sourceFileName);
 	}
-
 }

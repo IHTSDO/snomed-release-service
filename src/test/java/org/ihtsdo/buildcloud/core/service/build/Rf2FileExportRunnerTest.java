@@ -26,12 +26,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 public class Rf2FileExportRunnerTest extends AbstractTest {
 
+	@Value("${srs.storage.bucketName}")
+	private String storageBucketName;
+
+	@Value("${srs.build.storage.path}")
+	private String buildStoragePath;
+
+	@Value("${srs.published.releases.storage.path}")
+	private String publishedReleasesStoragePath;
+
 	private static final String PREVIOUS_RELEASE = "previousRelease";
-	private static final String PUBLISHED_BUCKET_NAME = "local.published.bucket";
-	private static final String BUILD_BUCKET_NAME = "local.build.bucket";
 	private static final String RELEASE_DATE = "20140731";
 
 	// Simple refset
@@ -47,7 +55,6 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 	private static final String EXPECTED_ATTRIBUT_VALUE_DELTA_FILE = "der2_cRefset_AttributeValueDelta_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE = "der2_cRefset_AttributeValueSnapshot_INT_20140731.txt";
 	private static final String EXPECTED_ATTRIBUT_VALUE_FULL_FILE = "der2_cRefset_AttributeValueFull_INT_20140731.txt";
-	
 
 	private static final String LANGUAGE_REFSET = "der2_cRefset_LanguageDelta-en_INT_20150731_transformed.txt";
 
@@ -64,10 +71,13 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 	public static final String PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME = "sct2_sRefset_OWLOntologyDelta_INT_20180731.txt";
 
 	private Product product;
+
 	@Autowired
 	private BuildDAO dao;
+
 	@Autowired
 	private S3Client s3Client;
+
 	private String transformedFileFullPath;
 	private String publishedPath;
 	private Build build;
@@ -92,15 +102,15 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		} catch (final ParseException e) {
 			throw new IllegalArgumentException("Release date format is not valid:" + RELEASE_DATE, e);
 		}
-		transformedFileFullPath = "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
-		publishedPath = "int/" + PREVIOUS_RELEASE + "/";
+		transformedFileFullPath = buildStoragePath + "int/test/" + EntityHelper.formatAsIsoDateTime(date) + "/transformed-files/";
+		publishedPath = publishedReleasesStoragePath + "int/" + PREVIOUS_RELEASE + "/";
 	}
 	
 	@Test
 	public void testGenerateFirstReleaseForSimpleRefset() throws Exception {
 		buildConfiguration.setFirstTimeRelease(true);
 		buildConfiguration.setWorkbenchDataFixesRequired(false);
-		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
+		s3Client.putObject(storageBucketName, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
 		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
 		rf2ExportService.generateReleaseFiles();
@@ -120,18 +130,18 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		buildConfiguration.setPreviousPublishedPackage("20180731");
 		buildConfiguration.setBetaRelease(true);
 		buildConfiguration.setEffectiveTimeFormatted("2019-01-31");
-		String path = "int/20180731/";
+		String path = publishedReleasesStoragePath + "int/20180731/";
 		Map<String, Set<String>> includedFileMap = new HashMap<>();
 		Set<String> includedFiles = new HashSet<>();
 		includedFiles.add(PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME);
 		includedFiles.add(PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME);
 		includedFileMap.put(INPUT_OWL_EXPRESSION_FILE_NAME,includedFiles);
 		buildConfiguration.setIncludePrevReleaseFiles(INPUT_OWL_EXPRESSION_FILE_NAME + "(" + PREVIOUS_OWL_AXIOM_DELTA_FILE_NAME + "," + PREVIOUS_OWL_ONTHOLOGY_DELTA_FILE_NAME + ")");
-		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME, getFileByName(EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_AXIOM_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_FULL_FILE_NAME));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, path + PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME));
+		s3Client.putObject(storageBucketName, transformedFileFullPath + EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME, getFileByName(EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME));
+		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_AXIOM_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_FULL_FILE_NAME));
+		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_AXIOM_SNAPSHOT_FILE_NAME));
+		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME));
+		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME));
 
 		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
 		rf2ExportService.generateReleaseFiles();
@@ -149,9 +159,9 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		buildConfiguration.setFirstTimeRelease(false);
 		buildConfiguration.setPreviousPublishedPackage(PREVIOUS_RELEASE);
 		buildConfiguration.setWorkbenchDataFixesRequired(true);
-		s3Client.putObject(BUILD_BUCKET_NAME, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
-		s3Client.putObject(PUBLISHED_BUCKET_NAME, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
+		s3Client.putObject(storageBucketName, transformedFileFullPath + TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE, getFileByName(TRANSFORMED_ATTRIBUT_VALUE_DELTA_FILE));
+		s3Client.putObject(storageBucketName, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
+		s3Client.putObject(storageBucketName, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
 		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
 		rf2ExportService.generateReleaseFiles();

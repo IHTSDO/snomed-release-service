@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.core.dao;
 
 import org.apache.commons.codec.CharEncoding;
 import org.apache.commons.io.IOUtils;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
@@ -31,13 +31,13 @@ public class InputFileDAOImpl implements InputFileDAO {
 	private final FileHelper fileHelper;
 
 	@Autowired
-	private BuildS3PathHelper s3PathHelper;
+	private S3PathHelper s3PathHelper;
 
 	@Autowired
-	public InputFileDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
+	public InputFileDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 							final S3Client s3Client,
 							final S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
+		fileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
 	}
 
 	@Override
@@ -49,7 +49,6 @@ public class InputFileDAOImpl implements InputFileDAO {
 			return null;
 		}
 	}
-
 
 	@Override
 	public InputStream getManifestStream(final Product product, String buildId) {
@@ -63,7 +62,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public String getManifestPath(final Product product) {
-		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product).toString();
+		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
 		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
 		if (xmlFiles.isEmpty()) {
@@ -97,7 +96,6 @@ public class InputFileDAOImpl implements InputFileDAO {
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
-
 	@Override
 	public void putManifestFile(final Product product, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) {
 		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(product, buildId) + "manifest.xml";
@@ -106,17 +104,16 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void deleteManifest(final Product product) {
-		final StringBuilder manifestDirectoryPathSB = s3PathHelper.getProductManifestDirectoryPath(product);
-		final List<String> files = fileHelper.listFiles(manifestDirectoryPathSB.toString());
+		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product);
+		final List<String> files = fileHelper.listFiles(manifestDirectoryPath);
 		for (final String file : files) {
-			fileHelper.deleteFile(manifestDirectoryPathSB.toString() + file);
+			fileHelper.deleteFile(manifestDirectoryPath + file);
 		}
-
 	}
 
 	@Override
 	public String getKnownManifestPath(final Product product, final String filename) {
-		return s3PathHelper.getProductManifestDirectoryPath(product).append(filename).toString();
+		return s3PathHelper.getProductManifestDirectoryPath(product) + filename;
 	}
 
 	@Override

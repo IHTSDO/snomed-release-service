@@ -120,7 +120,7 @@ public class BuildServiceImpl implements BuildService {
 	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
 
-	@Value("${srs.build.bucketName}")
+	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
 
 	@Value("${srs.jms.queue.prefix}.build-job-status")

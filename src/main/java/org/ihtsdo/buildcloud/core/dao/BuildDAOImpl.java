@@ -14,7 +14,7 @@ import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.helper.ListHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
@@ -73,14 +73,12 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final ExecutorService executorService;
 
-	private final FileHelper buildFileHelper;
+	private final FileHelper srsFileHelper;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
 	private final File tempDir;
-
-	private final FileHelper publishedFileHelper;
 
 	private final Rf2FileNameTransformation rf2FileNameTransformation;
 
@@ -93,28 +91,20 @@ public class BuildDAOImpl implements BuildDAO {
 	private ActiveMQTextMessage buildStatusTextMessage;
 
 	@Autowired
-	private BuildS3PathHelper pathHelper;
+	private S3PathHelper pathHelper;
 
 	private String buildBucketName;
 
 	@Autowired
 	private InputFileDAO inputFileDAO;
 
-	@Value("${srs.build.offlineMode}")
-	private Boolean offlineMode;
-
-	@Value("${srs.file-processing.failureMaxRetry}")
-	private Integer fileProcessingFailureMaxRetry;
-
 	@Autowired
-	public BuildDAOImpl(@Value("${srs.build.bucketName}") final String buildBucketName,
-			@Value("${srs.build.published-bucketName}") final String publishedBucketName,
+	public BuildDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
-		this.buildBucketName = buildBucketName;
 		executorService = Executors.newCachedThreadPool();
-		buildFileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
-		publishedFileHelper = new FileHelper(publishedBucketName, s3Client, s3ClientHelper);
+		buildBucketName = storageBucketName;
+		srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
 		this.tempDir = Files.createTempDir();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
 		this.s3Client = s3Client;
@@ -127,7 +117,7 @@ public class BuildDAOImpl implements BuildDAO {
 		if (manifestPath != null) {
 			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
-			buildFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
+			srsFileHelper.copyFile(manifestPath, buildManifestDirectoryPath + manifestFileName);
 		}
 	}
 
@@ -312,19 +302,19 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getOutputFileStream(final Build build, final String filePath) {
 		final String outputFilePath = pathHelper.getOutputFilesPath(build) + filePath;
-		return buildFileHelper.getFileStream(outputFilePath);
+		return srsFileHelper.getFileStream(outputFilePath);
 	}
 
 	@Override
 	public List<String> listInputFileNames(final Build build) {
 		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
-		return buildFileHelper.listFiles(buildInputFilesPath);
+		return srsFileHelper.listFiles(buildInputFilesPath);
 	}
 
 	@Override
 	public InputStream getInputFileStream(final Build build, final String inputFile) {
 		final String path = pathHelper.getBuildInputFilePath(build, inputFile);
-		return buildFileHelper.getFileStream(path);
+		return srsFileHelper.getFileStream(path);
 	}
 
 	@Override
@@ -350,7 +340,7 @@ public class BuildDAOImpl implements BuildDAO {
 	public void copyInputFileToOutputFile(final Build build, final String relativeFilePath) {
 		final String buildInputFilePath = pathHelper.getBuildInputFilePath(build, relativeFilePath);
 		final String buildOutputFilePath = pathHelper.getBuildOutputFilePath(build, relativeFilePath);
-		buildFileHelper.copyFile(buildInputFilePath, buildOutputFilePath);
+		srsFileHelper.copyFile(buildInputFilePath, buildOutputFilePath);
 	}
 
 	@Override
@@ -358,16 +348,16 @@ public class BuildDAOImpl implements BuildDAO {
 		final String sourceFolder = pathHelper.getBuildPath(sourceBuild).toString() + folder;
 		final String destFolder = pathHelper.getBuildPath(destBuild).toString() + folder;
 
-		final List<String> buildInputFilePaths = buildFileHelper.listFiles(sourceFolder);
+		final List<String> buildInputFilePaths = srsFileHelper.listFiles(sourceFolder);
 		for (final String path : buildInputFilePaths) {
-			buildFileHelper.copyFile(sourceFolder + path, destFolder + path);
+			srsFileHelper.copyFile(sourceFolder + path, destFolder + path);
 		}
 	}
 
 	@Override
 	public InputStream getOutputFileInputStream(final Build build, final String name) {
 		final String path = pathHelper.getBuildOutputFilePath(build, name);
-		return buildFileHelper.getFileStream(path);
+		return srsFileHelper.getFileStream(path);
 	}
 
 	@Override
@@ -375,7 +365,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String filename = file.getName();
 		final String outputFilePath = pathHelper.getBuildOutputFilePath(build, filename);
 		try {
-			return buildFileHelper.putFile(file, outputFilePath, calcMD5);
+			return srsFileHelper.putFile(file, outputFilePath, calcMD5);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
@@ -392,7 +382,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String filename = file.getName();
 		final String inputFilePath = pathHelper.getBuildInputFilePath(build, filename);
 		try {
-			return buildFileHelper.putFile(file, inputFilePath, calcMD5);
+			return srsFileHelper.putFile(file, inputFilePath, calcMD5);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
@@ -403,7 +393,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String name = file.getName();
 		final String outputPath = pathHelper.getBuildTransformedFilesPath(build).append(name).toString();
 		try {
-			buildFileHelper.putFile(file, outputPath);
+			srsFileHelper.putFile(file, outputPath);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
 		}
@@ -414,7 +404,7 @@ public class BuildDAOImpl implements BuildDAO {
 		String manifestFilePath = getManifestFilePath(build);
 		if (manifestFilePath != null) {
 			LOGGER.info("Opening manifest file found at " + manifestFilePath);
-			return buildFileHelper.getFileStream(manifestFilePath);
+			return srsFileHelper.getFileStream(manifestFilePath);
 		} else {
 			LOGGER.error("Failed to find manifest file for " + build.getId());
 			return null;
@@ -424,37 +414,37 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<String> listTransformedFilePaths(final Build build) {
 		final String transformedFilesPath = pathHelper.getBuildTransformedFilesPath(build).toString();
-		return buildFileHelper.listFiles(transformedFilesPath);
+		return srsFileHelper.listFiles(transformedFilesPath);
 	}
 
 	@Override
 	public List<String> listOutputFilePaths(final Build build) {
 		final String outputFilesPath = pathHelper.getOutputFilesPath(build);
-		return buildFileHelper.listFiles(outputFilesPath);
+		return srsFileHelper.listFiles(outputFilesPath);
 	}
 
 	@Override
 	public List<String> listLogFilePaths(final Build build) {
 		final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
-		return buildFileHelper.listFiles(logFilesPath);
+		return srsFileHelper.listFiles(logFilesPath);
 	}
 
 	@Override
 	public List<String> listBuildLogFilePaths(final Build build) {
 		final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
-		return buildFileHelper.listFiles(logFilesPath);
+		return srsFileHelper.listFiles(logFilesPath);
 	}
 
 	@Override
 	public InputStream getLogFileStream(final Build build, final String logFileName) {
 		final String logFilePath = pathHelper.getBuildLogFilePath(build, logFileName);
-		return buildFileHelper.getFileStream(logFilePath);
+		return srsFileHelper.getFileStream(logFilePath);
 	}
 
 	@Override
 	public InputStream getBuildLogFileStream(final Build build, final String logFileName) {
 		final String logFilePath = pathHelper.getBuildLogFilePath(build, logFileName);
-		return buildFileHelper.getFileStream(logFilePath);
+		return srsFileHelper.getFileStream(logFilePath);
 	}
 
 	@Override
@@ -481,7 +471,7 @@ public class BuildDAOImpl implements BuildDAO {
 	public InputStream getTransformedFileAsInputStream(final Build build,
 													   final String relativeFilePath) {
 		final String transformedFilePath = pathHelper.getTransformedFilePath(build, relativeFilePath);
-		return buildFileHelper.getFileStream(transformedFilePath);
+		return srsFileHelper.getFileStream(transformedFilePath);
 	}
 
 	@Override
@@ -495,7 +485,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 		targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 
-		final List<String> filePaths = publishedFileHelper.listFiles(publishedExtractedZipPath);
+		final List<String> filePaths = srsFileHelper.listFiles(publishedExtractedZipPath);
 		for (final String filePath : filePaths) {
 			String filename = FileUtils.getFilenameFromPath(filePath);
 			// use contains rather that startsWith so that we can have candidate release (with x prefix in the filename)
@@ -504,7 +494,7 @@ public class BuildDAOImpl implements BuildDAO {
 				filename = Normalizer.normalize(filename, Normalizer.Form.NFC);
 			}
 			if (filename.contains(targetFileNameStripped)) {
-				return publishedFileHelper.getFileStream(publishedExtractedZipPath + filePath);
+				return srsFileHelper.getFileStream(publishedExtractedZipPath + filePath);
 			}
 		}
 		if (filePaths.isEmpty()) {
@@ -521,7 +511,7 @@ public class BuildDAOImpl implements BuildDAO {
 		// Get the build report as a string we can write to disk/S3 synchronously because it's small
 		String buildReportJSON = build.getBuildReport().toString();
 		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
-			buildFileHelper.putFile(is, buildReportJSON.length(), reportPath);
+			srsFileHelper.putFile(is, buildReportJSON.length(), reportPath);
 		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
 		}
@@ -531,9 +521,9 @@ public class BuildDAOImpl implements BuildDAO {
 	public void renameTransformedFile(final Build build, final String sourceFileName, final String targetFileName, boolean deleteOriginal) {
 		final String soureFilePath = pathHelper.getTransformedFilePath(build, sourceFileName);
 		final String targetFilePath = pathHelper.getTransformedFilePath(build, targetFileName);
-		buildFileHelper.copyFile(soureFilePath, targetFilePath);
+		srsFileHelper.copyFile(soureFilePath, targetFilePath);
 		if (deleteOriginal) {
-			buildFileHelper.deleteFile(soureFilePath);
+			srsFileHelper.deleteFile(soureFilePath);
 		}
 	}
 
@@ -709,8 +699,8 @@ public class BuildDAOImpl implements BuildDAO {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
 				final String[] keyParts = key.split("/");
-				final String dateString = keyParts[2];
-				final String status = keyParts[3].split(":")[1];
+				final String dateString = keyParts[keyParts.length - 2];
+				final String status = keyParts[keyParts.length - 1].split(":")[1];
 				final Build build = new Build(dateString, product.getBusinessKey(), status);
 				build.setProduct(product);
 				builds.add(build);
@@ -729,9 +719,9 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Tag> getTags(Build build, final List<String> tagPaths) {
 		for (final String key : tagPaths) {
 			final String[] keyParts = key.split("/");
-			final String dateString = keyParts[2];
+			final String dateString = keyParts[keyParts.length - 2];
 			if (build.getCreationTime().equals(dateString)) {
-				String tagsStr = keyParts[3].split(":")[1];
+				String tagsStr = keyParts[keyParts.length - 1].split(":")[1];
 				String[] tagArr = tagsStr.split(",");
 				List<Tag> tags = new ArrayList<>();
 				for (String tag : tagArr) {
@@ -746,9 +736,9 @@ public class BuildDAOImpl implements BuildDAO {
 	private String getBuildUser(Build build, final List<String> userPaths) {
 		for (final String key : userPaths) {
 			final String[] keyParts = key.split("/");
-			final String dateString = keyParts[2];
+			final String dateString = keyParts[keyParts.length - 2];
 			if (build.getCreationTime().equals(dateString)) {
-				return keyParts[3].split(":")[1];
+				return keyParts[keyParts.length - 1].split(":")[1];
 			}
 		}
 		return null;
@@ -758,8 +748,8 @@ public class BuildDAOImpl implements BuildDAO {
 		List<String> result = new ArrayList<>();
 		for (final String key : visibilityPaths) {
 			final String[] keyParts = key.split("/");
-			final String dateString = keyParts[2];
-			final boolean visibility = Boolean.valueOf(keyParts[3].split(":")[1]);
+			final String dateString = keyParts[keyParts.length - 2];
+			final boolean visibility = Boolean.valueOf(keyParts[keyParts.length - 1].split(":")[1]);
 			if (!visibility) {
 				result.add(dateString);
 			}
@@ -776,7 +766,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final Future<String> future = executorService.submit(new Callable<String>() {
 			@Override
 			public String call() throws Exception {
-				buildFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+				srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
 				LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
 				return buildOutputFilePath;
 			}
@@ -813,7 +803,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public String getManifestFilePath(Build build) {
 		final String directoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-		final List<String> files = buildFileHelper.listFiles(directoryPath);
+		final List<String> files = srsFileHelper.listFiles(directoryPath);
 		//The first file in the manifest directory we'll call our manifest
 		if (!files.isEmpty()) {
 			final String manifestFilePath = directoryPath + files.iterator().next();
@@ -826,13 +816,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getBuildReportFileStream(Build build) {
 		final String reportFilePath = pathHelper.getReportPath(build);
-		return buildFileHelper.getFileStream(reportFilePath);
+		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
 	@Override
 	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
 		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
-		return buildFileHelper.getFileStream(reportFilePath);
+		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
 	@Override
@@ -856,8 +846,8 @@ public class BuildDAOImpl implements BuildDAO {
 	public void deleteOutputFiles(Build build) {
 		List<String> outputFiles = listOutputFilePaths(build);
 		for (String outputFile : outputFiles) {
-			if (buildFileHelper.exists(outputFile)) {
-				buildFileHelper.deleteFile(outputFile);
+			if (srsFileHelper.exists(outputFile)) {
+				srsFileHelper.deleteFile(outputFile);
 			}
 		}
 	}
@@ -865,7 +855,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getBuildInputGatherReportStream(Build build) {
 		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
-		return buildFileHelper.getFileStream(reportFilePath);
+		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
 
@@ -908,7 +898,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	public InputStream getPreConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
-		return buildFileHelper.getFileStream(reportFilePath);
+		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
 	public List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException {
@@ -929,7 +919,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getPostConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
-		return buildFileHelper.getFileStream(reportFilePath);
+		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
 	public List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException {
@@ -950,7 +940,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<String> listClassificationResultOutputFileNames(Build build) {
 		final String buildInputFilesPath = pathHelper.getClassificationResultOutputFilePath(build).toString();
-		return buildFileHelper.listFiles(buildInputFilesPath);
+		return srsFileHelper.listFiles(buildInputFilesPath);
 	}
 
 	@Override
@@ -958,7 +948,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String filename = file.getName();
 		final String outputFilePath = pathHelper.getClassificationResultOutputPath(build, filename);
 		try {
-			return buildFileHelper.putFile(file, outputFilePath, false);
+			return srsFileHelper.putFile(file, outputFilePath, false);
 		} catch (NoSuchAlgorithmException | DecoderException e) {
 			throw new IOException("Problem creating checksum while uploading " + filename, e);
 		}
@@ -967,7 +957,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath) {
 		final String path = pathHelper.getClassificationResultOutputPath(build, relativeFilePath);
-		return buildFileHelper.getFileStream(path);
+		return srsFileHelper.getFileStream(path);
 	}
 
 	@Override
@@ -986,7 +976,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void putManifestFile(Product product, String buildId, InputStream inputStream) {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(product, buildId);
-		buildFileHelper.putFile(inputStream, filePath + "manifest.xml");
+		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
 	}
 
 	@Override
@@ -1004,7 +994,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<String> listBuildComparisonReportPaths(Product product) {
 		final String reportPath = pathHelper.getBuildComparisonReportPath(product, null);
-		return buildFileHelper.listFiles(reportPath);
+		return srsFileHelper.listFiles(reportPath);
 	}
 
 	@Override
