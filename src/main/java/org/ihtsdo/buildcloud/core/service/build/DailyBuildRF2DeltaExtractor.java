@@ -14,7 +14,7 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.bind.JAXBException;
 
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.helper.BuildS3PathHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
@@ -96,7 +96,7 @@ public class DailyBuildRF2DeltaExtractor {
 			}
 		}
 		String dateStr = DateUtils.now(RF2Constants.DAILY_BUILD_TIME_FORMAT);
-		String targetFilePath = codeSystem + BuildS3PathHelper.SEPARATOR + dateStr + ".zip";
+		String targetFilePath = codeSystem + S3PathHelper.SEPARATOR + dateStr + ".zip";
 		resourceManager.writeResource(targetFilePath, new FileInputStream(zipPackage));
 		LOGGER.info("Daily build package {} is uploaded to S3 {}", zipPackage.getName(), targetFilePath);
 	}

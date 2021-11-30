@@ -2,15 +2,10 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
+import java.io.IOException;
 
 public interface ExternalMaintainedRefsetsService {
 
-	void putFile(File file, String target) throws BusinessServiceException;
+    void copyExternallyMaintainedFiles(String releaseCenterKey, String source, String target, boolean isHeaderOnly) throws BusinessServiceException, IOException;
 
-	InputStream getFileStream(String filePath);
-
-	List <String> listFiles(String directoryPath);
 }
