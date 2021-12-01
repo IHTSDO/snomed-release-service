@@ -893,8 +893,16 @@ public class BuildServiceImpl implements BuildService {
 			final ListingType listingType = parser.parse(manifestInputSteam);
 			FolderType folderType = listingType.getFolder();
 			List<FolderType> folderTypes = folderType.getFolder();
+			boolean isDeltaFolderExistInManifest = false;
 			for (FolderType subFolderType1 : folderTypes) {
 				if (subFolderType1.getName().equalsIgnoreCase(RF2Constants.DELTA)) {
+					isDeltaFolderExistInManifest = true;
+					break;
+				}
+			}
+			for (FolderType subFolderType1 : folderTypes) {
+				if ((isDeltaFolderExistInManifest && subFolderType1.getName().equalsIgnoreCase(RF2Constants.DELTA))
+					|| (!isDeltaFolderExistInManifest && subFolderType1.getName().equalsIgnoreCase(RF2Constants.SNAPSHOT)) ) {
 					for (FolderType subFolderType2 : subFolderType1.getFolder()) {
 						if (subFolderType2.getName().equalsIgnoreCase(RF2Constants.REFSET)) {
 							for (FolderType subFolderType3 : subFolderType2.getFolder()) {
