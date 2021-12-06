@@ -270,7 +270,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build
-			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
+			, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
 		File fileExported = null;
 		try {
 			SecurityContextHolder.setContext(securityContext);
@@ -287,16 +287,15 @@ public class InputFileServiceImpl implements InputFileService {
 			}
 		} catch (Exception ex) {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_TERM_SERVER, ex.getMessage());
-			throw ex;
+			throw new BusinessServiceException("Failed to export from term server for branch " + build.getConfiguration().getBranchPath() + ". Error: " + ex.getMessage());
 		} finally {
 			SecurityContextHolder.clearContext();
 			org.apache.commons.io.FileUtils.deleteQuietly(fileExported);
-
 		}
 	}
 
 
-	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws IOException {
+	public void gatherSourceFilesFromExternallyMaintainedBucket(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
 		BuildConfiguration configuration = build.getConfiguration();
 		String dirPath = centerKey + "/" + configuration.getEffectiveTimeSnomedFormat() + "/";
 		List<String> externalFiles = externallyMaintainedFileHelper.listFiles(dirPath);
@@ -314,7 +313,7 @@ public class InputFileServiceImpl implements InputFileService {
 			} catch (Exception ex) {
 				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
-				throw ex;
+				throw new BusinessServiceException("Failed to pull external file from S3. Error: " + ex.getMessage());
 			}
 		}
 	}

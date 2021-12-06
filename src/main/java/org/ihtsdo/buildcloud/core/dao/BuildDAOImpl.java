@@ -30,6 +30,7 @@ import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -207,12 +208,20 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void loadBuildConfiguration(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
-		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
-		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-			final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
-			build.setConfiguration(buildConfiguration);
+		try {
+			final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+				build.setConfiguration(buildConfiguration);
+			}
+		} catch (AmazonS3Exception e) {
+			if (404 == e.getStatusCode()) {
+				throw new ResourceNotFoundException("Configuration file for build '" + build.getId()+ "' does not exist.");
+			} else {
+				throw e;
+			}
 		}
 	}
 
@@ -220,12 +229,21 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void loadQaTestConfig(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
-		final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
-		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-			final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
-			build.setQaTestConfig(qaTestConfig);
+		try {
+			final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+				build.setQaTestConfig(qaTestConfig);
+			}
+
+		} catch (AmazonS3Exception e) {
+			if (404 == e.getStatusCode()) {
+				throw new ResourceNotFoundException("QA Configuration file for build '" + build.getId()+ "' does not exist.");
+			} else {
+				throw e;
+			}
 		}
 	}
 
