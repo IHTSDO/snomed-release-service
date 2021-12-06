@@ -167,7 +167,7 @@ public class InputFileServiceImpl implements InputFileService {
 		try {
 			inputFileDAO.persistInputPrepareReport(build, report);
 		} catch (IOException e) {
-			throw new BusinessServiceException(e);
+			throw new BusinessServiceException("Failed to persist inputPrepareReport to S3", e);
 		}
 		return report;
 	}
@@ -248,7 +248,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) {
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			Product product = constructProduct(centerKey, productKey);
@@ -261,10 +261,15 @@ public class InputFileServiceImpl implements InputFileService {
 				gatherSourceFilesFromExternallyMaintainedBucket(centerKey, productKey, build, inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
+		} finally {
+			try {
+				inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
+			} catch (IOException e) {
+				throw new BusinessServiceException("Failed to persist inputGatherReport to S3");
+			}
 		}
 		return inputGatherReport;
 	}
