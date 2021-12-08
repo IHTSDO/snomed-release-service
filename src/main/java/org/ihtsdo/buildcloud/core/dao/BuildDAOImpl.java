@@ -458,7 +458,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getPublishedFileArchiveEntry(final ReleaseCenter releaseCenter, final String targetFileName, final String previousPublishedPackage) throws IOException {
-		final String publishedZipPath = pathHelper.getPublishedFilePath(releaseCenter, previousPublishedPackage);
+		final String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenter, previousPublishedPackage);
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
 		String targetFileNameStripped = targetFileName;

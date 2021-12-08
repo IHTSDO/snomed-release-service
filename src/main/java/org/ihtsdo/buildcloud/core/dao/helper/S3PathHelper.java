@@ -155,12 +155,20 @@ public class S3PathHelper {
 		return getBuildTransformedFilesPath(build).append(relativeFilePath).toString();
 	}
 
-	public String getPublishedFilePath(final ReleaseCenter releaseCenter, final String publishedFileName) {
-		return getReleaseCenterPath(releaseCenter, publishedReleasesStoragePath).append(publishedFileName).toString();
-	}
-
 	public String getPublishJobDirectoryPath(final ReleaseCenter releaseCenter) {
 		return getReleaseCenterPath(releaseCenter, publishJobStoragePath).toString();
+	}
+
+	public String getPublishJobFilePath(final ReleaseCenter releaseCenter, final String fileName) {
+		return getReleaseCenterPath(releaseCenter, publishJobStoragePath).append(fileName).toString();
+	}
+
+	public String getPublishedReleasesDirectoryPath(final ReleaseCenter releaseCenter) {
+		return getReleaseCenterPath(releaseCenter, publishedReleasesStoragePath).toString();
+	}
+
+	public String getPublishedReleasesFilePath(final ReleaseCenter releaseCenter, final String fileName) {
+		return getReleaseCenterPath(releaseCenter, publishedReleasesStoragePath).append(fileName).toString();
 	}
 
 	public String getReportPath(final Build build) {

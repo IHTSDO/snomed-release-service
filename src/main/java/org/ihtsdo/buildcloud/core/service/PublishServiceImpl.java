@@ -57,8 +57,6 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final String PUBLISHED_BUILD = "published_build_backup";
 
-	private static final String SEPARATOR = "/";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
 	private final FileHelper srsFileHelper;
@@ -70,9 +68,6 @@ public class PublishServiceImpl implements PublishService {
 
 	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
-
-	@Value("${srs.publish.job.storage.path}")
-	private String publishJobStoragePath;
 
 	@Autowired
 	private S3PathHelper s3PathHelper;
@@ -103,7 +98,7 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
-		List<String> allFiles = srsFileHelper.listFiles(getPublishDirPath(releaseCenter));
+		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenter));
 		return allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
 	}
 
@@ -178,19 +173,18 @@ public class PublishServiceImpl implements PublishService {
 						}
 
 					}
-					//Does a published file already exist for this product?
-					if (exists(releaseCenter, releaseFileName)) {
-						String errorMessage = releaseFileName + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")";
+					// Does a published file already exist for this product?
+					String publishFilePath = s3PathHelper.getPublishJobFilePath(releaseCenter, releaseFileName);
+					if (srsFileHelper.exists(publishFilePath)) {
+						String errorMessage = publishFilePath + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")";
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
 						throw new EntityAlreadyExistsException(errorMessage);
 					}
 					try {
 						String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
-						String publishedFilePath = getPublishFilePath(releaseCenter, releaseFileName);
-						srsFileHelper.copyFile(outputFileFullPath, publishedFilePath);
-						LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishedFilePath);
-						publishExtractedVersionOfPackage(publishedFilePath, srsFileHelper.getFileStream(publishedFilePath));
-
+						srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
+						LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
+						publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
 						copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
 					} catch (BusinessServiceException e) {
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
@@ -200,7 +194,7 @@ public class PublishServiceImpl implements PublishService {
 				// copy MD5 file if available
 				if (md5FileName != null) {
 					String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
-					String target = getPublishFilePath(releaseCenter, md5FileName);
+					String target = s3PathHelper.getPublishJobFilePath(releaseCenter, md5FileName);
 					srsFileHelper.copyFile(source, target);
 					LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
 				}
@@ -233,9 +227,10 @@ public class PublishServiceImpl implements PublishService {
 			// Internalize the filename so we can use it as a synchronization object
 			String fileLock = originalFilename.intern();
 			synchronized (fileLock) {
-				//Does a published file already exist for this product?
-				if (exists(releaseCenter, originalFilename)) {
-					throw new EntityAlreadyExistsException(originalFilename + " has already been published for " + releaseCenter.getName());
+				// Does a published file already exist for this product?
+				String publishFilePath = s3PathHelper.getPublishJobFilePath(releaseCenter, originalFilename);
+				if (srsFileHelper.exists(publishFilePath)) {
+					throw new EntityAlreadyExistsException(publishFilePath + " has already been published for Release Center " + releaseCenter.getName());
 				}
 				
 				LOGGER.debug("Reading stream to temp file");
@@ -245,7 +240,6 @@ public class PublishServiceImpl implements PublishService {
 				}
 				
 				// Upload file
-				String publishFilePath = getPublishDirPath(releaseCenter) + originalFilename;
 				LOGGER.info("Uploading package to {}", publishFilePath);
 				srsFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
 				//Also upload the extracted version of the archive for random access performance improvements
@@ -273,15 +267,17 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
+	// Check if previously published release file exists
+	// NB! This will be looking in ${srs.published.releases.storage.path}, which should point to prod/published/ for all environments
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
-		String path = getPublishDirPath(releaseCenter) + targetFileName;
+		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenter, targetFileName);
 		LOGGER.info("Check if published file exists for path {} in storage bucket", path);
 		return srsFileHelper.exists(path);
 	}
 
 	// Publish extracted entries in a directory of the same name
 	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
-		String zipExtractPath = publishFilePath.replace(".zip", SEPARATOR);
+		String zipExtractPath = publishFilePath.replace(".zip", S3PathHelper.SEPARATOR);
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {
 			ZipEntry entry;
@@ -325,8 +321,8 @@ public class PublishServiceImpl implements PublishService {
 					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
 						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
 						// file name might contain parent folder
-						if (fileName.contains(SEPARATOR)) {
-							String[] splits = fileName.split(SEPARATOR);
+						if (fileName.contains(S3PathHelper.SEPARATOR)) {
+							String[] splits = fileName.split(S3PathHelper.SEPARATOR);
 							filenameToCheck = splits[splits.length-1];
 							filenameToCheck = isBetaRelease ? filenameToCheck.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : filenameToCheck ;
 						}
@@ -535,14 +531,6 @@ public class PublishServiceImpl implements PublishService {
 		return sctIds;
 	}
 
-	private String getPublishDirPath(final ReleaseCenter releaseCenter) {
-		return s3PathHelper.getPublishJobDirectoryPath(releaseCenter);
-	}
-
-	private String getPublishFilePath(final ReleaseCenter releaseCenter, final String releaseFileName) {
-		return getPublishDirPath(releaseCenter) + releaseFileName;
-	}
-
 	private void copyBuildToVersionedContentsStore(String releaseFileFullPath, String releaseFileName, String prefix) throws BusinessServiceException {
 		try {
 			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
@@ -559,8 +547,10 @@ public class PublishServiceImpl implements PublishService {
 	private void backupPublishedBuild(Build build) {
 		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
 		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
-		String buildBckUpPath = getPublishDirPath(build.getProduct().getReleaseCenter()) + PUBLISHED_BUILD + SEPARATOR
-				+ build.getProduct().getBusinessKey() + SEPARATOR + build.getId() + SEPARATOR;
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getProduct().getReleaseCenter())
+				+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
+				+ build.getProduct().getBusinessKey() + S3PathHelper.SEPARATOR
+				+ build.getId() + S3PathHelper.SEPARATOR;
 		for (String filename : buildFiles) {
 			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
 		}
