@@ -743,7 +743,7 @@ public class BuildServiceImpl implements BuildService {
 				releasePackageInfoFile = new File(releaseFilename);
 				fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8);
 
-				Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+				Gson gson = new GsonBuilder().serializeNulls().disableHtmlEscaping().setPrettyPrinting().create();
 				JsonElement je = JsonParser.parseString(mapToString(releasePackageInformationMap));
 				fileWriter.write(gson.toJson(je));
 			} finally {
@@ -870,7 +870,7 @@ public class BuildServiceImpl implements BuildService {
 							result.put("languageRefsets", list);
 							break;
 						case "licenceStatement":
-							result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? StringEscapeUtils.unescapeJava(buildConfig.getLicenceStatement()) : "");
+							result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? buildConfig.getLicenceStatement() : "");
 							break;
 						default:
 							break;
