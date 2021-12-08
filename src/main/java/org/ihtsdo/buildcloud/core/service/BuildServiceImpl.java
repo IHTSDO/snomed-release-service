@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.activemq.command.ActiveMQTextMessage;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -66,6 +67,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
@@ -735,10 +738,10 @@ public class BuildServiceImpl implements BuildService {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map releasePackageInformationMap = getReleasePackageInformationMap(build);
 			FileWriter fileWriter = null;
-			File releasePackageInfoFile = null;
+			File releasePackageInfoFile;
 			try {
 				releasePackageInfoFile = new File(releaseFilename);
-				fileWriter = new FileWriter(releasePackageInfoFile);
+				fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8);
 
 				Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 				JsonElement je = JsonParser.parseString(mapToString(releasePackageInformationMap));
@@ -819,60 +822,61 @@ public class BuildServiceImpl implements BuildService {
 		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
 		Map<String, String> preferredTermMap = getPreferredTermMap(build);
 
-		if (!StringUtils.isEmpty(buildConfig.getReleaseInformationFields())) {
-			String[] fields = buildConfig.getReleaseInformationFields().trim().split(",");
-			for (String field : fields) {
-				switch (field.trim()) {
-					case "effectiveTime":
-						result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
-						break;
-					case "deltaFromDate":
-						Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
-						result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
-						break;
-					case "deltaToDate":
-						Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
-						result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
-						break;
-					case "includedModules":
-						String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
-						if (extensionModule != null) {
-							List<ConceptMini> list = new ArrayList<>();
-							for (String moduleId : extensionModule.split(",")) {
-								ConceptMini conceptMini = new ConceptMini();
-								moduleId = moduleId.trim();
-								conceptMini.setId(moduleId);
-								conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
-								list.add(conceptMini);
-							}
-							result.put("includedModules", list);
-						}
-						break;
-					case "languageRefsets":
-						List<ConceptMini> list = new ArrayList<>();
-						for (RefsetType refsetType : languagesRefsets) {
-							ConceptMini conceptMini = new ConceptMini();
-							String languageRefsetId = String.valueOf(refsetType.getId()).trim();
-							conceptMini.setId(languageRefsetId);
-							conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
-							list.add(conceptMini);
-						}
-						result.put("languageRefsets", list);
-						break;
-					case "licenceStatement":
-						result.put("licenceStatement", buildConfig.getLicenceStatement());
-						break;
-					case "previousPublishedPackage":
-						result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
-						break;
-					default:
-						break;
-				}
-			}
-		}
 		if (!StringUtils.isEmpty(buildConfig.getAdditionalReleaseInformationFields())) {
 			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
-			jsonObject.keySet().forEach(keyStr -> result.put((String) keyStr, jsonObject.get((String) keyStr)));
+			for(Object key: jsonObject.keySet()) {
+				result.put((String) key, jsonObject.get((String) key));
+			}
+			for (String key : result.keySet()) {
+				if (JSONObject.NULL.equals(result.get(key))) {
+					switch (key.trim()) {
+						case "effectiveTime":
+							result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
+							break;
+						case "deltaFromDate":
+							Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
+							result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+							break;
+						case "deltaToDate":
+							Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
+							result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
+							break;
+						case "previousPublishedPackage":
+							result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
+							break;
+						case "includedModules":
+							String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleId() != null ? buildConfig.getExtensionConfig().getModuleId() : null) : null;
+							if (extensionModule != null) {
+								List<ConceptMini> list = new ArrayList<>();
+								for (String moduleId : extensionModule.split(",")) {
+									ConceptMini conceptMini = new ConceptMini();
+									moduleId = moduleId.trim();
+									conceptMini.setId(moduleId);
+									conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
+									list.add(conceptMini);
+								}
+								result.put("includedModules", list);
+							}
+							break;
+						case "languageRefsets":
+							List<ConceptMini> list = new ArrayList<>();
+							for (RefsetType refsetType : languagesRefsets) {
+								ConceptMini conceptMini = new ConceptMini();
+								String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+								conceptMini.setId(languageRefsetId);
+								conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
+								list.add(conceptMini);
+							}
+							result.put("languageRefsets", list);
+							break;
+						case "licenceStatement":
+							result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? StringEscapeUtils.unescapeJava(buildConfig.getLicenceStatement()) : "");
+							break;
+						default:
+							break;
+					}
+				}
+			}
 		}
 
 		return result;
@@ -880,7 +884,26 @@ public class BuildServiceImpl implements BuildService {
 
 	private JSONObject parseAdditionalReleaseInformationJSON(String additionalFields) {
 		try {
-			return new JSONObject(additionalFields);
+			return new JSONObject(additionalFields) {
+				/**
+				 * changes the value of JSONObject.map to a LinkedHashMap in order to maintain
+				 * order of keys.
+				 */
+				@Override
+				public JSONObject put(String key, Object value) throws JSONException {
+					try {
+						Field map = JSONObject.class.getDeclaredField("map");
+						map.setAccessible(true);
+						Object mapValue = map.get(this);
+						if (!(mapValue instanceof LinkedHashMap)) {
+							map.set(this, new LinkedHashMap<>());
+						}
+					} catch (NoSuchFieldException | IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
+					return super.put(key, value);
+				}
+			};
 		} catch (JSONException ex) {
 			throw new BusinessServiceRuntimeException("Failed to parse the additional fields to JSON object.", ex);
 		}
