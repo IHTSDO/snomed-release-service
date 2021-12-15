@@ -97,6 +97,12 @@ public class BuildDAOImpl implements BuildDAO {
 	@Autowired
 	private InputFileDAO inputFileDAO;
 
+	@Value("${srs.published.releases.storage.path}")
+	private String publishedReleasesStoragePath;
+
+	@Value("${srs.publish.job.storage.path}")
+	private String publishJobStoragePath;
+
 	@Autowired
 	public BuildDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 			final S3Client s3Client,
@@ -458,7 +464,13 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getPublishedFileArchiveEntry(final ReleaseCenter releaseCenter, final String targetFileName, final String previousPublishedPackage) throws IOException {
-		final String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenter, previousPublishedPackage);
+		// For scenarios in UAT and DEV where we use locally published release packages for a new build,
+		// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
+		String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenter, previousPublishedPackage);
+		if (!srsFileHelper.exists(publishedZipPath) && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
+			LOGGER.warn("Could not find previously published package {}", publishedZipPath);
+			publishedZipPath = pathHelper.getPublishJobFilePath(releaseCenter, previousPublishedPackage);
+		}
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
 		String targetFileNameStripped = targetFileName;

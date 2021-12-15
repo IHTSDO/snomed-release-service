@@ -163,10 +163,6 @@ public class S3PathHelper {
 		return getReleaseCenterPath(releaseCenter, publishJobStoragePath).append(fileName).toString();
 	}
 
-	public String getPublishedReleasesDirectoryPath(final ReleaseCenter releaseCenter) {
-		return getReleaseCenterPath(releaseCenter, publishedReleasesStoragePath).toString();
-	}
-
 	public String getPublishedReleasesFilePath(final ReleaseCenter releaseCenter, final String fileName) {
 		return getReleaseCenterPath(releaseCenter, publishedReleasesStoragePath).append(fileName).toString();
 	}

@@ -63,6 +63,12 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
+	@Value("${srs.published.releases.storage.path}")
+	private String publishedReleasesStoragePath;
+
+	@Value("${srs.publish.job.storage.path}")
+	private String publishJobStoragePath;
+
 	@Value("${srs.build.versioned-content.bucketName}")
 	private String versionedContentBucket;
 
@@ -98,7 +104,7 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
-		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenter));
+		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishJobDirectoryPath(releaseCenter));
 		return allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
 	}
 
@@ -268,11 +274,19 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	// Check if previously published release file exists
-	// NB! This will be looking in ${srs.published.releases.storage.path}, which should point to prod/published/ for all environments
+	// For scenarios in UAT and DEV where we use locally published release packages for a new build,
+	// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
 		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenter, targetFileName);
 		LOGGER.info("Check if published file exists for path {} in storage bucket", path);
-		return srsFileHelper.exists(path);
+		boolean exists = srsFileHelper.exists(path);
+
+		if (!exists && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
+			path = s3PathHelper.getPublishJobFilePath(releaseCenter, targetFileName);
+			LOGGER.info("Check if published file exists for path {} in storage bucket", path);
+			exists = srsFileHelper.exists(path);
+		}
+		return exists;
 	}
 
 	// Publish extracted entries in a directory of the same name
