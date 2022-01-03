@@ -1008,10 +1008,10 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException {
+	public void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			String reportFileName = report.getFileName().replace(".txt", ".diff.json");
+			String reportFileName = report.getFileName().replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
 			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(product, compareId, reportFileName), reportInputStream, new ObjectMetadata());
 		} finally {
 			if (reportFile != null) {
@@ -1022,9 +1022,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException {
+	public FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName, boolean ignoreIdComparison) throws IOException {
 		FileDiffReport report = null;
-		String reportFileName = fileName.replace(".txt", ".diff.json");
+		String reportFileName = fileName.replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
 		String filePath = pathHelper.getFileComparisonReportPath(product, compareId, reportFileName);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
 		if (s3Object != null) {

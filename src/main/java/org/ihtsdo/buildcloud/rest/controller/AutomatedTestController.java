@@ -83,6 +83,7 @@ public class AutomatedTestController {
             @RequestParam final String rightBuildId,
             @RequestParam final String fileName,
             @RequestParam(required = false) String compareId,
+            @RequestParam(required = false, defaultValue = "false") boolean ignoreIdComparison,
             final HttpServletRequest request) throws BusinessServiceException {
         // Verify if the builds exist
         Build leftBuild  = buildService.find(releaseCenterKey, productKey, leftBuildId, false, false, false , null);
@@ -91,7 +92,7 @@ public class AutomatedTestController {
         if (StringUtils.isEmpty(compareId)) {
             compareId = UUID.randomUUID().toString();;
         }
-        automatedTestService.compareFiles(leftBuild, rightBuild, fileName, compareId);
+        automatedTestService.compareFiles(leftBuild, rightBuild, fileName, compareId, ignoreIdComparison);
         MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
         queryParams.add("fileName", fileName);
         return ControllerHelper.getCreatedResponse(compareId, queryParams);
@@ -104,7 +105,8 @@ public class AutomatedTestController {
             @PathVariable final String productKey,
             @PathVariable final String compareId,
             @RequestParam final String fileName,
+            @RequestParam(required = false, defaultValue = "false") boolean ignoreIdComparison,
             final HttpServletRequest request) {
-        return automatedTestService.getFileDiffReport(releaseCenterKey, productKey, compareId, fileName);
+        return automatedTestService.getFileDiffReport(releaseCenterKey, productKey, compareId, fileName, ignoreIdComparison);
     }
 }
