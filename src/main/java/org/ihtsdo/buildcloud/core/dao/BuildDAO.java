@@ -139,7 +139,7 @@ public interface BuildDAO {
 
 	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
 
-	void saveFileComparisonReport(Product product, String compareId, FileDiffReport report) throws IOException;
+	void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
 
-	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName) throws IOException;
+	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
 }

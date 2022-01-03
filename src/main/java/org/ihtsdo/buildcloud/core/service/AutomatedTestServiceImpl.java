@@ -155,10 +155,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 	@Override
 	@Async
-	 public void compareFiles(Build leftBuild, Build rightBuild, String fileName, String compareId) {
+	 public void compareFiles(Build leftBuild, Build rightBuild, String fileName, String compareId, boolean ignoreIdComparison) {
 		FileDiffReport report = null;
 		try {
-			report = buildDAO.getFileComparisonReport(leftBuild.getProduct(), compareId, fileName);
+			report = buildDAO.getFileComparisonReport(leftBuild.getProduct(), compareId, fileName, ignoreIdComparison);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -173,8 +173,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			report.setLeftBuildId(leftBuild.getId());
 			report.setRightBuildId(rightBuild.getId());
 
-			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report));
-			buildDAO.saveFileComparisonReport(leftBuild.getProduct(), compareId, report);
+			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report, ignoreIdComparison));
+			buildDAO.saveFileComparisonReport(leftBuild.getProduct(), compareId, ignoreIdComparison, report);
 			processFileComparisonJobs();
 		} catch (InterruptedException | IOException e) {
 			LOGGER.error(e.getMessage(), e);
@@ -182,10 +182,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	}
 
 	@Override
-	public FileDiffReport getFileDiffReport(String releaseCenterKey, String productKey, String compareId, String fileName) {
+	public FileDiffReport getFileDiffReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) {
 		Product product = productService.find(releaseCenterKey, productKey, false);
 		try {
-			return buildDAO.getFileComparisonReport(product, compareId, fileName);
+			return buildDAO.getFileComparisonReport(product, compareId, fileName, ignoreIdComparison);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -252,7 +252,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 					leftList.clear();
 					rightList.clear();
 
-					extractResults(automatePromoteProcess, leftBuild, diffRows);
+					extractResults(automatePromoteProcess, leftBuild, diffRows, automatePromoteProcess.isIgnoreIdComparison());
 					LOGGER.info("Completed file comparison for: {}", fileName);
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(), e);
@@ -264,7 +264,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		});
 	}
 
-	private void extractResults(FileComparisonQueue automatePromoteProcess, Build leftBuild, List<com.github.difflib.text.DiffRow> diffRows) throws IOException {
+	private void extractResults(FileComparisonQueue automatePromoteProcess, Build leftBuild, List<com.github.difflib.text.DiffRow> diffRows, boolean ignoreIdComparison) throws IOException {
 		if (diffRows.size() > 0) {
 			diffRows = diffRows.stream().filter(r -> !com.github.difflib.text.DiffRow.Tag.EQUAL.equals(r.getTag()))
 									.collect(Collectors.toList());
@@ -297,6 +297,9 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		List<DiffRow> changeRows = new ArrayList<>();
 		List<DiffRow> deleteRows = new ArrayList<>();
 		List<DiffRow> insertRows = new ArrayList<>();
+
+		findChangedRowsWithoutId(changeRows, deleteIds, insertIds, leftIdToLineMap, rightIdToLineMap, ignoreIdComparison);
+
 		changeIds.forEach(id -> {
 			if (!leftIdToLineMap.get(id).equals(rightIdToLineMap.get(id))) {
 				changeRows.add(new DiffRow(leftIdToLineMap.get(id), rightIdToLineMap.get(id)));
@@ -314,7 +317,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		report.setDeleteRows(deleteRows);
 		report.setInsertRows(insertRows);
 		report.setChangeRows(changeRows);
-		buildDAO.saveFileComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), report);
+		buildDAO.saveFileComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), ignoreIdComparison, report);
 
 		// clear temp list
 		deleteIds.clear();
@@ -324,6 +327,27 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		rightIds.clear();
 		leftIdToLineMap.clear();
 		rightIdToLineMap.clear();
+	}
+
+	private void findChangedRowsWithoutId(List<DiffRow> changeRows, List<String> deleteIds, List<String> insertIds, Map<String, String> leftIdToLineMap, Map<String, String> rightIdToLineMap, boolean ignoreIdComparison) {
+		Map<String, String> leftLineToIdMap = new HashMap<>();
+		Map<String, String> rightLineToIdMap = new HashMap<>();
+		for (String id : deleteIds) {
+			leftLineToIdMap.put(leftIdToLineMap.get(id).replaceFirst(id, ""), id);
+		}
+		for (String id : insertIds) {
+			rightLineToIdMap.put(rightIdToLineMap.get(id).replaceFirst(id, ""), id);
+		}
+		List<String> changeLines = (ArrayList<String>) CollectionUtils.intersection(leftLineToIdMap.keySet(), rightLineToIdMap.keySet());
+		for (String changedLine : changeLines) {
+			String leftId = leftLineToIdMap.get(changedLine);
+			String rightId = rightLineToIdMap.get(changedLine);
+			deleteIds.remove(leftId);
+			insertIds.remove(rightId);
+			if (!ignoreIdComparison) {
+				changeRows.add(new DiffRow(leftIdToLineMap.get(leftId), rightIdToLineMap.get(rightId)));
+			}
+		}
 	}
 
 	private void waitForBuildCompleted(final Build build) throws InterruptedException, BusinessServiceException {
@@ -390,20 +414,26 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	private class FileComparisonQueue {
 		final private String compareId;
 		final private String fileName;
+		final private boolean ignoreIdComparison;
 		private Build leftBuild;
 		private Build rightBuild;
 		private FileDiffReport report;
 
-		FileComparisonQueue(String compareId, String fileName, Build leftBuild, Build rightBuild, FileDiffReport report) {
+		FileComparisonQueue(String compareId, String fileName, Build leftBuild, Build rightBuild, FileDiffReport report, boolean ignoreIdComparison) {
 			this.compareId = compareId;
 			this.fileName = fileName;
 			this.leftBuild = leftBuild;
 			this.rightBuild = rightBuild;
 			this.report = report;
+			this.ignoreIdComparison = ignoreIdComparison;
 		}
 
 		public String getCompareId() {
 			return compareId;
+		}
+
+		public boolean isIgnoreIdComparison() {
+			return ignoreIdComparison;
 		}
 
 		public String getFileName() {
