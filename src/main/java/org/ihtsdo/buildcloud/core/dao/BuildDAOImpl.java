@@ -800,9 +800,15 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> files = srsFileHelper.listFiles(directoryPath);
 		//The first file in the manifest directory we'll call our manifest
 		if (!files.isEmpty()) {
-			final String manifestFilePath = directoryPath + files.iterator().next();
-			LOGGER.info("manifest file found at " + manifestFilePath);
-			return manifestFilePath;
+			String fileName = files.stream()
+					.filter(file -> file != null && file.endsWith(".xml"))
+					.findAny()
+					.orElse(null);
+			if (fileName != null) {
+				final String manifestFilePath = directoryPath + fileName;
+				LOGGER.info("manifest file found at " + manifestFilePath);
+				return manifestFilePath;
+			}
 		}
 		return null;
 	}
