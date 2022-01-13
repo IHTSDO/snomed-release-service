@@ -50,6 +50,7 @@ public class ProductController {
 	public Page<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey,
 												 @RequestParam(required = false) boolean includeRemoved,
 												 @RequestParam(required = false) boolean includeLegacy,
+												 @RequestParam(required = false) boolean includedLatestBuildStatusAndTags,
 												 @RequestParam(defaultValue = "0") Integer pageNumber,
 												 @RequestParam(defaultValue = "10") Integer pageSize,
 												 HttpServletRequest request) {
@@ -62,7 +63,7 @@ public class ProductController {
 		}
 
 
-		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize), true);
+		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize), includedLatestBuildStatusAndTags);
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), page.getTotalElements());
