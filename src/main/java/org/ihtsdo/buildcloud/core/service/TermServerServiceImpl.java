@@ -62,7 +62,7 @@ public class TermServerServiceImpl implements TermServerService {
 			try {
 				isBranchLocked = snowstormRestClient.isBranchLocked(branchPath);
 			} catch (RestClientException e) {
-				throw new BusinessServiceException(String.format("Failed to check branch lock status for %s", branchPath), e);
+				throw new BusinessServiceException(String.format("Failed to check branch lock status for %s. Error: %s", branchPath, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 			}
 			if (!isBranchLocked) {
 				break;
@@ -85,7 +85,7 @@ public class TermServerServiceImpl implements TermServerService {
 			} catch(Exception e) {
 				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, ExceptionUtils.getRootCauseMessage(e));
 				if (counter == maxExportRetry) {
-					throw new BusinessServiceException(String.format("Failed to export from %s after retry %d times", branchPath, maxExportRetry), e);
+					throw new BusinessServiceException(String.format("Failed to export from %s after retry %d times. Error: %s", branchPath, maxExportRetry, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 				} else {
 					logger.info("Retry will start in {} seconds", retryDelayInMillis/1000);
 					try {
