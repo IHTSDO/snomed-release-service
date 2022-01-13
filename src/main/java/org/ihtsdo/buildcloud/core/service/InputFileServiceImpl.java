@@ -150,7 +150,7 @@ public class InputFileServiceImpl implements InputFileService {
 		try {
 			inputFileDAO.persistInputPrepareReport(build, report);
 		} catch (IOException e) {
-			throw new BusinessServiceException(e);
+			throw new BusinessServiceException("Failed to persist inputPrepareReport to S3", e);
 		}
 		return report;
 	}
@@ -231,7 +231,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) {
+	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
@@ -243,15 +243,20 @@ public class InputFileServiceImpl implements InputFileService {
 				gatherSourceFilesFromExternallyMaintained(centerKey, productKey, build, inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
-			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
 		} catch (Exception ex) {
 			LOGGER.error("Failed to gather source files!", ex);
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
+		} finally {
+			try {
+				inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
+			} catch (IOException e) {
+				throw new BusinessServiceException("Failed to persist inputGatherReport to S3");
+			}
 		}
 		return inputGatherReport;
 	}
 
-	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException, IOException {
+	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
 		File fileExported = null;
 		try {
 			SecurityContextHolder.setContext(securityContext);
@@ -268,11 +273,10 @@ public class InputFileServiceImpl implements InputFileService {
 			}
 		} catch (Exception ex) {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_TERM_SERVER, ex.getMessage());
-			throw ex;
+			throw new BusinessServiceException("Failed to export from term server for branch " + build.getConfiguration().getBranchPath() + ". Error: " + ex.getMessage());
 		} finally {
 			SecurityContextHolder.clearContext();
 			org.apache.commons.io.FileUtils.deleteQuietly(fileExported);
-
 		}
 	}
 
@@ -294,7 +298,7 @@ public class InputFileServiceImpl implements InputFileService {
 			} catch (Exception ex) {
 				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
-				throw ex;
+				throw new BusinessServiceException("Failed to pull external file from S3. Error: " + ex.getMessage());
 			}
 		}
 	}
