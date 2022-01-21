@@ -15,6 +15,8 @@ public interface RF2TableExportDAO {
 
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
+	void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
+
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
 	RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException;

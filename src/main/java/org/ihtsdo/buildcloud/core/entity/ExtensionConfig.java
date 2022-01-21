@@ -1,10 +1,14 @@
 package org.ihtsdo.buildcloud.core.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.util.Date;
 
 @Entity
 @Table(name="extension_config")
@@ -30,6 +34,9 @@ public class ExtensionConfig implements Serializable {
 	@Type(type="yes_no")
 	@Column(name="release_as_edition")
 	private boolean releaseAsAnEdition;
+
+	@Column(name="previous_edition_dependency_effective_date")
+	private Date previousEditionDependencyEffectiveDate; // yyyy-mm-dd format
 
 	public String getDependencyRelease() {
 		return dependencyRelease;
@@ -71,4 +78,22 @@ public class ExtensionConfig implements Serializable {
 		this.releaseAsAnEdition = releaseExtensionAsAnEdition;
 	}
 
+	public Date getPreviousEditionDependencyEffectiveDate() {
+		return this.previousEditionDependencyEffectiveDate;
+	}
+
+	@JsonProperty("previousEditionDependencyEffectiveDate")
+	public String getPreviousEditionDependencyEffectiveDateFormatted() {
+		return previousEditionDependencyEffectiveDate != null ? DateFormatUtils.ISO_DATE_FORMAT.format(previousEditionDependencyEffectiveDate) : null;
+	}
+
+	public void setPreviousEditionDependencyEffectiveDate(String previousEditionDependencyEffectiveDate) throws ParseException {
+		if (previousEditionDependencyEffectiveDate != null) {
+			this.previousEditionDependencyEffectiveDate = DateFormatUtils.ISO_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+		}
+	}
+
+	public void setPreviousEditionDependencyEffectiveDate(Date previousEditionDependencyEffectiveDate) {
+		this.previousEditionDependencyEffectiveDate = previousEditionDependencyEffectiveDate;
+	}
 }
