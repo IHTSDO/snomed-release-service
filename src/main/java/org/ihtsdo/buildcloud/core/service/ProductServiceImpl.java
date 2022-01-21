@@ -5,6 +5,7 @@ import java.util.*;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.core.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import static org.apache.commons.lang.time.DateFormatUtils.ISO_DATE_FORMAT;
 
 @Service
 @Transactional
@@ -399,15 +402,17 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setExtensionConfig(newPropertyValues, configuration);
 	}
 
-	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) {
+	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
 		if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)
 			|| newPropertyValues.containsKey(MODULE_ID)
 			|| newPropertyValues.containsKey(NAMESPACE_ID)
+			|| newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)
 			|| newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
 			String dependencyPackageRelease = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
 			String moduleID = newPropertyValues.get(MODULE_ID);
 			String namespaceID = newPropertyValues.get(NAMESPACE_ID);
 			String releaseAsEdition = newPropertyValues.get(RELEASE_AS_AN_EDITION);
+			String previousEditionDependencyEffectiveDate = newPropertyValues.get(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE);
 
 			if (StringUtils.isEmpty(dependencyPackageRelease)
 				&& StringUtils.isEmpty(moduleID)
@@ -441,7 +446,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 							rootCause = e;
 						}
 						if (pppExists) {
-
 							configuration.getExtensionConfig().setDependencyRelease(dependencyPackageRelease);
 						} else {
 							throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
@@ -467,6 +471,21 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 				if (newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
 					configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(releaseAsEdition));
+				}
+
+				if (newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)) {
+					Date previousDependencyDate = null;
+					try {
+						if (previousEditionDependencyEffectiveDate.contains("-")) {
+							previousDependencyDate = DateFormatUtils.ISO_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+						} else {
+							previousDependencyDate = RF2Constants.DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+						}
+						configuration.getExtensionConfig().setPreviousEditionDependencyEffectiveDate(previousDependencyDate);
+					} catch (ParseException e) {
+						throw new BadRequestException("Invalid " + previousEditionDependencyEffectiveDate + " format." +
+								" Expecting format in either" + ISO_DATE_FORMAT.getPattern() + " or " + RF2Constants.DATE_FORMAT.getPattern(), e);
+					}
 				}
 			}
 		}

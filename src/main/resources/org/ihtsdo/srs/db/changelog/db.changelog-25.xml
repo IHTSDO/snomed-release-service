@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="20220120" author="MCHU">
+      <addColumn tableName="extension_config">
+         <column name="previous_edition_dependency_effective_date" type="CHAR(8)"/>
+      </addColumn>
+   </changeSet>
+   <changeSet id="20220121" author="MCHU">
+      <modifyDataType tableName="extension_config" columnName="previous_edition_dependency_effective_date" newDataType="date"/>
+   </changeSet>
+</databaseChangeLog>

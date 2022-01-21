@@ -3,16 +3,18 @@ package org.ihtsdo.buildcloud.core.entity;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.text.ParseException;
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 
 public class BuildConfigurationTest {
 
@@ -29,7 +31,7 @@ public class BuildConfigurationTest {
 	}
 
 	@Test
-	public void testToJsonAndBack() throws IOException {
+	public void testToJsonAndBack() throws IOException, ParseException {
 		BuildConfiguration configuration = new BuildConfiguration();
 
 		Date effectiveTime = new GregorianCalendar(2014, 6, 31).getTime();
@@ -43,6 +45,7 @@ public class BuildConfigurationTest {
 		extensionConfig.setDependencyRelease("SnomedCT_Release_INT_20160131.zip");
 		extensionConfig.setModuleId("554471000005108");
 		extensionConfig.setNamespaceId("1000005");
+		extensionConfig.setPreviousEditionDependencyEffectiveDate("2021-07-31");
 		configuration.setExtensionConfig(extensionConfig);
 
 		jsonGenerator.writeObject(configuration);
@@ -51,20 +54,21 @@ public class BuildConfigurationTest {
 
 		BuildConfiguration buildConfigurationFromJson = jsonFactory.createJsonParser(new StringReader(actual)).readValueAs(BuildConfiguration.class);
 
-		Assert.assertEquals(2, buildConfigurationFromJson.getRefsetCompositeKeys().size());
-		Assert.assertEquals(effectiveTime, buildConfigurationFromJson.getEffectiveTime());
+		assertEquals(2, buildConfigurationFromJson.getRefsetCompositeKeys().size());
+		assertEquals(effectiveTime, buildConfigurationFromJson.getEffectiveTime());
 		Iterator<BuildConfiguration.RefsetCompositeKey> iterator = getSortedKeys(buildConfigurationFromJson).iterator();
 		BuildConfiguration.RefsetCompositeKey key1 = iterator.next();
-		Assert.assertEquals("100", key1.getRefsetId());
-		Assert.assertEquals("5, 6", key1.getFieldIndexes());
+		assertEquals("100", key1.getRefsetId());
+		assertEquals("5, 6", key1.getFieldIndexes());
 		BuildConfiguration.RefsetCompositeKey key2 = iterator.next();
-		Assert.assertEquals("200", key2.getRefsetId());
-		Assert.assertEquals("5, 8", key2.getFieldIndexes());
+		assertEquals("200", key2.getRefsetId());
+		assertEquals("5, 8", key2.getFieldIndexes());
 		ExtensionConfig extConfig = buildConfigurationFromJson.getExtensionConfig();
 		Assert.assertNotNull(extConfig);
-		Assert.assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
-		Assert.assertEquals("554471000005108", extConfig.getModuleId());
-		Assert.assertEquals("1000005", extConfig.getNamespaceId());
+		assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
+		assertEquals("554471000005108", extConfig.getModuleId());
+		assertEquals("1000005", extConfig.getNamespaceId());
+		assertEquals("2021-07-31", extConfig.getPreviousEditionDependencyEffectiveDateFormatted());
 	}
 
 	private TreeSet<BuildConfiguration.RefsetCompositeKey> getSortedKeys(BuildConfiguration buildConfigurationFromJson) {

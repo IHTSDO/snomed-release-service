@@ -5,15 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
@@ -78,6 +74,14 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
+		}
+	}
+
+	@Override
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
+			reader.readLine(); // Discard header line
+			insertData(reader, tableSchema, false, false, previousEffectiveDate);
 		}
 	}
 
@@ -245,6 +249,10 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	private void insertData(final BufferedReader reader, final TableSchema tableSchema, final boolean deltaData, final boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		insertData(reader, tableSchema, deltaData, workbenchDataFixesRequired, null);
+	}
+
+	private void insertData(final BufferedReader reader, final TableSchema tableSchema, final boolean deltaData, final boolean workbenchDataFixesRequired, String previousEffectiveDate) throws IOException, DatabasePopulatorException, BadConfigurationException {
 		dirtyKeys = new LinkedHashMap<>();
 		// Declare variables at top to prevent constant memory reallocation during recursion
 		String line, refsetId, compositeKey;
@@ -252,8 +260,14 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 		Key key;
 		Matcher refsetIdMatcher;
 		Pattern keyPattern;
+		// date format is always in yyyyMMdd so it is faster to compare as integer
+		Integer previousDate = previousEffectiveDate != null ? Integer.parseInt(previousEffectiveDate) : null;
 		while ((line = reader.readLine()) != null) {
 			parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+			if (previousDate != null && Integer.parseInt(parts[1]) <= previousDate) {
+				// skip data from previous release
+				continue;
+			}
 			key = getKey(parts[0], parts[1]);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
 				// Get refset id
