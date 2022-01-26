@@ -1,23 +1,34 @@
 package org.ihtsdo.buildcloud.core.service.build.compare.type;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.compare.ComponentComparison;
 import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparisonReport;
+import org.ihtsdo.buildcloud.core.service.build.compare.ValidationComparisonReport;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RVFReportComparison extends ComponentComparison {
 
     public static final String REPORTS = "reports";
+
+    @Value("${rvf.url}")
+    private String releaseValidationFrameworkUrl;
 
     public enum RVFTestName {
         REPORT_URL("RVF report URL"), STATUS("RVF status"), TOTAL_FAILURES("RVF total failures"), TOTAL_WARNINGS("RVF total warnings");
@@ -50,50 +61,19 @@ public class RVFReportComparison extends ComponentComparison {
 
     @Override
     public void findDiff(Build leftBuild, Build rightBuild) throws IOException {
-        RestTemplate rvfRestTemplate = new RestTemplate();
-        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
-
         List<DefaultComponentComparisonReport> reports = new ArrayList<>();
         if (!StringUtils.isEmpty(leftBuild.getRvfURL()) && !StringUtils.isEmpty(rightBuild.getRvfURL())) {
-            String leftValidationReportString = rvfRestTemplate.getForObject(leftBuild.getRvfURL(), String.class);
-            if (!StringUtils.isEmpty(leftValidationReportString)) {
-                leftValidationReportString = leftValidationReportString.replace("\"TestResult\"", "\"testResult\"");
-            }
-            final ValidationReport leftValidationReport = objectMapper.readValue(leftValidationReportString, ValidationReport.class);
-
-            String rightValidationReportString = rvfRestTemplate.getForObject(rightBuild.getRvfURL(), String.class);
-            if (!StringUtils.isEmpty(rightValidationReportString)) {
-                rightValidationReportString = rightValidationReportString.replace("\"TestResult\"", "\"testResult\"");
-            }
-            final ValidationReport rightValidationReport = objectMapper.readValue(rightValidationReportString, ValidationReport.class);
-            if (leftValidationReport.getStatus() != null && rightValidationReport.getStatus() != null && !leftValidationReport.getStatus().equals(rightValidationReport.getStatus())) {
-                DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
-                dto.setName(RVFTestName.STATUS.getLabel());
-                dto.setStatus(BuildComparisonManager.ComparisonState.FAILED.name());
-                dto.setExpected(leftValidationReport.getStatus());
-                dto.setActual(rightValidationReport.getStatus());
-                reports.add(dto);
-            }
-            if (totalFailurePresent(leftValidationReport) && totalFailurePresent(rightValidationReport) && getTotalFailures(leftValidationReport) != getTotalFailures(rightValidationReport)) {
-                DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
-                dto.setName(RVFTestName.TOTAL_FAILURES.getLabel());
-                dto.setStatus(BuildComparisonManager.ComparisonState.FAILED.name());
-                dto.setExpected(getTotalFailures(leftValidationReport));
-                dto.setActual(getTotalFailures(rightValidationReport));
-                reports.add(dto);
-            }
-            if (totalWarningPresent(leftValidationReport) && totalWarningPresent(rightValidationReport) && getTotalWarnings(leftValidationReport) != getTotalWarnings(rightValidationReport)) {
-                DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
-                dto.setName(RVFTestName.TOTAL_WARNINGS.getLabel());
-                dto.setStatus(BuildComparisonManager.ComparisonState.FAILED.name());
-                dto.setExpected(getTotalWarnings(leftValidationReport));
-                dto.setActual(getTotalWarnings(rightValidationReport));
-                reports.add(dto);
-            }
-            if (reports.size() > 0) {
-                fail(reports);
-            } else {
-                pass();
+            try {
+                String validationComparisonReportString = getValidationComparisonReport(leftBuild.getRvfURL(), rightBuild.getRvfURL());
+                ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
+                final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationComparisonReportString, ValidationComparisonReport.class);
+                if (ValidationComparisonReport.Status.PASS.equals(highLevelValidationReport.getStatus())) {
+                    pass(validationComparisonReportString);
+                } else {
+                    fail(validationComparisonReportString);
+                }
+            } catch (BusinessServiceException | InterruptedException e) {
+                fail("Failed to compare RVF results. Error: " + e.getMessage());
             }
         } else {
             if ((StringUtils.isEmpty(leftBuild.getRvfURL()) && !StringUtils.isEmpty(rightBuild.getRvfURL()))
@@ -108,95 +88,29 @@ public class RVFReportComparison extends ComponentComparison {
             }
         }
     }
-    private boolean testResultFound(ValidationReport report) {
-        return report != null && report.getRvfValidationResult() != null && report.getRvfValidationResult().getTestResult() != null;
-    }
 
-    private boolean totalFailurePresent(ValidationReport report) {
-        return testResultFound(report) && report.getRvfValidationResult().getTestResult().getTotalFailures() != null;
-    }
+    private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException, JsonProcessingException {
+        RestTemplate rvfRestTemplate = new RestTemplate();
+        URI uri = rvfRestTemplate.postForLocation(releaseValidationFrameworkUrl + "compare?prospectiveReportUrl=" + leftUrl + "&previousReportUrl=" + rightUrl, null);
+        final int pollPeriod = 60 * 1000; // 1 minute
+        final int maxPollPeriod = 3600000;
 
-    private boolean totalWarningPresent(ValidationReport report) {
-        return testResultFound(report) && report.getRvfValidationResult().getTestResult().getTotalWarnings() != null;
-    }
+        int count = 0;
+        while (true) {
+            Thread.sleep(pollPeriod);
+            count += pollPeriod;
 
-    private int getTotalWarnings(ValidationReport report) {
-        return report.getRvfValidationResult().getTestResult().getTotalWarnings();
-    }
-
-    private int getTotalFailures(ValidationReport report) {
-        return report.getRvfValidationResult().getTestResult().getTotalFailures();
-    }
-
-    private static final class ValidationReport {
-
-        public static final String COMPLETE = "COMPLETE";
-
-        private String status;
-        private RvfValidationResult rvfValidationResult;
-
-        public boolean isComplete() {
-            return COMPLETE.equals(status);
-        }
-
-        public Long getContentHeadTimestamp() {
-            return rvfValidationResult.getContentHeadTimestamp();
-        }
-
-        public boolean hasNoErrorsOrWarnings() {
-            return rvfValidationResult.hasNoErrorsOrWarnings();
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public RvfValidationResult getRvfValidationResult() {
-            return rvfValidationResult;
-        }
-
-        private static final class RvfValidationResult {
-
-            private ValidationConfig validationConfig;
-            private TestResult testResult;
-
-            public Long getContentHeadTimestamp() {
-                return validationConfig.getContentHeadTimestamp();
-            }
-
-            public boolean hasNoErrorsOrWarnings() {
-                return getTestResult().getTotalFailures() == 0 && getTestResult().getTotalWarnings() == 0;
-            }
-
-            public ValidationConfig getValidationConfig() {
-                return validationConfig;
-            }
-
-            public TestResult getTestResult() {
-                return testResult;
-            }
-
-            private static final class ValidationConfig {
-
-                private String contentHeadTimestamp;
-
-                public Long getContentHeadTimestamp() {
-                    return contentHeadTimestamp != null ? Long.parseLong(contentHeadTimestamp) : null;
+            String validationReportString = rvfRestTemplate.getForObject(uri.toString(), String.class);
+            if (!StringUtils.isEmpty(validationReportString)) {
+                ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
+                final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationReportString, ValidationComparisonReport.class);
+                if (!ValidationComparisonReport.Status.RUNNING.equals(highLevelValidationReport.getStatus())) {
+                    return validationReportString;
                 }
             }
 
-            private static final class TestResult {
-
-                private Integer totalFailures;
-                private Integer totalWarnings;
-
-                public Integer getTotalFailures() {
-                    return totalFailures;
-                }
-
-                public Integer getTotalWarnings() {
-                    return totalWarnings;
-                }
+            if (count > maxPollPeriod) {
+                throw new BusinessServiceException(String.format("RVF reports %s did not complete comparing within the allotted time (%s minutes).", uri.toString(), maxPollPeriod / (60 * 1000)));
             }
         }
     }
