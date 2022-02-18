@@ -34,7 +34,7 @@ public final class CreateReleasePackageBuildRequest {
         return "CreateReleasePackageBuildRequest{" +
                 "build=" + build.toString() +
                 ", username='" + username + '\'' +
-                ", authenticationToken='" + authenticationToken + '\'' +
+                ", authenticationToken='" + (authenticationToken != null ? authenticationToken.substring(0, Math.min(authenticationToken.length(), authenticationToken.indexOf("=") + 6)) + "....." : null) + '\'' +
                 '}';
     }
 }
