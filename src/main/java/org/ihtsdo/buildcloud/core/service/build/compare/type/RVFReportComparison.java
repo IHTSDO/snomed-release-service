@@ -91,7 +91,7 @@ public class RVFReportComparison extends ComponentComparison {
 
     private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException, JsonProcessingException {
         RestTemplate rvfRestTemplate = new RestTemplate();
-        URI uri = rvfRestTemplate.postForLocation(releaseValidationFrameworkUrl + "compare?prospectiveReportUrl=" + leftUrl + "&previousReportUrl=" + rightUrl, null);
+        URI uri = rvfRestTemplate.postForLocation(releaseValidationFrameworkUrl + "compare?prospectiveReportUrl=" + rightUrl + "&previousReportUrl=" + leftUrl, null);
         final int pollPeriod = 60 * 1000; // 1 minute
         final int maxPollPeriod = 3600000;
 
