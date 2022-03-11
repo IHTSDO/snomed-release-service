@@ -11,6 +11,8 @@ public class ValidationRequest {
 	private Integer failureExportMax;
 	
 	private String effectiveTime;
+
+	private String previousDependencyEffectiveTime;
 	
 	private boolean releaseAsAnEdition; 
 	
@@ -68,6 +70,14 @@ public class ValidationRequest {
 
 	public void setEffectiveTime(String effectiveTime) {
 		this.effectiveTime = effectiveTime;
+	}
+
+	public String getPreviousDependencyEffectiveTime() {
+		return previousDependencyEffectiveTime;
+	}
+
+	public void setPreviousDependencyEffectiveTime(String previousDependencyEffectiveTime) {
+		this.previousDependencyEffectiveTime = previousDependencyEffectiveTime;
 	}
 
 	public boolean isReleaseAsAnEdition() {
