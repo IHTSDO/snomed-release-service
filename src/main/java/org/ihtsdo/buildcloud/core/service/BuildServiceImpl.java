@@ -1111,6 +1111,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setBuildBucketName(buildBucketName);
 			request.setReleaseZipFileS3Path(s3ZipFilePath);
 			request.setEffectiveTime(effectiveTime);
+			request.setPreviousDependencyEffectiveTime(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getPreviousEditionDependencyEffectiveDateFormatted() : null);
 			request.setFailureExportMax(failureExportMax);
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);

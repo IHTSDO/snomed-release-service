@@ -51,6 +51,8 @@ public class RVFClient implements Closeable {
 
 	private static final String EFFECTIVE_TIME = "effectiveTime";
 
+	private static final String PREVIOUS_DEPENDENCY_EFFECTIVE_TIME = "previousDependencyEffectiveTime";
+
 	private static final String STORAGE_LOCATION = "storageLocation";
 
 	private static final String FAILURE_EXPORT_MAX = "failureExportMax";
@@ -284,6 +286,10 @@ public class RVFClient implements Closeable {
 
 		if (StringUtils.isNotBlank(qaTestConfig.getReportingStage())) {
 			multiPartBuilder.addTextBody(REPORTING_STAGE, qaTestConfig.getReportingStage());
+		}
+
+		if (StringUtils.isNotBlank(request.getPreviousDependencyEffectiveTime())) {
+			multiPartBuilder.addTextBody(PREVIOUS_DEPENDENCY_EFFECTIVE_TIME, request.getPreviousDependencyEffectiveTime());
 		}
 
 		post.setEntity(multiPartBuilder.build());
