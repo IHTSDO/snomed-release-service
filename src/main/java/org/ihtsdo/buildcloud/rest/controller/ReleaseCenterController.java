@@ -32,10 +32,7 @@ import springfox.documentation.annotations.ApiIgnore;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.core.service.PermissionService.GLOBAL_ROLE;
@@ -64,7 +61,7 @@ public class ReleaseCenterController {
     @ApiOperation(value = "Returns a list all release center for a logged in user",
             notes = "Returns a list of all release centers visible to the currently logged in user.")
     @ResponseBody
-    public List<Map<String, Object>> getReleaseCenters(HttpServletRequest request) {
+    public List<Map<String, Object>> getReleaseCenters(@RequestParam(required = false) boolean includeRemoved, HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             throw new AccessDeniedException("Access is denied");
@@ -72,8 +69,8 @@ public class ReleaseCenterController {
 
         List<ReleaseCenter> centers = releaseCenterService.findAll();
         Map rolesMap = permissionService.getRolesForLoggedInUser();
-        centers = centers.stream().filter(center ->
-                (rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_ADMIN.name()))
+        centers = centers.stream().filter(center -> (includeRemoved || !center.isRemoved()) &&
+                ((rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_ADMIN.name()))
                         || (!StringUtils.isEmpty(center.getCodeSystem()) &&
                             ((rolesMap.containsKey(GLOBAL_ROLE) && (((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())
                                                                     || ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_LEAD.name())))
@@ -82,7 +79,7 @@ public class ReleaseCenterController {
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_MANAGER.name()) ||
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_LEAD.name()) ||
                                          ((Set) rolesMap.get(center.getCodeSystem())).contains(RELEASE_USER.name()) ||
-                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name())))))
+                                         ((Set) rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name()))))))
         ).collect(Collectors.toList());
 
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
