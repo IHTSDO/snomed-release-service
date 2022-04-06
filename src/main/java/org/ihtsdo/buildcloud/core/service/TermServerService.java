@@ -17,4 +17,6 @@ public interface TermServerService {
 	List<CodeSystem> getCodeSystems();
 
 	Branch getBranch(String branchPath) throws RestClientException;
+
+	void updateCodeSystemVersionPackage(String codeSystemShortName, String effectiveDate, String releasePackage) throws RestClientException;
 }

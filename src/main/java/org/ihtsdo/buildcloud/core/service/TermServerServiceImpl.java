@@ -127,6 +127,12 @@ public class TermServerServiceImpl implements TermServerService {
 		return snowstormRestClient.getBranch(branchPath);
 	}
 
+	@Override
+	public void updateCodeSystemVersionPackage(String codeSystemShortName, String effectiveDate, String releasePackage) {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		snowstormRestClient.updateCodeSystemVersionPackage(codeSystemShortName, effectiveDate, releasePackage);
+	}
+
 
 	public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
 
