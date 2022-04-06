@@ -35,6 +35,8 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
@@ -74,6 +76,9 @@ public class PublishServiceImpl implements PublishService {
 
 	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
+
+	@Autowired
+	private TermServerService termServerService;
 
 	@Autowired
 	private S3PathHelper s3PathHelper;
@@ -211,6 +216,22 @@ public class PublishServiceImpl implements PublishService {
 				// mark the build as Published
 				buildDao.addTag(build, Build.Tag.PUBLISHED);
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
+
+				// update the release package in code system
+				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
+					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+					CodeSystem codeSystem = codeSystems.stream().filter(item -> build.getProduct().getReleaseCenter().getCodeSystem().equals(item.getShortName()))
+							.findAny()
+							.orElse(null);
+					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
+						try {
+							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+						} catch (RestClientException e) {
+							throw new BusinessServiceException("Failed to update Code System Version Package", e);
+						}
+					}
+				}
 			}
 		} catch (IOException e) {
 			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
@@ -220,6 +241,9 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
+	public static void main(String[] args) {
+		System.out.println("SNOMEDCT-US".equals("SNOMEDCT-US"));
+	}
 	@Override
 	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException {
 		//We're expecting a zip file only

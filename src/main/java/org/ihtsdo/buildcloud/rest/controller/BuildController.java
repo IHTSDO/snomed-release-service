@@ -363,7 +363,7 @@ public class BuildController {
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
-		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
+		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
 		publishService.publishBuildAsync(build, true, environment);
 	}
