@@ -128,7 +128,7 @@ public class TermServerServiceImpl implements TermServerService {
 	}
 
 	@Override
-	public void updateCodeSystemVersionPackage(String codeSystemShortName, String effectiveDate, String releasePackage) {
+	public void updateCodeSystemVersionPackage(String codeSystemShortName, String effectiveDate, String releasePackage) throws RestClientException {
 		SnowstormRestClient snowstormRestClient = getSnowstormClient();
 		snowstormRestClient.updateCodeSystemVersionPackage(codeSystemShortName, effectiveDate, releasePackage);
 	}

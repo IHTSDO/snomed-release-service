@@ -1,41 +1,20 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
-import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.ims.IMSRestClient;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -49,9 +28,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
+
+import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Transactional
@@ -76,6 +67,15 @@ public class PublishServiceImpl implements PublishService {
 
 	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
+
+	@Value("${snowstorm.admin.username}")
+	private String snowstormAdminUsername;
+
+	@Value("${snowstorm.admin.password}")
+	private String snowstormAdminPassword;
+
+	@Value("${ims.url}")
+	private String imsUrl;
 
 	@Autowired
 	private TermServerService termServerService;
@@ -215,7 +215,6 @@ public class PublishServiceImpl implements PublishService {
 
 				// mark the build as Published
 				buildDao.addTag(build, Build.Tag.PUBLISHED);
-				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
@@ -224,14 +223,20 @@ public class PublishServiceImpl implements PublishService {
 							.findAny()
 							.orElse(null);
 					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
+						Authentication backupAuthentication = SecurityContextHolder.getContext().getAuthentication();
 						try {
 							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+							loginToIMSAndSetSecurityContext();
 							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-						} catch (RestClientException e) {
+						} catch (Exception e) {
+							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
 							throw new BusinessServiceException("Failed to update Code System Version Package", e);
+						} finally {
+							SecurityContextHolder.getContext().setAuthentication(backupAuthentication);
 						}
 					}
 				}
+				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} catch (IOException e) {
 			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
@@ -241,9 +246,13 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	public static void main(String[] args) {
-		System.out.println("SNOMEDCT-US".equals("SNOMEDCT-US"));
+	private void loginToIMSAndSetSecurityContext() throws URISyntaxException, IOException {
+		IMSRestClient imsClient = new IMSRestClient(imsUrl);
+		String token = imsClient.loginForceNewSession(snowstormAdminUsername, snowstormAdminPassword);
+		PreAuthenticatedAuthenticationToken decoratedAuthentication = new PreAuthenticatedAuthenticationToken(snowstormAdminUsername, token);
+		SecurityContextHolder.getContext().setAuthentication(decoratedAuthentication);
 	}
+
 	@Override
 	public void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException {
 		//We're expecting a zip file only
