@@ -399,6 +399,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
 		}
 
+		if (newPropertyValues.containsKey(EXCLUDE_REFSET_DESCRIPTOR_MEMBERS)) {
+			configuration.setExcludeRefsetDescriptorMembers(newPropertyValues.get(EXCLUDE_REFSET_DESCRIPTOR_MEMBERS));
+		}
+
 		setExtensionConfig(newPropertyValues, configuration);
 	}
 

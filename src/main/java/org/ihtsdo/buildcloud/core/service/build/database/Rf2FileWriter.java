@@ -1,5 +1,10 @@
 package org.ihtsdo.buildcloud.core.service.build.database;
 
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.Field;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,12 +14,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-
 public class Rf2FileWriter {
+
+	private String excludeRefsetDescriptorMembers;
+
+	public Rf2FileWriter() {}
+
+	public Rf2FileWriter(final String excludeRefsetDescriptorMembers) {
+		this.excludeRefsetDescriptorMembers = excludeRefsetDescriptorMembers;
+	}
 
 	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws SQLException, IOException {
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream, RF2Constants.UTF_8))) {
@@ -26,7 +34,22 @@ public class Rf2FileWriter {
 			deltaWriter.append(RF2Constants.LINE_ENDING);
 
 			String line;
+			String currentId;
 			while ((line = tableResults.nextLine()) != null) {
+				String[] lineParts;
+				if (ComponentType.IDENTIFIER.equals(tableSchema.getComponentType())) {
+					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 4);
+					// effective time is on the third column
+					currentId = lineParts[0] + lineParts[1];
+				} else {
+					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					currentId = lineParts[0];
+				}
+				if (tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER)
+						&& this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId)) {
+					continue;
+				}
+
 				deltaWriter.append(line);
 				deltaWriter.append(RF2Constants.LINE_ENDING);
 			}
@@ -61,12 +84,8 @@ public class Rf2FileWriter {
 
 			// Iterate through data
 			while ((currentLine = tableResults.nextLine()) != null) {
-				// Write to Full file
-				fullWriter.append(currentLine);
-				fullWriter.append(RF2Constants.LINE_ENDING);
-
 				// Parse out id and effectiveTime
-				String[] lineParts = null;
+				String[] lineParts;
 				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
 					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 4);
 					// effective time is on the third column
@@ -77,6 +96,15 @@ public class Rf2FileWriter {
 					currentId = lineParts[0];
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
 				}
+				if (schema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER)
+					&& this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId)) {
+					continue;
+				}
+
+				// Write to Full file
+				fullWriter.append(currentLine);
+				fullWriter.append(RF2Constants.LINE_ENDING);
+
 				// If moved to new member or passed target effectiveTime write any previous valid line
 				movedToNewMember = lastId != null && !lastId.equals(currentId);
 				passedTargetEffectiveTime = currentEffectiveTimeInt > targetEffectiveTimeInt;

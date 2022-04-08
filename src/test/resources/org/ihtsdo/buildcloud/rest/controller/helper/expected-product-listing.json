@@ -23,6 +23,7 @@
     "createLegacyIds" : false,
     "extensionConfig" : null,
     "includePrevReleaseFiles" : null,
+    "excludeRefsetDescriptorMembers" : null,
     "dailyBuild" : false,
     "classifyOutputFiles" : false,
     "licenceStatement" : null,
