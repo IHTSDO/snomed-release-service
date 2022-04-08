@@ -42,7 +42,8 @@ public class SecurityContextConfiguration extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 		http.authorizeRequests()
-				.antMatchers("/swagger-ui.html",
+				.antMatchers("/snomed-release-service-websocket",
+						"/swagger-ui.html",
 						"/swagger-resources/**",
 						"/v2/api-docs",
 						"/webjars/springfox-swagger-ui/**").permitAll()
