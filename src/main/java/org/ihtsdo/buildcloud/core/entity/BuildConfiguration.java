@@ -74,6 +74,9 @@ public class BuildConfiguration {
 	
 	@Column(name = "include_prev_release_files")
 	private String includePrevReleaseFiles;
+
+	@Column(name = "exclude_refset_descriptor_members")
+	private String excludeRefsetDescriptorMembers;
 	
 	@Type(type="yes_no")
 	@Column(name = "daily_build")
@@ -408,6 +411,7 @@ public class BuildConfiguration {
 				", refsetCompositeKeys=" + refsetCompositeKeys +
 				", extensionConfig=" + extensionConfig +
 				", includePrevReleaseFiles='" + includePrevReleaseFiles + '\'' +
+				", excludeRefsetDescriptorMembers='" + excludeRefsetDescriptorMembers + '\'' +
 				", dailyBuild=" + dailyBuild +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
@@ -485,6 +489,14 @@ public class BuildConfiguration {
 
 	public void setIncludePrevReleaseFiles(String includePrevReleaseFiles) {
 		this.includePrevReleaseFiles = includePrevReleaseFiles;
+	}
+
+	public String getExcludeRefsetDescriptorMembers() {
+		return excludeRefsetDescriptorMembers;
+	}
+
+	public void setExcludeRefsetDescriptorMembers(String excludeRefsetDescriptorMembers) {
+		this.excludeRefsetDescriptorMembers = excludeRefsetDescriptorMembers;
 	}
 
 	public void setDailyBuild(boolean dailyBuild) {

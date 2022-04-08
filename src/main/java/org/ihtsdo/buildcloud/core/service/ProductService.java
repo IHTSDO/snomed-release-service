@@ -41,6 +41,7 @@ public interface ProductService extends EntityService<Product> {
 	String JIRA_PRODUCT_NAME = "jiraProductName";
 	String JIRA_REPORTING_STAGE = "jiraReportingStage";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
+	String EXCLUDE_REFSET_DESCRIPTOR_MEMBERS = "excludeRefsetDescriptorMembers";
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
 	String CLASSIFY_OUTPUT_FILES = "classifyOutputFiles";
 	String LICENSE_STATEMENT = "licenseStatement";
