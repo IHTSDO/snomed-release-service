@@ -403,6 +403,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			configuration.setExcludeRefsetDescriptorMembers(newPropertyValues.get(EXCLUDE_REFSET_DESCRIPTOR_MEMBERS));
 		}
 
+		if (newPropertyValues.containsKey(EXCLUDE_LANGUAGE_REFSET_IDS)) {
+			configuration.setExcludeLanguageRefsetIds(newPropertyValues.get(EXCLUDE_LANGUAGE_REFSET_IDS));
+		}
+
 		setExtensionConfig(newPropertyValues, configuration);
 	}
 

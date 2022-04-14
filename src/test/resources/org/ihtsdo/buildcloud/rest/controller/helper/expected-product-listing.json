@@ -24,6 +24,7 @@
     "extensionConfig" : null,
     "includePrevReleaseFiles" : null,
     "excludeRefsetDescriptorMembers" : null,
+    "excludeLanguageRefsetIds" : null,
     "dailyBuild" : false,
     "classifyOutputFiles" : false,
     "licenceStatement" : null,
