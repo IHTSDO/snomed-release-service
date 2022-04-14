@@ -41,6 +41,7 @@ public class RF2Constants {
 	public static final CharSequence ASSOCIATION_REFERENCE_FILE_IDENTIFIER = "AssociationReference";
 	public static final CharSequence EXTENEDED_MAP_FILE_IDENTIFIER = "ExtendedMap";
 	public static final CharSequence REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER = "RefsetDescriptor";
+	public static final String LANGUAGE_FILE_PATTERN = "^x?der2_cRefset_.*Language.*";
 	public static final CharSequence MODULE_DEPENDENCY_FILE_IDENTIFIER = "ModuleDependency";
 	public static final CharSequence COMPLEX_MAP_FILE_IDENTIFIER = "ComplexMap";
 	public static final String  RELASHIONSHIP_DELTA_PREFIX = "sct2_Relationship_Delta_";

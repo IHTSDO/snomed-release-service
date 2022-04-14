@@ -77,6 +77,9 @@ public class BuildConfiguration {
 
 	@Column(name = "exclude_refset_descriptor_members")
 	private String excludeRefsetDescriptorMembers;
+
+	@Column(name = "exclude_language_refset_ids")
+	private String excludeLanguageRefsetIds;
 	
 	@Type(type="yes_no")
 	@Column(name = "daily_build")
@@ -412,6 +415,7 @@ public class BuildConfiguration {
 				", extensionConfig=" + extensionConfig +
 				", includePrevReleaseFiles='" + includePrevReleaseFiles + '\'' +
 				", excludeRefsetDescriptorMembers='" + excludeRefsetDescriptorMembers + '\'' +
+				", excludeLanguageRefsetIds='" + excludeLanguageRefsetIds + '\'' +
 				", dailyBuild=" + dailyBuild +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
@@ -497,6 +501,14 @@ public class BuildConfiguration {
 
 	public void setExcludeRefsetDescriptorMembers(String excludeRefsetDescriptorMembers) {
 		this.excludeRefsetDescriptorMembers = excludeRefsetDescriptorMembers;
+	}
+
+	public String getExcludeLanguageRefsetIds() {
+		return excludeLanguageRefsetIds;
+	}
+
+	public void setExcludeLanguageRefsetIds(String excludeLanguageRefsetIds) {
+		this.excludeLanguageRefsetIds = excludeLanguageRefsetIds;
 	}
 
 	public void setDailyBuild(boolean dailyBuild) {

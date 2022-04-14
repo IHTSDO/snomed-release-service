@@ -13,15 +13,19 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Rf2FileWriter {
 
 	private String excludeRefsetDescriptorMembers;
 
+	private String excludeLanguageRefsetIds;
+
 	public Rf2FileWriter() {}
 
-	public Rf2FileWriter(final String excludeRefsetDescriptorMembers) {
+	public Rf2FileWriter(final String excludeRefsetDescriptorMembers, final String excludeLanguageRefsetIds) {
 		this.excludeRefsetDescriptorMembers = excludeRefsetDescriptorMembers;
+		this.excludeLanguageRefsetIds = excludeLanguageRefsetIds;
 	}
 
 	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws SQLException, IOException {
@@ -37,16 +41,22 @@ public class Rf2FileWriter {
 			String currentId;
 			while ((line = tableResults.nextLine()) != null) {
 				String[] lineParts;
+				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(tableSchema.getComponentType())) {
 					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 4);
 					// effective time is on the third column
 					currentId = lineParts[0] + lineParts[1];
 				} else {
-					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches()) {
+						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
+						languageRefsetId = lineParts[4];
+					} else {
+						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					}
 					currentId = lineParts[0];
 				}
-				if (tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER)
-						&& this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId)) {
+				if ((tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
+					|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId))) {
 					continue;
 				}
 
@@ -62,7 +72,6 @@ public class Rf2FileWriter {
 			 BufferedWriter snapshotWriter = new BufferedWriter(new OutputStreamWriter(snapshotOutputStream, RF2Constants.UTF_8))) {
 
 			// Declare a few objects to reuse over and over.
-			final StringBuilder producter = new StringBuilder();
 			final List<Field> fields = schema.getFields();
 
 			// Product header
@@ -86,18 +95,25 @@ public class Rf2FileWriter {
 			while ((currentLine = tableResults.nextLine()) != null) {
 				// Parse out id and effectiveTime
 				String[] lineParts;
+				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
 					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 4);
 					// effective time is on the third column
 					currentId = lineParts[0] + lineParts[1];
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
 				} else {
-					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(schema.getFilename()).matches()) {
+						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
+						languageRefsetId = lineParts[4];
+					} else {
+						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					}
+
 					currentId = lineParts[0];
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
 				}
-				if (schema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER)
-					&& this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId)) {
+				if ((schema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
+					|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId))) {
 					continue;
 				}
 
@@ -123,7 +139,6 @@ public class Rf2FileWriter {
 
 				// Record last id
 				lastId = currentId;
-				producter.setLength(0); // Reset producter, reuse is cheapest.
 			}
 
 			// Write out any valid line not yet written
@@ -131,9 +146,7 @@ public class Rf2FileWriter {
 				snapshotWriter.append(validLine);
 				snapshotWriter.append(RF2Constants.LINE_ENDING);
 			}
-
 		}
-
 	}
 
 	public void exportFull(RF2TableResults results, TableSchema tableSchema, OutputStream fullOutputStream) throws IOException, SQLException {
