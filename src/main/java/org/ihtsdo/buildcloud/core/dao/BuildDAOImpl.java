@@ -1032,6 +1032,12 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
+	public void deleteBuildComparisonReport(Product product, String compareId) {
+		String filePath = pathHelper.getBuildComparisonReportPath(product, compareId);
+		s3Client.deleteObject(buildBucketName, filePath);
+	}
+
+	@Override
 	public void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
