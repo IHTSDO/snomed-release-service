@@ -316,19 +316,23 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
 			configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
 		}
-		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH) && configuration.getDefaultBranchPath() != newPropertyValues.get(DEFAULT_BRANCH_PATH).toUpperCase()) {
+		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
 			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
-			if (!StringUtils.isEmpty(newDefaultBranchPath)) {
-				List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-				CodeSystem codeSystem = codeSystems.stream()
-						.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
-						.findAny()
-						.orElse(null);
-				if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
-					throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+			if (newDefaultBranchPath != null && configuration.getDefaultBranchPath() != newDefaultBranchPath.toUpperCase()) {
+				if (!StringUtils.isEmpty(newDefaultBranchPath)) {
+					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+					CodeSystem codeSystem = codeSystems.stream()
+							.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
+							.findAny()
+							.orElse(null);
+					if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
+						throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+					}
 				}
+				configuration.setDefaultBranchPath(newDefaultBranchPath.toUpperCase());
+			} else {
+				configuration.setDefaultBranchPath(null);
 			}
-			configuration.setDefaultBranchPath(newDefaultBranchPath.toUpperCase());
 		}
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
