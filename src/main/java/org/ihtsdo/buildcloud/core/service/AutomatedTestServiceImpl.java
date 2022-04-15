@@ -113,6 +113,19 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	}
 
 	@Override
+	public void deleteTestReport(String releaseCenterKey, String productKey, String compareId) throws BusinessServiceException {
+		BuildComparisonReport report = getTestReport(releaseCenterKey, productKey, compareId);
+		if (report.getStatus().equals(BuildComparisonReport.Status.PASS) || report.getStatus().equals(BuildComparisonReport.Status.FAILED) ||
+				report.getStatus().equals(BuildComparisonReport.Status.FAILED) || (report.getStatus().equals(BuildComparisonReport.Status.RUNNING) && (System.currentTimeMillis() - report.getStartDate().getTime()) > maxPollPeriod) ) {
+			Product product = productService.find(releaseCenterKey, productKey, false);
+			buildDAO.deleteBuildComparisonReport(product, compareId);
+			return;
+		}
+
+		throw new BusinessServiceException("Failed to delete report file. Build comparison is running");
+	}
+
+	@Override
 	@Async
 	public void compareBuilds(String compareId, Build leftBuild, Build rightBuild, String username) {
 		BuildComparisonReport report = new BuildComparisonReport();

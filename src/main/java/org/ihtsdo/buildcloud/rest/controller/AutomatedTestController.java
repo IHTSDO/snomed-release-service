@@ -52,6 +52,15 @@ public class AutomatedTestController {
         return automatedTestService.getTestReport(releaseCenterKey, productKey, compareId);
     }
 
+    @DeleteMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare/{compareId}")
+    @ResponseBody
+    @ApiOperation(value = "Delete a test report for specific Id")
+    public void deleteTestReport(@PathVariable final String releaseCenterKey,
+                                               @PathVariable final String productKey,
+                                               @PathVariable final String compareId) throws BusinessServiceException {
+        automatedTestService.deleteTestReport(releaseCenterKey, productKey, compareId);
+    }
+
     @PostMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
     @ResponseBody

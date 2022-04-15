@@ -139,6 +139,8 @@ public interface BuildDAO {
 
 	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
 
+	void deleteBuildComparisonReport(Product product, String compareId);
+
 	void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
 
 	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
