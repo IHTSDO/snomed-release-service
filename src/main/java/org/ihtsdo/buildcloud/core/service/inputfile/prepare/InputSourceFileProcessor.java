@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -33,6 +34,7 @@ import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -56,6 +58,7 @@ public class InputSourceFileProcessor {
 	private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
 	private static final int REFSETID_COL = 4;
 	private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
+	private static final int DESCRIPTION_MODULE_ID_COL = 3;
 	private static final String INPUT_FILE_TYPE_REFSET = "Refset";
 	private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
 	private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
@@ -340,11 +343,13 @@ public class InputSourceFileProcessor {
 
 	void initDescriptionProcessingConfig(FileType fileType) {
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
+			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 				String fileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("_Snapshot", "_Delta");
-				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_DESCRIPTION, languageCode, fileName);
-				if (!descriptionFileProcessingConfigs.containsKey(languageCode)) {
-					descriptionFileProcessingConfigs.put(config.getKey(), config);
+				String key = languageCode + keySuffix;
+				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_DESCRIPTION, key, fileName);
+				if (!descriptionFileProcessingConfigs.containsKey(key)) {
+					descriptionFileProcessingConfigs.put(key, config);
 				}
 				if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
 					config.setSpecificSources(new HashSet<>(fileType.getSources().getSource()));
@@ -385,14 +390,16 @@ public class InputSourceFileProcessor {
 	void initTextDefinitionProcessingConfig(FileType fileType) {
 		foundTextDefinitionFile = true;
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
+			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 				String fileName = this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("_Snapshot", "_Delta" );
-				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_TEXT_DEFINITON, languageCode, fileName);
+				String key = languageCode + keySuffix;
+				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_TEXT_DEFINITON, key, fileName);
 				if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
 					config.setSpecificSources(new HashSet<>(fileType.getSources().getSource()));
 				}
-				if (!textDefinitionFileProcessingConfigs.containsKey(languageCode)) {
-					textDefinitionFileProcessingConfigs.put(config.getKey(), config);
+				if (!textDefinitionFileProcessingConfigs.containsKey(key)) {
+					textDefinitionFileProcessingConfigs.put(key, config);
 				}
 			}
 		} else {
@@ -501,21 +508,52 @@ public class InputSourceFileProcessor {
 		}
 	}
 
+	/**
+	 *
+	 * @param rows description or text definition rows
+	 * @param moduleIdStr module Ids in string format. For example: fr-moduleId1-moduleId2
+	 * @return
+	 */
+	private List<String> filterRowsByModuleIds(List<String> rows, String moduleIdStr) {
+		if (!moduleIdStr.contains("-")) {
+			return rows;
+		}
+		String[] moduleIds = moduleIdStr.substring(moduleIdStr.indexOf("-") + 1).split("-");
+		List<String> results = new ArrayList<>();
+		for (String row : rows) {
+			String[] splits = row.split(TAB);
+			String moduleId = splits[DESCRIPTION_MODULE_ID_COL];
+			if (Arrays.asList(moduleIds).contains(moduleId)) {
+				results.add(row);
+			}
+		}
+
+		return results;
+	}
+
 	private void processDataByLanguageCode(Map<String,FileProcessingConfig> fileProcessingConfigs, String sourceName, Map<String, List<String>> rows,
 										   String inputFilename, String header, boolean isTextDefinition) throws IOException {
 		for (String languageCode : rows.keySet()) {
-			FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(languageCode);
-			if (fileProcessingConfig != null) {
-				String key = isTextDefinition ? INPUT_FILE_TYPE_TEXT_DEFINITON + languageCode : INPUT_FILE_TYPE_DESCRIPTION + languageCode;
-				if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
-						(fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() == 1)) {
-					writeToFile(outDir, header, rows.get(languageCode), fileProcessingConfig.getTargetFileName());
-				} else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() > 1) {
-					String errorMsg = String.format(UNPROCESSABLE_MSG, "language code " + languageCode);
-					fileProcessingReport.add(ReportType.ERROR, inputFilename, null, sourceName, errorMsg);
-				} else {
-					String warningMsg = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
-					fileProcessingReport.add(ReportType.WARNING, inputFilename , null, sourceName, warningMsg);
+			List<String> fileProcessingKeys = new ArrayList<>();
+			for (String key : fileProcessingConfigs.keySet()) {
+				if (key.startsWith(languageCode)) {
+					fileProcessingKeys.add(key);
+				}
+			}
+			if (fileProcessingKeys.size() != 0) {
+				for (String fileProcessingKey : fileProcessingKeys) {
+					FileProcessingConfig fileProcessingConfig = fileProcessingConfigs.get(fileProcessingKey);
+					String key = isTextDefinition ? INPUT_FILE_TYPE_TEXT_DEFINITON + languageCode : INPUT_FILE_TYPE_DESCRIPTION + languageCode;
+					if (fileProcessingConfig.getSpecificSources().contains(sourceName) ||
+							(fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() == 1)) {
+						writeToFile(outDir, header, filterRowsByModuleIds(rows.get(languageCode), fileProcessingKey), fileProcessingConfig.getTargetFileName());
+					} else if (fileProcessingConfig.getSpecificSources().isEmpty() && fileOrKeyWithMultipleSources.get(key).size() > 1) {
+						String errorMsg = String.format(UNPROCESSABLE_MSG, "language code " + languageCode);
+						fileProcessingReport.add(ReportType.ERROR, inputFilename, null, sourceName, errorMsg);
+					} else {
+						String warningMsg = String.format("Source %s is not specified in the manifest.xml therefore is skipped.", sourceName);
+						fileProcessingReport.add(ReportType.WARNING, inputFilename , null, sourceName, warningMsg);
+					}
 				}
 			} else {
 				String msg = String.format("Found language code: %s in source file but not specified in the manifest.xml", languageCode);

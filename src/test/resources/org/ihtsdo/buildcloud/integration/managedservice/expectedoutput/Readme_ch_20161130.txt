@@ -1,0 +1,12 @@
+This is the readme for the first release © 2002-2016.
+Table of contents:
+
+    SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20161130
+        Delta
+            Terminology
+                sct2_Description_Delta-en_CH1000195_20161130.txt
+                sct2_Description_Delta-de-ch_CH1000195_20161130.txt
+                sct2_Description_Delta-fr_CH1000195_20161130.txt
+                sct2_Description_Delta-fr-ch_CH1000195_20161130.txt
+                sct2_Description_Delta-it-ch_CH1000195_20161130.txt
+        Readme_ch_20161130.txt
