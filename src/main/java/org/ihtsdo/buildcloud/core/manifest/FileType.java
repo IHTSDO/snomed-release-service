@@ -44,6 +44,8 @@ public class FileType {
     protected ContainsReferenceSetsType containsReferenceSets;
     @XmlElement(name = "contains-language-codes")
     protected ContainsLanguageCodesType containsLanguageCodes;
+    @XmlElement(name = "contains-module-ids")
+    protected ContainsModuleIDsType containsModuleIds;
     @XmlElement(name = "contains-additional-fields")
     protected ContainsAdditionalFieldsType containsAdditionalFields;
     protected SourcesType sources;
@@ -96,6 +98,30 @@ public class FileType {
      */
     public void setContainsLanguageCodes(ContainsLanguageCodesType value) {
         this.containsLanguageCodes = value;
+    }
+
+    /**
+     * Gets the value of the containsModuleIds property.
+     *
+     * @return
+     *     possible object is
+     *     {@link ContainsModuleIDsType }
+     *
+     */
+    public ContainsModuleIDsType getContainsModuleIds() {
+        return containsModuleIds;
+    }
+
+    /**
+     * Sets the value of the containsModuleIds property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link ContainsModuleIDsType }
+     *
+     */
+    public void setContainsModuleIds(ContainsModuleIDsType value) {
+        this.containsModuleIds = value;
     }
 
     /**

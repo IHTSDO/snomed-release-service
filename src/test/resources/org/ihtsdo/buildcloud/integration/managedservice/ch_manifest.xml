@@ -1,0 +1,56 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+    <folder Name="SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20161130">
+        <file Name="Readme_ch_20161130.txt"/>
+        <folder Name="Delta">
+            <folder Name="Terminology">
+                <file Name="sct2_Description_Delta-en_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>en</code>
+                    </contains-language-codes>
+                </file>
+                <file Name="sct2_Description_Delta-de-ch_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>de</code>
+                    </contains-language-codes>
+                </file>
+                <file Name="sct2_Description_Delta-fr_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>fr</code>
+                    </contains-language-codes>
+                    <contains-module-ids>
+                        <moduleId>11000241103</moduleId>
+                    </contains-module-ids>
+                </file>
+                <file Name="sct2_Description_Delta-fr-ch_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>fr</code>
+                    </contains-language-codes>
+                    <contains-module-ids>
+                        <moduleId>2011000195101</moduleId>
+                    </contains-module-ids>
+                </file>
+                <file Name="sct2_Description_Delta-it-ch_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>it</code>
+                    </contains-language-codes>
+                </file>
+            </folder>
+        </folder>
+    </folder>
+</listing>
+

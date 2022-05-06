@@ -44,7 +44,7 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 
 		final String expectedZipEntries =  MANAGED_SERVICE_RELEASE + effectiveTime + "/\n" +
 				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Readme_en_" + effectiveTime + ".txt\n" +
-				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Documentation/\n" + 
+				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Documentation/\n" +
 				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Documentation/Current/\n" +
 				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Delta/\n" +
 				 MANAGED_SERVICE_RELEASE + effectiveTime + "/Delta/Refset/\n" +
@@ -81,7 +81,50 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 		// by multiple streams.
 		executeAndVerfiyResults(effectiveTime, expectedZipEntries );
 	}
-	
+
+	@Test
+	public void testFirstReleaseWithDescriptionsSeparatedByModuleId() throws Exception {
+		integrationTestHelper.createTestProductStructure();
+
+		// Perform first time release
+		integrationTestHelper.setFirstTimeRelease(true);
+		integrationTestHelper.setCreateLegacyIds(true);
+		final String effectiveTime = "20161130";
+		integrationTestHelper.setEffectiveTime(effectiveTime);
+		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2016");
+		Thread.sleep(1000);
+
+		integrationTestHelper.uploadManifest("ch_manifest.xml", getClass());
+
+		final String buildURL = integrationTestHelper.createBuild(effectiveTime);
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_CH1000195_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_CH1000195_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-de-ch_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-en_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-fr_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-fr-ch_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-it-ch_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.getInputFile("rel2_Description_Delta-it-ch_CH1000195_" + effectiveTime +".txt");
+		integrationTestHelper.scheduleBuild(buildURL);
+		integrationTestHelper.waitUntilCompleted(buildURL);
+
+		String CH_RELEASE = "SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_";
+		final String expectedZipEntries =  CH_RELEASE + effectiveTime + "/\n" +
+				CH_RELEASE + effectiveTime + "/Readme_ch_" + effectiveTime + ".txt\n" +
+				CH_RELEASE + effectiveTime + "/Delta/\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/sct2_Description_Delta-en_CH1000195_20161130.txt\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/sct2_Description_Delta-de-ch_CH1000195_20161130.txt\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/sct2_Description_Delta-fr_CH1000195_20161130.txt\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/sct2_Description_Delta-fr-ch_CH1000195_20161130.txt\n" +
+				CH_RELEASE + effectiveTime + "/Delta/Terminology/sct2_Description_Delta-it-ch_CH1000195_20161130.txt";
+
+		// Assert first release output expectations
+		final String expectedZipFilename = "SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_" + effectiveTime + ".zip";
+		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass(), false);
+	}
 	
 	
 	private void loadDeltaFilesToInputDirectory(final String releaseDate) throws Exception {

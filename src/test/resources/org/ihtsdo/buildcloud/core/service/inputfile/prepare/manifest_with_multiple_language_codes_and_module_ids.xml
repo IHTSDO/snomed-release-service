@@ -1,0 +1,291 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+	<folder Name="SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20211207T120000Z">
+		<folder Name="Delta">
+			<folder Name="Terminology">
+				<file Name="sct2_Concept_Delta_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+						<source>externally-maintained</source>
+					</sources>
+				</file>
+				<file Name="sct2_Description_Delta-en_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_Description_Delta-de-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>de</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_Description_Delta-fr_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>fr</code>
+					</contains-language-codes>
+					<contains-module-ids>
+						<moduleId>11000241103</moduleId>
+					</contains-module-ids>
+				</file>
+				<file Name="sct2_Description_Delta-fr-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>fr</code>
+					</contains-language-codes>
+					<contains-module-ids>
+						<moduleId>2011000195101</moduleId>
+					</contains-module-ids>
+				</file>
+				<file Name="sct2_Description_Delta-it-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>it</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_StatedRelationship_Delta_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+				</file>
+				<file Name="sct2_Relationship_Delta_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+				</file>
+				<file Name="sct2_RelationshipConcreteValues_Delta_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+				</file>
+				<file Name="sct2_Identifier_Delta_CH1000195_20211207.txt">
+					<sources>
+						<source>externally-maintained</source>
+					</sources>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-en_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>en</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-de-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>de</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-fr_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>fr</code>
+					</contains-language-codes>
+					<contains-module-ids>
+						<moduleId>11000241103</moduleId>
+					</contains-module-ids>
+				</file>
+				<file Name="sct2_TextDefinition_Delta-fr-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>fr</code>
+					</contains-language-codes>
+					<contains-module-ids>
+						<moduleId>2011000195101</moduleId>
+					</contains-module-ids>
+				</file>
+
+				<file Name="sct2_TextDefinition_Delta-it-ch_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-language-codes>
+						<code>it</code>
+					</contains-language-codes>
+				</file>
+				<file Name="sct2_sRefset_OWLExpressionDelta_CH1000195_20211207.txt">
+					<sources>
+						<source>terminology-server</source>
+					</sources>
+					<contains-reference-sets>
+						<refset id="762103008" label="OWL ontology reference set">
+							<sources>
+								<source>externally-maintained</source>
+							</sources>
+						</refset>
+						<refset id="733073007" label="OWL axiom reference set">
+							<sources>
+								<source>terminology-server</source>
+							</sources>
+						</refset>
+					</contains-reference-sets>
+					<contains-additional-fields>
+						<field name="owlExpression"/>
+					</contains-additional-fields>
+				</file>
+			</folder>
+			<folder Name="Refset">
+				<folder Name="Content">
+					<file Name="der2_cRefset_AssociationDelta_CH1000195_20211207.txt">
+						<sources>
+							<source>terminology-server</source>
+						</sources>
+						<contains-reference-sets>
+							<refset id="900000000000523009" label="POSSIBLY EQUIVALENT TO"/>
+							<refset id="900000000000524003" label="MOVED TO"/>
+							<refset id="900000000000525002" label="MOVED FROM"/>
+							<refset id="900000000000526001" label="REPLACED BY"/>
+							<refset id="900000000000527005" label="SAME AS"/>
+							<refset id="900000000000528000" label="WAS A"/>
+							<refset id="900000000000530003" label="ALTERNATIVE"/>
+							<refset id="900000000000531004" label="REFERS TO"/>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="targetComponentId"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_cRefset_AttributeValueDelta_CH1000195_20211207.txt">
+						<sources>
+							<source>terminology-server</source>
+						</sources>
+						<contains-reference-sets>
+							<refset id="900000000000489007" label="Concept inactivation indicator"/>
+							<refset id="900000000000490003" label="Description inactivation indicator"/>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="valueId"/>
+						</contains-additional-fields>
+					</file>
+				</folder>
+				<folder Name="Language">
+					<file Name="der2_cRefset_LanguageDelta-en_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="900000000000508004" label="GB English">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+							<refset id="900000000000509007" label="US English">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="acceptabilityId"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_cRefset_LanguageDelta-fr-ch_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="2021000195106" label="Swiss French Language Refset">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="acceptabilityId"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_cRefset_LanguageDelta-it-ch_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="2031000195108" label="Swiss Italian Language Refset">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="acceptabilityId"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_cRefset_LanguageDelta-de-ch_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="2041000195100" label="Swiss German Language Refset">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="acceptabilityId"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_cRefset_LanguageDelta-fr_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="722131000" label="Common French Language Refset">
+								<sources>
+									<source>terminology-server</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="acceptabilityId"/>
+						</contains-additional-fields>
+					</file>
+				</folder>
+				<folder Name="Metadata">
+					<file Name="der2_cciRefset_RefsetDescriptorDelta_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="900000000000456007" label="Refset descriptor">
+								<sources>
+									<source>externally-maintained</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="attributeDescription"/>
+							<field name="attributeType"/>
+							<field name="attributeOrder"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_ssRefset_ModuleDependencyDelta_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="900000000000534007" label="Module dependency refset">
+								<sources>
+									<source>externally-maintained</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="sourceEffectiveTime"/>
+							<field name="targetEffectiveTime"/>
+						</contains-additional-fields>
+					</file>
+					<file Name="der2_ciRefset_DescriptionTypeDelta_CH1000195_20211207.txt">
+						<contains-reference-sets>
+							<refset id="900000000000538005" label="Description Type">
+								<sources>
+									<source>externally-maintained</source>
+								</sources>
+							</refset>
+						</contains-reference-sets>
+						<contains-additional-fields>
+							<field name="descriptionFormat"/>
+							<field name="descriptionLength"/>
+						</contains-additional-fields>
+					</file>
+				</folder>
+			</folder>
+		</folder>
+	</folder>
+</listing>
+

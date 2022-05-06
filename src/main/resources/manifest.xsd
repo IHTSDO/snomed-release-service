@@ -21,6 +21,7 @@
 	<xs:complexType name="fileType">
 		<xs:all>
 			<xs:element type="containsReferenceSetsType" name="contains-reference-sets" maxOccurs="1" minOccurs="0"/>
+			<xs:element type="containsModuleIDsType" name="contains-module-ids" maxOccurs="1" minOccurs="0"/>
 			<xs:element type="containsLanguageCodesType" name="contains-language-codes" maxOccurs="1" minOccurs="0"/>
 			<xs:element type="containsAdditionalFieldsType" name="contains-additional-fields" maxOccurs="1" minOccurs="0"/>
 			<xs:element type="sourcesType" name="sources" maxOccurs="1" minOccurs="0"/>
@@ -56,11 +57,21 @@
 	<xs:complexType name="fieldType">
 		<xs:attribute name="name" use="required" type="xs:string"/>
 	</xs:complexType>
+	<xs:complexType name="containsModuleIDsType">
+		<xs:sequence>
+			<xs:element type="moduleIDType" name="moduleId" maxOccurs="unbounded" minOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
 	<xs:complexType name="containsLanguageCodesType">
 		<xs:sequence>
 			<xs:element type="languageCodeType" name="code" maxOccurs="unbounded" minOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:simpleType name="moduleIDType">
+		<xs:restriction base="xs:integer">
+			<xs:pattern value="[0-9]{6,20}"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="languageCodeType">
 			<xs:restriction base="xs:string">
 				<xs:pattern value="[a-z]{2}"/>

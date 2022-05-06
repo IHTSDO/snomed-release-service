@@ -32,6 +32,8 @@ public class InputSourceFileProcessorTest {
 	
 	private static final String DA = "da";
 	private static final String EN = "en";
+	private static final String DE = "de";
+	private static final String IT = "it";
 	private static final String EXTERNALLY_MAINTAINED = "externally-maintained";
 	private static final String TERMINOLOGY_SERVER = "terminology-server";
 	@Autowired
@@ -58,6 +60,39 @@ public class InputSourceFileProcessorTest {
 		ReleaseCenter releaseCenter = new ReleaseCenter("International", "int");
 		product.setReleaseCenter(releaseCenter);
 		build = new Build(new Date(), product);
+	}
+
+	@Test
+	public void testLoadingCHManifestWithMultipleLanguageCodesAndModuleIdsInDescriptionFile() throws Exception {
+		validateManifest("manifest_with_multiple_language_codes_and_module_ids.xml");
+		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_multiple_language_codes_and_module_ids.xml");
+		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, true);
+		processor.loadFileProcessConfigsFromManifest(manifestStream);
+		//description configs
+		Map<String, FileProcessingConfig>  descriptionProcessingConfigs = processor.getDescriptionFileProcessingConfigs();
+		assertEquals(5,descriptionProcessingConfigs.keySet().size());
+		assertTrue(descriptionProcessingConfigs.containsKey(EN));
+		assertTrue(descriptionProcessingConfigs.containsKey(DE));
+		assertTrue(descriptionProcessingConfigs.containsKey(IT));
+		assertTrue(descriptionProcessingConfigs.containsKey("fr-11000241103"));
+		assertTrue(descriptionProcessingConfigs.containsKey("fr-2011000195101"));
+		FileProcessingConfig enDescriptionConfig = descriptionProcessingConfigs.get(EN);
+		assertEquals(EN,enDescriptionConfig.getKey());
+		assertEquals("sct2_Description_Delta-en_CH1000195_20211207.txt", enDescriptionConfig.getTargetFileName());
+		assertEquals(1, enDescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, enDescriptionConfig.getSpecificSources().iterator().next());
+
+		FileProcessingConfig fr_11000241103_DescriptionConfig = descriptionProcessingConfigs.get("fr-11000241103");
+		assertEquals("fr-11000241103",fr_11000241103_DescriptionConfig.getKey());
+		assertEquals("sct2_Description_Delta-fr_CH1000195_20211207.txt", fr_11000241103_DescriptionConfig.getTargetFileName());
+		assertEquals(1, fr_11000241103_DescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, fr_11000241103_DescriptionConfig.getSpecificSources().iterator().next());
+
+		FileProcessingConfig fr_2011000195101_DescriptionConfig = descriptionProcessingConfigs.get("fr-2011000195101");
+		assertEquals("fr-2011000195101",fr_2011000195101_DescriptionConfig.getKey());
+		assertEquals("sct2_Description_Delta-fr-ch_CH1000195_20211207.txt", fr_2011000195101_DescriptionConfig.getTargetFileName());
+		assertEquals(1, fr_2011000195101_DescriptionConfig.getSpecificSources().size());
+		assertEquals(TERMINOLOGY_SERVER, fr_2011000195101_DescriptionConfig.getSpecificSources().iterator().next());
 	}
 	
 	@Test
