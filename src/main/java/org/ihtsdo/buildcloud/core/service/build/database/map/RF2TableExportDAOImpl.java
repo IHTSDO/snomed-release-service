@@ -59,6 +59,9 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 			LOGGER.info("Creating table from {}", rf2Filename);
 			final String headerLine = getHeader(rf2FilePath, reader);
 			tableSchema = schemaFactory.createSchemaBean(rf2Filename);
+			if (tableSchema == null) {
+				throw new FileRecognitionException("Failed to create a tableSchema using RF2 filename: " + rf2Filename);
+			}
 			idType = tableSchema.getFields().get(0).getType();
 			schemaFactory.populateExtendedRefsetAdditionalFieldNames(tableSchema, headerLine);
 
