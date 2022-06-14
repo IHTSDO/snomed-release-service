@@ -191,6 +191,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 				// Copy all Full files and rename to Snapshot files
 				if (fullFolder != null) {
+					// update effective time for Full files
+					renameFileName(fullFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.FULL);
+
 					Gson gson = new Gson();
 					FolderType newSnapshotFolder = gson.fromJson(gson.toJson(fullFolder), FolderType.class);
 					newSnapshotFolder.setName(RF2Constants.SNAPSHOT);
