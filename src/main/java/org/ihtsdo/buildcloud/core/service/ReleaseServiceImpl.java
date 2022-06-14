@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -8,6 +9,7 @@ import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.manifest.FileType;
 import org.ihtsdo.buildcloud.core.manifest.FolderType;
 import org.ihtsdo.buildcloud.core.manifest.ListingType;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
@@ -158,21 +161,103 @@ public class ReleaseServiceImpl implements ReleaseService {
 		File tmpFile = File.createTempFile("manifest", ".xml");
 		try {
 			final InputStream manifestStream = buildDAO.getManifestStream(build);
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(manifestStream));
-				 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
-				String str;
-				while ((str = reader.readLine()) != null) {
-					str = str.replaceAll("PRODUCTION", "DAILYBUILD");
-					str = str.replaceAll("_" + previousEffectiveTime, "_" + effectiveTime.replaceAll("-", ""));
-					writer.println(str);
+			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
+			ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
+			FolderType rootFolder = manifestListing.getFolder();
+			boolean isDeltaFolderExistInManifest = isDeltaFolderExistInManifest(rootFolder);
+			if (!isDeltaFolderExistInManifest) {
+				FolderType fullFolder = null;
+				FolderType snapshotFolder = null;
+				String newFileName = replaceReleasePackageName(rootFolder.getName());
+				newFileName = replaceEffectiveTime(newFileName, previousEffectiveTime, effectiveTime);
+				rootFolder.setName(newFileName);
+				for (FileType fileType : rootFolder.getFile()) {
+					fileType.setName(replaceEffectiveTime(fileType.getName(), previousEffectiveTime, effectiveTime));
 				}
-			} catch (FileNotFoundException e) {
-				LOGGER.error(e.getMessage());
+				for (FolderType subFolder : rootFolder.getFolder()) {
+					if (RF2Constants.FULL.equals(subFolder.getName())) {
+						fullFolder = subFolder;
+					}
+					if (RF2Constants.SNAPSHOT.equals(subFolder.getName())) {
+						snapshotFolder = subFolder;
+					}
+				}
+
+				// Re-use SNAPSHOT as DELTA
+				if (snapshotFolder != null) {
+					snapshotFolder.setName(RF2Constants.DELTA);
+					renameFileName(snapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.SNAPSHOT, RF2Constants.DELTA);
+				}
+
+				// Copy all Full files and rename to Snapshot files
+				if (fullFolder != null) {
+					Gson gson = new Gson();
+					FolderType newSnapshotFolder = gson.fromJson(gson.toJson(fullFolder), FolderType.class);
+					newSnapshotFolder.setName(RF2Constants.SNAPSHOT);
+					renameFileName(newSnapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.SNAPSHOT);
+					rootFolder.getFolder().add(newSnapshotFolder);
+				}
+				manifestListing.setFolder(rootFolder);
+
+				Marshaller marshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createMarshaller();
+				marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+				marshaller.marshal(manifestListing, tmpFile);
+			} else {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(manifestStream));
+					 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
+					String str;
+					while ((str = reader.readLine()) != null) {
+						str = replaceReleasePackageName(str);
+						str = replaceEffectiveTime(str, previousEffectiveTime, effectiveTime);
+						writer.println(str);
+					}
+				} catch (FileNotFoundException e) {
+					LOGGER.error(e.getMessage());
+				}
 			}
 			inputFileService.putManifestFile(releaseCenterKey, productKey, new FileInputStream(tmpFile), "manifest.xml", tmpFile.length());
+		} catch (JAXBException e) {
+			LOGGER.error(e.getMessage());
+
 		} finally {
 			FileUtils.forceDelete(tmpFile);
 		}
+	}
+
+	private boolean isDeltaFolderExistInManifest(FolderType rootFolder) {
+		boolean isDeltaFolderExistInManifest = false;
+		if (rootFolder.getFolder() != null) {
+			for (FolderType subFolder : rootFolder.getFolder()) {
+				if (RF2Constants.DELTA.equals(subFolder.getName())) {
+					isDeltaFolderExistInManifest = true;
+					break;
+				}
+			}
+		}
+		return isDeltaFolderExistInManifest;
+	}
+
+	private void renameFileName(FolderType folder, String previousEffectiveTime, String effectiveTime, String fromFile, String toFile) {
+		if (folder.getFile() != null) {
+			for (FileType fileType : folder.getFile()) {
+				String newFileName = replaceEffectiveTime(fileType.getName(), previousEffectiveTime, effectiveTime);
+				newFileName = newFileName.replaceAll(fromFile, toFile);
+				fileType.setName(newFileName);
+			}
+		}
+		if (folder.getFolder() != null) {
+			for (FolderType folderType : folder.getFolder()) {
+				renameFileName(folderType, previousEffectiveTime, effectiveTime, fromFile, toFile);
+			}
+		}
+	}
+
+	private String replaceEffectiveTime(String filename, String previousEffectiveTime, String effectiveTime) {
+		return filename.replaceAll("_" + previousEffectiveTime, "_" + effectiveTime.replaceAll("-", ""));
+	}
+
+	private String replaceReleasePackageName(String filename) {
+		return filename.replaceAll("PRODUCTION", "DAILYBUILD");
 	}
 
 	private boolean prepareInputFiles(Build build, Product product) throws BusinessServiceException {
