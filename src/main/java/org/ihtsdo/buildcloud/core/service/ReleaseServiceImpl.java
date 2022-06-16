@@ -206,7 +206,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 				marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 				marshaller.marshal(manifestListing, tmpFile);
 			} else {
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(manifestStream));
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(buildDAO.getManifestStream(build)));
 					 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
 					String str;
 					while ((str = reader.readLine()) != null) {
