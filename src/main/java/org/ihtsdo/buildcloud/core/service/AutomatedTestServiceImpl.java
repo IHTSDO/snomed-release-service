@@ -41,7 +41,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 	private final String SPACE_OF_FOUR = "    ";
 
-	private Status[] BUILD_FINAL_STATE = { 	Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
+	private Status[] BUILD_FINAL_STATES = { 	Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
 											Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
 											Status.FAILED_PRE_CONDITIONS,
 											Status.FAILED_POST_CONDITIONS,
@@ -115,8 +115,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Override
 	public void deleteTestReport(String releaseCenterKey, String productKey, String compareId) throws BusinessServiceException {
 		BuildComparisonReport report = getTestReport(releaseCenterKey, productKey, compareId);
-		if (report.getStatus().equals(BuildComparisonReport.Status.PASS) || report.getStatus().equals(BuildComparisonReport.Status.FAILED) ||
-				report.getStatus().equals(BuildComparisonReport.Status.FAILED) || (report.getStatus().equals(BuildComparisonReport.Status.RUNNING) && (System.currentTimeMillis() - report.getStartDate().getTime()) > maxPollPeriod) ) {
+		if (report.getStatus().equals(BuildComparisonReport.Status.PASSED.name()) || report.getStatus().equals(BuildComparisonReport.Status.FAILED.name()) ||
+				report.getStatus().equals(BuildComparisonReport.Status.FAILED_TO_COMPARE.name()) || (System.currentTimeMillis() - report.getStartDate().getTime()) > maxPollPeriod) {
 			Product product = productService.find(releaseCenterKey, productKey, false);
 			buildDAO.deleteBuildComparisonReport(product, compareId);
 			return;
@@ -136,24 +136,24 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		report.setProductKey(leftBuild.getProduct().getBusinessKey());
 		report.setLeftBuildId(leftBuild.getId());
 		report.setRightBuildId(rightBuild.getId());
-		report.setStatus(BuildComparisonReport.Status.RUNNING);
+		report.setStatus(BuildComparisonReport.Status.QUEUED.name());
 		try {
 			buildDAO.saveBuildComparisonReport(leftBuild.getProduct(), compareId, report);
-			if (!Arrays.stream(BUILD_FINAL_STATE).anyMatch(status -> status.equals(leftBuild.getStatus()))) {
+			if (!Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(leftBuild.getStatus()))) {
 				try {
-					waitForBuildCompleted(leftBuild);
+					waitForBuildCompleted(leftBuild, report);
 				} catch (BusinessServiceException e) {
-					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE);
+					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", compareId, e.getMessage()));
 					buildDAO.saveBuildComparisonReport(leftBuild.getProduct(), compareId, report);
 					return;
 				}
 			}
-			if (!Arrays.stream(BUILD_FINAL_STATE).anyMatch(status -> status.equals(rightBuild.getStatus()))) {
+			if (!Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(rightBuild.getStatus()))) {
 				try {
-					waitForBuildCompleted(rightBuild);
+					waitForBuildCompleted(rightBuild, report);
 				} catch (BusinessServiceException e) {
-					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE);
+					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", compareId, e.getMessage()));
 					buildDAO.saveBuildComparisonReport(leftBuild.getProduct(), compareId, report);
 					return;
@@ -212,8 +212,11 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			try {
 				automatePromoteProcess = buildComparisonBlockingQueue.take();
 
+
 				LOGGER.info("Staring build comparison for Id: {}", automatePromoteProcess.getCompareId());
 				BuildComparisonReport report = automatePromoteProcess.getReport();
+				report.setStatus(BuildComparisonReport.Status.COMPARING.name());
+				buildDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getProduct(), automatePromoteProcess.getCompareId(), report);
 
 				Build leftBuild = automatePromoteProcess.getLeftBuild();
 				Build rightBuild = automatePromoteProcess.getRightBuild();
@@ -222,7 +225,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 				List<HighLevelComparisonReport> highLevelComparisonReports = buildComparisonManager.runBuildComparisons(leftLatestBuild, rightLatestBuild);
 				boolean isFailed = highLevelComparisonReports.stream().anyMatch(c -> c.getResult().equals(HighLevelComparisonReport.State.FAILED));
-				report.setStatus(isFailed ? BuildComparisonReport.Status.FAILED : BuildComparisonReport.Status.PASS);
+				report.setStatus(isFailed ? BuildComparisonReport.Status.FAILED.name() : BuildComparisonReport.Status.PASSED.name());
 				report.setReports(highLevelComparisonReports);
 
 				buildDAO.saveBuildComparisonReport(leftBuild.getProduct(), automatePromoteProcess.getCompareId(), report);
@@ -231,7 +234,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				LOGGER.error(e.getMessage(), e);
 				if (automatePromoteProcess != null) {
 					BuildComparisonReport report = automatePromoteProcess.getReport();
-					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE);
+					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", automatePromoteProcess.getCompareId(), e.getMessage()));
 					try {
 						buildDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getProduct(), automatePromoteProcess.getCompareId(), report);
@@ -363,7 +366,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		}
 	}
 
-	private void waitForBuildCompleted(final Build build) throws InterruptedException, BusinessServiceException {
+	private void waitForBuildCompleted(final Build build, BuildComparisonReport report) throws InterruptedException, BusinessServiceException, IOException {
 		boolean isFinalState = false;
 		int count = 0;
 		final Product product = build.getProduct();
@@ -372,7 +375,11 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			count += pollPeriod;
 
 			Build latestBuild = buildService.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), false, false, false, null);
-			if (Arrays.stream(BUILD_FINAL_STATE).anyMatch(status -> status.equals(latestBuild.getStatus()))) {
+			if (!report.getStatus().equals(latestBuild.getStatus().name())) {
+				report.setStatus(latestBuild.getStatus().name());
+				buildDAO.saveBuildComparisonReport(build.getProduct(), report.getCompareId(), report);
+			}
+			if (Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(latestBuild.getStatus()))) {
 				isFinalState = true;
 			}
 

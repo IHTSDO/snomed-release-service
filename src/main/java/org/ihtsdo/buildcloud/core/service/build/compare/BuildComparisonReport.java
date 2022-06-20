@@ -5,14 +5,14 @@ import java.util.List;
 
 public class BuildComparisonReport {
     public enum Status {
-        RUNNING, PASS, FAILED, FAILED_TO_COMPARE;
+        QUEUED, COMPARING, PASSED, FAILED, FAILED_TO_COMPARE;
     }
 
     private String compareId;
 
     private String username;
 
-    private Status status;
+    private String status;
 
     private String message;
 
@@ -60,11 +60,11 @@ public class BuildComparisonReport {
         return leftBuildId;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
-    public Status getStatus() {
+    public String getStatus() {
         return status;
     }
 
