@@ -119,7 +119,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void copyManifestFileFromProduct(Build build) {
 		// Copy manifest file
-		final String manifestPath = inputFileDAO.getManifestPath(build.getProduct());
+		final String manifestPath = inputFileDAO.getManifestPath(build.getReleaseCenterKey(), build.getProductKey());
 		if (manifestPath != null) {
 			final String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 			final String manifestFileName = Paths.get(manifestPath).getFileName().toString();
@@ -130,7 +130,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void save(final Build build) throws IOException {
 		// Save config file
-		LOGGER.debug("Saving build {} for product {}", build.getId(), build.getProduct().getBusinessKey());
+		LOGGER.debug("Saving build {} for product {}", build.getId(), build.getProductKey());
 		File configJson = toJson(build.getConfiguration());
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
@@ -171,21 +171,21 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<Build> findAllDesc(final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
-		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-		return findBuildsDesc(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
+	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
+		final String productDirectoryPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
+		return findBuildsDesc(productDirectoryPath, releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 	}
 
 	@Override
-	public BuildPage<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
-		final String productDirectoryPath = pathHelper.getProductPath(product).toString();
-		return findBuildsDescPage(productDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
+	public BuildPage<Build> findAllDescPage(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
+		final String productDirectoryPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
+		return findBuildsDescPage(productDirectoryPath, releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
 	}
 
 	@Override
-	public Build find(final Product product, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
-		final String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
-		final List<Build> builds = findBuildsDesc(buildDirectoryPath, product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
+	public Build find(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
+		final String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
+		final List<Build> builds = findBuildsDesc(buildDirectoryPath, releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 		if (!builds.isEmpty()) {
 			return builds.get(0);
 		} else {
@@ -194,8 +194,8 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void delete(Product product, String buildId) {
-		String buildDirectoryPath = pathHelper.getBuildPath(product, buildId).toString();
+	public void delete(String releaseCenterKey, String productKey, String buildId) {
+		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
 		for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, buildDirectoryPath).getObjectSummaries()) {
 			s3Client.deleteObject(buildBucketName, file.getKey());
 		}
@@ -260,10 +260,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void sendStatusUpdateResponseMessage(final Build build) {
-		final Product product = build.getProduct();
 		messagingHelper.sendResponse(buildStatusTextMessage,
-				ImmutableMap.of("releaseCenterKey", product.getReleaseCenter().getBusinessKey(),
-						"productKey", product.getBusinessKey(),
+				ImmutableMap.of("releaseCenterKey", build.getReleaseCenterKey(),
+						"productKey", build.getProductKey(),
 						"buildId", build.getId(),
 						"buildStatus", build.getStatus().name()));
 	}
@@ -313,7 +312,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public List<String> listInputFileNames(final Build build) {
-		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
+		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).toString();
 		return srsFileHelper.listFiles(buildInputFilesPath);
 	}
 
@@ -395,17 +394,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void putTransformedFile(final Build build, final File file) throws IOException {
-		final String name = file.getName();
-		final String outputPath = pathHelper.getBuildTransformedFilesPath(build).append(name).toString();
-		try {
-			srsFileHelper.putFile(file, outputPath);
-		} catch (NoSuchAlgorithmException | DecoderException e) {
-			throw new IOException("Problem creating checksum while uploading transformed file " + name, e);
-		}
-	}
-
-	@Override
 	public InputStream getManifestStream(final Build build) {
 		String manifestFilePath = getManifestFilePath(build);
 		if (manifestFilePath != null) {
@@ -430,12 +418,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<String> listLogFilePaths(final Build build) {
-		final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
-		return srsFileHelper.listFiles(logFilesPath);
-	}
-
-	@Override
 	public List<String> listBuildLogFilePaths(final Build build) {
 		final String logFilesPath = pathHelper.getBuildLogFilesPath(build).toString();
 		return srsFileHelper.listFiles(logFilesPath);
@@ -443,12 +425,6 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getLogFileStream(final Build build, final String logFileName) {
-		final String logFilePath = pathHelper.getBuildLogFilePath(build, logFileName);
-		return srsFileHelper.getFileStream(logFilePath);
-	}
-
-	@Override
-	public InputStream getBuildLogFileStream(final Build build, final String logFileName) {
 		final String logFilePath = pathHelper.getBuildLogFilePath(build, logFileName);
 		return srsFileHelper.getFileStream(logFilePath);
 	}
@@ -481,13 +457,13 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public InputStream getPublishedFileArchiveEntry(final ReleaseCenter releaseCenter, final String targetFileName, final String previousPublishedPackage) throws IOException {
+	public InputStream getPublishedFileArchiveEntry(final String releaseCenterKey, final String targetFileName, final String previousPublishedPackage) throws IOException {
 		// For scenarios in UAT and DEV where we use locally published release packages for a new build,
 		// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
-		String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenter, previousPublishedPackage);
+		String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenterKey, previousPublishedPackage);
 		if (!srsFileHelper.exists(publishedZipPath) && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
 			LOGGER.warn("Could not find previously published package {}", publishedZipPath);
-			publishedZipPath = pathHelper.getPublishJobFilePath(releaseCenter, previousPublishedPackage);
+			publishedZipPath = pathHelper.getPublishJobFilePath(releaseCenterKey, previousPublishedPackage);
 		}
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
@@ -539,7 +515,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private List<Build> findBuildsDesc(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
+	private List<Build> findBuildsDesc(final String productDirectoryPath, final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final List<String> userPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
@@ -551,7 +527,7 @@ public class BuildDAOImpl implements BuildDAO {
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths);
 		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
 		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 		Collections.reverse(builds);
@@ -560,7 +536,7 @@ public class BuildDAOImpl implements BuildDAO {
 		return builds;
 	}
 
-	private BuildPage<Build> findBuildsDescPage(final String productDirectoryPath, final Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
+	private BuildPage<Build> findBuildsDescPage(final String productDirectoryPath, final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
 												Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
 		int pageNumber = pageRequest.getPageNumber();
 		int pageSize = pageRequest.getPageSize();
@@ -574,7 +550,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> visibilityPaths = new ArrayList<>();
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, product, userPaths, tagPaths, visibilityPaths);
+		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths);
 		Collections.reverse(allBuilds);
 		allBuilds = filterByViewMode(allBuilds, tagPaths, viewMode);
 		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
@@ -586,7 +562,7 @@ public class BuildDAOImpl implements BuildDAO {
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
-	private List<Build> getAllBuildsFromS3(String productDirectoryPath, Product product, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths) {
+	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, productDirectoryPath);
 		List<Build> builds = new ArrayList<>();
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
@@ -597,7 +573,7 @@ public class BuildDAOImpl implements BuildDAO {
 				objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			}
 			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			findBuilds(product, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
+			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
 			firstPass = false;
 		}
 
@@ -706,15 +682,14 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private void findBuilds(final Product product, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String>  visibilityPaths) {
+	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String>  visibilityPaths) {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[keyParts.length - 2];
 				final String status = keyParts[keyParts.length - 1].split(":")[1];
-				final Build build = new Build(dateString, product.getBusinessKey(), status);
-				build.setProduct(product);
+				final Build build = new Build(dateString, releaseCenterKey, productKey, status);
 				builds.add(build);
 			} else if (key.contains("/tag:")) {
 				tagPaths.add(key);
@@ -839,7 +814,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
-		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
+		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
@@ -872,7 +847,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getBuildInputGatherReportStream(Build build) {
-		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
+		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
@@ -883,8 +858,7 @@ public class BuildDAOImpl implements BuildDAO {
 		if (extensionConfig == null) {
 			return false;
 		}
-		String releaseCenter = build.getProduct().getReleaseCenter().getBusinessKey();
-		return INTERNATIONAL.equalsIgnoreCase(releaseCenter) && StringUtils.isNotBlank(extensionConfig.getDependencyRelease());
+		return INTERNATIONAL.equalsIgnoreCase(build.getReleaseCenterKey()) && StringUtils.isNotBlank(extensionConfig.getDependencyRelease());
 
 	}
 
@@ -992,16 +966,16 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void putManifestFile(Product product, String buildId, InputStream inputStream) {
-		final String filePath = pathHelper.getBuildManifestDirectoryPath(product, buildId);
+	public void putManifestFile(Build build, InputStream inputStream) {
+		final String filePath = pathHelper.getBuildManifestDirectoryPath(build);
 		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
 	}
 
 	@Override
-	public void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException {
+	public void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(product, compareId), reportInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, new ObjectMetadata());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();
@@ -1010,15 +984,15 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<String> listBuildComparisonReportPaths(Product product) {
-		final String reportPath = pathHelper.getBuildComparisonReportPath(product, null);
+	public List<String> listBuildComparisonReportPaths(String releaseCenterKey, String productKey) {
+		final String reportPath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, null);
 		return srsFileHelper.listFiles(reportPath);
 	}
 
 	@Override
-	public BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException {
+	public BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException {
 		BuildComparisonReport report = null;
-		String filePath = pathHelper.getBuildComparisonReportPath(product, compareId);
+		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
 		if (s3Object != null) {
 			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
@@ -1032,17 +1006,17 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void deleteBuildComparisonReport(Product product, String compareId) {
-		String filePath = pathHelper.getBuildComparisonReportPath(product, compareId);
+	public void deleteBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) {
+		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
 		s3Client.deleteObject(buildBucketName, filePath);
 	}
 
 	@Override
-	public void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException {
+	public void saveFileComparisonReport(String releaseCenterKey, String productKey, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
 			String reportFileName = report.getFileName().replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(product, compareId, reportFileName), reportInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, new ObjectMetadata());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();
@@ -1052,10 +1026,10 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName, boolean ignoreIdComparison) throws IOException {
+	public FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException {
 		FileDiffReport report = null;
 		String reportFileName = fileName.replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-		String filePath = pathHelper.getFileComparisonReportPath(product, compareId, reportFileName);
+		String filePath = pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName);
 		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
 		if (s3Object != null) {
 			final S3ObjectInputStream objectContent = s3Object.getObjectContent();

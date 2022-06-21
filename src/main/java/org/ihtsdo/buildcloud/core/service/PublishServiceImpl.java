@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
@@ -88,6 +89,9 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private BuildDAO buildDao;
+
+	@Autowired
+	private ReleaseCenterDAO releaseCenterDAO;
 	
 	@Autowired
 	private SchemaFactory schemaFactory;
@@ -109,7 +113,7 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
-		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishJobDirectoryPath(releaseCenter));
+		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishJobDirectoryPath(releaseCenter.getBusinessKey()));
 		return allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
 	}
 
@@ -162,7 +166,6 @@ public class PublishServiceImpl implements PublishService {
 				}
 			}
 
-			ReleaseCenter releaseCenter = build.getProduct().getReleaseCenter();
 			if (releaseFileName == null) {
 				String errorMessage = "No zip file found for build: " + build.getUniqueId();
 				LOGGER.error(errorMessage);
@@ -173,11 +176,11 @@ public class PublishServiceImpl implements PublishService {
 					//publish component ids
 					if (publishComponentIds) {
 						try {
-							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
 							String buildOutputDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
-							boolean isBetaRelease = build.getProduct().getBuildConfiguration().isBetaRelease();
+							boolean isBetaRelease = build.getConfiguration().isBetaRelease();
 							publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
-							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProduct().getBusinessKey(), build.getId());
+							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
 						} catch (BusinessServiceException e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 							throw e;
@@ -185,9 +188,9 @@ public class PublishServiceImpl implements PublishService {
 
 					}
 					// Does a published file already exist for this product?
-					String publishFilePath = s3PathHelper.getPublishJobFilePath(releaseCenter, releaseFileName);
+					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFileName);
 					if (srsFileHelper.exists(publishFilePath)) {
-						String errorMessage = publishFilePath + " has already been published for Release Center " + releaseCenter.getName() + " (" + build.getCreationTime() + ")";
+						String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
 						throw new EntityAlreadyExistsException(errorMessage);
 					}
@@ -205,7 +208,7 @@ public class PublishServiceImpl implements PublishService {
 				// copy MD5 file if available
 				if (md5FileName != null) {
 					String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
-					String target = s3PathHelper.getPublishJobFilePath(releaseCenter, md5FileName);
+					String target = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), md5FileName);
 					srsFileHelper.copyFile(source, target);
 					LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
 				}
@@ -219,7 +222,8 @@ public class PublishServiceImpl implements PublishService {
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
 					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-					CodeSystem codeSystem = codeSystems.stream().filter(item -> build.getProduct().getReleaseCenter().getCodeSystem().equals(item.getShortName()))
+					ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
+					CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
 							.findAny()
 							.orElse(null);
 					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
@@ -267,7 +271,7 @@ public class PublishServiceImpl implements PublishService {
 			String fileLock = originalFilename.intern();
 			synchronized (fileLock) {
 				// Does a published file already exist for this product?
-				String publishFilePath = s3PathHelper.getPublishJobFilePath(releaseCenter, originalFilename);
+				String publishFilePath = s3PathHelper.getPublishJobFilePath(releaseCenter.getBusinessKey(), originalFilename);
 				if (srsFileHelper.exists(publishFilePath)) {
 					throw new EntityAlreadyExistsException(publishFilePath + " has already been published for Release Center " + releaseCenter.getName());
 				}
@@ -310,12 +314,12 @@ public class PublishServiceImpl implements PublishService {
 	// For scenarios in UAT and DEV where we use locally published release packages for a new build,
 	// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
-		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenter, targetFileName);
+		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenter.getBusinessKey(), targetFileName);
 		LOGGER.info("Check if published file exists for path {} in storage bucket", path);
 		boolean exists = srsFileHelper.exists(path);
 
 		if (!exists && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
-			path = s3PathHelper.getPublishJobFilePath(releaseCenter, targetFileName);
+			path = s3PathHelper.getPublishJobFilePath(releaseCenter.getBusinessKey(), targetFileName);
 			LOGGER.info("Check if published file exists for path {} in storage bucket", path);
 			exists = srsFileHelper.exists(path);
 		}
@@ -594,17 +598,17 @@ public class PublishServiceImpl implements PublishService {
 	private void backupPublishedBuild(Build build) {
 		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
 		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
-		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getProduct().getReleaseCenter())
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
 				+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
-				+ build.getProduct().getBusinessKey() + S3PathHelper.SEPARATOR
+				+ build.getProductKey() + S3PathHelper.SEPARATOR
 				+ build.getId() + S3PathHelper.SEPARATOR;
 		for (String filename : buildFiles) {
 			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
 		}
-		LOGGER.info("Build: {} is copied to path: {}", build.getProduct().getBusinessKey() + build.getId(), buildBckUpPath);
+		LOGGER.info("Build: {} is copied to path: {}", build.getProductKey() + build.getId(), buildBckUpPath);
 	}
 
 	private String getBuildUniqueKey(Build build) {
-		return build.getProduct().getReleaseCenter().getBusinessKey() + "|" + build.getProduct().getBusinessKey() + "|" + build.getId();
+		return build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId();
 	}
 }

@@ -7,7 +7,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.activemq.command.ActiveMQTextMessage;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -173,11 +172,11 @@ public class BuildServiceImpl implements BuildService {
 		Build build;
 		try {
 			// Do we already have an build for that date?
-			final Build existingBuild = getBuild(product, creationDate);
+			final Build existingBuild = getBuild(releaseCenterKey, productKey, creationDate);
 			if (existingBuild != null) {
 				throw new EntityAlreadyExistsException("An Build for product " + productKey + " already exists with build id " + existingBuild.getId());
 			}
-			build = new Build(creationDate, product);
+			build = new Build(creationDate, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 			ObjectMapper objectMapper = new ObjectMapper();
 			if (build.getConfiguration() != null) {
 				BuildConfiguration configuration = objectMapper.readValue(objectMapper.writeValueAsString(build.getConfiguration()), BuildConfiguration.class);
@@ -212,8 +211,8 @@ public class BuildServiceImpl implements BuildService {
 			build.setBuildUser(user);
 			// create build status tracker
 			BuildStatusTracker tracker = new BuildStatusTracker();
-			tracker.setProductKey(build.getProduct().getBusinessKey());
-			tracker.setReleaseCenterKey(build.getProduct().getReleaseCenter().getBusinessKey());
+			tracker.setProductKey(build.getProductKey());
+			tracker.setReleaseCenterKey(build.getReleaseCenterKey());
 			tracker.setBuildId(build.getId());
 			statusTrackerDao.save(tracker);
 
@@ -466,7 +465,7 @@ public class BuildServiceImpl implements BuildService {
 		if (product == null) {
 			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
-		return dao.findAllDesc(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
+		return dao.findAllDesc(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
 	}
 
 	@Override
@@ -475,7 +474,7 @@ public class BuildServiceImpl implements BuildService {
 		if (product == null) {
 			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
-		return dao.findAllDescPage(product, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag, viewMode, pageRequest);
+		return dao.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag, viewMode, pageRequest);
 	}
 
 	@Override
@@ -485,23 +484,12 @@ public class BuildServiceImpl implements BuildService {
 			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
 
-		final Build build = dao.find(product, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
+		final Build build = dao.find(releaseCenterKey, productKey, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
 		}
 
-		build.setProduct(product);
 		return build;
-	}
-
-	private Product constructProduct(String releaseCenterKey, String productKey) {
-		// use this instead of fetching from mysql for srs worker
-		Product product = new Product();
-		product.setBusinessKey(productKey);
-		ReleaseCenter releaseCenter = new ReleaseCenter();
-		releaseCenter.setShortName(releaseCenterKey);
-		product.setReleaseCenter(releaseCenter);
-		return product;
 	}
 
 	@Override
@@ -510,8 +498,7 @@ public class BuildServiceImpl implements BuildService {
 		if (product == null) {
 			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT + productKey);
 		}
-
-		dao.delete(product, buildId);
+		dao.delete(releaseCenterKey, productKey, buildId);
 	}
 
 	@Override
@@ -1092,8 +1079,8 @@ public class BuildServiceImpl implements BuildService {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
 			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
-				final String storageLocation = build.getProduct().getReleaseCenter().getBusinessKey()
-						+ "/" + build.getProduct().getBusinessKey()
+				final String storageLocation = build.getReleaseCenterKey()
+						+ "/" + build.getProductKey()
 						+ "/" + build.getId();
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
@@ -1129,16 +1116,11 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private void sendMiniRvfValidationRequestToBuildStatusMessage(final Build build, final String runId) {
-		final Product product = build.getProduct();
-		if (product != null) {
-			messagingHelper.sendResponse(buildStatusTextMessage,
-					ImmutableMap.of("runId", Long.valueOf(runId),
-							"buildId", build.getId(),
-							"releaseCenterKey", product.getReleaseCenter().getBusinessKey(),
-							"productKey", product.getBusinessKey()));
-		} else {
-			LOGGER.info("Product is null when trying to send the build status message.");
-		}
+		messagingHelper.sendResponse(buildStatusTextMessage,
+				ImmutableMap.of("runId", Long.valueOf(runId),
+						"buildId", build.getId(),
+						"releaseCenterKey", build.getReleaseCenterKey(),
+						"productKey", build.getProductKey()));
 	}
 
 	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
@@ -1203,15 +1185,15 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
-		final Build build = dao.find(constructProduct(releaseCenterKey, productKey), buildId, null, null, null, null);
+		final Build build = dao.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
 		}
 		return build;
 	}
 
-	private Build getBuild(final Product product, final Date creationTime) {
-		return dao.find(product, EntityHelper.formatAsIsoDateTime(creationTime), null, null, null, null);
+	private Build getBuild(final String releaseCenterKey, final String productKey, final Date creationTime) {
+		return dao.find(releaseCenterKey, productKey, EntityHelper.formatAsIsoDateTime(creationTime), null, null, null, null);
 	}
 
 	private Product getProduct(final String releaseCenterKey, final String productKey) throws ResourceNotFoundException {
@@ -1343,20 +1325,19 @@ public class BuildServiceImpl implements BuildService {
 
 	@Override
 	public Build cloneBuild(final Build build, final String username) throws BusinessServiceException {
-		final Product product = build.getProduct();
 		final BuildConfiguration buildConfiguration =  build.getConfiguration();
 		final QATestConfig qaTestConfig =  build.getQaTestConfig();
 
 		final Date creationDate = new Date();
 		// Do we already have an build for that date?
-		final Build existingBuild = getBuild(product, creationDate);
+		final Build existingBuild = getBuild(build.getReleaseCenterKey(), build.getProductKey(), creationDate);
 		if (existingBuild != null) {
-			throw new EntityAlreadyExistsException("An Build for product " + product.getBusinessKey() + " already exists with build id " + existingBuild.getId());
+			throw new EntityAlreadyExistsException("A build for product " + build.getProductKey() + " already exists with build id " + existingBuild.getId());
 		}
 
 		Build newBuild;
 		try {
-			newBuild = new Build(creationDate, product);
+			newBuild = new Build(creationDate, build.getReleaseCenterKey(), build.getProductKey(), buildConfiguration, qaTestConfig);
 			newBuild.setBuildUser(username);
 
 			// Copy build and qa configurations
@@ -1370,8 +1351,8 @@ public class BuildServiceImpl implements BuildService {
 
 			// create build status tracker
 			BuildStatusTracker tracker = new BuildStatusTracker();
-			tracker.setProductKey(newBuild.getProduct().getBusinessKey());
-			tracker.setReleaseCenterKey(newBuild.getProduct().getReleaseCenter().getBusinessKey());
+			tracker.setProductKey(newBuild.getProductKey());
+			tracker.setReleaseCenterKey(newBuild.getReleaseCenterKey());
 			tracker.setBuildId(newBuild.getId());
 			statusTrackerDao.save(tracker);
 
@@ -1381,9 +1362,23 @@ public class BuildServiceImpl implements BuildService {
 			dao.copyBuildToAnother(build, newBuild, "input-files");
 			dao.copyBuildToAnother(build, newBuild, "manifest");
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to create build for product " + product.getBusinessKey(), e);
+			throw new BusinessServiceException("Failed to create build for product " + build.getProductKey(), e);
 		}
 
 		return newBuild;
+	}
+
+	@Override
+	public String getManifestFileName(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		LOGGER.info("Build used to find manifest file: {}", build);
+		return dao.getManifestFilePath(build);
+	}
+
+	@Override
+	public InputStream getManifestStream(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
+		LOGGER.info("Build used to find manifest file: {}", build);
+		return dao.getManifestStream(build);
 	}
 }
