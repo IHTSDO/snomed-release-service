@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 
@@ -12,32 +10,28 @@ import java.util.Set;
 
 public interface InputFileDAO {
 
-	InputStream getManifestStream(Product product);
+	InputStream getManifestStream(String releaseCenterKey, String productKey);
 
-	InputStream getManifestStream(final Product product, String buildId);
+	InputStream getManifestStream(String releaseCenterKey, String productKey, String buildId);
 
-	String getManifestPath(Product product);
+	String getManifestPath(String releaseCenterKey, String productKey);
 
-	void putManifestFile(Product product, InputStream inputStream,
-			String originalFilename, long fileSize);
+	String getManifestPath(String releaseCenterKey, String productKey, String buildId);
 
-	void putManifestFile(Product product, String buildId, InputStream inputStream,
-						 String originalFilename, long fileSize);
+	void putManifestFile(String releaseCenterKey, String productKey, InputStream inputStream, String originalFilename, long fileSize);
 
-	void deleteManifest(Product product);
+	void putManifestFile(String releaseCenterKey, String productKey, String buildId, InputStream inputStream, String originalFilename, long fileSize);
 
-	String getKnownManifestPath(Product product, String filename);
+	void deleteManifest(String releaseCenterKey, String productKey);
 
-	List<String> listRelativeSourceFilePaths(Product product, String buildId);
+	String getKnownManifestPath(String releaseCenterKey, String productKey, String filename);
 
-	List<String> listRelativeSourceFilePaths(Product product, String buildId, Set<String> subDirectories);
+	List<String> listRelativeSourceFilePaths(String releaseCenterKey, String productKey, String buildId);
 
-	List<String> listRelativeSourceFilePaths(Product product, String buildId, String subDirectory);
+	List<String> listRelativeSourceFilePaths(String releaseCenterKey, String productKey, String buildId, Set<String> subDirectories);
 
-	void persistInputPrepareReport(Build build, SourceFileProcessingReport fileProcessingReport) throws IOException;
+	void persistInputPrepareReport(String releaseCenterKey, String productKey, String buildId, SourceFileProcessingReport fileProcessingReport) throws IOException;
 
-	void persistSourcesGatherReport(Build build, InputGatherReport inputGatherReport) throws IOException;
-
-	InputStream getInputGatherReport(Product product, String buildId);
+	void persistSourcesGatherReport(String releaseCenterKey, String productKey, String buildId, InputGatherReport inputGatherReport) throws IOException;
 
 }

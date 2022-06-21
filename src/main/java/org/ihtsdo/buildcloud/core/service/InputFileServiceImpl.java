@@ -6,8 +6,6 @@ import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
@@ -75,58 +73,53 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putManifestFile(String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException {
-		Product product = constructProduct(centerKey, productKey);
-		inputFileDAO.putManifestFile(product, inputStream, originalFilename, fileSize);
+	public void putManifestFile(final String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException {
+		inputFileDAO.putManifestFile(centerKey, productKey, inputStream, originalFilename, fileSize);
 	}
 
 	@Override
-	public String getManifestFileName(String centerKey, final String productKey) throws ResourceNotFoundException {
-		return inputFileDAO.getManifestPath(constructProduct(centerKey, productKey));
+	public String getManifestFileName(final String centerKey, final String productKey) throws ResourceNotFoundException {
+		return inputFileDAO.getManifestPath(centerKey, productKey);
 	}
 
 	@Override
-	public InputStream getManifestStream(String centerKey, final String productKey) throws ResourceNotFoundException {
-		return inputFileDAO.getManifestStream(constructProduct(centerKey, productKey));
+	public InputStream getManifestStream(final String centerKey, final String productKey) throws ResourceNotFoundException {
+		return inputFileDAO.getManifestStream(centerKey, productKey);
 	}
 
 	@Override
-	public void putInputFile(final String centerKey, final Product product, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException {
-		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(product, buildId).toString();
+	public void putInputFile(final String centerKey, final String productKey, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException {
+		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(centerKey, productKey, buildId).toString();
 		putFile(filename, inputStream, buildInputFilesPath, fileSize);
 	}
 
 	@Override
 	public void putSourceFile(String sourceName, String centerKey, String productKey, String buildId, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
-		Product product = constructProduct(centerKey, productKey);
 		if (StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 
-		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, buildId, sourceName).toString();
+		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(centerKey, productKey, buildId, sourceName).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 	}
 
 	@Override
 	public List<String> listSourceFilePaths(String centerKey, String productKey, String buildId) throws ResourceNotFoundException {
-		Product product = constructProduct(centerKey, productKey);
-		return inputFileDAO.listRelativeSourceFilePaths(product, buildId);
+		return inputFileDAO.listRelativeSourceFilePaths(centerKey, productKey, buildId);
 	}
 
 	@Override
-	public List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, Set<String> subDirectories, String buildId) throws ResourceNotFoundException {
-		Product product = constructProduct(centerKey, productKey);
-		return inputFileDAO.listRelativeSourceFilePaths(product, buildId, subDirectories);
+	public List<String> listSourceFilePathsFromSubDirectories(String centerKey, String productKey, String buildId, Set<String> subDirectories) throws ResourceNotFoundException {
+		return inputFileDAO.listRelativeSourceFilePaths(centerKey, productKey, buildId, subDirectories);
 	}
 
 	@Override
-	public SourceFileProcessingReport prepareInputFiles(String centerKey, String productKey, Build build, boolean copyFilesInManifest) throws BusinessServiceException {
-		Product product = constructProduct(centerKey, productKey);
-		InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product, copyFilesInManifest);
+	public SourceFileProcessingReport prepareInputFiles(Build build, boolean copyFilesInManifest) throws BusinessServiceException {
+		InputSourceFileProcessor fileProcessor = new InputSourceFileProcessor(fileHelper, s3PathHelper, build.getReleaseCenterKey(), build.getProductKey(), copyFilesInManifest);
 		// check manifest file is present and valid
 		SourceFileProcessingReport report = fileProcessor.getFileProcessingReport();
-		checkAndValidateManifestFile(report, product, build.getId());
+		checkAndValidateManifestFile(report, build);
 		if (!report.getDetails().containsKey(ERROR)) {
-			try (InputStream manifestInputStream = inputFileDAO.getManifestStream(product, build.getId())) {
-				List<String> sourceFiles = listSourceFilePaths(centerKey, productKey, build.getId());
+			try (InputStream manifestInputStream = inputFileDAO.getManifestStream(build.getReleaseCenterKey(), build.getProductKey(), build.getId())) {
+				List<String> sourceFiles = listSourceFilePaths(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 				if (sourceFiles != null && !sourceFiles.isEmpty()) {
 					fileProcessor.processFiles(manifestInputStream, sourceFiles, build.getId(), fileProcessingFailureMaxRetry);
 				} else {
@@ -141,24 +134,24 @@ public class InputFileServiceImpl implements InputFileService {
 					}
 				}
 			} catch (Exception e) {
-				String errorMsg = String.format("Failed to prepare input files successfully for product %s", productKey);
+				String errorMsg = String.format("Failed to prepare input files successfully for product %s", build.getProductKey());
 				LOGGER.error(errorMsg, e);
 				report.add(ReportType.ERROR, errorMsg);
 			}
 		}
 
 		try {
-			inputFileDAO.persistInputPrepareReport(build, report);
+			inputFileDAO.persistInputPrepareReport(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), report);
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to persist inputPrepareReport to S3", e);
 		}
 		return report;
 	}
 
-	private void checkAndValidateManifestFile(SourceFileProcessingReport report, Product product, String buildId) throws BusinessServiceException {
-		try (InputStream manifestStream = inputFileDAO.getManifestStream(product, buildId)) {
+	private void checkAndValidateManifestFile(SourceFileProcessingReport report, Build build) throws BusinessServiceException {
+		try (InputStream manifestStream = inputFileDAO.getManifestStream(build.getReleaseCenterKey(), build.getProductKey(), build.getId())) {
 			if (manifestStream == null) {
-				report.add(ERROR, String.format("No manifest.xml found for product %s and build %s", product.getBusinessKey(), buildId));
+				report.add(ERROR, String.format("No manifest.xml found for product %s and build %s", build.getProductKey(), build.getId()));
 			} else {
 				//validate manifest.xml
 				String validationMsg = ManifestValidator.validate(manifestStream);
@@ -168,18 +161,8 @@ public class InputFileServiceImpl implements InputFileService {
 				}
 			}
 		} catch (IOException e) {
-			throw new BusinessServiceException(String.format("Failed to load manifest.xml for %s %s", product.getBusinessKey(), buildId), e);
+			throw new BusinessServiceException(String.format("Failed to load manifest.xml for %s %s", build.getProductKey(), build.getId()), e);
 		}
-	}
-
-	private Product constructProduct(String centerKey, final String productKey) {
-		LOGGER.debug("ReleaseCenter = " + centerKey + " productKey = " + productKey);
-		ReleaseCenter releaseCenter = new ReleaseCenter();
-		releaseCenter.setShortName(centerKey);
-		Product product = new Product();
-		product.setReleaseCenter(releaseCenter);
-		product.setBusinessKey(productKey);
-		return product;
 	}
 
 	private void putFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException {
@@ -231,16 +214,16 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(String centerKey, String productKey, Build build, SecurityContext securityContext) throws BusinessServiceException {
+	public InputGatherReport gatherSourceFiles(Build build, SecurityContext securityContext) throws BusinessServiceException {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
-			inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
+			inputFileDAO.persistSourcesGatherReport(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), inputGatherReport);
 			if (buildConfiguration.isLoadTermServerData()) {
-				gatherSourceFilesFromTermServer(centerKey, productKey, build, inputGatherReport, securityContext);
+				gatherSourceFilesFromTermServer(build, inputGatherReport, securityContext);
 			}
 			if (buildConfiguration.isLoadExternalRefsetData()) {
-				gatherSourceFilesFromExternallyMaintained(centerKey, productKey, build, inputGatherReport);
+				gatherSourceFilesFromExternallyMaintained(build, inputGatherReport);
 			}
 			inputGatherReport.setStatus(InputGatherReport.Status.COMPLETED);
 		} catch (Exception ex) {
@@ -248,7 +231,7 @@ public class InputFileServiceImpl implements InputFileService {
 			inputGatherReport.setStatus(InputGatherReport.Status.ERROR);
 		} finally {
 			try {
-				inputFileDAO.persistSourcesGatherReport(build, inputGatherReport);
+				inputFileDAO.persistSourcesGatherReport(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), inputGatherReport);
 			} catch (IOException e) {
 				throw new BusinessServiceException("Failed to persist inputGatherReport to S3");
 			}
@@ -256,7 +239,7 @@ public class InputFileServiceImpl implements InputFileService {
 		return inputGatherReport;
 	}
 
-	private void gatherSourceFilesFromTermServer(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
+	private void gatherSourceFilesFromTermServer(Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
 		File fileExported = null;
 		try {
 			SecurityContextHolder.setContext(securityContext);
@@ -266,7 +249,7 @@ public class InputFileServiceImpl implements InputFileService {
 			//Test whether the exported file is really a zip file
 			try (ZipFile zipFile = new ZipFile(fileExported);
 			FileInputStream fileInputStream = new FileInputStream(fileExported);) {
-				putSourceFile(SRC_TERM_SERVER, centerKey, productKey, build.getId(), fileInputStream, fileExported.getName(), fileExported.length());
+				putSourceFile(SRC_TERM_SERVER, build.getReleaseCenterKey(), build.getProductKey(), build.getId(), fileInputStream, fileExported.getName(), fileExported.length());
 				inputGatherReport.addDetails(InputGatherReport.Status.COMPLETED, SRC_TERM_SERVER,
 						"Successfully export file " + fileExported.getName() + " from term server and upload to source \"terminology-server\"");
 				LOGGER.info("Successfully export file {} from term server and upload to source \"terminology-server\"", fileExported.getName());
@@ -280,9 +263,9 @@ public class InputFileServiceImpl implements InputFileService {
 		}
 	}
 
-	private void gatherSourceFilesFromExternallyMaintained(String centerKey, String productKey, Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
+	private void gatherSourceFilesFromExternallyMaintained(Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
 		BuildConfiguration configuration = build.getConfiguration();
-		String externallyMaintainedPath = s3PathHelper.getExternallyMaintainedDirectoryPath(centerKey, configuration.getEffectiveTimeSnomedFormat());
+		String externallyMaintainedPath = s3PathHelper.getExternallyMaintainedDirectoryPath(build.getReleaseCenterKey(), configuration.getEffectiveTimeSnomedFormat());
 		List<String> externalFiles = fileHelper.listFiles(externallyMaintainedPath);
 		LOGGER.info("Found {} files at {} in storage bucket", externalFiles.size(), externallyMaintainedPath);
 		for (String externalFile : externalFiles) {
@@ -291,12 +274,11 @@ public class InputFileServiceImpl implements InputFileService {
 				continue;
 			}
 			try {
-				Product product = constructProduct(centerKey, productKey);
-				String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(product, build.getId(), SRC_EXT_MAINTAINED).toString();
+				String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(build, SRC_EXT_MAINTAINED).toString();
 				fileHelper.copyFile(externallyMaintainedPath + externalFile, sourceFilesPath + FilenameUtils.getName(externalFile));
 				LOGGER.info("Successfully exported file " + externalFile + " from " + externallyMaintainedPath + " and uploaded to source \"externally-maintained\"");
 			} catch (Exception ex) {
-				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", centerKey, configuration.getEffectiveTimeFormatted(), externalFile, ex);
+				LOGGER.error("Failed to pull external file from S3: {}/{}/{}", build.getReleaseCenterKey(), configuration.getEffectiveTimeFormatted(), externalFile, ex);
 				inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_EXT_MAINTAINED, ex.getMessage());
 				throw new BusinessServiceException("Failed to pull external file from S3. Error: " + ex.getMessage());
 			}
@@ -304,8 +286,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputStream getSourceFileStream(String releaseCenterKey, String productKey, String source, String sourceFileName) {
-		Product product = constructProduct(releaseCenterKey, productKey);
-		return fileHelper.getFileStream(s3PathHelper.getProductSourcesPath(product) + source + S3PathHelper.SEPARATOR + sourceFileName);
+	public InputStream getSourceFileStream(String centerKey, String productKey, String buildId, String source, String sourceFileName) {
+		return fileHelper.getFileStream(s3PathHelper.getBuildSourcesPath(centerKey, productKey, buildId) + source + S3PathHelper.SEPARATOR + sourceFileName);
 	}
 }

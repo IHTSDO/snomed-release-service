@@ -67,19 +67,17 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Override
 	public void runReleaseBuild(Build build, Authentication authentication) {
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
-		Product product = build.getProduct();
-
 		try {
-			MDC.put(TRACKER_ID, product.getReleaseCenter().getBusinessKey() + "|" + product.getBusinessKey() + "|" + build.getId());
-			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId());
+			MDC.put(TRACKER_ID, build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId());
+			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 
-			if (gatherSourceFiles(build, product, authentication) && prepareInputFiles(build, product)) {
+			if (gatherSourceFiles(build, authentication) && prepareInputFiles(build)) {
 				// trigger build
-				LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProduct().getBusinessKey());
+				LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProductKey());
 				buildService.triggerBuild(build, false);
 			}
 		} catch (Exception e) {
-			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProduct().getBusinessKey());
+			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProductKey());
 			LOGGER.error(msg, e);
 			buildDAO.updateStatus(build, Status.FAILED);
 		} finally {
@@ -263,9 +261,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return filename.replaceAll("PRODUCTION", "DAILYBUILD");
 	}
 
-	private boolean prepareInputFiles(Build build, Product product) throws BusinessServiceException {
+	private boolean prepareInputFiles(Build build) throws BusinessServiceException {
 		// Prepare input files from sources when available
-		SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, true);
+		SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(build, true);
 		if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {
 			LOGGER.error("Error occurred when processing input files");
 			List<FileProcessingReportDetail> errorDetails = sourceFileProcessingReport.getDetails().get(ReportType.ERROR);
@@ -279,12 +277,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return true;
 	}
 
-	private boolean gatherSourceFiles(Build build, Product product, Authentication authentication) throws BusinessServiceException, IOException {
+	private boolean gatherSourceFiles(Build build, Authentication authentication) throws BusinessServiceException, IOException {
 		SecurityContext securityContext = new SecurityContextImpl();
 		securityContext.setAuthentication(authentication);
 
 		// Gather all files in term server and externally maintain buckets when required
-		InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build, securityContext);
+		InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(build, securityContext);
 		if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 			LOGGER.error("Error occurred when gathering source files: ");
 			for (String source : inputGatherReport.getDetails().keySet()) {

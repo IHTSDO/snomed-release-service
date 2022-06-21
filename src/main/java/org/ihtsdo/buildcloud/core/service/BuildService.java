@@ -8,7 +8,6 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.io.InputStream;
@@ -81,4 +80,8 @@ public interface BuildService {
 	void saveTags(Build build, List<Build.Tag> tags);
 
 	Build cloneBuild(Build build, String username) throws BusinessServiceException;
+
+	String getManifestFileName(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
+
+	InputStream getManifestStream(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 }

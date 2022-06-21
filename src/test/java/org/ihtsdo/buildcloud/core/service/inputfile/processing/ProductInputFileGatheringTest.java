@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 
 import static org.mockito.Mockito.*;
 
@@ -75,15 +76,13 @@ public class ProductInputFileGatheringTest {
 	@Ignore
 	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
-		Build build = new Build();
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
 		buildConfiguration.setLoadTermServerData(true);
 		buildConfiguration.setLoadExternalRefsetData(false);
-		build.setConfiguration(buildConfiguration);
+		Build build = new Build(new Date(), "centerKey", "productKey", buildConfiguration, null);
 
 		FileInputStream fileInputStream = new FileInputStream(testArchive);
-		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
-				("centerkey", "productkey", build, SecurityContextHolder.getContext());
+		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build, SecurityContextHolder.getContext());
 		verify(productInputFileService, times(1))
 				.putSourceFile(eq(TERMINOLOGY_SERVER), eq("centerkey"), eq("productkey"), eq("buildId"),
 						argThat(new InputStreamMatcher(fileInputStream)), eq(INPUT_SOURCE_TEST_DATA_ZIP), eq(testArchive.length()));
@@ -97,11 +96,11 @@ public class ProductInputFileGatheringTest {
 	@Ignore
 	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
-		Build build = new Build();
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
 		buildConfiguration.setLoadTermServerData(true);
-		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles
-				("centerkey", "productkey", build, SecurityContextHolder.getContext());
+		Build build = new Build(new Date(), "centerKey", "productKey", buildConfiguration, null);
+
+		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build, SecurityContextHolder.getContext());
 		verify(productInputFileService, times(0)).putSourceFile(anyString(), anyString(), anyString(), anyString(),
 				any(InputStream.class), anyString(), anyLong());
 

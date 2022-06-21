@@ -97,11 +97,10 @@ public class BuildStatusListenerService {
 				product.getBusinessKey(), tracker.getBuildId(), false,
 				false, true, null);
 
-		LOGGER.info("Product: {}, Build: {} for run ID: {}", build.getProduct().getBusinessKey(), build.getId(), runId);
+		LOGGER.info("Product: {}, Build: {} for run ID: {}", build.getProductKey(), build.getId(), runId);
 		final Build.Status buildStatus = resolveBuildStatusWithResultsFromRvf(message, build, product);
 		LOGGER.info("Resolved build status with results from RVF: {}", buildStatus);
 		if (buildStatus != null) {
-			build.setProduct(product);
 			final BuildReport buildReport = getBuildReportFile(build);
 			if (buildReport != null) {
 				build.setBuildReport(buildReport);

@@ -17,7 +17,11 @@ public class TestEntityFactory extends TestEntityGenerator {
 
 	public Build createBuild() {
 		final Product product = createProduct();
-		return new Build(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(), product);
+		return new Build(new GregorianCalendar(2013, 2, 5, 16, 30, 00).getTime(),
+				product.getReleaseCenter().getBusinessKey(),
+				product.getBusinessKey(),
+				product.getBuildConfiguration(),
+				product.getQaTestConfig());
 	}
 
 }

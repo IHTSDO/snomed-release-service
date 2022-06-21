@@ -60,7 +60,7 @@ public class ZipperTest  extends AbstractTest {
 		super.setup();
 		Product product = productDAO.find(1L);
 		Thread.sleep(1000);// Make build unique
-		build = new Build(new Date(), product);
+		build = new Build(new Date(), product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 
 		//We're going to locally copy a manifest file for the test
 		FileHelper fileHelper = new FileHelper(buildBucketName, s3client, new S3ClientHelper(s3client));
