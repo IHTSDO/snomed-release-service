@@ -39,6 +39,7 @@
     "loadExternalRefsetData" : false,
     "loadTermServerData" : false,
     "exportType" : null,
+    "replaceExistingEffectiveTime" : false,
     "customRefsetCompositeKeys" : { },
     "effectiveTime" : null
   },

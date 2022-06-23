@@ -340,6 +340,7 @@ public class IntegrationTestHelper {
 		buildRequest.setLoadTermServerData(false);
 		buildRequest.setBuildName("Test");
 		buildRequest.setEffectiveDate(effectiveDate);
+		buildRequest.setReplaceExistingEffectiveTime(true);
 
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);

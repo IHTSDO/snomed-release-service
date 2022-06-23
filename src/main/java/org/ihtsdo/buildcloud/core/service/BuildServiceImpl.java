@@ -192,6 +192,7 @@ public class BuildServiceImpl implements BuildService {
 					configuration.setExcludedModuleIds(buildRequest.getExcludedModuleIds());
 					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
 					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
+					configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
 				}
 
 				build.setConfiguration(configuration);

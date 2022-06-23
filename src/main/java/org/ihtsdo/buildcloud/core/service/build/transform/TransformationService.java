@@ -372,9 +372,10 @@ public class TransformationService {
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
 		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries, idGenRetryDelaySeconds);
-
-		return new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
+		TransformationFactory transformationFactory = new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, moduleId, RF2Constants.INTERNATIONAL_MODEL_COMPONENT_ID, transformBufferSize);
+		transformationFactory.setReplaceEffectiveTime(build.getConfiguration().isReplaceExistingEffectiveTime());
+		return transformationFactory;
 	}
 	
 	private boolean isPreProcessType(final ComponentType componentType) {

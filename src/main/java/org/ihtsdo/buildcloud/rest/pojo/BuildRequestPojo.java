@@ -16,6 +16,7 @@ public class BuildRequestPojo {
 	private boolean enableTraceabilityValidation;
 	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
+	private boolean replaceExistingEffectiveTime;
 
 	public BuildRequestPojo() {
 	}
@@ -92,6 +93,13 @@ public class BuildRequestPojo {
 		this.maxFailuresExport = maxFailuresExport;
 	}
 
+	public boolean isReplaceExistingEffectiveTime() {
+		return replaceExistingEffectiveTime;
+	}
+
+	public void setReplaceExistingEffectiveTime(boolean replaceExistingEffectiveTime) {
+		this.replaceExistingEffectiveTime = replaceExistingEffectiveTime;
+	}
 
 	@Override
 	public String toString() {
@@ -103,6 +111,7 @@ public class BuildRequestPojo {
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +
+				", replaceExistingEffectiveTime=" + replaceExistingEffectiveTime +
 				'}';
 	}
 }
