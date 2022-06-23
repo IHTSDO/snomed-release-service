@@ -27,6 +27,7 @@ public class TransformationFactory {
 	private Set<String> modelConceptIdsForModuleIdFix;
 	private Map<String, String> existingUuidToSctidMap;
 	private final String namespaceId;
+	private boolean replaceEffectiveTime;
 	enum PARTITION_ID_TYPE {
 		CONCEPT,
 		DESCRIPTION,
@@ -51,7 +52,7 @@ public class TransformationFactory {
 			return getPreProcessDescriptionFileTransformation();
 		} else if (componentType == ComponentType.RELATIONSHIP) {
 			// PreProcess transform is similar to transform using modified UUID (so it's
-			// different from inferred UUIDs) but not doing reconcilliation
+			// different from inferred UUIDs) but not doing reconciliation
 			return getPreProcessStatedRelationshipFileTransformation();
 		} else {
 			return null;
@@ -87,8 +88,15 @@ public class TransformationFactory {
 			default:
 				throw new FileRecognitionException("No transformation available for table type " + tableSchema);
 		}
-
 		return transformation;
+	}
+
+	public void setReplaceEffectiveTime(boolean replaceEffectiveTime) {
+		this.replaceEffectiveTime = replaceEffectiveTime;
+	}
+
+	public boolean isReplaceEffectiveTime() {
+		return this.replaceEffectiveTime;
 	}
 
 	private StreamingFileTransformation getPreProcessConceptFileTransformation() {
@@ -136,7 +144,7 @@ public class TransformationFactory {
 		return newStreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// definitionStatusId
@@ -148,7 +156,7 @@ public class TransformationFactory {
 		return newStreamingFileTransformation()
 				// id transform already done
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
@@ -164,7 +172,7 @@ public class TransformationFactory {
 				// id
 				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.DESCRIPTION), cachedSctidFactory))
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// conceptId
@@ -194,7 +202,7 @@ public class TransformationFactory {
 				// id
 				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP), cachedSctidFactory))
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// sourceId
@@ -234,6 +242,8 @@ public class TransformationFactory {
 		}
 		streamingFileTransformation.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.RELATIONSHIP), cachedSctidFactory));
 		// effectiveTime
+		// SRS no longer classifies during release process and contents must have been classified and versioned.
+		// Therefore it makes sense to keep the effective time if present
 		streamingFileTransformation.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, true));
 		return streamingFileTransformation;
 	}
@@ -254,7 +264,7 @@ public class TransformationFactory {
 				// identifierSchemeId
 				.addTransformation(new SCTIDTransformation(0, 3, getPartionId(namespaceId, PARTITION_ID_TYPE.CONCEPT ), cachedSctidFactory))
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(2, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(4, cachedSctidFactory))
 				// referencedComponentId
@@ -294,7 +304,7 @@ public class TransformationFactory {
 				// id
 				.addTransformation(new UUIDTransformation(0, uuidGenerator))
 				// effectiveTime
-				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, false))
+				.addTransformation(new ReplaceValueLineTransformation(1, effectiveTimeInSnomedFormat, replaceEffectiveTime ? false : true))
 				// moduleId
 				.addTransformation(new SCTIDTransformationFromCache(3, cachedSctidFactory))
 				// refsetId

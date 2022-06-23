@@ -178,12 +178,6 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 		// load input files
 		loadDeltaFilesToInputDirectory(releaseDate);
-
-		BuildRequestPojo buildRequestPojo = new BuildRequestPojo();
-		buildRequestPojo.setLoadTermServerData(false);
-		buildRequestPojo.setLoadExternalRefsetData(false);
-		buildRequestPojo.setEffectiveDate(releaseDate);
-
 		integrationTestHelper.scheduleBuild(buildUrl);
 
 		// wait until the build is completed

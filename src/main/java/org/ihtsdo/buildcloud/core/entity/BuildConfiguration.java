@@ -126,6 +126,9 @@ public class BuildConfiguration {
 	@Transient
 	private String exportType;
 
+	@Transient
+	private boolean replaceExistingEffectiveTime;
+
 	public BuildConfiguration() {
 	}
 
@@ -397,6 +400,14 @@ public class BuildConfiguration {
 		this.exportType = exportType;
 	}
 
+	public boolean isReplaceExistingEffectiveTime() {
+		return this.replaceExistingEffectiveTime;
+	}
+
+	public void setReplaceExistingEffectiveTime(boolean replaceExistingEffectiveTime) {
+		this.replaceExistingEffectiveTime = replaceExistingEffectiveTime;
+	}
+
 	@Override
 	public String toString() {
 		return "BuildConfiguration{" +
@@ -408,6 +419,7 @@ public class BuildConfiguration {
 				", previousPublishedPackage='" + previousPublishedPackage + '\'' +
 				", newRF2InputFiles='" + newRF2InputFiles + '\'' +
 				", justPackage=" + justPackage +
+				", replaceExistingEffectiveTime=" + replaceExistingEffectiveTime +
 				", workbenchDataFixesRequired=" + workbenchDataFixesRequired +
 				", inputFilesFixesRequired=" + inputFilesFixesRequired +
 				", createLegacyIds=" + createLegacyIds +
