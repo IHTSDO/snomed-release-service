@@ -65,7 +65,7 @@ public class BuildController {
 	@Autowired
 	private ReleaseBuildManager releaseBuildManager;
 
-	private static final String[] BUILD_LINKS = {"configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
+	private static final String[] BUILD_LINKS = {"manifest", "configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
 
 	@PostMapping(value = "/release", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -192,6 +192,46 @@ public class BuildController {
 
 		final boolean currentResource = true;
 		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
+	}
+
+	@GetMapping(value = "/builds/{buildId}/manifest", produces = "application/json")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@ResponseBody
+	@ApiOperation( value = "Returns a manifest file name",
+			notes = "Returns a manifest file name for given product key, release center key, and build id" )
+	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey,
+										   @PathVariable final String productKey,
+										   @PathVariable final String buildId,
+										   final HttpServletRequest request) throws ResourceNotFoundException {
+		String manifestFileName = buildService.getManifestFileName(releaseCenterKey, productKey, buildId);
+		Map<String, String> objectHashMap = new HashMap<>();
+		if (manifestFileName != null) {
+			objectHashMap.put("filename", manifestFileName);
+			return hypermediaGenerator.getEntityHypermedia(objectHashMap, true, request, "file");
+		} else {
+			return hypermediaGenerator.getEntityHypermedia(new HashMap<>(), true, request);
+		}
+	}
+
+	@GetMapping(value = "/builds/{buildId}/manifest/file", produces = "application/xml")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@ApiOperation( value = "Returns a specified manifest file",
+			notes = "Returns the content of the manifest file as xml" )
+	public void getManifestFile(@PathVariable final String releaseCenterKey,
+								@PathVariable final String productKey,
+								@PathVariable final String buildId,
+								final HttpServletResponse response) throws ResourceNotFoundException {
+		try (InputStream fileStream = buildService.getManifestStream(releaseCenterKey, productKey, buildId)) {
+			if (fileStream != null) {
+				response.setContentType("application/xml");
+				StreamUtils.copy(fileStream, response.getOutputStream());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		} catch (IOException e) {
+			logger.error("Failed to stream manifest file from storage.", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@GetMapping(value = "/builds/{buildId}/configuration", produces = "application/json")

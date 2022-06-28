@@ -56,7 +56,7 @@ public class RF2ClassificationService {
 			" Please see detailed failures via the classificationResultsOutputFiles_url link listed.";
 
 	public File classify(Build build, File rf2DeltaFile) throws BusinessServiceException {
-		LOGGER.info("Run classification for product {} and build id {}", build.getProduct(), build.getId());
+		LOGGER.info("Run classification for product {} and build id {}", build.getProductKey(), build.getId());
 		if (!rf2DeltaFile.exists() || !rf2DeltaFile.canRead()) {
 			throw new IllegalArgumentException("File doesn't exist " + rf2DeltaFile.getAbsolutePath());
 		}
@@ -71,7 +71,7 @@ public class RF2ClassificationService {
 					LOGGER.info("The product is configured as an edition without dependency package." +
 							" Only previous package {} will be used in classification", previousPublished);
 				} else {
-					throw new BusinessServiceException(String.format("International dependency release can't be null for extension release build %s", build.getProduct()));
+					throw new BusinessServiceException(String.format("International dependency release can't be null for extension release build %s", build.getProductKey()));
 				}
 			}
 		}

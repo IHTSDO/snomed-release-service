@@ -35,7 +35,6 @@ public class Rf2FileExportRunner {
 
 	private static final String HYPHEN = "-";
 	private final Build build;
-	private final ReleaseCenter releaseCenter;
 	private final BuildDAO buildDao;
 	private final int maxRetries;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Rf2FileExportRunner.class);
@@ -44,7 +43,6 @@ public class Rf2FileExportRunner {
 	public Rf2FileExportRunner(final Build build, final BuildDAO dao, final int maxRetries) {
 		this.build = build;
 		configuration = build.getConfiguration();
-		releaseCenter = build.getProduct().getReleaseCenter();
 		buildDao = dao;
 		this.maxRetries = maxRetries;
 	}
@@ -264,11 +262,11 @@ public class Rf2FileExportRunner {
 	private InputStream getEquivalentInternationalFull(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
 		String equivalentFullFile = getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile).replace(DELTA, FULL);
 		LOGGER.info("Equivalent full file {}", equivalentFullFile);
-		return buildDao.getPublishedFileArchiveEntry(INT_RELEASE_CENTER, equivalentFullFile, extensionConfig.getDependencyRelease());
+		return buildDao.getPublishedFileArchiveEntry(INT_RELEASE_CENTER.getBusinessKey(), equivalentFullFile, extensionConfig.getDependencyRelease());
 	}
 
 	private InputStream getEquivalentInternationalDelta(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
-		return buildDao.getPublishedFileArchiveEntry(INT_RELEASE_CENTER, getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile), extensionConfig.getDependencyRelease());
+		return buildDao.getPublishedFileArchiveEntry(INT_RELEASE_CENTER.getBusinessKey(), getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile), extensionConfig.getDependencyRelease());
 	}
 
 	private String getEquivalentInternationalFile(ExtensionConfig extensionConfig, String transformedDeltaDataFile) {
@@ -290,7 +288,7 @@ public class Rf2FileExportRunner {
 	}
 
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
-		final InputStream previousFileStream = buildDao.getPublishedFileArchiveEntry(releaseCenter, currentFileName, previousPublishedPackage);
+		final InputStream previousFileStream = buildDao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(), currentFileName, previousPublishedPackage);
 		if (previousFileStream == null) {
 			throw new FileNotFoundException("No equivalent of:  "
 					+ currentFileName

@@ -24,7 +24,7 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Page<Product> findAll(String releaseCenterBusinessKey, Set<FilterOption> filterOptions, Pageable pageable) {
+	public Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable) {
 		String filter = "product.visibility = 'Y' ";
 		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
 			if (!filter.isEmpty()) {
@@ -38,7 +38,7 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 			}
 			filter += " product.isLegacyProduct = 'N' ";
 		}
-		if (releaseCenterBusinessKey != null) {
+		if (releaseCenterKey != null) {
 			if (!filter.isEmpty()) {
 				filter += " and ";
 			}
@@ -56,9 +56,9 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 						fromClause +
 						"where " +
 						filter);
-		if (releaseCenterBusinessKey != null) {
-			query.setParameter("releaseCenterBusinessKey", releaseCenterBusinessKey);
-			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterBusinessKey);
+		if (releaseCenterKey != null) {
+			query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
+			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 		}
 
 		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());

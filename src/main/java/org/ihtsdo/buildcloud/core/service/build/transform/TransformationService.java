@@ -111,7 +111,7 @@ public class TransformationService {
 				if (!configuration.isFirstTimeRelease()) {
 					final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 					try {
-						final InputStream statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						final InputStream statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
 						if (statedRelationshipSnapshotStream != null) {
 							final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -305,7 +305,7 @@ public class TransformationService {
 			if (build.getConfiguration().isBetaRelease()) {
 				conceptSnapshot = conceptSnapshot.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
 			}
-			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getProduct().getReleaseCenter(), 
+			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(),
 					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
 				if (prevousSnapshot == null) {
 					throw new IOException("No equivalent file found in the previous published release:" + conceptSnapshot);

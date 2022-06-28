@@ -1,7 +1,9 @@
 package org.ihtsdo.buildcloud.core.dao;
 
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.PostConditionCheckReport;
+import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
@@ -18,13 +20,13 @@ public interface BuildDAO {
 
 	void save(Build build) throws IOException;
 
-	List<Build> findAllDesc(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
+	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
-	BuildPage<Build> findAllDescPage(Product product, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest);
+	BuildPage<Build> findAllDescPage(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest);
 
-	Build find(Product product, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
+	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
-	void delete(Product product, String buildId);
+	void delete(String releaseCenterKey, String productKey, String buildId);
 
 	void loadConfiguration(Build build) throws IOException;
 
@@ -58,12 +60,9 @@ public interface BuildDAO {
 
 	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
-	String putOutputFile(Build build, File file)
-			throws IOException;
+	String putOutputFile(Build build, File file) throws IOException;
 
 	String putInputFile(Build build, File file, final boolean calcMD5) throws IOException;
-
-	void putTransformedFile(Build build, File file) throws IOException;
 
 	InputStream getManifestStream(Build build);
 
@@ -71,13 +70,9 @@ public interface BuildDAO {
 
 	List<String> listOutputFilePaths(Build build);
 
-	List<String> listLogFilePaths(Build build);
-
 	List<String> listBuildLogFilePaths(Build build);
 
 	InputStream getLogFileStream(Build build, String logFileName);
-
-	InputStream getBuildLogFileStream(Build build, String logFileName);
 
 	String getTelemetryBuildLogFilePath(Build build);
 
@@ -87,7 +82,7 @@ public interface BuildDAO {
 
 	InputStream getTransformedFileAsInputStream(Build build, String relativeFilePath);
 
-	InputStream getPublishedFileArchiveEntry(ReleaseCenter releaseCenter, String targetFileName, String previousPublishedPackage) throws IOException;
+	InputStream getPublishedFileArchiveEntry(String releaseCenterKey, String targetFileName, String previousPublishedPackage) throws IOException;
 
 	void persistReport(Build build);
 
@@ -131,17 +126,17 @@ public interface BuildDAO {
 
 	void updateVisibility(Build build, boolean visibility);
 
-	void putManifestFile(Product product, String buildId, InputStream inputStream);
+	void putManifestFile(Build build, InputStream inputStream);
 
-	void saveBuildComparisonReport(Product product, String compareId, BuildComparisonReport report) throws IOException;
+	void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException;
 
-	List<String> listBuildComparisonReportPaths(Product product);
+	List<String> listBuildComparisonReportPaths(String releaseCenterKey, String productKey);
 
-	BuildComparisonReport getBuildComparisonReport(Product product, String compareId) throws IOException;
+	BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException;
 
-	void deleteBuildComparisonReport(Product product, String compareId);
+	void deleteBuildComparisonReport(String releaseCenterKey, String productKey, String compareId);
 
-	void saveFileComparisonReport(Product product, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
+	void saveFileComparisonReport(String releaseCenterKey, String productKey, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
 
-	FileDiffReport getFileComparisonReport(Product product, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
+	FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
 }

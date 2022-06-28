@@ -91,7 +91,7 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 
 	protected void createNewBuild(Boolean isBeta) throws IOException {
 		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, buildIdx++).getTime();
-		build = new Build(creationTime, product);
+		build = new Build(creationTime, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		if (Boolean.TRUE.equals(isBeta)) {
 			build.getConfiguration().setBetaRelease(true);
 		}
@@ -131,7 +131,7 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 			createNewBuild(isBetaRelease);
 			final String testFilePath = getClass().getResource(filename).getFile();
 			final File testManifest = new File(testFilePath);
-			inputFileDAO.putManifestFile(product, build.getId(), new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
+			inputFileDAO.putManifestFile(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), new FileInputStream(testManifest), testManifest.getName(), testManifest.length());
 		}
 	}
 

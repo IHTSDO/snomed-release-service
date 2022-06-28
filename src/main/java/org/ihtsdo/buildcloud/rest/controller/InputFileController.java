@@ -62,9 +62,8 @@ public class InputFileController {
 		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
 	@ResponseBody
 	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
-			@PathVariable final String productKey, @RequestParam(value = "file") final MultipartFile file)
-			throws IOException, ResourceNotFoundException {
-
+													 @PathVariable final String productKey,
+													 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 		inputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		InputStream manifestInputStream = inputFileService.getManifestStream(releaseCenterKey, productKey);
 		String validationStatus = ManifestValidator.validate(manifestInputStream);
@@ -80,8 +79,9 @@ public class InputFileController {
 	@ApiOperation( value = "Returns a manifest file name",
 		notes = "Returns a manifest file name for given release center and product" )
 	@ResponseBody
-	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			final HttpServletRequest request) throws ResourceNotFoundException {
+	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey,
+										   @PathVariable final String productKey,
+										   final HttpServletRequest request) throws ResourceNotFoundException {
 		String manifestFileName = inputFileService.getManifestFileName(releaseCenterKey, productKey);
 		Map<String, String> objectHashMap = new HashMap<>();
 		if (manifestFileName != null) {
@@ -96,9 +96,9 @@ public class InputFileController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a specified manifest file",
 		notes = "Returns the content of the manifest file as xml" )
-	public void getManifestFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			final HttpServletResponse response) throws ResourceNotFoundException {
-
+	public void getManifestFile(@PathVariable final String releaseCenterKey,
+								@PathVariable final String productKey,
+								final HttpServletResponse response) throws ResourceNotFoundException {
 		try (InputStream fileStream = inputFileService.getManifestStream(releaseCenterKey, productKey)) {
 			if (fileStream != null) {
 				response.setContentType("application/xml");
@@ -117,8 +117,10 @@ public class InputFileController {
 	@ApiOperation( value = "Store or Replace a file",
 		notes = "Stores or replaces a file with its original name against the package specified in the URL" )
 	@ResponseBody
-	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
-			@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey,
+													@PathVariable final String productKey,
+													@PathVariable final String buildId,
+													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 		String inputFileName = file.getOriginalFilename();
 		LOGGER.debug("uploading input file:" + inputFileName);
 		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
@@ -135,7 +137,7 @@ public class InputFileController {
 			inputFileName = inputFileName.replace("der2", "rel2").replace("sct2", "rel2");
 		}
 
-		inputFileService.putInputFile(releaseCenterKey, product, buildId, file.getInputStream(),inputFileName,file.getSize());
+		inputFileService.putInputFile(releaseCenterKey, productKey, buildId, file.getInputStream(),inputFileName,file.getSize());
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}
 
@@ -144,8 +146,11 @@ public class InputFileController {
 	@ApiOperation( value = "Store or Replace a file in specified source",
 			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
 	@ResponseBody
-	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,@PathVariable String buildId, @PathVariable String source,
-													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey,
+												 @PathVariable final String productKey,
+												 @PathVariable String buildId,
+												 @PathVariable String source,
+												 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
 		if (file != null) {
 			String inputFileName = file.getOriginalFilename();
 			LOGGER.debug("uploading source file:" + inputFileName);
@@ -165,8 +170,10 @@ public class InputFileController {
 	@ApiOperation( value = "Returns a list of file names in source directories",
 			notes = "Returns a list of file names for the package specified in the URL" )
 	@ResponseBody
-	public List<Map<String, Object>> listSourceFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
-													final HttpServletRequest request) throws ResourceNotFoundException {
+	public List<Map<String, Object>> listSourceFiles(@PathVariable final String releaseCenterKey,
+													 @PathVariable final String productKey,
+													 @PathVariable final String buildId,
+													 final HttpServletRequest request) throws ResourceNotFoundException {
 		List<String> filePaths = inputFileService.listSourceFilePaths(releaseCenterKey, productKey, buildId);
 		List<Map<String, String>> files = new ArrayList<>();
 		for (String filePath : filePaths) {
@@ -181,11 +188,13 @@ public class InputFileController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ApiOperation( value = "Returns a specified file",
 		notes = "Returns the content of the specified file." )
-	public void getSourceFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String source, @PathVariable final String buildId, @PathVariable final String sourceFileName,
-			final HttpServletResponse response) throws ResourceNotFoundException {
-
-		try (InputStream fileStream = inputFileService.getSourceFileStream(releaseCenterKey, productKey, source, sourceFileName)) {
+	public void getSourceFile(@PathVariable final String releaseCenterKey,
+							  @PathVariable final String productKey,
+							  @PathVariable final String buildId,
+							  @PathVariable final String source,
+							  @PathVariable final String sourceFileName,
+							  final HttpServletResponse response) throws ResourceNotFoundException {
+		try (InputStream fileStream = inputFileService.getSourceFileStream(releaseCenterKey, productKey, buildId, source, sourceFileName)) {
 			if (fileStream != null) {
 				StreamUtils.copy(fileStream, response.getOutputStream());
 			} else {
@@ -197,12 +206,13 @@ public class InputFileController {
 		}
 	}
 
-
 	@PostMapping(value = "/builds/{buildId}/inputfiles/prepare")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
 			notes = "Create or replace files in input file directories")
-	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
+	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey,
+												   @PathVariable final String productKey,
+												   @PathVariable final String buildId,
 												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
 												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException {
 		// try avoid to throw exceptions so that build status
@@ -210,16 +220,21 @@ public class InputFileController {
 		if (build == null) {
 			throw new ResourceNotFoundException(String.format("Unable to find build id %s for productKey %s", buildId, productKey));
 		}
-		SourceFileProcessingReport report = inputFileService.prepareInputFiles(releaseCenterKey, productKey, build, copyFilesInManifest != null ? copyFilesInManifest : true);
+		inputFileService.prepareInputFiles(build, copyFilesInManifest != null ? copyFilesInManifest : true);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
 	@PostMapping(value = "/builds/{buildId}/inputfiles/gather")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
-	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId) throws BusinessServiceException, IOException {
-		Build build  = buildService.find(releaseCenterKey, productKey, buildId, true, true, false , false);
-		inputFileService.gatherSourceFiles(releaseCenterKey, productKey, build, SecurityContextHolder.getContext());
+	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey,
+												   @PathVariable final String productKey,
+												   @PathVariable final String buildId) throws BusinessServiceException, IOException {
+		Build build  = buildService.find(releaseCenterKey, productKey, buildId, true, true, false, false);
+		if (build == null) {
+			throw new ResourceNotFoundException(String.format("Unable to find build id %s for productKey %s", buildId, productKey));
+		}
+		inputFileService.gatherSourceFiles(build, SecurityContextHolder.getContext());
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 }

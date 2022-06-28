@@ -95,7 +95,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 			buildConfiguration = new BuildConfiguration();
 			product.setBuildConfiguration(buildConfiguration);
 		}
-		build = new Build(date, product);
+		build = new Build(date, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		final SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd");
 		try {
 			buildConfiguration.setEffectiveTime(formater.parse(RELEASE_DATE));
