@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 
-import javax.persistence.Transient;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -17,6 +17,7 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.PENDING;
  * This entity is stored via S3, not Hibernate.
  */
 @JsonPropertyOrder({"id", "name"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Build {
 
 	private String creationTime;
@@ -31,14 +32,13 @@ public class Build {
 
 	private BuildConfiguration configuration;
 
-	private String productBusinessKey;
+	private String releaseCenterKey;
+
+	private String productKey;
 
 	private List<PreConditionCheckReport> preConditionCheckReports;
 
 	private BuildReport buildReport;
-
-	@Transient
-	private Product product;
 
 	private QATestConfig qaTestConfig;
 
@@ -85,20 +85,13 @@ public class Build {
 
 	}
 
-	private Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {
+	private Build(final String creationTime, final String releaseCenterKey, final String productKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig, final String statusString) {
 		this.buildReport = new BuildReport();
-		this.productBusinessKey = productBusinessKey;
+		this.releaseCenterKey = releaseCenterKey;
+		this.productKey = productKey;
 		this.creationTime = creationTime;
 		this.configuration = configuration;
 		this.qaTestConfig = qaTestConfig;
-	}
-
-	public Build(final String creationTime, final String productBusinessKey, final String statusString) {
-		this(creationTime, productBusinessKey, null, null, statusString);
-	}
-
-	public Build(final String creationTime, final String productBusinessKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig, final String statusString) {
-		this(creationTime, productBusinessKey, configuration, qaTestConfig);
 		try {
 			this.status = Status.valueOf(statusString);
 		} catch (final IllegalArgumentException e) {
@@ -106,9 +99,12 @@ public class Build {
 		}
 	}
 
-	public Build(final Date creationTime, final Product product) {
-		this(EntityHelper.formatAsIsoDateTime(creationTime), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig(), PENDING.name());
-		this.product = product;
+	public Build(final Date creationTime, final String releaseCenterKey, final String productKey, final BuildConfiguration configuration, final QATestConfig qaTestConfig) {
+		this(EntityHelper.formatAsIsoDateTime(creationTime), releaseCenterKey, productKey, configuration, qaTestConfig, PENDING.name());
+	}
+
+	public Build(final String creationTime, final String releaseCenterKey, final String productKey, final String statusString) {
+		this(creationTime, releaseCenterKey, productKey, null, null, statusString);
 	}
 
 	@JsonProperty(value = "id")
@@ -118,6 +114,14 @@ public class Build {
 
 	public String getCreationTime() {
 		return creationTime;
+	}
+
+	public String getReleaseCenterKey() {
+		return releaseCenterKey;
+	}
+
+	public String getProductKey() {
+		return productKey;
 	}
 
 	public Status getStatus() {
@@ -137,7 +141,7 @@ public class Build {
 	}
 
 	public String getUniqueId() {
-		return productBusinessKey + "|" + getId();
+		return productKey + "|" + getId();
 	}
 
 	public BuildConfiguration getConfiguration() {
@@ -162,14 +166,6 @@ public class Build {
 
 	public void setBuildReport(final BuildReport buildReport) {
 		this.buildReport = buildReport;
-	}
-
-	public Product getProduct() {
-		return product;
-	}
-
-	public void setProduct(final Product product) {
-		this.product = product;
 	}
 
 	public QATestConfig getQaTestConfig() {
@@ -205,10 +201,10 @@ public class Build {
 				", buildUser='" + buildUser + '\'' +
 				", rvfURL='" + rvfURL + '\'' +
 				", configuration=" + configuration +
-				", productBusinessKey='" + productBusinessKey + '\'' +
+				", releaseCenterKey='" + releaseCenterKey + '\'' +
+				", productKey='" + productKey + '\'' +
 				", preConditionCheckReports=" + preConditionCheckReports +
 				", buildReport=" + buildReport +
-				", product=" + product +
 				", qaTestConfig=" + qaTestConfig +
 				'}';
 	}

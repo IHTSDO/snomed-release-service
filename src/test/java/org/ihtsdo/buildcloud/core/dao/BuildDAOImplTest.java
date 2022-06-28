@@ -42,7 +42,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		super.setup();
 		product = productDAO.find(1L);
 		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
-		build = new Build(creationTime, product);
+		build = new Build(creationTime, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build);
 		buildId = build.getId();
 	}
@@ -50,13 +50,13 @@ public class BuildDAOImplTest extends AbstractTest {
 	@Test
 	public void testFind() {
 		// saved build
-		Build foundBuild = buildDAO.find(product, buildId, null, null, null, null);
+		Build foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), buildId, null, null, null, null);
 		Assert.assertNotNull(foundBuild);
 		Assert.assertEquals("2014-02-04T10:30:01", foundBuild.getCreationTime());
 		Assert.assertEquals(Build.Status.PENDING, foundBuild.getStatus());
 
 		// no existing build id
-		foundBuild = buildDAO.find(product, "2014-02-04T10:30:02", null, null, null, null);
+		foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "2014-02-04T10:30:02", null, null, null, null);
 		Assert.assertNull(foundBuild);
 	}
 	
@@ -92,7 +92,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10));
 
 		// then
 		assertEquals(5, result.getTotalElements());
@@ -107,7 +107,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		Date build4 = createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product, null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(3, 1));
+		BuildPage<Build> result = buildDAO.findAllDescPage(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(3, 1));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -119,7 +119,7 @@ public class BuildDAOImplTest extends AbstractTest {
 	private Date createBuild() throws InterruptedException, IOException {
 		Thread.sleep(1000); // Sleep for different time
 		Date date = new Date();
-		Build build4 = new Build(date, product);
+		Build build4 = new Build(date, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build4);
 
 		return date;

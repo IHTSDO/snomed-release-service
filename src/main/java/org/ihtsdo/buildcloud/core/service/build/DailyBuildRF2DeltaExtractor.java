@@ -90,7 +90,7 @@ public class DailyBuildRF2DeltaExtractor {
 				codeSystem = splits[1];
 			}
 		} else {
-			String businessKey = build.getProduct().getReleaseCenter().getBusinessKey();
+			String businessKey = build.getReleaseCenterKey();
 			if (!RF2Constants.INT_RELEASE_CENTER.getBusinessKey().equalsIgnoreCase(businessKey)) {
 				codeSystem += "-" + businessKey;
 			}

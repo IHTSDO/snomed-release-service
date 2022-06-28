@@ -3,8 +3,6 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.apache.commons.codec.CharEncoding;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -41,8 +39,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public InputStream getManifestStream(final Product product) {
-		final String manifestPath = getManifestPath(product);
+	public InputStream getManifestStream(String releaseCenterKey, String productKey) {
+		final String manifestPath = getManifestPath(releaseCenterKey, productKey);
 		if (manifestPath != null) {
 			return fileHelper.getFileStream(manifestPath);
 		} else {
@@ -51,8 +49,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public InputStream getManifestStream(final Product product, String buildId) {
-		final String manifestPath = getManifestPath(product, buildId);
+	public InputStream getManifestStream(String releaseCenterKey, String productKey, String buildId) {
+		final String manifestPath = getManifestPath(releaseCenterKey, productKey, buildId);
 		if (manifestPath != null) {
 			return fileHelper.getFileStream(manifestPath);
 		} else {
@@ -61,8 +59,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public String getManifestPath(final Product product) {
-		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product);
+	public String getManifestPath(final String releaseCenterKey, final String productKey) {
+		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(releaseCenterKey, productKey);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
 		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
 		if (xmlFiles.isEmpty()) {
@@ -74,8 +72,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 		return manifestDirectoryPath + xmlFiles.get(0);
 	}
 
-	public String getManifestPath(final Product product, String buildId) {
-		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(product, buildId);
+	public String getManifestPath(final String releaseCenterKey, final String productKey, final String buildId) {
+		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
 		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
 		if (xmlFiles.isEmpty()) {
@@ -88,23 +86,23 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(final Product product, final InputStream inputStream, final String originalFilename, final long fileSize) {
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) {
 		// Fist delete any existing manifest files
-		deleteManifest(product);
+		deleteManifest(releaseCenterKey, productKey);
 		// Put new manifest file
-		final String filePath = getKnownManifestPath(product, originalFilename);
+		final String filePath = getKnownManifestPath(releaseCenterKey, productKey, originalFilename);
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
 	@Override
-	public void putManifestFile(final Product product, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) {
-		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(product, buildId) + "manifest.xml";
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) {
+		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId) + "manifest.xml";
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
 	@Override
-	public void deleteManifest(final Product product) {
-		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(product);
+	public void deleteManifest(final String releaseCenterKey, final String productKey) {
+		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(releaseCenterKey, productKey);
 		final List<String> files = fileHelper.listFiles(manifestDirectoryPath);
 		for (final String file : files) {
 			fileHelper.deleteFile(manifestDirectoryPath + file);
@@ -112,22 +110,22 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public String getKnownManifestPath(final Product product, final String filename) {
-		return s3PathHelper.getProductManifestDirectoryPath(product) + filename;
+	public String getKnownManifestPath(final String releaseCenterKey, final String productKey, final String filename) {
+		return s3PathHelper.getProductManifestDirectoryPath(releaseCenterKey, productKey) + filename;
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(final Product product, final String buildId) {
-		String sourcesPath = s3PathHelper.getBuildSourcesPath(product, buildId).toString();
+	public List<String> listRelativeSourceFilePaths(final String releaseCenterKey, final String productKey, final String buildId) {
+		String sourcesPath = s3PathHelper.getBuildSourcesPath(releaseCenterKey, productKey, buildId).toString();
 		return fileHelper.listFiles(sourcesPath);
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(final Product product, String buildId, final Set<String> subDirectories) {
+	public List<String> listRelativeSourceFilePaths(final String releaseCenterKey, final String productKey, final String buildId, final Set<String> subDirectories) {
 		List<String> filesPath = new ArrayList<>();
 		if(subDirectories != null && !subDirectories.isEmpty()) {
 			for (String subDirectory : subDirectories) {
-				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(product, buildId, subDirectory).toString();
+				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(releaseCenterKey, productKey, buildId, subDirectory).toString();
 				filesPath.addAll(fileHelper.listFiles(sourcePath));
 			}
 		}
@@ -135,30 +133,14 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public List<String> listRelativeSourceFilePaths(Product product, String buildId, String subDirectory) {
-		List<String> filesPath = new ArrayList<>();
-		String sourcePath = s3PathHelper.getProductSourceSubDirectoryPath(product, subDirectory).toString();
-		filesPath.addAll(fileHelper.listFiles(sourcePath));
-		return filesPath;
-	}
-
-	@Override
-	public void persistInputPrepareReport(final Build build, final SourceFileProcessingReport fileProcessingReport) throws IOException {
-		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(build);
+	public void persistInputPrepareReport(final String releaseCenterKey, final String productKey, final String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
+		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId);
 		fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
 	}
 
 	@Override
-	public void persistSourcesGatherReport(Build build, InputGatherReport inputGatherReport) throws IOException {
-
-		String reportPath = s3PathHelper.getBuildInputGatherReportPath(build);
-
+	public void persistSourcesGatherReport(final String releaseCenterKey, final String productKey, final String buildId, InputGatherReport inputGatherReport) throws IOException {
+		String reportPath = s3PathHelper.getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId);
 		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
-	}
-
-	@Override
-	public InputStream getInputGatherReport(Product product, String buildId) {
-		String reportPath = s3PathHelper.getInputGatherReportLogPath(product);
-		return fileHelper.getFileStream(reportPath);
 	}
 }
