@@ -227,16 +227,12 @@ public class PublishServiceImpl implements PublishService {
 							.findAny()
 							.orElse(null);
 					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
-						Authentication backupAuthentication = SecurityContextHolder.getContext().getAuthentication();
 						try {
 							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-							loginToIMSAndSetSecurityContext();
 							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 						} catch (Exception e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
 							throw new BusinessServiceException("Failed to update Code System Version Package", e);
-						} finally {
-							SecurityContextHolder.getContext().setAuthentication(backupAuthentication);
 						}
 					}
 				}
@@ -248,13 +244,6 @@ public class PublishServiceImpl implements PublishService {
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
-	}
-
-	private void loginToIMSAndSetSecurityContext() throws URISyntaxException, IOException {
-		IMSRestClient imsClient = new IMSRestClient(imsUrl);
-		String token = imsClient.loginForceNewSession(snowstormAdminUsername, snowstormAdminPassword);
-		PreAuthenticatedAuthenticationToken decoratedAuthentication = new PreAuthenticatedAuthenticationToken(snowstormAdminUsername, token);
-		SecurityContextHolder.getContext().setAuthentication(decoratedAuthentication);
 	}
 
 	@Override

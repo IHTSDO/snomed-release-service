@@ -16,6 +16,7 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
+import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsGlobalAdminOrGlobalReleaseManager;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -396,7 +397,7 @@ public class BuildController {
 	}
 
 	@PostMapping(value = "/builds/{buildId}/publish")
-	@IsAuthenticatedAsAdminOrReleaseManager
+	@IsAuthenticatedAsGlobalAdminOrGlobalReleaseManager
 	@ResponseBody
 	@ApiOperation( value = "Publish a release for given build id",
 	notes = "Publish release for given build id to make it available in repository for wider usages" )
