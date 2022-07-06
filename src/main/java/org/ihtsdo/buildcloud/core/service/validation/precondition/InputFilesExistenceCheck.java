@@ -35,7 +35,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class InputFilesExistenceCheck extends PreconditionCheck {
 
-	private static final String MISSING_STATED_RELATIONSHIP_FILE = "No stated relationship file is found in the input file directory.";
 	private static final String MISSING_RELATIONSHIP_FILE = "No relationship file is found in the input file directory.";
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 	private static final String RELATIONSHIP = "_Relationship_";
@@ -82,32 +81,19 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				fatalError(errorMsgBuilder.toString());
 				return;
 			}
-			//check stated relationship delta file present
+			//check inferred relationship delta file present
 			if (!justPackage) {
-				boolean isStatedRelationshipFilePresent = false;
 				boolean isRelationshipFilePresent = false;
 				for ( final String name : inputfilesList) {
-					if (name.contains(STATED_RELATIONSHIP)) {
-						isStatedRelationshipFilePresent = true;
-					}
 					if (name.contains(RELATIONSHIP)) {
 						isRelationshipFilePresent = true;
 					}
 				}
-				if (!isStatedRelationshipFilePresent || !isRelationshipFilePresent) {
-					if (!isStatedRelationshipFilePresent) {
-						if (errorMsgBuilder.length() > 0 ) {
-							errorMsgBuilder.append(" ");
-						}
-						errorMsgBuilder.append(MISSING_STATED_RELATIONSHIP_FILE);
+				if (!isRelationshipFilePresent) {
+					if (errorMsgBuilder.length() > 0 ) {
+						errorMsgBuilder.append(" ");
 					}
-
-					if (!isRelationshipFilePresent) {
-						if (errorMsgBuilder.length() > 0 ) {
-							errorMsgBuilder.append(" ");
-						}
-						errorMsgBuilder.append(MISSING_RELATIONSHIP_FILE);
-					}
+					errorMsgBuilder.append(MISSING_RELATIONSHIP_FILE);
 				}
 			}
 			if (errorMsgBuilder.length() > 0) {
@@ -115,7 +101,6 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				fail(errorMsgBuilder.toString());
 				isFailed = true;
 			}
-
 		} catch (JAXBException | ResourceNotFoundException | IOException e) {
 			fatalError("Failed to parse manifest xml file." + e.getMessage());
 			isFailed = true;
@@ -123,7 +108,6 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 		if (!isFailed) {
 			pass();
 		}
-
 	}
 
 	private Set<String> resolveExpectedFilesByManifest(final boolean isBeta, final boolean isJustPackaging, final ListingType listingType) {
@@ -147,14 +131,14 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 				//ignore the release file
 				continue;
 			}
+			if (fileName.contains(STATED_RELATIONSHIP) || fileName.contains(RELATIONSHIP) ) {
+				continue;
+			}
 			if (!isJustPackaging) {
 				if (isBeta && fileNamePrefix.startsWith(BuildConfiguration.BETA_PREFIX)) {
 					fileNamePrefix = fileNamePrefix.substring(1);
 				}
 				if (RF2Constants.DER2.equals(fileNamePrefix) || RF2Constants.SCT2.equals(fileNamePrefix)) {
-					if (fileName.contains(RF2Constants.SCT2 + RELATIONSHIP)) {
-						fileName = fileName.replace(RF2Constants.SCT2 + RELATIONSHIP, RF2Constants.SCT2 + STATED_RELATIONSHIP);
-					}
 					fileName = fileName.replace(fileNamePrefix, RF2Constants.INPUT_FILE_PREFIX);
 					final String token3 = splits[2];
 					if (token3.contains(RF2Constants.FULL)) {
@@ -164,7 +148,7 @@ public class InputFilesExistenceCheck extends PreconditionCheck {
 					}
 				} 
 			}
-		filesExpected.add(fileName);
+			filesExpected.add(fileName);
 		}
 		return filesExpected;
 	}
