@@ -1106,6 +1106,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setIncludedModuleId(includedModuleId);
 			request.setResponseQueue(queue);
 			request.setBranchPath(buildConfiguration.getBranchPath());
+			request.setExcludedRefsetDescriptorMembers(buildConfiguration.getExcludeRefsetDescriptorMembers());
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
 		} catch (IOException | BusinessServiceException | ConfigurationException e) {
