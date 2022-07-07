@@ -24,6 +24,8 @@ public class ValidationRequest {
 
 	private String branchPath;
 
+	private String excludedRefsetDescriptorMembers;
+
 	public ValidationRequest(String runId) {
 		this.runId = runId;
 	}
@@ -110,5 +112,13 @@ public class ValidationRequest {
 
 	public String getBranchPath() {
 		return branchPath;
+	}
+
+	public void setExcludedRefsetDescriptorMembers(String excludedRefsetDescriptorMembers) {
+		this.excludedRefsetDescriptorMembers = excludedRefsetDescriptorMembers;
+	}
+
+	public String getExcludedRefsetDescriptorMembers() {
+		return excludedRefsetDescriptorMembers;
 	}
 }
