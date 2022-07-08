@@ -2,8 +2,10 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
 import org.ihtsdo.buildcloud.core.service.ProductService;
@@ -23,10 +25,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
@@ -53,6 +52,8 @@ public class ProductController {
 												 @RequestParam(required = false) boolean includedLatestBuildStatusAndTags,
 												 @RequestParam(defaultValue = "0") Integer pageNumber,
 												 @RequestParam(defaultValue = "10") Integer pageSize,
+												 @RequestParam(required = false) String sortField,
+												 @RequestParam(required = false) String sortDirection,
 												 HttpServletRequest request) {
 		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
 		if (includeRemoved) {
@@ -62,11 +63,13 @@ public class ProductController {
 			filterOptions.add(FilterOption.INCLUDE_LEGACY);
 		}
 
-
-		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, PageRequest.of(pageNumber, pageSize), includedLatestBuildStatusAndTags);
+		PageRequest pageRequest = PageRequestHelper.createPageRequest(pageNumber, pageSize,
+				StringUtils.isEmpty(sortField) ? null : Collections.singletonList(sortField),
+				StringUtils.isEmpty(sortDirection) ? null : Collections.singletonList(sortDirection));
+		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, pageRequest, includedLatestBuildStatusAndTags);
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
 
-		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), page.getTotalElements());
+		return new PageImpl<>(result, pageRequest, page.getTotalElements());
 	}
 
 	@GetMapping( value = "/{productKey}")

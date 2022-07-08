@@ -6,7 +6,9 @@ import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Set;
 
@@ -45,24 +47,32 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 			filter += " releaseCenter.businessKey = :releaseCenterBusinessKey ";
 		}
 		String fromClause = "from Product product join product.releaseCenter releaseCenter ";
-		Query query = getCurrentSession().createQuery(
-				"select product " +
-						fromClause +
-						"where " +
-						filter +
-						"order by product.id DESC");
-		Query queryTotal = getCurrentSession().createQuery(
-				"select count(product.id) " +
-						fromClause +
-						"where " +
-						filter);
+		String queryString = "select product " +
+				fromClause +
+				"where " +
+				filter +
+				"order by ";
+		String queryTotalString = "select count(product.id) " +
+				fromClause +
+				"where " +
+				filter;
+		if (pageable.getSort() != null && !pageable.getSort().isEmpty()) {
+			Sort.Order order = pageable.getSort().iterator().next();
+			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection().toString();
+		} else {
+			queryString += "product.id DESC";
+		}
+
+
+		Query query = getCurrentSession().createQuery(queryString);
+		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
+		query.setMaxResults(pageable.getPageSize());
+
+		Query queryTotal = getCurrentSession().createQuery(queryTotalString);
 		if (releaseCenterKey != null) {
 			query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 		}
-
-		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
-		query.setMaxResults(pageable.getPageSize());
 
 		return new PageImpl(query.list(), pageable, (long) queryTotal.uniqueResult());
 	}
