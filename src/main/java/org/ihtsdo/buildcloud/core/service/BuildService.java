@@ -37,6 +37,8 @@ public interface BuildService {
 
 	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 
+	void markBuildAsDeleted(Build build);
+
 	void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
 	BuildConfiguration loadBuildConfiguration(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;

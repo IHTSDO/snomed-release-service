@@ -500,6 +500,11 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
+	public void markBuildAsDeleted(Build build) {
+		dao.markBuildAsDeleted(build);
+	}
+
+	@Override
 	public void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException {
 		final Product product = getProduct(releaseCenterKey, productKey);
 		if (product == null) {
