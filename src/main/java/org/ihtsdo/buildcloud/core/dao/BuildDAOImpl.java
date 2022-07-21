@@ -202,6 +202,12 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
+	public void markBuildAsDeleted(Build build) {
+		final String newTagFilePath = pathHelper.getBuildPath(build).append(S3PathHelper.MARK_AS_DELETED).toString();
+		putFile(newTagFilePath, BLANK);
+	}
+
+	@Override
 	public void loadBuildConfiguration(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
 		try {
@@ -528,6 +534,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> userPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
+		final List<String> buildsMarkAsDeleted = new ArrayList<>();
 
 		// Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
 		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
@@ -536,8 +543,9 @@ public class BuildDAOImpl implements BuildDAO {
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths);
+		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
 		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
+		builds = removeBuildsMarkAsDeleted(buildsMarkAsDeleted, builds);
 		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 		Collections.reverse(builds);
 
@@ -557,12 +565,14 @@ public class BuildDAOImpl implements BuildDAO {
 		final List<String> userPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
+		final List<String> buildsMarkAsDeleted = new ArrayList<>();
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths);
+		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths,buildsMarkAsDeleted);
 		Collections.reverse(allBuilds);
 		allBuilds = filterByViewMode(allBuilds, tagPaths, viewMode);
 		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
+		allBuilds = removeBuildsMarkAsDeleted(buildsMarkAsDeleted, allBuilds);
 		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
 		addDataToBuilds(pagedBuilds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 
@@ -571,7 +581,7 @@ public class BuildDAOImpl implements BuildDAO {
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
-	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths) {
+	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths, List<String> buildsMarkAsDeleted) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, productDirectoryPath);
 		List<Build> builds = new ArrayList<>();
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
@@ -582,7 +592,7 @@ public class BuildDAOImpl implements BuildDAO {
 				objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			}
 			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, tagPaths, visibilityPaths);
+			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
 			firstPass = false;
 		}
 
@@ -606,6 +616,15 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 		LOGGER.debug("{} Builds remaining.", builds.size());
+		return builds;
+	}
+
+	private List<Build> removeBuildsMarkAsDeleted(List<String> buildsMarkAsDeleted, List<Build> builds) {
+		if (!buildsMarkAsDeleted.isEmpty()) {
+			return builds.stream()
+					.filter(build -> !buildsMarkAsDeleted.contains(build.getCreationTime()))
+					.collect(Collectors.toList());
+		}
 		return builds;
 	}
 
@@ -691,7 +710,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String>  visibilityPaths) {
+	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String> visibilityPaths, final List<String> buildsMarkAsDeleted) {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
@@ -706,6 +725,10 @@ public class BuildDAOImpl implements BuildDAO {
 				userPaths.add(key);
 			} else if (key.contains("/visibility:")) {
 				visibilityPaths.add(key);
+			} else if (key.contains("/" + S3PathHelper.MARK_AS_DELETED)) {
+				final String[] keyParts = key.split("/");
+				final String dateString = keyParts[keyParts.length - 2];
+				buildsMarkAsDeleted.add(dateString);
 			} else {
 				// do nothing
 			}

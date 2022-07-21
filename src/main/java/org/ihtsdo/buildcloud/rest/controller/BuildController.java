@@ -40,10 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
@@ -138,8 +135,7 @@ public class BuildController {
 	@DeleteMapping(value = "/builds/{buildId}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ApiOperation( value = "Delete a build",
-			notes = "" +
-					"Delete a build for given product key and release center key and build id" )
+			notes = "Delete a build for given product key and release center key and build id" )
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
@@ -151,7 +147,16 @@ public class BuildController {
 			throw new BusinessServiceException("You can not delete the PUBLISHED build");
 		}
 
-		buildService.delete(releaseCenterKey, productKey, buildId);
+		Build.Status[] BUILD_RUNNING_STATES = {
+				Build.Status.PENDING,
+				Build.Status.QUEUED,
+				Build.Status.BEFORE_TRIGGER,
+				Build.Status.BUILDING};
+		if (Arrays.asList(BUILD_RUNNING_STATES).contains(build.getStatus())) {
+			buildService.markBuildAsDeleted(build);
+		} else {
+			buildService.delete(releaseCenterKey, productKey, buildId);
+		}
 
 		return new ResponseEntity<>(HttpStatus.OK);
 	}

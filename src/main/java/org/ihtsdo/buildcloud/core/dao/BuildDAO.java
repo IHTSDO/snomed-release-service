@@ -147,4 +147,6 @@ public interface BuildDAO {
 	void saveFileComparisonReport(String releaseCenterKey, String productKey, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
 
 	FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
+
+	void markBuildAsDeleted(Build build);
 }

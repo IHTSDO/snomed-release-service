@@ -37,6 +37,7 @@ public class S3PathHelper {
 	private static final String MANIFEST = "manifest";
 	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
+	public static final String MARK_AS_DELETED = "MARK_AS_DELETED";
 	public static final String BUILD_LOG_TXT = "build_log.txt";
 	public static final String QA_CONFIG_JSON = "qa-test-config.json";
 	private static final String INPUT_PREPARE_REPORT_JSON = "input-prepare-report.json";
