@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
@@ -112,6 +113,12 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private TransformationService transformationService;
+
+	@Autowired
+	private PublishService publishService;
+
+	@Autowired
+	private S3PathHelper pathHelper;
 
 	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
@@ -1325,9 +1332,22 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build cloneBuild(final Build build, final String username) throws BusinessServiceException {
-		final BuildConfiguration buildConfiguration =  build.getConfiguration();
-		final QATestConfig qaTestConfig =  build.getQaTestConfig();
+	public Build cloneBuild(final String releaseCenterKey, final String productKey, final String buildId, final String username) throws BusinessServiceException {
+		Build build;
+		String sourceBuildPath;
+		try {
+			build = this.find(releaseCenterKey, productKey, buildId, true, true, null , null);
+			sourceBuildPath = pathHelper.getBuildPath(build).toString();
+		} catch (ResourceNotFoundException e) {
+			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey, true);
+			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
+			if (build != null) {
+				Map<String, String> buildPathMap = publishService.getPublishedBuildPathMap(releaseCenterKey, productKey);
+				sourceBuildPath = buildPathMap.get(buildId);
+			} else {
+				throw e;
+			}
+		}
 
 		final Date creationDate = new Date();
 		// Do we already have an build for that date?
@@ -1337,6 +1357,9 @@ public class BuildServiceImpl implements BuildService {
 		}
 
 		Build newBuild;
+		final BuildConfiguration buildConfiguration =  build.getConfiguration();
+		final QATestConfig qaTestConfig =  build.getQaTestConfig();
+
 		try {
 			newBuild = new Build(creationDate, build.getReleaseCenterKey(), build.getProductKey(), buildConfiguration, qaTestConfig);
 			newBuild.setBuildUser(username);
@@ -1360,8 +1383,9 @@ public class BuildServiceImpl implements BuildService {
 			dao.save(newBuild);
 
 			// Copy input-files and manifest from the old build
-			dao.copyBuildToAnother(build, newBuild, "input-files");
-			dao.copyBuildToAnother(build, newBuild, "manifest");
+			String destBuildPath = pathHelper.getBuildPath(newBuild).toString();
+			dao.copyBuildToAnother(sourceBuildPath, destBuildPath, "input-files");
+			dao.copyBuildToAnother(sourceBuildPath, destBuildPath, "manifest");
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to create build for product " + build.getProductKey(), e);
 		}

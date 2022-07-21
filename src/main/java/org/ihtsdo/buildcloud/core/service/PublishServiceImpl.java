@@ -1,11 +1,16 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import com.amazonaws.services.s3.model.*;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
@@ -15,29 +20,30 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.ims.IMSRestClient;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
 import java.io.*;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,20 +75,19 @@ public class PublishServiceImpl implements PublishService {
 	@Value("${srs.build.versioned-content.path}")
 	private String versionedContentPath;
 
-	@Value("${snowstorm.admin.username}")
-	private String snowstormAdminUsername;
-
-	@Value("${snowstorm.admin.password}")
-	private String snowstormAdminPassword;
-
-	@Value("${ims.url}")
-	private String imsUrl;
+	@Value("${srs.storage.bucketName}")
+	private String storageBucketName;
 
 	@Autowired
 	private TermServerService termServerService;
 
 	@Autowired
 	private S3PathHelper s3PathHelper;
+
+	private S3Client s3Client;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Autowired
 	private IdServiceRestClient idRestClient;
@@ -108,13 +113,38 @@ public class PublishServiceImpl implements PublishService {
 	public PublishServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 			final S3Client s3Client,
 			final S3ClientHelper s3ClientHelper) {
-		srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+		this.srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+		this.s3Client = s3Client;
 	}
 
 	@Override
 	public List<String> getPublishedPackages(final ReleaseCenter releaseCenter) {
 		List<String> allFiles = srsFileHelper.listFiles(s3PathHelper.getPublishJobDirectoryPath(releaseCenter.getBusinessKey()));
 		return allFiles.stream().filter(file -> file.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<Build> findPublishedBuilds(String releaseCenterKey, String productKey, boolean includeProdPublishedReleases) throws ResourceNotFoundException {
+		List<Build> builds = new ArrayList<>();
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuilds(releaseCenterKey, productKey, builds, buildBckUpPath);
+		if (includeProdPublishedReleases) {
+			buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuilds(releaseCenterKey, productKey, builds, buildBckUpPath);
+		}
+
+		return builds;
+	}
+
+	@Override
+	public Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey) {
+		Map<String, String> buildPathMap = new HashMap<>();
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuildPathMap(buildPathMap, buildBckUpPath);
+		buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuildPathMap(buildPathMap, buildBckUpPath);
+
+		return buildPathMap;
 	}
 
 	@Override
@@ -599,5 +629,132 @@ public class PublishServiceImpl implements PublishService {
 
 	private String getBuildUniqueKey(Build build) {
 		return build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId();
+	}
+
+	private void findPublishedBuildPathMap(Map<String, String> buildPathMap, String buildBckUpPath) {
+		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
+		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
+		boolean firstPass = true;
+		while (firstPass || objectListing.isTruncated()) {
+			if (!firstPass) {
+				objectListing = s3Client.listNextBatchOfObjects(objectListing);
+			}
+			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+			for (final S3ObjectSummary objectSummary : objectSummaries) {
+				final String key = objectSummary.getKey();
+				if (key.contains("/status:")) {
+					final String[] keyParts = key.split("/");
+					final String dateString = keyParts[keyParts.length - 2];
+					if (!buildPathMap.containsKey(dateString)) {
+						buildPathMap.put(dateString, buildBckUpPath + dateString + S3PathHelper.SEPARATOR);
+					}
+				}
+			}
+			firstPass = false;
+		}
+	}
+
+	private void findPublishedBuilds(String releaseCenterKey, String productKey, List<Build> builds, String buildBckUpPath) {
+		List<Build> foundBuilds = new ArrayList<>();
+		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
+		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
+		boolean firstPass = true;
+		while (firstPass || objectListing.isTruncated()) {
+			if (!firstPass) {
+				objectListing = s3Client.listNextBatchOfObjects(objectListing);
+			}
+			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
+			for (final S3ObjectSummary objectSummary : objectSummaries) {
+				final String key = objectSummary.getKey();
+				if (key.contains("/status:")) {
+					final String[] keyParts = key.split("/");
+					final String dateString = keyParts[keyParts.length - 2];
+					final String status = keyParts[keyParts.length - 1].split(":")[1];
+					if (!builds.stream().anyMatch(b -> b.getId().equals(status))) {
+						final Build build = new Build(dateString, releaseCenterKey, productKey, status);
+						foundBuilds.add(build);
+					}
+				}
+			}
+			firstPass = false;
+		}
+		foundBuilds.forEach(build -> {
+			if (build.getStatus().equals(Build.Status.BUILT)
+					|| build.getStatus().equals(Build.Status.RVF_QUEUED)
+					|| build.getStatus().equals(Build.Status.RVF_RUNNING)
+					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
+					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS)) {
+				InputStream buildReportStream = getBuildReportFileStream(buildBckUpPath, build);
+				if (buildReportStream != null) {
+					JSONParser jsonParser = new JSONParser();
+					try {
+						JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+						if (jsonObject.containsKey("rvf_response")) {
+							build.setRvfURL(jsonObject.get("rvf_response").toString());
+						}
+					} catch (IOException e) {
+						LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+					} catch (ParseException e) {
+						LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
+					}
+				}
+			}
+			try {
+				this.loadBuildConfiguration(buildBckUpPath, build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
+			}
+			try {
+				this.loadQaTestConfig(buildBckUpPath, build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
+			}
+		});
+
+		builds.addAll(foundBuilds);
+	}
+
+	private InputStream getBuildReportFileStream(String buildBckUpPath, Build build) {
+		final String reportFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.BUILD_REPORT_JSON);
+		return srsFileHelper.getFileStream(reportFilePath);
+	}
+
+	private void loadBuildConfiguration(final String buildBckUpPath,final Build build) throws IOException {
+		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.CONFIG_JSON);
+		try {
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(srsFileHelper.getFileStream(configFilePath), RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+				build.setConfiguration(buildConfiguration);
+			}
+		} catch (AmazonS3Exception e) {
+			if (404 == e.getStatusCode()) {
+				throw new ResourceNotFoundException("Build configuration file is missing from the build '" + build.getId()+ "'.");
+			} else {
+				throw e;
+			}
+		}
+	}
+
+	private void loadQaTestConfig(final String buildBckUpPath, final Build build) throws IOException {
+		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.QA_CONFIG_JSON);
+		try {
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(srsFileHelper.getFileStream(configFilePath), RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+				build.setQaTestConfig(qaTestConfig);
+			}
+
+		} catch (AmazonS3Exception e) {
+			if (404 == e.getStatusCode()) {
+				throw new ResourceNotFoundException("QA Configuration file is missing from the build '" + build.getId()+ "'.");
+			} else {
+				throw e;
+			}
+		}
+	}
+
+	private String getPublishedReleaseFilePath(String buildBckUpPath, Build build, String fileName) {
+		return buildBckUpPath + build.getId() + s3PathHelper.SEPARATOR + fileName;
 	}
 }

@@ -79,7 +79,7 @@ public interface BuildService {
 
 	void saveTags(Build build, List<Build.Tag> tags);
 
-	Build cloneBuild(Build build, String username) throws BusinessServiceException;
+	Build cloneBuild(String releaseCenterKey, String productKey, String buildId, String username) throws BusinessServiceException;
 
 	String getManifestFileName(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 

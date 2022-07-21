@@ -71,13 +71,9 @@ public class AutomatedTestController {
             @RequestParam final String leftBuildId,
             @RequestParam final String rightBuildId,
             final HttpServletRequest request) {
-        // Verify if the builds exist
-        Build leftBuild  = buildService.find(releaseCenterKey, productKey, leftBuildId, false, false, false , null);
-        Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
-
         String compareId = UUID.randomUUID().toString();
         String username = SecurityUtil.getUsername();
-        automatedTestService.compareBuilds(compareId, leftBuild, rightBuild, username);
+        automatedTestService.compareBuilds(compareId, releaseCenterKey, productKey, leftBuildId, rightBuildId, username);
 
         return ControllerHelper.getCreatedResponse(compareId);
     }

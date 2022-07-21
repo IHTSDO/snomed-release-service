@@ -349,10 +349,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void copyBuildToAnother(Build sourceBuild, Build destBuild, String folder) {
-		final String sourceFolder = pathHelper.getBuildPath(sourceBuild).toString() + folder;
-		final String destFolder = pathHelper.getBuildPath(destBuild).toString() + folder;
-
+	public void copyBuildToAnother(String sourceBuildPath, String destBuildPath, String folder) {
+		final String sourceFolder = sourceBuildPath + folder;
+		final String destFolder = destBuildPath + folder;
 		final List<String> buildInputFilePaths = srsFileHelper.listFiles(sourceFolder);
 		for (final String path : buildInputFilePaths) {
 			srsFileHelper.copyFile(sourceFolder + path, destFolder + path);
@@ -363,6 +362,11 @@ public class BuildDAOImpl implements BuildDAO {
 	public InputStream getOutputFileInputStream(final Build build, final String name) {
 		final String path = pathHelper.getBuildOutputFilePath(build, name);
 		return srsFileHelper.getFileStream(path);
+	}
+
+	@Override
+	public InputStream getOutputFileInputStream(String buildPath, String name) {
+		return srsFileHelper.getFileStream(buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
 	}
 
 	@Override
@@ -415,6 +419,11 @@ public class BuildDAOImpl implements BuildDAO {
 	public List<String> listOutputFilePaths(final Build build) {
 		final String outputFilesPath = pathHelper.getOutputFilesPath(build);
 		return srsFileHelper.listFiles(outputFilesPath);
+	}
+
+	@Override
+	public List<String> listOutputFilePaths(String buildPath) {
+		return srsFileHelper.listFiles(buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR);
 	}
 
 	@Override
@@ -888,15 +897,22 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
+	@Override
 	public InputStream getPreConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
+	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException {
-		List<PreConditionCheckReport> reports = new ArrayList<>();
 		final String reportFilePath = pathHelper.getBuildPreConditionCheckReportPath(build);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, reportFilePath);
+		return getPreConditionCheckReport(reportFilePath);
+	}
+
+	@Override
+	public List<PreConditionCheckReport> getPreConditionCheckReport(String reportPath) throws IOException {
+		List<PreConditionCheckReport> reports = new ArrayList<>();
+		final S3Object s3Object = s3Client.getObject(buildBucketName, reportPath);
 		if (s3Object != null) {
 			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
 			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
@@ -914,10 +930,16 @@ public class BuildDAOImpl implements BuildDAO {
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
+	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException {
-		List<PostConditionCheckReport> reports = new ArrayList<>();
 		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, reportFilePath);
+		return getPostConditionCheckReport(reportFilePath);
+	}
+
+	@Override
+	public List<PostConditionCheckReport> getPostConditionCheckReport(String reportPath) throws IOException {
+		List<PostConditionCheckReport> reports = new ArrayList<>();
+		final S3Object s3Object = s3Client.getObject(buildBucketName, reportPath);
 		if (s3Object != null) {
 			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
 			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream

@@ -28,15 +28,14 @@ public class HypermediaGenerator {
 
 	public List<Map<String, Object>> getEntityCollectionHypermedia(Collection<?> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
 		String url = getUrl(request);
-		String apiRootUrl = getApiRootUrl(url, request);
-		if (instanceRoot != null) {
-			url = apiRootUrl + instanceRoot;
-		}
-		List<Map<String, Object>> entitiesHypermedia = new ArrayList<>();
-		for (Object entity : entities) {
-			entitiesHypermedia.add(getEntityHypermedia(entity, false, url, apiRootUrl, entityLinks));
-		}
-		return entitiesHypermedia;
+		return getEntitiesHypermedia(entities, request, entityLinks, instanceRoot, url);
+	}
+
+	public List<Map<String, Object>> getEntityCollectionHypermediaOfAction(Collection<?> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot) {
+		String url = getUrl(request);
+		// Remove action name
+		url = url.substring(0, url.lastIndexOf("/"));
+		return getEntitiesHypermedia(entities, request, entityLinks, instanceRoot, url);
 	}
 
 	/**
@@ -64,6 +63,18 @@ public class HypermediaGenerator {
 	public String getRootURL(HttpServletRequest request) {
 		String url = getUrl(request);
 		return getApiRootUrl(url, request);
+	}
+
+	private List<Map<String, Object>> getEntitiesHypermedia(Collection<?> entities, HttpServletRequest request, String[] entityLinks, String instanceRoot, String url) {
+		String apiRootUrl = getApiRootUrl(url, request);
+		if (instanceRoot != null) {
+			url = apiRootUrl + instanceRoot;
+		}
+		List<Map<String, Object>> entitiesHypermedia = new ArrayList<>();
+		for (Object entity : entities) {
+			entitiesHypermedia.add(getEntityHypermedia(entity, false, url, apiRootUrl, entityLinks));
+		}
+		return entitiesHypermedia;
 	}
 
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
