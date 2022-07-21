@@ -137,16 +137,16 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		report.setCompareId(compareId);
 		report.setStartDate(new Date());
 		report.setUsername(username);
-
-		Build leftBuild = getBuild(releaseCenterKey, productKey, leftBuildId, false);
-		Build rightBuild = getBuild(releaseCenterKey, productKey, rightBuildId, false);
-		report.setCenterKey(leftBuild.getReleaseCenterKey());
-		report.setProductKey(leftBuild.getProductKey());
-		report.setLeftBuildId(leftBuild.getId());
-		report.setRightBuildId(rightBuild.getId());
+		report.setCenterKey(releaseCenterKey);
+		report.setProductKey(productKey);
+		report.setLeftBuildId(leftBuildId);
+		report.setRightBuildId(rightBuildId);
 		report.setStatus(BuildComparisonReport.Status.QUEUED.name());
+
 		try {
-			buildDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
+			buildDAO.saveBuildComparisonReport(releaseCenterKey, productKey, compareId, report);
+			Build leftBuild = getBuild(releaseCenterKey, productKey, leftBuildId, false);
+			Build rightBuild = getBuild(releaseCenterKey, productKey, rightBuildId, false);
 			if (!Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(leftBuild.getStatus()))) {
 				try {
 					waitForBuildCompleted(leftBuild, report);
