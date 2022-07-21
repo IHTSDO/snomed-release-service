@@ -62,6 +62,9 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	private ProductService productService;
 
 	@Autowired
+	private PublishService publishService;
+
+	@Autowired
 	private ReleaseCenterService releaseCenterService;
 
 	@Autowired
@@ -129,11 +132,14 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 	@Override
 	@Async
-	public void compareBuilds(String compareId, Build leftBuild, Build rightBuild, String username) {
+	public void compareBuilds(String compareId, String releaseCenterKey, String productKey, String leftBuildId, String rightBuildId, String username) {
 		BuildComparisonReport report = new BuildComparisonReport();
 		report.setCompareId(compareId);
 		report.setStartDate(new Date());
 		report.setUsername(username);
+
+		Build leftBuild = getBuild(releaseCenterKey, productKey, leftBuildId, false);
+		Build rightBuild = getBuild(releaseCenterKey, productKey, rightBuildId, false);
 		report.setCenterKey(leftBuild.getReleaseCenterKey());
 		report.setProductKey(leftBuild.getProductKey());
 		report.setLeftBuildId(leftBuild.getId());
@@ -221,8 +227,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 				Build leftBuild = automatePromoteProcess.getLeftBuild();
 				Build rightBuild = automatePromoteProcess.getRightBuild();
-				Build leftLatestBuild = buildDAO.find(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), leftBuild.getId(), false, false, true, null);
-				Build rightLatestBuild = buildDAO.find(rightBuild.getReleaseCenterKey(), rightBuild.getProductKey(), rightBuild.getId(), false, false, true, null);
+				Build leftLatestBuild = getBuild(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), leftBuild.getId(), true);
+				Build rightLatestBuild = getBuild(rightBuild.getReleaseCenterKey(), rightBuild.getProductKey(), rightBuild.getId(), true);
 
 				List<HighLevelComparisonReport> highLevelComparisonReports = buildComparisonManager.runBuildComparisons(leftLatestBuild, rightLatestBuild);
 				boolean isFailed = highLevelComparisonReports.stream().anyMatch(c -> c.getResult().equals(HighLevelComparisonReport.State.FAILED));
@@ -374,7 +380,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			Thread.sleep(pollPeriod);
 			count += pollPeriod;
 
-			Build latestBuild = buildService.find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), false, false, false, null);
+			Build latestBuild = getBuild(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), false);
 			if (!report.getStatus().equals(latestBuild.getStatus().name())) {
 				report.setStatus(latestBuild.getStatus().name());
 				buildDAO.saveBuildComparisonReport(build.getReleaseCenterKey(), build.getProductKey(), report.getCompareId(), report);
@@ -387,6 +393,21 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				throw new BusinessServiceException(String.format("Build with id %s did not complete within the allotted time (%s minutes).", build.getId(), maxPollPeriod/(60 * 1000)));
 			}
 		}
+	}
+
+	private Build getBuild(String releaseCenterKey, String productKey, String buildId, boolean includeRvfURL) {
+		Build build;
+		try {
+			build = buildService.find(releaseCenterKey, productKey, buildId, false, false, includeRvfURL , null);
+		} catch (ResourceNotFoundException e) {
+			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey, true);
+			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
+			if (build == null) {
+				throw e;
+			}
+		}
+
+		return build;
 	}
 
 	private class BuildComparisonQueue {

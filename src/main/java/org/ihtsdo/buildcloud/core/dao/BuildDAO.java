@@ -54,9 +54,11 @@ public interface BuildDAO {
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
 
-	void copyBuildToAnother(Build sourceBuild, Build destBuild, String folder);
+	void copyBuildToAnother(String sourceBuildPath, String destBuildPath, String folder);
 
 	InputStream getOutputFileInputStream(Build build, String name);
+
+	InputStream getOutputFileInputStream(String buildPath, String name);
 
 	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
@@ -69,6 +71,8 @@ public interface BuildDAO {
 	List<String> listTransformedFilePaths(Build build);
 
 	List<String> listOutputFilePaths(Build build);
+
+	List<String> listOutputFilePaths(String buildPath);
 
 	List<String> listBuildLogFilePaths(Build build);
 
@@ -114,9 +118,13 @@ public interface BuildDAO {
 
 	List<PreConditionCheckReport> getPreConditionCheckReport(final Build build) throws IOException;
 
+	List<PreConditionCheckReport> getPreConditionCheckReport(final String reportPath) throws IOException;
+
 	InputStream getPostConditionCheckReportStream(Build build);
 
 	List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException;
+
+	List<PostConditionCheckReport> getPostConditionCheckReport(final String reportPath) throws IOException;
 
 	List<String> listClassificationResultOutputFileNames(Build build);
 

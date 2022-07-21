@@ -3,11 +3,15 @@ package org.ihtsdo.buildcloud.core.service.build.compare.type;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.compare.ComponentComparison;
 import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparisonReport;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -46,6 +51,9 @@ public class ReleasePackageComparison extends ComponentComparison {
     @Autowired
     private BuildDAO buildDAO;
 
+    @Autowired
+    private PublishService publishService;
+
     @Override
     public String getTestName() {
         return BuildComparisonManager.TestType.RELEASE_PACKAGE_TEST.getLabel();
@@ -69,23 +77,17 @@ public class ReleasePackageComparison extends ComponentComparison {
         File leftDir = null;
         File rightDir = null;
         try {
-            String leftPackageFilePath = null;
-            String rightPackageFilePath = null;
             try {
-                List<String> leftOutputFiles = buildDAO.listOutputFilePaths(leftBuild);
-                leftPackageFilePath = leftOutputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+                leftReleasePackage = getReleaseFile(leftBuild);
             } catch (Exception e) {
                 LOGGER.error(e.getMessage(), e);
             }
             try {
-                List<String> rightOutputFiles = buildDAO.listOutputFilePaths(rightBuild);
-                rightPackageFilePath = rightOutputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+                rightReleasePackage = getReleaseFile(rightBuild);
             } catch (Exception e) {
                 LOGGER.error(e.getMessage(), e);
             }
-            if (leftPackageFilePath != null && rightPackageFilePath != null) {
-                leftReleasePackage = downloadReleasePackage(leftBuild, leftPackageFilePath);
-                rightReleasePackage = downloadReleasePackage(rightBuild, rightPackageFilePath);
+            if (leftReleasePackage != null && rightReleasePackage != null) {
                 leftDir = Files.createTempDirectory("left-package-temp").toFile();
                 rightDir = Files.createTempDirectory("right-package-temp").toFile();
                 unzipFlat(leftReleasePackage, leftDir);
@@ -98,13 +100,13 @@ public class ReleasePackageComparison extends ComponentComparison {
                     pass();
                 }
             } else {
-                if ((leftPackageFilePath == null && rightPackageFilePath != null)
-                    || (leftPackageFilePath != null && rightPackageFilePath == null)) {
+                if ((leftReleasePackage == null && rightReleasePackage != null)
+                    || (leftReleasePackage != null && rightReleasePackage == null)) {
                     DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                     dto.setName(PackageTestName.PACKAGE_FILE.name());
                     dto.setStatus(BuildComparisonManager.ComparisonState.NOT_FOUND.name());
-                    dto.setExpected(leftPackageFilePath != null ? leftPackageFilePath : null);
-                    dto.setActual(rightPackageFilePath != null ? rightPackageFilePath : null);
+                    dto.setExpected(leftReleasePackage != null ? getReleaseFileName(leftBuild) : null);
+                    dto.setActual(rightReleasePackage != null ? getReleaseFileName(rightBuild) : null);
                     result.add(dto);
                     fail(result);
                 }
@@ -167,6 +169,21 @@ public class ReleasePackageComparison extends ComponentComparison {
         return releaseFile;
     }
 
+    private File downloadReleasePackage(String buildPath, String fileName) throws IOException {
+        File releaseFile = File.createTempFile(fileName, RF2Constants.ZIP_FILE_EXTENSION);
+        try (InputStream inputFileStream = buildDAO.getOutputFileInputStream(buildPath, fileName);
+             FileOutputStream out = new FileOutputStream(releaseFile)) {
+            if (inputFileStream != null) {
+                StreamUtils.copy(inputFileStream, out);
+            } else {
+                FileUtils.forceDelete(releaseFile);
+                return null;
+            }
+        }
+
+        return releaseFile;
+    }
+
     private void unzipFlat(File archive, File targetDir) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archive))) {
             ZipEntry ze = zis.getNextEntry();
@@ -182,5 +199,47 @@ public class ReleasePackageComparison extends ComponentComparison {
                 ze = zis.getNextEntry();
             }
         }
+    }
+
+    private File getReleaseFile(Build build) throws IOException {
+        Build found = buildDAO.find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), false, false, false, null);
+        if (found != null) {
+            // Trying to find the output files from build folder
+            List<String> outputFiles = buildDAO.listOutputFilePaths(build);
+            String releaseFilePath = outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+            if (releaseFilePath != null) {
+                return downloadReleasePackage(build, releaseFilePath);
+            }
+        } else {
+            // Trying to find  the output files from published folder
+            Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
+            if (publishedBuildPathMap.containsKey(build.getId())) {
+                List<String> outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                String releaseFilePath = outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+                if (releaseFilePath != null) {
+                    return downloadReleasePackage(publishedBuildPathMap.get(build.getId()), releaseFilePath);
+                }
+            }
+        }
+
+        throw new ResourceNotFoundException("Release file not found for build " + build.getId());
+    }
+
+    private String getReleaseFileName(Build build) {
+        Build found = buildDAO.find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), false, false, false, null);
+        if (found != null) {
+            // Trying to find the output files from build folder
+            List<String> outputFiles = buildDAO.listOutputFilePaths(build);
+            return outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+        } else {
+            // Trying to find  the output files from published folder
+            Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
+            if (publishedBuildPathMap.containsKey(build.getId())) {
+                List<String> outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                return outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
+            }
+        }
+
+        return null;
     }
 }

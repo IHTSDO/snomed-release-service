@@ -24,12 +24,12 @@ public class S3PathHelper {
 	private String externallyMaintainedStoragePath;
 
 	public static final String SEPARATOR = "/";
-	private static final String CONFIG_JSON = "configuration.json";
+	public static final String CONFIG_JSON = "configuration.json";
 	private static final String STATUS_PREFIX = "status:";
 	private static final String VISIBILITY_PREFIX = "visibility:";
 	private static final String TAG_PREFIX = "tag:";
 	private static final String USER_PREFIX = "user:";
-	private static final String OUTPUT_FILES = "output-files";
+	public static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String CLASSIFICATION_RESULT_OUTPUT_FILES = "classification-result-output-files";
 	private static final String BUILD_FILES = "product-files";
@@ -38,11 +38,11 @@ public class S3PathHelper {
 	private static final String TRANSFORMED_FILES = "transformed-files";
 	public static final String LOG = "log";
 	public static final String BUILD_LOG_TXT = "build_log.txt";
-	private static final String QA_CONFIG_JSON = "qa-test-config.json";
+	public static final String QA_CONFIG_JSON = "qa-test-config.json";
 	private static final String INPUT_PREPARE_REPORT_JSON = "input-prepare-report.json";
 	private static final String INPUT_GATHER_REPORT_JSON = "input-gather-report.json";
-	private static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
-	private static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
+	public static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
+	public static final String POST_CONDITION_CHECKS_REPORT = "post-condition-checks-report.json";
 	public static final String BUILD_REPORT_JSON = "build_report.json";
 	public static final String BUILD_COMPARISON_REPORT = "build-comparison-reports";
 	public static final String FILE_COMPARISON_REPORT = "file-comparison-reports";
@@ -144,6 +144,10 @@ public class S3PathHelper {
 
 	public String getPublishJobFilePath(final String releaseCenterKey, final String fileName) {
 		return getReleaseCenterPath(releaseCenterKey, publishJobStoragePath).append(fileName).toString();
+	}
+
+	public String getPublishedReleasesDirectoryPath(final String releaseCenterKey) {
+		return getReleaseCenterPath(releaseCenterKey, publishedReleasesStoragePath).toString();
 	}
 
 	public String getPublishedReleasesFilePath(final String releaseCenterKey, final String fileName) {

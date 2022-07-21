@@ -2,11 +2,13 @@ package org.ihtsdo.buildcloud.core.service;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 /**
  * Service to publish a product release after verification tests are
@@ -15,6 +17,10 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 public interface PublishService {
 
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
+
+	List<Build> findPublishedBuilds(String releaseCenterKey, String productKey, boolean includeProdPublishedReleases) throws ResourceNotFoundException;
+
+	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 
 	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
 

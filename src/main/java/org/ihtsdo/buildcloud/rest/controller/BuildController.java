@@ -111,10 +111,9 @@ public class BuildController {
 		final String username = SecurityUtil.getUsername();
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 
-		// Verify if the build exists
-		Build build  = buildService.find(releaseCenterKey, productKey, buildId, true, true, null , null);
-		Build newBuild = buildService.cloneBuild(build, username);
+		Build newBuild = buildService.cloneBuild(releaseCenterKey, productKey, buildId, username);
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
+
 		return new ResponseEntity<>(newBuild, HttpStatus.OK);
 	}
 
@@ -175,6 +174,17 @@ public class BuildController {
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(builds.getContent(), request, BUILD_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), builds.getTotalElements());
+	}
+
+	@GetMapping(value = "/builds/published")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+	@ApiOperation( value = "Returns a list of published builds from the published releases directory")
+	@ResponseBody
+	public List<Map<String, Object>> getPublishedBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+														@RequestParam(required = false, defaultValue = "false") boolean includeProdPublishedReleases,
+											   final HttpServletRequest request) throws ResourceNotFoundException {
+		List<Build> builds = publishService.findPublishedBuilds(releaseCenterKey, productKey, includeProdPublishedReleases);
+		return hypermediaGenerator.getEntityCollectionHypermediaOfAction(builds, request, BUILD_LINKS, null);
 	}
 
 	@GetMapping(value = "/builds/{buildId}")
