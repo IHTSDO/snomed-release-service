@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.activemq.command.ActiveMQTextMessage;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -767,7 +768,7 @@ public class BuildServiceImpl implements BuildService {
 	private <K, V> String mapToString(Map<K, V> map) {
 		return map.entrySet()
 				.stream()
-				.map(entry -> entry.getKey() + ":" + (entry.getValue() instanceof String ? "\"" + entry.getValue() + "\"" : entry.getValue()))
+				.map(entry -> entry.getKey() + ":" + (entry.getValue() instanceof String ? "\"" + StringEscapeUtils.escapeJson(entry.getValue().toString()) + "\"" : entry.getValue()))
 				.collect(Collectors.joining(", ", "{", "}"));
 	}
 
