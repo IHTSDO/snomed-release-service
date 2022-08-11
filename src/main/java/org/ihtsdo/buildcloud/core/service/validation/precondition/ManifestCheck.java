@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -29,6 +30,8 @@ public class ManifestCheck extends PreconditionCheck {
 	private static final String HYPHEN = "_";
 	private static final String RELEASE_DATE_NOT_MATCHED_MSG = "The following file names specified in the manifest:%s don't have "
 			+ "the same release date as configured in the product:%s.";
+	private static final String PRESENT_IN_SNAPSHOT_BUT_NOT_IN_FULL_MSG = "The following file names specified in the Snapshot folder but not found in the Full folder: %s";
+	private static final String PRESENT_IN_FULL_BUT_NOT_IN_SNAPSHOT_MSG = "The following file names specified in the Full folder but not found in the Snapshot folder: %s";
 	private static final String INVALID_RELEASE_PACKAGE_NAME_MSG = "The package name does not follow the packaging conventions: "
 			+ "[x prefix if applicable]SnomedCT_[Product][Format(optional)]_[ReleaseStatus]_[Releasedate]T[Releasetime]Z";
 	private static final String INVALID_FILE_NAME_AGAINST_BETA_RELEASE_MSG = "The following files which specified in the manifest are required starting with x for a Beta release: %s";
@@ -77,6 +80,12 @@ public class ManifestCheck extends PreconditionCheck {
 					return;
 				}
 
+				final String invalidFilePresentMsg = validateManifestStructure(manifestListing);
+				if (!StringUtils.isEmpty(invalidFilePresentMsg)) {
+					fail(invalidFilePresentMsg);
+					return;
+				}
+
 				final String invalidReleaseVersionMsg = validateReleaseDate(manifestListing, releaseVersion);
 				final boolean validReleasePackageName = validatePackageName(manifestListing);
 				if (!StringUtils.isEmpty(invalidReleaseVersionMsg) || !validReleasePackageName) {
@@ -98,6 +107,37 @@ public class ManifestCheck extends PreconditionCheck {
 			e.printStackTrace();
 			fatalError("Build manifest is missing or invalid: " + e.getMessage());
 		}
+	}
+
+	private String validateManifestStructure(final ListingType manifestListing) {
+		List<FolderType> folderTypes = manifestListing.getFolder().getFolder();
+		List<String> snapshotFiles = new ArrayList<>();
+		List<String> fullFiles = new ArrayList<>();
+		for (FolderType folderType : folderTypes) {
+			String folderName = folderType.getName();
+			if (RF2Constants.SNAPSHOT.equals(folderName)) {
+				snapshotFiles = ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderName);
+			} else if (RF2Constants.FULL.equals(folderName)) {
+				fullFiles = ManifestFileListingHelper.getFilesByFolderName(manifestListing, folderName);
+			}
+		}
+		if (!snapshotFiles.isEmpty() && !fullFiles.isEmpty()) {
+			List <String> finalFullFiles = fullFiles;
+			List <String> finalSnapshotFiles = snapshotFiles;
+			List<String> missingFilesInFullFolder = snapshotFiles.stream()
+					.filter(file -> !finalFullFiles.contains(file.replace("Snapshot_", "Full_").replace("Snapshot-", "Full-")))
+					.collect(Collectors.toList());
+			List<String> missingFilesInSnapshotFolder = fullFiles.stream()
+					.filter(file -> !finalSnapshotFiles.contains(file.replace("Full_", "Snapshot_").replace("Full-", "Snapshot-")))
+					.collect(Collectors.toList());
+			if (!missingFilesInFullFolder.isEmpty()) {
+				return String.format(PRESENT_IN_SNAPSHOT_BUT_NOT_IN_FULL_MSG, String.join(", ", missingFilesInFullFolder));
+			}
+			if (!missingFilesInSnapshotFolder.isEmpty()) {
+				return String.format(PRESENT_IN_FULL_BUT_NOT_IN_SNAPSHOT_MSG, String.join(", ", missingFilesInSnapshotFolder));
+			}
+		}
+		return null;
 	}
 
 	private String validateFileNamesAgainstBetaRelease(ListingType manifestListing) {
