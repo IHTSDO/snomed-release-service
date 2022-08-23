@@ -37,6 +37,8 @@ public class RVFClient implements Closeable {
 
 	private static final String BRANCH_PATH = "branchPath";
 
+	private static final String BRANCH_HEAD_TIMESTAMP = "contentHeadTimestamp";
+
 	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
 
 	private static final String PRODUCT_NAME = "productName";
@@ -256,7 +258,11 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody(ENABLE_TRACEABILITY_VALIDATION, Boolean.toString(qaTestConfig.isEnableTraceabilityValidation()));
 			multiPartBuilder.addTextBody(BRANCH_PATH, request.getBranchPath());
 		}
-		
+
+		if (qaTestConfig.getContentHeadTimestamp() != null) {
+			multiPartBuilder.addTextBody(BRANCH_HEAD_TIMESTAMP, qaTestConfig.getContentHeadTimestamp().toString());
+		}
+
 		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );
 		Integer failureExportMax = request.getFailureExportMax();
 		if (failureExportMax != null && failureExportMax.intValue() != 0) {
