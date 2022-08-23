@@ -1,9 +1,7 @@
 package org.ihtsdo.buildcloud.core.dao;
 
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.PostConditionCheckReport;
-import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
+import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
@@ -19,6 +17,10 @@ public interface BuildDAO {
 	void copyManifestFileFromProduct(Build build);
 
 	void save(Build build) throws IOException;
+
+	void updateQATestConfig(Build build) throws IOException;
+
+	void updateBuildConfiguration(Build build) throws IOException;
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility);
 
