@@ -56,7 +56,8 @@
     "reportingStage" : null,
     "enableMRCMValidation" : false,
     "maxFailureExport" : null,
-    "enableTraceabilityValidation" : false
+    "enableTraceabilityValidation" : false,
+    "contentHeadTimestamp" : null
   },
   "visibility" : false,
   "legacyProduct" : false,

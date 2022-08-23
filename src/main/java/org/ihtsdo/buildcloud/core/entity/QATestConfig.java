@@ -61,6 +61,9 @@ public class QATestConfig {
 	@Transient
 	private boolean enableTraceabilityValidation;
 
+	@Transient
+	private Long contentHeadTimestamp;
+
 	public String getAssertionGroupNames() {
 		return assertionGroupNames;
 	}
@@ -150,6 +153,7 @@ public class QATestConfig {
 				", reportingStage='" + reportingStage + '\'' +
 				", enableMRCMValidation=" + enableMRCMValidation +
 				", maxFailureExport=" + maxFailureExport +
+				", contentHeadTimestamp=" + contentHeadTimestamp +
 				'}';
 	}
 
@@ -183,5 +187,13 @@ public class QATestConfig {
 
 	public boolean isEnableTraceabilityValidation() {
 		return enableTraceabilityValidation;
+	}
+
+	public void setContentHeadTimestamp(Long contentHeadTimestamp) {
+		this.contentHeadTimestamp = contentHeadTimestamp;
+	}
+
+	public Long getContentHeadTimestamp() {
+		return contentHeadTimestamp;
 	}
 }

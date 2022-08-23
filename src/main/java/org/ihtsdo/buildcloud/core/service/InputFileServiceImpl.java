@@ -244,8 +244,10 @@ public class InputFileServiceImpl implements InputFileService {
 		try {
 			SecurityContextHolder.setContext(securityContext);
 			BuildConfiguration buildConfiguration = build.getConfiguration();
+			final long branchHeadTimestamp = termServerService.getBranch(buildConfiguration.getBranchPath()).getHeadTimestamp();
 			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
 					buildConfiguration.getExcludedModuleIds(), SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
+			build.getQaTestConfig().setContentHeadTimestamp(branchHeadTimestamp);
 			//Test whether the exported file is really a zip file
 			try (ZipFile zipFile = new ZipFile(fileExported);
 			FileInputStream fileInputStream = new FileInputStream(fileExported);) {
