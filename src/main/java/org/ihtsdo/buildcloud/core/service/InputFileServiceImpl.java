@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
@@ -55,6 +56,9 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Autowired
 	private InputFileDAO inputFileDAO;
+
+	@Autowired
+	private BuildDAO buildDAO;
 
 	@Autowired
 	private S3PathHelper s3PathHelper;
@@ -248,6 +252,7 @@ public class InputFileServiceImpl implements InputFileService {
 			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
 					buildConfiguration.getExcludedModuleIds(), SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
 			build.getQaTestConfig().setContentHeadTimestamp(branchHeadTimestamp);
+			buildDAO.updateQATestConfig(build);
 			//Test whether the exported file is really a zip file
 			try (ZipFile zipFile = new ZipFile(fileExported);
 			FileInputStream fileInputStream = new FileInputStream(fileExported);) {

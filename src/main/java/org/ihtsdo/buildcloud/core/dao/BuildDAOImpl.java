@@ -160,6 +160,33 @@ public class BuildDAOImpl implements BuildDAO {
 		LOGGER.debug("Saved build {}", build.getId());
 	}
 
+	@Override
+	public void updateQATestConfig(final Build build) throws IOException {
+		File qaConfigJson = toJson(build.getQaTestConfig());
+		try (FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
+			s3Client.deleteObject(buildBucketName, pathHelper.getQATestConfigFilePath(build));
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, new ObjectMetadata());
+		} finally {
+			if (qaConfigJson != null) {
+				qaConfigJson.delete();
+			}
+		}
+	}
+
+	@Override
+	public void updateBuildConfiguration(final Build build) throws IOException {
+		File configJson = toJson(build.getConfiguration());
+		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson)) {
+			s3Client.deleteObject(buildBucketName, pathHelper.getBuildConfigFilePath(build));
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, new ObjectMetadata());
+		} finally {
+			if (configJson != null) {
+				configJson.delete();
+			}
+		}
+	}
+
+
 	protected File toJson(final Object obj) throws IOException {
 		final File temp = File.createTempFile("tempJson", ".tmp");
 		objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
