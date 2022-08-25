@@ -157,8 +157,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 						}
 						if (metaData.containsKey("assertionGroupNames")) {
 							String assertionGroupNames = metaData.get("assertionGroupNames").toString();
-							propertyValues.put(ASSERTION_GROUP_NAMES, assertionGroupNames);
 							propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
+						}
+
+						if (metaData.containsKey("releaseAssertionGroupNames")) {
+							String releaseAssertionGroupNames = metaData.get("releaseAssertionGroupNames").toString();
+							propertyValues.put(ASSERTION_GROUP_NAMES, releaseAssertionGroupNames);
 						}
 					}
 
