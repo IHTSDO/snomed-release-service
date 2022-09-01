@@ -333,12 +333,17 @@ public class PublishServiceImpl implements PublishService {
 	// For scenarios in UAT and DEV where we use locally published release packages for a new build,
 	// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
 	public boolean exists(final ReleaseCenter releaseCenter, final String targetFileName) {
-		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenter.getBusinessKey(), targetFileName);
+		return exists(releaseCenter.getBusinessKey(), targetFileName);
+	}
+
+	@Override
+	public boolean exists(String releaseCenterKey, String targetFileName) {
+		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenterKey, targetFileName);
 		LOGGER.info("Check if published file exists for path {} in storage bucket", path);
 		boolean exists = srsFileHelper.exists(path);
 
 		if (!exists && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
-			path = s3PathHelper.getPublishJobFilePath(releaseCenter.getBusinessKey(), targetFileName);
+			path = s3PathHelper.getPublishJobFilePath(releaseCenterKey, targetFileName);
 			LOGGER.info("Check if published file exists for path {} in storage bucket", path);
 			exists = srsFileHelper.exists(path);
 		}

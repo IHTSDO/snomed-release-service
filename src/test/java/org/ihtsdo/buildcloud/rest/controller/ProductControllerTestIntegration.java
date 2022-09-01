@@ -22,13 +22,13 @@ public class ProductControllerTestIntegration extends AbstractControllerTest {
 	@Test
 	public void testPublishUpload() throws Exception {
 		//publish test file
-		integrationTestHelper.publishFile("/three_readmes.zip", getClass(), HttpStatus.CREATED);
+		integrationTestHelper.publishFile("/three_readmes.zip", getClass(), HttpStatus.CREATED, null);
 
 		//publish test file a second time - expect rejection
-		integrationTestHelper.publishFile("/three_readmes.zip", getClass(),HttpStatus.CONFLICT);
+		integrationTestHelper.publishFile("/three_readmes.zip", getClass(),HttpStatus.CONFLICT, null);
 
 		//publish non zip file which we expect to fail
-		integrationTestHelper.publishFile("/invalid-file-test-defn.xsd", getClass(), HttpStatus.BAD_REQUEST);
+		integrationTestHelper.publishFile("/invalid-file-test-defn.xsd", getClass(), HttpStatus.BAD_REQUEST, null);
 	}
 
 

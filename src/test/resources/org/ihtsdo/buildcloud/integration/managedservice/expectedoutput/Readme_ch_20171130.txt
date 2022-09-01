@@ -1,0 +1,17 @@
+This is the readme for the second release © 2002-2017.
+Table of contents:
+
+    SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20171130
+        Snapshot
+            Terminology
+                sct2_Description_Snapshot-en_CH1000195_20171130.txt
+            Refset
+                Language
+                    der2_cRefset_LanguageSnapshot_fr-CH_20171130.txt
+        Full
+            Terminology
+                sct2_Description_Full-en_CH1000195_20171130.txt
+            Refset
+                Language
+                    der2_cRefset_LanguageFull_fr-CH_20171130.txt
+        Readme_ch_20171130.txt

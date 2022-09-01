@@ -50,9 +50,11 @@ public class InputFileServiceImpl implements InputFileService {
 
 	private final FileHelper fileHelper;
 
-	private static final String SRC_TERM_SERVER = "terminology-server";
+	public static final String SRC_TERM_SERVER = "terminology-server";
 
-	private static final String SRC_EXT_MAINTAINED = "externally-maintained";
+	public static final String SRC_EXT_MAINTAINED = "externally-maintained";
+
+	public static final String SRC_EXTERNAL_DEPENDENCY = "external-dependency-package";
 
 	@Autowired
 	private InputFileDAO inputFileDAO;
