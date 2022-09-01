@@ -143,17 +143,17 @@ public class IntegrationTestHelper {
 		return mvcResult.getResponse().getContentAsString();
 	}
 	
-	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
+	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus, String centerUrl) throws Exception {
 		final MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
 		mockMvc.perform(
-				fileUpload(CENTER_URL + "/published")
+				fileUpload((centerUrl != null ? centerUrl : CENTER_URL) + "/published")
 						.file(publishFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
 				.andDo(print())
 				.andExpect(status().is(expectedStatus.value()));
 	}
-	
+
 	
 	public String getInputFile(String inputFileName) throws Exception {
 		String getInputFileUrl = getBuildUrl() + "/inputfiles/" + inputFileName;
@@ -220,6 +220,10 @@ public class IntegrationTestHelper {
 
 	public void setPreviousPublishedPackage(final String previousPublishedFile) throws Exception {
 		setProductProperty("{ " + jsonPair(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPublishedFile) + " }");
+	}
+
+	public void setAdditionalPreviousPublishedPackages(final String additionalPreviousPublishedPackages) throws Exception {
+		setProductProperty("{ " + jsonPair(ProductService.ADDITIONAL_PREVIOUS_PUBLISHED_PACKAGES, additionalPreviousPublishedPackages) + " }");
 	}
 
 	public void setReadmeHeader(final String readmeHeader) throws Exception {
@@ -578,5 +582,17 @@ public class IntegrationTestHelper {
 				Assert.fail("Failed to publish build " + buildUrl);
 			}
 		}
+	}
+
+	public void createReleaseCenter(String centerShortname) throws Exception {
+		mockMvc.perform(
+			post("/centers")
+					.header("Authorization", getBasicDigestHeaderValue())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{ \"shortName\" : \"" + centerShortname + "\" }")
+		).andDo(print())
+		.andExpect(status().isCreated())
+		.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+		.andReturn();
 	}
 }

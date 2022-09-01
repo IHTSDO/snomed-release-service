@@ -1,5 +1,30 @@
 package org.ihtsdo.buildcloud.core.service.build;
 
+import com.amazonaws.AmazonClientException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
+import org.ihtsdo.buildcloud.core.manifest.FolderType;
+import org.ihtsdo.buildcloud.core.manifest.ListingType;
+import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
+import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
+import org.ihtsdo.buildcloud.core.service.build.database.Rf2FileWriter;
+import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
+import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
+import org.ihtsdo.buildcloud.core.service.helper.StatTimer;
+import org.ihtsdo.buildcloud.core.service.validation.precondition.ManifestFileListingHelper;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,28 +32,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
-import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
-import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.core.service.build.database.Rf2FileWriter;
-import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
-import org.ihtsdo.buildcloud.core.service.helper.StatTimer;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.AmazonClientException;
-
 import static org.ihtsdo.buildcloud.core.entity.BuildConfiguration.BETA_PREFIX;
+import static org.ihtsdo.buildcloud.core.service.InputFileServiceImpl.SRC_EXTERNAL_DEPENDENCY;
+import static org.ihtsdo.buildcloud.core.service.ProductServiceImpl.EXTERNAL_DEPENDENCY_PACKAGE_RELEASE_CENTER;
 import static org.ihtsdo.buildcloud.core.service.build.RF2Constants.*;
 
 public class Rf2FileExportRunner {
@@ -59,14 +65,15 @@ public class Rf2FileExportRunner {
 			boolean success = false;
 			while (!success) {
 				try {
-					boolean fileFirstTimeRelease = false;
+					boolean fileFirstTimeRelease;
 					String cleanFileName  = thisFile;
 					if (configuration.isBetaRelease()) {
 						cleanFileName = thisFile.substring(1);
 					}
-					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					cleanFileName = cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX);
+					final boolean newFile = newRF2InputFiles.contains(cleanFileName);
 					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
-					Set<String> includedFilesInNewFile = includedFilesMap.get(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					Set<String> includedFilesInNewFile = includedFilesMap.get(cleanFileName);
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease, includedFilesInNewFile);
 					success = true;
 				} catch (final Exception e) {
@@ -74,6 +81,62 @@ public class Rf2FileExportRunner {
 				}
 			}
 		}
+
+		// Copy files from the additional previous published releases
+		final List<String> filesFromAdditionalPackages = getAdditionalFilesFromManifest();
+		for ( String thisFile : filesFromAdditionalPackages) {
+			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+				continue;
+			}
+			int failureCount = 0;
+			boolean success = false;
+			while (!success) {
+				try {
+					generateAdditionalReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys());
+					success = true;
+				} catch (final Exception e) {
+					failureCount = handleException(e, thisFile, failureCount);
+				}
+			}
+		}
+	}
+
+	private List<String> getAdditionalFilesFromManifest() {
+		try (InputStream manifestInputSteam = buildDao.getManifestStream(build)) {
+			final ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			final ListingType listingType = parser.parse(manifestInputSteam);
+			FolderType folderType = listingType.getFolder();
+			List<FolderType> folderTypes = folderType.getFolder();
+			boolean isDeltaFolderExistInManifest = false;
+			for (FolderType subFolderType : folderTypes) {
+				if (subFolderType.getName().equalsIgnoreCase(RF2Constants.DELTA)) {
+					isDeltaFolderExistInManifest = true;
+					break;
+				}
+			}
+			for (FolderType subFolderTypeLevel1 : folderTypes) {
+				if ((isDeltaFolderExistInManifest && subFolderTypeLevel1.getName().equalsIgnoreCase(RF2Constants.DELTA))
+						|| (!isDeltaFolderExistInManifest && subFolderTypeLevel1.getName().equalsIgnoreCase(RF2Constants.SNAPSHOT)) ) {
+					List<String> files = new ArrayList <>();
+					for (FolderType subFolderTypeLevel2 : subFolderTypeLevel1.getFolder()) {
+						files = ManifestFileListingHelper.listAllFiles(subFolderTypeLevel2, SRC_EXTERNAL_DEPENDENCY);
+					}
+					// Rename Snapshot to Delta
+					if (files.size() > 0 && !isDeltaFolderExistInManifest) {
+						List<String> newFiles = new ArrayList<>();
+						for (String file : files) {
+							newFiles.add(file.replace("Snapshot_", "Delta_").replace("Snapshot-", "Delta-"));
+						}
+						return newFiles;
+					}
+					return files;
+				}
+			}
+		} catch (ResourceNotFoundException | JAXBException | IOException e) {
+			LOGGER.error("Failed to parse manifest xml file." + e.getMessage());
+		}
+
+		return Collections.emptyList();
 	}
 
 	public boolean isInferredRelationshipFileExist(final List<String> rf2DeltaFilesSpecifiedByManifest) throws ReleaseFileGenerationException{
@@ -259,6 +322,97 @@ public class Rf2FileExportRunner {
 		}
 	}
 
+
+	private void generateAdditionalReleaseFile(final String additionalDeltaDataFile, final Map<String, List <Integer>> customRefsetCompositeKeys) throws BusinessServiceException {
+
+		if (StringUtils.isEmpty(configuration.getAdditionalPreviousPublishedPackages())) {
+			throw new BusinessServiceException("The additional previous published packages must not be empty");
+		}
+
+		String[] additionalPreviousPublishedPackages = Arrays.stream(configuration.getAdditionalPreviousPublishedPackages().split(",")).map(String::trim).toArray(String[]::new);
+
+		LOGGER.info("Generating additional release file using {}", additionalDeltaDataFile);
+		final StatTimer timer = new StatTimer(getClass());
+		final Rf2FileWriter rf2FileWriter = new Rf2FileWriter(configuration.getExcludeRefsetDescriptorMembers(), configuration.getExcludeLanguageRefsetIds());
+		RF2TableExportDAO rf2TableDAO = null;
+		TableSchema tableSchema = null;
+		try {
+
+			LOGGER.debug("Start: creating table for {}", additionalDeltaDataFile);
+			rf2TableDAO = new RF2TableExportDAOImpl(customRefsetCompositeKeys);
+			timer.split();
+
+			for (String additionalPreviousPublishedPackage : additionalPreviousPublishedPackages) {
+				InputStream additionalDeltaInputStream = getEquivalentAdditionalPackageInputStream(additionalPreviousPublishedPackage, additionalDeltaDataFile);
+				if (additionalDeltaInputStream != null) {
+					tableSchema = rf2TableDAO.createTable(additionalDeltaDataFile, additionalDeltaInputStream, false);
+					LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
+					timer.setTargetEntity(tableSchema.getTableName());
+					timer.logTimeTaken("Create table");
+
+					// Export ordered Delta file
+					final AsyncPipedStreamBean deltaFileAsyncPipe = buildDao.getOutputFileOutputStream(build, additionalDeltaDataFile);
+
+					timer.split();
+					RF2TableResults deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+					timer.logTimeTaken("Select all ordered");
+					timer.split();
+					rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream());
+					LOGGER.debug("Completed processing delta file for {}, waiting for network", tableSchema.getTableName());
+					timer.logTimeTaken("Export delta processing");
+					deltaFileAsyncPipe.waitForFinish();
+					LOGGER.debug("Finish: Exporting delta file for {}", tableSchema.getTableName());
+					break;
+				}
+			}
+
+			final String currentFullFileName = constructFullOrSnapshotFilename(additionalDeltaDataFile, RF2Constants.FULL);
+			final String snapshotOutputFilePath = constructFullOrSnapshotFilename(additionalDeltaDataFile, SNAPSHOT);
+			for (String additionalPreviousPublishedPackage : additionalPreviousPublishedPackages) {
+				InputStream additionalFullInputStream = getEquivalentAdditionalPackageInputStream(additionalPreviousPublishedPackage, currentFullFileName);
+				if (additionalFullInputStream != null) {
+					tableSchema = rf2TableDAO.createTable(additionalDeltaDataFile, additionalFullInputStream, false);
+					LOGGER.debug("Start: Exporting Full file for {}", tableSchema.getTableName());
+					timer.setTargetEntity(tableSchema.getTableName());
+					timer.logTimeTaken("Create table");
+
+					// Export Full and Snapshot files
+					final AsyncPipedStreamBean fullFileAsyncPipe = buildDao.getOutputFileOutputStream(build, currentFullFileName);
+					final AsyncPipedStreamBean snapshotAsyncPipe = buildDao.getOutputFileOutputStream(build, snapshotOutputFilePath);
+
+					timer.split();
+					final RF2TableResults fullResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
+					timer.logTimeTaken("selectAllOrdered");
+
+					rf2FileWriter.exportFullAndSnapshot(fullResultSet, tableSchema,
+							build.getConfiguration().getEffectiveTime(), fullFileAsyncPipe.getOutputStream(),
+							snapshotAsyncPipe.getOutputStream());
+					LOGGER.debug("Completed processing full and snapshot files for {}, waiting for network.", tableSchema.getTableName());
+					fullFileAsyncPipe.waitForFinish();
+					snapshotAsyncPipe.waitForFinish();
+					break;
+				}
+			}
+		} catch (final Exception e) {
+			final String errorMsg = "Failed to generate subsequent full and snapshot release files due to: " + ExceptionUtils.getRootCauseMessage(e);
+			throw new ReleaseFileGenerationException(errorMsg, e);
+		} finally {
+			// Clean up time
+			if (rf2TableDAO != null) {
+				try {
+					rf2TableDAO.closeConnection();
+				} catch (final Exception e) {
+					LOGGER.error("Failure while trying to clean up after {}", tableSchema != null ? tableSchema.getTableName() : "No table yet.", e);
+				}
+			}
+		}
+	}
+
+
+	private InputStream getEquivalentAdditionalPackageInputStream(String additionalPreviousPublishedPackage, String currentAdditionalFileName) throws IOException {
+		return buildDao.getPublishedFileArchiveEntry(EXTERNAL_DEPENDENCY_PACKAGE_RELEASE_CENTER, getEquivalentAdditionalFile(additionalPreviousPublishedPackage, currentAdditionalFileName), additionalPreviousPublishedPackage);
+	}
+
 	private InputStream getEquivalentInternationalFull(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
 		String equivalentFullFile = getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile).replace(DELTA, FULL);
 		LOGGER.info("Equivalent full file {}", equivalentFullFile);
@@ -285,6 +439,17 @@ public class Rf2FileExportRunner {
 		equivalentBuilder.append(RF2Constants.TXT_FILE_EXTENSION);
 		LOGGER.info("The equivalent file for {} in international package is {}", transformedDeltaDataFile, equivalentBuilder);
 		return equivalentBuilder.toString();
+	}
+
+	private String getEquivalentAdditionalFile(String additionalRelease, String additionalFilename) {
+		additionalFilename = additionalFilename.replace(RF2Constants.TXT_FILE_EXTENSION, "");
+		if (configuration.isBetaRelease() && additionalFilename.startsWith(BETA_PREFIX)) {
+			additionalFilename = additionalFilename.substring(1);
+		}
+		String[] splits = additionalFilename.split(RF2Constants.FILE_NAME_SEPARATOR);
+		splits[splits.length - 1] = RF2BuildUtils.getReleaseDateFromReleasePackage(additionalRelease);
+		LOGGER.info("The equivalent file for {} in additional package is {}", additionalFilename, String.join(RF2Constants.FILE_NAME_SEPARATOR, splits) + RF2Constants.TXT_FILE_EXTENSION);
+		return String.join(RF2Constants.FILE_NAME_SEPARATOR, splits) + RF2Constants.TXT_FILE_EXTENSION;
 	}
 
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {
