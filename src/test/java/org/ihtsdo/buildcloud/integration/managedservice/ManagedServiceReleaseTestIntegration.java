@@ -1,19 +1,31 @@
 package org.ihtsdo.buildcloud.integration.managedservice;
 
-import java.util.zip.ZipFile;
-
+import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+
+import java.io.InputStream;
+import java.util.zip.ZipFile;
+
+import static org.ihtsdo.buildcloud.core.service.ProductServiceImpl.EXTERNAL_DEPENDENCY_PACKAGE_RELEASE_CENTER;
 
 public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest {
 	
 	private static final String MANAGED_SERVICE_RELEASE = "SnomedCT_ManagedServiceSE1000052_";
 
 	private IntegrationTestHelper integrationTestHelper;
+
+	@Autowired
+	private PublishService publishService;
 
 	@Override
 	@Before
@@ -93,6 +105,8 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 		integrationTestHelper.setEffectiveTime(effectiveTime);
 		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
 		integrationTestHelper.setReadmeEndDate("2016");
+		integrationTestHelper.setPreviousPublishedPackage("");
+		integrationTestHelper.setAdditionalPreviousPublishedPackages("");
 		Thread.sleep(1000);
 
 		integrationTestHelper.uploadManifest("ch_manifest.xml", getClass());
@@ -122,6 +136,77 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 
 		// Assert first release output expectations
 		final String expectedZipFilename = "SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_" + effectiveTime + ".zip";
+		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL, expectedZipFilename, expectedZipEntries, getClass());
+		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass(), false);
+	}
+
+	@Test
+	public void testReleaseWithMultiplePreviousReleases() throws Exception {
+		integrationTestHelper.createTestProductStructure();
+
+		// Perform first time release
+		integrationTestHelper.setFirstTimeRelease(true);
+		integrationTestHelper.setCreateLegacyIds(true);
+		final String effectiveTime = "20161130";
+		integrationTestHelper.setEffectiveTime(effectiveTime);
+		integrationTestHelper.setReadmeHeader("This is the readme for the first release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setReadmeEndDate("2016");
+		Thread.sleep(1000);
+
+		integrationTestHelper.uploadManifest("ch_manifest_20161130.xml", getClass());
+
+		String buildURL = integrationTestHelper.createBuild(effectiveTime);
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_CH1000195_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_CH1000195_" + effectiveTime + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-en_CH1000195_" + effectiveTime +".txt", getClass());
+		integrationTestHelper.scheduleBuild(buildURL);
+		integrationTestHelper.waitUntilCompleted(buildURL);
+		integrationTestHelper.publishOutput(buildURL);
+		Thread.sleep(1000);
+
+		integrationTestHelper.createReleaseCenter("External Dependency Packages");
+		integrationTestHelper.publishFile("/SnomedCT_CommonFrench_PRODUCTION_CH1000195_20170330.zip", getClass(), HttpStatus.CREATED, "/centers/" + "external_dependency_packages");
+
+		// perform second time release for Swiss extension
+		integrationTestHelper.createTestProductStructure();
+		integrationTestHelper.setFirstTimeRelease(false);
+
+		final String effectiveTime2 = "20171130";
+		integrationTestHelper.setEffectiveTime(effectiveTime2);
+		integrationTestHelper.setBetaRelease(false);
+		integrationTestHelper.setReadmeEndDate("2017");
+		integrationTestHelper.setReadmeHeader("This is the readme for the second release © 2002-{readmeEndDate}.\\nTable of contents:\\n");
+		integrationTestHelper.setPreviousPublishedPackage("SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20161130.zip");
+		integrationTestHelper.setAdditionalPreviousPublishedPackages("SnomedCT_CommonFrench_PRODUCTION_CH1000195_20170330.zip");
+		Thread.sleep(1000);
+
+		integrationTestHelper.uploadManifest("ch_manifest_20171130.xml", getClass());
+
+		buildURL = integrationTestHelper.createBuild(effectiveTime2);
+		integrationTestHelper.uploadDeltaInputFile("rel2_Relationship_Delta_CH1000195_" + effectiveTime2 + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_StatedRelationship_Delta_CH1000195_" + effectiveTime2 + ".txt", getClass());
+		integrationTestHelper.uploadDeltaInputFile("rel2_Description_Delta-en_CH1000195_" + effectiveTime2 +".txt", getClass());
+		integrationTestHelper.scheduleBuild(buildURL);
+		integrationTestHelper.waitUntilCompleted(buildURL);
+
+		String CH_RELEASE = "SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_";
+		final String expectedZipEntries =  CH_RELEASE + effectiveTime2 + "/\n" +
+				CH_RELEASE + effectiveTime2 + "/Readme_ch_" + effectiveTime2 + ".txt\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/Terminology/\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/Terminology/sct2_Description_Snapshot-en_CH1000195_20171130.txt\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/Refset/\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/Refset/Language/\n" +
+				CH_RELEASE + effectiveTime2 + "/Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot_fr-CH_20171130.txt\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/Terminology/\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/Terminology/sct2_Description_Full-en_CH1000195_20171130.txt\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/Refset/\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/Refset/Language/\n" +
+				CH_RELEASE + effectiveTime2 + "/Full/Refset/Language/der2_cRefset_LanguageFull_fr-CH_20171130.txt";
+
+		// Assert second release output expectations including additional releases
+		final String expectedZipFilename = "SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_" + effectiveTime2 + ".zip";
 		final ZipFile zipFile = integrationTestHelper.testZipNameAndEntryNames(buildURL, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents("expectedoutput", zipFile, getClass(), false);
 	}

@@ -41,6 +41,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProductServiceImpl.class);
 
+	public static final String EXTERNAL_DEPENDENCY_PACKAGE_RELEASE_CENTER = "external_dependency_packages";
+
 	@Autowired
 	private ProductDAO productDAO;
 
@@ -358,6 +360,21 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				} else {
 					throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
 				}
+			}
+		}
+
+		if (newPropertyValues.containsKey(ADDITIONAL_PREVIOUS_PUBLISHED_PACKAGES)) {
+			final String additionalPackagesStr = newPropertyValues.get(ADDITIONAL_PREVIOUS_PUBLISHED_PACKAGES);
+			if (StringUtils.isEmpty(additionalPackagesStr)) {
+				configuration.setAdditionalPreviousPublishedPackages(null);
+			} else {
+				String[] additionalPackageArr = Arrays.stream(additionalPackagesStr.split(",")).map(String::trim).toArray(String[]::new);
+				for (String previousPublishedPackage : additionalPackageArr) {
+					if (!publishService.exists(EXTERNAL_DEPENDENCY_PACKAGE_RELEASE_CENTER, previousPublishedPackage)) {
+						throw new ResourceNotFoundException("Could not find the additional previously published package: " + previousPublishedPackage);
+					}
+				}
+				configuration.setAdditionalPreviousPublishedPackages(additionalPackagesStr);
 			}
 		}
 

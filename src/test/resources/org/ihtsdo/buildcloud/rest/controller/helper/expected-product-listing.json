@@ -16,6 +16,7 @@
     "firstTimeRelease" : false,
     "betaRelease" : false,
     "previousPublishedPackage" : null,
+    "additionalPreviousPublishedPackages" : null,
     "newRF2InputFiles" : null,
     "justPackage" : false,
     "workbenchDataFixesRequired" : false,

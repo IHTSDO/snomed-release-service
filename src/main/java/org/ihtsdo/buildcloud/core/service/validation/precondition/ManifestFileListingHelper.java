@@ -12,7 +12,20 @@ public class ManifestFileListingHelper {
 	public static List<String> listAllFiles(ListingType listingType) {
 		FolderType rootFolder = listingType.getFolder();
 		List<String> result = new ArrayList<>();
-		getFilesFromCurrentAndSubFolders(rootFolder, result);
+		getFilesFromCurrentAndSubFolders(rootFolder, result, null);
+		return result;
+	}
+
+	public static List<String> listAllFiles(ListingType listingType, String source) {
+		FolderType rootFolder = listingType.getFolder();
+		List<String> result = new ArrayList<>();
+		getFilesFromCurrentAndSubFolders(rootFolder, result, source);
+		return result;
+	}
+
+	public static List<String> listAllFiles(FolderType folderType, String source) {
+		List<String> result = new ArrayList<>();
+		getFilesFromCurrentAndSubFolders(folderType, result, source);
 		return result;
 	}
 
@@ -21,7 +34,7 @@ public class ManifestFileListingHelper {
 		List<FolderType> folderTypes = listingType.getFolder().getFolder();
 		for (FolderType folderType : folderTypes) {
 			if (folderType.getName().equals(folderName)) {
-				getFilesFromCurrentAndSubFolders(folderType, result);
+				getFilesFromCurrentAndSubFolders(folderType, result, null);
 				break;
 			}
 		}
@@ -29,16 +42,26 @@ public class ManifestFileListingHelper {
 		return  result;
 	}
 
-	private static void getFilesFromCurrentAndSubFolders(FolderType folder, List<String> filesList) {
+	private static void getFilesFromCurrentAndSubFolders(FolderType folder, List<String> filesList, String source) {
 		if (folder != null) {
 			if (folder.getFile() != null) {
 				for (FileType fileType : folder.getFile()) {
-					filesList.add(fileType.getName());
+					if (source == null) {
+						filesList.add(fileType.getName());
+					} else if (fileType.getSources() != null){
+						for (String s : fileType.getSources().getSource()) {
+							if (source.equals(s)) {
+								filesList.add(fileType.getName());
+								break;
+							}
+						}
+					}
+
 				}
 			}
 			if (folder.getFolder() != null) {
 				for (FolderType subFolder : folder.getFolder()) {
-					getFilesFromCurrentAndSubFolders(subFolder, filesList);
+					getFilesFromCurrentAndSubFolders(subFolder, filesList, source);
 				}
 			}
 		}
