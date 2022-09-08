@@ -2,12 +2,15 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import net.rcarz.jiraclient.JiraException;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
+import org.ihtsdo.buildcloud.core.entity.RVFFailureJiraAssociation;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.PublishService;
+import org.ihtsdo.buildcloud.core.service.RVFFailureJiraAssociationService;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
@@ -62,6 +65,9 @@ public class BuildController {
 
 	@Autowired
 	private ReleaseBuildManager releaseBuildManager;
+
+	@Autowired
+	private RVFFailureJiraAssociationService rvfFailureJiraAssociationService;
 
 	private static final String[] BUILD_LINKS = {"manifest", "configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
@@ -573,6 +579,22 @@ public class BuildController {
 								   @PathVariable final String buildId, HttpServletResponse response) throws IOException {
 		String logUrl = "/logViewer.html?center=" + releaseCenterKey + "&product=" + productKey + "&build=" + buildId;
 		response.sendRedirect(logUrl);
+	}
+
+	@GetMapping(value = "/builds/{buildId}/failure-jira-associations")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@ApiOperation(value = "Get the list of JIRA issues associated with the RVF failures for each build")
+	public ResponseEntity getRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+																		 @PathVariable final String buildId) {
+		return new ResponseEntity<>(rvfFailureJiraAssociationService.findByBuildKey(releaseCenterKey, productKey, buildId), HttpStatus.OK);
+	}
+
+	@PostMapping(value = "/builds/{buildId}/failure-jira-associations")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+	@ApiOperation(value = "Generate Jira issues for the RVF failures")
+	public ResponseEntity createRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+											  @PathVariable final String buildId, @RequestBody String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
+		return new ResponseEntity<>(rvfFailureJiraAssociationService.createFailureJiraAssociations(releaseCenterKey, productKey, buildId, assertionIds), HttpStatus.CREATED);
 	}
 
 }
