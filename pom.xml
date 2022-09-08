@@ -53,6 +53,24 @@
 			<artifactId>java-diff-utils</artifactId>
 			<version>4.11</version>
 		</dependency>
+		<!-- Jira -->
+		<dependency>
+			<groupId>net.rcarz</groupId>
+			<artifactId>jira-client</artifactId>
+			<version>0.6.4-IHTSDO</version>
+		</dependency>
+		<dependency>
+			<!-- For Jira OAuth -->
+			<groupId>com.google.gdata</groupId>
+			<artifactId>core</artifactId>
+			<version>1.47.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>jetty</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		<!-- Test -->
 		<dependency>
 			<groupId>org.junit.vintage</groupId>
