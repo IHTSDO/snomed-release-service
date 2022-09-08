@@ -109,7 +109,7 @@ public class RVFFailureJiraAssociationService {
 		List<RVFFailureJiraAssociation> associations = new ArrayList<>();
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem> assertionsFailedAndWarning = getAllAssertions(report);
 		for (String assertionId : validAssertionIds) {
-			ValidationReport.RvfValidationResult.TestResult.TestRunItem found = assertionsFailedAndWarning.stream().filter(item -> item.getAssertionUuid().equals(assertionId)).findAny().orElse(null);
+			ValidationReport.RvfValidationResult.TestResult.TestRunItem found = assertionsFailedAndWarning.stream().filter(item -> item.getAssertionUuid() != null && item.getAssertionUuid().equals(assertionId)).findAny().orElse(null);
 			if (found != null) {
 				Issue jiraIssue = createJiraIssue(generateSummary(product, build, found), generateDescription(build, found), build.getConfiguration().getEffectiveTimeFormatted());
 				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
