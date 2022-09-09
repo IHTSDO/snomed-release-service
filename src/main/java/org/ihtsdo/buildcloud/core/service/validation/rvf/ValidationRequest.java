@@ -14,7 +14,9 @@ public class ValidationRequest {
 
 	private String previousDependencyEffectiveTime;
 	
-	private boolean releaseAsAnEdition; 
+	private boolean releaseAsAnEdition;
+
+	private boolean dailyBuild;
 	
 	private String includedModuleId;
 
@@ -120,5 +122,13 @@ public class ValidationRequest {
 
 	public String getExcludedRefsetDescriptorMembers() {
 		return excludedRefsetDescriptorMembers;
+	}
+
+	public void setDailyBuild(boolean dailyBuild) {
+		this.dailyBuild = dailyBuild;
+	}
+
+	public boolean isDailyBuild() {
+		return dailyBuild;
 	}
 }
