@@ -1116,6 +1116,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setFailureExportMax(failureExportMax);
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
+			request.setDailyBuild(buildConfiguration.isDailyBuild());
 			request.setIncludedModuleId(includedModuleId);
 			request.setResponseQueue(queue);
 			request.setBranchPath(buildConfiguration.getBranchPath());

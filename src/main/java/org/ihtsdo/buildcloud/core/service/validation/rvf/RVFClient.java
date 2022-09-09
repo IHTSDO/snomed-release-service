@@ -35,6 +35,8 @@ public class RVFClient implements Closeable {
 
 	private static final String ENABLE_TRACEABILITY_VALIDATION = "enableTraceabilityValidation";
 
+	private static final String ENABLE_CHANGE_NOT_AT_TASK_LEVEL_VALIDATION = "enableChangeNotAtTaskLevelValidation";
+
 	private static final String BRANCH_PATH = "branchPath";
 
 	private static final String BRANCH_HEAD_TIMESTAMP = "contentHeadTimestamp";
@@ -256,6 +258,8 @@ public class RVFClient implements Closeable {
 		}
 		if (qaTestConfig.isEnableTraceabilityValidation() && !StringUtils.isEmpty(request.getBranchPath())) {
 			multiPartBuilder.addTextBody(ENABLE_TRACEABILITY_VALIDATION, Boolean.toString(qaTestConfig.isEnableTraceabilityValidation()));
+			multiPartBuilder.addTextBody(ENABLE_CHANGE_NOT_AT_TASK_LEVEL_VALIDATION, Boolean.toString(request.isDailyBuild()));
+
 			multiPartBuilder.addTextBody(BRANCH_PATH, request.getBranchPath());
 		}
 
