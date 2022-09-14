@@ -9,8 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -46,11 +46,12 @@ public class SecurityContextConfiguration extends WebSecurityConfigurerAdapter {
 						"/swagger-ui.html",
 						"/swagger-resources/**",
 						"/v2/api-docs",
+						"/version",
 						"/webjars/springfox-swagger-ui/**").permitAll()
 				.anyRequest().authenticated()
 				.and().httpBasic();
 		http.csrf().disable();
-		http.addFilterAfter(new RequestHeaderAuthenticationDecorator(), BasicAuthenticationFilter.class);
+		http.addFilterBefore(new RequestHeaderAuthenticationDecorator(), FilterSecurityInterceptor.class);
 	}
 
 	// Does not seem to be used anywhere
