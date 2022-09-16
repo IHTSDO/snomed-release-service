@@ -43,7 +43,7 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
 
     @Override
     @CacheEvict(value = "release-center-records", allEntries = true)
-    public ReleaseCenter create(String name, String shortName, String codeSystem) throws EntityAlreadyExistsException {
+    public ReleaseCenter create(String name, String shortName, String codeSystem, String snomedCtProduct) throws EntityAlreadyExistsException {
         //Check that we don't already have one of these
         String releaseCenterBusinessKey = EntityHelper.formatAsBusinessKey(shortName);
         ReleaseCenter existingRC = dao.find(releaseCenterBusinessKey);
@@ -52,6 +52,7 @@ public class ReleaseCenterServiceImpl extends EntityServiceImpl<ReleaseCenter> i
         }
 
         ReleaseCenter releaseCenter = new ReleaseCenter(name, shortName, codeSystem);
+        releaseCenter.setSnomedCtProduct(snomedCtProduct);
         dao.save(releaseCenter);
 
         return releaseCenter;

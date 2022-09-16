@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.core.service.ReleaseCenterService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +28,7 @@ public class ReleaseCenterServiceImplTest extends TestEntityGenerator {
 		Assert.assertTrue(before > 0);  //Check our test data is in there.
 		final ReleaseCenter releaseCenter =
 				new ReleaseCenter("my test releaseCenter name2", "some short name2", "code system2");
-		Mockito.when(rcs.create("my test releaseCenter name2", "some short name2", "code system2"))
+		Mockito.when(rcs.create("my test releaseCenter name2", "some short name2", "code system2", null))
 				.thenReturn(releaseCenter);
 		releaseCentersExpected.add(releaseCenter);
 		Mockito.when(rcs.findAll()).thenReturn(releaseCentersExpected);

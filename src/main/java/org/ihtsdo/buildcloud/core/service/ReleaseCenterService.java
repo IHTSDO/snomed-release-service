@@ -12,5 +12,5 @@ public interface ReleaseCenterService extends EntityService<ReleaseCenter> {
 
 	ReleaseCenter find(String businessKey) throws ResourceNotFoundException;
 
-	ReleaseCenter create(String name, String shortName, String codeSystem) throws EntityAlreadyExistsException;
+	ReleaseCenter create(String name, String shortName, String codeSystem, String snomedCtProduct) throws EntityAlreadyExistsException;
 }
