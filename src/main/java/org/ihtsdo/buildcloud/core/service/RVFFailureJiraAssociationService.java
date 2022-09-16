@@ -301,9 +301,9 @@ public class RVFFailureJiraAssociationService {
 								", assertionUuid='" + assertionUuid + '\'' +
 								", assertionText='" + assertionText + '\'' +
 								", severity=" + (severity != null ? "\'" + severity + "\'" : null) +
-								", failureCount=" + (failureCount != null ? "\'" + failureCount + "\'" : null) +
-								", failureMessage='" + (failureMessage != null ? "\'" + failureMessage + "\'" : null) +
-								", firstNInstances=" + (firstNInstances != null ? "\'" + firstNInstances + "\'" : null) +
+								", failureCount=" + failureCount +
+								", failureMessage=" + (failureMessage != null ? "\'" + failureMessage + "\'" : null) +
+								", firstNInstances=" + firstNInstances +
 								'}';
 					}
 
