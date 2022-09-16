@@ -34,6 +34,9 @@ public class ReleaseCenter {
 	@Column(name="code_system")
 	private String codeSystem;
 
+	@Column(name="snomed_ct_product")
+	private String snomedCtProduct;
+
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
 	private final List<Product> products;
@@ -109,6 +112,14 @@ public class ReleaseCenter {
 
 	public void setCodeSystem(String codeSystem) {
 		this.codeSystem = codeSystem;
+	}
+
+	public String getSnomedCtProduct() {
+		return snomedCtProduct;
+	}
+
+	public void setSnomedCtProduct(String snomedCtProduct) {
+		this.snomedCtProduct = snomedCtProduct;
 	}
 
 	@Override

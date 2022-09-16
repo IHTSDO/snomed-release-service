@@ -13,6 +13,7 @@ import org.ihtsdo.buildcloud.core.dao.RVFFailureJiraAssociationDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.RVFFailureJiraAssociation;
+import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.jira.ImpersonatingJiraClientFactory;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.sso.integration.SecurityUtil;
@@ -27,10 +28,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -64,6 +62,9 @@ public class RVFFailureJiraAssociationService {
 
 	@Value("${jira.ticket.customField.reporting.entity.default.value}")
 	private String reportingEntityDefaultValue;
+
+	@Value("${jira.ticket.customField.snomedct.product}")
+	private String snomedCtProduct;
 
 	@Autowired
 	private RVFFailureJiraAssociationDAO rvfFailureJiraAssociationDAO;
@@ -111,9 +112,9 @@ public class RVFFailureJiraAssociationService {
 		for (String assertionId : validAssertionIds) {
 			ValidationReport.RvfValidationResult.TestResult.TestRunItem found = assertionsFailedAndWarning.stream().filter(item -> item.getAssertionUuid() != null && item.getAssertionUuid().equals(assertionId)).findAny().orElse(null);
 			if (found != null) {
-				Issue jiraIssue = createJiraIssue(generateSummary(product, build, found), generateDescription(build, found), build.getConfiguration().getEffectiveTimeFormatted());
+				Issue jiraIssue = createJiraIssue(product.getReleaseCenter(), generateSummary(product, build, found), generateDescription(build, found), build.getConfiguration().getEffectiveTimeFormatted());
 				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
-				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.getFirstNInstances().toString()).getBytes());
+				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
 				jiraIssue.addAttachments(attachments);
 
 				final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, found.getAssertionUuid(), jiraUrl + "browse/" + jiraIssue.getKey());
@@ -128,21 +129,21 @@ public class RVFFailureJiraAssociationService {
 	}
 
 	private String generateSummary(Product product, Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
-		return product.getName() + ", " + build.getConfiguration().getEffectiveTimeFormatted() + ", " + testRunItem.getAssertionUuid() + ", " + build.getId();
+		return product.getName() + ", " + build.getConfiguration().getEffectiveTimeFormatted() + ", " + testRunItem.getTestType().replace("_ ", " ") + ", "+ testRunItem.getAssertionUuid() + ", " + build.getId();
 	}
 
 	private String generateDescription(Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
 		String result = testRunItem.getAssertionText() + "\n"
-				+ "Total number of failures : " + testRunItem.getFailureCount() + "\n"
+				+ "Total number of failures: " + testRunItem.getFailureCount() + "\n"
 				+ "Report URL: " + "[" + build.getRvfURL() + "|" + build.getRvfURL() + "]" + "\n";
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> firstNInstances = getFirstNInstances(testRunItem.getFirstNInstances(), 10);
-		result += "First " + firstNInstances.size() + " failures : \n";
+		result += "First " + firstNInstances.size() + " failures: \n";
 		result += firstNInstances.toString();
 		return result;
 	}
 
 	private String getPrettyString(String input) {
-		Gson gson = new GsonBuilder().serializeNulls().disableHtmlEscaping().setPrettyPrinting().create();
+		Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 		JsonElement je = JsonParser.parseString(input);
 		return gson.toJson(je);
 	}
@@ -170,7 +171,7 @@ public class RVFFailureJiraAssociationService {
 		return assertionsFailedAndWarning;
 	}
 
-	private Issue createJiraIssue(String summary, String description, String releaseDate) throws BusinessServiceException {
+	private Issue createJiraIssue(ReleaseCenter releaseCenter, String summary, String description, String releaseDate) throws BusinessServiceException {
 		Issue jiraIssue;
 		try {
 			jiraIssue = getJiraClient().createIssue(project, issueType)
@@ -181,9 +182,12 @@ public class RVFFailureJiraAssociationService {
 			final Issue.FluentUpdate updateRequest = jiraIssue.update();
 			updateRequest.field(Field.PRIORITY, priority);
 			updateRequest.field(productReleaseDate, releaseDate);
-			updateRequest.field(reportingEntity, reportingEntityDefaultValue);
+			updateRequest.field(reportingEntity, Arrays.asList(reportingEntityDefaultValue));
 			if (StringUtils.hasLength(assignee)) {
 				updateRequest.field(Field.ASSIGNEE, assignee);
+			}
+			if (StringUtils.hasLength(releaseCenter.getSnomedCtProduct())) {
+				updateRequest.field(snomedCtProduct, Arrays.asList(releaseCenter.getSnomedCtProduct().trim()));
 			}
 			updateRequest.execute();
 		} catch (JiraException e) {
@@ -290,6 +294,19 @@ public class RVFFailureJiraAssociationService {
 						return firstNInstances;
 					}
 
+					@Override
+					public String toString() {
+						return "{" +
+								"testType='" + testType + '\'' +
+								", assertionUuid='" + assertionUuid + '\'' +
+								", assertionText='" + assertionText + '\'' +
+								", severity=" + (severity != null ? "\'" + severity + "\'" : null) +
+								", failureCount=" + (failureCount != null ? "\'" + failureCount + "\'" : null) +
+								", failureMessage='" + (failureMessage != null ? "\'" + failureMessage + "\'" : null) +
+								", firstNInstances=" + (firstNInstances != null ? "\'" + firstNInstances + "\'" : null) +
+								'}';
+					}
+
 					private static final class FailureDetail {
 						private String conceptId;
 						private String conceptFsn;
@@ -320,11 +337,11 @@ public class RVFFailureJiraAssociationService {
 						@Override
 						public String toString() {
 							return "{\n\t" +
-									"\"conceptId\":" + (conceptId != null ? '\"' + conceptId + '\"' : null) + ",\n\t" +
-									"\"conceptFsn\":" + (conceptFsn != null ? '\"' + conceptFsn + '\"' : null) + ",\n\t" +
-									"\"detail\":" + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
-									"\"componentId\":" + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
-									"\"fullComponent\":" + (fullComponent != null ? '\"' + fullComponent + '\"' : null) + "\n" +
+									"\"conceptId\": " + (conceptId != null ? '\"' + conceptId + '\"' : null) + ",\n\t" +
+									"\"conceptFsn\": " + (conceptFsn != null ? '\"' + conceptFsn + '\"' : null) + ",\n\t" +
+									"\"detail\": " + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
+									"\"componentId\": " + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
+									"\"fullComponent\": " + (fullComponent != null ? '\"' + fullComponent + '\"' : null) + "\n" +
 									"}";
 						}
 					}
