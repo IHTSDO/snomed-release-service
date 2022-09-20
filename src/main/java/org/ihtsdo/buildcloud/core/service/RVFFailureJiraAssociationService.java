@@ -129,7 +129,7 @@ public class RVFFailureJiraAssociationService {
 	}
 
 	private String generateSummary(Product product, Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
-		return product.getName() + ", " + build.getConfiguration().getEffectiveTimeFormatted() + ", " + testRunItem.getTestType().replace("_ ", " ") + ", "+ testRunItem.getAssertionUuid() + ", " + build.getId();
+		return product.getName() + ", " + build.getConfiguration().getEffectiveTimeFormatted() + ", " + testRunItem.getTestType().replace("DROOL_RULES", "DROOLS") + ", "+ testRunItem.getAssertionUuid() + ", " + build.getId();
 	}
 
 	private String generateDescription(Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
