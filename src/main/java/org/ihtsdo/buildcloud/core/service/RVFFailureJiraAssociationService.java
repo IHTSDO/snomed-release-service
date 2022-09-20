@@ -297,13 +297,13 @@ public class RVFFailureJiraAssociationService {
 					@Override
 					public String toString() {
 						return "{" +
-								"testType='" + testType + '\'' +
-								", assertionUuid='" + assertionUuid + '\'' +
-								", assertionText='" + assertionText + '\'' +
-								", severity=" + (severity != null ? "\'" + severity + "\'" : null) +
-								", failureCount=" + failureCount +
-								", failureMessage=" + (failureMessage != null ? "\'" + failureMessage + "\'" : null) +
-								", firstNInstances=" + firstNInstances +
+								"\"testType\": \"" + testType + '\"' +
+								", \"assertionUuid\": \"" + assertionUuid + '\"' +
+								", \"assertionText\": \"" + assertionText + '\"' +
+								", \"severity\": " + (severity != null ? "\"" + severity + "\"" : null) +
+								", \"failureCount\": " + failureCount +
+								", \"failureMessage\": " + (failureMessage != null ? "\"" + failureMessage + "\"" : null) +
+								", \"firstNInstances\": " + firstNInstances +
 								'}';
 					}
 
