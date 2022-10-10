@@ -1,11 +1,13 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.MDC;
@@ -62,6 +64,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import javax.jms.JMSException;
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -135,6 +138,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Value("${srs.jms.queue.prefix}.build-job-status")
 	private String queue;
+
+	@Value("${srs.jms.queue.prefix}.daily-build-rvf-response-queue")
+	private String dailyBuildRvfResponseQueue;
 
 	@Autowired
 	private DailyBuildResourceConfig dailyBuildResourceConfig;
@@ -1123,6 +1129,9 @@ public class BuildServiceImpl implements BuildService {
 			request.setExcludedRefsetDescriptorMembers(buildConfiguration.getExcludeRefsetDescriptorMembers());
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
 			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
+			if (buildConfiguration.isDailyBuild()) {
+				sendDailyBuildRvfResponseUpdateMessage(buildConfiguration.getBranchPath(), rvfResponse);
+			}
 		} catch (IOException | BusinessServiceException | ConfigurationException e) {
 			LOGGER.error("Failed to run RVF validations.", e);
 			dao.updateStatus(build, Status.RVF_FAILED);
@@ -1136,6 +1145,15 @@ public class BuildServiceImpl implements BuildService {
 						"buildId", build.getId(),
 						"releaseCenterKey", build.getReleaseCenterKey(),
 						"productKey", build.getProductKey()));
+	}
+
+	private void sendDailyBuildRvfResponseUpdateMessage(String branchPath, String rvfURL) {
+		try {
+			messagingHelper.send(new ActiveMQQueue(dailyBuildRvfResponseQueue), ImmutableMap.of("rvfURL",rvfURL,
+					"branchPath", branchPath));
+		} catch (JsonProcessingException | JMSException e) {
+			LOGGER.error("Failed to send daily build RVF response notification for {}.", branchPath, e);
+		}
 	}
 
 	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
