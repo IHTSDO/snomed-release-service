@@ -46,9 +46,13 @@ public class BuildConfiguration {
 	
 	@Column(name="previous_published_release")
 	private String previousPublishedPackage;
+
+	@Column(name="additional_previous_published_releases")
+	private String additionalPreviousPublishedPackages;
+
 	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
-	
+
 	@Type(type="yes_no")
 	@Column(name="just_package")
 	private boolean justPackage = false;
@@ -282,6 +286,14 @@ public class BuildConfiguration {
 
 	public void setPreviousPublishedPackage(final String previousPublishedPackage) {
 		this.previousPublishedPackage = previousPublishedPackage;
+	}
+
+	public String getAdditionalPreviousPublishedPackages() {
+		return additionalPreviousPublishedPackages;
+	}
+
+	public void setAdditionalPreviousPublishedPackages(String additionalPreviousPublishedPackages) {
+		this.additionalPreviousPublishedPackages = additionalPreviousPublishedPackages;
 	}
 
 	public boolean isCreateLegacyIds() {

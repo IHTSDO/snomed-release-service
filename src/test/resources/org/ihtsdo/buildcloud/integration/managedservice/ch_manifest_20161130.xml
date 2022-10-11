@@ -1,0 +1,24 @@
+<listing xmlns="http://release.ihtsdo.org/manifest/1.0.0">
+    <folder Name="SnomedCT_ManagedServiceCH_PRODUCTION_CH1000195_20161130">
+        <file Name="Readme_ch_20161130.txt"/>
+        <folder Name="Snapshot">
+            <folder Name="Terminology">
+                <file Name="sct2_Description_Snapshot-en_CH1000195_20161130.txt">
+                    <sources>
+                        <source>terminology-server</source>
+                    </sources>
+                    <contains-language-codes>
+                        <code>en</code>
+                    </contains-language-codes>
+                </file>
+            </folder>
+        </folder>
+
+        <folder Name="Full">
+            <folder Name="Terminology">
+                <file Name="sct2_Description_Full-en_CH1000195_20161130.txt"/>
+            </folder>
+        </folder>
+    </folder>
+</listing>
+
