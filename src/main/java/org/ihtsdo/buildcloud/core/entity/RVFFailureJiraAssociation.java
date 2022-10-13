@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name="rvf_failure_jira_associations")
@@ -26,6 +27,9 @@ public class RVFFailureJiraAssociation {
 	@Column(name="build_id")
 	private String buildId;
 
+	@Column(name="effective_time")
+	private Date effectiveTime;
+
 	@Column(name="assertion_id")
 	private String assertionId;
 
@@ -35,10 +39,11 @@ public class RVFFailureJiraAssociation {
 	public RVFFailureJiraAssociation() {
 	}
 
-	public RVFFailureJiraAssociation(ReleaseCenter releaseCenter, Product product, String buildId, String assertionId, String jiraUrl) {
+	public RVFFailureJiraAssociation(ReleaseCenter releaseCenter, Product product, String buildId, Date effectiveTime, String assertionId, String jiraUrl) {
 		this.releaseCenter = releaseCenter;
 		this.product = product;
 		this.buildId = buildId;
+		this.effectiveTime = effectiveTime;
 		this.assertionId = assertionId;
 		this.jiraUrl = jiraUrl;
 	}
@@ -73,6 +78,14 @@ public class RVFFailureJiraAssociation {
 
 	public void setBuildId(String buildId) {
 		this.buildId = buildId;
+	}
+
+	public Date getEffectiveTime() {
+		return effectiveTime;
+	}
+
+	public void setEffectiveTime(Date effectiveTime) {
+		this.effectiveTime = effectiveTime;
 	}
 
 	public String getAssertionId() {

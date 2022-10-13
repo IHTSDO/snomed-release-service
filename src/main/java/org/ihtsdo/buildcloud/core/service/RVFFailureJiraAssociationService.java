@@ -85,7 +85,7 @@ public class RVFFailureJiraAssociationService {
 		return rvfFailureJiraAssociationDAO.findByBuildKey(centerKey, productKey, buildKey);
 	}
 
-	public List<RVFFailureJiraAssociation> createFailureJiraAssociations(String centerKey, String productKey, String buildKey, String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
+	public Map<String, List<RVFFailureJiraAssociation>> createFailureJiraAssociations(String centerKey, String productKey, String buildKey, String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
 		if (assertionIds.length == 0) {
 			throw new IllegalArgumentException("Assertion IDs must not be empty");
 		}
@@ -100,13 +100,17 @@ public class RVFFailureJiraAssociationService {
 			throw new BusinessServiceException("RVF report must be completed");
 		}
 
-		// check against the existing associations
+		// check duplicate
 		List<String> validAssertionIds = new ArrayList<>();
-		List<RVFFailureJiraAssociation> existingAssocs = this.findByBuildKey(centerKey, productKey, buildKey);
+		List<RVFFailureJiraAssociation> dupplicatedAssocs = new ArrayList<>();
+		List<RVFFailureJiraAssociation> existingAssocs = rvfFailureJiraAssociationDAO.findByEffectiveTime(centerKey, productKey, build.getConfiguration().getEffectiveTime());
 		if (!existingAssocs.isEmpty()) {
 			for (String assertionId : assertionIds) {
-				if (!existingAssocs.stream().anyMatch(item -> item.getAssertionId().equals(assertionId))) {
+				RVFFailureJiraAssociation existingAssoc = existingAssocs.stream().filter(item -> item.getAssertionId().equals(assertionId)).findFirst().orElse(null);
+				if (existingAssoc == null) {
 					validAssertionIds.add(assertionId);
+				} else {
+					dupplicatedAssocs.add(existingAssoc);
 				}
 			}
 		} else {
@@ -123,15 +127,18 @@ public class RVFFailureJiraAssociationService {
 				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
 				jiraIssue.addAttachments(attachments);
 
-				final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, found.getAssertionUuid(), jiraUrl + "browse/" + jiraIssue.getKey());
+				final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, build.getConfiguration().getEffectiveTime(), found.getAssertionUuid(), jiraUrl + "browse/" + jiraIssue.getKey());
 				rvfFailureJiraAssociationDAO.save(association);
 				associations.add(association);
 			} else {
 				logger.error("No failure found for the assertion {} for the build {}", assertionId, build.getId());
 			}
 		}
+		Map<String, List<RVFFailureJiraAssociation>> result = new HashMap<>();
+		result.put("newlyCreatedRVFFailureJiraAssociations", associations);
+		result.put("duplicatedRVFFailureJiraAssociations", dupplicatedAssocs);
 
-		return associations;
+		return result;
 	}
 
 	private String generateSummary(Product product, Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
@@ -201,7 +208,8 @@ public class RVFFailureJiraAssociationService {
 			}
 			updateRequest.execute();
 		} catch (JiraException e) {
-			throw new BusinessServiceException("Failed to create Jira task", e);
+			logger.error(e.getMessage());
+			throw new BusinessServiceException("Failed to create Jira task. Error: " + e.getMessage(), e);
 		}
 
 		return jiraIssue;
