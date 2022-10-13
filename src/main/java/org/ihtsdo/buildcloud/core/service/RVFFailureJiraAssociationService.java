@@ -209,7 +209,7 @@ public class RVFFailureJiraAssociationService {
 			updateRequest.execute();
 		} catch (JiraException e) {
 			logger.error(e.getMessage());
-			throw new BusinessServiceException("Failed to create Jira task. Error: " + e.getMessage(), e);
+			throw new BusinessServiceException("Failed to create Jira task. Error: " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 		}
 
 		return jiraIssue;
