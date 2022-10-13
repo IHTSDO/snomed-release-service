@@ -63,6 +63,12 @@ public class RVFFailureJiraAssociationService {
 	@Value("${jira.ticket.customField.reporting.entity.default.value}")
 	private String reportingEntityDefaultValue;
 
+	@Value("${jira.ticket.customField.reporting.stage}")
+	private String reportingStage;
+
+	@Value("${jira.ticket.customField.reporting.stage.default.value}")
+	private String reportingStageDefaultValue;
+
 	@Value("${jira.ticket.customField.snomedct.product}")
 	private String snomedCtProduct;
 
@@ -138,7 +144,10 @@ public class RVFFailureJiraAssociationService {
 				+ "Report URL: " + "[" + build.getRvfURL() + "|" + build.getRvfURL() + "]" + "\n";
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> firstNInstances = getFirstNInstances(testRunItem.getFirstNInstances(), 10);
 		result += "First " + firstNInstances.size() + " failures: \n";
-		result += firstNInstances.toString();
+		for (ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail failureDetail: firstNInstances) {
+			result += "* " + failureDetail.toString() + "\n";
+		}
+
 		return result;
 	}
 
@@ -183,6 +192,7 @@ public class RVFFailureJiraAssociationService {
 			updateRequest.field(Field.PRIORITY, priority);
 			updateRequest.field(productReleaseDate, releaseDate);
 			updateRequest.field(reportingEntity, Arrays.asList(reportingEntityDefaultValue));
+			updateRequest.field(reportingStage, Arrays.asList(reportingStageDefaultValue));
 			if (StringUtils.hasLength(assignee)) {
 				updateRequest.field(Field.ASSIGNEE, assignee);
 			}
