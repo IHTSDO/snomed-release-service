@@ -162,6 +162,18 @@ public class ReleaseServiceImpl implements ReleaseService {
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
 			FolderType rootFolder = manifestListing.getFolder();
+
+			// Remove release_package_information.json
+			if (rootFolder.getFile() != null) {
+				for (FileType fileType : rootFolder.getFile()) {
+					if (fileType.getName().toLowerCase().startsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_PREFIX)
+							&& fileType.getName().endsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_EXTENSION)) {
+						rootFolder.getFile().remove(fileType);
+						break;
+					}
+				}
+			}
+
 			boolean isDeltaFolderExistInManifest = isDeltaFolderExistInManifest(rootFolder);
 			if (!isDeltaFolderExistInManifest) {
 				FolderType fullFolder = null;
@@ -258,7 +270,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	private String replaceReleasePackageName(String filename) {
-		return filename.replaceAll("PRODUCTION", "DAILYBUILD");
+		return filename.replaceAll("PRODUCTION", "DAILYBUILD_BETA");
 	}
 
 	private boolean prepareInputFiles(Build build) throws BusinessServiceException {
