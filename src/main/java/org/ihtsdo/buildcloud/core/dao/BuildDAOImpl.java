@@ -50,10 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -149,8 +146,13 @@ public class BuildDAOImpl implements BuildDAO {
 		// Save trigger user
 		if (StringUtils.isNotEmpty(build.getBuildUser())) {
 			final String userFilePath = pathHelper.getBuildUserFilePath(build, build.getBuildUser());
-			// Put new status before deleting old to avoid there being none.
 			putFile(userFilePath, BLANK);
+		}
+
+		// Save trigger user roles
+		if (!CollectionUtils.isEmpty(build.getUserRoles())) {
+			final String userRolesFilePath = pathHelper.getBuildUserRolesFilePath(build, build.getUserRoles());
+			putFile(userRolesFilePath, BLANK);
 		}
 
 		// save build status
@@ -559,6 +561,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private List<Build> findBuildsDesc(final String productDirectoryPath, final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final List<String> userPaths = new ArrayList<>();
+		final List<String> userRolesPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
 		final List<String> buildsMarkAsDeleted = new ArrayList<>();
@@ -570,10 +573,10 @@ public class BuildDAOImpl implements BuildDAO {
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
+		List<Build> builds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
 		builds = removeInvisibleBuilds(visibility, visibilityPaths, builds);
 		builds = removeBuildsMarkAsDeleted(buildsMarkAsDeleted, builds);
-		addDataToBuilds(builds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+		addDataToBuilds(builds, userPaths, userRolesPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 		Collections.reverse(builds);
 
 		LOGGER.info("{} Builds being returned to client.", builds.size());
@@ -590,25 +593,26 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 		final List<String> userPaths = new ArrayList<>();
+		final List<String> userRolesPaths = new ArrayList<>();
 		final List<String> tagPaths = new ArrayList<>();
 		final List<String> visibilityPaths = new ArrayList<>();
 		final List<String> buildsMarkAsDeleted = new ArrayList<>();
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, tagPaths, visibilityPaths,buildsMarkAsDeleted);
+		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, userRolesPaths, tagPaths, visibilityPaths,buildsMarkAsDeleted);
 		Collections.reverse(allBuilds);
 		allBuilds = filterByViewMode(allBuilds, tagPaths, viewMode);
 		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
 		allBuilds = removeBuildsMarkAsDeleted(buildsMarkAsDeleted, allBuilds);
 		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
-		addDataToBuilds(pagedBuilds, userPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+		addDataToBuilds(pagedBuilds, userPaths, userRolesPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 
 		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
 		LOGGER.info("{} Builds being returned to client. {} pages of Builds available.", pagedBuilds.size(), totalPages);
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
-	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> tagPaths, List<String> visibilityPaths, List<String> buildsMarkAsDeleted) {
+	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> visibilityPaths, List<String> buildsMarkAsDeleted) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, productDirectoryPath);
 		List<Build> builds = new ArrayList<>();
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
@@ -619,7 +623,7 @@ public class BuildDAOImpl implements BuildDAO {
 				objectListing = s3Client.listNextBatchOfObjects(objectListing);
 			}
 			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
+			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
 			firstPass = false;
 		}
 
@@ -692,11 +696,12 @@ public class BuildDAOImpl implements BuildDAO {
 		return ListHelper.page(builds, pageNumber, pageSize);
 	}
 
-	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> tagPaths, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
+	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
 		LOGGER.info("Adding users, tags & build reports to Builds.");
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
 				build.setBuildUser(getBuildUser(build, userPaths));
+				build.setUserRoles(getUserRoles(build, userRolesPaths));
 				build.setTags(getTags(build, tagPaths));
 				if (Boolean.TRUE.equals(includeRvfURL) &&
 						(build.getStatus().equals(Build.Status.BUILT)
@@ -737,7 +742,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> tagPaths, final List<String> visibilityPaths, final List<String> buildsMarkAsDeleted) {
+	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> userRolesPaths, final List<String> tagPaths, final List<String> visibilityPaths, final List<String> buildsMarkAsDeleted) {
 		for (final S3ObjectSummary objectSummary : objectSummaries) {
 			final String key = objectSummary.getKey();
 			if (key.contains("/status:")) {
@@ -750,6 +755,8 @@ public class BuildDAOImpl implements BuildDAO {
 				tagPaths.add(key);
 			} else if (key.contains("/user:")) {
 				userPaths.add(key);
+			} else if (key.contains("/user-roles:")) {
+				userRolesPaths.add(key);
 			} else if (key.contains("/visibility:")) {
 				visibilityPaths.add(key);
 			} else if (key.contains("/" + S3PathHelper.MARK_AS_DELETED)) {
@@ -760,6 +767,19 @@ public class BuildDAOImpl implements BuildDAO {
 				// do nothing
 			}
 		}
+	}
+
+	private List<String> getUserRoles(Build build, final List<String> userRolesPaths) {
+		for (final String key : userRolesPaths) {
+			final String[] keyParts = key.split("/");
+			final String dateString = keyParts[keyParts.length - 2];
+			if (build.getCreationTime().equals(dateString)) {
+				String rolesStr = keyParts[keyParts.length - 1].split(":")[1];
+				String[] roleArr = rolesStr.split(",");
+				return Arrays.asList(roleArr);
+			}
+		}
+		return null;
 	}
 
 	private List<Tag> getTags(Build build, final List<String> tagPaths) {
