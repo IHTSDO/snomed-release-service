@@ -159,6 +159,9 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private BuildStatusTrackerDao statusTrackerDao;
 
+	@Autowired
+	private InputFileService inputFileService;
+
 	@PostConstruct
 	public void init() {
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
@@ -197,6 +200,7 @@ public class BuildServiceImpl implements BuildService {
 				if (effectiveTime != null) {
 					configuration.setEffectiveTime(effectiveTime);
 				}
+				configuration.setBuildPackageName(getBuildPackageName(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey()));
 
 				if (buildRequest != null) {
 					configuration.setBranchPath(buildRequest.getBranchPath());
@@ -315,6 +319,20 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return null;
+	}
+
+	private String getBuildPackageName(String releaseCenter, String productKey) throws IOException, JAXBException {
+		ListingType manifestListing;
+		try (InputStream manifestInputStream = inputFileService.getManifestStream(releaseCenter, productKey)) {
+			if (manifestInputStream == null) {
+				return null;
+			}
+			ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			manifestListing = parser.parse(manifestInputStream);
+		}
+		// Zip file name is the same as the root folder defined in manifest, with .zip appended
+		FolderType rootFolder = manifestListing.getFolder();
+		return rootFolder.getName() + ".zip";
 	}
 
 	@Override

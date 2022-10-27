@@ -115,6 +115,9 @@ public class BuildConfiguration {
 	private String buildName;
 
 	@Transient
+	private String buildPackageName;
+
+	@Transient
 	private Set<String> excludedModuleIds;
 
 	@Transient
@@ -390,6 +393,14 @@ public class BuildConfiguration {
 
 	public void setBuildName(String buildName) {
 		this.buildName = buildName;
+	}
+
+	public String getBuildPackageName() {
+		return buildPackageName;
+	}
+
+	public void setBuildPackageName(String buildPackageName) {
+		this.buildPackageName = buildPackageName;
 	}
 
 	public String getExportType() {
