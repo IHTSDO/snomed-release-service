@@ -21,7 +21,7 @@ public interface BuildService {
 		DEFAULT, UNPUBLISHED, PUBLISHED, ALL_RELEASES
 	}
 
-	Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user) throws BusinessServiceException;
+	Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user, List<String> userRoles) throws BusinessServiceException;
 
 	/**
 	 * Synchronous method which runs the build.

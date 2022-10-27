@@ -168,7 +168,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user) throws BusinessServiceException {
+	public Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user, List<String> userRoles) throws BusinessServiceException {
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 
@@ -227,6 +227,8 @@ public class BuildServiceImpl implements BuildService {
 				build.setQaTestConfig(qaTestConfig);
 			}
 			build.setBuildUser(user);
+			build.setUserRoles(userRoles);
+
 			// create build status tracker
 			BuildStatusTracker tracker = new BuildStatusTracker();
 			tracker.setProductKey(build.getProductKey());

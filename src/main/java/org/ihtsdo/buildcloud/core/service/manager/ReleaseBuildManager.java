@@ -14,6 +14,7 @@ import org.ihtsdo.otf.rest.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
@@ -23,7 +24,9 @@ import org.springframework.util.StringUtils;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 
@@ -31,6 +34,8 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 @Service
 @Transactional
 public class ReleaseBuildManager {
+
+	private static final String ENV_LOCAL = "local";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -62,6 +67,12 @@ public class ReleaseBuildManager {
 	@Autowired
 	private BuildStatusTrackerDao statusTrackerDao;
 
+	@Autowired
+	private PermissionService permissionService;
+
+	@Value("${srs.environment.shortname}")
+	private String envShortname;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
 	public Build createBuild(String releaseCenter, String productKey, BuildRequestPojo buildRequestPojo, String currentUser) throws BusinessServiceException {
@@ -77,7 +88,15 @@ public class ReleaseBuildManager {
 
 		findManifestFileOrThrow(releaseCenter, productKey);
 
-		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildRequestPojo, currentUser);
+		List<String> userRoles = null;
+		if (!ENV_LOCAL.equals(envShortname)) {
+			Map<String, List<String>> rolesToCodeSystemMap = permissionService.getRolesForLoggedInUser();
+			if (!rolesToCodeSystemMap.isEmpty() && StringUtils.hasLength(product.getReleaseCenter().getCodeSystem())) {
+				userRoles = new ArrayList<>(rolesToCodeSystemMap.get(product.getReleaseCenter().getCodeSystem()));
+			}
+		}
+
+		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildRequestPojo, currentUser, userRoles);
 	}
 
 	public void queueBuild(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException {

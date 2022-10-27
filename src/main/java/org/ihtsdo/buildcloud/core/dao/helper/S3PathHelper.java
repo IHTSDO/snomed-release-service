@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 @Service
 public class S3PathHelper {
 
@@ -29,6 +31,7 @@ public class S3PathHelper {
 	private static final String VISIBILITY_PREFIX = "visibility:";
 	private static final String TAG_PREFIX = "tag:";
 	private static final String USER_PREFIX = "user:";
+	private static final String USER_ROLES_PREFIX = "user-roles:";
 	public static final String OUTPUT_FILES = "output-files";
 	private static final String INPUT_FILES = "input-files";
 	private static final String CLASSIFICATION_RESULT_OUTPUT_FILES = "classification-result-output-files";
@@ -121,6 +124,10 @@ public class S3PathHelper {
 
 	public String getBuildUserFilePath(final Build build, final String user) {
 		return getBuildPath(build).append(USER_PREFIX).append(user).toString();
+	}
+
+	public String getBuildUserRolesFilePath(final Build build, final List<String> roles) {
+		return getBuildPath(build).append(USER_ROLES_PREFIX).append(String.join(",", roles)).toString();
 	}
 
 	public String getOutputFilesPath(final Build build) {

@@ -83,7 +83,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		buildRequest.setLoadTermServerData(false);
 		buildRequest.setBuildName("Test");
 		buildRequest.setEffectiveDate("20210731");
-		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), buildRequest, null);
+		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), buildRequest, null, null);
 
 		//Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();

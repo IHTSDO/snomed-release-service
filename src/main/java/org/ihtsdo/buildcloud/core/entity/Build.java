@@ -28,6 +28,8 @@ public class Build {
 
 	private String buildUser;
 
+	private List<String> userRoles;
+
 	private String rvfURL;
 
 	private BuildConfiguration configuration;
@@ -184,6 +186,14 @@ public class Build {
 		this.buildUser = buildUser;
 	}
 
+	public List<String> getUserRoles() {
+		return userRoles;
+	}
+
+	public void setUserRoles(List<String> userRoles) {
+		this.userRoles = userRoles;
+	}
+
 	public String getRvfURL() {
 		return rvfURL;
 	}
@@ -199,6 +209,7 @@ public class Build {
 				", status=" + status +
 				", tags=" + tags +
 				", buildUser='" + buildUser + '\'' +
+				", userRoles='" + userRoles + '\'' +
 				", rvfURL='" + rvfURL + '\'' +
 				", configuration=" + configuration +
 				", releaseCenterKey='" + releaseCenterKey + '\'' +
