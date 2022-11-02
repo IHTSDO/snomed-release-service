@@ -15,6 +15,8 @@ public interface ProductDAO extends EntityDAO<Product> {
 
 	Product find(String releaseCenterKey, String productKey);
 
+	Product find(String productKey);
+
 	Product find(Long id);
 
 }

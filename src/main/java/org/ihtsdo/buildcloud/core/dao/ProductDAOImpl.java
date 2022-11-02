@@ -104,4 +104,14 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 		query.setParameter("productBusinessKey", productKey);
 		return (Product) query.uniqueResult();
 	}
+
+	@Override
+	public Product find(String productKey) {
+		Query query = getCurrentSession().createQuery(
+				"select product " +
+						"from Product product " +
+						"where product.businessKey = :productBusinessKey ");
+		query.setParameter("productBusinessKey", productKey);
+		return (Product) query.uniqueResult();
+	}
 }

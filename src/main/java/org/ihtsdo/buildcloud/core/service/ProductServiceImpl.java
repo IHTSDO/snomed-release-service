@@ -105,9 +105,11 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		// Check that we don't already have one of these
 		final String productBusinessKey = EntityHelper.formatAsBusinessKey(productName);
-		final Product existingProduct = productDAO.find(releaseCenterKey, productBusinessKey);
+		final Product existingProduct = productDAO.find(productBusinessKey);
 		if (existingProduct != null) {
-			throw new EntityAlreadyExistsException("Product named '" + productName + "' already exists.");
+			throw new EntityAlreadyExistsException("Product named '" + productName + "' already exists"
+					+ (releaseCenterKey.equalsIgnoreCase(existingProduct.getReleaseCenter().getBusinessKey()) ? "." : " in the '" + existingProduct.getReleaseCenter().getName() +"'.")
+					+ " Please select a different product name.");
 		}
 
 		final Product product = new Product(productName);
