@@ -91,7 +91,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 		Product product = productService.find(releaseCenterKey, productKey, false);
 		if (product == null) {
 			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenterKey);
+		} else if (!product.getBuildConfiguration().isDailyBuild()) {
+			throw new BusinessServiceException("The product with key " + productKey + " is not a daily product");
 		}
+
 		Product productSource = productService.find(releaseCenterKey, productKeySource, false);
 		if (productSource == null) {
 			throw new BusinessServiceRuntimeException("Could not find product " + productKeySource + " in release center " + releaseCenterKey);
