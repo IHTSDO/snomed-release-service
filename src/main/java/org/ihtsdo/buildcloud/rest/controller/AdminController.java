@@ -4,8 +4,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdmin;
+import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ import java.text.ParseException;
 public class AdminController {
 
 	@Autowired
+	private ProductService productService;
+
+	@Autowired
 	private ReleaseService releaseService;
 
 	@PostMapping(value = "/{productKey}/new-authoring-cycle")
@@ -43,5 +48,14 @@ public class AdminController {
 		}
 		releaseService.startNewAuthoringCycle(releaseCenterKey, productKey, effectiveTime, productSource, dependencyPackage);
 		return new ResponseEntity(HttpStatus.OK);
+	}
+
+	@PostMapping(value = "/{productKey}/upgrade-dependant-version")
+	@IsAuthenticatedAsAdminOrReleaseManager
+	@ResponseBody
+	@ApiOperation(value = "Upgrade dependant version for daily build product", notes = "This API is for Daily Build only")
+	public ResponseEntity upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
+		productService.upgradeDependantVersion(releaseCenterKey, productKey);
+		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 }

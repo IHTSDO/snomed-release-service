@@ -11,6 +11,7 @@ import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportTy
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClientFactory;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -38,7 +38,7 @@ public class TermServerServiceImpl implements TermServerService {
 	@Value("${snowstorm.reasonerId}")
 	private String reasonerId;
 
-	@Value("${snowstorm.url}" )
+	@Value("${snowstorm.url}")
 	private String termServerUrl;
 
 	@Value("${srs.file-export.max.retry:3}")
@@ -119,6 +119,12 @@ public class TermServerServiceImpl implements TermServerService {
 	public List<CodeSystem> getCodeSystems() {
 		SnowstormRestClient snowstormRestClient = getSnowstormClient();
 		return snowstormRestClient.getCodeSystems();
+	}
+
+	@Override
+	public List <CodeSystemVersion> getCodeSystemVersions(String shortName, boolean showFutureVersions, boolean showInternalReleases) {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.getCodeSystemVersions(shortName, showFutureVersions, showInternalReleases);
 	}
 
 	@Override

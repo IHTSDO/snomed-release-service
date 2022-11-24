@@ -1,25 +1,18 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import java.text.ParseException;
-import java.util.*;
-
 import org.apache.commons.lang3.time.DateFormatUtils;
-import org.ihtsdo.buildcloud.core.entity.*;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.core.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
-import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.rest.exception.BadRequestException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
-import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
+import org.ihtsdo.otf.rest.exception.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -32,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.text.ParseException;
+import java.util.*;
 
 import static org.apache.commons.lang.time.DateFormatUtils.ISO_DATE_FORMAT;
 
@@ -219,6 +215,40 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		for (Build build : builds) {
 			buildService.updateVisibility(build, visibility);
 		}
+	}
+
+	@Override
+	public void upgradeDependantVersion(String releaseCenterKey, String productKey)throws BusinessServiceException {
+		Product product = find(releaseCenterKey, productKey, false);
+		if (product == null) {
+			throw new BusinessServiceException("The product with key " + productKey + " not found");
+		} else if (!product.getBuildConfiguration().isDailyBuild()) {
+			throw new BusinessServiceException("The product with key " + productKey + " is not a daily product");
+		}
+
+		List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+		CodeSystem codeSystem = codeSystems.stream().filter(cs -> cs.getShortName().equalsIgnoreCase(product.getReleaseCenter().getCodeSystem())).findAny().orElse(null);
+		if (codeSystem == null) {
+			throw new BusinessServiceException("Code System with name " + product.getReleaseCenter().getCodeSystem() + " not found");
+		}
+
+		List<CodeSystemVersion> intCodeSystemVersions = termServerService.getCodeSystemVersions("SNOMEDCT", false, false);
+		CodeSystemVersion newDependantVersion = intCodeSystemVersions.stream().filter(cv -> cv.getEffectiveDate().compareTo(codeSystem.getDependantVersionEffectiveTime()) == 0).findAny().orElse(null);
+		if (newDependantVersion == null) {
+			throw new ResourceNotFoundException("Could not find any dependant version with effectiveTime " + codeSystem.getDependantVersionEffectiveTime());
+		} else if (!StringUtils.hasLength(newDependantVersion.getReleasePackage())) {
+			throw new ResourceNotFoundException("Could not find release package from International versions with effectiveTime " + codeSystem.getDependantVersionEffectiveTime());
+		}
+
+		String newDependantReleasePackage = newDependantVersion.getReleasePackage();
+		if (product.getBuildConfiguration().getExtensionConfig() != null) {
+			product.getBuildConfiguration().getExtensionConfig().setDependencyRelease(newDependantReleasePackage);
+		}
+		if (product.getQaTestConfig() != null) {
+			product.getQaTestConfig().setExtensionDependencyRelease(newDependantReleasePackage);
+		}
+
+		update(product);
 	}
 
 	private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) {
