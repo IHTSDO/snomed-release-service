@@ -320,7 +320,7 @@ public class InputSourceFileProcessor {
 						initDescriptionProcessingConfig(fileType);
 					} else {
 						if(this.copyFilesDefinedInManifest) {
-							String deltaFileName = this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("_Snapshot", "_Delta").replace("Snapshot_", "Delta_");;
+							String deltaFileName = this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 							logger.debug("Add file to copy:" + deltaFileName);
 							deltaFileName = (deltaFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? deltaFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : deltaFileName;
 							if (fileType.getSources() != null) {
@@ -344,7 +344,7 @@ public class InputSourceFileProcessor {
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
 			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-				String fileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("_Snapshot", "_Delta");
+				String fileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 				String key = languageCode + keySuffix;
 				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_DESCRIPTION, key, fileName);
 				if (!descriptionFileProcessingConfigs.containsKey(key)) {
@@ -363,7 +363,7 @@ public class InputSourceFileProcessor {
 	void initReferenceSetProcessingConfig(FileType fileType) {
 		if (fileType.getContainsAdditionalFields() != null && fileType.getContainsAdditionalFields().getField() != null ) {
 			for (FieldType field : fileType.getContainsAdditionalFields().getField()) {
-				String referenceSetFileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("Snapshot_", "Delta_").replace("Snapshot-", "Delta-");
+				String referenceSetFileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 				referenceSetFileName = (referenceSetFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ?
 						referenceSetFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : referenceSetFileName;
 				refsetWithAdditionalFields.add(referenceSetFileName, field.getName());
@@ -371,7 +371,7 @@ public class InputSourceFileProcessor {
 		}
 		for (RefsetType refsetType : fileType.getContainsReferenceSets().getRefset()) {
 			String referenceSetId = refsetType.getId().toString();
-			String referenceSetFileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("Snapshot_", "Delta_").replace("Snapshot-", "Delta-");
+			String referenceSetFileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 			FileProcessingConfig fileProcessingConfig = new FileProcessingConfig(INPUT_FILE_TYPE_REFSET, refsetType.getId().toString(), referenceSetFileName);
 			if (!refsetFileProcessingConfigs.containsKey(referenceSetId)) {
 				refsetFileProcessingConfigs.put(fileProcessingConfig.getKey(), fileProcessingConfig);
@@ -391,7 +391,7 @@ public class InputSourceFileProcessor {
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
 			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
-				String fileName = this.isDeltaFolderExistInManifest ? fileType.getName() : fileType.getName().replace("_Snapshot", "_Delta" );
+				String fileName = this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 				String key = languageCode + keySuffix;
 				FileProcessingConfig config = new FileProcessingConfig(INPUT_FILE_TYPE_TEXT_DEFINITON, key, fileName);
 				if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
@@ -405,6 +405,10 @@ public class InputSourceFileProcessor {
 			//add error reporting manifest.xml is not configured properly
 			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, NO_LANGUAGE_CODE_IS_CONFIGURED_MSG);
 		}
+	}
+
+	private String replaceSnapshotByDelta(String filename) {
+		return filename.replace("_Snapshot", "_Delta").replace("Snapshot_", "Delta_").replace("Snapshot-", "Delta-");
 	}
 
 	private void prepareSourceFiles() {
