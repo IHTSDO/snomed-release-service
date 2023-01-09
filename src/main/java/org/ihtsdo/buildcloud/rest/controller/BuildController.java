@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,8 @@ import java.util.*;
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
 @Api(value = "Build", position = 1)
 public class BuildController {
+
+	private static final String COMMA = ",";
 
 	private final Logger logger = LoggerFactory.getLogger(BuildController.class);
 
@@ -180,8 +183,16 @@ public class BuildController {
 											   @RequestParam(defaultValue = "DEFAULT") BuildService.View viewMode,
 											   @RequestParam(defaultValue = "0") Integer pageNumber,
 											   @RequestParam(defaultValue = "10") Integer pageSize,
+											   @RequestParam(required = false) String[] sort,
 											   final HttpServletRequest request) throws ResourceNotFoundException {
-		BuildPage<Build> builds = buildService.findAllDescPage(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, viewMode, PageRequest.of(pageNumber, pageSize));
+		PageRequest pageRequest;
+		if (sort != null && sort.length != 0) {
+			List<Sort.Order> orders = createPageRequest(sort);
+			pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by(orders));
+		} else {
+			pageRequest = PageRequest.of(pageNumber, pageSize);
+		}
+		BuildPage<Build> builds = buildService.findAll(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, viewMode, pageRequest);
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(builds.getContent(), request, BUILD_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), builds.getTotalElements());
@@ -597,5 +608,22 @@ public class BuildController {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.createFailureJiraAssociations(releaseCenterKey, productKey, buildId, assertionIds), HttpStatus.CREATED);
 	}
 
+	private List<Sort.Order> createPageRequest(String[] sort) {
+		List<Sort.Order> orders = new ArrayList<>();
+		for(String item : sort) {
+			if (item.contains(COMMA)) {
+				String[] arr = item.split(COMMA);
+				String fieldSortProperty = arr[0];
+				String fieldSortDirection = arr[1];
+				Sort.Direction sortDirection = (fieldSortDirection != null && fieldSortDirection.equalsIgnoreCase("desc")) ? Sort.Direction.DESC : Sort.Direction.ASC;
+				Sort.Order order = new Sort.Order(sortDirection, fieldSortProperty);
+				orders.add(order);
+			} else {
+				Sort.Order order = new Sort.Order(null, item);
+				orders.add(order);
+			}
+		}
+		return orders;
+	}
 }
 

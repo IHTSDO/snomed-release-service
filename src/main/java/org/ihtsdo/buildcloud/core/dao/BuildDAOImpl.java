@@ -41,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
@@ -206,9 +207,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public BuildPage<Build> findAllDescPage(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
+	public BuildPage<Build> findAll(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
 		final String productDirectoryPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
-		return findBuildsDescPage(productDirectoryPath, releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
+		return findBuilds(productDirectoryPath, releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
 	}
 
 	@Override
@@ -583,7 +584,7 @@ public class BuildDAOImpl implements BuildDAO {
 		return builds;
 	}
 
-	private BuildPage<Build> findBuildsDescPage(final String productDirectoryPath, final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
+	private BuildPage<Build> findBuilds(final String productDirectoryPath, final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration,
 												Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
 		int pageNumber = pageRequest.getPageNumber();
 		int pageSize = pageRequest.getPageSize();
@@ -600,16 +601,81 @@ public class BuildDAOImpl implements BuildDAO {
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
 		List<Build> allBuilds = getAllBuildsFromS3(productDirectoryPath, releaseCenterKey, productKey, userPaths, userRolesPaths, tagPaths, visibilityPaths,buildsMarkAsDeleted);
-		Collections.reverse(allBuilds);
 		allBuilds = filterByViewMode(allBuilds, tagPaths, viewMode);
 		allBuilds = removeInvisibleBuilds(visibility, visibilityPaths, allBuilds);
 		allBuilds = removeBuildsMarkAsDeleted(buildsMarkAsDeleted, allBuilds);
-		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
-		addDataToBuilds(pagedBuilds, userPaths, userRolesPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
 
+		List<Build> pagedBuilds = new ArrayList<>();
+		if (!allBuilds.isEmpty()) {
+			if (pageRequest.getSort() != null && !Sort.unsorted().equals(pageRequest.getSort())) {
+				joinUsers(allBuilds, userPaths);
+				if (pageRequest.getSort().getOrderFor("buildName") != null) {
+					joinBuildConfigurations(allBuilds);
+				}
+
+				sortBuilds(pageRequest, userPaths, allBuilds);
+				pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
+
+				if (pageRequest.getSort().getOrderFor("buildName") == null && Boolean.TRUE.equals(includeBuildConfiguration)) {
+					joinBuildConfigurations(pagedBuilds);
+				}
+				if (Boolean.TRUE.equals(includeQAConfiguration)) {
+					joinQAConfigurations(pagedBuilds);
+				}
+				if (Boolean.TRUE.equals(includeRvfURL)) {
+					joinRvfUrls(pagedBuilds);
+				}
+				joinRoles(allBuilds, userRolesPaths);
+				joinTags(allBuilds, tagPaths);
+			} else {
+				Collections.reverse(allBuilds);
+				pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
+				addDataToBuilds(pagedBuilds, userPaths, userRolesPaths, tagPaths, includeBuildConfiguration, includeQAConfiguration, includeRvfURL);
+			}
+		}
 		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
 		LOGGER.info("{} Builds being returned to client. {} pages of Builds available.", pagedBuilds.size(), totalPages);
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
+	}
+
+	private void sortBuilds(PageRequest pageRequest, List<String> userPaths, List<Build> allBuilds) {
+		Comparator<Build> comparator = Comparator.nullsLast(null);
+		Sort sort = pageRequest.getSort();
+		for (Sort.Order order : sort.toList()) {
+			switch (order.getProperty()) {
+				case "buildName":
+					if (order.getDirection().isDescending()) {
+						comparator = comparator.thenComparing(Build::getBuildName).reversed();
+					} else {
+						comparator = comparator.thenComparing(Build::getBuildName);
+					}
+					break;
+				case "creationTime":
+					if (order.getDirection().isDescending()) {
+						comparator = comparator.thenComparing(Build::getId).reversed();
+					} else {
+						comparator = comparator.thenComparing(Build::getId);
+					}
+					break;
+				case "status":
+					if (order.getDirection().isDescending()) {
+						comparator = comparator.thenComparing(Build::getStatus).reversed();
+					} else {
+						comparator = comparator.thenComparing(Build::getStatus);
+					}
+					break;
+				case "buildUser":
+					if (order.getDirection().isDescending()) {
+						comparator = comparator.thenComparing(Build::getBuildUser).reversed();
+					} else {
+						comparator = comparator.thenComparing(Build::getBuildUser);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		allBuilds.sort(comparator);
 	}
 
 	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> visibilityPaths, List<String> buildsMarkAsDeleted) {
@@ -694,6 +760,69 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Build> pageBuilds(List<Build> builds, int pageNumber, int pageSize) {
 		LOGGER.debug("Fetching pageNumber {} with pageSize {} from {} Builds.", pageNumber, pageSize, builds.size());
 		return ListHelper.page(builds, pageNumber, pageSize);
+	}
+
+	private void joinUsers(List<Build> builds, List<String> userPaths) {
+		builds.forEach(build -> {
+			build.setBuildUser(getBuildUser(build, userPaths));
+		});
+	}
+
+	private void joinTags(List<Build> builds, List<String> userPaths) {
+		builds.forEach(build -> {
+			build.setBuildUser(getBuildUser(build, userPaths));
+		});
+	}
+
+	private void joinRoles(List<Build> builds, List<String> tagPaths) {
+		builds.forEach(build -> {
+			build.setTags(getTags(build, tagPaths));
+		});
+	}
+
+	private void joinBuildConfigurations(List<Build> builds) {
+		builds.forEach(build -> {
+			try {
+				this.loadBuildConfiguration(build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
+			}
+		});
+	}
+
+	private void joinQAConfigurations(List<Build> builds) {
+		builds.forEach(build -> {
+			try {
+				this.loadQaTestConfig(build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
+			}
+		});
+	}
+
+	private void joinRvfUrls(List<Build> builds) {
+		builds.forEach(build -> {
+			if (build.getStatus().equals(Build.Status.BUILT)
+				|| build.getStatus().equals(Build.Status.RVF_QUEUED)
+				|| build.getStatus().equals(Build.Status.RVF_RUNNING)
+				|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
+				|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS)) {
+				InputStream buildReportStream = getBuildReportFileStream(build);
+				if (buildReportStream != null) {
+					JSONParser jsonParser = new JSONParser();
+					try {
+						JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+						if (jsonObject.containsKey("rvf_response")) {
+							build.setRvfURL(jsonObject.get("rvf_response").toString());
+						}
+					} catch (IOException e) {
+						LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+					} catch (ParseException e) {
+						LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
+					}
+				}
+			}
+		});
 	}
 
 	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL) {
