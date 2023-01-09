@@ -150,6 +150,10 @@ public class Build {
 		return configuration;
 	}
 
+	public String getBuildName() {
+		return configuration != null ? configuration.getBuildName() : null;
+	}
+
 	public void setConfiguration(final BuildConfiguration configuration) {
 		this.configuration = configuration;
 	}

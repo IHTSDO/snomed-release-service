@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -89,13 +90,28 @@ public class BuildDAOImplTest extends AbstractTest {
 		createBuild();
 		createBuild();
 		createBuild();
-		createBuild();
+		Date build4 = createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10));
+		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10));
 
 		// then
 		assertEquals(5, result.getTotalElements());
+
+		// then
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		Sort.Order order = new Sort.Order(Sort.Direction.DESC, "creationTime");
+		result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10, Sort.by(order)));
+		String lhs = simpleDateFormat.format(build4);
+		String rhs = result.getContent().get(0).getCreationTime();
+		assertEquals(lhs, rhs);
+
+		order = new Sort.Order(Sort.Direction.ASC, "creationTime");
+		result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(0, 10, Sort.by(order)));
+		lhs = buildId;
+		rhs = result.getContent().get(0).getCreationTime();
+		assertEquals(lhs, rhs);
 	}
 
 	@Test
@@ -107,7 +123,7 @@ public class BuildDAOImplTest extends AbstractTest {
 		Date build4 = createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAllDescPage(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(3, 1));
+		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, PageRequest.of(3, 1));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

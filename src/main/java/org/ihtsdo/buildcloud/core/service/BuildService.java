@@ -33,7 +33,7 @@ public interface BuildService {
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 
-	BuildPage<Build> findAllDescPage(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, View viewMode, PageRequest pageRequest) throws ResourceNotFoundException;
+	BuildPage<Build> findAll(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, View viewMode, PageRequest pageRequest) throws ResourceNotFoundException;
 
 	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 
