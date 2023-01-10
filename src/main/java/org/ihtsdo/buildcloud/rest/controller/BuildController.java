@@ -610,16 +610,19 @@ public class BuildController {
 
 	private List<Sort.Order> createPageRequest(String[] sort) {
 		List<Sort.Order> orders = new ArrayList<>();
-		for(String item : sort) {
-			if (item.contains(COMMA)) {
+		if (sort.length == 2) {
+			String fieldSortProperty = sort[0];
+			String fieldSortDirection = sort[1];
+			Sort.Direction sortDirection = (fieldSortDirection != null && fieldSortDirection.equalsIgnoreCase("desc")) ? Sort.Direction.DESC : Sort.Direction.ASC;
+			Sort.Order order = new Sort.Order(sortDirection, fieldSortProperty);
+			orders.add(order);
+		} else {
+			for(String item : sort) {
 				String[] arr = item.split(COMMA);
 				String fieldSortProperty = arr[0];
 				String fieldSortDirection = arr[1];
 				Sort.Direction sortDirection = (fieldSortDirection != null && fieldSortDirection.equalsIgnoreCase("desc")) ? Sort.Direction.DESC : Sort.Direction.ASC;
 				Sort.Order order = new Sort.Order(sortDirection, fieldSortProperty);
-				orders.add(order);
-			} else {
-				Sort.Order order = new Sort.Order(null, item);
 				orders.add(order);
 			}
 		}
