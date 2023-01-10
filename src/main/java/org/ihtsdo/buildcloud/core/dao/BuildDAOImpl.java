@@ -14,8 +14,8 @@ import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.helper.ListHelper;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
@@ -613,7 +613,7 @@ public class BuildDAOImpl implements BuildDAO {
 					joinBuildConfigurations(allBuilds);
 				}
 
-				sortBuilds(pageRequest, userPaths, allBuilds);
+				sortBuilds(pageRequest, allBuilds);
 				pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
 
 				if (pageRequest.getSort().getOrderFor("buildName") == null && Boolean.TRUE.equals(includeBuildConfiguration)) {
@@ -638,37 +638,37 @@ public class BuildDAOImpl implements BuildDAO {
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
-	private void sortBuilds(PageRequest pageRequest, List<String> userPaths, List<Build> allBuilds) {
+	private void sortBuilds(PageRequest pageRequest, List<Build> allBuilds) {
 		Comparator<Build> comparator = Comparator.nullsLast(null);
 		Sort sort = pageRequest.getSort();
 		for (Sort.Order order : sort.toList()) {
 			switch (order.getProperty()) {
 				case "buildName":
 					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getBuildName).reversed();
+						comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.reverseOrder()));
 					} else {
-						comparator = comparator.thenComparing(Build::getBuildName);
+						comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.naturalOrder()));
 					}
 					break;
 				case "creationTime":
 					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getId).reversed();
+						comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.reverseOrder()));
 					} else {
-						comparator = comparator.thenComparing(Build::getId);
+						comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.naturalOrder()));
 					}
 					break;
 				case "status":
 					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getStatus).reversed();
+						comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.reverseOrder()));
 					} else {
-						comparator = comparator.thenComparing(Build::getStatus);
+						comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.naturalOrder()));
 					}
 					break;
 				case "buildUser":
 					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getBuildUser).reversed();
+						comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.reverseOrder()));
 					} else {
-						comparator = comparator.thenComparing(Build::getBuildUser);
+						comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.naturalOrder()));
 					}
 					break;
 				default:
@@ -763,21 +763,15 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void joinUsers(List<Build> builds, List<String> userPaths) {
-		builds.forEach(build -> {
-			build.setBuildUser(getBuildUser(build, userPaths));
-		});
+		builds.forEach(build -> build.setBuildUser(getBuildUser(build, userPaths)));
 	}
 
-	private void joinTags(List<Build> builds, List<String> userPaths) {
-		builds.forEach(build -> {
-			build.setBuildUser(getBuildUser(build, userPaths));
-		});
+	private void joinTags(List<Build> builds, List<String> tagPaths) {
+		builds.forEach(build -> build.setTags(getTags(build, tagPaths)));
 	}
 
-	private void joinRoles(List<Build> builds, List<String> tagPaths) {
-		builds.forEach(build -> {
-			build.setTags(getTags(build, tagPaths));
-		});
+	private void joinRoles(List<Build> builds, List<String> rolesPaths) {
+		builds.forEach(build -> build.setUserRoles(getUserRoles(build, rolesPaths)));
 	}
 
 	private void joinBuildConfigurations(List<Build> builds) {
