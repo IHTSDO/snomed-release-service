@@ -610,7 +610,7 @@ public class BuildController {
 
 	private List<Sort.Order> createPageRequest(String[] sort) {
 		List<Sort.Order> orders = new ArrayList<>();
-		if (sort.length == 2) {
+		if (sort.length == 2 && !sort[0].contains(COMMA)) {
 			String fieldSortProperty = sort[0];
 			String fieldSortDirection = sort[1];
 			Sort.Direction sortDirection = (fieldSortDirection != null && fieldSortDirection.equalsIgnoreCase("desc")) ? Sort.Direction.DESC : Sort.Direction.ASC;
