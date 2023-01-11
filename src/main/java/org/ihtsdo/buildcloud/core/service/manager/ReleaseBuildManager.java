@@ -178,10 +178,6 @@ public class ReleaseBuildManager {
 				List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 				CodeSystem codeSystem = codeSystems.stream().filter(cs -> cs.getShortName().equalsIgnoreCase(product.getReleaseCenter().getCodeSystem())).findAny().orElse(null);
 				if (codeSystem != null) {
-					if (codeSystem.getLatestVersion() != null && StringUtils.hasLength(configuration.getPreviousPublishedPackage())
-						&& !configuration.getPreviousPublishedPackage().contains(codeSystem.getLatestVersion().getEffectiveDate().toString())) {
-						throw new BusinessServiceException("The previous published release is out of sync with code system. Could you please update it manually or start a new authoring cycle.");
-					}
 					if (configuration.getExtensionConfig() != null && StringUtils.hasLength(configuration.getExtensionConfig().getDependencyRelease())
 						&& !configuration.getExtensionConfig().getDependencyRelease().contains(codeSystem.getDependantVersionEffectiveTime().toString())) {
 						throw new BusinessServiceException("The dependency release package is out of sync with code system. Could you please upgrade the dependant version.");
