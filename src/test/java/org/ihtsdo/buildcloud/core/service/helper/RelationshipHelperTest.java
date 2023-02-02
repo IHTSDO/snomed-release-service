@@ -11,14 +11,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RelationshipHelperTest {
 	
 	private final Map<String, String> conceptToModuleMap = new HashMap<>();
-	@Before
+	@BeforeEach
 	public void setUp() {
 		conceptToModuleMap.put("741232009","900000000000207008");
 		conceptToModuleMap.put("741232010","900000000000207008");

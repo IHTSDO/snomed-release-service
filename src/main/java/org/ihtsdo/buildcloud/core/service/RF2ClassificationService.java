@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.List;
 
 @Service
@@ -153,7 +154,7 @@ public class RF2ClassificationService {
 		for (File file : resultFiles) {
 			if (file.getName().endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 				if (file.getName().startsWith(RF2Constants.RELASHIONSHIP_DELTA_PREFIX)) {
-					List<String> results = FileUtils.readLines(file);
+					List<String> results = FileUtils.readLines(file, Charset.defaultCharset());
 					if (results.size() > 1) {
 						String errorMessage = String.format(ERROR_MSG_FORMAT, "relationship", (results.size() - 1));
 						LOGGER.error(errorMessage);
@@ -161,7 +162,7 @@ public class RF2ClassificationService {
 						errorMessageBuilder.append(errorMessage);
 					}
 				} else if(file.getName().startsWith(EQUIVALENT_CONCEPT_REFSET)) {
-					List<String> results = FileUtils.readLines(file);
+					List<String> results = FileUtils.readLines(file, Charset.defaultCharset());
 					if (results.size() > 1) {
 						String errorMessage = String.format(ERROR_MSG_FORMAT, "equivalent concept refsets", (results.size() - 1));
 						LOGGER.error(errorMessage);

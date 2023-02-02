@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.AutomatedTestService;
 import org.ihtsdo.buildcloud.core.service.BuildService;
@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
-@Api(value = "Automated Test")
+@Tag(name = "Automated Test", description = "-")
 public class AutomatedTestController {
 
     @Autowired
@@ -37,14 +37,14 @@ public class AutomatedTestController {
 
     @GetMapping(value = "/regression-test/test-reports")
     @ResponseBody
-    @ApiOperation(value = "Get all test report")
+    @Operation(summary = "Get all test reports")
     public List<BuildComparisonReport> getTestReports() {
         return automatedTestService.getAllTestReports();
     }
 
     @GetMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare/{compareId}")
     @ResponseBody
-    @ApiOperation(value = "Get test report for specific Id")
+    @Operation(summary = "Get test report for specific id")
     public BuildComparisonReport getTestReport(@PathVariable final String releaseCenterKey,
                                                @PathVariable final String productKey,
                                                @PathVariable final String compareId,
@@ -54,7 +54,7 @@ public class AutomatedTestController {
 
     @DeleteMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare/{compareId}")
     @ResponseBody
-    @ApiOperation(value = "Delete a test report for specific Id")
+    @Operation(summary = "Delete test report for specific id")
     public void deleteTestReport(@PathVariable final String releaseCenterKey,
                                                @PathVariable final String productKey,
                                                @PathVariable final String compareId) throws BusinessServiceException {
@@ -64,7 +64,8 @@ public class AutomatedTestController {
     @PostMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
     @ResponseBody
-    @ApiOperation(value = "Compare 2 builds", notes = "Compare 2 builds and put the report to product")
+    @Operation(summary = "Compare 2 builds",
+            description = "Compare 2 builds and put the report to product")
     public ResponseEntity<Void> compareBuilds(
             @PathVariable final String releaseCenterKey,
             @PathVariable final String productKey,
@@ -80,7 +81,8 @@ public class AutomatedTestController {
 
     @PostMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/files/find-diff")
     @ResponseBody
-    @ApiOperation(value = "Compare file from 2 builds", notes = "Compare 2 builds and put the report to product")
+    @Operation(summary = "Compare file from 2 builds",
+            description = "Compare files from 2 builds and put the report to product")
     public ResponseEntity<Void> compareFiles(
             @PathVariable final String releaseCenterKey,
             @PathVariable final String productKey,
@@ -94,7 +96,7 @@ public class AutomatedTestController {
         Build leftBuild  = buildService.find(releaseCenterKey, productKey, leftBuildId, false, false, false , null);
         Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
 
-        if (StringUtils.isEmpty(compareId)) {
+        if (!StringUtils.hasLength(compareId)) {
             compareId = UUID.randomUUID().toString();;
         }
         automatedTestService.compareFiles(leftBuild, rightBuild, fileName, compareId, ignoreIdComparison);

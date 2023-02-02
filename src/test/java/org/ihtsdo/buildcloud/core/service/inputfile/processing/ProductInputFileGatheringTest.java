@@ -11,17 +11,17 @@ import org.ihtsdo.buildcloud.core.service.TermServerService;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.File;
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.*;
  * Date: 8/27/2017
  * Time: 1:15 PM
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ProductInputFileGatheringTest {
 
 	private static final String TERMINOLOGY_SERVER = "terminology-server";
@@ -61,7 +62,7 @@ public class ProductInputFileGatheringTest {
 
 	File failedExportArchive;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		MockitoAnnotations.initMocks(this);
 		String testFile = getClass().getResource(INPUT_SOURCE_TEST_DATA_ZIP).getFile();
@@ -73,7 +74,7 @@ public class ProductInputFileGatheringTest {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
@@ -86,14 +87,14 @@ public class ProductInputFileGatheringTest {
 		verify(productInputFileService, times(1))
 				.putSourceFile(eq(TERMINOLOGY_SERVER), eq("centerkey"), eq("productkey"), eq("buildId"),
 						argThat(new InputStreamMatcher(fileInputStream)), eq(INPUT_SOURCE_TEST_DATA_ZIP), eq(testArchive.length()));
-		Assert.assertEquals(InputGatherReport.Status.COMPLETED, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());
-		Assert.assertEquals(InputGatherReport.Status.COMPLETED, inputGatherReport.getStatus());
-		Assert.assertEquals("Successfully export file input_source_test_data.zip from term server and upload to source \"terminology-server\"",
+		assertEquals(InputGatherReport.Status.COMPLETED, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());
+		assertEquals(InputGatherReport.Status.COMPLETED, inputGatherReport.getStatus());
+		assertEquals("Successfully export file input_source_test_data.zip from term server and upload to source \"terminology-server\"",
 				inputGatherReport.getDetails().get("terminology-server").getMessage());
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
@@ -104,9 +105,9 @@ public class ProductInputFileGatheringTest {
 		verify(productInputFileService, times(0)).putSourceFile(anyString(), anyString(), anyString(), anyString(),
 				any(InputStream.class), anyString(), anyLong());
 
-		Assert.assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());
-		Assert.assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getStatus());
-		Assert.assertEquals("Failed export data from term server. Term server returned error:{\"status\":500,\"code\":0,\"message\":\"Something went wrong during the processing of your request.\"}", inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getMessage());
+		assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getStatus());
+		assertEquals(InputGatherReport.Status.ERROR, inputGatherReport.getStatus());
+		assertEquals("Failed export data from term server. Term server returned error:{\"status\":500,\"code\":0,\"message\":\"Something went wrong during the processing of your request.\"}", inputGatherReport.getDetails().get(TERMINOLOGY_SERVER).getMessage());
 	}
 
 	public static class InputStreamMatcher implements ArgumentMatcher<InputStream> {

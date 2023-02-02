@@ -2,14 +2,13 @@ package org.ihtsdo.buildcloud.core.service.build.database.hsql;
 
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
-import org.ihtsdo.buildcloud.core.service.build.database.hsql.RF2TableDAOHsqlImpl;
+import mockit.integration.junit5.JMockitExtension;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,21 +17,21 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 
-@RunWith(JMockit.class)
+@ExtendWith(JMockitExtension.class)
 public class RF2TableDAOHsqlImplTest {
 
 	@Mocked
 	PreparedStatement insertStatement;
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testFullColumns() throws IOException, SQLException, ParseException {
 		String testData = "one\ttwo\tthree\tfour\n" + "one\ttwo\tthree\tfour\n";
 		runTest(testData);
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testBlankLastColumn() throws IOException, SQLException, ParseException {
 		String testData = "one\ttwo\tthree\tfour\n" + "one\ttwo\tthree\t\n";
 		runTest(testData);

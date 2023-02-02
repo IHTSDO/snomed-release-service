@@ -222,7 +222,7 @@ public class S3PathHelper {
 
 	public String getBuildComparisonReportPath(final String releaseCenterKey, final String productKey, final String compareId) {
 		StringBuilder builder = getProductPath(releaseCenterKey, productKey).append(BUILD_COMPARISON_REPORT).append(SEPARATOR);
-		if (!StringUtils.isEmpty(compareId)) {
+		if (StringUtils.hasLength(compareId)) {
 			builder.append(compareId).append(".json");
 		}
 		return builder.toString();

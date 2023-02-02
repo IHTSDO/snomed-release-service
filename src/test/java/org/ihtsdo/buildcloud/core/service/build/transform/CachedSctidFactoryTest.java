@@ -7,12 +7,12 @@ import java.util.UUID;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
-import org.ihtsdo.buildcloud.core.service.build.transform.CachedSctidFactory;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CachedSctidFactoryTest {
 
@@ -20,7 +20,7 @@ public class CachedSctidFactoryTest {
 	private CachedSctidFactory cachedSctidFactory;
 	private IdServiceRestClient mockIdRestClient;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		mocksControl = new MocksControl(MockType.DEFAULT);
 		mockIdRestClient = mocksControl.createMock(IdServiceRestClient.class);
@@ -28,7 +28,7 @@ public class CachedSctidFactoryTest {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testGetSCTID() throws Exception {
 		// Set up expectations
 		// Mock objects in record mode
@@ -43,11 +43,11 @@ public class CachedSctidFactoryTest {
 
 		// Verify mock object expectations
 		mocksControl.verify();
-		Assert.assertEquals(new Long(1234), sctid);
+		assertEquals(Long.valueOf(1234), sctid);
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testGetSCTIDWithNetworkIssuesWithinLimit() throws Exception {
 		// Set up expectations
 		// Mock objects in record mode
@@ -66,11 +66,11 @@ public class CachedSctidFactoryTest {
 
 		// Verify mock object expectations
 		mocksControl.verify();
-		Assert.assertEquals(new Long(1234), sctid);
+		assertEquals(Long.valueOf(1234), sctid);
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testGetSCTIDWithNetworkIssuesOverLimit() throws Exception {
 		// Set up expectations
 		// Mock objects in record mode
@@ -86,7 +86,7 @@ public class CachedSctidFactoryTest {
 		// Call target method
 		
 		final Long sctid = cachedSctidFactory.getSCTID("e568b6b6-1869-4adb-99ea-039d076f64f0", "1", "123");
-		Assert.fail("Should have thrown exception");
+		fail("Should have thrown exception");
 		// Verify mock object expectations
 		mocksControl.verify();
 	}
@@ -94,12 +94,12 @@ public class CachedSctidFactoryTest {
 	@Test
 	public void testGetSctdIdsForEmptyUUIDs() throws Exception {
 		final Map<String, Long> result = cachedSctidFactory.getSCTIDs( new ArrayList<String>(), "1", "123");
-		Assert.assertTrue(result.isEmpty());
+		assertTrue(result.isEmpty());
 	}
 
 	@Test
 	public void testGetSctdIdsForNullUUIDList() throws Exception {
 		final Map<String, Long> result = cachedSctidFactory.getSCTIDs( null, "1", "123");
-		Assert.assertTrue(result.isEmpty());
+		assertTrue(result.isEmpty());
 	}
 }

@@ -2,15 +2,15 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 
 import java.util.zip.ZipFile;
 
-import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
@@ -23,7 +23,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
@@ -31,7 +31,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 
 
 	@Override
-	@After
+	@AfterEach
 	public void tearDown() {
 		super.tearDown();
 	}
@@ -50,7 +50,7 @@ public class CoreComponentsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeEndDate("2014");
 		//get previous published files
 		final String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
-		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
+		assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		
 		integrationTestHelper.setNewRF2InputFiles("rel2_Refset_SimpleDelta_INT_20140731.txt|rel2_sRefset_OWLOntologyDelta_INT_20140731.txt|rel2_RelationshipConcreteValues_Delta_INT_20140731.txt");

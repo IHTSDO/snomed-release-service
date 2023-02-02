@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ihtsdo.buildcloud.core.service.TermServerService;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Controller
-@Api(value = "Code Systems")
+@Tag(name = "Code Systems", description = "-")
 @RequestMapping(value = "/codesystems", produces = "application/json")
 public class CodeSystemController {
 
@@ -29,7 +29,8 @@ public class CodeSystemController {
     private TermServerService termServerService;
 
     @GetMapping
-    @ApiOperation(value = "List code systems", notes = "List all code systems.")
+    @Operation(summary = "List code systems",
+            description = "List all code systems")
     @ResponseBody
     public ResponseEntity listCodeSystems(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

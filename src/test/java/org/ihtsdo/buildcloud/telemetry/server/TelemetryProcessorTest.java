@@ -12,7 +12,10 @@ import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.telemetry.TestService;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
-import org.junit.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ResourceLoader;
@@ -23,6 +26,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TelemetryProcessorTest {
 
@@ -37,7 +42,7 @@ public class TelemetryProcessorTest {
 	private static String streamFileDestination;
 	private static String streamS3Destination;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		LogLog.setInternalDebugging(true);
 		LogLog.setQuietMode(false);
@@ -64,7 +69,7 @@ public class TelemetryProcessorTest {
 		testStreamFile.delete();
 	}
 
-	@Ignore
+	@Disabled
 	@Test
 	public void testErrorDetection() throws IOException, InterruptedException {
 
@@ -82,26 +87,26 @@ public class TelemetryProcessorTest {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testAggregateEventsToFile() throws IOException, InterruptedException {
 		TestProcessor.doProcessing(TelemetryProcessorTest.streamFileDestination);
 		// Wait for the aggregator to finish.
 		Thread.sleep(1000);
 
 		String capturedEventStream = replaceDates(fileToString(testStreamFile));
-		Assert.assertNotNull(capturedEventStream);
-		Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
-		Assert.assertEquals("DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
+		assertNotNull(capturedEventStream);
+		assertEquals(3, capturedEventStream.split("\n").length, "Line count");
+		assertEquals("DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
 				"DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
 				"DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
 				capturedEventStream);
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testAggregateEventsToS3() throws IOException, InterruptedException {
 		// Set up mock expectations
-		final Capture<File> fileCapture = new Capture<>();
+		final Capture<File> fileCapture = Capture.newInstance();
 		final BooleanHolder fileAssertionsRan = new BooleanHolder();
 		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.build.bucket"), EasyMock.eq(streamFileName), EasyMock.capture(fileCapture))).andReturn(mockUpload);
 		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(new IAnswer<UploadResult>() {
@@ -109,11 +114,11 @@ public class TelemetryProcessorTest {
 			public UploadResult answer() throws Throwable {
 				// Run temp file assertions before it's deleted
 				File capturedFile = fileCapture.getValue();
-				Assert.assertNotNull(capturedFile);
+				assertNotNull(capturedFile);
 				String capturedEventStream = replaceDates(fileToString(capturedFile));
-				Assert.assertNotNull(capturedEventStream);
-				Assert.assertEquals("Line count", 3, capturedEventStream.split("\n").length);
-				Assert.assertEquals("DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
+				assertNotNull(capturedEventStream);
+				assertEquals(3, capturedEventStream.split("\n").length, "Line count");
+				assertEquals("DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
 						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
 						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
 						capturedEventStream);
@@ -130,10 +135,10 @@ public class TelemetryProcessorTest {
 
 		// Assert mock expectations
 		mocksControl.verify();
-		Assert.assertTrue(fileAssertionsRan.b);
+		assertTrue(fileAssertionsRan.b);
 	}
 
-	@Ignore
+	@Disabled
 	@Test
 	public void testAggregateEventsToFileWithException() throws IOException, InterruptedException {
 		TestProcessor.doProcessingWithException(TelemetryProcessorTest.streamFileDestination);
@@ -154,7 +159,7 @@ public class TelemetryProcessorTest {
 				"\tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:LINE)\n" +
 				"\tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:LINE)";
 
-		Assert.assertEquals(expected, capturedEventStreamFirstEightLines);
+		assertEquals(expected, capturedEventStreamFirstEightLines);
 	}
 
 	private String stripLineNumbersFromStackTrace(String s) {
@@ -169,7 +174,7 @@ public class TelemetryProcessorTest {
 		return FileCopyUtils.copyToString(new FileReader(file));
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		testStreamFile.delete();
 		telemetryProcessor.shutdown();

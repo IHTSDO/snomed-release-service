@@ -5,22 +5,22 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @Transactional
 public class ProductServiceImplTest extends TestEntityGenerator {
@@ -30,7 +30,7 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 
 	private String releaseCenterKey;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		releaseCenterKey = EntityHelper.formatAsBusinessKey(releaseCenterShortNames[0]);
 	}
@@ -54,7 +54,7 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 	}
 	
 	@Test
-	@Ignore
+	@Disabled
 	// TODO
 	public void testRemovedFilter() throws Exception{
 

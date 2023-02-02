@@ -298,15 +298,15 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		Map<String, String> leftIdToLineMap = new HashMap<>();
 		Map<String, String> rightIdToLineMap = new HashMap<>();
 		diffRows.forEach(row -> {
-			if (!StringUtils.isEmpty(row.getOldLine())) {
+			if (StringUtils.hasLength(row.getOldLine())) {
 				String[] arr = row.getOldLine().split(SPACE_OF_FOUR);
-				if (!StringUtils.isEmpty(arr[0])) {
+				if (StringUtils.hasLength(arr[0])) {
 					leftIdToLineMap.put(arr[0], row.getOldLine());
 				}
 			}
-			if (!StringUtils.isEmpty(row.getNewLine())) {
+			if (StringUtils.hasLength(row.getNewLine())) {
 				String[] arr = row.getNewLine().split(SPACE_OF_FOUR);
-				if (!StringUtils.isEmpty(arr[0])) {
+				if (StringUtils.hasLength(arr[0])) {
 					rightIdToLineMap.put(arr[0], row.getNewLine());
 				}
 			}

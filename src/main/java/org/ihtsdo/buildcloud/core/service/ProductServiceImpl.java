@@ -95,7 +95,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			throw new ResourceNotFoundException("Unable to find Release Center: " + releaseCenterKey);
 		}
 
-		if (StringUtils.isEmpty(releaseCenter.getCodeSystem())) {
+		if (!StringUtils.hasLength(releaseCenter.getCodeSystem())) {
 			throw new BusinessServiceException(String.format("Could not create new product as no code system specified for release center %s. Contact Admin Global for support", releaseCenterKey));
 		}
 
@@ -134,7 +134,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			if (INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
 				propertyValues.put(CREATE_LEGACY_IDS, TRUE);
 			}
-			if (codeSystem != null && !StringUtils.isEmpty(codeSystem.getBranchPath())) {
+			if (codeSystem != null && StringUtils.hasLength(codeSystem.getBranchPath())) {
 				try {
 					Branch branch = termServerService.getBranch(codeSystem.getBranchPath());
 					if (branch.getMetadata() != null) {
@@ -303,10 +303,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
-				final Date date = DateFormatUtils.ISO_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
+				final Date date = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
 				configuration.setEffectiveTime(date);
 			} catch (final ParseException e) {
-				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
+				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
 		if (newPropertyValues.containsKey(JUST_PACKAGE)) {
@@ -344,7 +344,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
 			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
-			if (!StringUtils.isEmpty(additionalFields) && !isJSONValid((additionalFields))) {
+			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
 				throw new BusinessServiceException(String.format("The additional release information is not valid JSON String"));
 			}
 			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
@@ -355,7 +355,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
 			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
 			if (newDefaultBranchPath != null && configuration.getDefaultBranchPath() != newDefaultBranchPath.toUpperCase()) {
-				if (!StringUtils.isEmpty(newDefaultBranchPath)) {
+				if (StringUtils.hasLength(newDefaultBranchPath)) {
 					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 					CodeSystem codeSystem = codeSystems.stream()
 							.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
@@ -373,7 +373,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
 			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
-			if (StringUtils.isEmpty(pPP)) {
+			if (!StringUtils.hasLength(pPP)) {
 				configuration.setPreviousPublishedPackage(null);
 			} else {
 				//Validate that a file of that name actually exists
@@ -397,7 +397,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
 			try {
 				final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
-				if (!StringUtils.isEmpty(refsetCompositeKeyIndexes)) {
+				if (StringUtils.hasLength(refsetCompositeKeyIndexes)) {
 					final String[] split = refsetCompositeKeyIndexes.split("\\|");
 					for (String refsetKeyAndIndexes : split) {
 						refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
@@ -462,10 +462,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			String releaseAsEdition = newPropertyValues.get(RELEASE_AS_AN_EDITION);
 			String previousEditionDependencyEffectiveDate = newPropertyValues.get(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE);
 
-			if (StringUtils.isEmpty(dependencyPackageRelease)
-				&& StringUtils.isEmpty(moduleID)
-				&& StringUtils.isEmpty(namespaceID)
-				&& (StringUtils.isEmpty(releaseAsEdition) || !TRUE.equals(releaseAsEdition))) {
+			if (!StringUtils.hasLength(dependencyPackageRelease)
+				&& !StringUtils.hasLength(moduleID)
+				&& !StringUtils.hasLength(namespaceID)
+				&& (!StringUtils.hasLength(releaseAsEdition) || !TRUE.equals(releaseAsEdition))) {
 				if (configuration.getExtensionConfig() != null) {
 					ExtensionConfig extensionConfig = configuration.getExtensionConfig();
 					extensionConfig.setBuildConfiguration(configuration);
@@ -480,7 +480,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				}
 
 				if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)) {
-					if (StringUtils.isEmpty(dependencyPackageRelease)) {
+					if (!StringUtils.hasLength(dependencyPackageRelease)) {
 						configuration.getExtensionConfig().setDependencyRelease(null);
 					} else {
 						final ReleaseCenter releaseCenter = new ReleaseCenter();
@@ -502,7 +502,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				}
 
 				if (newPropertyValues.containsKey(MODULE_ID)) {
-					if (StringUtils.isEmpty(moduleID)) {
+					if (!StringUtils.hasLength(moduleID)) {
 						configuration.getExtensionConfig().setModuleId(null);
 					} else {
 						configuration.getExtensionConfig().setModuleId(moduleID);
@@ -510,7 +510,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				}
 
 				if (newPropertyValues.containsKey(NAMESPACE_ID)) {
-					if (StringUtils.isEmpty(namespaceID)) {
+					if (!StringUtils.hasLength(namespaceID)) {
 						configuration.getExtensionConfig().setNamespaceId(null);
 					} else {
 						configuration.getExtensionConfig().setNamespaceId(namespaceID);
@@ -525,7 +525,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					Date previousDependencyDate = null;
 					try {
 						if (previousEditionDependencyEffectiveDate.contains("-")) {
-							previousDependencyDate = DateFormatUtils.ISO_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+							previousDependencyDate = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
 						} else {
 							previousDependencyDate = RF2Constants.DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
 						}

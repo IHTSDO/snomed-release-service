@@ -1,20 +1,16 @@
 package org.ihtsdo.buildcloud.core.service.identifier.client;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
-import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClientImpl;
-import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class IdServiceRestClientImpTestManual {
@@ -26,29 +22,29 @@ public class IdServiceRestClientImpTestManual {
 	private static final String userName ="username";
 	private static final String password ="username";
 	
-	@BeforeClass
+	@BeforeAll
 	public static void  setUp() throws Exception {
 		client = new IdServiceRestClientImpl(idServiceApiUrl, userName, password);
 		client.logIn();
 	}
 	
-	@AfterClass
+	@AfterAll
 	public static void tearDown() throws Exception {
 		client.logOut();
 	}
 	@Test
 	public void testCreateSctId() throws Exception {
-		Long sctId = client.getOrCreateSctId(UUID.fromString("E2F7B688-396E-4E84-A78B-6802698EB309"), new Integer("0"), "00","testing");
+		Long sctId = client.getOrCreateSctId(UUID.fromString("E2F7B688-396E-4E84-A78B-6802698EB309"), Integer.valueOf("0"), "00","testing");
 		assertNotNull(sctId);
 		System.out.println("Sctid:" + sctId);
-		assertEquals( new Long("715155004"), sctId);
+		assertEquals(Long.valueOf("715155004"), sctId);
 	}
 	@Test
 	public void testCreateSctids() throws Exception {
 		List<UUID> uuids = new ArrayList<>();
 		uuids.add(UUID.fromString(UUID_ONE));
 		uuids.add(UUID.fromString(UUID_TWO));
-		Map<UUID,Long> result = client.getOrCreateSctIds(uuids, new Integer("0"), "00", "testing");
+		Map<UUID,Long> result = client.getOrCreateSctIds(uuids, Integer.valueOf("0"), "00", "testing");
 		assertEquals(uuids.size(), result.size());
 		for ( UUID uuid : result.keySet()) {
 			System.out.println("UUID:" + uuid + " SCTID:" + result.get(uuid));
@@ -82,37 +78,36 @@ public class IdServiceRestClientImpTestManual {
 		}
 	}
 	
-	@Test(expected=RestClientException.class)
-	public void testPublishSctIds() throws Exception {
+	@Test
+	public void testPublishSctIds() {
 		List<Long> sctids = new ArrayList<>();
-		sctids.add(new Long("714141004"));
-		sctids.add(new Long("714139000"));
-		assertTrue(client.publishSctIds(sctids, new Integer("0"), "testing"));
+		sctids.add(Long.valueOf("714141004"));
+		sctids.add(Long.valueOf("714139000"));
+		assertThrows(RestClientException.class, () -> client.publishSctIds(sctids, Integer.valueOf("0"), "testing"));
 	}
 	
-	@Test(expected=RestClientException.class)
-	public void testPublishSnomedIds() throws Exception {
+	@Test
+	public void testPublishSnomedIds() {
 		List<String> snomedIds = new ArrayList<>();
 		snomedIds.add("R-FF605");
 		snomedIds.add("R-FF609");
-		assertTrue(client.publishSchemeIds(snomedIds,SchemeIdType.SNOMEDID, "publish testing"));
+		assertThrows(RestClientException.class, () -> client.publishSchemeIds(snomedIds,SchemeIdType.SNOMEDID, "publish testing"));
 	}
 	
 	
-	@Test(expected=RestClientException.class)
-	public void testPublishCtv3Ids() throws Exception {
+	@Test
+	public void testPublishCtv3Ids() {
 		List<String> ctv3Ids = new ArrayList<>();
 		ctv3Ids.add("XUsHT");
 		ctv3Ids.add("XUsfV");
-		
-		assertTrue(client.publishSchemeIds(ctv3Ids, SchemeIdType.CTV3ID, "publish testing"));
+		assertThrows(RestClientException.class, () -> client.publishSchemeIds(ctv3Ids, SchemeIdType.CTV3ID, "publish testing"));
 	}
 	
 	@Test
 	public void testGetSctIdStatusMap() throws Exception {
 		List<Long> sctids = new ArrayList<>();
-		sctids.add(new Long("714141004"));
-		sctids.add(new Long("714139000"));
+		sctids.add(Long.valueOf("714141004"));
+		sctids.add(Long.valueOf("714139000"));
 		Map<Long, String> result = client.getStatusForSctIds(sctids);
 		assertEquals(sctids.size(), result.keySet().size());
 		assertTrue(result.keySet().containsAll(sctids));
@@ -149,9 +144,9 @@ public class IdServiceRestClientImpTestManual {
 	@Test
 	public void testRegisterSctIds() throws Exception {
 		List<Long> sctids = new ArrayList<>();
-		sctids.add(new Long("1484571000005112"));
-		sctids.add(new Long("4893241000005115"));
-		List<Long> result = client.registerSctIds(sctids, null,new Integer("1000005"), "testing");
+		sctids.add(Long.valueOf("1484571000005112"));
+		sctids.add(Long.valueOf("4893241000005115"));
+		List<Long> result = client.registerSctIds(sctids, null, Integer.valueOf("1000005"), "testing");
 		assertEquals(sctids.size(), result.size());
 		assertTrue(result.containsAll(sctids));
 	}
