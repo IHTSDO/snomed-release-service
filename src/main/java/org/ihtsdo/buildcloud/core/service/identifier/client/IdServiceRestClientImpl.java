@@ -195,7 +195,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0; i < items.length();i++) {
-							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
+							result.put(Long.valueOf((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
 						}
 					} else {
 						throw new RestClientException(getFailureMessage(response));
@@ -234,7 +234,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					requestData.put(COMMENT, comment);
 					JSONResource response = resty.json(urlHelper.getSctIdGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						 result = new Long((String)response.get(SCTID));
+						 result = Long.valueOf((String)response.get(SCTID));
 					} else {
 						throw new RestClientException(getFailureMessage(response));
 					}
@@ -291,7 +291,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
 							JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 							for (int i =0;i < items.length();i++) {
-								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), new Long((String)items.getJSONObject(i).get(SCTID)));
+								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
 							}
 						}
 					} else {
@@ -613,7 +613,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
 						JSONArray items = response.array();
 						for (int i =0;i < items.length();i++) {
-							result.put(new Long((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
+							result.put(Long.valueOf((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
 						}
 					} else {
 						String errorMsg = (response != null) ? "http status code is:" + response.getHTTPStatus() : "No response received.";
@@ -746,7 +746,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
-						result.add(new Long((String)items.getJSONObject(i).get(SCTID)));
+						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
 					}
 				}
 			} else {
@@ -784,7 +784,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
 						
-						result.add(new Long((String)items.getJSONObject(i).get(SCTID)));
+						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
 					}
 				}
 			} else {
@@ -822,7 +822,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
 					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
 					for (int i =0;i < items.length();i++) {
-						result.add(new Long((String)items.getJSONObject(i).get(SCTID)));
+						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
 					}
 				}
 			} else {

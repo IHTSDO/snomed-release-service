@@ -120,11 +120,11 @@ public class ReleaseBuildManager {
 	}
 
 	private void validateBuildRequest(BuildRequestPojo buildRequestPojo, Product product) throws BusinessServiceException {
-		if (StringUtils.isEmpty(buildRequestPojo.getEffectiveDate())) {
+		if (!StringUtils.hasLength(buildRequestPojo.getEffectiveDate())) {
 			throw new BadRequestException("Effective Date must not be empty.");
 		}
 		if (buildRequestPojo.isLoadTermServerData()) {
-			if (StringUtils.isEmpty(buildRequestPojo.getBranchPath())) {
+			if (!StringUtils.hasLength(buildRequestPojo.getBranchPath())) {
 				throw new BadRequestException("Branch path must not be empty.");
 			}
 			try {
@@ -156,20 +156,20 @@ public class ReleaseBuildManager {
 		final ReleaseCenter releaseCenter = product.getReleaseCenter();
 
 		if (configuration != null) {
-			if (StringUtils.isEmpty(configuration.getReadmeHeader())) {
+			if (!StringUtils.hasLength(configuration.getReadmeHeader())) {
 				throw new BadRequestException("Readme Header must not be empty.");
 			}
 
-			if (StringUtils.isEmpty(configuration.getReadmeEndDate())) {
+			if (!StringUtils.hasLength(configuration.getReadmeEndDate())) {
 				throw new BadRequestException("Readme End Date must not be empty.");
 			}
 
-			if (!StringUtils.isEmpty(configuration.getPreviousPublishedPackage()) && !publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
+			if (StringUtils.hasLength(configuration.getPreviousPublishedPackage()) && !publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
 				throw new ResourceNotFoundException("Could not find previously published package: " + configuration.getPreviousPublishedPackage());
 			}
 
 			ExtensionConfig extensionConfig = configuration.getExtensionConfig();
-			if (extensionConfig != null && !StringUtils.isEmpty(extensionConfig.getDependencyRelease())
+			if (extensionConfig != null && StringUtils.hasLength(extensionConfig.getDependencyRelease())
 					&& !publishService.exists(internationalReleaseCenter, extensionConfig.getDependencyRelease())) {
 				throw new ResourceNotFoundException("Could not find dependency release package: " + extensionConfig.getDependencyRelease());
 			}
@@ -189,19 +189,19 @@ public class ReleaseBuildManager {
 		}
 
 		if (qaTestConfig != null) {
-			if (StringUtils.isEmpty(qaTestConfig.getAssertionGroupNames())) {
+			if (!StringUtils.hasLength(qaTestConfig.getAssertionGroupNames())) {
 				throw new BadRequestException("RVF Assertion group name must not be empty.");
 			}
-			if (qaTestConfig.isEnableDrools() && StringUtils.isEmpty(qaTestConfig.getDroolsRulesGroupNames())) {
+			if (qaTestConfig.isEnableDrools() && !StringUtils.hasLength(qaTestConfig.getDroolsRulesGroupNames())) {
 				throw new BadRequestException("Drool rule assertion group Name must not be empty.");
 			}
-			if (!StringUtils.isEmpty(qaTestConfig.getPreviousExtensionRelease()) && !publishService.exists(releaseCenter, qaTestConfig.getPreviousExtensionRelease())) {
+			if (StringUtils.hasLength(qaTestConfig.getPreviousExtensionRelease()) && !publishService.exists(releaseCenter, qaTestConfig.getPreviousExtensionRelease())) {
 				throw new ResourceNotFoundException("Could not find previous extension release package: " + qaTestConfig.getPreviousExtensionRelease());
 			}
-			if (!StringUtils.isEmpty(qaTestConfig.getExtensionDependencyRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getExtensionDependencyRelease())) {
+			if (StringUtils.hasLength(qaTestConfig.getExtensionDependencyRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getExtensionDependencyRelease())) {
 				throw new ResourceNotFoundException("Could not find extension dependency release package: " + qaTestConfig.getExtensionDependencyRelease());
 			}
-			if (!StringUtils.isEmpty(qaTestConfig.getPreviousInternationalRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getPreviousInternationalRelease())) {
+			if (StringUtils.hasLength(qaTestConfig.getPreviousInternationalRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getPreviousInternationalRelease())) {
 				throw new ResourceNotFoundException("Could not find previous international release package: " + qaTestConfig.getPreviousInternationalRelease());
 			}
 		}
@@ -209,7 +209,7 @@ public class ReleaseBuildManager {
 
 	private void findManifestFileOrThrow(String releaseCenter, String productKey) {
 		String manifestFileName = inputFileService.getManifestFileName(releaseCenter, productKey);
-		if (StringUtils.isEmpty(manifestFileName)) {
+		if (!StringUtils.hasLength(manifestFileName)) {
 			throw new ResourceNotFoundException(String.format("No manifest file found for product %s", productKey));
 		}
 	}

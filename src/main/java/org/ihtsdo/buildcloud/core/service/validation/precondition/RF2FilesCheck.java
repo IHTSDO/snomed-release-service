@@ -46,7 +46,7 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 					}
 				}
 			}
-			if (!StringUtils.isEmpty(errorMessage)) {
+			if (StringUtils.hasLength(errorMessage)) {
 				fail(errorMessage);
 			} else {
 				pass();

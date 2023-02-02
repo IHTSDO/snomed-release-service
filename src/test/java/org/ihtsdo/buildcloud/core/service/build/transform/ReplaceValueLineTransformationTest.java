@@ -1,7 +1,8 @@
 package org.ihtsdo.buildcloud.core.service.build.transform;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReplaceValueLineTransformationTest {
 
@@ -13,7 +14,7 @@ public class ReplaceValueLineTransformationTest {
 		String[] columnValues = {"", "20150131"};
 		String[] expected = {"", "20150131"};
 		subject.transformLine(columnValues);
-		Assert.assertArrayEquals(expected, columnValues);
+		assertArrayEquals(expected, columnValues);
 	}
 
 	@Test
@@ -22,7 +23,7 @@ public class ReplaceValueLineTransformationTest {
 		String[] columnValues = {"", null};
 		String[] expected = {"", "20140731"};
 		subject.transformLine(columnValues);
-		Assert.assertArrayEquals(expected, columnValues);
+		assertArrayEquals(expected, columnValues);
 	}
 
 	@Test
@@ -31,7 +32,7 @@ public class ReplaceValueLineTransformationTest {
 		String[] columnValues = {"", ""};
 		String[] expected = {"", "20140731"};
 		subject.transformLine(columnValues);
-		Assert.assertArrayEquals(expected, columnValues);
+		assertArrayEquals(expected, columnValues);
 	}
 
 	@Test
@@ -40,7 +41,7 @@ public class ReplaceValueLineTransformationTest {
 		String[] columnValues = {"", "20150131"};
 		String[] expected = {"", "20140731"};
 		subject.transformLine(columnValues);
-		Assert.assertArrayEquals(expected, columnValues);
+		assertArrayEquals(expected, columnValues);
 	}
 
 }

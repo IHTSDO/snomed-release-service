@@ -2,12 +2,13 @@ package org.ihtsdo.buildcloud.integration.workbenchworkarround.moduleids;
 
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.zip.ZipFile;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 
@@ -16,7 +17,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc, getClass().getSimpleName());
@@ -43,7 +44,7 @@ public class ReconcileModuleIdsTestIntegration extends AbstractControllerTest {
 		integrationTestHelper.setReadmeEndDate("2015");
 		//get previous published files
 		String previousPublishedPackage = integrationTestHelper.getPreviousPublishedPackage();
-		Assert.assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
+		assertEquals("SnomedCT_Release_INT_20140131.zip", previousPublishedPackage);
 		integrationTestHelper.setPreviousPublishedPackage(previousPublishedPackage);
 		executeAndVerifyResults("20140731");
 	}

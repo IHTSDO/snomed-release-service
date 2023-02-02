@@ -6,7 +6,8 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.test.AbstractTest;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -19,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 public class BuildDAOImplTest extends AbstractTest {
@@ -38,7 +39,7 @@ public class BuildDAOImplTest extends AbstractTest {
 
 	private String buildId;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		product = productDAO.find(1L);
@@ -52,13 +53,13 @@ public class BuildDAOImplTest extends AbstractTest {
 	public void testFind() {
 		// saved build
 		Build foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), buildId, null, null, null, null);
-		Assert.assertNotNull(foundBuild);
-		Assert.assertEquals("2014-02-04T10:30:01", foundBuild.getCreationTime());
-		Assert.assertEquals(Build.Status.PENDING, foundBuild.getStatus());
+		assertNotNull(foundBuild);
+		assertEquals("2014-02-04T10:30:01", foundBuild.getCreationTime());
+		assertEquals(Build.Status.PENDING, foundBuild.getStatus());
 
 		// no existing build id
 		foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "2014-02-04T10:30:02", null, null, null, null);
-		Assert.assertNull(foundBuild);
+		assertNull(foundBuild);
 	}
 	
 	
@@ -77,11 +78,11 @@ public class BuildDAOImplTest extends AbstractTest {
 		//Offline test is just going to return the MD5 input, so this test only makes sense in online mode.
 		final byte[] md5BytesExpected = Base64.decodeBase64("xWJD6+IqEtukiwI9rz4pNw==");
 		final byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
-		Assert.assertArrayEquals(md5BytesExpected, md5BytesReceived);
+		assertArrayEquals(md5BytesExpected, md5BytesReceived);
 		
 		//Now lets see if we can get that file back out again
 		final InputStream is = buildDAO.getOutputFileInputStream(build, TEST_FILE_NAME);
-		Assert.assertNotNull(is);
+		assertNotNull(is);
 	}
 
 	@Test

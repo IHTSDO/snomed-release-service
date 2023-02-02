@@ -3,10 +3,11 @@ package org.ihtsdo.buildcloud.integration.corecomponents;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BuildCancellationTestIntegration extends AbstractControllerTest{
 
@@ -15,14 +16,14 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
     private IntegrationTestHelper integrationTestHelper;
 
     @Override
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         super.setup();
         integrationTestHelper = new IntegrationTestHelper(mockMvc,"CoreComponentsTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testCancelBuild() throws Exception {
         integrationTestHelper.createTestProductStructure();
 
@@ -41,13 +42,13 @@ public class BuildCancellationTestIntegration extends AbstractControllerTest{
         int cancelBuildStatus = integrationTestHelper.cancelBuild(buildURL1);
 
         //Build is not triggered so result should be failed
-        Assert.assertNotEquals(200, cancelBuildStatus);
+        assertNotEquals(200, cancelBuildStatus);
 
         final Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
                 int cancelBuildStatus1 = integrationTestHelper.cancelBuild(buildURL1);
-                Assert.assertEquals(200, cancelBuildStatus1);
+                assertEquals(200, cancelBuildStatus1);
 
             } catch (Exception e) {
                 e.printStackTrace();

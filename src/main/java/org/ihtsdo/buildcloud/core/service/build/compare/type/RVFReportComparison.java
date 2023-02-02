@@ -62,7 +62,7 @@ public class RVFReportComparison extends ComponentComparison {
     @Override
     public void findDiff(Build leftBuild, Build rightBuild) throws IOException {
         List<DefaultComponentComparisonReport> reports = new ArrayList<>();
-        if (!StringUtils.isEmpty(leftBuild.getRvfURL()) && !StringUtils.isEmpty(rightBuild.getRvfURL())) {
+        if (StringUtils.hasLength(leftBuild.getRvfURL()) && StringUtils.hasLength(rightBuild.getRvfURL())) {
             try {
                 String validationComparisonReportString = getValidationComparisonReport(leftBuild.getRvfURL(), rightBuild.getRvfURL());
                 ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
@@ -76,13 +76,13 @@ public class RVFReportComparison extends ComponentComparison {
                 fail("Failed to compare RVF results. Error: " + e.getMessage());
             }
         } else {
-            if ((StringUtils.isEmpty(leftBuild.getRvfURL()) && !StringUtils.isEmpty(rightBuild.getRvfURL()))
-                || (!StringUtils.isEmpty(leftBuild.getRvfURL()) && StringUtils.isEmpty(rightBuild.getRvfURL()))){
+            if ((!StringUtils.hasLength(leftBuild.getRvfURL()) && StringUtils.hasLength(rightBuild.getRvfURL()))
+                || (StringUtils.hasLength(leftBuild.getRvfURL()) && !StringUtils.hasLength(rightBuild.getRvfURL()))){
                 DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                 dto.setName(RVFTestName.REPORT_URL.getLabel());
                 dto.setStatus(BuildComparisonManager.ComparisonState.NOT_FOUND.name());
-                dto.setExpected(!StringUtils.isEmpty(leftBuild.getRvfURL()) ? leftBuild.getRvfURL() : null);
-                dto.setActual(!StringUtils.isEmpty(rightBuild.getRvfURL()) ? rightBuild.getRvfURL() : null);
+                dto.setExpected(StringUtils.hasLength(leftBuild.getRvfURL()) ? leftBuild.getRvfURL() : null);
+                dto.setActual(StringUtils.hasLength(rightBuild.getRvfURL()) ? rightBuild.getRvfURL() : null);
                 reports.add(dto);
                 fail(reports);
             }
@@ -101,7 +101,7 @@ public class RVFReportComparison extends ComponentComparison {
             count += pollPeriod;
 
             String validationReportString = rvfRestTemplate.getForObject(uri.toString(), String.class);
-            if (!StringUtils.isEmpty(validationReportString)) {
+            if (StringUtils.hasLength(validationReportString)) {
                 ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
                 final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationReportString, ValidationComparisonReport.class);
                 if (!ValidationComparisonReport.Status.RUNNING.equals(highLevelValidationReport.getStatus())) {

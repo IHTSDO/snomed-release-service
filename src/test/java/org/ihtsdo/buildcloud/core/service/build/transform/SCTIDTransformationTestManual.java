@@ -9,8 +9,8 @@ import java.util.List;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClientImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SCTIDTransformationTestManual {
 
@@ -21,7 +21,7 @@ public class SCTIDTransformationTestManual {
 	private final String userName = "userName";
 	private final String password = "password";
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		idRestClient = new IdServiceRestClientImpl(url, userName, password);
 		idRestClient.logIn();

@@ -1,14 +1,13 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdmin;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsGlobalAdmin;
-import org.ihtsdo.buildcloud.rest.security.*;
 import org.ihtsdo.buildcloud.core.service.PermissionService;
 import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.ReleaseCenterService;
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -40,7 +38,7 @@ import static org.ihtsdo.buildcloud.core.service.PermissionService.Role.*;
 
 @Controller
 @RequestMapping("/centers")
-@Api(value = "Release Center", position = 3)
+@Tag(name = "Release Center", description = "-")
 public class ReleaseCenterController {
 
     @Autowired
@@ -58,8 +56,8 @@ public class ReleaseCenterController {
     private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
 
     @GetMapping
-    @ApiOperation(value = "Returns a list all release center for a logged in user",
-            notes = "Returns a list of all release centers visible to the currently logged in user.")
+    @Operation(summary = "Returns a list all release center for a logged in user",
+            description = "Returns a list of all release centers visible to the currently logged in user")
     @ResponseBody
     public List<Map<String, Object>> getReleaseCenters(@RequestParam(required = false) boolean includeRemoved, HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -71,7 +69,7 @@ public class ReleaseCenterController {
         Map rolesMap = permissionService.getRolesForLoggedInUser();
         centers = centers.stream().filter(center -> (includeRemoved || !center.isRemoved()) &&
                 ((rolesMap.containsKey(GLOBAL_ROLE) && ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_ADMIN.name()))
-                        || (!StringUtils.isEmpty(center.getCodeSystem()) &&
+                        || (StringUtils.hasLength(center.getCodeSystem()) &&
                             ((rolesMap.containsKey(GLOBAL_ROLE) && (((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_MANAGER.name())
                                                                     || ((Set) rolesMap.get(GLOBAL_ROLE)).contains(RELEASE_LEAD.name())))
                             || (rolesMap.containsKey(center.getCodeSystem()) &&
@@ -87,8 +85,8 @@ public class ReleaseCenterController {
 
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     @IsAuthenticatedAsGlobalAdmin
-    @ApiOperation(value = "Creates a new Release Center",
-            notes = " Creates a new Release Center and returns the newly created release center.")
+    @Operation(summary = "Creates a new Release Center",
+            description = "Creates a new Release Center and returns the newly created release center")
     public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
                                                                    HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
 
@@ -105,9 +103,9 @@ public class ReleaseCenterController {
 
     @PutMapping(value = "/{releaseCenterKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @IsAuthenticatedAsAdmin
-    @ApiOperation(value = "Updates a release center details",
-            notes = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed.   "
-                    + "Note that the short name is used in the formation of the ‘business key'")
+    @Operation(summary = "Updates a release center details",
+            description = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed. " +
+                    "Note that the short name is used in the formation of the ‘business key'")
     @ResponseBody
     public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterKey,
                                                    @RequestBody(required = false) Map<String, String> json,
@@ -133,8 +131,8 @@ public class ReleaseCenterController {
 
     @GetMapping(value = "/{releaseCenterKey}")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-    @ApiOperation(value = "Returns a single release center",
-            notes = "Returns a single release center for a given releaseCenterBusinessKey")
+    @Operation(summary = "Returns a single release center",
+            description = "Returns a single release center for a given releaseCenterBusinessKey")
     @ResponseBody
     public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterKey, HttpServletRequest request) throws ResourceNotFoundException {
         ReleaseCenter center = getReleaseCenterRequired(releaseCenterKey);
@@ -143,8 +141,8 @@ public class ReleaseCenterController {
 
     @GetMapping(value = "/{releaseCenterKey}/published")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-    @ApiOperation(value = "Returns a list published releases names",
-            notes = "Returns a list published releases names for a given release center")
+    @Operation(summary = "Returns a list published releases names",
+            description = "Returns a list published releases names for a given release center")
     @ResponseBody
     public Map<String, Object> getReleaseCenterPublishedPackages(@PathVariable String releaseCenterKey, HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -159,7 +157,7 @@ public class ReleaseCenterController {
     @PostMapping(value = "/{releaseCenterKey}/published", consumes = MediaType.ALL_VALUE)
     @IsAuthenticatedAsAdminOrReleaseManager
     @ResponseBody
-    @ApiIgnore
+    @Operation(hidden = true)
     public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterKey,
                                                               @RequestParam(value = "file") final MultipartFile file, @RequestParam(value = "isComponentIdPublishingRequired", defaultValue = "true") boolean publishComponentIds) throws BusinessServiceException, IOException {
 

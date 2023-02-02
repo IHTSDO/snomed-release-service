@@ -1,10 +1,9 @@
 package org.ihtsdo.buildcloud.core.manifest;
 
-import org.junit.Test;
-
 import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ManifestValidatorTest {
 

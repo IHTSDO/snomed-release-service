@@ -37,7 +37,6 @@ import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -155,11 +154,6 @@ public abstract class Config extends BaseConfiguration {
 
 	private Cache getCache(final String name) {
 		return new ConcurrentMapCache(name);
-	}
-
-	@Bean
-	public StandardPasswordEncoder standardPasswordEncoder(@Value("${encryption.salt}") final String salt) {
-		return new StandardPasswordEncoder(salt);
 	}
 
 	@Bean

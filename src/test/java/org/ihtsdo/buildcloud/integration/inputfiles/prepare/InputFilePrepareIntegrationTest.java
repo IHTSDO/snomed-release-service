@@ -9,13 +9,11 @@ import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 
@@ -32,7 +30,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 	private ObjectMapper objectMapper;
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc, "FileProcessingTest");
@@ -88,25 +86,27 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
 		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
 		assertEquals(1, reportDetails.size());
-		Assert.assertTrue(reportDetails.containsKey(ReportType.ERROR));
+		assertTrue(reportDetails.containsKey(ReportType.ERROR));
 		List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(ReportType.ERROR);
 		assertEquals("Failed to find files from source directory", fileProcessingReportDetails.get(0).getMessage());
 	}
 
-	@Test(expected = AssertionError.class)
-	public void testProcessSourceFileNoManifest() throws Exception {
-		integrationTestHelper.createBuild("20170731");
-		buildUrl = integrationTestHelper.getLocalHostBuildUrl();
+	@Test
+	public void testProcessSourceFileNoManifest() {
+		assertThrows(AssertionError.class, () -> {
+			integrationTestHelper.createBuild("20170731");
+			buildUrl = integrationTestHelper.getLocalHostBuildUrl();
 
-		integrationTestHelper.uploadSourceFile("der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt", REFSET_TOOL, this.getClass());
-		integrationTestHelper.prepareSourceFile();
-		String report = integrationTestHelper.getInputPrepareReport();
-		SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
-		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-		assertEquals(1, reportDetails.size());
-		Assert.assertTrue(reportDetails.containsKey(ReportType.ERROR));
-		List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(ReportType.ERROR);
-		assertTrue(fileProcessingReportDetails.get(0).getMessage().startsWith("No manifest.xml found for product fileprocessingtest_product and build "));
+			integrationTestHelper.uploadSourceFile("der2_cRefset_AlternativeAssociationReferenceSetDelta_INT_20170731.txt", REFSET_TOOL, this.getClass());
+			integrationTestHelper.prepareSourceFile();
+			String report = integrationTestHelper.getInputPrepareReport();
+			SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
+			Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
+			assertEquals(1, reportDetails.size());
+			assertTrue(reportDetails.containsKey(ReportType.ERROR));
+			List<FileProcessingReportDetail> fileProcessingReportDetails = reportDetails.get(ReportType.ERROR);
+			assertTrue(fileProcessingReportDetails.get(0).getMessage().startsWith("No manifest.xml found for product fileprocessingtest_product and build "));
+		});
 	}
 
 	@Test
@@ -121,7 +121,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		String report = integrationTestHelper.getInputPrepareReport();
 		SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
 		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-		Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
+		assertNotNull(reportDetails.get(ReportType.ERROR));
 		assertEquals(22, reportDetails.get(ReportType.ERROR).size());
 	}
 
@@ -136,7 +136,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		String report = integrationTestHelper.getInputPrepareReport();
 		SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
 		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-		Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
+		assertNotNull(reportDetails.get(ReportType.ERROR));
 		assertEquals(1, reportDetails.get(ReportType.ERROR).size());
 	}
 
@@ -157,7 +157,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		reportDetailForDa.setRefsetId("554461000005103");
 		reportDetailForDa.setMessage("Added source terminology-server/der2_cRefset_LanguageDelta_INT_20180331.txt");
 
-		Assert.assertTrue(reportDetails.get(ReportType.INFO).contains(reportDetailForDa));
+		assertTrue(reportDetails.get(ReportType.INFO).contains(reportDetailForDa));
 
 		FileProcessingReportDetail reportDetailForEn = new FileProcessingReportDetail();
 		reportDetailForEn.setType(ReportType.INFO);
@@ -166,7 +166,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		reportDetailForEn.setRefsetId("900000000000509007");
 		reportDetailForEn.setMessage("Added source terminology-server/der2_cRefset_LanguageDelta_INT_20180331.txt");
 
-		Assert.assertTrue(reportDetails.get(ReportType.INFO).contains(reportDetailForEn));
+		assertTrue(reportDetails.get(ReportType.INFO).contains(reportDetailForEn));
 
 		String actualRefsetData = integrationTestHelper.getInputFile("rel2_cRefset_LanguageDelta-en_DK1000005_20180331.txt");
 		String expected = "id	effectiveTime	active	moduleId	refsetId	referencedComponentId	acceptabilityId\r\n" +
@@ -199,13 +199,13 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		detailWithEn.setType(ReportType.INFO);
 		detailWithEn.setFileName("rel2_Description_Delta-en_DK1000005_20180331.txt");
 		detailWithEn.setMessage("Uploaded to product input files directory");
-		Assert.assertTrue(reportDetails.get(ReportType.INFO).contains(detailWithEn));
+		assertTrue(reportDetails.get(ReportType.INFO).contains(detailWithEn));
 
 		FileProcessingReportDetail detailWithDa = new FileProcessingReportDetail();
 		detailWithDa.setType(ReportType.INFO);
 		detailWithDa.setFileName("rel2_Description_Delta-da_DK1000005_20180331.txt");
 		detailWithDa.setMessage("Uploaded to product input files directory");
-		Assert.assertTrue(reportDetails.get(ReportType.INFO).contains(detailWithDa));
+		assertTrue(reportDetails.get(ReportType.INFO).contains(detailWithDa));
 
 		String expectedDescInEn = "id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId\r\n" +
 				"4927621000005118	20180331	1	554471000005108	554071000005100	en	900000000000003001	Hospital pharmacy (environment)	900000000000448009\r\n" +

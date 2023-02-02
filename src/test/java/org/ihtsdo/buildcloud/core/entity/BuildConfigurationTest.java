@@ -1,19 +1,19 @@
 package org.ihtsdo.buildcloud.core.entity;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.ParseException;
 import java.util.*;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 public class BuildConfigurationTest {
@@ -22,7 +22,7 @@ public class BuildConfigurationTest {
 	private JsonGenerator jsonGenerator;
 	private JsonFactory jsonFactory;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		ObjectMapper objectMapper = new ObjectMapper();
 		stringWriter = new StringWriter();
@@ -52,7 +52,7 @@ public class BuildConfigurationTest {
 		String actual = stringWriter.toString();
 		System.out.println(actual.replaceAll(",", ",\n"));
 
-		BuildConfiguration buildConfigurationFromJson = jsonFactory.createJsonParser(new StringReader(actual)).readValueAs(BuildConfiguration.class);
+		BuildConfiguration buildConfigurationFromJson = jsonFactory.createParser(new StringReader(actual)).readValueAs(BuildConfiguration.class);
 
 		assertEquals(2, buildConfigurationFromJson.getRefsetCompositeKeys().size());
 		assertEquals(effectiveTime, buildConfigurationFromJson.getEffectiveTime());
@@ -64,7 +64,7 @@ public class BuildConfigurationTest {
 		assertEquals("200", key2.getRefsetId());
 		assertEquals("5, 8", key2.getFieldIndexes());
 		ExtensionConfig extConfig = buildConfigurationFromJson.getExtensionConfig();
-		Assert.assertNotNull(extConfig);
+		assertNotNull(extConfig);
 		assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
 		assertEquals("554471000005108", extConfig.getModuleId());
 		assertEquals("1000005", extConfig.getNamespaceId());

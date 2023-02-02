@@ -13,9 +13,8 @@ import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +30,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 public class ZipperTest  extends AbstractTest {
@@ -55,7 +54,7 @@ public class ZipperTest  extends AbstractTest {
 	
 	protected Build build;
 	
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		Product product = productDAO.find(1L);
@@ -65,13 +64,13 @@ public class ZipperTest  extends AbstractTest {
 		//We're going to locally copy a manifest file for the test
 		FileHelper fileHelper = new FileHelper(buildBucketName, s3client, new S3ClientHelper(s3client));
 		String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
-		Assert.assertFalse(new File(buildManifestDirectoryPath).exists());
+		assertFalse(new File(buildManifestDirectoryPath).exists());
 		fileHelper.putFile(getClass().getResourceAsStream("zip_simple_refset_manifest.xml"), buildManifestDirectoryPath + "zip_simple_refset_manifest.xml");
 
 		//And also a refset file to copy down from the output (NOT INPUT!) directory
 		URL fileURL = getClass().getResource("der2_Refset_SimpleDelta_INT_20140831.txt");
 		File testRefset = new File(fileURL.getFile());
-		Assert.assertTrue(testRefset.exists());
+		assertTrue(testRefset.exists());
 		buildDAO.putOutputFile(build, testRefset, false);
 	}
 	
@@ -81,14 +80,14 @@ public class ZipperTest  extends AbstractTest {
 		Zipper zipper = new Zipper(build, buildDAO);
 		File zipFile = zipper.createZipFile(false);
 
-		Assert.assertNotNull(zipFile);
-		Assert.assertTrue(zipFile.exists());
+		assertNotNull(zipFile);
+		assertTrue(zipFile.exists());
 
 		Map<String, String> zipContents = FileUtils.examineZipContents(zipFile.getName(), new FileInputStream(zipFile));
 		for (String key : zipContents.keySet()) {
 			System.out.println(key + "," + zipContents.get(key));
 		}
-		assertEquals("Expecting 11 directories + 1 file = 12 items in zipped file", 12, zipContents.size());
+		assertEquals(12, zipContents.size(), "Expecting 11 directories + 1 file = 12 items in zipped file");
 
 		//And lets make sure our test file is in there.
 		assertTrue(zipContents.containsValue(FilenameUtils
@@ -117,7 +116,7 @@ public class ZipperTest  extends AbstractTest {
 		for (String key : zipContents.keySet()) {
 			System.out.println(key + "," + zipContents.get(key));
 		}
-		assertEquals("Expecting 5 directories + 1 file = 6 items in zipped file", 6, zipContents.size());
+		assertEquals(6, zipContents.size(), "Expecting 5 directories + 1 file = 6 items in zipped file");
 
 		//And lets make sure our test file is in there.
 		assertTrue(zipContents.containsValue(FilenameUtils

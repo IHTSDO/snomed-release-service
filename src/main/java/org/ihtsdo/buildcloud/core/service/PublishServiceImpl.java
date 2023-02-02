@@ -523,7 +523,7 @@ public class PublishServiceImpl implements PublishService {
 					//publishing sctId grouped in batch by namespace id
 					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(assignedIds);
 					for ( String namespace : sctIdsByNamespaceMap.keySet()) {
-						boolean isSuccessful = idRestClient.publishSctIds(sctIdsByNamespaceMap.get(namespace), new Integer(namespace), buildId);
+						boolean isSuccessful = idRestClient.publishSctIds(sctIdsByNamespaceMap.get(namespace), Integer.valueOf(namespace), buildId);
 						if (!isSuccessful) {
 							LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
 						}
@@ -595,7 +595,7 @@ public class PublishServiceImpl implements PublishService {
 					continue;
 				}
 				String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR,-1);
-				sctIds.add(new Long(columnValues[0]));
+				sctIds.add(Long.valueOf(columnValues[0]));
 			}
 		} 
 		return sctIds;

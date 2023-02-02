@@ -1,14 +1,13 @@
 package org.ihtsdo.buildcloud.core.service.validation.precondition;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
@@ -17,7 +16,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 	private InputFilesExistenceCheck inputFilesCheck;
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager(false).preconditionChecks(inputFilesCheck);
@@ -64,7 +63,7 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		Assert.assertEquals(State.PASS, actualResult);
+		assertEquals(State.PASS, actualResult);
 	}
 
 	@Test
@@ -204,9 +203,9 @@ public class InputFilesExistenceCheckTest extends PreconditionCheckTest {
 		loadManifest("invalid_manifest.xml");
 		final PreConditionCheckReport report = runPreConditionCheck(InputFilesExistenceCheck.class);
 		final State actualResult = report.getResult();
-		Assert.assertEquals(State.FATAL, actualResult);
+		assertEquals(State.FATAL, actualResult);
 	}
-	@After
+	@AfterEach
 	public void tearDown() throws ResourceNotFoundException {
 		product = null;
 	}

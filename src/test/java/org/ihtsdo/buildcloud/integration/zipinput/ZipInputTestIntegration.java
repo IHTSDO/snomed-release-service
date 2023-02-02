@@ -2,9 +2,8 @@ package org.ihtsdo.buildcloud.integration.zipinput;
 
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.zip.ZipFile;
 
@@ -13,7 +12,7 @@ public class ZipInputTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 	
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc, getClass().getSimpleName());

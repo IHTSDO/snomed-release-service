@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.compare;
 
-import com.github.difflib.text.DiffRow.Tag;
-
 public class DiffRow {
 	private String oldLine;
 	private String newLine;

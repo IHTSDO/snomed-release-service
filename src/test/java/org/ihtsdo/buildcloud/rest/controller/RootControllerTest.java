@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +17,7 @@ public class RootControllerTest extends AbstractControllerTest {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
 				.andDo(print())
-				.andExpect(content().contentType(APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.url", is(ROOT_URL)))
 				.andExpect(jsonPath("$.user_url", is(ROOT_URL + "/user")))
 				.andExpect(jsonPath("$.login_url", is(ROOT_URL + "/login")))

@@ -219,7 +219,7 @@ public class RVFFailureJiraAssociationService {
 		RestTemplate rvfRestTemplate = new RestTemplate();
 		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
 		String validationReportString = rvfRestTemplate.getForObject(url, String.class);
-		if (!StringUtils.isEmpty(validationReportString)) {
+		if (StringUtils.hasLength(validationReportString)) {
 			validationReportString = validationReportString.replace("\"TestResult\"", "\"testResult\"");
 		}
 

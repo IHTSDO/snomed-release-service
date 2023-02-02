@@ -1,14 +1,12 @@
 package org.ihtsdo.buildcloud.core.service.classifier;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 
-import org.ihtsdo.buildcloud.core.service.classifier.ClassificationServiceRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ClassificationServiceRestClientTestHarness {
 	
@@ -18,7 +16,7 @@ public class ClassificationServiceRestClientTestHarness {
 	private final String userName = "classification";
 	private final String password = "classification";
 	
-	@Before
+	@BeforeEach
 	public void setUp() throws BusinessServiceException {
 		client = new ClassificationServiceRestClient(classificationServiceUrl, userName, password);
 		client.setTimeoutInSeconds(300);

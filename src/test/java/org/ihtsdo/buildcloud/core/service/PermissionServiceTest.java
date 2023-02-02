@@ -6,15 +6,14 @@ import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.sso.integration.SecurityUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -29,7 +28,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-@RunWith(MockitoJUnitRunner.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @Transactional
 public class PermissionServiceTest {
@@ -43,7 +44,7 @@ public class PermissionServiceTest {
 
     private MocksControl mocksControl;
 
-    @Before
+    @BeforeEach
     public void setup() {
         PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken("user", "password", Sets.newHashSet(new SimpleGrantedAuthority("USER")));
         SecurityContext context = new SecurityContextImpl();
@@ -68,20 +69,20 @@ public class PermissionServiceTest {
 
         Map roleMap = permissionService.getRolesForLoggedInUser();
 
-        Assert.assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_ADMIN.name()));
-        Assert.assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
-        Assert.assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_LEAD.name()));
+        assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_ADMIN.name()));
+        assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
+        assertTrue(((Set)roleMap.get("GLOBAL")).contains(PermissionService.Role.RELEASE_LEAD.name()));
 
-        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT")).size());
-        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT")).contains(PermissionService.Role.RELEASE_ADMIN.name()));
+        assertEquals(1, ((Set) roleMap.get("SNOMEDCT")).size());
+        assertTrue(((Set) roleMap.get("SNOMEDCT")).contains(PermissionService.Role.RELEASE_ADMIN.name()));
 
-        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT-DK")).size());
-        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT-DK")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
+        assertEquals(1, ((Set) roleMap.get("SNOMEDCT-DK")).size());
+        assertTrue(((Set) roleMap.get("SNOMEDCT-DK")).contains(PermissionService.Role.RELEASE_MANAGER.name()));
 
-        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT-IE")).size());
-        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT-IE")).contains(PermissionService.Role.RELEASE_LEAD.name()));
+        assertEquals(1, ((Set) roleMap.get("SNOMEDCT-IE")).size());
+        assertTrue(((Set) roleMap.get("SNOMEDCT-IE")).contains(PermissionService.Role.RELEASE_LEAD.name()));
 
-        Assert.assertEquals(1, ((Set) roleMap.get("SNOMEDCT-BE")).size());
-        Assert.assertTrue(((Set) roleMap.get("SNOMEDCT-BE")).contains(PermissionService.Role.RELEASE_USER.name()));
+        assertEquals(1, ((Set) roleMap.get("SNOMEDCT-BE")).size());
+        assertTrue(((Set) roleMap.get("SNOMEDCT-BE")).contains(PermissionService.Role.RELEASE_USER.name()));
     }
 }

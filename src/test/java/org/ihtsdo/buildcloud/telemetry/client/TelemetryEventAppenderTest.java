@@ -3,7 +3,10 @@ package org.ihtsdo.buildcloud.telemetry.client;
 import org.ihtsdo.buildcloud.telemetry.TestService;
 import org.ihtsdo.buildcloud.telemetry.core.Constants;
 import org.ihtsdo.buildcloud.telemetry.server.TestBroker;
-import org.junit.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,11 +15,13 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class TelemetryEventAppenderTest {
 
 	private TestBroker testBroker;
 
-	@Before
+	@BeforeEach
 	public void setup() throws JMSException {
 		testBroker = new TestBroker();
 
@@ -25,7 +30,7 @@ public class TelemetryEventAppenderTest {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testLogInfoEvent() throws JMSException, InterruptedException {
 		// Create logger
 		Logger logger = LoggerFactory.getLogger(TestService.class);
@@ -39,13 +44,13 @@ public class TelemetryEventAppenderTest {
 
 		// Assert message received
 		List<Message> messages = testBroker.getMessages();
-		Assert.assertEquals(1, messages.size());
+		assertEquals(1, messages.size());
 		TextMessage actual = (TextMessage) messages.get(0);
-		Assert.assertTrue(actual.getText().matches("[^ ]+ INFO  org.ihtsdo.buildcloud.telemetry.client.TelemetryEventAppenderTest.testLogInfoEvent - test event\n"));
-		Assert.assertEquals("INFO", actual.getStringProperty("level"));
+		assertTrue(actual.getText().matches("[^ ]+ INFO  org.ihtsdo.buildcloud.telemetry.client.TelemetryEventAppenderTest.testLogInfoEvent - test event\n"));
+		assertEquals("INFO", actual.getStringProperty("level"));
 	}
 
-	@After
+	@AfterEach
 	public void after() throws JMSException {
 		testBroker.close();
 	}
