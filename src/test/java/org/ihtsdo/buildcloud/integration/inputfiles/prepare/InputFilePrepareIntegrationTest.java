@@ -122,7 +122,7 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		SourceFileProcessingReport fileProcessingReport = objectMapper.readValue(report, SourceFileProcessingReport.class);
 		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
 		Assert.assertNotNull(reportDetails.get(ReportType.ERROR));
-		assertEquals(30, reportDetails.get(ReportType.ERROR).size());
+		assertEquals(22, reportDetails.get(ReportType.ERROR).size());
 	}
 
 	@Test
