@@ -53,17 +53,32 @@ public class InputSourceFileProcessor {
 
 	private final Logger logger = LoggerFactory.getLogger(InputSourceFileProcessor.class);
 
+	private static final String HEADER_CONCEPT = "id\teffectiveTime\tactive\tmoduleId\tdefinitionStatusId";
+	private static final String HEADER_INFERRED_OR_STATED_RELATIONSHIP = "id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId";
+	private static final String HEADER_RELATIONSHIP_CONCRETE_VALUES = "id\teffectiveTime\tactive\tmoduleId\tsourceId\tvalue\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId";
 	private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
 	private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
+	private static final String HEADER_OWL_EXPRESSION = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\towlExpression";
+	private static final String HEADER_IDENTIFIER = "identifierSchemeId\talternateIdentifier\teffectiveTime\tactive\tmoduleId\treferencedComponentId";
 	private static final int REFSETID_COL = 4;
+	private static final int CHARACTERISTICTYPEID_COL = 8;
 	private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
 	private static final int DESCRIPTION_MODULE_ID_COL = 3;
 	private static final String INPUT_FILE_TYPE_REFSET = "Refset";
 	private static final String INPUT_FILE_TYPE_DESCRIPTION = "Description_";
 	private static final String INPUT_FILE_TYPE_TEXT_DEFINITON = "TextDefinition";
+	private static final String INPUT_FILE_TYPE_CONCEPT = "Concept_";
+	private static final String INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES = "RelationshipConcreteValues_";
+	private static final String INPUT_FILE_TYPE_RELATIONSHIP = "Relationship_";
+	private static final String INPUT_FILE_TYPE_STATED_RELATIONSHIP = "StatedRelationship_";
+	private static final String INPUT_FILE_TYPE_OWL_EXPRESSION = "OWLExpression";
+	private static final String INPUT_FILE_TYPE_IDENTIFIER = "Identifier_";
+
 	private static final String OUT_DIR = "out";
 	private static final int DESCRIPTION_TYPE_COL = 6;
 	private static final String TEXT_DEFINITION_TYPE_ID = "900000000000550004";
+	private static final String STATED_RELATIONSHIP_ID = "900000000000010007";
+	private static final String INFERRED_RELATIONSHIP_ID = "900000000000011006";
 
 	private final FileHelper fileHelper;
 	private final S3PathHelper s3PathHelper;
@@ -72,7 +87,7 @@ public class InputSourceFileProcessor {
 	private File localDir;
 	private File outDir;
 	private boolean foundTextDefinitionFile = false;
-	private boolean copyFilesDefinedInManifest = false;
+	private final boolean copyFilesDefinedInManifest ;
 	private boolean isDeltaFolderExistInManifest = false;
 	private final Set<String> availableSources;
 	private final Map<String, List<String>> sourceFilesMap;
@@ -80,6 +95,7 @@ public class InputSourceFileProcessor {
 	private final Map<String, Set<String>> skippedSourceFiles;
 	private final MultiValueMap<String, String> fileOrKeyWithMultipleSources;
 	//processing instructions from the manifest.xml
+	private final Map<String, FileProcessingConfig> commonFileProcessingConfigs;
 	private final Map<String, FileProcessingConfig> refsetFileProcessingConfigs;
 	private final Map<String, FileProcessingConfig> descriptionFileProcessingConfigs;
 	private final Map<String, FileProcessingConfig> textDefinitionFileProcessingConfigs;
@@ -93,6 +109,7 @@ public class InputSourceFileProcessor {
 		this.productKey = productKey;
 		this.sourceFilesMap = new HashMap<>();
 		this.refsetFileProcessingConfigs = new HashMap<>();
+		this.commonFileProcessingConfigs = new HashMap<>();
 		this.descriptionFileProcessingConfigs = new HashMap<>();
 		this.textDefinitionFileProcessingConfigs = new HashMap<>();
 		this.availableSources = new HashSet<>();
@@ -301,10 +318,10 @@ public class InputSourceFileProcessor {
 				}
 			}
 		}
-		getDeltaFilesFromFolder(rootFolder);
+		getDeltaFilesFromManifestFolder(rootFolder);
 	}
 
-	private void getDeltaFilesFromFolder(FolderType folder) {
+	private void getDeltaFilesFromManifestFolder(FolderType folder) {
 		if (folder != null) {
 			if (folder.getFile() != null ) {
 				for (FileType fileType : folder.getFile()) {
@@ -312,7 +329,19 @@ public class InputSourceFileProcessor {
 					|| (!this.isDeltaFolderExistInManifest && fileType.getName().contains(RF2Constants.FULL)))) {
 						continue;
 					}
-					if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
+					if (fileType.getName().contains(INPUT_FILE_TYPE_CONCEPT)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_CONCEPT);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_STATED_RELATIONSHIP)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_STATED_RELATIONSHIP);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_RELATIONSHIP)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_RELATIONSHIP);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_OWL_EXPRESSION)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_OWL_EXPRESSION);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_IDENTIFIER)) {
+						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_IDENTIFIER);
+					} else if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
 						initTextDefinitionProcessingConfig(fileType);
 					} else if (fileType.getContainsReferenceSets() != null && fileType.getContainsReferenceSets().getRefset() != null) {
 						initReferenceSetProcessingConfig(fileType);
@@ -334,7 +363,7 @@ public class InputSourceFileProcessor {
 			}
 			if (folder.getFolder() != null) {
 				for (FolderType subFolder : folder.getFolder()) {
-					getDeltaFilesFromFolder(subFolder);
+					getDeltaFilesFromManifestFolder(subFolder);
 				}
 			}
 		}
@@ -357,6 +386,15 @@ public class InputSourceFileProcessor {
 		} else {
 			//add error reporting manifest.xml is not configured properly
 			fileProcessingReport.add(ReportType.ERROR, fileType.getName(), null, null, NO_LANGUAGE_CODE_IS_CONFIGURED_MSG);
+		}
+	}
+
+	void initCommonProcessingConfig(FileType fileType, String key) {
+		String fileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
+		FileProcessingConfig config = new FileProcessingConfig(key, null, fileName);
+		commonFileProcessingConfigs.put(key, config);
+		if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
+			config.setSpecificSources(new HashSet<>(fileType.getSources().getSource()));
 		}
 	}
 
@@ -424,7 +462,18 @@ public class InputSourceFileProcessor {
 						String header = lines.get(0);
 						//remove header before processing
 						lines.remove(0);
-						if (header.startsWith(HEADER_REFSETS)) {
+
+						if (header.startsWith(HEADER_CONCEPT) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_CONCEPT)) {
+							processCommonFiles(source, header, INPUT_FILE_TYPE_CONCEPT, lines);
+						} else if (header.startsWith(HEADER_RELATIONSHIP_CONCRETE_VALUES) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES)) {
+							processCommonFiles(source, header, INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES, lines);
+						} else if (header.startsWith(HEADER_INFERRED_OR_STATED_RELATIONSHIP)) {
+							processRelationshipFiles(source,lines, header);
+						} else if (header.startsWith(HEADER_OWL_EXPRESSION) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_OWL_EXPRESSION)) {
+							processCommonFiles(source, header, INPUT_FILE_TYPE_OWL_EXPRESSION, lines);
+						} else if (header.startsWith(HEADER_IDENTIFIER) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_IDENTIFIER)) {
+							processCommonFiles(source, header, INPUT_FILE_TYPE_IDENTIFIER, lines);
+						} else if (header.startsWith(HEADER_REFSETS)) {
 							processRefsetFiles(fileProcessingReportDetails,lines, source, fileName, outDir, header);
 						} else if (header.startsWith(HEADER_TERM_DESCRIPTION)) {
 							//create delta file with header
@@ -446,6 +495,38 @@ public class InputSourceFileProcessor {
 			}
 		}
 		fileProcessingReport.addReportDetails(fileProcessingReportDetails);
+	}
+
+	private void processCommonFiles(String source, String header, String inputFileType, List<String> lines) throws IOException {
+		Set<String> sources = commonFileProcessingConfigs.get(inputFileType).getSpecificSources();
+		if (sources.isEmpty() || sources.contains(source)) {
+			writeToFile(outDir, header,  lines, commonFileProcessingConfigs.get(inputFileType).getTargetFileName());
+		}
+	}
+
+	private void processRelationshipFiles(String source, List<String> lines, String header) throws IOException {
+		List<String> statedRelationships = new ArrayList<>(), inferredRelationships = new ArrayList<>();
+		for (String line : lines) {
+			String[] splits = line.split(TAB);
+			String characteristicTypeId = splits[CHARACTERISTICTYPEID_COL];
+			if (STATED_RELATIONSHIP_ID.equals(characteristicTypeId)) {
+				statedRelationships.add(line);
+			} else if (INFERRED_RELATIONSHIP_ID.equals(characteristicTypeId)) {
+				inferredRelationships.add(line);
+			}
+		}
+		if (commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_RELATIONSHIP)) {
+			Set<String> sources = commonFileProcessingConfigs.get(INPUT_FILE_TYPE_RELATIONSHIP).getSpecificSources();
+			if (sources.isEmpty() || sources.contains(source)) {
+				writeToFile(outDir, header, inferredRelationships, commonFileProcessingConfigs.get(INPUT_FILE_TYPE_RELATIONSHIP).getTargetFileName());
+			}
+		}
+		if (commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_STATED_RELATIONSHIP)) {
+			Set<String> sources = commonFileProcessingConfigs.get(INPUT_FILE_TYPE_STATED_RELATIONSHIP).getSpecificSources();
+			if (sources.isEmpty() || sources.contains(source)) {
+				writeToFile(outDir, header, statedRelationships, commonFileProcessingConfigs.get(INPUT_FILE_TYPE_STATED_RELATIONSHIP).getTargetFileName());
+			}
+		}
 	}
 
 	private void processRefsetFiles(List<FileProcessingReportDetail> fileProcessingReportDetails, List<String> lines, String sourceName,

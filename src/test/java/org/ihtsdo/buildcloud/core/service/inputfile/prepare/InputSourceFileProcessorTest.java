@@ -162,7 +162,7 @@ public class InputSourceFileProcessorTest {
 		
 		
 		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
-		assertEquals(3, filesToCopy.keySet().size());
+		assertEquals(0, filesToCopy.keySet().size());
 		String [] filesFromTermServerOnly = {"sct2_Concept_Delta_DK1000005_20170731.txt",
 				"sct2_StatedRelationship_Delta_DK1000005_20170731.txt"};
 		String [] filesWithoutSourcesSpecified = {"sct2_Relationship_Delta_DK1000005_20170731.txt"};
@@ -294,7 +294,7 @@ public class InputSourceFileProcessorTest {
 		assertEquals(TERMINOLOGY_SERVER, descriptionConfig.getSpecificSources().iterator().next());
 		
 		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
-		assertEquals(13, filesToCopy.keySet().size());
+		assertEquals(9, filesToCopy.keySet().size());
 		String [] filesFromTermServerOnly = {"sct2_Concept_Delta_INT_20170731.txt",
 				"sct2_StatedRelationship_Delta_INT_20170731.txt",
 				"sct2_Relationship_Delta_INT_20170731.txt"};
