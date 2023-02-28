@@ -2,7 +2,7 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,7 +25,7 @@ public class ProductControllerTest extends AbstractControllerTest {
 		mockMvc.perform(get(productsUrl))
 				.andExpect(status().isOk())
 				//.andDo(print())
-				.andExpect(content().contentType(APPLICATION_JSON));
+				.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON));
 				//.andExpect(jsonPath("$[" + random_product + "].url", is(ROOT_URL + productsUrl + businessKey)));
 	}
 

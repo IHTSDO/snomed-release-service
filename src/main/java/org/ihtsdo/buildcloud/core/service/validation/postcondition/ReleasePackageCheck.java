@@ -70,7 +70,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
                     }
                 }
                 String errorMsg = stringBuilder.toString();
-                return !StringUtils.isEmpty(errorMsg) ? errorMsg.substring(0, errorMsg.length() - 1) : null;
+                return StringUtils.hasLength(errorMsg) ? errorMsg.substring(0, errorMsg.length() - 1) : null;
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {

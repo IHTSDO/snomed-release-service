@@ -21,17 +21,18 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityFactory;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.util.FileCopyUtils;
 
-@RunWith(SpringRunner.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @WebAppConfiguration
 public class HypermediaGeneratorTest {
@@ -47,7 +48,7 @@ public class HypermediaGeneratorTest {
 	private MocksControl mocksControl;
 	private HttpServletRequest mockServletRequest;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		final TestEntityFactory entityFactory = new TestEntityFactory();
 		product = entityFactory.createProduct();
@@ -74,11 +75,11 @@ public class HypermediaGeneratorTest {
 		final List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(products, mockServletRequest, ProductController.PRODUCT_LINKS, "/products");
 
 		mocksControl.verify();
-		Assert.assertNotNull(hypermedia);
+		assertNotNull(hypermedia);
 		String actual = toString(hypermedia);
 		expected = expected.replaceAll("\r\n", "/n");
 		actual = actual.replaceAll("/r/n","/n");
-		Assert.assertEquals(expected, actual);
+		assertEquals(expected, actual);
 	}
 
 	@Test
@@ -90,9 +91,9 @@ public class HypermediaGeneratorTest {
 		final boolean currentResource = true;
 		final Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermedia(build, currentResource, mockServletRequest, "configuration", linkNameAndUrl);
 
-		Assert.assertNotNull(hypermedia);
+		assertNotNull(hypermedia);
 		System.out.println(toString(hypermedia));
-		Assert.assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
+		assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
 	}
 
 	@Test
@@ -102,10 +103,10 @@ public class HypermediaGeneratorTest {
 
 		final Map<String, Object> hypermedia = hypermediaGenerator.getEntityHypermediaOfAction(build, mockServletRequest, "configuration", "productScripts|product-scripts.zip");
 
-		Assert.assertNotNull(hypermedia);
+		assertNotNull(hypermedia);
 		System.out.println(toString(hypermedia));
-		Assert.assertEquals("http://localhost/api/v1/products/something/exec/something", hypermedia.get("url"));
-		Assert.assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
+		assertEquals("http://localhost/api/v1/products/something/exec/something", hypermedia.get("url"));
+		assertEquals("http://localhost/api/v1/products/something/exec/something/product-scripts.zip", hypermedia.get("productScripts_url"));
 	}
 
 	private String toString(final Object hypermedia) throws IOException {

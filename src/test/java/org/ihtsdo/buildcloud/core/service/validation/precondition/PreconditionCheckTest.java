@@ -13,9 +13,8 @@ import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.buildcloud.test.TestUtils;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +28,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 public abstract class PreconditionCheckTest extends AbstractTest {
@@ -62,7 +63,7 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 
 	private File tempDir;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		product = productDAO.find(1L);
@@ -75,7 +76,7 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 		tempDir = Files.createTempDirectory("temp-test").toFile();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws IOException {
 		super.tearDown();
 		if (tempDir != null && tempDir.exists()) {
@@ -108,12 +109,12 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 
 		// Create a manager for this test
 		final List<PreConditionCheckReport> report = manager.runPreconditionChecks(build);
-		Assert.assertNotNull(report);
+		assertNotNull(report);
 
 		final PreConditionCheckReport testResult = report.get(0); // Get the first test run
 
 		final String testName = testResult.getPreConditionCheckName();
-		Assert.assertEquals(classUnderTest.getSimpleName(), testName);
+		assertEquals(classUnderTest.getSimpleName(), testName);
 
 		// If it's a fail, we'll debug that message just for testing purposes
 		if (State.PASS != testResult.getResult()) {

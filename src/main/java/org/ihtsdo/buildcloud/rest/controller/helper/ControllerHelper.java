@@ -13,7 +13,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
 
 @Component
 public class ControllerHelper {
@@ -44,7 +43,7 @@ public class ControllerHelper {
         String requestUrl = request.getRequestURL().toString();
         // Decode branch path
         requestUrl = requestUrl.replace("%7C", "/");
-        if (!StringUtils.isEmpty(removePathPart)) {
+        if (StringUtils.hasLength(removePathPart)) {
             requestUrl = requestUrl.replace(removePathPart, "");
         }
 

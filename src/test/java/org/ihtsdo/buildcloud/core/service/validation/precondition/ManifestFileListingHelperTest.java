@@ -3,14 +3,12 @@ package org.ihtsdo.buildcloud.core.service.validation.precondition;
 import org.ihtsdo.buildcloud.core.manifest.FileType;
 import org.ihtsdo.buildcloud.core.manifest.FolderType;
 import org.ihtsdo.buildcloud.core.manifest.ListingType;
-import org.ihtsdo.buildcloud.core.service.validation.precondition.ManifestFileListingHelper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ManifestFileListingHelperTest {
 	private static final String TXT_EXTENSION = ".txt";
@@ -23,14 +21,14 @@ public class ManifestFileListingHelperTest {
 		folder.getFile().addAll(createFileTypes(total));
 		listingType.setFolder(folder);
 		List<String> actual = ManifestFileListingHelper.listAllFiles(listingType);
-		assertEquals("Total files expected:" + total, total, actual.size());
+		assertEquals(total, actual.size(), "Total files expected:" + total);
 		assertFilesNames(actual);
 
 	}
 
 	private void assertFilesNames(List<String> actual) {
 		for (String fileName : actual) {
-			assertTrue("File names should contian .txt", fileName.endsWith(TXT_EXTENSION));
+			assertTrue(fileName.endsWith(TXT_EXTENSION), "File names should contain .txt");
 		}
 	}
 
@@ -46,7 +44,7 @@ public class ManifestFileListingHelperTest {
 		}
 		listingType.setFolder(root);
 		List<String> actual = ManifestFileListingHelper.listAllFiles(listingType);
-		assertEquals("Total files expected:" + total * 3, total * 3, actual.size());
+		assertEquals(total * 3, actual.size(), "Total files expected:" + total * 3);
 		assertFilesNames(actual);
 	}
 
@@ -81,7 +79,7 @@ public class ManifestFileListingHelperTest {
 		ListingType listingType = new ListingType();
 		listingType.setFolder(root);
 		List<String> actual = ManifestFileListingHelper.listAllFiles(listingType);
-		assertEquals("Total files expected:" + total * 6, total * 6, actual.size());
+		assertEquals(total * 6, actual.size(), "Total files expected:" + total * 6);
 		assertFilesNames(actual);
 	}
 
@@ -92,7 +90,7 @@ public class ManifestFileListingHelperTest {
 		listingType.setFolder(folder);
 		List<String> actual = ManifestFileListingHelper.listAllFiles(listingType);
 		int expected = 0;
-		assertEquals("Total files expected:" + expected, expected, actual.size());
+		assertEquals(expected, actual.size(), "Total files expected:" + expected);
 	}
 
 	private FolderType createFolder(String folderName, int numberOfSubFolders) {

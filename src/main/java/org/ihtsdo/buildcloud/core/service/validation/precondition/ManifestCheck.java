@@ -61,40 +61,40 @@ public class ManifestCheck extends PreconditionCheck {
 			final String releaseVersion = build.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (releaseVersion != null) {
 				final String invalidFileNamesInFolderMsg = validateFileNamesAgainstFolder(manifestListing);
-				if (!StringUtils.isEmpty(invalidFileNamesInFolderMsg)) {
+				if (StringUtils.hasLength(invalidFileNamesInFolderMsg)) {
 					fatalError(invalidFileNamesInFolderMsg);
 					return;
 				}
 
 				if (build.getConfiguration().isBetaRelease()) {
 					final String invalidFileNamesAgainstBetaReleaseMsg = validateFileNamesAgainstBetaRelease(manifestListing);
-					if (!StringUtils.isEmpty(invalidFileNamesAgainstBetaReleaseMsg)) {
+					if (StringUtils.hasLength(invalidFileNamesAgainstBetaReleaseMsg)) {
 						fatalError(invalidFileNamesAgainstBetaReleaseMsg);
 						return;
 					}
 				}
 
 				final String invalidFileFormatMsg = validateFileFormat(manifestListing, releaseVersion);
-				if (!StringUtils.isEmpty(invalidFileFormatMsg)) {
+				if (StringUtils.hasLength(invalidFileFormatMsg)) {
 					fail(invalidFileFormatMsg);
 					return;
 				}
 
 				final String invalidFilePresentMsg = validateManifestStructure(manifestListing);
-				if (!StringUtils.isEmpty(invalidFilePresentMsg)) {
+				if (StringUtils.hasLength(invalidFilePresentMsg)) {
 					fail(invalidFilePresentMsg);
 					return;
 				}
 
 				final String invalidReleaseVersionMsg = validateReleaseDate(manifestListing, releaseVersion);
 				final boolean validReleasePackageName = validatePackageName(manifestListing);
-				if (!StringUtils.isEmpty(invalidReleaseVersionMsg) || !validReleasePackageName) {
+				if (StringUtils.hasLength(invalidReleaseVersionMsg) || !validReleasePackageName) {
 					String warningMsg = "";
-					if (!StringUtils.isEmpty(invalidReleaseVersionMsg)) {
+					if (StringUtils.hasLength(invalidReleaseVersionMsg)) {
 						warningMsg = invalidReleaseVersionMsg;
 					}
 					if (!validReleasePackageName) {
-						warningMsg = !StringUtils.isEmpty(invalidReleaseVersionMsg) ?
+						warningMsg = StringUtils.hasLength(invalidReleaseVersionMsg) ?
 								warningMsg + " " + INVALID_RELEASE_PACKAGE_NAME_MSG : INVALID_RELEASE_PACKAGE_NAME_MSG;
 					}
 					warning(warningMsg);
@@ -145,7 +145,7 @@ public class ManifestCheck extends PreconditionCheck {
 		final String zipFileName = manifestListing.getFolder().getName();
 
 		// check package name
-		if (!StringUtils.isEmpty(zipFileName) && !zipFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
+		if (StringUtils.hasLength(zipFileName) && !zipFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
 			invalidFileNameMsgBuilder.append(zipFileName);
 		}
 		//check that sct2 and der2 file names starting with X

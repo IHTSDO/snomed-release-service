@@ -146,11 +146,11 @@ public class BuildConfiguration {
 
 	@JsonProperty("effectiveTime")
 	public String getEffectiveTimeFormatted() {
-		return effectiveTime != null ? DateFormatUtils.ISO_DATE_FORMAT.format(effectiveTime) : null;
+		return effectiveTime != null ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(effectiveTime) : null;
 	}
 
 	public void setEffectiveTimeFormatted(final String effectiveTimeFormatted) throws ParseException {
-		effectiveTime = DateFormatUtils.ISO_DATE_FORMAT.parse(effectiveTimeFormatted);
+		effectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTimeFormatted);
 	}
 
 	@JsonIgnore

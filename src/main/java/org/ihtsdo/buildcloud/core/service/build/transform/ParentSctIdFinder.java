@@ -32,8 +32,8 @@ public class ParentSctIdFinder {
 					final Matcher matcher = IS_A_RELATIONSHIP_PATTERN.matcher(line);
 					if (matcher.matches()) {
 						final String sourceId = matcher.group(1);
-						if (sourceIdsToFind.contains(new Long(sourceId))) {
-							result.put(new Long(sourceId), new Long(matcher.group(2)));
+						if (sourceIdsToFind.contains(Long.valueOf(sourceId))) {
+							result.put(Long.valueOf(sourceId), Long.valueOf(matcher.group(2)));
 							sourceIdsToFind.remove(sourceId);
 						}
 					}

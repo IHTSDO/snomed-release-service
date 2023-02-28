@@ -13,13 +13,13 @@ import org.ihtsdo.buildcloud.core.service.InputFileService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
@@ -30,12 +30,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @Transactional
 public class InputFileServiceImplTest extends TestEntityGenerator {
@@ -63,7 +64,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 	private Build build;
 
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		String testFile = getClass().getResource(TEST_ARCHIVE_FILE).getFile();
 		testArchive = new File(testFile);
@@ -82,7 +83,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		build = new Build(new Date(), product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() {
 		buildDAO.delete(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 	}
@@ -154,7 +155,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		"rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt",
 		"rel2_cRefset_AttributeValueDelta_INT_20140731.txt"};
 		for (String filename : inputFileList) {
-			assertTrue("must contain " + filename, Arrays.asList(inputFileCreated).contains(filename));
+			assertTrue(Arrays.asList(inputFileCreated).contains(filename), "must contain " + filename);
 		}
 	}
 
@@ -270,8 +271,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 				"der2_cRefset_MRCMModuleScopeDelta_INT_20170731.txt"};
 		for (FileProcessingReportDetail reportDetail :report.getDetails().get(ReportType.ERROR)) {
 			assertEquals("Required by manifest but not found in any source.", reportDetail.getMessage());
-			assertTrue("must contain" + reportDetail.getFileName(),
-					Arrays.asList(filesReportedAsError).contains(reportDetail.getFileName()));
+			assertTrue(Arrays.asList(filesReportedAsError).contains(reportDetail.getFileName()), "must contain" + reportDetail.getFileName());
 		}
 		assertEquals(5, report.getDetails().get(ReportType.WARNING).size());
 		assertEquals(20, report.getDetails().get(ReportType.INFO).size());
@@ -397,31 +397,31 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 	private void verifyFileProcessingInAllSources() throws ResourceNotFoundException, IOException {
 		InputStream inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt");
 		assertNotNull(inputStream);
-		assertEquals(9, IOUtils.readLines(inputStream).size());
+		assertEquals(9, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AttributeValueDelta_INT_20140731.txt");
 		assertNotNull(inputStream);
-		assertEquals(3, IOUtils.readLines(inputStream).size());
+		assertEquals(3, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_TextDefinition_Delta-en_INT_20140731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Description_Delta-en_INT_20140731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 	}
 
 	private void verifyForFileProcessingInRestrictedSources() throws ResourceNotFoundException, IOException {
 		InputStream inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AssociationReferenceDelta_INT_20180731.txt");
 		assertNotNull(inputStream);
-		assertEquals(7, IOUtils.readLines(inputStream).size());
+		assertEquals(7, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AttributeValueDelta_INT_20180731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_TextDefinition_Delta-en_INT_20180731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Description_Delta-en_INT_20180731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 	}
 
 	private void verifyResults() throws ResourceNotFoundException, IOException {
@@ -429,23 +429,23 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		assertEquals(7, inputFileList.size());
 		InputStream inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AssociationReferenceDelta_INT_20170731.txt");
 		assertNotNull(inputStream);
-		assertEquals(9, IOUtils.readLines(inputStream).size());
+		assertEquals(9, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_cRefset_AttributeValueDelta_INT_20170731.txt");
 		assertNotNull(inputStream);
-		assertEquals(3, IOUtils.readLines(inputStream).size());
+		assertEquals(3, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_TextDefinition_Delta-en_INT_20170731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Description_Delta-en_INT_20170731.txt");
 		assertNotNull(inputStream);
-		assertEquals(2, IOUtils.readLines(inputStream).size());
+		assertEquals(2, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 
 		//Unprocessed files
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Concept_Delta_INT_20170731.txt");
 		assertNotNull(inputStream);
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Relationship_Delta_INT_20170731.txt");
 		assertNotNull(inputStream);
-		assertEquals(5, IOUtils.readLines(inputStream).size());
+		assertEquals(5, IOUtils.readLines(inputStream, Charset.defaultCharset()).size());
 		inputStream = buildDAO.getInputFileStream(build, "rel2_Refset_SimpleDelta_INT_20170731.txt");
 		assertNotNull(inputStream);
 	}
@@ -493,7 +493,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 
 	private void assertFileNameExist (List<String> inputFileList, String ...fileNames ) {
 		for (String name : fileNames) {
-			assertTrue("File name must exist:" + name, inputFileList.contains(name));
+			assertTrue(inputFileList.contains(name), "File name must exist:" + name);
 		}
 	}
 

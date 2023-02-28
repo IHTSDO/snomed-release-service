@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.integration.simplerefset;
 
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.zip.ZipFile;
 
@@ -13,7 +13,7 @@ public class SimpleRefsetTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 	
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"simple_refset_test");

@@ -4,15 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.core.service.build.database.Rf2FileWriter;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class Rf2FileWriterTest {
 
@@ -36,7 +33,7 @@ public class Rf2FileWriterTest {
 	private ByteArrayOutputStream deltaOutputStream;
 	private RF2TableExportDAO rf2TableDAO;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 	    rf2TableDAO = new RF2TableExportDAOImpl( null);
 	    rf2FileWriter = new Rf2FileWriter();
@@ -116,7 +113,7 @@ public class Rf2FileWriterTest {
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		rf2TableDAO.closeConnection();
 	}

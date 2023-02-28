@@ -13,7 +13,6 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IntegrationTestHelper {
 
@@ -85,7 +85,7 @@ public class IntegrationTestHelper {
 			)
 					.andDo(print())
 					.andExpect(status().isCreated())
-					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 		}
 
@@ -97,7 +97,7 @@ public class IntegrationTestHelper {
 
 	public void uploadDeltaInputFile(final String deltaFileName, final Class classpathResourceOwner) throws Exception {
 		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
-		Assert.assertNotNull(deltaFileName + " stream is null.", resourceAsStream);
+		assertNotNull(resourceAsStream, deltaFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
 				fileUpload(getBuildUrl() + "/inputfiles")
@@ -110,7 +110,7 @@ public class IntegrationTestHelper {
 
 	public void uploadSourceFile(final String sourceFileName, final String sourceName, final Class classpathResourceOwner) throws Exception {
 		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(sourceFileName);
-		Assert.assertNotNull(sourceFileName + " stream is null.", resourceAsStream);
+		assertNotNull(resourceAsStream, sourceFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", sourceFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
 				fileUpload(getBuildUrl() + "/sourcefiles/" + sourceName)
@@ -189,7 +189,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON));
 	}
 
 	private String getEffectiveDateWithSeparators(final String effectiveDate) {
@@ -259,7 +259,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON));
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON));
 	}
 
 	public String createReleasePackage(final BuildRequestPojo buildRequestPojo) throws Exception {
@@ -269,7 +269,7 @@ public class IntegrationTestHelper {
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
 				.andExpect(status().isCreated())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		buildId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
@@ -283,7 +283,7 @@ public class IntegrationTestHelper {
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 	}
 
@@ -301,7 +301,7 @@ public class IntegrationTestHelper {
 							.contentType(MediaType.APPLICATION_JSON))
 					.andDo(print())
 					.andExpect(status().isOk())
-					.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
 			final String statusString = JsonPath.read(buildResult.getResponse().getContentAsString(), "$.status");
@@ -314,16 +314,16 @@ public class IntegrationTestHelper {
 
 		if (FAILED_INPUT_PREPARE_REPORT_VALIDATION == buildStatus) {
 			printReport(buildUrl + "/inputPrepareReport");
-			Assert.fail("Failed to prepare input file");
+			fail("Failed to prepare input file");
 		} else if (FAILED_PRE_CONDITIONS == buildStatus) {
 			printReport(buildUrl + "/preConditionCheckReports");
-			Assert.fail("Errors found in preConditionCheckReports");
+			fail("Errors found in preConditionCheckReports");
 		} else if (FAILED_POST_CONDITIONS == buildStatus) {
 			printReport(buildUrl + "/postConditionCheckReports");
-			Assert.fail("Errors found in postConditionCheckReports");
+			fail("Errors found in postConditionCheckReports");
 		} else if (FAILED == buildStatus) {
 			printReport(buildUrl + "/buildLogs");
-			Assert.fail("The build didn't complete successfully!");
+			fail("The build didn't complete successfully!");
 		}
 	}
 
@@ -355,7 +355,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isCreated())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		buildId = JsonPath.read(createBuildResult.getResponse().getContentAsString(), "$.id");
@@ -375,7 +375,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String outputFileListJson = triggerResult.getResponse().getContentAsString();
@@ -383,7 +383,7 @@ public class IntegrationTestHelper {
 		final JSONObject buildReport = jsonObject.getJSONObject("buildReport");
 		final String status = buildReport.getString("Progress Status");
 		final String message = buildReport.getString("Message");
-		Assert.assertEquals("Build bad status. Message: " + message, "cancelled", status);
+		assertEquals("cancelled", status, "Build bad status. Message: " + message);
 	}
 
 	public void publishOutput(final String buildURL) throws Exception {
@@ -417,13 +417,13 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		final String publishedURL = JsonPath.read(productResult.getResponse().getContentAsString(), "$.published_url");
 		final String expectedURL = "http://localhost/centers/international/published";
 
-		Assert.assertEquals(expectedURL, publishedURL);
+		assertEquals(expectedURL, publishedURL);
 
 		//Recover list of published packages
 		final MvcResult publishedResult = mockMvc.perform(
@@ -433,7 +433,7 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 				.andReturn();
 
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
@@ -461,13 +461,13 @@ public class IntegrationTestHelper {
 			}
 		}
 
-		Assert.assertEquals(expectedZipFilename, zipFilePath);
+		assertEquals(expectedZipFilename, zipFilePath);
 
 		final ZipFile zipFile = new ZipFile(downloadToTempFile(buildURL, zipFilePath, classpathResourceOwner));
 		final List<String> entryPaths = getZipEntryPaths(zipFile);
-		Assert.assertEquals("Zip entries expected.",
-				expectedZipEntries,
-				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""));
+		assertEquals(expectedZipEntries,
+				entryPaths.toString().replace(", ", "\n").replace("[", "").replace("]", ""),
+				"Zip entries expected.");
 		return zipFile;
 	}
 
@@ -567,7 +567,11 @@ public class IntegrationTestHelper {
 
 		while (!isDone) {
 			Thread.sleep(1000);
-			publishResult = mockMvc.perform(get(buildUrl + "/publish/status").contentType(MediaType.APPLICATION_JSON)).andDo(print()).andExpect(status().isOk()).andExpect(content().contentType(AbstractControllerTest.APPLICATION_JSON)).andReturn();
+			publishResult = mockMvc.perform(get(buildUrl + "/publish/status").contentType(MediaType.APPLICATION_JSON))
+					.andDo(print())
+					.andExpect(status().isOk())
+					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
+					.andReturn();
 
 			final String statusString = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.status");
 			status = PublishServiceImpl.Status.valueOf(statusString);
@@ -575,7 +579,7 @@ public class IntegrationTestHelper {
 				isDone = true;
 			}
 			if (PublishServiceImpl.Status.FAILED == status) {
-				Assert.fail("Failed to publish build " + buildUrl);
+				fail("Failed to publish build " + buildUrl);
 			}
 		}
 	}

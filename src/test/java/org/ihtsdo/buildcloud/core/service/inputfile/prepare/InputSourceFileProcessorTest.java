@@ -15,18 +15,18 @@ import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
-import static org.junit.Assert.*;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.MultiValueMap;
 
-@RunWith(SpringRunner.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 public class InputSourceFileProcessorTest {
 	
@@ -53,7 +53,7 @@ public class InputSourceFileProcessorTest {
 	private Product product;
 	private Build build;
 	
-	@Before
+	@BeforeEach
 	public void setUp() {
 		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
 		product = new Product(getClass().getName());
@@ -159,8 +159,7 @@ public class InputSourceFileProcessorTest {
 		assertEquals("xsct2_TextDefinition_Delta-da_DK1000005_20170731.txt", daTextDefinitionConfig.getTargetFileName());
 		assertEquals(1, daTextDefinitionConfig.getSpecificSources().size());
 		assertEquals(TERMINOLOGY_SERVER, daTextDefinitionConfig.getSpecificSources().iterator().next());
-		
-		
+
 		MultiValueMap<String, String> filesToCopy = processor.getFilesToCopyFromSource();
 		assertEquals(0, filesToCopy.keySet().size());
 		String [] filesFromTermServerOnly = {"sct2_Concept_Delta_DK1000005_20170731.txt",
@@ -186,15 +185,15 @@ public class InputSourceFileProcessorTest {
 		String [] refsetIdsWithoutSourceSepcified = {"723264001"};
 		
 		for (String refsetId : associcaitionRefsetIds) {
-			assertTrue("must contain refsetId " + refsetId , refsetConfigs.containsKey(refsetId));
+			assertTrue(refsetConfigs.containsKey(refsetId), "must contain refsetId " + refsetId);
 		}
 		
 		for (String refsetId : refsetsFromTermServer) {
-			assertTrue("must contain refsetId " + refsetId , refsetConfigs.containsKey(refsetId));
+			assertTrue(refsetConfigs.containsKey(refsetId), "must contain refsetId " + refsetId);
 		}
 		
 		for (String refsetId : refsetIdsWithoutSourceSepcified) {
-			assertTrue("must contain refsetId " + refsetId , refsetConfigs.containsKey(refsetId));
+			assertTrue(refsetConfigs.containsKey(refsetId), "must contain refsetId " + refsetId);
 		}
 	
 		for (String refsetid : refsetConfigs.keySet()) {
@@ -257,7 +256,7 @@ public class InputSourceFileProcessorTest {
 		assertEquals(6,refsetProcessingConfig.keySet().size());
 		String [] refsetIds = {"900000000000525002","900000000000524003","900000000000530003","900000000000526001","900000000000528000"};
 		for (String refsetId : refsetIds) {
-			assertTrue("must contain " + refsetId, refsetProcessingConfig.containsKey(refsetId));
+			assertTrue(refsetProcessingConfig.containsKey(refsetId), "must contain " + refsetId);
 		}
 		for (FileProcessingConfig config : refsetProcessingConfig.values()) {
 			assertEquals("xder2_cRefset_AssociationReferenceDelta_INT_20190731.txt" , config.getTargetFileName());

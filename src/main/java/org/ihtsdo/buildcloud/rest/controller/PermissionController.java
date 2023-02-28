@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsGlobalAdmin;
 import org.ihtsdo.buildcloud.core.service.PermissionService;
@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/permissions")
-@Api(value = "Permissions")
+@Tag(name = "Permissions", description = "-")
 public class PermissionController {
 
     @Autowired
@@ -36,8 +36,8 @@ public class PermissionController {
     private PermissionServiceCache permissionServiceCache;
 
     @GetMapping(value = "/roles")
-    @ApiOperation(value = "Returns a list all roles for a logged in user",
-            notes = "Returns a list of all roles visible to the currently logged in user.")
+    @Operation(summary = "Returns a list all roles for a logged in user",
+            description = "Returns a list of all roles visible to the currently logged in user")
     @ResponseBody
     public ResponseEntity getCurrentRoles(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication() ;

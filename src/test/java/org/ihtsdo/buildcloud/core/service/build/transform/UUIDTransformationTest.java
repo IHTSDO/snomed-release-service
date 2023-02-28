@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.core.service.build.transform;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UUIDTransformationTest {
 
@@ -22,7 +21,7 @@ public class UUIDTransformationTest {
 	private UUIDTransformation uuidTransformation;
 	private File refSetFile;
 
-	@Before
+	@BeforeEach
 	public void setup() throws URISyntaxException, IOException {
 		uuidTransformation = new UUIDTransformation(0, new RandomUUIDGenerator());
 		File origFile = new File(getClass().getResource("refSet-without-uuid.txt").toURI());
@@ -35,7 +34,7 @@ public class UUIDTransformationTest {
 	public void testReplaceSingleColumnValue() throws IOException {
 		List<String> lines = Files.readAllLines(refSetFile.toPath(), RF2Constants.UTF_8);
 		assertEquals(5, lines.size());
-		assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", lines.get(0));
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", lines.get(0), "Header as expected");
 		for (int i = 1; i < lines.size(); i++) {
 			String[] values = lines.get(i).split("\t");
 			assertEquals(EMPTY_SPACE, values[0]);

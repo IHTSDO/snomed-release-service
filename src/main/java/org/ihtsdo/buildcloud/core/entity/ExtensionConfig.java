@@ -84,12 +84,12 @@ public class ExtensionConfig implements Serializable {
 
 	@JsonProperty("previousEditionDependencyEffectiveDate")
 	public String getPreviousEditionDependencyEffectiveDateFormatted() {
-		return previousEditionDependencyEffectiveDate != null ? DateFormatUtils.ISO_DATE_FORMAT.format(previousEditionDependencyEffectiveDate) : null;
+		return previousEditionDependencyEffectiveDate != null ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(previousEditionDependencyEffectiveDate) : null;
 	}
 
 	public void setPreviousEditionDependencyEffectiveDate(String previousEditionDependencyEffectiveDate) throws ParseException {
 		if (previousEditionDependencyEffectiveDate != null) {
-			this.previousEditionDependencyEffectiveDate = DateFormatUtils.ISO_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+			this.previousEditionDependencyEffectiveDate = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
 		}
 	}
 

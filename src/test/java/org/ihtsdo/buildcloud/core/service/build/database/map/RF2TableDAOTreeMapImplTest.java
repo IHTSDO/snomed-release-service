@@ -10,11 +10,10 @@ import java.util.Map;
 
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
-import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -23,7 +22,7 @@ public class RF2TableDAOTreeMapImplTest {
 	private RF2TableExportDAO dao;
 	private Map<String, List<Integer>> customRefsetCompositeKeys;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
 		dao = new RF2TableExportDAOImpl(customRefsetCompositeKeys);

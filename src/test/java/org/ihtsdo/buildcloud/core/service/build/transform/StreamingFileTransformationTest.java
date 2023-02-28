@@ -5,9 +5,8 @@ import org.ihtsdo.buildcloud.core.service.build.transform.RandomUUIDGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.ReplaceValueLineTransformation;
 import org.ihtsdo.buildcloud.core.service.build.transform.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.core.service.build.transform.UUIDTransformation;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class StreamingFileTransformationTest {
 
 	private StreamingFileTransformation fileTransformation;
@@ -26,7 +27,7 @@ public class StreamingFileTransformationTest {
 	private File tempOutputFile;
 	private BuildReport report;
 
-	@Before
+	@BeforeEach
 	public void setup() throws URISyntaxException, IOException {
 		fileTransformation = new StreamingFileTransformation(100);
 
@@ -50,16 +51,16 @@ public class StreamingFileTransformationTest {
 
 		try {
 			inputStream.available();
-			Assert.fail("The available method should throw an exception because the stream should be closed.");
+			fail("The available method should throw an exception because the stream should be closed.");
 		} catch (IOException e) {
-			Assert.assertEquals("Stream Closed", e.getMessage());
+			assertEquals("Stream Closed", e.getMessage());
 		}
 
 		try {
 			outputStream.write(0);
-			Assert.fail("The write method should throw an exception because the stream should be closed.");
+			fail("The write method should throw an exception because the stream should be closed.");
 		} catch (IOException e) {
-			Assert.assertEquals("Stream Closed", e.getMessage());
+			assertEquals("Stream Closed", e.getMessage());
 		}
 
 	}
@@ -70,18 +71,18 @@ public class StreamingFileTransformationTest {
 
 		// Assert preconditions
 		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesBefore.size());
-		Assert.assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0));
-		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
-		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
+		assertEquals(5, linesBefore.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0), "Header as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1), "First line as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4), "Last line as expected");
 
 		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesAfter.size());
-		Assert.assertEquals("Header unchanged", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0));
-		Assert.assertEquals("First line with new value", "\t03062014\t1\t900000000000207008\t450990004\t293495006", linesAfter.get(1));
-		Assert.assertEquals("Last line with new value", "\t03062014\t1\t900000000000207008\t450990004\t293104008", linesAfter.get(4));
+		assertEquals(5, linesAfter.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0), "Header unchanged");
+		assertEquals("\t03062014\t1\t900000000000207008\t450990004\t293495006", linesAfter.get(1), "First line with new value");
+		assertEquals("\t03062014\t1\t900000000000207008\t450990004\t293104008", linesAfter.get(4), "Last line with new value");
 	}
 
 	@Test
@@ -91,18 +92,18 @@ public class StreamingFileTransformationTest {
 
 		// Assert preconditions
 		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesBefore.size());
-		Assert.assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0));
-		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
-		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
+		assertEquals(5, linesBefore.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0), "Header as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1), "First line as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4), "Last line as expected");
 
 		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesAfter.size());
-		Assert.assertEquals("Header unchanged", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0));
-		Assert.assertEquals("First line with new value", "\t03062014\t0\t900000000000207008\t450990004\t293495006", linesAfter.get(1));
-		Assert.assertEquals("Last line with new value", "\t03062014\t0\t900000000000207008\t450990004\t293104008", linesAfter.get(4));
+		assertEquals(5, linesAfter.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0), "Header unchanged");
+		assertEquals("\t03062014\t0\t900000000000207008\t450990004\t293495006", linesAfter.get(1), "First line with new value");
+		assertEquals("\t03062014\t0\t900000000000207008\t450990004\t293104008", linesAfter.get(4), "Last line with new value");
 	}
 	
 	@Test
@@ -111,18 +112,18 @@ public class StreamingFileTransformationTest {
 
 		// Assert preconditions
 		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesBefore.size());
-		Assert.assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0));
-		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
-		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
+		assertEquals(5, linesBefore.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0), "Header as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1), "First line as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4), "Last line as expected");
 
 		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesAfter.size());
-		Assert.assertEquals("Header unchanged", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0));
+		assertEquals(5, linesAfter.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0), "Header unchanged");
 		for( int i =1; i < linesAfter.size() ; i++ ){
-			Assert.assertNotEquals("UUID should be changed", linesBefore.get(i), linesAfter.get(i));
+			assertNotEquals(linesBefore.get(i), linesAfter.get(i), "UUID should be changed");
 		}
 	}
 	
@@ -132,20 +133,20 @@ public class StreamingFileTransformationTest {
 
 		// Assert preconditions
 		List<String> linesBefore = Files.readAllLines(rf2File.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesBefore.size());
-		Assert.assertEquals("Header as expected", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0));
-		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1));
-		Assert.assertEquals("Second line as expected", "\t\t1\t900000000000207008\t450990004\t293507007", linesBefore.get(2));
-		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4));
+		assertEquals(5, linesBefore.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesBefore.get(0), "Header as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293495006", linesBefore.get(1), "First line as expected");
+		assertEquals("\t\t1\t900000000000207008\t450990004\t293507007", linesBefore.get(2), "Second line as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293104008", linesBefore.get(4), "Last line as expected");
 
 		fileTransformation.transformFile(new FileInputStream(rf2File), new FileOutputStream(tempOutputFile), rf2File.getName(), report);
 
 		List<String> linesAfter = Files.readAllLines(tempOutputFile.toPath(), RF2Constants.UTF_8);
-		Assert.assertEquals(5, linesAfter.size());
-		Assert.assertEquals("Header unchanged", "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0));
-		Assert.assertEquals("First line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293495006", linesAfter.get(1));
-		Assert.assertEquals("Second line as expected", "\t20140731\t1\t900000000000207008\t450990004\t293507007", linesAfter.get(2));
-		Assert.assertEquals("Last line as expected", "\t20140131\t1\t900000000000207008\t450990004\t293104008", linesAfter.get(4));
+		assertEquals(5, linesAfter.size());
+		assertEquals("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId", linesAfter.get(0), "Header unchanged");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293495006", linesAfter.get(1), "First line as expected");
+		assertEquals("\t20140731\t1\t900000000000207008\t450990004\t293507007", linesAfter.get(2), "Second line as expected");
+		assertEquals("\t20140131\t1\t900000000000207008\t450990004\t293104008", linesAfter.get(4), "Last line as expected");
 	}
 
 }

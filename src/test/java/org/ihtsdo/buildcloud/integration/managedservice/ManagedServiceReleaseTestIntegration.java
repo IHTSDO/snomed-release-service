@@ -5,9 +5,9 @@ import java.util.zip.ZipFile;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest {
 	
@@ -16,14 +16,14 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 	private IntegrationTestHelper integrationTestHelper;
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"ManagedServiceReleaseTestIntegration");
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testFirstRelease() throws Exception {
 		
 		integrationTestHelper.createTestProductStructure();

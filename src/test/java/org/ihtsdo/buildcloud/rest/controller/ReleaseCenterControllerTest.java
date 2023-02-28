@@ -2,8 +2,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,14 +13,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ReleaseCenterControllerTest extends AbstractControllerTest {
 
 	@Test
-	@Ignore
+	@Disabled
 	public void test() throws Exception {
 		String centerId = EntityHelper.formatAsBusinessKey(TestEntityGenerator.releaseCenterShortNames[0]);
 		String centerUrl = ROOT_URL + "/centers/" + centerId;
 		mockMvc.perform(get("/centers"))
 				.andExpect(status().isOk())
 				.andDo(print())
-				.andExpect(content().contentType(APPLICATION_JSON))
+				.andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
 				.andExpect(jsonPath("[0]$.id", is(centerId)))
 				.andExpect(jsonPath("[0]$.name", is(TestEntityGenerator.releaseCenterNames[0])))
 				.andExpect(jsonPath("[0]$.shortName", is(TestEntityGenerator.releaseCenterShortNames[0])))
