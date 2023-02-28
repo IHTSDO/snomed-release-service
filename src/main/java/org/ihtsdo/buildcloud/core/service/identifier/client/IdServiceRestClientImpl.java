@@ -1,27 +1,20 @@
 package org.ihtsdo.buildcloud.core.service.identifier.client;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.http.HttpStatus;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.resty.RestyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import us.monoid.web.JSONResource;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class IdServiceRestClientImpl implements IdServiceRestClient {
@@ -69,7 +62,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private int batchSize;
 	
 	public IdServiceRestClientImpl(@Value("${cis.url}") final String idServiceUrl,
-			@Value("${cis.userName}") final String username,
+			@Value("${cis.username}") final String username,
 			@Value("${cis.password}") final String password) {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);

@@ -83,20 +83,21 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean(name = "sessionFactory")
-	public LocalSessionFactoryBean sessionFactory(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-			@Value("${srs.jdbc.url}") final String url,
-			@Value("${srs.jdbc.username}") final String username,
-			@Value("${srs.jdbc.password}") final String password,
-			@Value("${srs.hibernate.dialect}") final String dialect) {
+	public LocalSessionFactoryBean sessionFactory(
+			@Value("${spring.datasource.driver-class-name}") final String driverClassName,
+			@Value("${spring.datasource.url}") final String url,
+			@Value("${spring.datasource.username}") final String username,
+			@Value("${spring.datasource.password}") final String password,
+			@Value("${spring.jpa.database-platform}") final String dialect) {
 		return getSessionFactory(driverClassName, url, username, password, dialect);
 	}
 
 	@Bean
-	public HibernateTransactionManager transactionManager(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-			@Value("${srs.jdbc.url}") final String url,
-			@Value("${srs.jdbc.username}") final String username,
-			@Value("${srs.jdbc.password}") final String password,
-			@Value("${srs.hibernate.dialect}") final String dialect,
+	public HibernateTransactionManager transactionManager(
+			@Value("${spring.datasource.driver-class-name}") final String driverClassName,
+			@Value("${spring.datasource.url}") final String url,
+			@Value("${spring.datasource.username}") final String username,
+			@Value("${spring.datasource.password}") final String password,
 			@Autowired SessionFactory sessionFactory) {
 		final HibernateTransactionManager transactionManager = new HibernateTransactionManager();
 		transactionManager.setDataSource(getBasicDataSource(driverClassName, url, username, password));
@@ -115,10 +116,11 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public SpringLiquibase liquibase(@Value("${srs.jdbc.driverClassName}") final String driverClassName,
-	                                 @Value("${srs.jdbc.url}") final String url, @Value("${srs.jdbc.username}") final String username,
-	                                 @Value("${srs.jdbc.password}") final String password,
-	                                 @Value("${srs.environment.shortname}") final String shortname) {
+	public SpringLiquibase liquibase(@Value("${spring.datasource.driver-class-name}") final String driverClassName,
+	                                 @Value("${spring.datasource.url}") final String url,
+									 @Value("${spring.datasource.username}") final String username,
+	                                 @Value("${spring.datasource.password}") final String password,
+									 @Value("${srs.environment.shortname}") final String shortname) {
 		final SpringLiquibase springLiquibase = new SpringLiquibase();
 		springLiquibase.setDataSource(getBasicDataSource(driverClassName, url, username, password));
 		springLiquibase.setChangeLog(CHANGE_LOG_PATH);
@@ -147,8 +149,10 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public SimpleCacheManager cacheManager() {
 		final SimpleCacheManager cacheManager = new SimpleCacheManager();
-		cacheManager.setCaches(Arrays.asList(getCache("release-center-records"),
-				getCache("global-roles"), getCache("code-system-roles")));
+		cacheManager.setCaches(Arrays.asList(
+				getCache("release-center-records"),
+				getCache("global-roles"),
+				getCache("code-system-roles")));
 		return cacheManager;
 	}
 
