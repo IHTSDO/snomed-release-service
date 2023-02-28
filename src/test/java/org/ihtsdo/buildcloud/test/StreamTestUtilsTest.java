@@ -1,7 +1,8 @@
 package org.ihtsdo.buildcloud.test;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StreamTestUtilsTest {
 
@@ -30,7 +31,7 @@ public class StreamTestUtilsTest {
 			exceptionThrown = true;
 		}
 		if (!exceptionThrown) {
-			Assert.fail("Should have failed.");
+			fail("Should have failed.");
 		}
 	}
 

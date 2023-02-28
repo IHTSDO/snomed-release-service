@@ -38,7 +38,7 @@ public class StatTimer {
 	}
 
 	private float getSeconds(long milis) {
-		return new Float(milis) / 1000f;
+		return Float.valueOf(milis) / 1000f;
 	}
 
 	private long getMilis() {

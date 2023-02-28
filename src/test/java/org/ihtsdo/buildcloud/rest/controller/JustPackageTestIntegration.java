@@ -2,9 +2,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
-import org.ihtsdo.otf.dao.s3.TestS3Client;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class JustPackageTestIntegration extends AbstractControllerTest {
@@ -15,7 +14,7 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 	private IntegrationTestHelper integrationTestHelper;
 	
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc,"just_package_test");

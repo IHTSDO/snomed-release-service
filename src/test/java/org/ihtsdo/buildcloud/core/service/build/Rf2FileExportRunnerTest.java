@@ -22,11 +22,12 @@ import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.otf.dao.s3.S3Client;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Rf2FileExportRunnerTest extends AbstractTest {
 
@@ -83,7 +84,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 	private Build build;
 	private BuildConfiguration buildConfiguration;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		super.setup();
 		product = new Product("Test");
@@ -116,7 +117,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
-		Assert.assertEquals(3, outputFiles.size());
+		assertEquals(3, outputFiles.size());
 		
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_DELTA_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_DELTA_FILE_NAME));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(build, EXPECTED_SIMPLE_SNAPSHOT_FILE_NAME));
@@ -147,7 +148,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
-		Assert.assertEquals(3, outputFiles.size());
+		assertEquals(3, outputFiles.size());
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_DELTA_FILE_NAME));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_SNAPSHOT_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_SNAPSHOT_FILE_NAME));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_OWL_EXPRESSION_FULL_FILE_NAME), dao.getOutputFileInputStream(build,EXPECTED_OWL_EXPRESSION_FULL_FILE_NAME));
@@ -167,7 +168,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
-		Assert.assertEquals(3, outputFiles.size());
+		assertEquals(3, outputFiles.size());
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_DELTA_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_DELTA_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 		StreamTestUtils.assertStreamsEqualLineByLine(getExpectedFileInputStreamFromResource(EXPECTED_ATTRIBUT_VALUE_FULL_FILE), dao.getOutputFileInputStream(build, EXPECTED_ATTRIBUT_VALUE_FULL_FILE));

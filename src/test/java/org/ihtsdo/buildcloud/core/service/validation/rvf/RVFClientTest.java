@@ -1,19 +1,20 @@
 package org.ihtsdo.buildcloud.core.service.validation.rvf;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class RVFClientTest {
 
 	private RVFClient rvfClient;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		rvfClient = new RVFClient("");
 	}
@@ -29,7 +30,7 @@ public class RVFClientTest {
 		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseNoFailures");
 
-		Assert.assertEquals(0, failDetail.getFailedCount());
+		assertEquals(0, failDetail.getFailedCount());
 	}
 
 	@Test
@@ -43,6 +44,6 @@ public class RVFClientTest {
 		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseFailures");
 
-		Assert.assertEquals(2, failDetail.getFailedCount());
+		assertEquals(2, failDetail.getFailedCount());
 	}
 }

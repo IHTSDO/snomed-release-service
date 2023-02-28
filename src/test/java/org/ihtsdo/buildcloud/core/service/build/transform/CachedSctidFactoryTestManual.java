@@ -3,12 +3,12 @@ package org.ihtsdo.buildcloud.core.service.build.transform;
 import java.util.Date;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.transform.CachedSctidFactory;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClientImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CachedSctidFactoryTestManual {
 
@@ -18,7 +18,7 @@ public class CachedSctidFactoryTestManual {
 	private final String userName = "userName";
 	private final String password = "password";
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		idRestClient = new IdServiceRestClientImpl(url, userName, password);
 		idRestClient.logIn();
@@ -27,7 +27,7 @@ public class CachedSctidFactoryTestManual {
 
 	@Test
 	public void testGetSCTID() throws Exception {
-		Assert.assertNotNull(cachedSctidFactory.getSCTID("e568b6b6-1869-4adb-99ea-039d076f64f0", "1", "123"));
+		assertNotNull(cachedSctidFactory.getSCTID("e568b6b6-1869-4adb-99ea-039d076f64f0", "1", "123"));
 	}
 
 }

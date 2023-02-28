@@ -22,16 +22,17 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 public class PublishServiceImpl2Test extends AbstractTest {
@@ -65,7 +66,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 	private static final String BETA_TEST_FILENAME = "xBetaTest.zip";
 	private String releaseCenterName;
 
-	@Before
+	@BeforeEach
 	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
 
 		generator = new TestEntityGenerator();
@@ -90,7 +91,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		buildDAO.putOutputFile(build, new File(testFile), false);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws IOException {
 		((TestS3Client) s3Client).freshBucketStore();
 	}
@@ -115,7 +116,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 			expectedExceptionThrown = true;
 		}
 
-		Assert.assertTrue("Expected EntityAlreadyExistsException to have been thrown", expectedExceptionThrown);
+		assertTrue(expectedExceptionThrown, "Expected EntityAlreadyExistsException to have been thrown");
 
 	}
 
@@ -152,7 +153,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 			publishService.publishAdHocFile(releaseCenter, inputStream, BETA_TEST_FILENAME, size, true);
 		} catch (BusinessServiceException e) {
 			e.printStackTrace();
-			Assert.fail("Should not result in exception");
+			fail("Should not result in exception");
 		}
 	}
 
@@ -167,7 +168,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 			publishService.publishAdHocFile(releaseCenter, inputStream, fileToPublish, size, true);
 		} catch (BusinessServiceException e) {
 			e.printStackTrace();
-			Assert.fail("Should not result in exception");
+			fail("Should not result in exception");
 		}
 	}
 }

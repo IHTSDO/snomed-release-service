@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
@@ -13,7 +13,6 @@ import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManage
 import org.ihtsdo.buildcloud.core.service.InputFileService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -37,7 +36,7 @@ import java.util.*;
 
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
-@Api(value = "Input Files", position = 4)
+@Tag(name = "Input Files", description = "-")
 public class InputFileController {
 
 	@Autowired
@@ -58,8 +57,8 @@ public class InputFileController {
 
 	@PostMapping(value = "/manifest")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Stores a manifest file",
-		notes = "Stores or replaces a file identified as the manifest for the package specified in the URL" )
+	@Operation(summary = "Stores a manifest file",
+			description = "Stores or replaces a file identified as the manifest for the package specified in the URL")
 	@ResponseBody
 	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
 													 @PathVariable final String productKey,
@@ -76,8 +75,8 @@ public class InputFileController {
 
 	@GetMapping(value = "/manifest")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a manifest file name",
-		notes = "Returns a manifest file name for given release center and product" )
+	@Operation(summary = "Returns a manifest file name",
+			description = "Returns a manifest file name for given release center and product")
 	@ResponseBody
 	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey,
 										   @PathVariable final String productKey,
@@ -94,8 +93,8 @@ public class InputFileController {
 
 	@GetMapping(value = "/manifest/file", produces = "application/xml")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a specified manifest file",
-		notes = "Returns the content of the manifest file as xml" )
+	@Operation(summary = "Returns a specified manifest file",
+			description = "Returns the content of the manifest file as xml")
 	public void getManifestFile(@PathVariable final String releaseCenterKey,
 								@PathVariable final String productKey,
 								final HttpServletResponse response) throws ResourceNotFoundException {
@@ -114,8 +113,8 @@ public class InputFileController {
 
 	@PostMapping(value = "/builds/{buildId}/inputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Store or Replace a file",
-		notes = "Stores or replaces a file with its original name against the package specified in the URL" )
+	@Operation(summary = "Store or replace a file",
+			description = "Stores or replaces a file with its original name against the package specified in the URL")
 	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey,
 													@PathVariable final String productKey,
@@ -143,8 +142,9 @@ public class InputFileController {
 
 	@PostMapping(value = "/builds/{buildId}/sourcefiles/{source}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Store or Replace a file in specified source",
-			notes = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
+	@Operation(summary = "Store or replace a file in specified source",
+			description = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. " +
+					"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
 	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey,
 												 @PathVariable final String productKey,
@@ -167,8 +167,8 @@ public class InputFileController {
 
 	@GetMapping(value = "/builds/{buildId}/sourcefiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a list of file names in source directories",
-			notes = "Returns a list of file names for the package specified in the URL" )
+	@Operation(summary = "Returns a list of file names in source directories",
+			description = "Returns a list of file names for the package specified in the URL")
 	@ResponseBody
 	public List<Map<String, Object>> listSourceFiles(@PathVariable final String releaseCenterKey,
 													 @PathVariable final String productKey,
@@ -186,8 +186,8 @@ public class InputFileController {
 
 	@GetMapping(value = "/builds/{buildId}/sourcefiles/{source}/{sourceFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a specified file",
-		notes = "Returns the content of the specified file." )
+	@Operation(summary = "Returns a specified file",
+			description = "Returns the content of the specified file")
 	public void getSourceFile(@PathVariable final String releaseCenterKey,
 							  @PathVariable final String productKey,
 							  @PathVariable final String buildId,
@@ -208,13 +208,14 @@ public class InputFileController {
 
 	@PostMapping(value = "/builds/{buildId}/inputfiles/prepare")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Prepare input file by processing files in source directories based on configurations in Manifest",
-			notes = "Create or replace files in input file directories")
+	@Operation(summary = "Prepare input files",
+			description = "Prepare input files by processing files in source directories based on configurations in manifest. Creates or replaces files in input file directories")
 	public ResponseEntity<Object> prepareInputFile(@PathVariable final String releaseCenterKey,
 												   @PathVariable final String productKey,
 												   @PathVariable final String buildId,
-												   @ApiParam(name = "copyFilesInManifest", value = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
-												   @RequestParam(required = false) final Boolean copyFilesInManifest) throws BusinessServiceException {
+												   @Parameter(name = "copyFilesInManifest", description = "Whether to copy unprocessed files specified in manifest into input-files. Default is true")
+													   @RequestParam(required = false) final Boolean copyFilesInManifest)
+			throws BusinessServiceException {
 		// try avoid to throw exceptions so that build status
 		Build build = buildService.find(releaseCenterKey, productKey, buildId, true, true, false, false);
 		if (build == null) {
@@ -226,7 +227,8 @@ public class InputFileController {
 
 	@PostMapping(value = "/builds/{buildId}/inputfiles/gather")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation(value = "Gather input files from multiple sources and upload to source directories")
+	@Operation(summary = "Gather input files",
+			description = "Gather input files from multiple sources and upload to source directories")
 	public ResponseEntity<Object> gatherInputFiles(@PathVariable final String releaseCenterKey,
 												   @PathVariable final String productKey,
 												   @PathVariable final String buildId) throws BusinessServiceException, IOException {

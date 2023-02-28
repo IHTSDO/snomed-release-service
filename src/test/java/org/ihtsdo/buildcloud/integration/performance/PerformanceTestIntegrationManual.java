@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.integration.performance;
 
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 	private long lastSeconds;
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		integrationTestHelper = new IntegrationTestHelper(mockMvc, "PerformanceTest");
@@ -73,7 +73,7 @@ public class PerformanceTestIntegrationManual extends AbstractControllerTest {
 		memoryRecordings.add(getStats("After verify mem used"));
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() {
 		super.tearDown();
 		LOGGER.info("MemoryRecordings:");

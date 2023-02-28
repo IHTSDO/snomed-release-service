@@ -7,7 +7,7 @@ import java.util.Date;
 
 public class EntityHelper {
 
-	public static final FastDateFormat DATE_FORMAT = DateFormatUtils.ISO_DATETIME_FORMAT;
+	public static final FastDateFormat DATE_FORMAT = DateFormatUtils.ISO_8601_EXTENDED_DATETIME_FORMAT;
 
 	public static String formatAsBusinessKey(String name) {
 		String businessKey = null;

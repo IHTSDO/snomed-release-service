@@ -9,7 +9,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -258,10 +258,10 @@ public class BuildServiceImpl implements BuildService {
 		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
 		if (extensionConfig != null) {
 			if (extensionConfig.getModuleId() == null || extensionConfig.getModuleId().isEmpty()) {
-				throw new BadConfigurationException("The module id must be set for " + (StringUtils.isEmpty(branchPath) ? "a derivative product." : "an extension build."));
+				throw new BadConfigurationException("The module id must be set for " + (!StringUtils.hasLength(branchPath) ? "a derivative product." : "an extension build."));
 			}
 			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
-				throw new BadConfigurationException("The namespace must be set for " + (StringUtils.isEmpty(branchPath) ? "a derivative product." : "an extension build."));
+				throw new BadConfigurationException("The namespace must be set for " + (!StringUtils.hasLength(branchPath) ? "a derivative product." : "an extension build."));
 			}
 		}
 	}
@@ -697,8 +697,8 @@ public class BuildServiceImpl implements BuildService {
 
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
-		if (!StringUtils.isEmpty(releaseFilename) && (!StringUtils.isEmpty(configuration.getReleaseInformationFields())
-													|| !StringUtils.isEmpty(configuration.getAdditionalReleaseInformationFields()))) {
+		if (StringUtils.hasLength(releaseFilename) && (StringUtils.hasLength(configuration.getReleaseInformationFields())
+													|| StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields()))) {
 			generateReleasePackageFile(build, releaseFilename);
 		}
 		// Generate readme file
@@ -829,7 +829,7 @@ public class BuildServiceImpl implements BuildService {
 
 	private Map<String, String> getPreferredTermMap(Build build) {
 		Map<String, String> result = new HashMap<>();
-		if (!StringUtils.isEmpty(build.getConfiguration().getConceptPreferredTerms())) {
+		if (StringUtils.hasLength(build.getConfiguration().getConceptPreferredTerms())) {
 			String[] conceptIdAndTerms = build.getConfiguration().getConceptPreferredTerms().split(",");
 			for (String conceptIdAndTerm : conceptIdAndTerms) {
 				String[] arr = conceptIdAndTerm.split(Pattern.quote("|"));
@@ -849,7 +849,7 @@ public class BuildServiceImpl implements BuildService {
 		Map<String, Integer> deltaFromAndToDateMap = getDeltaFromAndToDate(build);
 		Map<String, String> preferredTermMap = getPreferredTermMap(build);
 
-		if (!StringUtils.isEmpty(buildConfig.getAdditionalReleaseInformationFields())) {
+		if (StringUtils.hasLength(buildConfig.getAdditionalReleaseInformationFields())) {
 			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
 			for(Object key: jsonObject.keySet()) {
 				result.put((String) key, jsonObject.get((String) key));

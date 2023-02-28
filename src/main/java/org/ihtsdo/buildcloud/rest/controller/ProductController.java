@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.core.entity.Product;
@@ -30,7 +30,7 @@ import java.util.*;
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
-@Api(value = "Product", position = 2)
+@Tag(name = "Product", description = "-")
 public class ProductController {
 
 	@Autowired
@@ -43,8 +43,8 @@ public class ProductController {
 
 	@GetMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a list of products",
-	notes = "Returns a list of products for the extension specified in the URL" )
+	@Operation(summary = "Returns a list of products",
+			description = "Returns a list of products for the extension specified in the URL")
 	@ResponseBody
 	public Page<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey,
 												 @RequestParam(required = false) boolean includeRemoved,
@@ -74,7 +74,8 @@ public class ProductController {
 
 	@GetMapping( value = "/{productKey}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a product", notes = "Returns a single product object for a given product key" )
+	@Operation(summary = "Returns a product",
+			description = "Returns a single product object for a given product key")
 	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -89,9 +90,8 @@ public class ProductController {
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Create a product",
-		notes = "creates a new Product with a name as specified in  the request "
-				+ "and returns the new product object" )
+	@Operation(summary = "Create a product",
+			description = "Creates a new product with a name as specified in the request and returns the new product object")
 	public ResponseEntity<Map<String, Object>> createProduct(@PathVariable String releaseCenterKey,
 			@RequestBody Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -108,8 +108,8 @@ public class ProductController {
 	@PatchMapping(value = "/{productKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Update a product", notes = "Update an existing product with new details "
-			+ "and returns updated product" )
+	@Operation(summary = "Update a product",
+			description = "Updates an existing product with new details and returns updated product")
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
@@ -127,7 +127,8 @@ public class ProductController {
 	@PutMapping(value = "/{productKey}/configuration", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation(value = "Update a product", notes = "Update an existing product with new details " + "and returns updated product")
+	@Operation(summary = "Update a product",
+			description = "Updates an existing product with new details and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
 		Product product = productService.update(releaseCenterKey, productKey, json);
@@ -141,7 +142,8 @@ public class ProductController {
 	@PostMapping(value = "/{productKey}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Update visibility for product", notes = "Update an existing product with the visibility flag")
+	@Operation(summary = "Update visibility for product",
+			description = "Update an existing product with the visibility flag")
 	public ResponseEntity updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													   @RequestParam(required = true, defaultValue = "true") boolean visibility) {
 		productService.updateVisibility(releaseCenterKey, productKey, visibility);

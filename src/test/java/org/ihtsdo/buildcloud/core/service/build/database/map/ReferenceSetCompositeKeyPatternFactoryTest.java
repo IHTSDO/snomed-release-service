@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.core.service.build.database.map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,11 +9,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
-import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
-import org.ihtsdo.buildcloud.core.service.build.database.map.ReferenceSetCompositeKeyPatternFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ReferenceSetCompositeKeyPatternFactoryTest {
 	
@@ -26,7 +24,7 @@ public class ReferenceSetCompositeKeyPatternFactoryTest {
 	private Map<String, List<Integer>> customRefsetCompositeKeys;
 	private ReferenceSetCompositeKeyPatternFactory refsetCompositeKeyPatternFactory;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		customRefsetCompositeKeys = new HashMap<>();
 		dao = new RF2TableExportDAOImpl(customRefsetCompositeKeys);

@@ -1,8 +1,8 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
@@ -24,7 +24,7 @@ import java.text.ParseException;
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products")
-@Api(value = "Admin")
+@Tag(name = "Admin", description = "-")
 public class AdminController {
 
 	@Autowired
@@ -36,15 +36,21 @@ public class AdminController {
 	@PostMapping(value = "/{productKey}/new-authoring-cycle")
 	@IsAuthenticatedAsAdmin
 	@ResponseBody
-	@ApiOperation(value = "Start new authoring cycle", notes = "This API is for Daily Build only")
-	public ResponseEntity startNewAuthoringCycle(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-												 @ApiParam(value = "New effective time. Required format: yyyy-MM-dd", required = true) @RequestParam String effectiveTime,
-												 @ApiParam(value = "The product that contains the latest published build. This param requires a product key", required = true) @RequestParam String productSource,
-												 @ApiParam(value = "New dependency package if needed.") @RequestParam(required = false) String dependencyPackage) throws BusinessServiceException, IOException, ParseException, JAXBException {
+	@Operation(summary = "Start new authoring cycle",
+			description = "This API is for Daily Build only")
+	public ResponseEntity startNewAuthoringCycle(@PathVariable String releaseCenterKey,
+												 @PathVariable String productKey,
+												 @Parameter(description = "New effective time. Required format: yyyy-MM-dd", required = true)
+													 @RequestParam String effectiveTime,
+												 @Parameter(description = "The product that contains the latest published build. This param requires a product key", required = true)
+													 @RequestParam String productSource,
+												 @Parameter(description = "New dependency package if needed.")
+													 @RequestParam(required = false) String dependencyPackage)
+			throws BusinessServiceException, IOException, ParseException, JAXBException {
 		try {
-			DateFormatUtils.ISO_DATE_FORMAT.parse(effectiveTime);
+			DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTime);
 		} catch (final ParseException e) {
-			throw new BadRequestException("Invalid effectiveTime format. Expecting format " + DateFormatUtils.ISO_DATE_FORMAT.getPattern() + ".", e);
+			throw new BadRequestException("Invalid effectiveTime format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
 		}
 		releaseService.startNewAuthoringCycle(releaseCenterKey, productKey, effectiveTime, productSource, dependencyPackage);
 		return new ResponseEntity(HttpStatus.OK);
@@ -53,7 +59,8 @@ public class AdminController {
 	@PostMapping(value = "/{productKey}/upgrade-dependant-version")
 	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
-	@ApiOperation(value = "Upgrade dependant version for daily build product", notes = "This API is for Daily Build only")
+	@Operation(summary = "Upgrade dependant version for daily build product",
+			description = "This API is for Daily Build only")
 	public ResponseEntity upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
 		productService.upgradeDependantVersion(releaseCenterKey, productKey);
 		return ResponseEntity.status(HttpStatus.OK).build();

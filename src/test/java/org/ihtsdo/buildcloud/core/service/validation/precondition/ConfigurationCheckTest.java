@@ -3,12 +3,13 @@ package org.ihtsdo.buildcloud.core.service.validation.precondition;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
+import static org.junit.jupiter.api.Assertions.*;
+
+@Disabled
 public class ConfigurationCheckTest extends PreconditionCheckTest {
 	
 	private static final String README_HEADER = "readmeHeader";
@@ -17,7 +18,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 	private static final String INVALID_PUBLISHED_PAKCAGE_NAME = "Invalid_201407.zip";
 
 	@Override
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		super.setup();
 		manager = new PreconditionManager(true).preconditionChecks(new ConfigurationCheck());
@@ -33,8 +34,8 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		State actualResult = report.getResult();
-		Assert.assertEquals(State.PASS, actualResult);	
-		Assert.assertEquals("", report.getMessage());
+		assertEquals(State.PASS, actualResult);
+		assertEquals("", report.getMessage());
 	}
 	
 	@Test
@@ -47,8 +48,8 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
 		State actualResult = report.getResult();
-		Assert.assertEquals(State.PASS, actualResult);	
-		Assert.assertEquals("", report.getMessage());
+		assertEquals(State.PASS, actualResult);
+		assertEquals("", report.getMessage());
 
 	}
 	
@@ -59,7 +60,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setPreviousPublishedPackage(PUBLISHED_PACKAGE_IN_JAN);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals( State.FAIL, report.getResult());
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	
@@ -72,7 +73,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	
@@ -86,7 +87,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	@Test
@@ -97,7 +98,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	@Test
@@ -108,7 +109,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeHeader(README_HEADER);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	@Test
@@ -120,7 +121,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 	
 	
@@ -133,7 +134,7 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setReadmeEndDate(JULY_RELEASE);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());	
+		assertEquals(State.FAIL, report.getResult());
 	}
 
 	
@@ -143,8 +144,8 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setFirstTimeRelease(false);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());
-		Assert.assertEquals("Subsequent releases must have a previous published package specified. The copyright end date is not set. No Readme Header detected.",
+		assertEquals(State.FAIL, report.getResult());
+		assertEquals("Subsequent releases must have a previous published package specified. The copyright end date is not set. No Readme Header detected.",
 				report.getMessage());
 	}
 
@@ -154,8 +155,8 @@ public class ConfigurationCheckTest extends PreconditionCheckTest {
 		buildConfiguration.setFirstTimeRelease(true);
 
 		PreConditionCheckReport report = runPreConditionCheck(ConfigurationCheck.class);
-		Assert.assertEquals(State.FAIL, report.getResult());
-		Assert.assertEquals("The copyright end date is not set. No Readme Header detected.", report.getMessage());
+		assertEquals(State.FAIL, report.getResult());
+		assertEquals("The copyright end date is not set. No Readme Header detected.", report.getMessage());
 	}
 
 }

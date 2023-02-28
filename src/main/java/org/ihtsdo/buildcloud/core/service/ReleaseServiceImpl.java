@@ -111,7 +111,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		if (latestPublishedBuild != null) {
 			latestPublishedBuild = buildService.find(releaseCenterKey, productKeySource, latestPublishedBuild.getId(), true, false, false, null);
 			BuildConfiguration configuration = latestPublishedBuild.getConfiguration();
-			if (configuration.getEffectiveTime().compareTo(DateFormatUtils.ISO_DATE_FORMAT.parse(effectiveTime)) >= 0) {
+			if (configuration.getEffectiveTime().compareTo(DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTime)) >= 0) {
 				throw new BusinessServiceRuntimeException("The new effective time must be greater than the latest published effective time " + configuration.getEffectiveTimeFormatted());
 			}
 

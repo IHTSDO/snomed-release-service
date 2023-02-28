@@ -7,16 +7,16 @@ import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClientOfflineDemoImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 public abstract class AbstractTest {
 	@Autowired
@@ -28,7 +28,7 @@ public abstract class AbstractTest {
 	@Autowired
 	private IdServiceRestClient idRestClient;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		if (uuidGenerator instanceof PseudoUUIDGenerator) {
 			((PseudoUUIDGenerator)uuidGenerator).reset();
@@ -41,7 +41,7 @@ public abstract class AbstractTest {
 		}
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws IOException {
 		if (uuidGenerator instanceof PseudoUUIDGenerator) {
 			((PseudoUUIDGenerator) uuidGenerator).reset();

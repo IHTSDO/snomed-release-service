@@ -1,12 +1,11 @@
 package org.ihtsdo.buildcloud.rest.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import net.rcarz.jiraclient.JiraException;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
-import org.ihtsdo.buildcloud.core.entity.RVFFailureJiraAssociation;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.PublishService;
@@ -50,7 +49,7 @@ import java.util.*;
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @Controller
 @RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
-@Api(value = "Build", position = 1)
+@Tag(name = "Build", description = "-")
 public class BuildController {
 
 	private static final String COMMA = ",";
@@ -78,7 +77,8 @@ public class BuildController {
 	@PostMapping(value = "/release", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation(value = "Create a release package", notes = "Create a new build and add the build to the job queue automatically")
+	@Operation(summary = "Create a release package",
+			description = "Create a new build and add the build to the job queue automatically")
 	public ResponseEntity createReleasePackage(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
@@ -93,8 +93,8 @@ public class BuildController {
 
 	@PostMapping(value = "/builds")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Create a build",
-		notes = "Create a build for the given product key and release center key and returns build id" )
+	@Operation(summary = "Create a build",
+			description = "Create a build for the given product key and release center key and returns build id")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey,
 														   @PathVariable final String productKey,
@@ -108,7 +108,8 @@ public class BuildController {
 	@PostMapping(value = "/builds/{buildId}/clone")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation(value = "Clone a new release build from specific build", notes = "Clone from specific build and add the new one to the job queue")
+	@Operation(summary = "Clone a new release build from specific build",
+			description = "Clone from specific build and add the new one to the job queue")
 	public ResponseEntity cloneBuild(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
@@ -126,7 +127,8 @@ public class BuildController {
 	@PostMapping(value = "/builds/{buildId}/schedule")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation(value = "Schedule a release build", notes = "Add a release build to the job queue")
+	@Operation(summary = "Schedule a release build",
+			description = "Add a release build to the job queue")
 	public ResponseEntity scheduleBuild(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
@@ -143,8 +145,8 @@ public class BuildController {
 
 	@DeleteMapping(value = "/builds/{buildId}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Delete a build",
-			notes = "Delete a build for given product key and release center key and build id" )
+	@Operation(summary = "Delete a build",
+			description = "Delete a build for given product key and release center key and build id")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
@@ -172,9 +174,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a list all builds for a logged in user",
-		notes = "Returns a list all builds visible to the currently logged in user, "
-			+ "so this could potentially span across Release Centres" )
+	@Operation(summary = "Returns a list all builds for a logged in user",
+			description = "Returns a list all builds visible to the currently logged in user, so this could potentially span across Release Centres")
 	@ResponseBody
 	public Page<Map<String, Object>> getBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											   @RequestParam(required = false) boolean includeBuildConfiguration,
@@ -200,7 +201,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/published")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Returns a list of published builds from the published releases directory")
+	@Operation(summary = "Returns a list of published builds",
+			description = "Returns a list of published builds from the published releases directory")
 	@ResponseBody
 	public List<Map<String, Object>> getPublishedBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 														@RequestParam(required = false, defaultValue = "false") boolean includeProdPublishedReleases,
@@ -212,8 +214,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Get a build id",
-	notes = "Returns a single build object for given key" )
+	@Operation(summary = "Get a build id",
+			description = "Returns a single build object for given key")
 	public Map<String, Object> getBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 										@RequestParam(required = false, defaultValue = "true") boolean includeBuildConfiguration,
 										@RequestParam(required = false, defaultValue = "true") boolean includeQAConfiguration,
@@ -230,8 +232,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/manifest", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Returns a manifest file name",
-			notes = "Returns a manifest file name for given product key, release center key, and build id" )
+	@Operation(summary = "Returns a manifest file name",
+			description = "Returns a manifest file name for given product key, release center key, and build id")
 	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey,
 										   @PathVariable final String productKey,
 										   @PathVariable final String buildId,
@@ -248,8 +250,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/manifest/file", produces = "application/xml")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Returns a specified manifest file",
-			notes = "Returns the content of the manifest file as xml" )
+	@Operation(summary = "Returns a specified manifest file",
+			description = "Returns the content of the manifest file as xml")
 	public void getManifestFile(@PathVariable final String releaseCenterKey,
 								@PathVariable final String productKey,
 								@PathVariable final String buildId,
@@ -270,8 +272,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/configuration", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves configuration details",
-		notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves configuration details",
+			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public Map<String, Object> getConfiguration(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			final HttpServletRequest request) throws IOException, BusinessServiceException {
 		final BuildConfiguration buildConfiguration = buildService.loadBuildConfiguration(releaseCenterKey, productKey, buildId);
@@ -286,8 +288,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/qaTestConfig", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves QA test configuration details",
-		notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves QA test configuration details",
+			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public Map<String, Object> getQqTestConfig(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			final HttpServletRequest request) throws IOException, BusinessServiceException {
 		final Map<String,Object> result = new HashMap<>();
@@ -302,8 +304,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/buildReport", produces = "application/json")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves build report details",
-		notes = "Retrieves buildReport details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves build report details",
+			description = "Retrieves buildReport details for given product key, release center key, and build id")
 	public void getBuildReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			final HttpServletRequest request, final HttpServletResponse response) throws IOException, BusinessServiceException {
 		
@@ -319,8 +321,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/inputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves list of input file names",
-		notes = "Retrieves list of input file names for given release center, product key and build id" )
+	@Operation(summary = "Retrieves list of input file names",
+			description = "Retrieves list of input file names for given release center, product key and build id")
 	public List<Map<String, Object>> listPackageInputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -331,8 +333,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/inputPrepareReport")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves the report for preparing input source files.",
-		notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
+	@Operation(summary = "Retrieves the report for preparing input source files",
+			description = "Product key and build id are required. And the report might not exist if no preparation is required")
 	public void getInputPrepareReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -348,8 +350,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/inputGatherReport")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves the report for gathering input source files.",
-			notes = "Product key and build id are required. And the report might not exist if no preparation is required." )
+	@Operation(summary = "Retrieves the report for gathering input source files",
+			description = "Product key and build id are required. And the report might not exist if no preparation is required")
 	public void getInputGatherReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 									  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -365,8 +367,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/inputfiles/{inputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Download a specific file",
-		notes = "Download a specific file content for given release center, product key, build id and given input file name combination" )
+	@Operation(summary = "Download a specific file",
+			description = "Download a specific file content for given release center, product key, build id and given input file name combination")
 	public void getPackageInputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -383,9 +385,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/outputfiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Retrieves a list of file names from output directory",
-		notes = "Retrieves a list of file names from output directory for given release center, "
-				+ "product key, build id combination" )
+	@Operation(summary = "Retrieves a list of file names from output directory",
+			description = "Retrieves a list of file names from output directory for given release center, product key, build id combination")
 	public List<Map<String, Object>> listPackageOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
 
@@ -395,9 +396,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/outputfiles/{outputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Download a specific file from output directory",
-		notes = "Download a specific file from output directory for given release center, "
-			+ "product key, build id and file name combination" )
+	@Operation(summary = "Download a specific file from output directory",
+			description = "Download a specific file from output directory for given release center, product key, build id and file name combination")
 	public void getPackageOutputFile(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			@PathVariable final String outputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -410,7 +410,8 @@ public class BuildController {
 	@PostMapping(value = "/builds/{buildId}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Update visibility for build", notes = "Update an existing build with the visibility flag")
+	@Operation(summary = "Update visibility for build",
+			description = "Update an existing build with the visibility flag")
 	public ResponseEntity updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 										   @PathVariable final String buildId, @RequestParam(required = true, defaultValue = "true") boolean visibility) {
 		buildService.updateVisibility(releaseCenterKey, productKey, buildId, visibility);
@@ -420,7 +421,8 @@ public class BuildController {
 	@PostMapping(value = "/builds/{buildId}/tags")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Update tags for build", notes = "Update an existing build with the tags")
+	@Operation(summary = "Update tags for build",
+			description = "Update an existing build with the tags")
 	public ResponseEntity updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 										   @PathVariable final String buildId, @RequestParam(required = true) List<Build.Tag> tags) {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
@@ -431,8 +433,8 @@ public class BuildController {
 	@PostMapping(value = "/builds/{buildId}/publish")
 	@IsAuthenticatedAsGlobalAdminOrGlobalReleaseManager
 	@ResponseBody
-	@ApiOperation( value = "Publish a release for given build id",
-	notes = "Publish release for given build id to make it available in repository for wider usages" )
+	@Operation(summary = "Publish a release for given build id",
+			description = "Publish release for given build id to make it available in repository for wider usages")
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
@@ -444,8 +446,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/publish/status")
 	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
-	@ApiOperation( value = "Get publishing release status",
-			notes = "Get publishing release status for given build id")
+	@Operation(summary = "Get publishing release status",
+			description = "Get publishing release status for given build id")
 	public ResponseEntity<ProcessingStatus> getPublishingBuildStatus(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 																	 @PathVariable final String buildId) {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
@@ -461,8 +463,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/logs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@ResponseBody
-	@ApiOperation( value = "Retrieves a list of build log file names",
-		notes = "Retrieves a list of build log file names for given release center, product key, and build id" )
+	@Operation(summary = "Retrieves a list of build log file names",
+			description = "Retrieves a list of build log file names for given release center, product key, and build id")
 	public List<Map<String, Object>> getBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, final HttpServletRequest request) throws ResourceNotFoundException {
 
@@ -471,9 +473,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/logs/{logFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation( value = "Download a specific build log file",
-		notes = "Download a specific log file for given release center, "
-		+ "product key, build id and file name combination" )
+	@Operation(summary = "Download a specific build log file",
+			description = "Download a specific log file for given release center, product key, build id and file name combination")
 	public void getBuildLog(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 			@PathVariable final String logFileName, final HttpServletResponse response) throws ResourceNotFoundException, IOException {
 
@@ -488,8 +489,8 @@ public class BuildController {
 
 	@RequestMapping(value = "/builds/{buildId}/logs/{logFileName:.*}", method = RequestMethod.HEAD)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation(value = "Download a specific build log file", notes = "Download a specific log file for given release center, "
-			+ "product key, build id and file name combination")
+	@Operation(summary = "Download a specific build log file",
+			description = "Download a specific log file for given release center, product key, build id and file name combination")
 	public void getBuildLogHead(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 			@PathVariable final String buildId, @PathVariable final String logFileName, final HttpServletResponse response)
 			throws ResourceNotFoundException, IOException {
@@ -503,8 +504,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/preConditionCheckReports")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves Pre-Condition Check Report",
-			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves Pre-Condition Check Report",
+			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public void getPreConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 	                                  @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -520,8 +521,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/postConditionCheckReports")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves Post-Condition Check Report",
-			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves Post-Condition Check Report",
+			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public void getPostConditionCheckReports(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											@PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -537,8 +538,8 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/classificationResultsOutputFiles")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@ResponseBody
-	@ApiOperation( value = "Retrieves classification results for output files",
-			notes = "Retrieves configuration details for given product key, release center key, and build id" )
+	@Operation(summary = "Retrieves classification results for output files",
+			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public List<Map<String, Object>> getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											 @PathVariable final String buildId, final HttpServletRequest request, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 		final List<String> relativeFilePaths = buildService.getClassificationResultOutputFilePaths(releaseCenterKey, productKey, buildId);
@@ -547,8 +548,8 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/classificationResultsOutputFiles/{inputFileName:.*}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation( value = "Download a specific file",
-			notes = "Download a specific file content for given release center, product key, build id and given file name combination" )
+	@Operation(summary = "Download a specific file",
+			description = "Download a specific file content for given release center, product key, build id and given file name combination")
 	public void getClassificationResultsOutputFiles(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
 									@PathVariable final String inputFileName, final HttpServletResponse response) throws IOException, ResourceNotFoundException {
 
@@ -576,7 +577,7 @@ public class BuildController {
 
 	@PostMapping(value = "/builds/{buildId}/cancel")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation(value = "Cancel a running build job")
+	@Operation(summary = "Cancel a running build job")
 	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
@@ -585,7 +586,7 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/buildLogs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation(value = "Get the full logs of the build process")
+	@Operation(summary = "Get the full logs of the build process")
 	public void getFullBuildLogs(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 								   @PathVariable final String buildId, HttpServletResponse response) throws IOException {
 		String logUrl = "/logViewer.html?center=" + releaseCenterKey + "&product=" + productKey + "&build=" + buildId;
@@ -594,7 +595,7 @@ public class BuildController {
 
 	@GetMapping(value = "/builds/{buildId}/failure-jira-associations")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
-	@ApiOperation(value = "Get the list of JIRA issues associated with the RVF failures for each build")
+	@Operation(summary = "Get the list of JIRA issues associated with the RVF failures for each build")
 	public ResponseEntity getRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 																		 @PathVariable final String buildId) {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.findByBuildKey(releaseCenterKey, productKey, buildId), HttpStatus.OK);
@@ -602,7 +603,7 @@ public class BuildController {
 
 	@PostMapping(value = "/builds/{buildId}/failure-jira-associations")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ApiOperation(value = "Generate Jira issues for the RVF failures")
+	@Operation(summary = "Generate Jira issues for the RVF failures")
 	public ResponseEntity createRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											  @PathVariable final String buildId, @RequestBody String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.createFailureJiraAssociations(releaseCenterKey, productKey, buildId, assertionIds), HttpStatus.CREATED);

@@ -33,7 +33,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2TableDAOHsqlImpl.class);
 
-	public RF2TableDAOHsqlImpl(String uniqueId) throws DatabasePopulatorException, SQLException, ClassNotFoundException {
+	public RF2TableDAOHsqlImpl(String uniqueId) throws SQLException, ClassNotFoundException {
 		this.connection = new DatabaseManager().createConnection(uniqueId);
 		dataTypeConverter = new H2DataTypeConverter();
 		schemaFactory = new SchemaFactory();
@@ -119,7 +119,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException {
+	public RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) {
 		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 
