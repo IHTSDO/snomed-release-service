@@ -141,6 +141,11 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 						Map<String, Object> metaData = branch.getMetadata();
 						propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
 
+						Set<String> modules = termServerService.getModulesForBranch(codeSystem.getBranchPath());
+						if (modules != null) {
+							propertyValues.put(MODULE_IDS, String.join(",", modules));
+						}
+
 						if (metaData.containsKey("previousPackage")) {
 							//propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
 						}
@@ -151,7 +156,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 							propertyValues.put(NAMESPACE_ID, metaData.get("defaultNamespace").toString());
 						}
 						if (metaData.containsKey("defaultModuleId")) {
-							propertyValues.put(MODULE_ID, metaData.get("defaultModuleId").toString());
+							propertyValues.put(DEFAULT_MODULE_ID, metaData.get("defaultModuleId").toString());
 						}
 						if (metaData.containsKey("assertionGroupNames")) {
 							String assertionGroupNames = metaData.get("assertionGroupNames").toString();
@@ -452,18 +457,21 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
 		if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)
-			|| newPropertyValues.containsKey(MODULE_ID)
+			|| newPropertyValues.containsKey(MODULE_IDS)
+			|| newPropertyValues.containsKey(DEFAULT_MODULE_ID)
 			|| newPropertyValues.containsKey(NAMESPACE_ID)
 			|| newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)
 			|| newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
 			String dependencyPackageRelease = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
-			String moduleID = newPropertyValues.get(MODULE_ID);
+			String defaultModuleId = newPropertyValues.get(DEFAULT_MODULE_ID);
+			String moduleIds = newPropertyValues.get(MODULE_IDS);
 			String namespaceID = newPropertyValues.get(NAMESPACE_ID);
 			String releaseAsEdition = newPropertyValues.get(RELEASE_AS_AN_EDITION);
 			String previousEditionDependencyEffectiveDate = newPropertyValues.get(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE);
 
 			if (!StringUtils.hasLength(dependencyPackageRelease)
-				&& !StringUtils.hasLength(moduleID)
+				&& !StringUtils.hasLength(moduleIds)
+				&& !StringUtils.hasLength(defaultModuleId)
 				&& !StringUtils.hasLength(namespaceID)
 				&& (!StringUtils.hasLength(releaseAsEdition) || !TRUE.equals(releaseAsEdition))) {
 				if (configuration.getExtensionConfig() != null) {
@@ -501,11 +509,19 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					}
 				}
 
-				if (newPropertyValues.containsKey(MODULE_ID)) {
-					if (!StringUtils.hasLength(moduleID)) {
-						configuration.getExtensionConfig().setModuleId(null);
+				if (newPropertyValues.containsKey(MODULE_IDS)) {
+					if (!StringUtils.hasLength(moduleIds)) {
+						configuration.getExtensionConfig().setModuleIds(null);
 					} else {
-						configuration.getExtensionConfig().setModuleId(moduleID);
+						configuration.getExtensionConfig().setModuleIds(moduleIds);
+					}
+				}
+
+				if (newPropertyValues.containsKey(DEFAULT_MODULE_ID)) {
+					if (!StringUtils.hasLength(defaultModuleId)) {
+						configuration.getExtensionConfig().setDefaultModuleId(null);
+					} else {
+						configuration.getExtensionConfig().setDefaultModuleId(defaultModuleId);
 					}
 				}
 

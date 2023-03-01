@@ -139,6 +139,12 @@ public class TermServerServiceImpl implements TermServerService {
 		snowstormRestClient.updateCodeSystemVersionPackage(codeSystemShortName, effectiveDate, releasePackage);
 	}
 
+	@Override
+	public Set<String> getModulesForBranch(String branchPath) throws RestClientException {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
+	}
+
 
 	public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
 

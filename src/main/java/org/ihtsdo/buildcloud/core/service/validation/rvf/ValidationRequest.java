@@ -18,7 +18,7 @@ public class ValidationRequest {
 
 	private boolean dailyBuild;
 	
-	private String includedModuleId;
+	private String includedModuleIds;
 
 	private final String runId;
 
@@ -92,12 +92,12 @@ public class ValidationRequest {
 		this.releaseAsAnEdition = releaseAsAnEdition;
 	}
 
-	public String getIncludedModuleId() {
-		return includedModuleId;
+	public String getIncludedModuleIds() {
+		return includedModuleIds;
 	}
 
-	public void setIncludedModuleId(String includedModuleId) {
-		this.includedModuleId = includedModuleId;
+	public void setIncludedModuleIds(String includedModuleIds) {
+		this.includedModuleIds = includedModuleIds;
 	}
 
 	public final String getResponseQueue() {

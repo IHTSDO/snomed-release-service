@@ -33,7 +33,8 @@ public interface ProductService extends EntityService<Product> {
 	String DEPENDENCY_RELEASE_PACKAGE = "dependencyReleasePackage";
 	String PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE = "previousEditionDependencyEffectiveDate";
 	String NAMESPACE_ID = "namespaceId";
-	String MODULE_ID = "moduleId";
+	String DEFAULT_MODULE_ID = "defaultModuleId";
+	String MODULE_IDS = "moduleIds";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	String ENABLE_DROOLS = "enableDrools";
 	String ENABLE_JIRA = "jiraIssueCreationFlag";

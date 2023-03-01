@@ -279,8 +279,8 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody(EFFECTIVE_TIME, request.getEffectiveTime());
 		}
 
-		if (StringUtils.isNotBlank(request.getIncludedModuleId())) {
-			multiPartBuilder.addTextBody(INCLUDED_MODULES, request.getIncludedModuleId());
+		if (StringUtils.isNotBlank(request.getIncludedModuleIds())) {
+			multiPartBuilder.addTextBody(INCLUDED_MODULES, request.getIncludedModuleIds());
 		}
 
 		final String responseQueue = request.getResponseQueue();

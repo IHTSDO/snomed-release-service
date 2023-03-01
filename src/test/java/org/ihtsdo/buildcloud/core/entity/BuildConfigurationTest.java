@@ -43,7 +43,7 @@ public class BuildConfigurationTest {
 		configuration.setRefsetCompositeKeys(refsetCompositeKeys);
 		ExtensionConfig extensionConfig = new ExtensionConfig();
 		extensionConfig.setDependencyRelease("SnomedCT_Release_INT_20160131.zip");
-		extensionConfig.setModuleId("554471000005108");
+		extensionConfig.setModuleIds("554471000005108");
 		extensionConfig.setNamespaceId("1000005");
 		extensionConfig.setPreviousEditionDependencyEffectiveDate("2021-07-31");
 		configuration.setExtensionConfig(extensionConfig);
@@ -66,7 +66,7 @@ public class BuildConfigurationTest {
 		ExtensionConfig extConfig = buildConfigurationFromJson.getExtensionConfig();
 		assertNotNull(extConfig);
 		assertEquals("SnomedCT_Release_INT_20160131.zip", extConfig.getDependencyRelease());
-		assertEquals("554471000005108", extConfig.getModuleId());
+		assertEquals("554471000005108", extConfig.getModuleIds());
 		assertEquals("1000005", extConfig.getNamespaceId());
 		assertEquals("2021-07-31", extConfig.getPreviousEditionDependencyEffectiveDateFormatted());
 	}

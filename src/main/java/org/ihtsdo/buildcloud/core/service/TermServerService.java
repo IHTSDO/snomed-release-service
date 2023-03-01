@@ -22,4 +22,6 @@ public interface TermServerService {
 	Branch getBranch(String branchPath) throws RestClientException;
 
 	void updateCodeSystemVersionPackage(String codeSystemShortName, String effectiveDate, String releasePackage) throws RestClientException;
+
+	Set<String> getModulesForBranch(String branchPath) throws RestClientException;
 }
