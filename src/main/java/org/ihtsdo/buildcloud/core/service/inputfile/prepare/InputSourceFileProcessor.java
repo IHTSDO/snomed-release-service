@@ -58,7 +58,6 @@ public class InputSourceFileProcessor {
 	private static final String HEADER_RELATIONSHIP_CONCRETE_VALUES = "id\teffectiveTime\tactive\tmoduleId\tsourceId\tvalue\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId";
 	private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
 	private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
-	private static final String HEADER_OWL_EXPRESSION = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\towlExpression";
 	private static final String HEADER_IDENTIFIER = "identifierSchemeId\talternateIdentifier\teffectiveTime\tactive\tmoduleId\treferencedComponentId";
 	private static final int REFSETID_COL = 4;
 	private static final int CHARACTERISTICTYPEID_COL = 8;
@@ -71,7 +70,6 @@ public class InputSourceFileProcessor {
 	private static final String INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES = "RelationshipConcreteValues_";
 	private static final String INPUT_FILE_TYPE_RELATIONSHIP = "Relationship_";
 	private static final String INPUT_FILE_TYPE_STATED_RELATIONSHIP = "StatedRelationship_";
-	private static final String INPUT_FILE_TYPE_OWL_EXPRESSION = "OWLExpression";
 	private static final String INPUT_FILE_TYPE_IDENTIFIER = "Identifier_";
 
 	private static final String OUT_DIR = "out";
@@ -337,8 +335,6 @@ public class InputSourceFileProcessor {
 						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_STATED_RELATIONSHIP);
 					} else if (fileType.getName().contains(INPUT_FILE_TYPE_RELATIONSHIP)) {
 						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_RELATIONSHIP);
-					} else if (fileType.getName().contains(INPUT_FILE_TYPE_OWL_EXPRESSION)) {
-						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_OWL_EXPRESSION);
 					} else if (fileType.getName().contains(INPUT_FILE_TYPE_IDENTIFIER)) {
 						initCommonProcessingConfig(fileType, INPUT_FILE_TYPE_IDENTIFIER);
 					} else if (fileType.getName().contains(INPUT_FILE_TYPE_TEXT_DEFINITON)) {
@@ -469,8 +465,6 @@ public class InputSourceFileProcessor {
 							processCommonFiles(source, header, INPUT_FILE_TYPE_RELATIONSHIP_CONCRETE_VALUES, lines);
 						} else if (header.startsWith(HEADER_INFERRED_OR_STATED_RELATIONSHIP)) {
 							processRelationshipFiles(source,lines, header);
-						} else if (header.startsWith(HEADER_OWL_EXPRESSION) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_OWL_EXPRESSION)) {
-							processCommonFiles(source, header, INPUT_FILE_TYPE_OWL_EXPRESSION, lines);
 						} else if (header.startsWith(HEADER_IDENTIFIER) && commonFileProcessingConfigs.containsKey(INPUT_FILE_TYPE_IDENTIFIER)) {
 							processCommonFiles(source, header, INPUT_FILE_TYPE_IDENTIFIER, lines);
 						} else if (header.startsWith(HEADER_REFSETS)) {
