@@ -24,9 +24,12 @@ public class ExtensionConfig implements Serializable {
 	
 	@Column(name="namespace_id")
 	private String namespaceId;
-	
-	@Column(name="module_id")
-	private String moduleId;
+
+	@Column(name="default_module_id")
+	private String defaultModuleId;
+
+	@Column(name="module_ids")
+	private String moduleIds;
 	
 	@Column(name="dependency_release")
 	private String dependencyRelease;
@@ -46,12 +49,20 @@ public class ExtensionConfig implements Serializable {
 		this.dependencyRelease = dependencyRelease;
 	}
 
-	public String getModuleId() {
-		return moduleId;
+	public String getDefaultModuleId() {
+		return defaultModuleId;
 	}
 
-	public void setModuleId(String moduleId) {
-		this.moduleId = moduleId;
+	public void setDefaultModuleId(String defaultModuleId) {
+		this.defaultModuleId = defaultModuleId;
+	}
+
+	public String getModuleIds() {
+		return moduleIds;
+	}
+
+	public void setModuleIds(String moduleIds) {
+		this.moduleIds = moduleIds;
 	}
 
 	public String getNamespaceId() {
