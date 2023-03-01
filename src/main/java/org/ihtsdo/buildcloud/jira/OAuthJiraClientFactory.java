@@ -23,6 +23,9 @@ public class OAuthJiraClientFactory implements ImpersonatingJiraClientFactory {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private static final String UNIT_TEST = "UNIT_TEST";
 
+	@Value("${srs.manager}")
+	private Boolean isSrsManager;
+
 	public OAuthJiraClientFactory(
 			@Value("${jira.url}") String jiraUrl,
 			@Value("${jira.username}") String adminUsername,
@@ -32,7 +35,7 @@ public class OAuthJiraClientFactory implements ImpersonatingJiraClientFactory {
 		this.jiraUrl = jiraUrl;
 		this.adminJiraUsername = adminUsername;
 		this.consumerKey = consumerKey;
-		if (!privateKeyPath.equals(UNIT_TEST)) {
+		if (!privateKeyPath.equals(UNIT_TEST) && Boolean.TRUE.equals(isSrsManager)) {
 			privateKey = OAuthCredentials.getPrivateKey(privateKeyPath);
 		} else {
 			privateKey = null;
