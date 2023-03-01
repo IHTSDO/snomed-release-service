@@ -19,6 +19,6 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
 	@Override
 	public void registerStompEndpoints(final StompEndpointRegistry registry) {
-		registry.addEndpoint("/snomed-release-service-websocket").setAllowedOrigins("*").withSockJS();
+		registry.addEndpoint("/snomed-release-service-websocket").setAllowedOriginPatterns("*").withSockJS();
 	}
 }
