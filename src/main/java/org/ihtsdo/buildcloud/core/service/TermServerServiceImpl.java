@@ -53,9 +53,8 @@ public class TermServerServiceImpl implements TermServerService {
 	private static final String SNAPSHOT = "Snapshot";
 
 	@Override
-	public File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
+	public File export(String branchPath, String effectiveDate, Set<String> exportModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
 		SnowstormRestClient snowstormRestClient = getSnowstormClient();
-		Set<String> moduleList = buildModulesList(snowstormRestClient, branchPath, excludedModuleIds);
 		int counter = 0;
 		boolean isBranchLocked = false;
 		while (counter++ < maxExportRetry) {
@@ -80,7 +79,7 @@ public class TermServerServiceImpl implements TermServerService {
 		boolean isSuccessful = false;
 		while (!isSuccessful && counter++ < maxExportRetry) {
 			try {
-				export = snowstormRestClient.export(branchPath, effectiveDate, moduleList, exportCategory, ExportType.SNAPSHOT);
+				export = snowstormRestClient.export(branchPath, effectiveDate, exportModuleIds, exportCategory, ExportType.SNAPSHOT);
 				isSuccessful = true;
 			} catch(Exception e) {
 				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, ExceptionUtils.getRootCauseMessage(e));
@@ -217,22 +216,5 @@ public class TermServerServiceImpl implements TermServerService {
 			}
 		}
 		return null;
-	}
-
-	private Set<String> buildModulesList(SnowstormRestClient SnowstormRestClient, String branchPath, Set<String> excludedModuleIds) throws BusinessServiceException {
-		// If any modules are excluded build a list of modules to include
-		Set<String> exportModuleIds = null;
-		if (excludedModuleIds != null && !excludedModuleIds.isEmpty()) {
-			try {
-				Set<String> allModules = SnowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
-				allModules.removeAll(excludedModuleIds);
-				exportModuleIds = new HashSet<>();
-				exportModuleIds.addAll(allModules);
-				logger.info("Excluded modules are {}, included modules are {} for release on {}", excludedModuleIds, exportModuleIds, branchPath);
-			} catch (RestClientException e) {
-				throw new BusinessServiceException("Failed to build list of modules for export.", e);
-			}
-		}
-		return exportModuleIds;
 	}
 }

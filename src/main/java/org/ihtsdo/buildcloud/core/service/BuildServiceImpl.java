@@ -206,7 +206,6 @@ public class BuildServiceImpl implements BuildService {
 					configuration.setBranchPath(buildRequest.getBranchPath());
 					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
 					configuration.setBuildName(buildRequest.getBuildName());
-					configuration.setExcludedModuleIds(buildRequest.getExcludedModuleIds());
 					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
 					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
 					configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
@@ -257,7 +256,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
 		if (extensionConfig != null) {
-			if (extensionConfig.getModuleIds() == null || extensionConfig.getModuleIds().isEmpty()) {
+			if (extensionConfig.getModuleIdsSet() == null || extensionConfig.getModuleIdsSet().isEmpty()) {
 				throw new BadConfigurationException("The module ids must be set for " + (!StringUtils.hasLength(branchPath) ? "a derivative product." : "an extension build."));
 			}
 			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
@@ -872,10 +871,10 @@ public class BuildServiceImpl implements BuildService {
 							result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
 							break;
 						case "includedModules":
-							String extensionModule = buildConfig.getExtensionConfig() != null ? (buildConfig.getExtensionConfig().getModuleIds() != null ? buildConfig.getExtensionConfig().getModuleIds() : null) : null;
-							if (extensionModule != null) {
+							Set<String> extensionModules = buildConfig.getExtensionConfig() != null ? buildConfig.getExtensionConfig().getModuleIdsSet() : null;
+							if (extensionModules != null) {
 								List<ConceptMini> list = new ArrayList<>();
-								for (String moduleId : extensionModule.split(",")) {
+								for (String moduleId : extensionModules) {
 									ConceptMini conceptMini = new ConceptMini();
 									moduleId = moduleId.trim();
 									conceptMini.setId(moduleId);
@@ -1127,11 +1126,11 @@ public class BuildServiceImpl implements BuildService {
 			validateQaTestConfig(qaTestConfig, buildConfiguration);
 			String effectiveTime = buildConfiguration.getEffectiveTimeFormatted();
 			boolean releaseAsAnEdition = false;
-			String includedModuleIds = null;
+			String includedModuleIdsStr = null;
 			ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
 			if (extensionConfig != null) {
 				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
-				includedModuleIds = extensionConfig.getModuleIds();
+				includedModuleIdsStr = extensionConfig.getModuleIds();
 			}
 			String runId = Long.toString(System.currentTimeMillis());
 			ValidationRequest request = new ValidationRequest(runId);
@@ -1143,7 +1142,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setDailyBuild(buildConfiguration.isDailyBuild());
-			request.setIncludedModuleIds(includedModuleIds);
+			request.setIncludedModuleIds(includedModuleIdsStr);
 			request.setResponseQueue(queue);
 			request.setBranchPath(buildConfiguration.getBranchPath());
 			request.setExcludedRefsetDescriptorMembers(buildConfiguration.getExcludeRefsetDescriptorMembers());

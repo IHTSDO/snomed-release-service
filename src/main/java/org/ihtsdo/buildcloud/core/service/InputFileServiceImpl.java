@@ -250,7 +250,7 @@ public class InputFileServiceImpl implements InputFileService {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			final long branchHeadTimestamp = termServerService.getBranch(buildConfiguration.getBranchPath()).getHeadTimestamp();
 			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
-					buildConfiguration.getExcludedModuleIds(), SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
+					buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getModuleIdsSet() : null, SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
 			build.getQaTestConfig().setContentHeadTimestamp(branchHeadTimestamp);
 			buildDAO.updateQATestConfig(build);
 			//Test whether the exported file is really a zip file
