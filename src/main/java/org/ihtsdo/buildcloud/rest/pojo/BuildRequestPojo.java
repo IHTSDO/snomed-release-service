@@ -14,7 +14,6 @@ public class BuildRequestPojo {
 	private boolean loadTermServerData;
 	private boolean loadExternalRefsetData;
 	private boolean enableTraceabilityValidation;
-	private Set<String> excludedModuleIds;
 	private Integer maxFailuresExport;
 	private boolean replaceExistingEffectiveTime;
 
@@ -51,14 +50,6 @@ public class BuildRequestPojo {
 
 	public void setBranchPath(String branchPath) {
 		this.branchPath = branchPath;
-	}
-
-	public Set<String> getExcludedModuleIds() {
-		return excludedModuleIds;
-	}
-
-	public void setExcludedModuleIds(Set<String> excludedModuleIds) {
-		this.excludedModuleIds = excludedModuleIds;
 	}
 
 	public boolean isLoadTermServerData() {
@@ -107,7 +98,6 @@ public class BuildRequestPojo {
 				", effectiveDate='" + effectiveDate + '\'' +
 				", exportCategory=" + exportCategory +
 				", branchPath='" + branchPath + '\'' +
-				", excludedModuleIds=" + excludedModuleIds +
 				", loadTermServerData=" + loadTermServerData +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", maxFailuresExport=" + maxFailuresExport +

@@ -8,7 +8,10 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name="extension_config")
@@ -55,6 +58,11 @@ public class ExtensionConfig implements Serializable {
 
 	public void setDefaultModuleId(String defaultModuleId) {
 		this.defaultModuleId = defaultModuleId;
+	}
+
+	public Set<String> getModuleIdsSet() {
+		if (moduleIds == null) return null;
+		return Arrays.stream(moduleIds.split(",")).map(String::trim).collect(Collectors.toSet());
 	}
 
 	public String getModuleIds() {

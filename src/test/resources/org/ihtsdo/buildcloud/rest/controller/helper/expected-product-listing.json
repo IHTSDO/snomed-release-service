@@ -37,7 +37,6 @@
     "branchPath" : null,
     "buildName" : null,
     "buildPackageName" : null,
-    "excludedModuleIds" : null,
     "loadExternalRefsetData" : false,
     "loadTermServerData" : false,
     "exportType" : null,

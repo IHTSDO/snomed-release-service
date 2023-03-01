@@ -13,7 +13,7 @@ import java.util.Set;
 import static org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 
 public interface TermServerService {
-	File export(String branchPath, String effectiveDate, Set<String> excludedModuleIds, ExportCategory exportCategory) throws BusinessServiceException;
+	File export(String branchPath, String effectiveDate, Set<String> exportModuleIds, ExportCategory exportCategory) throws BusinessServiceException;
 
 	List<CodeSystem> getCodeSystems();
 

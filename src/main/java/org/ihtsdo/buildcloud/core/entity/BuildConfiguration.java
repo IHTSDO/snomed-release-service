@@ -118,9 +118,6 @@ public class BuildConfiguration {
 	private String buildPackageName;
 
 	@Transient
-	private Set<String> excludedModuleIds;
-
-	@Transient
 	private boolean loadExternalRefsetData;
 
 	@Transient
@@ -448,7 +445,6 @@ public class BuildConfiguration {
 				", defaultBranchPath='" + defaultBranchPath + '\'' +
 				", branchPath='" + branchPath + '\'' +
 				", buildName='" + buildName + '\'' +
-				", excludedModuleIds=" + excludedModuleIds +
 				", loadExternalRefsetData=" + loadExternalRefsetData +
 				", loadTermServerData=" + loadTermServerData +
 				", exportType='" + exportType + '\'' +
@@ -540,14 +536,6 @@ public class BuildConfiguration {
 
 	public boolean isDailyBuild() {
 		return dailyBuild;
-	}
-
-	public void setExcludedModuleIds(Set<String> excludedModuleIds) {
-		this.excludedModuleIds = excludedModuleIds;
-	}
-
-	public Set<String> getExcludedModuleIds() {
-		return excludedModuleIds;
 	}
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {
