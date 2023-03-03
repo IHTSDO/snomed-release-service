@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Service
 public class TransformationService {
@@ -368,7 +370,11 @@ public class TransformationService {
 		String moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
 		if (extConfig != null) {
 			namespaceId = Integer.valueOf(extConfig.getNamespaceId());
-			moduleId = extConfig.getDefaultModuleId();
+			if (StringUtils.hasLength(extConfig.getDefaultModuleId())) {
+				moduleId = extConfig.getDefaultModuleId();
+			} else if (!CollectionUtils.isEmpty(extConfig.getModuleIdsSet())) {
+				moduleId = extConfig.getModuleIdsSet().iterator().next();
+			}
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
 		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries, idGenRetryDelaySeconds);
