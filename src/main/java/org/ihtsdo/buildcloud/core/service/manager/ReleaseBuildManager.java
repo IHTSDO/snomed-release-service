@@ -195,15 +195,6 @@ public class ReleaseBuildManager {
 			if (qaTestConfig.isEnableDrools() && !StringUtils.hasLength(qaTestConfig.getDroolsRulesGroupNames())) {
 				throw new BadRequestException("Drool rule assertion group Name must not be empty.");
 			}
-			if (StringUtils.hasLength(qaTestConfig.getPreviousExtensionRelease()) && !publishService.exists(releaseCenter, qaTestConfig.getPreviousExtensionRelease())) {
-				throw new ResourceNotFoundException("Could not find previous extension release package: " + qaTestConfig.getPreviousExtensionRelease());
-			}
-			if (StringUtils.hasLength(qaTestConfig.getExtensionDependencyRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getExtensionDependencyRelease())) {
-				throw new ResourceNotFoundException("Could not find extension dependency release package: " + qaTestConfig.getExtensionDependencyRelease());
-			}
-			if (StringUtils.hasLength(qaTestConfig.getPreviousInternationalRelease()) && !publishService.exists(internationalReleaseCenter, qaTestConfig.getPreviousInternationalRelease())) {
-				throw new ResourceNotFoundException("Could not find previous international release package: " + qaTestConfig.getPreviousInternationalRelease());
-			}
 		}
 	}
 

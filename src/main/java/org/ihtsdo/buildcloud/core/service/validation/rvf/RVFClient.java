@@ -236,25 +236,13 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
 		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
 
-		String extensionDependencyRelease = qaTestConfig.getExtensionDependencyRelease();
+		String previousPublishedPackage = request.getPreviousPublishedPackage();
+		if (previousPublishedPackage != null && !previousPublishedPackage.isEmpty()) {
+			multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousPublishedPackage);
+		}
+		String extensionDependencyRelease = request.getExtensionDependencyRelease();
 		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
-				multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
-			String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
-			if (previousExtensionRelease != null && !previousExtensionRelease.isEmpty()) {
-				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
-			}
-		}
-		else if (StringUtils.isBlank(extensionDependencyRelease) && request.isReleaseAsAnEdition()) {
-			String previousExtensionRelease = qaTestConfig.getPreviousExtensionRelease();
-			if (previousExtensionRelease != null && !previousExtensionRelease.isEmpty()) {
-				multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousExtensionRelease);
-			}
-		}
-		else {
-			String previousIntRelease = qaTestConfig.getPreviousInternationalRelease();
-			if (previousIntRelease != null && !previousIntRelease.isEmpty() ) {
-				multiPartBuilder.addTextBody(PREVIOUS_RELEASE,qaTestConfig.getPreviousInternationalRelease());
-			}
+			multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
 		}
 		if (qaTestConfig.isEnableTraceabilityValidation() && !StringUtils.isEmpty(request.getBranchPath())) {
 			multiPartBuilder.addTextBody(ENABLE_TRACEABILITY_VALIDATION, Boolean.toString(qaTestConfig.isEnableTraceabilityValidation()));
@@ -300,8 +288,8 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody(REPORTING_STAGE, qaTestConfig.getReportingStage());
 		}
 
-		if (StringUtils.isNotBlank(request.getPreviousDependencyEffectiveTime())) {
-			multiPartBuilder.addTextBody(PREVIOUS_DEPENDENCY_EFFECTIVE_TIME, request.getPreviousDependencyEffectiveTime());
+		if (StringUtils.isNotBlank(request.getPreviousExtensionDependencyEffectiveTime())) {
+			multiPartBuilder.addTextBody(PREVIOUS_DEPENDENCY_EFFECTIVE_TIME, request.getPreviousExtensionDependencyEffectiveTime());
 		}
 
 		if (StringUtils.isNotBlank(request.getExcludedRefsetDescriptorMembers())) {

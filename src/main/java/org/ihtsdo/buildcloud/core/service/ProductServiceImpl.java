@@ -174,10 +174,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 						Map<String, Object> metaData = branch.getMetadata();
 						if (metaData.containsKey("previousPackage")) {
 							String latestInternationalPackage = metaData.get("previousPackage").toString();
-							propertyValues.put(PREVIOUS_INTERNATIONAL_RELEASE, latestInternationalPackage);
 							if (!INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
 								propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
-								propertyValues.put(DEPENDENCY_RELEASE_PACKAGE, latestInternationalPackage);
 							}
 						}
 					}
@@ -249,9 +247,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (product.getBuildConfiguration().getExtensionConfig() != null) {
 			product.getBuildConfiguration().getExtensionConfig().setDependencyRelease(newDependantReleasePackage);
 		}
-		if (product.getQaTestConfig() != null) {
-			product.getQaTestConfig().setExtensionDependencyRelease(newDependantReleasePackage);
-		}
 
 		update(product);
 	}
@@ -263,17 +258,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			qaTestConfig.setProduct(product);
 			product.setQaTestConfig(qaTestConfig);
 		}
-		if (newPropertyValues.containsKey(PREVIOUS_INTERNATIONAL_RELEASE)) {
-			qaTestConfig.setPreviousInternationalRelease(newPropertyValues.get(PREVIOUS_INTERNATIONAL_RELEASE));
-		}
-		if (newPropertyValues.containsKey(PREVIOUS_EXTENSION_RELEASE)) {
-			qaTestConfig.setPreviousExtensionRelease(newPropertyValues.get(PREVIOUS_EXTENSION_RELEASE));
-		}
 		if (newPropertyValues.containsKey(ASSERTION_GROUP_NAMES)) {
 			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ASSERTION_GROUP_NAMES));
-		}
-		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
-			qaTestConfig.setExtensionDependencyRelease(newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE));
 		}
 		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
 			qaTestConfig.setEnableDrools(TRUE.equals(newPropertyValues.get(ENABLE_DROOLS)));
@@ -456,13 +442,13 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
-		if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)
+		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)
 			|| newPropertyValues.containsKey(MODULE_IDS)
 			|| newPropertyValues.containsKey(DEFAULT_MODULE_ID)
 			|| newPropertyValues.containsKey(NAMESPACE_ID)
 			|| newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)
 			|| newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
-			String dependencyPackageRelease = newPropertyValues.get(DEPENDENCY_RELEASE_PACKAGE);
+			String dependencyPackageRelease = newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE);
 			String defaultModuleId = newPropertyValues.get(DEFAULT_MODULE_ID);
 			String moduleIds = newPropertyValues.get(MODULE_IDS);
 			String namespaceID = newPropertyValues.get(NAMESPACE_ID);
@@ -487,7 +473,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					extConfig.setBuildConfiguration(configuration);
 				}
 
-				if (newPropertyValues.containsKey(DEPENDENCY_RELEASE_PACKAGE)) {
+				if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
 					if (!StringUtils.hasLength(dependencyPackageRelease)) {
 						configuration.getExtensionConfig().setDependencyRelease(null);
 					} else {

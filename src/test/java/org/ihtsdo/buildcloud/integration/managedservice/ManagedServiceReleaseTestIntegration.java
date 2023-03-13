@@ -29,7 +29,7 @@ public class ManagedServiceReleaseTestIntegration extends AbstractControllerTest
 		integrationTestHelper.createTestProductStructure();
 		
 		//config assertion tests
-		integrationTestHelper.setAssertionTestConfigProperty(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, "20160731");
+		integrationTestHelper.setAssertionTestConfigProperty(ProductService.EXTENSION_DEPENDENCY_RELEASE, "20160731");
 
 		// Perform first time release
 		integrationTestHelper.setFirstTimeRelease(true);

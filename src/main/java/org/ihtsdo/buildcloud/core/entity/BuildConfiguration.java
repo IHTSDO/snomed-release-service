@@ -46,6 +46,7 @@ public class BuildConfiguration {
 	
 	@Column(name="previous_published_release")
 	private String previousPublishedPackage;
+
 	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
 	

@@ -130,13 +130,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		changes.put(ProductService.EFFECTIVE_TIME, effectiveTime);
 		changes.put(ProductService.PREVIOUS_PUBLISHED_PACKAGE, previousPackage);
 		if (!StringUtils.isEmpty(dependencyPackage)) {
-			changes.put(ProductService.DEPENDENCY_RELEASE_PACKAGE, dependencyPackage);
 			changes.put(ProductService.EXTENSION_DEPENDENCY_RELEASE, dependencyPackage); // QA config
-		}
-		if ("international".equalsIgnoreCase(releaseCenterKey)) {
-			changes.put(ProductService.PREVIOUS_INTERNATIONAL_RELEASE, previousPackage); // QA config
-		} else {
-			changes.put(ProductService.PREVIOUS_EXTENSION_RELEASE, previousPackage); // QA config
 		}
 		productService.update(releaseCenterKey, productKey, changes);
 	}
