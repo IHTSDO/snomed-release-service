@@ -34,10 +34,7 @@ public interface ProductService extends EntityService<Product> {
 	String MODULE_IDS = "moduleIds";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
 	String ENABLE_DROOLS = "enableDrools";
-	String ENABLE_JIRA = "jiraIssueCreationFlag";
 	String ENABLE_MRCM = "enableMRCMValidation";
-	String JIRA_PRODUCT_NAME = "jiraProductName";
-	String JIRA_REPORTING_STAGE = "jiraReportingStage";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";
 	String EXCLUDE_REFSET_DESCRIPTOR_MEMBERS = "excludeRefsetDescriptorMembers";
 	String EXCLUDE_LANGUAGE_REFSET_IDS = "excludeLanguageRefsetIds";

@@ -32,16 +32,6 @@ public class QATestConfig {
 	@Column(name = "enable_drools")
 	private boolean enableDrools = false;
 
-	@Type(type="yes_no")
-	@Column(name = "create_jira_issue")
-	private boolean jiraIssueCreationFlag = false;
-
-	@Column(name = "product_name")
-	private String productName;
-
-	@Column(name = "reporting_stage")
-	private String reportingStage;
-
 	@Type(type = "yes_no")
 	@Column(name = "enable_mrcm_validation")
 	private boolean enableMRCMValidation;
@@ -85,30 +75,6 @@ public class QATestConfig {
 		this.enableDrools = enableDrools;
 	}
 
-	public boolean isJiraIssueCreationFlag() {
-		return jiraIssueCreationFlag;
-	}
-
-	public void setJiraIssueCreationFlag(boolean jiraIssueCreationFlag) {
-		this.jiraIssueCreationFlag = jiraIssueCreationFlag;
-	}
-
-	public String getProductName() {
-		return productName;
-	}
-
-	public void setProductName(String productName) {
-		this.productName = productName;
-	}
-
-	public String getReportingStage() {
-		return reportingStage;
-	}
-
-	public void setReportingStage(String reportingStage) {
-		this.reportingStage = reportingStage;
-	}
-
 	@Override
 	public String toString() {
 		return "QATestConfig{" +
@@ -118,11 +84,9 @@ public class QATestConfig {
 				", droolsRulesGroupNames='" + droolsRulesGroupNames + '\'' +
 				", storageLocation='" + storageLocation + '\'' +
 				", enableDrools=" + enableDrools +
-				", jiraIssueCreationFlag=" + jiraIssueCreationFlag +
-				", productName='" + productName + '\'' +
-				", reportingStage='" + reportingStage + '\'' +
 				", enableMRCMValidation=" + enableMRCMValidation +
 				", maxFailureExport=" + maxFailureExport +
+				", enableTraceabilityValidation=" + enableTraceabilityValidation +
 				", contentHeadTimestamp=" + contentHeadTimestamp +
 				'}';
 	}
