@@ -26,11 +26,8 @@ public interface ProductService extends EntityService<Product> {
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
 	String TRUE = "true";
-	String PREVIOUS_INTERNATIONAL_RELEASE = "previousInternationalRelease";
-	String PREVIOUS_EXTENSION_RELEASE = "previousExtensionRelease";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
 	String EXTENSION_DEPENDENCY_RELEASE = "extensionDependencyRelease";
-	String DEPENDENCY_RELEASE_PACKAGE = "dependencyReleasePackage";
 	String PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE = "previousEditionDependencyEffectiveDate";
 	String NAMESPACE_ID = "namespaceId";
 	String DEFAULT_MODULE_ID = "defaultModuleId";

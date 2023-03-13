@@ -25,15 +25,6 @@ public class QATestConfig {
 	@Column(name="drools_rules_group_names")
 	private String droolsRulesGroupNames;
 	
-	@Column(name="previous_int_release")
-	private String previousInternationalRelease;
-	
-	@Column(name="previous_ext_release")
-	private String previousExtensionRelease;
-	
-	@Column(name="extension_dependency_release")
-	private String extensionDependencyRelease;
-	
 	@Column(name = "storage_location")
 	private String storageLocation;
 
@@ -79,29 +70,11 @@ public class QATestConfig {
 		this.droolsRulesGroupNames = droolsRulesGroupNames;
 	}
 
-	public String getPreviousInternationalRelease() {
-		return previousInternationalRelease;
-	}
-	public void setPreviousInternationalRelease(final String previousIntRelease) {
-		this.previousInternationalRelease = previousIntRelease;
-	}
 	public Product getProduct() {
 		return product;
 	}
 	public void setProduct(final Product product) {
 		this.product = product;
-	}
-	public String getPreviousExtensionRelease() {
-		return previousExtensionRelease;
-	}
-	public void setPreviousExtensionRelease(final String previousExtensionRelease) {
-		this.previousExtensionRelease = previousExtensionRelease;
-	}
-	public String getExtensionDependencyRelease() {
-		return extensionDependencyRelease;
-	}
-	public void setExtensionDependencyRelease(final String extDependencyRelease) {
-		extensionDependencyRelease = extDependencyRelease;
 	}
 
 	public boolean isEnableDrools() {
@@ -143,9 +116,6 @@ public class QATestConfig {
 				", product=" + (product != null ? product.getBusinessKey() : null) +
 				", assertionGroupNames='" + assertionGroupNames + '\'' +
 				", droolsRulesGroupNames='" + droolsRulesGroupNames + '\'' +
-				", previousInternationalRelease='" + previousInternationalRelease + '\'' +
-				", previousExtensionRelease='" + previousExtensionRelease + '\'' +
-				", extensionDependencyRelease='" + extensionDependencyRelease + '\'' +
 				", storageLocation='" + storageLocation + '\'' +
 				", enableDrools=" + enableDrools +
 				", jiraIssueCreationFlag=" + jiraIssueCreationFlag +

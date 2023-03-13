@@ -12,7 +12,11 @@ public class ValidationRequest {
 	
 	private String effectiveTime;
 
-	private String previousDependencyEffectiveTime;
+	private String previousPublishedPackage;
+
+	private String extensionDependencyRelease;
+
+	private String previousExtensionDependencyEffectiveTime;
 	
 	private boolean releaseAsAnEdition;
 
@@ -76,12 +80,28 @@ public class ValidationRequest {
 		this.effectiveTime = effectiveTime;
 	}
 
-	public String getPreviousDependencyEffectiveTime() {
-		return previousDependencyEffectiveTime;
+	public String getPreviousPublishedPackage() {
+		return previousPublishedPackage;
 	}
 
-	public void setPreviousDependencyEffectiveTime(String previousDependencyEffectiveTime) {
-		this.previousDependencyEffectiveTime = previousDependencyEffectiveTime;
+	public void setPreviousPublishedPackage(String previousPublishedPackage) {
+		this.previousPublishedPackage = previousPublishedPackage;
+	}
+
+	public String getExtensionDependencyRelease() {
+		return extensionDependencyRelease;
+	}
+
+	public void setExtensionDependencyRelease(String extensionDependencyRelease) {
+		this.extensionDependencyRelease = extensionDependencyRelease;
+	}
+
+	public String getPreviousExtensionDependencyEffectiveTime() {
+		return previousExtensionDependencyEffectiveTime;
+	}
+
+	public void setPreviousExtensionDependencyEffectiveTime(String previousExtensionDependencyEffectiveTime) {
+		this.previousExtensionDependencyEffectiveTime = previousExtensionDependencyEffectiveTime;
 	}
 
 	public boolean isReleaseAsAnEdition() {

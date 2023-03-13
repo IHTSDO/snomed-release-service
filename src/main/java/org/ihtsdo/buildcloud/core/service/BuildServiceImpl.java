@@ -1137,7 +1137,9 @@ public class BuildServiceImpl implements BuildService {
 			request.setBuildBucketName(buildBucketName);
 			request.setReleaseZipFileS3Path(s3ZipFilePath);
 			request.setEffectiveTime(effectiveTime);
-			request.setPreviousDependencyEffectiveTime(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getPreviousEditionDependencyEffectiveDateFormatted() : null);
+			request.setPreviousPublishedPackage(buildConfiguration.getPreviousPublishedPackage());
+			request.setExtensionDependencyRelease(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getDependencyRelease() : null);
+			request.setPreviousExtensionDependencyEffectiveTime(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getPreviousEditionDependencyEffectiveDateFormatted() : null);
 			request.setFailureExportMax(failureExportMax);
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
@@ -1175,23 +1177,15 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void validateQaTestConfig(final QATestConfig qaTestConfig, BuildConfiguration buildConfig) throws ConfigurationException {
+	private void validateQaTestConfig(final QATestConfig qaTestConfig, final BuildConfiguration buildConfig) throws ConfigurationException {
 		if (qaTestConfig == null || qaTestConfig.getAssertionGroupNames() == null) {
 			throw new ConfigurationException("No QA test configured. Please check the assertion group name is specified.");
 		}
 		if (!buildConfig.isJustPackage() && !buildConfig.isFirstTimeRelease()) {
-			if (buildConfig.getExtensionConfig() == null && qaTestConfig.getPreviousInternationalRelease() == null) {
+			if (buildConfig.getExtensionConfig() == null && buildConfig.getPreviousPublishedPackage() == null) {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
-			if (qaTestConfig.getPreviousExtensionRelease() != null && qaTestConfig.getExtensionDependencyRelease() == null) {
-				if (buildConfig.getExtensionConfig().isReleaseAsAnEdition()) {
-					LOGGER.warn("This edition does not have dependency release. Empty dependency release will be used for testing");
-				} else {
-					throw new ConfigurationException("No extension dependency release is configured for extension testing.");
-				}
-			}
-
-			if (qaTestConfig.getExtensionDependencyRelease() != null && qaTestConfig.getPreviousExtensionRelease() == null) {
+			if (buildConfig.getExtensionConfig() == null && buildConfig.getExtensionConfig().getDependencyRelease() != null && buildConfig.getPreviousPublishedPackage() == null) {
 				throw new ConfigurationException("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
 			}
 		}
