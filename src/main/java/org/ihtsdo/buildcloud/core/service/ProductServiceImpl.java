@@ -267,15 +267,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ENABLE_MRCM)) {
 			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
 		}
-		if (newPropertyValues.containsKey(ENABLE_JIRA)) {
-			qaTestConfig.setJiraIssueCreationFlag(TRUE.equals(newPropertyValues.get(ENABLE_JIRA)));
-		}
-		if (newPropertyValues.containsKey(JIRA_PRODUCT_NAME)) {
-			qaTestConfig.setProductName(newPropertyValues.get(JIRA_PRODUCT_NAME));
-		}
-		if (newPropertyValues.containsKey(JIRA_REPORTING_STAGE)) {
-			qaTestConfig.setReportingStage(newPropertyValues.get(JIRA_REPORTING_STAGE));
-		}
 		if (newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
 			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
 		}
