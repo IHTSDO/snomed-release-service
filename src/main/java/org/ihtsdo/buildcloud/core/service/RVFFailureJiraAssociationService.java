@@ -154,7 +154,7 @@ public class RVFFailureJiraAssociationService {
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> firstNInstances = getFirstNInstances(testRunItem.getFirstNInstances(), 10);
 		result += "First " + firstNInstances.size() + " failures: \n";
 		for (ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail failureDetail: firstNInstances) {
-			result += "* " + failureDetail.toString() + "\n";
+			result += "* " + failureDetail.toStringAndTruncateIfTextTooLong() + "\n";
 		}
 
 		return result;
@@ -328,6 +328,7 @@ public class RVFFailureJiraAssociationService {
 					}
 
 					private static final class FailureDetail {
+						private static final int FULL_COMPONENT_MAX_LENGTH = 1000;
 						private String conceptId;
 						private String conceptFsn;
 						private String detail;
@@ -362,6 +363,16 @@ public class RVFFailureJiraAssociationService {
 									"\"detail\": " + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
 									"\"componentId\": " + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
 									"\"fullComponent\": " + (fullComponent != null ? '\"' + fullComponent + '\"' : null) + "\n" +
+									"}";
+						}
+
+						public String toStringAndTruncateIfTextTooLong() {
+							return "{\n\t" +
+									"\"conceptId\": " + (conceptId != null ? '\"' + conceptId + '\"' : null) + ",\n\t" +
+									"\"conceptFsn\": " + (conceptFsn != null ? '\"' + conceptFsn + '\"' : null) + ",\n\t" +
+									"\"detail\": " + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
+									"\"componentId\": " + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
+									"\"fullComponent\": " + (fullComponent != null ? '\"' + (fullComponent.length() <= FULL_COMPONENT_MAX_LENGTH ? fullComponent : fullComponent.substring(0, FULL_COMPONENT_MAX_LENGTH)) + "..." + '\"' : null) + "\n" +
 									"}";
 						}
 					}
