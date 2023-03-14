@@ -23,19 +23,17 @@ public class OAuthJiraClientFactory implements ImpersonatingJiraClientFactory {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private static final String UNIT_TEST = "UNIT_TEST";
 
-	@Value("${srs.manager}")
-	private Boolean isSrsManager;
-
 	public OAuthJiraClientFactory(
 			@Value("${jira.url}") String jiraUrl,
 			@Value("${jira.username}") String adminUsername,
 			@Value("${jira.consumerKey}") String consumerKey,
-			@Value("${jira.privateKeyName}") String privateKeyPath) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+			@Value("${jira.privateKeyName}") String privateKeyPath,
+			@Value("${srs.manager}") boolean isSrsManager) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 
 		this.jiraUrl = jiraUrl;
 		this.adminJiraUsername = adminUsername;
 		this.consumerKey = consumerKey;
-		if (!privateKeyPath.equals(UNIT_TEST) && Boolean.TRUE.equals(isSrsManager)) {
+		if (!privateKeyPath.equals(UNIT_TEST) && isSrsManager) {
 			privateKey = OAuthCredentials.getPrivateKey(privateKeyPath);
 		} else {
 			privateKey = null;
