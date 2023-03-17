@@ -152,11 +152,12 @@ public class RVFFailureJiraAssociationService {
 				+ "Total number of failures: " + testRunItem.getFailureCount() + "\n"
 				+ "Report URL: " + "[" + build.getRvfURL() + "|" + build.getRvfURL() + "]" + "\n";
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> firstNInstances = getFirstNInstances(testRunItem.getFirstNInstances(), 10);
-		result += "First " + firstNInstances.size() + " failures: \n";
-		for (ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail failureDetail: firstNInstances) {
-			result += "* " + failureDetail.toStringAndTruncateIfTextTooLong() + "\n";
+		if (!firstNInstances.isEmpty()) {
+			result += "First " + firstNInstances.size() + " failures: \n";
+			for (ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail failureDetail: firstNInstances) {
+				result += "* " + failureDetail.toStringAndTruncateIfTextTooLong() + "\n";
+			}
 		}
-
 		return result;
 	}
 
@@ -167,6 +168,9 @@ public class RVFFailureJiraAssociationService {
 	}
 
 	private List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> getFirstNInstances(List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> instances, int numberOfItem) {
+		if (instances == null) {
+			return Collections.emptyList();
+		}
 		if (numberOfItem < 0) {
 			return instances;
 		}
