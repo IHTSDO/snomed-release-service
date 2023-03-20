@@ -1185,7 +1185,7 @@ public class BuildServiceImpl implements BuildService {
 			if (buildConfig.getExtensionConfig() == null && buildConfig.getPreviousPublishedPackage() == null) {
 				throw new ConfigurationException("No previous international release is configured for non-first time release.");
 			}
-			if (buildConfig.getExtensionConfig() == null && buildConfig.getExtensionConfig().getDependencyRelease() != null && buildConfig.getPreviousPublishedPackage() == null) {
+			if (buildConfig.getExtensionConfig() != null && buildConfig.getExtensionConfig().getDependencyRelease() != null && buildConfig.getPreviousPublishedPackage() == null) {
 				throw new ConfigurationException("Extension dependency release is specified but no previous extension release is configured for non-first time release testing.");
 			}
 		}
