@@ -9,6 +9,7 @@ import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+@Service
 public class ReleasePackageCheck extends PostconditionCheck implements NetworkRequired {
 
     @Autowired
@@ -25,9 +27,14 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
 
     @Override
     public void runCheck(Build build) {
+        String errorMsg = validateReleasePackageAndMD5FilesExisting(build);
+        if (errorMsg != null) {
+            fatalError(errorMsg);
+            return;
+        }
         if (build.getConfiguration() != null && build.getConfiguration().isBetaRelease()) {
             try {
-                String errorMsg = validateBetaReleasePackage(build);
+                errorMsg = validateBetaReleasePackage(build);
                 if (errorMsg != null) {
                     fatalError("The following files are required starting with x for a Beta release: " + errorMsg);
                     return;
@@ -37,7 +44,23 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
                 return;
             }
         }
+
         pass();
+    }
+
+    private String validateReleasePackageAndMD5FilesExisting(Build build) {
+        List<String> filePaths = buildDAO.listOutputFilePaths(build);
+        String zippedFileName = filePaths.stream().filter(filepath -> filepath.endsWith(RF2Constants.ZIP_FILE_EXTENSION)).findAny().orElse(null);
+        String md5FileName = filePaths.stream().filter(filepath -> filepath.endsWith(RF2Constants.MD5_FILE_EXTENSION)).findAny().orElse(null);
+        if (zippedFileName == null && md5FileName == null) {
+            return "The release package and MD5 files are missing from the S3 output-files";
+        } else if (zippedFileName == null) {
+            return "The release package file is missing from the S3 output-files";
+        } else if (md5FileName == null) {
+            return "The MD5 file is missing from the S3 output-files";
+        } else {
+            return null;
+        }
     }
 
     private String validateBetaReleasePackage(Build build) throws ResourceNotFoundException{

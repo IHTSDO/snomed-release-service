@@ -27,6 +27,7 @@ public class RF2Constants {
 	public static final String RELEASE_INFORMATION_FILENAME_PREFIX = "release";
 	public static final String RELEASE_INFORMATION_FILENAME_EXTENSION = ".json";
 	public static final String ZIP_FILE_EXTENSION = ".zip";
+	public static final String MD5_FILE_EXTENSION = ".md5";
 	public static final String BOOLEAN_TRUE = "1";
 	public static final String BOOLEAN_FALSE = "0";
 	public static final CharSequence ATTRIBUTE_VALUE_FILE_IDENTIFIER = "AttributeValue";
