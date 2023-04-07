@@ -58,7 +58,7 @@ public class InputSourceFileProcessor {
 	private static final String HEADER_RELATIONSHIP_CONCRETE_VALUES = "id\teffectiveTime\tactive\tmoduleId\tsourceId\tvalue\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId";
 	private static final String HEADER_REFSETS = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId";
 	private static final String HEADER_TERM_DESCRIPTION = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\tcaseSignificanceId";
-	private static final String HEADER_IDENTIFIER = "identifierSchemeId\talternateIdentifier\teffectiveTime\tactive\tmoduleId\treferencedComponentId";
+	private static final String HEADER_IDENTIFIER = "alternateIdentifier\teffectiveTime\tactive\tmoduleId\tidentifierSchemeId\treferencedComponentId";
 	private static final int REFSETID_COL = 4;
 	private static final int CHARACTERISTICTYPEID_COL = 8;
 	private static final int DESCRIPTION_LANGUAGE_CODE_COL = 5;
