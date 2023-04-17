@@ -45,6 +45,8 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @SpringBootApplication(exclude = {
 		ContextInstanceDataAutoConfiguration.class,
@@ -198,6 +200,11 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
 		return getActiveMQTextMessage(queue);
+	}
+
+	@Bean
+	public ExecutorService cachedThreadExecutors() {
+		return Executors.newCachedThreadPool();
 	}
 
 	private ActiveMQTextMessage getActiveMQTextMessage(final String queue) throws JMSException {

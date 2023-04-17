@@ -1,7 +1,11 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
@@ -19,8 +23,10 @@ import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
+import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
@@ -42,11 +48,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
+import javax.jms.JMSException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -78,6 +86,12 @@ public class PublishServiceImpl implements PublishService {
 	@Value("${srs.storage.bucketName}")
 	private String storageBucketName;
 
+	@Value("${srs.jms.time-to-live-seconds}")
+	private int messageTimeToLiveSeconds;
+
+	@Value("${srs.jms.queue.prefix}.release-published.event")
+	private String releasePublishDestination;
+
 	@Autowired
 	private TermServerService termServerService;
 
@@ -100,6 +114,12 @@ public class PublishServiceImpl implements PublishService {
 	
 	@Autowired
 	private SchemaFactory schemaFactory;
+
+	@Autowired
+	private ExecutorService executorService;
+
+	@Autowired
+	private MessagingHelper messagingHelper;
 	
 	private static final int BATCH_SIZE = 5000;
 	
@@ -258,8 +278,33 @@ public class PublishServiceImpl implements PublishService {
 							.orElse(null);
 					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
 						try {
+							final String effectiveTimeSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
 							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), effectiveTimeSnomedFormat, releaseFileName);
+
+							// Send notification via JMS
+							executorService.submit(() -> {
+								try {
+									Long importDate = null;
+									List<CodeSystemVersion> versions = termServerService.getCodeSystemVersions(codeSystem.getShortName(), false, false);
+									for (CodeSystemVersion version : versions) {
+										if (String.valueOf(version.getEffectiveDate()).equals(effectiveTimeSnomedFormat) && version.getImportDate() != null) {
+											importDate = version.getImportDate().getTime();
+											break;
+										}
+									}
+
+									if (importDate != null) {
+										Map payload = new HashMap();
+										payload.put("codeSystemShortName", codeSystem.getShortName());
+										payload.put("effectiveDate", effectiveTimeSnomedFormat);
+										payload.put("importDate", importDate);
+										messagingHelper.publish(releasePublishDestination, payload, null, messageTimeToLiveSeconds);
+									}
+								} catch (JsonProcessingException | JMSException e) {
+									LOGGER.error("Failed to send PUBLISHED status to {}", releasePublishDestination);
+								}
+							});
 						} catch (Exception e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
 							throw new BusinessServiceException("Failed to update Code System Version Package", e);
