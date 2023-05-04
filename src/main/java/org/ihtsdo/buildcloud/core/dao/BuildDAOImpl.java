@@ -736,10 +736,12 @@ public class BuildDAOImpl implements BuildDAO {
 			case ALL_RELEASES:
 				break;
 			case DEFAULT:
+				List<Build> copy = new ArrayList<>(allBuilds);
+				Collections.reverse(copy);
 				Build latestPublishedBuild = null;
 				List<Build> publishedBuilds = new ArrayList<>();
-				for (int i = 0; i < allBuilds.size(); i++) {
-					Build build = allBuilds.get(i);
+				for (int i = 0; i < copy.size(); i++) {
+					Build build = copy.get(i);
 					if (getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
 						if (latestPublishedBuild == null) {
 							latestPublishedBuild = build;
@@ -749,8 +751,9 @@ public class BuildDAOImpl implements BuildDAO {
 					}
 				}
 				if (latestPublishedBuild != null) {
-					allBuilds = allBuilds.subList(0, allBuilds.indexOf(latestPublishedBuild) + 1);
+					allBuilds = copy.subList(0, copy.indexOf(latestPublishedBuild) + 1);
 					allBuilds.addAll(publishedBuilds);
+					Collections.reverse(allBuilds);
 				}
 				break;
 		}
