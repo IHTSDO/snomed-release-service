@@ -13,6 +13,8 @@ public interface ProductDAO extends EntityDAO<Product> {
 
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable);
 
+	Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable);
+
 	Product find(String releaseCenterKey, String productKey);
 
 	Product find(String productKey);

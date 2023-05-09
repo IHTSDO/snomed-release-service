@@ -78,6 +78,40 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	}
 
 	@Override
+	public Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable) {
+		String filter = "(product.isLegacyProduct = 'Y' or product.visibility = 'N') and releaseCenter.businessKey = :releaseCenterBusinessKey ";
+		String fromClause = "from Product product join product.releaseCenter releaseCenter ";
+		String queryString = "select product " +
+				fromClause +
+				"where " +
+				filter +
+				"order by ";
+		String queryTotalString = "select count(product.id) " +
+				fromClause +
+				"where " +
+				filter;
+		if (pageable.getSort() != null && !pageable.getSort().isEmpty()) {
+			Sort.Order order = pageable.getSort().iterator().next();
+			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection().toString();
+		} else {
+			queryString += "product.id DESC";
+		}
+
+
+		Query query = getCurrentSession().createQuery(queryString);
+		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
+		query.setMaxResults(pageable.getPageSize());
+
+		Query queryTotal = getCurrentSession().createQuery(queryTotalString);
+		if (releaseCenterKey != null) {
+			query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
+			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterKey);
+		}
+
+		return new PageImpl(query.list(), pageable, (long) queryTotal.uniqueResult());
+	}
+
+	@Override
 	public Product find(Long id) {
 		Query query = getCurrentSession().createQuery(
 				"select product " +
