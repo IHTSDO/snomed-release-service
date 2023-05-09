@@ -78,6 +78,11 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
+	public Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable) {
+		return productDAO.findHiddenProducts(releaseCenterKey, pageable);
+	}
+
+	@Override
 	public Product find(final String releaseCenterKey, final String productKey, final boolean includedLatestBuildStatusAndTags) {
 		Product product = productDAO.find(releaseCenterKey, productKey);
 		if (includedLatestBuildStatusAndTags && product != null) {
@@ -210,6 +215,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 
 		product.setVisibility(visibility);
+		product.setLegacyProduct(false);
 		productDAO.update(product);
 
 		// Mark all builds shown/hidden

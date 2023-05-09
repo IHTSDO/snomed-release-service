@@ -72,6 +72,27 @@ public class ProductController {
 		return new PageImpl<>(result, pageRequest, page.getTotalElements());
 	}
 
+	@GetMapping( value = "/hidden")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@Operation(summary = "Returns a list of  hidden products",
+			description = "Returns a list of hidden products for the extension specified in the URL")
+	@ResponseBody
+	public Page<Map<String, Object>> getHiddenProducts(@PathVariable String releaseCenterKey,
+	                                             @RequestParam(defaultValue = "0") Integer pageNumber,
+	                                             @RequestParam(defaultValue = "10") Integer pageSize,
+	                                             @RequestParam(required = false) String sortField,
+	                                             @RequestParam(required = false) String sortDirection,
+	                                             HttpServletRequest request) {
+
+		PageRequest pageRequest = PageRequestHelper.createPageRequest(pageNumber, pageSize,
+				StringUtils.isEmpty(sortField) ? null : Collections.singletonList(sortField),
+				StringUtils.isEmpty(sortDirection) ? null : Collections.singletonList(sortDirection));
+		Page<Product> page = productService.findHiddenProducts(releaseCenterKey, pageRequest);
+		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
+
+		return new PageImpl<>(result, pageRequest, page.getTotalElements());
+	}
+
 	@GetMapping( value = "/{productKey}")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a product",
