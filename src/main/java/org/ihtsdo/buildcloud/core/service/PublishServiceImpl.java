@@ -283,28 +283,24 @@ public class PublishServiceImpl implements PublishService {
 							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), effectiveTimeSnomedFormat, releaseFileName);
 
 							// Send notification via JMS
-							executorService.submit(() -> {
-								try {
-									Long importDate = null;
-									List<CodeSystemVersion> versions = termServerService.getCodeSystemVersions(codeSystem.getShortName(), false, false);
-									for (CodeSystemVersion version : versions) {
-										if (String.valueOf(version.getEffectiveDate()).equals(effectiveTimeSnomedFormat) && version.getImportDate() != null) {
-											importDate = version.getImportDate().getTime();
-											break;
-										}
-									}
-
-									if (importDate != null) {
-										Map payload = new HashMap();
-										payload.put("codeSystemShortName", codeSystem.getShortName());
-										payload.put("effectiveDate", effectiveTimeSnomedFormat);
-										payload.put("importDate", importDate);
-										messagingHelper.publish(releasePublishDestination, payload, null, messageTimeToLiveSeconds);
-									}
-								} catch (JsonProcessingException | JMSException e) {
-									LOGGER.error("Failed to send PUBLISHED status to {}", releasePublishDestination);
+							Long importDate = null;
+							List<CodeSystemVersion> versions = termServerService.getCodeSystemVersions(codeSystem.getShortName(), false, false);
+							for (CodeSystemVersion version : versions) {
+								if (String.valueOf(version.getEffectiveDate()).equals(effectiveTimeSnomedFormat) && version.getImportDate() != null) {
+									importDate = version.getImportDate().getTime();
+									break;
 								}
-							});
+							}
+
+							if (importDate != null) {
+								Map payload = new HashMap();
+								payload.put("codeSystemShortName", codeSystem.getShortName());
+								payload.put("effectiveDate", effectiveTimeSnomedFormat);
+								payload.put("importDate", String.valueOf(importDate));
+								messagingHelper.publish(releasePublishDestination, payload, null, messageTimeToLiveSeconds);
+							} else {
+								LOGGER.error("Could not find any versions for Effective Date {}", effectiveTimeSnomedFormat);
+							}
 						} catch (Exception e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
 							throw new BusinessServiceException("Failed to update Code System Version Package", e);
