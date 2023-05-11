@@ -89,6 +89,9 @@ public class TransformationService {
 	public void transformFiles(final Build build, final Map<String, TableSchema> inputFileSchemaMap)
 			throws BusinessServiceException, NoSuchAlgorithmException {
 
+		//  clean up any existing data in transformed folder in case there could be data left from previous run during retry
+		dao.deleteTransformedFiles(build);
+
 		BuildConfiguration configuration = build.getConfiguration();
 		final BuildReport report = build.getBuildReport();
 
