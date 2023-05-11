@@ -48,6 +48,9 @@ public class Rf2FileExportRunner {
 	}
 
 	public final void generateReleaseFiles() throws ReleaseFileGenerationException {
+		//  clean up any existing data in output folder in case there could be data left from previous run during retry
+		buildDao.deleteOutputFiles(build);
+
 		final List<String> transformedFiles = getTransformedDeltaFiles();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();

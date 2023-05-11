@@ -139,7 +139,7 @@ public class S3PathHelper {
 	}
 
 	public StringBuilder getBuildTransformedFilesPath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(TRANSFORMED_FILES).append(SEPARATOR);
+		return getBuildPath(build).append(TRANSFORMED_FILES).append(SEPARATOR);
 	}
 
 	public String getTransformedFilePath(final Build build, final String relativeFilePath) {

@@ -1043,9 +1043,21 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void deleteOutputFiles(Build build) {
 		List<String> outputFiles = listOutputFilePaths(build);
+		final String outputFilesPath = pathHelper.getOutputFilesPath(build);
 		for (String outputFile : outputFiles) {
-			if (srsFileHelper.exists(outputFile)) {
-				srsFileHelper.deleteFile(outputFile);
+			if (srsFileHelper.exists(outputFilesPath + outputFile)) {
+				srsFileHelper.deleteFile(outputFilesPath + outputFile);
+			}
+		}
+	}
+
+	@Override
+	public void deleteTransformedFiles(Build build) {
+		List<String> transformedFiles = listTransformedFilePaths(build);
+		final String transformedFilesPath = pathHelper.getBuildTransformedFilesPath(build).toString();
+		for (String transformedFile : transformedFiles) {
+			if (srsFileHelper.exists(transformedFilesPath + transformedFile)) {
+				srsFileHelper.deleteFile(transformedFilesPath + transformedFile);
 			}
 		}
 	}
