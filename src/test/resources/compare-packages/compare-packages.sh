@@ -40,6 +40,7 @@ if [ $# -lt 4 ]; then
 	exit 1
 fi
 
+OS=$(uname -s)
 leftName=$1
 leftArchive=$2
 rightName=$3
@@ -157,8 +158,13 @@ for file in `cat ${processOrderFile}`; do
 		fi
 		
 		echo -n "File size difference (bytes): "
-		leftSize=`stat -f%z ${leftFile}`
-		rightSize=`stat -f%z ${rightFile}`
+		if [[ $OS == Linux ]]; then
+			leftSize=`stat -c%s ${leftFile}`
+			rightSize=`stat -c%s ${rightFile}`
+		else
+			leftSize=`stat -f%z ${leftFile}`
+			rightSize=`stat -f%z ${rightFile}`
+		fi
 		echo "${leftSize} - ${rightSize}" | bc
 		echo
 	else
