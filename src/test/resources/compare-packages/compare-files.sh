@@ -4,6 +4,8 @@ set -e
 #Switch this off to do comparisons both with and without ids.
 optimiseFlag=true
 
+OS=$(uname -s)
+
 leftFile=$1
 rightFile=$2
 fileName=$3
@@ -129,8 +131,13 @@ then
 	fi
 	
 	echo -n "File size difference (bytes): " >> ${tmpOutput}
-	leftSize=`stat -f%z ${leftFile}`
-	rightSize=`stat -f%z ${rightFile}`
+	if [[ $OS == Linux ]]; then
+		leftSize=`stat -c%s ${leftFile}`
+		rightSize=`stat -c%s ${rightFile}`
+	else
+		leftSize=`stat -f%z ${leftFile}`
+		rightSize=`stat -f%z ${rightFile}`
+	fi
 	echo "${leftSize} - ${rightSize}" | bc >> ${tmpOutput}
 	echo >> ${tmpOutput}
 else
