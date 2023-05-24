@@ -63,6 +63,12 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
+	@Value("${srs.publish.job.useOwnBackupBucket}")
+	private Boolean useOwnBackupBucket;
+
+	@Value("${srs.publish.job.backup.storage.bucketName}")
+	private String publishJobBackupStorageBucketName;
+
 	@Value("${srs.published.releases.storage.path}")
 	private String publishedReleasesStoragePath;
 
@@ -126,24 +132,38 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public List<Build> findPublishedBuilds(String releaseCenterKey, String productKey, boolean includeProdPublishedReleases) throws ResourceNotFoundException {
 		List<Build> builds = new ArrayList<>();
-		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-		findPublishedBuilds(releaseCenterKey, productKey, builds, buildBckUpPath);
-		if (includeProdPublishedReleases) {
-			buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuilds(releaseCenterKey, productKey, builds, buildBckUpPath);
+		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+			String buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+			if (includeProdPublishedReleases) {
+				buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+				findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+			}
+		} else {
+			String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+			if (includeProdPublishedReleases) {
+				buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+				findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+			}
 		}
-
 		return builds;
 	}
 
 	@Override
 	public Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey) {
 		Map<String, String> buildPathMap = new HashMap<>();
-		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-		findPublishedBuildPathMap(buildPathMap, buildBckUpPath);
-		buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-		findPublishedBuildPathMap(buildPathMap, buildBckUpPath);
-
+		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+			String buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
+			buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
+		} else {
+			String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
+			buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
+		}
 		return buildPathMap;
 	}
 
@@ -152,8 +172,8 @@ public class PublishServiceImpl implements PublishService {
 	public void publishBuildAsync(Build build, boolean publishComponentIds, String env) {
 		try {
 			this.publishBuild(build, publishComponentIds, env);
-		} catch (BusinessServiceException e) {
-			LOGGER.error("Failed to publish the build {}. Error message: ", build.getId(), e.getMessage());
+		} catch (Exception e) {
+			LOGGER.error("An error occurs while publishing the build {}. Error message: {}", build.getId(), e.getMessage());
 		}
 	}
 
@@ -172,7 +192,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException {
+	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 
 		ProcessingStatus currentStatus = concurrentPublishingBuildStatus.get(getBuildUniqueKey(build));
@@ -203,7 +223,16 @@ public class PublishServiceImpl implements PublishService {
 			} else {
 				String fileLock = releaseFileName.intern();
 				synchronized (fileLock) {
-					//publish component ids
+
+					// verify if the published file already exists for this product
+					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFileName);
+					if (srsFileHelper.exists(publishFilePath)) {
+						String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
+						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
+						throw new EntityAlreadyExistsException(errorMessage);
+					}
+
+					// publish component ids
 					if (publishComponentIds) {
 						try {
 							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
@@ -215,26 +244,23 @@ public class PublishServiceImpl implements PublishService {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 							throw e;
 						}
+					}
 
-					}
-					// Does a published file already exist for this product?
-					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFileName);
-					if (srsFileHelper.exists(publishFilePath)) {
-						String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
-						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
-						throw new EntityAlreadyExistsException(errorMessage);
-					}
 					try {
 						String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
 						srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
 						LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
 						publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
 						copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+
+						// mark the build as Published
+						buildDao.addTag(build, Build.Tag.PUBLISHED);
 					} catch (BusinessServiceException e) {
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 						throw e;
 					}
 				}
+
 				// copy MD5 file if available
 				if (md5FileName != null) {
 					String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
@@ -242,35 +268,37 @@ public class PublishServiceImpl implements PublishService {
 					srsFileHelper.copyFile(source, target);
 					LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
 				}
-				
-				// copy build info to published storage path
-				backupPublishedBuild(build);
 
-				// mark the build as Published
-				buildDao.addTag(build, Build.Tag.PUBLISHED);
+				// copy build info to the backup published storage path
+				try {
+					backupPublishedBuild(build);
+				} catch (Exception e) {
+					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to copy to Backup published storage.  Error message: " + e.getMessage()));
+					throw new BusinessServiceException("Failed to copy to Backup published storage", e);
+				}
 
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
-					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-					ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
-					CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
-							.findAny()
-							.orElse(null);
-					if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
-						try {
+					try {
+						List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+						ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
+						CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
+								.findAny()
+								.orElse(null);
+						if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
 							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-						} catch (Exception e) {
-							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
-							throw new BusinessServiceException("Failed to update Code System Version Package", e);
 						}
+					} catch (Exception e) {
+						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
+						throw new BusinessServiceException("Failed to update Code System Version Package", e);
 					}
 				}
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} catch (IOException e) {
 			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
-			throw new BusinessServiceException("Failed to publish build " + build.getUniqueId(), e);
+			throw e;
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
@@ -617,12 +645,22 @@ public class PublishServiceImpl implements PublishService {
 	private void backupPublishedBuild(Build build) {
 		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
 		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
-		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
-				+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
-				+ build.getProductKey() + S3PathHelper.SEPARATOR
-				+ build.getId() + S3PathHelper.SEPARATOR;
-		for (String filename : buildFiles) {
-			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
+		String buildBckUpPath;
+		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(build.getReleaseCenterKey())
+					+ build.getProductKey() + S3PathHelper.SEPARATOR
+					+ build.getId() + S3PathHelper.SEPARATOR;
+			for (String filename : buildFiles) {
+				srsFileHelper.copyFile(originalBuildPath + filename, publishJobBackupStorageBucketName, buildBckUpPath + filename);
+			}
+		} else {
+			buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
+					+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
+					+ build.getProductKey() + S3PathHelper.SEPARATOR
+					+ build.getId() + S3PathHelper.SEPARATOR;
+			for (String filename : buildFiles) {
+				srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
+			}
 		}
 		LOGGER.info("Build: {} is copied to path: {}", build.getProductKey() + build.getId(), buildBckUpPath);
 	}
@@ -631,7 +669,7 @@ public class PublishServiceImpl implements PublishService {
 		return build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId();
 	}
 
-	private void findPublishedBuildPathMap(Map<String, String> buildPathMap, String buildBckUpPath) {
+	private void findPublishedBuildPathMap(String storageBucketName, Map<String, String> buildPathMap, String buildBckUpPath) {
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 		boolean firstPass = true;
@@ -654,7 +692,7 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void findPublishedBuilds(String releaseCenterKey, String productKey, List<Build> builds, String buildBckUpPath) {
+	private void findPublishedBuilds(String storageBucketName, String releaseCenterKey, String productKey, List<Build> builds, String buildBckUpPath) {
 		List<Build> foundBuilds = new ArrayList<>();
 		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
 		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);

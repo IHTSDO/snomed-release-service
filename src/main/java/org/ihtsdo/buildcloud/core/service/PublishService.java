@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public interface PublishService {
 
 	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 
-	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException;
+	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException;
 
 	void publishBuildAsync(Build build, boolean publishComponentIds, String env);
 

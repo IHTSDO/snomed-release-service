@@ -19,8 +19,14 @@ public class S3PathHelper {
 	@Value("${srs.published.releases.storage.path}")
 	private String publishedReleasesStoragePath;
 
+	@Value("${srs.published.releases.backup.storage.path}")
+	private String publishedReleasesBackupStoragePath;
+
 	@Value("${srs.publish.job.storage.path}")
 	private String publishJobStoragePath;
+
+	@Value("${srs.publish.job.backup.storage.path}")
+	private String publishJobBackupStoragePath;
 
 	@Value("${srs.externally-maintained.storage.path}")
 	private String externallyMaintainedStoragePath;
@@ -150,6 +156,10 @@ public class S3PathHelper {
 		return getReleaseCenterPath(releaseCenterKey, publishJobStoragePath).toString();
 	}
 
+	public String getPublishJobBackupDirectoryPath(final String releaseCenterKey) {
+		return getReleaseCenterPath(releaseCenterKey, publishJobBackupStoragePath).toString();
+	}
+
 	public String getPublishJobFilePath(final String releaseCenterKey, final String fileName) {
 		return getReleaseCenterPath(releaseCenterKey, publishJobStoragePath).append(fileName).toString();
 	}
@@ -157,6 +167,11 @@ public class S3PathHelper {
 	public String getPublishedReleasesDirectoryPath(final String releaseCenterKey) {
 		return getReleaseCenterPath(releaseCenterKey, publishedReleasesStoragePath).toString();
 	}
+
+	public String getPublishedReleasesBackupDirectoryPath(final String releaseCenterKey) {
+		return getReleaseCenterPath(releaseCenterKey, publishedReleasesBackupStoragePath).toString();
+	}
+
 
 	public String getPublishedReleasesFilePath(final String releaseCenterKey, final String fileName) {
 		return getReleaseCenterPath(releaseCenterKey, publishedReleasesStoragePath).append(fileName).toString();
