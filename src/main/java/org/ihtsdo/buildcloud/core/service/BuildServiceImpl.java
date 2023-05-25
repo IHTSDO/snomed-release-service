@@ -124,6 +124,9 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private S3PathHelper pathHelper;
 
+	@Value("${srs.publish.job.useOwnBackupBucket}")
+	private Boolean useOwnBackupBucket;
+
 	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
@@ -135,6 +138,9 @@ public class BuildServiceImpl implements BuildService {
 
 	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
+
+	@Value("${srs.publish.job.backup.storage.bucketName}")
+	private String publishJobBackupStorageBucketName;
 
 	@Value("${srs.jms.queue.prefix}.build-job-status")
 	private String queue;
@@ -1373,15 +1379,18 @@ public class BuildServiceImpl implements BuildService {
 	public Build cloneBuild(final String releaseCenterKey, final String productKey, final String buildId, final String username) throws BusinessServiceException {
 		Build build;
 		String sourceBuildPath;
+		String sourceBucketName;
 		try {
 			build = this.find(releaseCenterKey, productKey, buildId, true, true, null , null);
 			sourceBuildPath = pathHelper.getBuildPath(build).toString();
+			sourceBucketName = this.buildBucketName;
 		} catch (ResourceNotFoundException e) {
 			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey, true);
 			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
 			if (build != null) {
 				Map<String, String> buildPathMap = publishService.getPublishedBuildPathMap(releaseCenterKey, productKey);
 				sourceBuildPath = buildPathMap.get(buildId);
+				sourceBucketName = Boolean.TRUE.equals(useOwnBackupBucket) ? this.publishJobBackupStorageBucketName : this.buildBucketName;
 			} else {
 				throw e;
 			}
@@ -1422,8 +1431,8 @@ public class BuildServiceImpl implements BuildService {
 
 			// Copy input-files and manifest from the old build
 			String destBuildPath = pathHelper.getBuildPath(newBuild).toString();
-			dao.copyBuildToAnother(sourceBuildPath, destBuildPath, "input-files");
-			dao.copyBuildToAnother(sourceBuildPath, destBuildPath, "manifest");
+			dao.copyBuildToAnother(sourceBucketName, sourceBuildPath, this.buildBucketName, destBuildPath, "input-files");
+			dao.copyBuildToAnother(sourceBucketName, sourceBuildPath, this.buildBucketName, destBuildPath, "manifest");
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to create build for product " + build.getProductKey(), e);
 		}

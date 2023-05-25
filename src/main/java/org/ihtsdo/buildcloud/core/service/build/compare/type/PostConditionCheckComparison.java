@@ -11,6 +11,7 @@ import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparis
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -24,6 +25,12 @@ import java.util.stream.Collectors;
 public class PostConditionCheckComparison extends ComponentComparison {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostConditionCheckComparison.class);
+
+    @Value("${srs.publish.job.useOwnBackupBucket}")
+    private Boolean useOwnBackupBucket;
+
+    @Value("${srs.publish.job.backup.storage.bucketName}")
+    private String publishJobBackupStorageBucketName;
 
     @Autowired
     private BuildDAO buildDAO;
@@ -127,7 +134,11 @@ public class PostConditionCheckComparison extends ComponentComparison {
             // Trying to find the report file from published folder
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
-                report = buildDAO.getPostConditionCheckReport(publishedBuildPathMap.get(build.getId()) + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
+                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+                    report = buildDAO.getPostConditionCheckReport(publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()) + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
+                } else {
+                    report = buildDAO.getPostConditionCheckReport(publishedBuildPathMap.get(build.getId()) + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
+                }
             }
         }
 

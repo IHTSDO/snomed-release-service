@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -385,12 +386,14 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void copyBuildToAnother(String sourceBuildPath, String destBuildPath, String folder) {
+	public void copyBuildToAnother(String sourceBucketName,String sourceBuildPath, String destinationBucketName , String destBuildPath, String folder) {
 		final String sourceFolder = sourceBuildPath + folder;
 		final String destFolder = destBuildPath + folder;
 		final List<String> buildInputFilePaths = srsFileHelper.listFiles(sourceFolder);
-		for (final String path : buildInputFilePaths) {
-			srsFileHelper.copyFile(sourceFolder + path, destFolder + path);
+		ObjectListing objectListing = this.s3Client.listObjects(sourceBucketName, sourceFolder);
+		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+			String filename = summary.getKey().substring(sourceFolder.length());
+			this.s3Client.copyObject(sourceBucketName, sourceFolder + filename, destinationBucketName, destFolder + filename);
 		}
 	}
 
@@ -403,6 +406,22 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getOutputFileInputStream(String buildPath, String name) {
 		return srsFileHelper.getFileStream(buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
+	}
+
+	@Override
+	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) {
+		try {
+			S3Object s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
+			if (s3Object != null) {
+				return s3Object.getObjectContent();
+			}
+		} catch (AmazonS3Exception e) {
+			if (404 != e.getStatusCode()) {
+				throw e;
+			}
+		}
+
+		return null;
 	}
 
 	@Override
@@ -460,6 +479,25 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<String> listOutputFilePaths(String buildPath) {
 		return srsFileHelper.listFiles(buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR);
+	}
+
+	@Override
+	public List<String> listOutputFilePaths(String bucketName, String buildPath) {
+		ArrayList files = new ArrayList();
+
+		try {
+			ObjectListing objectListing = this.s3Client.listObjects(bucketName, buildPath);
+			Iterator var4 = objectListing.getObjectSummaries().iterator();
+
+			while(var4.hasNext()) {
+				S3ObjectSummary summary = (S3ObjectSummary)var4.next();
+				files.add(summary.getKey().substring(buildPath.length()));
+			}
+		} catch (AmazonServiceException e) {
+			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", buildPath, e.getLocalizedMessage());
+		}
+
+		return files;
 	}
 
 	@Override
@@ -1133,6 +1171,21 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
+	public List<PreConditionCheckReport> getPreConditionCheckReport(String bucketName, String reportPath) throws IOException {
+		List<PreConditionCheckReport> reports = new ArrayList<>();
+		final S3Object s3Object = s3Client.getObject(bucketName, reportPath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
+			}
+		}
+
+		return reports;
+	}
+
+	@Override
 	public InputStream getPostConditionCheckReportStream(final Build build) {
 		final String reportFilePath = pathHelper.getPostConditionCheckReportPath(build);
 		return srsFileHelper.getFileStream(reportFilePath);
@@ -1148,6 +1201,21 @@ public class BuildDAOImpl implements BuildDAO {
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String reportPath) throws IOException {
 		List<PostConditionCheckReport> reports = new ArrayList<>();
 		final S3Object s3Object = s3Client.getObject(buildBucketName, reportPath);
+		if (s3Object != null) {
+			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
+			}
+		}
+
+		return reports;
+	}
+
+	@Override
+	public List<PostConditionCheckReport> getPostConditionCheckReport(String bucketName, String reportPath) throws IOException {
+		List<PostConditionCheckReport> reports = new ArrayList<>();
+		final S3Object s3Object = s3Client.getObject(bucketName, reportPath);
 		if (s3Object != null) {
 			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
 			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
