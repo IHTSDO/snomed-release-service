@@ -56,11 +56,13 @@ public interface BuildDAO {
 
 	void copyInputFileToOutputFile(Build build, String relativeFilePath);
 
-	void copyBuildToAnother(String sourceBuildPath, String destBuildPath, String folder);
+	void copyBuildToAnother(String sourceBucketName, String sourceBuildPath, String destinationBucketName, String destBuildPath, String folder);
 
 	InputStream getOutputFileInputStream(Build build, String name);
 
 	InputStream getOutputFileInputStream(String buildPath, String name);
+
+	InputStream getOutputFileInputStream(String bucketName, String buildPath, String name);
 
 	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
@@ -75,6 +77,8 @@ public interface BuildDAO {
 	List<String> listOutputFilePaths(Build build);
 
 	List<String> listOutputFilePaths(String buildPath);
+
+	List<String> listOutputFilePaths(String bucketName, String buildPath);
 
 	List<String> listBuildLogFilePaths(Build build);
 
@@ -124,11 +128,15 @@ public interface BuildDAO {
 
 	List<PreConditionCheckReport> getPreConditionCheckReport(final String reportPath) throws IOException;
 
+	List<PreConditionCheckReport> getPreConditionCheckReport(String bucketName, String reportPath) throws IOException;
+
 	InputStream getPostConditionCheckReportStream(Build build);
 
 	List<PostConditionCheckReport> getPostConditionCheckReport(final Build build) throws IOException;
 
 	List<PostConditionCheckReport> getPostConditionCheckReport(final String reportPath) throws IOException;
+
+	List<PostConditionCheckReport> getPostConditionCheckReport(final String bucketName, final String reportPath) throws IOException;
 
 	List<String> listClassificationResultOutputFileNames(Build build);
 

@@ -240,7 +240,7 @@ public class PublishServiceImpl implements PublishService {
 							boolean isBetaRelease = build.getConfiguration().isBetaRelease();
 							publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
 							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
-						} catch (BusinessServiceException e) {
+						} catch (Exception e) {
 							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 							throw e;
 						}
@@ -255,7 +255,7 @@ public class PublishServiceImpl implements PublishService {
 
 						// mark the build as Published
 						buildDao.addTag(build, Build.Tag.PUBLISHED);
-					} catch (BusinessServiceException e) {
+					} catch (Exception e) {
 						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
 						throw e;
 					}
@@ -296,9 +296,6 @@ public class PublishServiceImpl implements PublishService {
 				}
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
-		} catch (IOException e) {
-			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
-			throw e;
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
@@ -722,7 +719,7 @@ public class PublishServiceImpl implements PublishService {
 					|| build.getStatus().equals(Build.Status.RVF_RUNNING)
 					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
 					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS)) {
-				InputStream buildReportStream = getBuildReportFileStream(buildBckUpPath, build);
+				InputStream buildReportStream = getBuildReportFileStream(storageBucketName, buildBckUpPath, build);
 				if (buildReportStream != null) {
 					JSONParser jsonParser = new JSONParser();
 					try {
@@ -738,12 +735,12 @@ public class PublishServiceImpl implements PublishService {
 				}
 			}
 			try {
-				this.loadBuildConfiguration(buildBckUpPath, build);
+				this.loadBuildConfiguration(storageBucketName, buildBckUpPath, build);
 			} catch (IOException e) {
 				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
 			}
 			try {
-				this.loadQaTestConfig(buildBckUpPath, build);
+				this.loadQaTestConfig(storageBucketName, buildBckUpPath, build);
 			} catch (IOException e) {
 				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
 			}
@@ -752,15 +749,15 @@ public class PublishServiceImpl implements PublishService {
 		builds.addAll(foundBuilds);
 	}
 
-	private InputStream getBuildReportFileStream(String buildBckUpPath, Build build) {
+	private InputStream getBuildReportFileStream(final String storageBucketName, final String buildBckUpPath, final Build build) {
 		final String reportFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.BUILD_REPORT_JSON);
-		return srsFileHelper.getFileStream(reportFilePath);
+		return getFileStream(storageBucketName, reportFilePath);
 	}
 
-	private void loadBuildConfiguration(final String buildBckUpPath,final Build build) throws IOException {
+	private void loadBuildConfiguration(final String storageBucketName, final String buildBckUpPath,final Build build) throws IOException {
 		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.CONFIG_JSON);
 		try {
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(srsFileHelper.getFileStream(configFilePath), RF2Constants.UTF_8));// Closes stream
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
 				build.setConfiguration(buildConfiguration);
@@ -774,10 +771,10 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void loadQaTestConfig(final String buildBckUpPath, final Build build) throws IOException {
+	private void loadQaTestConfig(final String storageBucketName, final String buildBckUpPath, final Build build) throws IOException {
 		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.QA_CONFIG_JSON);
 		try {
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(srsFileHelper.getFileStream(configFilePath), RF2Constants.UTF_8));// Closes stream
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
 				build.setQaTestConfig(qaTestConfig);
@@ -790,6 +787,21 @@ public class PublishServiceImpl implements PublishService {
 				throw e;
 			}
 		}
+	}
+
+	private InputStream getFileStream(String bucketName, String filePath) {
+		try {
+			S3Object s3Object = this.s3Client.getObject(bucketName, filePath);
+			if (s3Object != null) {
+				return s3Object.getObjectContent();
+			}
+		} catch (AmazonS3Exception ex) {
+			if (404 != ex.getStatusCode()) {
+				throw ex;
+			}
+		}
+
+		return null;
 	}
 
 	private String getPublishedReleaseFilePath(String buildBckUpPath, Build build, String fileName) {

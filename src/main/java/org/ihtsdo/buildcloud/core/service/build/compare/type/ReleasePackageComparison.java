@@ -15,6 +15,7 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
@@ -47,6 +48,12 @@ public class ReleasePackageComparison extends ComponentComparison {
             return label;
         }
     }
+
+    @Value("${srs.publish.job.useOwnBackupBucket}")
+    private Boolean useOwnBackupBucket;
+
+    @Value("${srs.publish.job.backup.storage.bucketName}")
+    private String publishJobBackupStorageBucketName;
 
     @Autowired
     private BuildDAO buildDAO;
@@ -171,7 +178,8 @@ public class ReleasePackageComparison extends ComponentComparison {
 
     private File downloadReleasePackage(String buildPath, String fileName) throws IOException {
         File releaseFile = File.createTempFile(fileName, RF2Constants.ZIP_FILE_EXTENSION);
-        try (InputStream inputFileStream = buildDAO.getOutputFileInputStream(buildPath, fileName);
+        try (InputStream inputFileStream =  Boolean.TRUE.equals(useOwnBackupBucket) ? buildDAO.getOutputFileInputStream(this.publishJobBackupStorageBucketName, buildPath, fileName)
+                                                                                    : buildDAO.getOutputFileInputStream(buildPath, fileName);
              FileOutputStream out = new FileOutputStream(releaseFile)) {
             if (inputFileStream != null) {
                 StreamUtils.copy(inputFileStream, out);
@@ -214,7 +222,13 @@ public class ReleasePackageComparison extends ComponentComparison {
             // Trying to find  the output files from published folder
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
-                List<String> outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                List<String> outputFiles;
+                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+                    outputFiles = buildDAO.listOutputFilePaths(this.publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()));
+                } else {
+                    outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                }
+
                 String releaseFilePath = outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
                 if (releaseFilePath != null) {
                     return downloadReleasePackage(publishedBuildPathMap.get(build.getId()), releaseFilePath);
@@ -235,7 +249,12 @@ public class ReleasePackageComparison extends ComponentComparison {
             // Trying to find  the output files from published folder
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
-                List<String> outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                List<String> outputFiles;
+                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
+                    outputFiles = buildDAO.listOutputFilePaths(this.publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()));
+                } else {
+                    outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
+                }
                 return outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
             }
         }
