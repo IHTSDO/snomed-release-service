@@ -705,7 +705,7 @@ public class PublishServiceImpl implements PublishService {
 					final String[] keyParts = key.split("/");
 					final String dateString = keyParts[keyParts.length - 2];
 					final String status = keyParts[keyParts.length - 1].split(":")[1];
-					if (!builds.stream().anyMatch(b -> b.getId().equals(status))) {
+					if (!builds.stream().anyMatch(b -> b.getId().equals(dateString))) {
 						final Build build = new Build(dateString, releaseCenterKey, productKey, status);
 						foundBuilds.add(build);
 					}
