@@ -55,6 +55,8 @@ public class SRSWorkerService {
             throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
         }
 
+        if (buildDAO.isBuildCancelRequested(build)) return;
+
         LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
         // build status response message is handled by buildDAO
         buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);

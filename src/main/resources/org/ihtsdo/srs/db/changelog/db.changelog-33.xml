@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="20230529" author="qly">
+      <createTable tableName="notification">
+         <column autoIncrement="true" name="id" type="BIGINT">
+            <constraints primaryKey="true"/>
+         </column>
+         <column name="recipient" type="VARCHAR(50)"/>
+         <column name="notification_type" type="VARCHAR(50)"/>
+         <column name="created_date" type="datetime"/>
+         <column name="read" type="CHAR(1)"/>
+      </createTable>
+   </changeSet>
+   <changeSet id="20230530" author="QLY">
+      <addColumn tableName="notification">
+         <column name="details" type="TEXT" />
+      </addColumn>
+   </changeSet>
+   <changeSet author="QLY" id="20230531">
+      <renameColumn columnDataType="CHAR(1)"
+                    newColumnName="is_read"
+                    oldColumnName="read"
+                    tableName="notification"/>
+   </changeSet>
+</databaseChangeLog>

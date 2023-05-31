@@ -199,7 +199,7 @@ public class BuildStatusListenerService {
 			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}", buildId, totalTimeTaken, status);
 		}
 		LOGGER.info("Web socket status update {}", message);
-		simpMessagingTemplate.convertAndSend("/topic/snomed-release-service-websocket", objectMapper.writeValueAsString(message));
+		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
 	}
 
 

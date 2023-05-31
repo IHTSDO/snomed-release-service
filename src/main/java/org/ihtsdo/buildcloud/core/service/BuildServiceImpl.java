@@ -344,6 +344,8 @@ public class BuildServiceImpl implements BuildService {
 
 	@Override
 	public Build triggerBuild(Build build, Boolean enableTelemetryStream) {
+		if (dao.isBuildCancelRequested(build)) return build;
+
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		try {
 			if (Boolean.TRUE.equals(enableTelemetryStream)) {
@@ -351,12 +353,15 @@ public class BuildServiceImpl implements BuildService {
 			}
 			// Get build configurations from S3
 			getBuildConfigurations(build);
+			if (dao.isBuildCancelRequested(build)) return build;
 
 			performPreconditionTesting(build);
 			// Stop processing when the pre_condition checks have failed
 			if (Status.FAILED_PRE_CONDITIONS == build.getStatus()) {
 				return build;
 			}
+			if (dao.isBuildCancelRequested(build)) return build;
+
 			boolean isAbandoned = checkSourceFile(build);
 			// execute build
 			if (!isAbandoned) {
@@ -1323,8 +1328,11 @@ public class BuildServiceImpl implements BuildService {
 	@Override
 	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
-		//Only cancel build if the status is "BUILDING"
-		dao.assertStatus(build, Status.BUILDING);
+		//Only cancel build if the status is "QUEUED" or "BEFORE_TRIGGER" or "BUILDING"
+		if (Status.BUILDING != build.getStatus() && Status.QUEUED != build.getStatus() && Status.BEFORE_TRIGGER != build.getStatus() ) {
+			throw new BadConfigurationException("Build " + build.getCreationTime() + " is at status: " + build.getStatus().name()
+					+ " and is expected to be at status:" + Status.QUEUED.name() + " or " +  Status.BEFORE_TRIGGER.name() + " or " + Status.BUILDING.name());
+		}
 		dao.updateStatus(build, Status.CANCEL_REQUESTED);
 		LOGGER.warn("Status of build {} has been updated to {}", build, Status.CANCEL_REQUESTED.name());
 	}
