@@ -66,15 +66,20 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 	@Override
 	public void runReleaseBuild(Build build, Authentication authentication) {
+		if (buildDAO.isBuildCancelRequested(build)) return;
+
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		try {
 			MDC.put(TRACKER_ID, build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId());
 			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 
-			if (gatherSourceFiles(build, authentication) && prepareInputFiles(build)) {
-				// trigger build
-				LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProductKey());
-				buildService.triggerBuild(build, false);
+			if (gatherSourceFiles(build, authentication)) {
+				if (buildDAO.isBuildCancelRequested(build)) return;
+				if (prepareInputFiles(build)) {
+					// trigger build
+					LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProductKey());
+					buildService.triggerBuild(build, false);
+				}
 			}
 		} catch (Exception e) {
 			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProductKey());

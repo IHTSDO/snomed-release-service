@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.RVFFailureJiraAssociationService;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
+import org.ihtsdo.buildcloud.core.service.monitor.MonitorService;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
@@ -71,6 +72,9 @@ public class BuildController {
 	@Autowired
 	private RVFFailureJiraAssociationService rvfFailureJiraAssociationService;
 
+	@Autowired
+	private MonitorService monitorService;
+
 	private static final String[] BUILD_LINKS = {"manifest", "configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
 
@@ -88,6 +92,7 @@ public class BuildController {
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, username);
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
+		monitorService.startMonitorBuild(newBuild, username);
 		return new ResponseEntity<>(newBuild, HttpStatus.CREATED);
 	}
 
@@ -102,6 +107,7 @@ public class BuildController {
 															final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
 		final Build build = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, currentUser);
+		monitorService.startMonitorBuild(build, currentUser);
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(build, false, request, BUILD_LINKS), HttpStatus.CREATED);
 	}
 
@@ -120,7 +126,7 @@ public class BuildController {
 
 		Build newBuild = buildService.cloneBuild(releaseCenterKey, productKey, buildId, username);
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
-
+		monitorService.startMonitorBuild(newBuild, username);
 		return new ResponseEntity<>(newBuild, HttpStatus.OK);
 	}
 

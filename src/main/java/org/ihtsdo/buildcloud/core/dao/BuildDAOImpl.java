@@ -282,7 +282,36 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public void updateStatus(final Build build, final Build.Status newStatus) {
-		final Build.Status origStatus = build.getStatus();
+		String buildStatusPath = pathHelper.getStatusFilePath(build, build.getStatus());
+		Build.Status origStatus = build.getStatus();
+		if (origStatus != null) {
+			boolean isLatestStatus = false;
+			try {
+				S3Object s3Object = s3Client.getObject(buildBucketName, buildStatusPath);
+				if (s3Object != null) {
+					isLatestStatus = true;
+				}
+			} catch (AmazonS3Exception e) {
+				if (404 != e.getStatusCode()) {
+					throw e;
+				}
+			}
+			if (!isLatestStatus) {
+				Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), null, null, null, null);
+				origStatus = lastBuild.getStatus();
+			}
+			if (Build.Status.CANCEL_REQUESTED == origStatus
+				|| Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION == origStatus
+				|| Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION == origStatus
+				|| Build.Status.FAILED_PRE_CONDITIONS == origStatus
+				|| Build.Status.FAILED_POST_CONDITIONS == origStatus
+				|| Build.Status.CANCELLED == origStatus
+				|| Build.Status.FAILED == origStatus
+				) {
+				throw new IllegalStateException("Could not update build status as it has been already " + origStatus.name());
+			}
+		}
+
 		build.setStatus(newStatus);
 		final String newStatusFilePath = pathHelper.getStatusFilePath(build, build.getStatus());
 		// Put new status before deleting old to avoid there being none.
