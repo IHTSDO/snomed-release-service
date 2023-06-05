@@ -26,12 +26,6 @@ public class PostConditionCheckComparison extends ComponentComparison {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostConditionCheckComparison.class);
 
-    @Value("${srs.publish.job.useOwnBackupBucket}")
-    private Boolean useOwnBackupBucket;
-
-    @Value("${srs.publish.job.backup.storage.bucketName}")
-    private String publishJobBackupStorageBucketName;
-
     @Autowired
     private BuildDAO buildDAO;
 
@@ -134,11 +128,10 @@ public class PostConditionCheckComparison extends ComponentComparison {
             // Trying to find the report file from published folder
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
-                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-                    report = buildDAO.getPostConditionCheckReport(publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()) + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
-                } else {
-                    report = buildDAO.getPostConditionCheckReport(publishedBuildPathMap.get(build.getId()) + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
-                }
+                String absoluteBuildPath = publishedBuildPathMap.get(build.getId());
+                String sourceBuildPath = absoluteBuildPath.substring(absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR) + 1);
+                String sourceBucketName = absoluteBuildPath.substring(0, absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR));
+                report = buildDAO.getPostConditionCheckReport(sourceBucketName, sourceBuildPath + S3PathHelper.POST_CONDITION_CHECKS_REPORT);
             }
         }
 

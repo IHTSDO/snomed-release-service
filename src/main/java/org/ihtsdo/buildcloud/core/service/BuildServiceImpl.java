@@ -1397,8 +1397,9 @@ public class BuildServiceImpl implements BuildService {
 			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
 			if (build != null) {
 				Map<String, String> buildPathMap = publishService.getPublishedBuildPathMap(releaseCenterKey, productKey);
-				sourceBuildPath = buildPathMap.get(buildId);
-				sourceBucketName = Boolean.TRUE.equals(useOwnBackupBucket) ? this.publishJobBackupStorageBucketName : this.buildBucketName;
+				String absoluteBuildPath = buildPathMap.get(buildId);
+				sourceBuildPath = absoluteBuildPath.substring(absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR) + 1);
+				sourceBucketName = absoluteBuildPath.substring(0, absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR));
 			} else {
 				throw e;
 			}
