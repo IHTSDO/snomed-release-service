@@ -49,12 +49,6 @@ public class ReleasePackageComparison extends ComponentComparison {
         }
     }
 
-    @Value("${srs.publish.job.useOwnBackupBucket}")
-    private Boolean useOwnBackupBucket;
-
-    @Value("${srs.publish.job.backup.storage.bucketName}")
-    private String publishJobBackupStorageBucketName;
-
     @Autowired
     private BuildDAO buildDAO;
 
@@ -176,10 +170,9 @@ public class ReleasePackageComparison extends ComponentComparison {
         return releaseFile;
     }
 
-    private File downloadReleasePackage(String buildPath, String fileName) throws IOException {
+    private File downloadReleasePackage(String bucketName, String buildPath, String fileName) throws IOException {
         File releaseFile = File.createTempFile(fileName, RF2Constants.ZIP_FILE_EXTENSION);
-        try (InputStream inputFileStream =  Boolean.TRUE.equals(useOwnBackupBucket) ? buildDAO.getOutputFileInputStream(this.publishJobBackupStorageBucketName, buildPath, fileName)
-                                                                                    : buildDAO.getOutputFileInputStream(buildPath, fileName);
+        try (InputStream inputFileStream =  buildDAO.getOutputFileInputStream(bucketName, buildPath, fileName);
              FileOutputStream out = new FileOutputStream(releaseFile)) {
             if (inputFileStream != null) {
                 StreamUtils.copy(inputFileStream, out);
@@ -222,16 +215,14 @@ public class ReleasePackageComparison extends ComponentComparison {
             // Trying to find  the output files from published folder
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
-                List<String> outputFiles;
-                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-                    outputFiles = buildDAO.listOutputFilePaths(this.publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()));
-                } else {
-                    outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
-                }
+                String absoluteBuildPath = publishedBuildPathMap.get(build.getId());
+                String sourceBuildPath = absoluteBuildPath.substring(absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR) + 1);
+                String sourceBucketName = absoluteBuildPath.substring(0, absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR));
+                List<String> outputFiles = buildDAO.listOutputFilePaths(sourceBucketName, sourceBuildPath + S3PathHelper.OUTPUT_FILES);
 
                 String releaseFilePath = outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
                 if (releaseFilePath != null) {
-                    return downloadReleasePackage(publishedBuildPathMap.get(build.getId()), releaseFilePath);
+                    return downloadReleasePackage(sourceBucketName, sourceBuildPath, releaseFilePath);
                 }
             }
         }
@@ -250,11 +241,12 @@ public class ReleasePackageComparison extends ComponentComparison {
             Map<String, String> publishedBuildPathMap = publishService.getPublishedBuildPathMap(build.getReleaseCenterKey(), build.getProductKey());
             if (publishedBuildPathMap.containsKey(build.getId())) {
                 List<String> outputFiles;
-                if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-                    outputFiles = buildDAO.listOutputFilePaths(this.publishJobBackupStorageBucketName, publishedBuildPathMap.get(build.getId()));
-                } else {
-                    outputFiles = buildDAO.listOutputFilePaths(publishedBuildPathMap.get(build.getId()));
-                }
+
+                String absoluteBuildPath = publishedBuildPathMap.get(build.getId());
+                String sourceBuildPath = absoluteBuildPath.substring(absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR) + 1);
+                String sourceBucketName = absoluteBuildPath.substring(0, absoluteBuildPath.indexOf(S3PathHelper.SEPARATOR));
+                outputFiles = buildDAO.listOutputFilePaths(sourceBucketName, sourceBuildPath + S3PathHelper.OUTPUT_FILES);
+
                 return outputFiles.stream().filter(path -> path.endsWith(".zip")).findAny().orElse(null);
             }
         }

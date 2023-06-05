@@ -132,20 +132,22 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public List<Build> findPublishedBuilds(String releaseCenterKey, String productKey, boolean includeProdPublishedReleases) throws ResourceNotFoundException {
 		List<Build> builds = new ArrayList<>();
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+		if (includeProdPublishedReleases) {
+			buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+			findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
+		}
+
 		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-			String buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
 			findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
 			if (includeProdPublishedReleases) {
 				buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
 				findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
 			}
 		} else {
-			String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
-			if (includeProdPublishedReleases) {
-				buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-				findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
-			}
+
 		}
 		return builds;
 	}
@@ -153,16 +155,16 @@ public class PublishServiceImpl implements PublishService {
 	@Override
 	public Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey) {
 		Map<String, String> buildPathMap = new HashMap<>();
+		String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
+		buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
+		findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
+
 		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-			String buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
+			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
 			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
 			buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
 			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
-		} else {
-			String buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
-			buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
 		}
 		return buildPathMap;
 	}
@@ -681,7 +683,7 @@ public class PublishServiceImpl implements PublishService {
 					final String[] keyParts = key.split("/");
 					final String dateString = keyParts[keyParts.length - 2];
 					if (!buildPathMap.containsKey(dateString)) {
-						buildPathMap.put(dateString, buildBckUpPath + dateString + S3PathHelper.SEPARATOR);
+						buildPathMap.put(dateString, storageBucketName + S3PathHelper.SEPARATOR + buildBckUpPath + dateString + S3PathHelper.SEPARATOR);
 					}
 				}
 			}
