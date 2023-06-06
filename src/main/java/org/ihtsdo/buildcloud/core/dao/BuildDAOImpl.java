@@ -300,8 +300,7 @@ public class BuildDAOImpl implements BuildDAO {
 				Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), null, null, null, null);
 				origStatus = lastBuild.getStatus();
 			}
-			if (Build.Status.CANCEL_REQUESTED == origStatus
-				|| Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION == origStatus
+			if (Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION == origStatus
 				|| Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION == origStatus
 				|| Build.Status.FAILED_PRE_CONDITIONS == origStatus
 				|| Build.Status.FAILED_POST_CONDITIONS == origStatus

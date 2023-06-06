@@ -469,19 +469,10 @@ public class BuildServiceImpl implements BuildService {
 
 	public void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
 			final String resultMessage) throws BadConfigurationException {
-		if (dao.isBuildCancelRequested(build)) {
-			report.add(PROGRESS_STATUS, "cancelled");
-			report.add(MESSAGE, "Build was cancelled");
-			dao.persistReport(build);
-			dao.updateStatus(build, Status.CANCELLED);
-			dao.deleteOutputFiles(build);
-			LOGGER.info("Build has been canceled");
-		} else {
-			report.add(PROGRESS_STATUS, resultStatus);
-			report.add(MESSAGE, resultMessage);
-			dao.persistReport(build);
-			updateStatusWithChecks(build, status);
-		}
+		report.add(PROGRESS_STATUS, resultStatus);
+		report.add(MESSAGE, resultMessage);
+		dao.persistReport(build);
+		updateStatusWithChecks(build, status);
 	}
 
 	private void performPreConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {

@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.entity.BuildReport;
+import org.ihtsdo.buildcloud.core.service.BuildService;
+import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
 import org.slf4j.Logger;
@@ -19,8 +21,13 @@ import org.springframework.stereotype.Service;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
+
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.PROGRESS_STATUS;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.MESSAGE;
 
 @Service
 @ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
@@ -35,6 +42,9 @@ public class SRSWorkerService {
     private ReleaseService releaseService;
 
     @Autowired
+    private BuildService buildService;
+
+    @Autowired
     private BuildDAO buildDAO;
 
     @Autowired
@@ -42,6 +52,7 @@ public class SRSWorkerService {
 
     @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
     public void consumeSRSJob(final TextMessage srsMessage) {
+
         final Instant start = Instant.now();
         CreateReleasePackageBuildRequest buildRequest;
         try {
@@ -51,20 +62,36 @@ public class SRSWorkerService {
         }
 
         final Build build = buildRequest.getBuild();
-        if (Build.Status.QUEUED != build.getStatus()) {
-            throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
+        try {
+            if (Build.Status.QUEUED != build.getStatus()) {
+                throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
+            }
+
+            if (buildDAO.isBuildCancelRequested(build)) return;
+
+            LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
+            // build status response message is handled by buildDAO
+            buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
+            SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
+            releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
+
+            final Instant finish = Instant.now();
+            LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
+        } finally {
+            if (buildDAO.isBuildCancelRequested(build)) {
+                final BuildReport buildReport = getBuildReportFile(build);
+                if (buildReport != null) {
+                    buildReport.add(PROGRESS_STATUS, "cancelled");
+                    buildReport.add(MESSAGE, "Build was cancelled");
+                    build.setBuildReport(buildReport);
+                    buildDAO.persistReport(build);
+                }
+
+                buildDAO.updateStatus(build, Build.Status.CANCELLED);
+                buildDAO.deleteOutputFiles(build);
+                LOGGER.info("Build has been canceled");
+            }
         }
-
-        if (buildDAO.isBuildCancelRequested(build)) return;
-
-        LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
-        // build status response message is handled by buildDAO
-        buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
-        SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
-        releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
-
-        final Instant finish = Instant.now();
-        LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
     }
 
     private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {
@@ -72,5 +99,18 @@ public class SRSWorkerService {
                 buildRequest.getAuthenticationToken());
         preAuthenticatedAuthenticationToken.setAuthenticated(true);
         return preAuthenticatedAuthenticationToken;
+    }
+
+    private BuildReport getBuildReportFile(final Build build) {
+        try (InputStream reportStream = buildService.getBuildReportFile(build)) {
+            if (reportStream != null) {
+                return objectMapper.readValue(reportStream, BuildReport.class);
+            } else {
+                LOGGER.warn("No build report file.");
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error occurred while trying to get the build report file.", e);
+        }
+        return null;
     }
 }
