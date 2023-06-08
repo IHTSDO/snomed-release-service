@@ -19,7 +19,7 @@
 		<packageName>${project.artifactId}</packageName>
 
 		<otf-common.version>5.8.0</otf-common.version>
-		<snomed-utilities.version>1.4.1</snomed-utilities.version>
+		<snomed-utilities.version>1.5.0</snomed-utilities.version>
 		<ihtsdo-spring-sso.version>3.1.2</ihtsdo-spring-sso.version>
 		<spring-cloud.version>2021.0.3</spring-cloud.version>
 		<spring-cloud-aws-version>2.2.6.RELEASE</spring-cloud-aws-version>
