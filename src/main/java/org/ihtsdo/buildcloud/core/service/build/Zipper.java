@@ -24,6 +24,10 @@ import javax.xml.bind.JAXBException;
 
 public class Zipper {
 
+	public enum FileTypeOption {
+		DELTA_ONLY, SNAPSHOT_ONLY, FULL_ONLY, NONE
+	}
+
 	private static final String DELTA = "delta";
 
 	private static final String PATH_CHAR = "/";
@@ -51,24 +55,24 @@ public class Zipper {
 		this.buildDAO = buildDAO;
 	}
 
-	public File createZipFile(boolean deltaOnly) throws JAXBException, IOException, ResourceNotFoundException {
+	public File createZipFile(FileTypeOption fileTypeOption) throws JAXBException, IOException, ResourceNotFoundException {
 		loadManifest();
-		File zipFile = createArchive(deltaOnly);
+		File zipFile = createArchive(fileTypeOption);
 		return zipFile;
 	}
 
 	public void loadManifest() throws JAXBException, ResourceNotFoundException, IOException {
 		// Get the manifest file as an input stream
-	try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
-		ManifestXmlFileParser parser = new ManifestXmlFileParser();
-		manifestListing = parser.parse(manifestInputSteam);
-	}
-	// Zip file name is the same as the root folder defined in manifest, with .zip appended
-	rootFolder = manifestListing.getFolder();
-	isInitialised = true;
+		try (InputStream manifestInputSteam = buildDAO.getManifestStream(build)) {
+			ManifestXmlFileParser parser = new ManifestXmlFileParser();
+			manifestListing = parser.parse(manifestInputSteam);
+		}
+		// Zip file name is the same as the root folder defined in manifest, with .zip appended
+		rootFolder = manifestListing.getFolder();
+		isInitialised = true;
 	}
 
-	private File createArchive(boolean deltaOnly) throws IOException {
+	private File createArchive(FileTypeOption fileTypeOption) throws IOException {
 
 		assert (isInitialised);  //Would be a coding error if this tripped
 
@@ -85,13 +89,13 @@ public class Zipper {
 		FileOutputStream fos = new FileOutputStream(zipFile);
 		BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
 		ZipOutputStream zos = new ZipOutputStream(bos);
-		walkFolders(rootFolder, zos, "", deltaOnly);
+		walkFolders(rootFolder, zos, "", fileTypeOption);
 		zos.close();
 		LOGGER.debug("Finished: Zipping file structure {}", rootFolder.getName());
 		return zipFile;
 	}
 
-	private void walkFolders(final FolderType f, final ZipOutputStream zos, final String parentPath, boolean deltaOnly) throws IOException {
+	private void walkFolders(final FolderType f, final ZipOutputStream zos, final String parentPath, FileTypeOption fileTypeOption) throws IOException {
 		//Create an entry for this folder
 		String thisFolder = parentPath + f.getName() + PATH_CHAR;
 		zos.putNextEntry(new ZipEntry(thisFolder));
@@ -99,7 +103,14 @@ public class Zipper {
 		//Pull down and compress any child files
 		for (FileType file : f.getFile()) {
 			String filename = file.getName();
-			if (deltaOnly && !filename.toLowerCase().contains(DELTA)) {
+			if (FileTypeOption.DELTA_ONLY.equals(fileTypeOption) && !filename.toLowerCase().contains(DELTA)) {
+				continue;
+			}
+			if (FileTypeOption.SNAPSHOT_ONLY.equals(fileTypeOption) && !filename.toLowerCase().contains(SNAPSHOT)) {
+				continue;
+			}
+
+			if (FileTypeOption.FULL_ONLY.equals(fileTypeOption) && !filename.toLowerCase().contains(FULL)) {
 				continue;
 			}
 			if (!Normalizer.isNormalized(filename,Form.NFC)) {
@@ -124,10 +135,16 @@ public class Zipper {
 
 		//Recurse through child folders
 		for (FolderType childFolder : f.getFolder()) {
-			if (deltaOnly && (childFolder.getName().equalsIgnoreCase(SNAPSHOT) || childFolder.getName().equalsIgnoreCase(FULL))) {
+			if (FileTypeOption.DELTA_ONLY.equals(fileTypeOption) && (childFolder.getName().equalsIgnoreCase(SNAPSHOT) || childFolder.getName().equalsIgnoreCase(FULL))) {
 				continue;
 			}
-			walkFolders(childFolder, zos, thisFolder, deltaOnly);
+			if (FileTypeOption.SNAPSHOT_ONLY.equals(fileTypeOption) && (childFolder.getName().equalsIgnoreCase(DELTA) || childFolder.getName().equalsIgnoreCase(FULL))) {
+				continue;
+			}
+			if (FileTypeOption.FULL_ONLY.equals(fileTypeOption) && (childFolder.getName().equalsIgnoreCase(DELTA) || childFolder.getName().equalsIgnoreCase(SNAPSHOT))) {
+				continue;
+			}
+			walkFolders(childFolder, zos, thisFolder, fileTypeOption);
 		}
 	}
 
