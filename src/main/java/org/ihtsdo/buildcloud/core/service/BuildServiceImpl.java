@@ -23,10 +23,7 @@ import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.manifest.*;
 import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
-import org.ihtsdo.buildcloud.core.service.build.DailyBuildRF2DeltaExtractor;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.Rf2FileExportRunner;
-import org.ihtsdo.buildcloud.core.service.build.Zipper;
+import org.ihtsdo.buildcloud.core.service.build.*;
 import org.ihtsdo.buildcloud.core.service.build.readme.ReadmeGenerator;
 import org.ihtsdo.buildcloud.core.service.build.transform.StreamingFileTransformation;
 import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
@@ -712,14 +709,17 @@ public class BuildServiceImpl implements BuildService {
 		String packageName;
 		try {
 			final Zipper zipper = new Zipper(build, dao);
-			zipPackage = zipper.createZipFile(false);
+			zipPackage = zipper.createZipFile(Zipper.FileTypeOption.NONE);
 			packageName = zipPackage.getName();
 			LOGGER.info("Start: Upload zipPackage file {}", zipPackage.getName());
 			dao.putOutputFile(build, zipPackage, true);
 			LOGGER.info("Finish: Upload zipPackage file {}", zipPackage.getName());
 			if (build.getConfiguration().isDailyBuild()) {
-				DailyBuildRF2DeltaExtractor extractor = new DailyBuildRF2DeltaExtractor(build, dao);
-				extractor.outputDailyBuildPackage(dailyBuildResourceManager);
+				DailyBuildRF2DeltaExtractor deltaExtractor = new DailyBuildRF2DeltaExtractor(build, dao);
+				deltaExtractor.outputDailyBuildPackage(dailyBuildResourceManager);
+
+				DailyBuildRF2SnapshotExtractor snapshotExtractor = new DailyBuildRF2SnapshotExtractor(build, dao);
+				snapshotExtractor.outputDailyBuildPackage(dailyBuildResourceManager);
 			}
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to create zip file", e);
