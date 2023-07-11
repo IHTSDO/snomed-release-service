@@ -122,7 +122,7 @@ public class ProductController {
 		}
 
 		String name = json.get(ProductService.NAME);
-		Product product = productService.create(releaseCenterKey, name);
+		Product product = productService.create(releaseCenterKey, name.trim());
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, false, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 

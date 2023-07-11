@@ -52,7 +52,7 @@ public class AdminController {
 		} catch (final ParseException e) {
 			throw new BadRequestException("Invalid effectiveTime format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
 		}
-		releaseService.startNewAuthoringCycle(releaseCenterKey, productKey, effectiveTime, productSource, dependencyPackage);
+		releaseService.startNewAuthoringCycle(releaseCenterKey.trim(), productKey.trim(), effectiveTime, productSource.trim(), dependencyPackage.trim());
 		return new ResponseEntity(HttpStatus.OK);
 	}
 
@@ -62,7 +62,7 @@ public class AdminController {
 	@Operation(summary = "Upgrade dependant version for daily build product",
 			description = "This API is for Daily Build only")
 	public ResponseEntity upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
-		productService.upgradeDependantVersion(releaseCenterKey, productKey);
+		productService.upgradeDependantVersion(releaseCenterKey.trim(), productKey.trim());
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 }
