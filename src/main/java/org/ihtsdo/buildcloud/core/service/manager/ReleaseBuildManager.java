@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 @Service
 @Transactional
 public class ReleaseBuildManager {
+
+	public static final String EPOCH_TIME = "1970-01-01T00:00:00";
 
 	private static final String ENV_LOCAL = "local";
 
@@ -74,6 +77,17 @@ public class ReleaseBuildManager {
 	private String envShortname;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
+
+	@PostConstruct
+	public void initialise() {
+		try {
+			Build build = new Build(EPOCH_TIME, null, null, Build.Status.UNKNOWN.name());
+			CreateReleasePackageBuildRequest buildRequest = new CreateReleasePackageBuildRequest(build, null, null);
+			convertAndSend(buildRequest);
+		} catch (BusinessServiceException e) {
+			LOGGER.error("Failed to send EMPTY request", e);
+		}
+	}
 
 	public Build createBuild(String releaseCenter, String productKey, BuildRequestPojo buildRequestPojo, String currentUser) throws BusinessServiceException {
 		Product product = productService.find(releaseCenter, productKey, false);

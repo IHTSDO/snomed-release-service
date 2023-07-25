@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
+import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,11 @@ public class SRSWorkerService {
         }
 
         final Build build = buildRequest.getBuild();
+
+        if (build.getId().equals(ReleaseBuildManager.EPOCH_TIME)) {
+            return;
+        }
+
         try {
             if (Build.Status.QUEUED != build.getStatus()) {
                 throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
