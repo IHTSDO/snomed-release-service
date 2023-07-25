@@ -77,6 +77,12 @@ public class BuildController {
 
 	private static final String[] BUILD_LINKS = {"manifest", "configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
+	@Operation(summary="Re-initialise")
+	@RequestMapping(value="/builds/initialise", method= RequestMethod.GET)
+	public ResponseEntity initialise() throws BusinessServiceException {
+		releaseBuildManager.initialise();
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
 
 	@PostMapping(value = "/release", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
