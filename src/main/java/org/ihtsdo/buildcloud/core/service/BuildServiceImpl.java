@@ -58,6 +58,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
@@ -1134,6 +1135,18 @@ public class BuildServiceImpl implements BuildService {
 				releaseAsAnEdition = extensionConfig.isReleaseAsAnEdition();
 				includedModuleIdsStr = extensionConfig.getModuleIds();
 			}
+
+			String defaultModuleId = null;
+			if (extensionConfig != null) {
+				if (StringUtils.hasLength(extensionConfig.getDefaultModuleId())) {
+					defaultModuleId = extensionConfig.getDefaultModuleId();
+				} else {
+					if (!CollectionUtils.isEmpty(extensionConfig.getModuleIdsSet()) && extensionConfig.getModuleIdsSet().size() == 1) {
+						defaultModuleId = extensionConfig.getModuleIdsSet().iterator().next();
+					}
+				}
+			}
+
 			String runId = Long.toString(System.currentTimeMillis());
 			ValidationRequest request = new ValidationRequest(runId);
 			request.setBuildBucketName(buildBucketName);
@@ -1146,6 +1159,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setDailyBuild(buildConfiguration.isDailyBuild());
+			request.setDefaultModuleId(defaultModuleId);
 			request.setIncludedModuleIds(includedModuleIdsStr);
 			request.setResponseQueue(queue);
 			request.setBranchPath(buildConfiguration.getBranchPath());

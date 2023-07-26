@@ -41,15 +41,11 @@ public class RVFClient implements Closeable {
 
 	private static final String BRANCH_HEAD_TIMESTAMP = "contentHeadTimestamp";
 
-	private static final String CREATE_JIRA_ISSUE = "jiraIssueCreationFlag";
-
-	private static final String PRODUCT_NAME = "productName";
-
-	private static final String REPORTING_STAGE = "reportingStage";
-
 	private static final String DROOLS_RULES_GROUPS = "droolsRulesGroups";
 
 	private static final String INCLUDED_MODULES = "includedModules";
+
+	private static final String DEFAULT_MODULE_ID = "defaultModuleId";
 
 	private static final String RESPONSE_QUEUE = "responseQueue";
 
@@ -266,6 +262,10 @@ public class RVFClient implements Closeable {
 			multiPartBuilder.addTextBody(EFFECTIVE_TIME, request.getEffectiveTime());
 		}
 
+		if (StringUtils.isNotBlank(request.getDefaultModuleId())) {
+			multiPartBuilder.addTextBody(DEFAULT_MODULE_ID, request.getDefaultModuleId());
+		}
+
 		if (StringUtils.isNotBlank(request.getIncludedModuleIds())) {
 			multiPartBuilder.addTextBody(INCLUDED_MODULES, request.getIncludedModuleIds());
 		}
@@ -294,7 +294,7 @@ public class RVFClient implements Closeable {
 	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest) throws BusinessServiceException {
 		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest, RUN_POST_VIA_S3);
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
-		String rvfResponse = "No result recovered from RVF";
+		String rvfResponse;
 		try (CloseableHttpResponse response = httpClient.execute(post)) {
 			LOGGER.debug(response.toString());
 			final int statusCode = response.getStatusLine().getStatusCode();
