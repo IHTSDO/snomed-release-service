@@ -21,7 +21,9 @@ public class ValidationRequest {
 	private boolean releaseAsAnEdition;
 
 	private boolean dailyBuild;
-	
+
+	private String defaultModuleId;
+
 	private String includedModuleIds;
 
 	private final String runId;
@@ -110,6 +112,14 @@ public class ValidationRequest {
 
 	public void setReleaseAsAnEdition(boolean releaseAsAnEdition) {
 		this.releaseAsAnEdition = releaseAsAnEdition;
+	}
+
+	public String getDefaultModuleId() {
+		return defaultModuleId;
+	}
+
+	public void setDefaultModuleId(String defaultModuleId) {
+		this.defaultModuleId = defaultModuleId;
 	}
 
 	public String getIncludedModuleIds() {
