@@ -70,9 +70,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	public Page<Product> findAll(final String releaseCenterKey, final Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags) {
 		Page<Product> page = productDAO.findAll(releaseCenterKey, filterOptions, pageable);
 		if (includedLatestBuildStatusAndTags && !CollectionUtils.isEmpty(page.getContent())) {
-			page.getContent().forEach(product -> {
-				setLatestBuildStatusAndTag(releaseCenterKey, product);
-			});
+			page.getContent().forEach(product -> setLatestBuildStatusAndTag(releaseCenterKey, product));
 		}
 		return page;
 	}
@@ -130,7 +128,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			Map<String, String> propertyValues = new HashMap<>();
 			propertyValues.put(EFFECTIVE_TIME, "1970-01-01");
 			propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
-			propertyValues.put(USE_CLASSIFIER_PRECONDITION_CHECKS, TRUE);
 			propertyValues.put(CLASSIFY_OUTPUT_FILES, TRUE);
 			propertyValues.put(ENABLE_DROOLS, TRUE);
 			propertyValues.put(ENABLE_MRCM, TRUE);
@@ -152,7 +149,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 						}
 
 						if (metaData.containsKey("previousPackage")) {
-							//propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
+							propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
 						}
 						else {
 							propertyValues.put(FIRST_TIME_RELEASE, TRUE);
@@ -333,7 +330,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
 			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
 			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
-				throw new BusinessServiceException(String.format("The additional release information is not valid JSON String"));
+				throw new BusinessServiceException("The additional release information is not valid JSON String");
 			}
 			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
 		}
@@ -342,14 +339,15 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
 			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
-			if (newDefaultBranchPath != null && configuration.getDefaultBranchPath() != newDefaultBranchPath.toUpperCase()) {
+			if (newDefaultBranchPath != null && !Objects.equals(configuration.getDefaultBranchPath(), newDefaultBranchPath.toUpperCase())) {
 				if (StringUtils.hasLength(newDefaultBranchPath)) {
 					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 					CodeSystem codeSystem = codeSystems.stream()
 							.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
 							.findAny()
 							.orElse(null);
-					if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
+                    assert codeSystem != null;
+                    if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
 						throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
 					}
 				}
@@ -521,7 +519,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				}
 
 				if (newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)) {
-					Date previousDependencyDate = null;
+					Date previousDependencyDate;
 					try {
 						if (previousEditionDependencyEffectiveDate.contains("-")) {
 							previousDependencyDate = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);

@@ -56,7 +56,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 
 	public Long createNewId(final String partitionId) {
 		sctid++;
-		return Long.parseLong("" + sctid + partitionId + BOGUS_CHECK_DIGIT);
+		return Long.parseLong(sctid + partitionId + BOGUS_CHECK_DIGIT);
 	}
 
 	public void reset() {
@@ -74,7 +74,7 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 			if (ctv3IdChar > 122) {
 				ctv3IdChar = 64;
 			}
-			result.put(uuid, CTV3ID_PREFIX + Character.valueOf((char)(ctv3IdChar)));
+			result.put(uuid, CTV3ID_PREFIX + (char) (ctv3IdChar));
 		}
 		return result;
 	}
@@ -83,11 +83,11 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	private Map<UUID, String> createSnomeds( final List<UUID> componentUuidList) {
 		final Map<UUID, String> result =  new HashMap<>();
 		for (final UUID uuid : componentUuidList) {
-			String hexString = Integer.toHexString(snomedIdCounter++);
+			StringBuilder hexString = new StringBuilder(Integer.toHexString(snomedIdCounter++));
 			final int numberOfZeorsToPadd = 4 - hexString.length();
 			if (hexString.length() < 4) {
 				for (int j = 0; j < numberOfZeorsToPadd; j++) {
-					hexString = "0" + hexString;
+					hexString.insert(0, "0");
 				}
 			}
 			result.put(uuid, SNOMED_ID_PREFIX + hexString);

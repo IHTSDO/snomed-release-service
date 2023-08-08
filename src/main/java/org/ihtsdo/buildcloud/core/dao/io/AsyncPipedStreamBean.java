@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 public class AsyncPipedStreamBean implements Closeable {
 
 	private final OutputStream outputStream;
-	private final Future future;
+	private final Future<String> future;
 	private final String outputFilePath;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AsyncPipedStreamBean.class);
 

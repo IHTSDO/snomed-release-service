@@ -68,7 +68,7 @@ public class SourcesType {
      */
     public List<String> getSource() {
         if (source == null) {
-            source = new ArrayList<String>();
+            source = new ArrayList<>();
         }
         return this.source;
     }

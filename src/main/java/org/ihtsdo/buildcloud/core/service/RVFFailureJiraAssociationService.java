@@ -148,17 +148,17 @@ public class RVFFailureJiraAssociationService {
 	}
 
 	private String generateDescription(Build build, ValidationReport.RvfValidationResult.TestResult.TestRunItem testRunItem) {
-		String result = testRunItem.getAssertionText() + "\n"
-				+ "Total number of failures: " + testRunItem.getFailureCount() + "\n"
-				+ "Report URL: " + "[" + build.getRvfURL() + "|" + build.getRvfURL() + "]" + "\n";
+		StringBuilder result = new StringBuilder(testRunItem.getAssertionText() + "\n"
+                + "Total number of failures: " + testRunItem.getFailureCount() + "\n"
+                + "Report URL: " + "[" + build.getRvfURL() + "|" + build.getRvfURL() + "]" + "\n");
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> firstNInstances = getFirstNInstances(testRunItem.getFirstNInstances(), 10);
 		if (!firstNInstances.isEmpty()) {
-			result += "First " + firstNInstances.size() + " failures: \n";
+			result.append("First ").append(firstNInstances.size()).append(" failures: \n");
 			for (ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail failureDetail: firstNInstances) {
-				result += "* " + failureDetail.toStringAndTruncateIfTextTooLong() + "\n";
+				result.append("* ").append(failureDetail.toStringAndTruncateIfTextTooLong()).append("\n");
 			}
 		}
-		return result;
+		return result.toString();
 	}
 
 	private String getPrettyString(String input) {
@@ -204,13 +204,13 @@ public class RVFFailureJiraAssociationService {
 			final Issue.FluentUpdate updateRequest = jiraIssue.update();
 			updateRequest.field(Field.PRIORITY, priority);
 			updateRequest.field(productReleaseDate, releaseDate);
-			updateRequest.field(reportingEntity, Arrays.asList(reportingEntityDefaultValue));
-			updateRequest.field(reportingStage, Arrays.asList(reportingStageDefaultValue));
+			updateRequest.field(reportingEntity, Collections.singletonList(reportingEntityDefaultValue));
+			updateRequest.field(reportingStage, Collections.singletonList(reportingStageDefaultValue));
 			if (StringUtils.hasLength(assignee)) {
 				updateRequest.field(Field.ASSIGNEE, assignee);
 			}
 			if (StringUtils.hasLength(releaseCenter.getSnomedCtProduct())) {
-				updateRequest.field(snomedCtProduct, Arrays.asList(releaseCenter.getSnomedCtProduct().trim()));
+				updateRequest.field(snomedCtProduct, List.of(releaseCenter.getSnomedCtProduct().trim()));
 			}
 			updateRequest.execute();
 		} catch (JiraException e) {

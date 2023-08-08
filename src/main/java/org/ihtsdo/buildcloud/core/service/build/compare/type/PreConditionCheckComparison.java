@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.build.compare.type;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.PostConditionCheckReport;
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport;
 import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
@@ -12,7 +11,6 @@ import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparis
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -20,7 +18,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class PreConditionCheckComparison extends ComponentComparison {
@@ -64,9 +61,9 @@ public class PreConditionCheckComparison extends ComponentComparison {
             LOGGER.error(e.getMessage(), e);
         }
         if (!CollectionUtils.isEmpty(leftReport) && !CollectionUtils.isEmpty(rightReport)) {
-            List<String> leftCheckNames = leftReport.stream().map(item -> item.getPreConditionCheckName()).collect(Collectors.toList());
-            List<String> rightCheckNames = rightReport.stream().map(item -> item.getPreConditionCheckName()).collect(Collectors.toList());
-            List<PreConditionCheckReport> deletedItems = leftReport.stream().filter(item -> !rightCheckNames.contains(item.getPreConditionCheckName())).collect(Collectors.toList());
+            List<String> leftCheckNames = leftReport.stream().map(PreConditionCheckReport::getPreConditionCheckName).toList();
+            List<String> rightCheckNames = rightReport.stream().map(PreConditionCheckReport::getPreConditionCheckName).toList();
+            List<PreConditionCheckReport> deletedItems = leftReport.stream().filter(item -> !rightCheckNames.contains(item.getPreConditionCheckName())).toList();
             deletedItems.forEach(item -> {
                 DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                 dto.setName(item.getPreConditionCheckName());
@@ -76,7 +73,7 @@ public class PreConditionCheckComparison extends ComponentComparison {
                 reports.add(dto);
             });
 
-            List<PreConditionCheckReport> newItems = rightReport.stream().filter(item -> !leftCheckNames.contains(item.getPreConditionCheckName())).collect(Collectors.toList());
+            List<PreConditionCheckReport> newItems = rightReport.stream().filter(item -> !leftCheckNames.contains(item.getPreConditionCheckName())).toList();
             newItems.forEach(item -> {
                 DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                 dto.setName(item.getPreConditionCheckName());

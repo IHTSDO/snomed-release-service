@@ -26,14 +26,20 @@ public class RF2TableDAOHsqlImplTest {
 	@Test
 	@Disabled
 	public void testFullColumns() throws IOException, SQLException, ParseException {
-		String testData = "one\ttwo\tthree\tfour\n" + "one\ttwo\tthree\tfour\n";
+		String testData = """
+                one\ttwo\tthree\tfour
+                one\ttwo\tthree\tfour
+                """;
 		runTest(testData);
 	}
 
 	@Test
 	@Disabled
 	public void testBlankLastColumn() throws IOException, SQLException, ParseException {
-		String testData = "one\ttwo\tthree\tfour\n" + "one\ttwo\tthree\t\n";
+		String testData = """
+                one\ttwo\tthree\tfour
+                one\ttwo\tthree\t
+                """;
 		runTest(testData);
 	}
 

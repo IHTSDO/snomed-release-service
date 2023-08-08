@@ -68,7 +68,7 @@ public class ContainsModuleIDsType {
 	 */
 	public List<BigInteger> getModuleId() {
 		if (moduleId == null) {
-			moduleId = new ArrayList<BigInteger>();
+			moduleId = new ArrayList<>();
 		}
 		return this.moduleId;
 	}

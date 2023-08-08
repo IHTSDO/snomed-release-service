@@ -52,89 +52,73 @@ public class IdServiceClientConcurrencyTestManual {
 
 
 	private static void createSnomedIdsInAThread(final List<UUID> uuids) {
-		final Thread t = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					//create a different idgen client instance
-					final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
-					idGen.logIn();
-					Map<UUID,String> result = idGen.getOrCreateSchemeIds(uuids, SchemeIdType.SNOMEDID, COMMENT);
-					for (UUID uuid : result.keySet()) {
-						System.out.println("Thread:" + Thread.currentThread().getId()  + " created SNOMED ID:" + result.get(uuid) + " for UUID:" + uuid);
-					}
-					idGen.logOut();
-				} catch (final Exception e) {
-					e.printStackTrace();
-					throw new RuntimeException(e);
-				}
-			}
-		});
+		final Thread t = new Thread(() -> {
+            try {
+                //create a different idgen client instance
+                final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
+                idGen.logIn();
+                Map<UUID,String> result = idGen.getOrCreateSchemeIds(uuids, SchemeIdType.SNOMEDID, COMMENT);
+                for (UUID uuid : result.keySet()) {
+                    System.out.println("Thread:" + Thread.currentThread().getId()  + " created SNOMED ID:" + result.get(uuid) + " for UUID:" + uuid);
+                }
+                idGen.logOut();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 		t.start();
 	}
 
 
 	private static void createCtv3IdsInAThread(final List<UUID> uuids) {
-		final Thread t = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					//comment this out to testing multiple connections.
+		final Thread t = new Thread(() -> {
+            try {
+                //comment this out to testing multiple connections.
 //					final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
 //					idGen.logIn();
-					final Map<UUID,String> ctv3IdMap = idGen.getOrCreateSchemeIds(uuids, SchemeIdType.CTV3ID, COMMENT);
-					for (UUID uuid : ctv3IdMap.keySet()) {
-						System.out.println("Thread:" + Thread.currentThread().getId()  + " created CTV3 ID:" + ctv3IdMap.get(uuid) + " for UUID:" + uuid);
-					}
+                final Map<UUID,String> ctv3IdMap = idGen.getOrCreateSchemeIds(uuids, SchemeIdType.CTV3ID, COMMENT);
+                for (UUID uuid : ctv3IdMap.keySet()) {
+                    System.out.println("Thread:" + Thread.currentThread().getId()  + " created CTV3 ID:" + ctv3IdMap.get(uuid) + " for UUID:" + uuid);
+                }
 //					idGen.logOut();
-				} catch (final Exception e) {
-					e.printStackTrace();
-					throw new RuntimeException(e);
-				}
-			}
-		});
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 		t.start();
 	}
 
 	private static void  createSctIdInAThread(final UUID componentUuid) {
-		final Thread t = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					final long id = Thread.currentThread().getId();
-					System.out.println("Thread running:" + id);
-					final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
-					idGen.logIn();
-					final Long sctId = idGen.getOrCreateSctId(componentUuid, NAMES_SPACE_ID, PARTITION_ID, "testing");
-					System.out.println("Thread:" + id + " created SCT ID:" + sctId + " for UUID:" + componentUuid);
-					idGen.logOut();
-				} catch (final Exception e) {
-					e.printStackTrace();
-					throw new RuntimeException("Failed to create sctID!", e);
-				}
-			}
-		});
+		final Thread t = new Thread(() -> {
+            try {
+                final long id = Thread.currentThread().getId();
+                System.out.println("Thread running:" + id);
+                final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
+                idGen.logIn();
+                final Long sctId = idGen.getOrCreateSctId(componentUuid, NAMES_SPACE_ID, PARTITION_ID, "testing");
+                System.out.println("Thread:" + id + " created SCT ID:" + sctId + " for UUID:" + componentUuid);
+                idGen.logOut();
+            } catch (final Exception e) {
+                throw new RuntimeException("Failed to create sctID!", e);
+            }
+        });
 		t.start();
 	}
 
 	private static void createSctIdsInAThread(final List<UUID> uuids) {
-		final Thread t = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					final long id = Thread.currentThread().getId();
-					System.out.println("Thread running:" + id);
+		final Thread t = new Thread(() -> {
+            try {
+                final long id = Thread.currentThread().getId();
+                System.out.println("Thread running:" + id);
 //					final IdServiceRestClient idGen = new IdServiceRestClientImpl(LOCAL_HOST,USER_NAME,PASSWORD);
-					final Map<UUID,Long> result = idGen.getOrCreateSctIds(uuids, NAMES_SPACE_ID,PARTITION_ID, COMMENT);
-					for (UUID uuid : result.keySet()) {
-						System.out.println("SCT ID created:" + result.get(uuid) + " by thread:" + id);
-					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					throw new RuntimeException("Failed to create!", e);
-				}
-			}
-		});
+                final Map<UUID,Long> result = idGen.getOrCreateSctIds(uuids, NAMES_SPACE_ID,PARTITION_ID, COMMENT);
+                for (UUID uuid : result.keySet()) {
+                    System.out.println("SCT ID created:" + result.get(uuid) + " by thread:" + id);
+                }
+            } catch (final Exception e) {
+                throw new RuntimeException("Failed to create!", e);
+            }
+        });
 		t.start();
 	}
 

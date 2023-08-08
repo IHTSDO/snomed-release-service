@@ -78,7 +78,7 @@ public class ModuleResolverService {
 						String sourceId = matcher.group(1);
 						String destinationId = matcher.group(2);
 						if (!destinationIdToSourceIdListMap.containsKey(destinationId)) {
-							destinationIdToSourceIdListMap.put(destinationId, new ArrayList<String>());
+							destinationIdToSourceIdListMap.put(destinationId, new ArrayList<>());
 						}
 						destinationIdToSourceIdListMap.get(destinationId).add(sourceId);
 					}

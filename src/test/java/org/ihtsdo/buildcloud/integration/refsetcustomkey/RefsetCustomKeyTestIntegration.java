@@ -67,15 +67,16 @@ public class RefsetCustomKeyTestIntegration extends AbstractControllerTest {
 
 	private void assertOutput(String expectedOutputPackageName, String buildUrl) throws Exception {
 		String expectedZipFilename = "SnomedCT_Release_INT_20140131.zip";
-		String expectedZipEntries = "SnomedCT_Release_INT_20140131/\n" +
-				"SnomedCT_Release_INT_20140131/Readme_20140131.txt\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccsiRefset_UnknownFormatFull_INT_20140131.txt\n" +
-				"SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt";
+		String expectedZipEntries = """
+                SnomedCT_Release_INT_20140131/
+                SnomedCT_Release_INT_20140131/Readme_20140131.txt
+                SnomedCT_Release_INT_20140131/RF2Release/
+                SnomedCT_Release_INT_20140131/RF2Release/Full/
+                SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/
+                SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/
+                SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt
+                SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_iisssccsiRefset_UnknownFormatFull_INT_20140131.txt
+                SnomedCT_Release_INT_20140131/RF2Release/Full/Refset/Content/der2_Refset_SimpleFull_INT_20140131.txt""";
 		ZipFile zipFileFirstRelease = integrationTestHelper.testZipNameAndEntryNames(buildUrl, expectedZipFilename, expectedZipEntries, getClass());
 		integrationTestHelper.assertZipContents(expectedOutputPackageName, zipFileFirstRelease, getClass());
 	}

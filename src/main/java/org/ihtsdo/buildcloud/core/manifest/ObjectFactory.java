@@ -118,7 +118,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://release.ihtsdo.org/manifest/1.0.0", name = "listing")
     public JAXBElement<ListingType> createListing(ListingType value) {
-        return new JAXBElement<ListingType>(_Listing_QNAME, ListingType.class, null, value);
+        return new JAXBElement<>(_Listing_QNAME, ListingType.class, null, value);
     }
 
 }

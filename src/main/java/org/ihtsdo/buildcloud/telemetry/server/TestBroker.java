@@ -31,19 +31,16 @@ public class TestBroker {
 	public void consumeMessages() throws JMSException {
 		Queue queue = session.createQueue(Constants.QUEUE_RELEASE_EVENTS);
 		final MessageConsumer consumer = session.createConsumer(queue);
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					Message receive = consumer.receive();
-					if (receive != null) {
-						messages.add(receive);
-					}
-				} catch (JMSException e) {
-					logger.error("JMSException", e);
-				}
-			}
-		}).start();
+		new Thread(() -> {
+            try {
+                Message receive = consumer.receive();
+                if (receive != null) {
+                    messages.add(receive);
+                }
+            } catch (JMSException e) {
+                logger.error("JMSException", e);
+            }
+        }).start();
 	}
 
 	public void close() throws JMSException {

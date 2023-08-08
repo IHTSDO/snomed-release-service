@@ -33,7 +33,7 @@ public class RF2TableDAOTreeMapImplTest {
 		String effectiveTime = "20140731";
 
 		String deltaInput = "rel2_Refset_SimpleDelta_INT_20140731.txt";
-		Class thisClass = getClass();
+		Class<?> thisClass = getClass();
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_Refset_SimpleSnapshot_INT_20140131.txt";
@@ -50,7 +50,7 @@ public class RF2TableDAOTreeMapImplTest {
 		String effectiveTime = "20140731";
 
 		String deltaInput = "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
-		Class thisClass = getClass();
+		Class<?> thisClass = getClass();
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
@@ -68,7 +68,7 @@ public class RF2TableDAOTreeMapImplTest {
 		String effectiveTime = "20140731";
 
 		String deltaInput = "rel2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
-		Class thisClass = getClass();
+		Class<?> thisClass = getClass();
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
@@ -93,7 +93,7 @@ public class RF2TableDAOTreeMapImplTest {
 				new RF2TableResultsReaderHack(results));
 	}
 
-	class RF2TableResultsReaderHack extends BufferedReader {
+	static class RF2TableResultsReaderHack extends BufferedReader {
 
 		private final RF2TableResults results;
 

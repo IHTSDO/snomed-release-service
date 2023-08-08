@@ -169,17 +169,21 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		assertTrue(reportDetails.get(ReportType.INFO).contains(reportDetailForEn));
 
 		String actualRefsetData = integrationTestHelper.getInputFile("rel2_cRefset_LanguageDelta-en_DK1000005_20180331.txt");
-		String expected = "id	effectiveTime	active	moduleId	refsetId	referencedComponentId	acceptabilityId\r\n" +
-				"894e9c94-7fba-4f87-bce5-fd9a8879737c	20180331	1	554471000005108	900000000000509007	4926731000005112	900000000000548007\r\n" +
-				"fede5943-7b6e-54e9-ba22-acd675deb7d2	20180331	0	554471000005108	900000000000509007	4852791000005118	900000000000548007\r\n";
+		String expected = """
+                id	effectiveTime	active	moduleId	refsetId	referencedComponentId	acceptabilityId\r
+                894e9c94-7fba-4f87-bce5-fd9a8879737c	20180331	1	554471000005108	900000000000509007	4926731000005112	900000000000548007\r
+                fede5943-7b6e-54e9-ba22-acd675deb7d2	20180331	0	554471000005108	900000000000509007	4852791000005118	900000000000548007\r
+                """;
 
 		assertEquals(expected, actualRefsetData);
 
 		String daRefsetDataActual = integrationTestHelper.getInputFile("rel2_cRefset_LanguageDelta-da_DK1000005_20180331.txt");
-		String expectedDaRefsetData = "id	effectiveTime	active	moduleId	refsetId	referencedComponentId	acceptabilityId\r\n" +
-				"17b9020e-c5f2-4fa7-aca5-bf2c3de51e8b	20180331	1	554471000005108	554461000005103	3299811000005110	900000000000548007\r\n" +
-				"bd6b1181-ebbc-46ce-95bc-6b02c0cab392	20180331	1	554471000005108	554461000005103	4924031000005119	900000000000548007\r\n" +
-				"24dea357-abd4-48d8-b950-75cfd80688d5	20180331	1	554471000005108	554461000005103	4924271000005113	900000000000548007\r\n";
+		String expectedDaRefsetData = """
+                id	effectiveTime	active	moduleId	refsetId	referencedComponentId	acceptabilityId\r
+                17b9020e-c5f2-4fa7-aca5-bf2c3de51e8b	20180331	1	554471000005108	554461000005103	3299811000005110	900000000000548007\r
+                bd6b1181-ebbc-46ce-95bc-6b02c0cab392	20180331	1	554471000005108	554461000005103	4924031000005119	900000000000548007\r
+                24dea357-abd4-48d8-b950-75cfd80688d5	20180331	1	554471000005108	554461000005103	4924271000005113	900000000000548007\r
+                """;
 		assertEquals(expectedDaRefsetData, daRefsetDataActual);
 	}
 
@@ -207,20 +211,24 @@ public class InputFilePrepareIntegrationTest extends AbstractControllerTest {
 		detailWithDa.setMessage("Uploaded to product input files directory");
 		assertTrue(reportDetails.get(ReportType.INFO).contains(detailWithDa));
 
-		String expectedDescInEn = "id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId\r\n" +
-				"4927621000005118	20180331	1	554471000005108	554071000005100	en	900000000000003001	Hospital pharmacy (environment)	900000000000448009\r\n" +
-				"4927681000005119	20180331	1	554471000005108	550891000005100	en	900000000000003001	Private (environment)	900000000000448009\r\n";
+		String expectedDescInEn = """
+                id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId\r
+                4927621000005118	20180331	1	554471000005108	554071000005100	en	900000000000003001	Hospital pharmacy (environment)	900000000000448009\r
+                4927681000005119	20180331	1	554471000005108	550891000005100	en	900000000000003001	Private (environment)	900000000000448009\r
+                """;
 
 		String actualDesInEn = integrationTestHelper.getInputFile("rel2_Description_Delta-en_DK1000005_20180331.txt");
 
 		assertEquals(expectedDescInEn, actualDesInEn);
-		String expectedDescInDa = "id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId\r\n" +
-				"4923861000005118	20180331	1	554471000005108	10829007	da	900000000000013009	øsofagusinfusionstest – Bernstein	900000000000448009\r\n" +
-				"2367611000005115	20180331	0	554471000005108	43179002	da	900000000000013009	Punkturaspiration af hæmatom i hud	900000000000448009\r\n" +
-				"4921641000005119	20180331	1	554471000005108	405098003	da	900000000000013009	opfattelse af helbredstilstand	900000000000448009\r\n" +
-				"4927251000005110	20180331	1	554471000005108	734452007	da	900000000000013009	saxagliptinhydrochlorid	900000000000448009\r\n" +
-				"4923271000005110	20180331	1	554471000005108	285873000	da	900000000000013009	evne til at anvende komfur	900000000000448009\r\n" +
-				"2178411000005115	20180331	0	554471000005108	66865009	da	900000000000013009	dobbeltanlæg af oesophagus	900000000000448009\r\n";
+		String expectedDescInDa = """
+                id	effectiveTime	active	moduleId	conceptId	languageCode	typeId	term	caseSignificanceId\r
+                4923861000005118	20180331	1	554471000005108	10829007	da	900000000000013009	øsofagusinfusionstest – Bernstein	900000000000448009\r
+                2367611000005115	20180331	0	554471000005108	43179002	da	900000000000013009	Punkturaspiration af hæmatom i hud	900000000000448009\r
+                4921641000005119	20180331	1	554471000005108	405098003	da	900000000000013009	opfattelse af helbredstilstand	900000000000448009\r
+                4927251000005110	20180331	1	554471000005108	734452007	da	900000000000013009	saxagliptinhydrochlorid	900000000000448009\r
+                4923271000005110	20180331	1	554471000005108	285873000	da	900000000000013009	evne til at anvende komfur	900000000000448009\r
+                2178411000005115	20180331	0	554471000005108	66865009	da	900000000000013009	dobbeltanlæg af oesophagus	900000000000448009\r
+                """;
 
 		String actualDescInDa = integrationTestHelper.getInputFile("rel2_Description_Delta-da_DK1000005_20180331.txt");
 		assertEquals(expectedDescInDa, actualDescInDa);

@@ -115,19 +115,16 @@ public class BuildStatusListenerService {
 
 	private Build.Status resolveBuildStatusWithResultsFromRvf(final Map<String, Object> message, final Build build, final Product product) {
 		final String state = (String) message.get(STATE_KEY);
-		switch (state) {
-			case "QUEUED":
-				return Build.Status.RVF_QUEUED;
-			case "RUNNING":
-				return Build.Status.RVF_RUNNING;
-			case "COMPLETE":
-				return processCompleteStatus(build, product);
-			case "FAILED":
-				return Build.Status.RVF_FAILED;
-			default:
-				LOGGER.info("Unexpected build status state: {}", state);
-				return null;
-		}
+        return switch (state) {
+            case "QUEUED" -> Build.Status.RVF_QUEUED;
+            case "RUNNING" -> Build.Status.RVF_RUNNING;
+            case "COMPLETE" -> processCompleteStatus(build, product);
+            case "FAILED" -> Build.Status.RVF_FAILED;
+            default -> {
+                LOGGER.info("Unexpected build status state: {}", state);
+                yield null;
+            }
+        };
 	}
 
 	private BuildReport getBuildReportFile(final Build build) {
@@ -161,7 +158,8 @@ public class BuildStatusListenerService {
 				product.getReleaseCenter().getBusinessKey(),
 				product.getBusinessKey(), build.getId())) {
 			if (reportStream != null) {
-				return objectMapper.readValue(reportStream, new TypeReference<List<PreConditionCheckReport>>(){});
+				return objectMapper.readValue(reportStream, new TypeReference<>() {
+                });
 			} else {
 				LOGGER.warn("No pre-condition checks report found.");
 			}

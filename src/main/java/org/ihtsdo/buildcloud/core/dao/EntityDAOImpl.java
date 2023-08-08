@@ -26,9 +26,7 @@ public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
 
 	@Override
 	public T load(Serializable id) {
-		@SuppressWarnings("unchecked")
-		T t = getCurrentSession().get(type, id);
-		return t;
+		return getCurrentSession().get(type, id);
 	}
 
 	@Override

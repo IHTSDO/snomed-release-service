@@ -122,23 +122,20 @@ public class PublishServiceImpl2Test extends AbstractTest {
 
 	private static Thread runThread(final String threadName, final PublishService service, final Build build,
 			final Class<?> expectedExceptionClass) {
-		Thread thread = new Thread() {
-			@Override
-			public void run() {
-				try {
-					service.publishBuild(build, true, null);
-					LOGGER.info("Publishing complete in thread " + threadName);
-				} catch (Exception e) {
-					if (expectedExceptionClass == null) {
-						throw new RuntimeException("Unexpected exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
-					}
+		Thread thread = new Thread(() -> {
+            try {
+                service.publishBuild(build, true, null);
+                LOGGER.info("Publishing complete in thread " + threadName);
+            } catch (Exception e) {
+                if (expectedExceptionClass == null) {
+                    throw new RuntimeException("Unexpected exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
+                }
 
-					if (expectedExceptionClass != null && e.getClass() != expectedExceptionClass) {
-						throw new RuntimeException("Incorrect exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
-					}
-				}
-			}
-		};
+                if (expectedExceptionClass != null && e.getClass() != expectedExceptionClass) {
+                    throw new RuntimeException("Incorrect exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
+                }
+            }
+        });
 		thread.start();
 		return thread;
 	}

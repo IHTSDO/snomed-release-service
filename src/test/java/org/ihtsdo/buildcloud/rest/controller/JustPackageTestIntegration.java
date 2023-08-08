@@ -39,12 +39,13 @@ public class JustPackageTestIntegration extends AbstractControllerTest {
 
 		// Assert first release output expectations
 		String expectedZipFilename = "JustPackage_Release_INT_20140131.zip";
-		String expectedZipEntries = "JustPackage_Release_INT_20140131/\n" +
-				"JustPackage_Release_INT_20140131/RF2Release/\n" +
-				"JustPackage_Release_INT_20140131/RF2Release/Delta/\n" +
-				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/\n" +
-				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/\n" +
-				"JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt";
+		String expectedZipEntries = """
+                JustPackage_Release_INT_20140131/
+                JustPackage_Release_INT_20140131/RF2Release/
+                JustPackage_Release_INT_20140131/RF2Release/Delta/
+                JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/
+                JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/
+                JustPackage_Release_INT_20140131/RF2Release/Delta/Refset/Content/der2_Refset_SimpleDelta_INT_20140131.txt""";
 		integrationTestHelper.testZipNameAndEntryNames(buildURL, expectedZipFilename, expectedZipEntries, getClass());
 	}
 

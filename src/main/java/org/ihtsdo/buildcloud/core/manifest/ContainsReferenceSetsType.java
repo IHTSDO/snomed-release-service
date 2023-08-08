@@ -68,7 +68,7 @@ public class ContainsReferenceSetsType {
      */
     public List<RefsetType> getRefset() {
         if (refset == null) {
-            refset = new ArrayList<RefsetType>();
+            refset = new ArrayList<>();
         }
         return this.refset;
     }

@@ -7,7 +7,6 @@ import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildReport;
 import org.ihtsdo.buildcloud.core.service.BuildService;
-import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;

@@ -18,55 +18,53 @@ public class NotificationDaoImpl extends EntityDAOImpl<Notification> implements 
 
 	@Override
 	public Page<Notification> findAll(String recipient, PageRequest pageRequest) {
-		Query query = getCurrentSession().createQuery(
+		Query<Notification> query = getCurrentSession().createQuery(
 				"select notification " +
 						"from Notification notification " +
 						"where notification.recipient = :recipient " +
-						"order by notification.createdDate DESC");
+						"order by notification.createdDate DESC", Notification.class);
 		query.setParameter("recipient", recipient);
 		query.setFirstResult(pageRequest.getPageNumber() * pageRequest.getPageSize());
 		query.setMaxResults(pageRequest.getPageSize());
 
-		Query queryTotal = getCurrentSession().createQuery(
+		Query<Long> queryTotal = getCurrentSession().createQuery(
 				"select count(notification.id) " +
 						"from Notification notification " +
-						"where notification.recipient = :recipient");
+						"where notification.recipient = :recipient", Long.class);
 		queryTotal.setParameter("recipient", recipient);
 
 
-		return new PageImpl(query.list(), pageRequest, (long) queryTotal.uniqueResult());
+		return new PageImpl<>(query.list(), pageRequest, queryTotal.uniqueResult());
 	}
 
 	@Override
 	public Long countUnreadNotifications(String recipient) {
-		Query queryTotal = getCurrentSession().createQuery(
+		Query<Long> queryTotal = getCurrentSession().createQuery(
 				"select count(notification.id) " +
 						"from Notification notification " +
-						"where notification.recipient = :recipient and notification.read = 'N'");
+						"where notification.recipient = :recipient and notification.read = 'N'", Long.class);
 		queryTotal.setParameter("recipient", recipient);
 
-		return (long) queryTotal.uniqueResult();
+		return queryTotal.uniqueResult();
 	}
 
 	@Override
 	public List<Notification> findByRecipient(String recipient) {
-		Query query = getCurrentSession().createQuery(
+		Query<Notification> query = getCurrentSession().createQuery(
 				"select notification " +
 						"from Notification notification " +
-						"where notification.recipient = :recipient");
+						"where notification.recipient = :recipient", Notification.class);
 		query.setParameter("recipient", recipient);
-
 		return query.list();
 	}
 
 	@Override
 	public List<Notification> findByIds(List<Long> notificationIds) {
-		Query query = getCurrentSession().createQuery(
+		Query<Notification> query = getCurrentSession().createQuery(
 				"select notification " +
 						"from Notification notification " +
-						"where notification.id in (:notificationIds)");
+						"where notification.id in (:notificationIds)", Notification.class);
 		query.setParameter("notificationIds", notificationIds);
-
 		return query.list();
 	}
 }

@@ -3,8 +3,6 @@ package org.ihtsdo.buildcloud.rest.pojo;
 
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 
-import java.util.Set;
-
 public class BuildRequestPojo {
 
 	private String effectiveDate;

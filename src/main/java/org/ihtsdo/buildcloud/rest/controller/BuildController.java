@@ -6,6 +6,7 @@ import net.rcarz.jiraclient.JiraException;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
+import org.ihtsdo.buildcloud.core.entity.RVFFailureJiraAssociation;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.PublishService;
@@ -79,7 +80,7 @@ public class BuildController {
 
 	@Operation(summary="Re-initialise")
 	@RequestMapping(value="/builds/initialise", method= RequestMethod.GET)
-	public ResponseEntity initialise() throws BusinessServiceException {
+	public ResponseEntity<Void> initialise() throws BusinessServiceException {
 		releaseBuildManager.initialise();
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -89,7 +90,7 @@ public class BuildController {
 	@ResponseBody
 	@Operation(summary = "Create a release package",
 			description = "Create a new build and add the build to the job queue automatically")
-	public ResponseEntity createReleasePackage(
+	public ResponseEntity<Build> createReleasePackage(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@RequestBody final BuildRequestPojo buildRequestPojo,
@@ -122,7 +123,7 @@ public class BuildController {
 	@ResponseBody
 	@Operation(summary = "Clone a new release build from specific build",
 			description = "Clone from specific build and add the new one to the job queue")
-	public ResponseEntity cloneBuild(
+	public ResponseEntity<Build> cloneBuild(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
@@ -141,7 +142,7 @@ public class BuildController {
 	@ResponseBody
 	@Operation(summary = "Schedule a release build",
 			description = "Add a release build to the job queue")
-	public ResponseEntity scheduleBuild(
+	public ResponseEntity<Build> scheduleBuild(
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
@@ -424,10 +425,10 @@ public class BuildController {
 	@ResponseBody
 	@Operation(summary = "Update visibility for build",
 			description = "Update an existing build with the visibility flag")
-	public ResponseEntity updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	public ResponseEntity<Void> updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 										   @PathVariable final String buildId, @RequestParam(required = true, defaultValue = "true") boolean visibility) {
 		buildService.updateVisibility(releaseCenterKey, productKey, buildId, visibility);
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/builds/{buildId}/tags")
@@ -435,11 +436,11 @@ public class BuildController {
 	@ResponseBody
 	@Operation(summary = "Update tags for build",
 			description = "Update an existing build with the tags")
-	public ResponseEntity updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	public ResponseEntity<Void> updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 										   @PathVariable final String buildId, @RequestParam(required = true) List<Build.Tag> tags) {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		buildService.saveTags(build, tags);
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/builds/{buildId}/publish")
@@ -608,15 +609,15 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/failure-jira-associations")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Get the list of JIRA issues associated with the RVF failures for each build")
-	public ResponseEntity getRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-																		 @PathVariable final String buildId) {
+	public ResponseEntity<List<RVFFailureJiraAssociation>> getRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+																						 @PathVariable final String buildId) {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.findByBuildKey(releaseCenterKey, productKey, buildId), HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/builds/{buildId}/failure-jira-associations")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Generate Jira issues for the RVF failures")
-	public ResponseEntity createRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+	public ResponseEntity<Map<String, List<RVFFailureJiraAssociation>>>  createRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
 											  @PathVariable final String buildId, @RequestBody String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.createFailureJiraAssociations(releaseCenterKey, productKey, buildId, assertionIds), HttpStatus.CREATED);
 	}

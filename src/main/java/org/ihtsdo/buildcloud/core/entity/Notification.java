@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;

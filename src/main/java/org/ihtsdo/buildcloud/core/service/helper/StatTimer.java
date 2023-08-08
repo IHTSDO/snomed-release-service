@@ -7,13 +7,13 @@ import java.util.Date;
 
 public class StatTimer {
 
-	private final Class aClass;
+	private final Class<?> aClass;
 	private long start;
 	private long split;
 	private static final Logger LOGGER = LoggerFactory.getLogger(StatTimer.class);
 	private String targetEntity;
 
-	public StatTimer(Class aClass) {
+	public StatTimer(Class<?> aClass) {
 		this.aClass = aClass;
 		split();
 	}
@@ -38,7 +38,7 @@ public class StatTimer {
 	}
 
 	private float getSeconds(long milis) {
-		return Float.valueOf(milis) / 1000f;
+		return (float) milis / 1000f;
 	}
 
 	private long getMilis() {

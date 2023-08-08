@@ -64,28 +64,28 @@ public class ReferenceSetCompositeKeyPatternFactory {
 		}
 
 		final List<String> fieldNames = new ArrayList<>();
-		String patternString = "";
+		StringBuilder patternString = new StringBuilder();
 		boolean alreadyMatchingTab = false;
 		for (int a = 0; !fieldIndexes.isEmpty(); a++) {
 			if (a > 0) {
 				if (alreadyMatchingTab) {
 					alreadyMatchingTab = false;
 				} else {
-					patternString += "\t";
+					patternString.append("\t");
 				}
 			}
  			if (!fieldIndexes.contains(a)) {
-				patternString += "[^\t]*";
+				patternString.append("[^\t]*");
 			} else {
 				fieldIndexes.remove(a);
 				fieldNames.add(a + " (" + fields.get(a).getName() + ")");
-				patternString += "([^\t]*\t?)";
+				patternString.append("([^\t]*\t?)");
 				alreadyMatchingTab = true;
 			}
 		}
-		patternString += ".*";
+		patternString.append(".*");
 
 		LOGGER.info("Reference Set {} in {} using {} composite key with fields {}, pattern {}", refsetId, tableSchema.getFilename(), customCompositeKey ? "custom" : "standard", fieldNames, patternString);
-		return Pattern.compile(patternString);
+		return Pattern.compile(patternString.toString());
 	}
 }

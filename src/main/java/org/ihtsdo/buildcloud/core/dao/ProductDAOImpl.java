@@ -8,7 +8,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Set;
 
@@ -25,27 +24,8 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable) {
-		String filter = "product.visibility = 'Y' ";
-		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
-			if (!filter.isEmpty()) {
-				filter += " and ";
-			}
-			filter += " ( removed = 'N' or removed is null) ";
-		}
-		if (filterOptions == null || !filterOptions.contains(FilterOption.INCLUDE_LEGACY)) {
-			if (!filter.isEmpty()) {
-				filter += " and ";
-			}
-			filter += " product.isLegacyProduct = 'N' ";
-		}
-		if (releaseCenterKey != null) {
-			if (!filter.isEmpty()) {
-				filter += " and ";
-			}
-			filter += " releaseCenter.businessKey = :releaseCenterBusinessKey ";
-		}
+		String filter = constructFilter(releaseCenterKey, filterOptions);
 		String fromClause = "from Product product join product.releaseCenter releaseCenter ";
 		String queryString = "select product " +
 				fromClause +
@@ -56,25 +36,42 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 				fromClause +
 				"where " +
 				filter;
-		if (pageable.getSort() != null && !pageable.getSort().isEmpty()) {
+		if (!pageable.getSort().isEmpty()) {
 			Sort.Order order = pageable.getSort().iterator().next();
-			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection().toString();
+			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection();
 		} else {
 			queryString += "product.id DESC";
 		}
 
 
-		Query query = getCurrentSession().createQuery(queryString);
+		Query<Product> query = getCurrentSession().createQuery(queryString, Product.class);
 		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
 		query.setMaxResults(pageable.getPageSize());
 
-		Query queryTotal = getCurrentSession().createQuery(queryTotalString);
+		Query<Long> queryTotal = getCurrentSession().createQuery(queryTotalString, Long.class);
 		if (releaseCenterKey != null) {
 			query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 		}
 
-		return new PageImpl(query.list(), pageable, (long) queryTotal.uniqueResult());
+		return new PageImpl<>(query.list(), pageable, queryTotal.uniqueResult());
+	}
+
+	private static String constructFilter(String releaseCenterKey, Set<FilterOption> filterOptions) {
+		String filter = "product.visibility = 'Y' ";
+		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
+            filter += " and ";
+            filter += " ( removed = 'N' or removed is null) ";
+		}
+		if (filterOptions == null || !filterOptions.contains(FilterOption.INCLUDE_LEGACY)) {
+            filter += " and ";
+            filter += " product.isLegacyProduct = 'N' ";
+		}
+		if (releaseCenterKey != null) {
+            filter += " and ";
+            filter += " releaseCenter.businessKey = :releaseCenterBusinessKey ";
+		}
+		return filter;
 	}
 
 	@Override
@@ -90,36 +87,36 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 				fromClause +
 				"where " +
 				filter;
-		if (pageable.getSort() != null && !pageable.getSort().isEmpty()) {
+		if (!pageable.getSort().isEmpty()) {
 			Sort.Order order = pageable.getSort().iterator().next();
-			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection().toString();
+			queryString += "product." + order.getProperty().toLowerCase() + " " + order.getDirection();
 		} else {
 			queryString += "product.id DESC";
 		}
 
 
-		Query query = getCurrentSession().createQuery(queryString);
+		Query<Product> query = getCurrentSession().createQuery(queryString, Product.class);
 		query.setFirstResult(pageable.getPageNumber() * pageable.getPageSize());
 		query.setMaxResults(pageable.getPageSize());
 
-		Query queryTotal = getCurrentSession().createQuery(queryTotalString);
+		Query<Long> queryTotal = getCurrentSession().createQuery(queryTotalString, Long.class);
 		if (releaseCenterKey != null) {
 			query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 			queryTotal.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 		}
 
-		return new PageImpl(query.list(), pageable, (long) queryTotal.uniqueResult());
+		return new PageImpl<>(query.list(), pageable, queryTotal.uniqueResult());
 	}
 
 	@Override
 	public Product find(Long id) {
-		Query query = getCurrentSession().createQuery(
+		Query<Product> query = getCurrentSession().createQuery(
 				"select product " +
 						"from Product product " +
 						"where product.id = :productId " +
-						"order by product.id ");
+						"order by product.id ", Product.class);
 		query.setParameter("productId", id);
-		return (Product) query.uniqueResult();
+		return query.uniqueResult();
 	}
 
 	/**
@@ -128,24 +125,24 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	@Override
 	public Product find(String releaseCenterKey,
 						String productKey) {
-		Query query = getCurrentSession().createQuery(
+		Query<Product> query = getCurrentSession().createQuery(
 				"select product " +
 						"from Product product " +
 						"join product.releaseCenter releaseCenter " +
 						"where releaseCenter.businessKey = :releaseCenterBusinessKey " +
-						"and product.businessKey = :productBusinessKey ");
+						"and product.businessKey = :productBusinessKey ", Product.class);
 		query.setParameter("releaseCenterBusinessKey", releaseCenterKey);
 		query.setParameter("productBusinessKey", productKey);
-		return (Product) query.uniqueResult();
+		return query.uniqueResult();
 	}
 
 	@Override
 	public Product find(String productKey) {
-		Query query = getCurrentSession().createQuery(
+		Query<Product> query = getCurrentSession().createQuery(
 				"select product " +
 						"from Product product " +
-						"where product.businessKey = :productBusinessKey ");
+						"where product.businessKey = :productBusinessKey ", Product.class);
 		query.setParameter("productBusinessKey", productKey);
-		return (Product) query.uniqueResult();
+		return query.uniqueResult();
 	}
 }

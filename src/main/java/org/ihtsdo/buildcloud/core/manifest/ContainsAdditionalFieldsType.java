@@ -68,7 +68,7 @@ public class ContainsAdditionalFieldsType {
      */
     public List<FieldType> getField() {
         if (field == null) {
-            field = new ArrayList<FieldType>();
+            field = new ArrayList<>();
         }
         return this.field;
     }

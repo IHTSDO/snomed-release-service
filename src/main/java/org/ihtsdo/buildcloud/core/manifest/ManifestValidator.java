@@ -35,11 +35,10 @@ public class ManifestValidator {
 	    		failureMessage = e.getCause().getMessage() != null ? e.getCause().getMessage() : msg;
 	    	}
 	    	if (e instanceof SAXParseException) {
-	    		StringBuilder msgBuilder = new StringBuilder();
-	    		msgBuilder.append(failureMessage);
-	    		msgBuilder.append(" The issue lies in the manifest.xml at line " + ((SAXParseException) e).getLineNumber());
-	    		msgBuilder.append(" and column " + ((SAXParseException) e).getColumnNumber());
-	    		failureMessage = msgBuilder.toString();
+				String msgBuilder = failureMessage +
+						" The issue lies in the manifest.xml at line " + ((SAXParseException) e).getLineNumber() +
+						" and column " + ((SAXParseException) e).getColumnNumber();
+	    		failureMessage = msgBuilder;
 	    	}
 	    }
 		return failureMessage;

@@ -2,12 +2,10 @@ package org.ihtsdo.buildcloud.telemetry.server;
 
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
-import com.amazonaws.services.s3.transfer.model.UploadResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.helpers.LogLog;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.telemetry.TestService;
@@ -96,9 +94,11 @@ public class TelemetryProcessorTest {
 		String capturedEventStream = replaceDates(fileToString(testStreamFile));
 		assertNotNull(capturedEventStream);
 		assertEquals(3, capturedEventStream.split("\n").length, "Line count");
-		assertEquals("DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
-				"DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
-				"DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
+		assertEquals("""
+                        DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Start of event stream
+                        DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - Processing...
+                        DATE INFO  org.ihtsdo.buildcloud.telemetry.server.TestProcessor.doProcessing - End of event stream
+                        """,
 				capturedEventStream);
 	}
 
@@ -109,23 +109,22 @@ public class TelemetryProcessorTest {
 		final Capture<File> fileCapture = Capture.newInstance();
 		final BooleanHolder fileAssertionsRan = new BooleanHolder();
 		EasyMock.expect(mockTransferManager.upload(EasyMock.eq("local.build.bucket"), EasyMock.eq(streamFileName), EasyMock.capture(fileCapture))).andReturn(mockUpload);
-		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(new IAnswer<UploadResult>() {
-			@Override
-			public UploadResult answer() throws Throwable {
-				// Run temp file assertions before it's deleted
-				File capturedFile = fileCapture.getValue();
-				assertNotNull(capturedFile);
-				String capturedEventStream = replaceDates(fileToString(capturedFile));
-				assertNotNull(capturedEventStream);
-				assertEquals(3, capturedEventStream.split("\n").length, "Line count");
-				assertEquals("DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream\n" +
-						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Processing...\n" +
-						"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - End of event stream\n",
-						capturedEventStream);
-				fileAssertionsRan.b = true;
-				return null;
-			}
-		});
+		EasyMock.expect(mockUpload.waitForUploadResult()).andAnswer(() -> {
+            // Run temp file assertions before it's deleted
+            File capturedFile = fileCapture.getValue();
+            assertNotNull(capturedFile);
+            String capturedEventStream = replaceDates(fileToString(capturedFile));
+            assertNotNull(capturedEventStream);
+            assertEquals(3, capturedEventStream.split("\n").length, "Line count");
+            assertEquals("""
+                            DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Start of event stream
+                            DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - Processing...
+                            DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessing - End of event stream
+                            """,
+                    capturedEventStream);
+            fileAssertionsRan.b = true;
+            return null;
+        });
 		mocksControl.replay();
 
 		// Perform test scenario
@@ -150,14 +149,15 @@ public class TelemetryProcessorTest {
 		// Grab first 8 lines. The lower part of the stack includes the container (Maven, IDE etc.) so should not be part of unit test.
 		String capturedEventStreamFirstEightLines = StringUtils.join(Arrays.copyOfRange(capturedEventStream.split("\n"), 0, 8), "\n");
 
-		String expected = "DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Start of event stream\n" +
-				"DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Processing...\n" +
-				"DATE ERROR org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - User input is not a valid float: a\n" +
-				"java.lang.NumberFormatException: For input string: \"a\"\n" +
-				"\tat sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:LINE)\n" +
-				"\tat java.lang.Float.parseFloat(Float.java:LINE)\n" +
-				"\tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:LINE)\n" +
-				"\tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:LINE)";
+		String expected = """
+                DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Start of event stream
+                DATE INFO  org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - Processing...
+                DATE ERROR org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException - User input is not a valid float: a
+                java.lang.NumberFormatException: For input string: "a"
+                \tat sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:LINE)
+                \tat java.lang.Float.parseFloat(Float.java:LINE)
+                \tat org.ihtsdo.telemetry.server.TestProcessor.doProcessingWithException(TestProcessor.java:LINE)
+                \tat org.ihtsdo.telemetry.server.TelemetryProcessorTest.testAggregateEventsToFileWithException(TelemetryProcessorTest.java:LINE)""";
 
 		assertEquals(expected, capturedEventStreamFirstEightLines);
 	}

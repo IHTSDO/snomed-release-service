@@ -11,30 +11,16 @@ public class H2DataTypeConverter {
 	 * @return a <code>String</code> containing the H2 data type.
 	 */
 	public String convert(DataType type) throws SQLException {
-		String h2Type;
-		switch (type) {
-			case SCTID:
-				h2Type = "BIGINT";
-				break;
-			case UUID:
-				h2Type = "UUID";
-				break;
-			case BOOLEAN:
-				h2Type = "BOOLEAN";
-				break;
-			case TIME:
-				h2Type = "TIMESTAMP";
-				break;
-			case INTEGER:
-				h2Type = "INTEGER";
-				break;
-			case STRING:
-				h2Type = "VARCHAR";
-				break;
-			default:
-				throw new SQLException("DataType missing from " + getClass() + " : " + type);
-		}
-		return h2Type;
+		String h2Type = switch (type) {
+            case SCTID -> "BIGINT";
+            case UUID -> "UUID";
+            case BOOLEAN -> "BOOLEAN";
+            case TIME -> "TIMESTAMP";
+            case INTEGER -> "INTEGER";
+            case STRING -> "VARCHAR";
+            default -> throw new SQLException("DataType missing from " + getClass() + " : " + type);
+        };
+        return h2Type;
 	}
 
 }

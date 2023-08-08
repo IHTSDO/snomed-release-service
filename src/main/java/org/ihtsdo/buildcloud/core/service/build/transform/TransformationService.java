@@ -175,7 +175,7 @@ public class TransformationService {
 			}
 			// Phase 2
 			// Process all files
-			final List<Future> concurrentTasks = new ArrayList<>();
+			final List<Future<?>> concurrentTasks = new ArrayList<>();
 			for (final String inputFileName : buildInputFileNames) {
 				// Transform all txt files
 				final TableSchema tableSchema = inputFileSchemaMap.get(inputFileName);
@@ -184,40 +184,37 @@ public class TransformationService {
 
 					checkFileHasGotMatchingEffectiveDate(inputFileName, effectiveDateInSnomedFormat);
 					final String outputFilename = isBeta ? BuildConfiguration.BETA_PREFIX + tableSchema.getFilename() : tableSchema.getFilename();
-					final Future<?> future = executorService.submit(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								InputStream buildInputFileInputStream;
-								if (isPreProcessType(tableSchema.getComponentType())) {
-									buildInputFileInputStream = dao.getLocalInputFileStream(build, inputFileName);
-								} else {
-									buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
-								}
-								final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
-								final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
+					final Future<?> future = executorService.submit(() -> {
+                        try {
+                            InputStream buildInputFileInputStream;
+                            if (isPreProcessType(tableSchema.getComponentType())) {
+                                buildInputFileInputStream = dao.getLocalInputFileStream(build, inputFileName);
+                            } else {
+                                buildInputFileInputStream = dao.getInputFileStream(build, inputFileName);
+                            }
+                            final AsyncPipedStreamBean asyncPipedStreamBean = dao.getTransformedFileOutputStream(build, outputFilename);
+                            final OutputStream buildTransformedOutputStream = asyncPipedStreamBean.getOutputStream();
 
-								// Get appropriate transformations for this file.
-								final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
+                            // Get appropriate transformations for this file.
+                            final StreamingFileTransformation steamingFileTransformation = transformationFactory.getSteamingFileTransformation(tableSchema);
 
-								// Get the report to output to
-								// Apply transformations
-								steamingFileTransformation.transformFile(buildInputFileInputStream, buildTransformedOutputStream,
-										outputFilename, report);
+                            // Get the report to output to
+                            // Apply transformations
+                            steamingFileTransformation.transformFile(buildInputFileInputStream, buildTransformedOutputStream,
+                                    outputFilename, report);
 
-								// Wait for upload of transformed file to finish
-								asyncPipedStreamBean.waitForFinish();
-							} catch (final FileRecognitionException e) {
-								LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
-							} catch (TransformationException | IOException | NoSuchAlgorithmException e) {
-								// Catch blocks just log and let the next file get processed.
-								LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
-							} catch (ExecutionException | InterruptedException e) {
-								dao.renameTransformedFile(build, outputFilename, outputFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
-								LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
-							}
-						}
-					});
+                            // Wait for upload of transformed file to finish
+                            asyncPipedStreamBean.waitForFinish();
+                        } catch (final FileRecognitionException e) {
+                            LOGGER.error("Did not recognise input file '{}'.", inputFileName, e);
+                        } catch (TransformationException | IOException | NoSuchAlgorithmException e) {
+                            // Catch blocks just log and let the next file get processed.
+                            LOGGER.error("Exception occurred when transforming file {}", inputFileName, e);
+                        } catch (ExecutionException | InterruptedException e) {
+                            dao.renameTransformedFile(build, outputFilename, outputFilename.replace(RF2Constants.TXT_FILE_EXTENSION, ".error"), true);
+                            LOGGER.error("Exception occurred when uploading transformed file {}", inputFileName, e);
+                        }
+                    });
 					concurrentTasks.add(future);
 				} else {
 					// Not recognised as an RF2 file, copy across without transform
@@ -225,7 +222,7 @@ public class TransformationService {
 				}
 
 				// Wait for all concurrent tasks to finish
-				for (final Future concurrentTask : concurrentTasks) {
+				for (final Future<?> concurrentTask : concurrentTasks) {
 					try {
 						concurrentTask.get();
 					} catch (ExecutionException | InterruptedException e) {
@@ -253,7 +250,6 @@ public class TransformationService {
 				}
 			}
 		} finally {
-			
 			logOutIdServiceClient();
 		}
 	}
@@ -368,11 +364,11 @@ public class TransformationService {
 
 	public TransformationFactory getTransformationFactory(Build build) {
 		final String effectiveDateInSnomedFormat = build.getConfiguration().getEffectiveTimeSnomedFormat();
-		Integer namespaceId = RF2Constants.INTERNATIONAL_NAMESPACE_ID;
+		int namespaceId = RF2Constants.INTERNATIONAL_NAMESPACE_ID;
 		ExtensionConfig extConfig = build.getConfiguration().getExtensionConfig();
 		String moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
 		if (extConfig != null) {
-			namespaceId = Integer.valueOf(extConfig.getNamespaceId());
+			namespaceId = Integer.parseInt(extConfig.getNamespaceId());
 			if (StringUtils.hasLength(extConfig.getDefaultModuleId())) {
 				moduleId = extConfig.getDefaultModuleId();
 			} else if (!CollectionUtils.isEmpty(extConfig.getModuleIdsSet())) {
@@ -381,7 +377,7 @@ public class TransformationService {
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);
 		final CachedSctidFactory cachedSctidFactory = new CachedSctidFactory(namespaceId, effectiveDateInSnomedFormat, build, dao, idRestClient, idGenMaxTries, idGenRetryDelaySeconds);
-		TransformationFactory transformationFactory = new TransformationFactory(namespaceId.toString(),effectiveDateInSnomedFormat, cachedSctidFactory,
+		TransformationFactory transformationFactory = new TransformationFactory(Integer.toString(namespaceId),effectiveDateInSnomedFormat, cachedSctidFactory,
 				uuidGenerator, moduleId, RF2Constants.INTERNATIONAL_MODEL_COMPONENT_ID, transformBufferSize);
 		transformationFactory.setReplaceEffectiveTime(build.getConfiguration().isReplaceExistingEffectiveTime());
 		return transformationFactory;

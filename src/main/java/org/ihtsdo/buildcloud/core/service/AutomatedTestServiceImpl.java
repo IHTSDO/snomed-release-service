@@ -112,7 +112,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		try {
 			return buildDAO.getBuildComparisonReport(releaseCenterKey, productKey, compareId);
 		} catch (IOException e) {
-			throw new ResourceNotFoundException(String.format("Unable to find report for key: %s"), compareId);
+			throw new ResourceNotFoundException("Unable to find report for key: %s", compareId);
 		}
 	}
 
@@ -147,7 +147,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			buildDAO.saveBuildComparisonReport(releaseCenterKey, productKey, compareId, report);
 			Build leftBuild = getBuild(releaseCenterKey, productKey, leftBuildId, false);
 			Build rightBuild = getBuild(releaseCenterKey, productKey, rightBuildId, false);
-			if (!Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(leftBuild.getStatus()))) {
+			if (Arrays.stream(BUILD_FINAL_STATES).noneMatch(status -> status.equals(leftBuild.getStatus()))) {
 				try {
 					waitForBuildCompleted(leftBuild, report);
 				} catch (BusinessServiceException e) {
@@ -157,7 +157,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 					return;
 				}
 			}
-			if (!Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(rightBuild.getStatus()))) {
+			if (Arrays.stream(BUILD_FINAL_STATES).noneMatch(status -> status.equals(rightBuild.getStatus()))) {
 				try {
 					waitForBuildCompleted(rightBuild, report);
 				} catch (BusinessServiceException e) {
@@ -328,12 +328,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				changeRows.add(new DiffRow(leftIdToLineMap.get(id), rightIdToLineMap.get(id)));
 			}
 		});
-		deleteIds.forEach(id -> {
-			deleteRows.add(new DiffRow(leftIdToLineMap.get(id),""));
-		});
-		insertIds.forEach(id -> {
-			insertRows.add(new DiffRow("", rightIdToLineMap.get(id)));
-		});
+		deleteIds.forEach(id -> deleteRows.add(new DiffRow(leftIdToLineMap.get(id),"")));
+		insertIds.forEach(id -> insertRows.add(new DiffRow("", rightIdToLineMap.get(id))));
 
 		FileDiffReport report = automatePromoteProcess.getReport();
 		report.setStatus(FileDiffReport.Status.COMPLETED);
@@ -410,7 +406,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		return build;
 	}
 
-	private class BuildComparisonQueue {
+	private static class BuildComparisonQueue {
 		final private String compareId;
 		private Build leftBuild;
 		private Build rightBuild;
@@ -452,7 +448,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		}
 	}
 
-	private class FileComparisonQueue {
+	private static class FileComparisonQueue {
 		final private String compareId;
 		final private String fileName;
 		final private boolean ignoreIdComparison;

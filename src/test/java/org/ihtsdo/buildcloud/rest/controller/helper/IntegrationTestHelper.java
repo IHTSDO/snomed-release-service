@@ -95,7 +95,7 @@ public class IntegrationTestHelper {
 		return createProductResponseString.substring(idStartIndex, idEndIndex);
 	}
 
-	public void uploadDeltaInputFile(final String deltaFileName, final Class classpathResourceOwner) throws Exception {
+	public void uploadDeltaInputFile(final String deltaFileName, final Class<?> classpathResourceOwner) throws Exception {
 		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(deltaFileName);
 		assertNotNull(resourceAsStream, deltaFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
@@ -108,7 +108,7 @@ public class IntegrationTestHelper {
 				.andExpect(status().isCreated());
 	}
 
-	public void uploadSourceFile(final String sourceFileName, final String sourceName, final Class classpathResourceOwner) throws Exception {
+	public void uploadSourceFile(final String sourceFileName, final String sourceName, final Class<?> classpathResourceOwner) throws Exception {
 		final InputStream resourceAsStream = classpathResourceOwner.getResourceAsStream(sourceFileName);
 		assertNotNull(resourceAsStream, sourceFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", sourceFileName, "text/plain", resourceAsStream);
@@ -143,7 +143,7 @@ public class IntegrationTestHelper {
 		return mvcResult.getResponse().getContentAsString();
 	}
 	
-	public void publishFile(final String publishFileName, final Class classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
+	public void publishFile(final String publishFileName, final Class<?> classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
 		final MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
 		mockMvc.perform(
 				fileUpload(CENTER_URL + "/published")
@@ -167,7 +167,7 @@ public class IntegrationTestHelper {
 		
 	}
 
-	public void uploadManifest(final String manifestFileName, final Class classpathResourceOwner) throws Exception {
+	public void uploadManifest(final String manifestFileName, final Class<?> classpathResourceOwner) throws Exception {
 		final MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
 		mockMvc.perform(
 				fileUpload(getProductUrl() + "/manifest")
@@ -290,7 +290,7 @@ public class IntegrationTestHelper {
 
 	public void waitUntilCompleted(String buildUrl) throws Exception {
 		boolean isDone = false;
-		MvcResult buildResult = null;
+		MvcResult buildResult;
 		Build.Status buildStatus = null;
 
 		while (!isDone) {
@@ -439,7 +439,7 @@ public class IntegrationTestHelper {
 		return JsonPath.read(publishedResult.getResponse().getContentAsString(), "$.publishedPackages[0]");
 	}
 
-	public ZipFile testZipNameAndEntryNames(final String buildURL, final String expectedZipFilename, final String expectedZipEntries, final Class classpathResourceOwner) throws Exception {
+	public ZipFile testZipNameAndEntryNames(final String buildURL, final String expectedZipFilename, final String expectedZipEntries, final Class<?> classpathResourceOwner) throws Exception {
 		final MvcResult outputFileListResult = mockMvc.perform(
 				get(buildURL + "/outputfiles")
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -471,7 +471,7 @@ public class IntegrationTestHelper {
 		return zipFile;
 	}
 
-	private File downloadToTempFile(final String buildURL, final String zipFilePath, final Class classpathResourceOwner) throws Exception {
+	private File downloadToTempFile(final String buildURL, final String zipFilePath, final Class<?> classpathResourceOwner) throws Exception {
 		final MvcResult outputFileResult = mockMvc.perform(
 				get(buildURL + "/outputfiles/" + zipFilePath)
 						.header("Authorization", getBasicDigestHeaderValue())
@@ -489,7 +489,7 @@ public class IntegrationTestHelper {
 		return tempFile;
 	}
 
-	public void assertZipContents(final String expectedOutputPackageName, final ZipFile zipFile, final Class classpathResourceOwner) throws IOException {
+	public void assertZipContents(final String expectedOutputPackageName, final ZipFile zipFile, final Class<?> classpathResourceOwner) throws IOException {
 		assertZipContents(expectedOutputPackageName, zipFile, classpathResourceOwner, false);
 	}
 
@@ -518,7 +518,7 @@ public class IntegrationTestHelper {
 		
 	}
 
-	public void assertZipContents(String expectedOutputPackageName, ZipFile zipFile, Class classpathResourceOwner, boolean isBeta) throws IOException {
+	public void assertZipContents(String expectedOutputPackageName, ZipFile zipFile, Class<?> classpathResourceOwner, boolean isBeta) throws IOException {
 		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
 			final ZipEntry zipEntry = entries.nextElement();
@@ -562,8 +562,8 @@ public class IntegrationTestHelper {
 
 	void waitUntilPublishingCompleted(String buildUrl) throws Exception {
 		boolean isDone = false;
-		MvcResult publishResult = null;
-		PublishServiceImpl.Status status = null;
+		MvcResult publishResult;
+		PublishServiceImpl.Status status;
 
 		while (!isDone) {
 			Thread.sleep(1000);

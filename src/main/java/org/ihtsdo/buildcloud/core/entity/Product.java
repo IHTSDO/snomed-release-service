@@ -162,11 +162,9 @@ public class Product {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof Product)) {
+		if (!(o instanceof Product product)) {
 			return false;
 		}
-
-		final Product product = (Product) o;
 
 		if (!businessKey.equals(product.businessKey)) {
 			return false;

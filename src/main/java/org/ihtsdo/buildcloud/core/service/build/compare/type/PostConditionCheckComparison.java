@@ -11,7 +11,6 @@ import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparis
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class PostConditionCheckComparison extends ComponentComparison {
@@ -63,9 +61,9 @@ public class PostConditionCheckComparison extends ComponentComparison {
             LOGGER.error(e.getMessage(), e);
         }
         if (!CollectionUtils.isEmpty(leftReport) && !CollectionUtils.isEmpty(rightReport)) {
-            List<String> leftCheckNames = leftReport.stream().map(item -> item.getPostConditionCheckName()).collect(Collectors.toList());
-            List<String> rightCheckNames = rightReport.stream().map(item -> item.getPostConditionCheckName()).collect(Collectors.toList());
-            List<PostConditionCheckReport> deletedItems = leftReport.stream().filter(item -> !rightCheckNames.contains(item.getPostConditionCheckName())).collect(Collectors.toList());
+            List<String> leftCheckNames = leftReport.stream().map(PostConditionCheckReport::getPostConditionCheckName).toList();
+            List<String> rightCheckNames = rightReport.stream().map(PostConditionCheckReport::getPostConditionCheckName).toList();
+            List<PostConditionCheckReport> deletedItems = leftReport.stream().filter(item -> !rightCheckNames.contains(item.getPostConditionCheckName())).toList();
             deletedItems.forEach(item -> {
                 DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                 dto.setName(item.getPostConditionCheckName());
@@ -75,7 +73,7 @@ public class PostConditionCheckComparison extends ComponentComparison {
                 reports.add(dto);
             });
 
-            List<PostConditionCheckReport> newItems = rightReport.stream().filter(item -> !leftCheckNames.contains(item.getPostConditionCheckName())).collect(Collectors.toList());
+            List<PostConditionCheckReport> newItems = rightReport.stream().filter(item -> !leftCheckNames.contains(item.getPostConditionCheckName())).toList();
             newItems.forEach(item -> {
                 DefaultComponentComparisonReport dto = new DefaultComponentComparisonReport();
                 dto.setName(item.getPostConditionCheckName());
@@ -99,7 +97,7 @@ public class PostConditionCheckComparison extends ComponentComparison {
                     }
                 }
             }
-            if (reports.size() > 0) {
+            if (!reports.isEmpty()) {
                 fail(reports);
             } else {
                 pass();

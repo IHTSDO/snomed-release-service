@@ -64,8 +64,7 @@ public class OAuthCredentials implements ICredentials {
 
 	@Override
 	public void authenticate(HttpRequest request) {
-		if (request instanceof HttpRequestBase) {
-			HttpRequestBase requestBase = (HttpRequestBase) request;
+		if (request instanceof HttpRequestBase requestBase) {
 			try {
 				final String uri = requestBase.getRequestLine().getUri();
 				logger.debug("Initial uri {}", uri);
@@ -76,7 +75,7 @@ public class OAuthCredentials implements ICredentials {
 				Map<String, String> params = nameValuePairsToMap(uriBuilder.getQueryParams());
 				params.put(OAUTH_CONSUMER_KEY, consumerKey);
 				params.put(OAUTH_TIMESTAMP, OAuthUtil.getTimestamp());
-				params.put(OAUTH_NONCE, OAuthUtil.getNonce() + (Math.random() + "".replace(".", "")));
+				params.put(OAUTH_NONCE, OAuthUtil.getNonce() + (String.valueOf(Math.random()).replace(".", "")));
 				params.put(USER_ID, username);
 				params.put(OAUTH_SIGNATURE_METHOD, RSA_SHA1);
 				params.put(OAUTH_TOKEN, BLANK);

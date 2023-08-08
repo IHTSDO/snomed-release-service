@@ -72,12 +72,7 @@ public class BuildConfigurationTest {
 	}
 
 	private TreeSet<BuildConfiguration.RefsetCompositeKey> getSortedKeys(BuildConfiguration buildConfigurationFromJson) {
-		TreeSet<BuildConfiguration.RefsetCompositeKey> refsetCompositeKeys1 = new TreeSet<>(new Comparator<BuildConfiguration.RefsetCompositeKey>() {
-			@Override
-			public int compare(BuildConfiguration.RefsetCompositeKey o1, BuildConfiguration.RefsetCompositeKey o2) {
-				return o1.getRefsetId().compareTo(o2.getRefsetId());
-			}
-		});
+		TreeSet<BuildConfiguration.RefsetCompositeKey> refsetCompositeKeys1 = new TreeSet<>(Comparator.comparing(BuildConfiguration.RefsetCompositeKey::getRefsetId));
 		refsetCompositeKeys1.addAll(buildConfigurationFromJson.getRefsetCompositeKeys());
 		return refsetCompositeKeys1;
 	}

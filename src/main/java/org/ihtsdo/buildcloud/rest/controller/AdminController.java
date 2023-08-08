@@ -38,7 +38,7 @@ public class AdminController {
 	@ResponseBody
 	@Operation(summary = "Start new authoring cycle",
 			description = "This API is for Daily Build only")
-	public ResponseEntity startNewAuthoringCycle(@PathVariable String releaseCenterKey,
+	public ResponseEntity<Void> startNewAuthoringCycle(@PathVariable String releaseCenterKey,
 												 @PathVariable String productKey,
 												 @Parameter(description = "New effective time. Required format: yyyy-MM-dd", required = true)
 													 @RequestParam String effectiveTime,
@@ -53,7 +53,7 @@ public class AdminController {
 			throw new BadRequestException("Invalid effectiveTime format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
 		}
 		releaseService.startNewAuthoringCycle(releaseCenterKey.trim(), productKey.trim(), effectiveTime, productSource.trim(), dependencyPackage.trim());
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/{productKey}/upgrade-dependant-version")
@@ -61,7 +61,7 @@ public class AdminController {
 	@ResponseBody
 	@Operation(summary = "Upgrade dependant version for daily build product",
 			description = "This API is for Daily Build only")
-	public ResponseEntity upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
+	public ResponseEntity<Void> upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
 		productService.upgradeDependantVersion(releaseCenterKey.trim(), productKey.trim());
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}

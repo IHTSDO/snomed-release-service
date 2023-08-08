@@ -93,7 +93,7 @@ public class CachedSctidFactoryTest {
 	
 	@Test
 	public void testGetSctdIdsForEmptyUUIDs() throws Exception {
-		final Map<String, Long> result = cachedSctidFactory.getSCTIDs( new ArrayList<String>(), "1", "123");
+		final Map<String, Long> result = cachedSctidFactory.getSCTIDs(new ArrayList<>(), "1", "123");
 		assertTrue(result.isEmpty());
 	}
 

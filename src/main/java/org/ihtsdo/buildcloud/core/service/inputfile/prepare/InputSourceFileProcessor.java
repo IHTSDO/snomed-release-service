@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
@@ -134,9 +135,9 @@ public class InputSourceFileProcessor {
 			StringBuilder msgBuilder = new StringBuilder();
 			msgBuilder.append("Error encountered when preparing input files.");
 			if (e.getCause() != null) {
-				msgBuilder.append("Cause:" + e.getCause().getMessage());
+				msgBuilder.append("Cause:").append(e.getCause().getMessage());
 			} else {
-				msgBuilder.append("Failure message:" + e.getMessage());
+				msgBuilder.append("Failure message:").append(e.getMessage());
 			}
 			logger.error(msgBuilder.toString(), e);
 			fileProcessingReport.add(ReportType.ERROR, msgBuilder.toString() );
@@ -183,7 +184,7 @@ public class InputSourceFileProcessor {
 					if (checkAdditionalFields) {
 						try {
 							String header = getHeaderLine(file);
-							if (header == null || !header.equals(headerLine.toString())) {
+							if (header == null || !header.contentEquals(headerLine)) {
 								fileProcessingReport.add(ReportType.ERROR, refsetFileName, null, null,
 										"Refset file does not contain a valid header according to the manifest. Actual:" + header + " while expecting:" + headerLine.toString());
 							}
@@ -202,7 +203,7 @@ public class InputSourceFileProcessor {
 				if (!refsetDeltFile .exists()) {
 					try {
 						refsetDeltFile.createNewFile();
-						FileUtils.writeLines(refsetDeltFile, CharEncoding.UTF_8, Arrays.asList(headerLine.toString()), RF2Constants.LINE_ENDING);
+						FileUtils.writeLines(refsetDeltFile, CharEncoding.UTF_8, List.of(headerLine.toString()), RF2Constants.LINE_ENDING);
 						fileProcessingReport.add(ReportType.WARNING, refsetFileName, null, null,
 								"No refset data found in any source therefore an empty delta file with header line only is created instead.");
 					} catch (IOException e) {
@@ -313,6 +314,7 @@ public class InputSourceFileProcessor {
 			for (FolderType subFolder : rootFolder.getFolder()) {
 				if (RF2Constants.DELTA.equals(subFolder.getName())) {
 					this.isDeltaFolderExistInManifest = true;
+					break;
 				}
 			}
 		}
@@ -367,7 +369,7 @@ public class InputSourceFileProcessor {
 
 	void initDescriptionProcessingConfig(FileType fileType) {
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
-			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
+			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(BigInteger::toString).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 				String fileName =  this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 				String key = languageCode + keySuffix;
@@ -411,10 +413,10 @@ public class InputSourceFileProcessor {
 				refsetFileProcessingConfigs.put(fileProcessingConfig.getKey(), fileProcessingConfig);
 			}
 			if (refsetType.getSources() != null && refsetType.getSources().getSource() != null && !refsetType.getSources().getSource().isEmpty()) {
-				fileProcessingConfig.setSpecificSources(new HashSet<String>(refsetType.getSources().getSource()));
+				fileProcessingConfig.setSpecificSources(new HashSet<>(refsetType.getSources().getSource()));
 			} else {
 				if (fileType.getSources() != null && !fileType.getSources().getSource().isEmpty()) {
-					fileProcessingConfig.setSpecificSources(new HashSet<String>(fileType.getSources().getSource()));
+					fileProcessingConfig.setSpecificSources(new HashSet<>(fileType.getSources().getSource()));
 				}
 			}
 		}
@@ -423,7 +425,7 @@ public class InputSourceFileProcessor {
 	void initTextDefinitionProcessingConfig(FileType fileType) {
 		foundTextDefinitionFile = true;
 		if (fileType.getContainsLanguageCodes() != null && fileType.getContainsLanguageCodes().getCode() != null) {
-			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(item -> item.toString()).collect(Collectors.joining("-"));
+			String keySuffix = fileType.getContainsModuleIds() == null || CollectionUtils.isEmpty(fileType.getContainsModuleIds().getModuleId()) ? "" : "-" + fileType.getContainsModuleIds().getModuleId().stream().map(BigInteger::toString).collect(Collectors.joining("-"));
 			for (String languageCode : fileType.getContainsLanguageCodes().getCode()) {
 				String fileName = this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
 				String key = languageCode + keySuffix;
@@ -655,12 +657,12 @@ public class InputSourceFileProcessor {
 				if (foundTextDefinitionFile && TEXT_DEFINITION_TYPE_ID.equals(descriptionTypeValue)) {
 					isTextDefinition = true;
 					if (!textDefinitionRows.containsKey(languageCode)) {
-						textDefinitionRows.put(languageCode, new ArrayList<String>());
+						textDefinitionRows.put(languageCode, new ArrayList<>());
 					}
 					textDefinitionRows.get(languageCode).add(line);
 				} else {
 					if (!descriptionRows.containsKey(languageCode)) {
-						descriptionRows.put(languageCode, new ArrayList<String>());
+						descriptionRows.put(languageCode, new ArrayList<>());
 					}
 					descriptionRows.get(languageCode).add(line);
 				}
@@ -686,7 +688,7 @@ public class InputSourceFileProcessor {
 				File file = new File(outDir, fileName);
 				if (!file.exists()) {
 					file.createNewFile();
-					FileUtils.writeLines(file, CharEncoding.UTF_8, Arrays.asList(headerLine), RF2Constants.LINE_ENDING);
+					FileUtils.writeLines(file, CharEncoding.UTF_8, Collections.singletonList(headerLine), RF2Constants.LINE_ENDING);
 				}
 			}
 		}
@@ -859,9 +861,9 @@ public class InputSourceFileProcessor {
 		}
 		for (String filename : filesToCopyFromSource.keySet()) {
 			if (!filesPrepared.contains(filename) && !filename.startsWith("Readme") && !filename.startsWith("release")) {
-				String message = null;
+				String message;
 				if (filesToCopyFromSource.get(filename).isEmpty()) {
-					message = String.format("Required by manifest but not found in any source.");
+					message = "Required by manifest but not found in any source.";
 				} else {
 					message = String.format("Required by manifest but not found in source %s", filesToCopyFromSource.get(filename));
 				}

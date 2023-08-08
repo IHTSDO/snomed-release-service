@@ -84,8 +84,8 @@ public class Rf2FileWriter {
 			// Variables for snapshot resolution
 			String currentLine;
 			String currentId;
-			Integer currentEffectiveTimeInt;
-			Integer targetEffectiveTimeInt = Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(targetEffectiveTime));
+			int currentEffectiveTimeInt;
+			int targetEffectiveTimeInt = Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(targetEffectiveTime));
 			String lastId = null;
 			String validLine = null;
 			boolean movedToNewMember;

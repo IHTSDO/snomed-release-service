@@ -73,7 +73,7 @@ public class ClassificationServiceRestClient {
 		resty.authenticate(classificationServiceUrl, username, password.toCharArray());
 		resty.withHeader("Accept", ANY_CONTENT_TYPE);
 		
-		String statusUrl = null;
+		String statusUrl;
 		try {
 			JSONResource response = resty.json(uri, new HttpEntityContent(httpEntity));
 			RestyServiceHelper.ensureSuccessfull(response);

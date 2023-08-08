@@ -11,15 +11,15 @@ public class TopologicalSort {
 	public static <T> List<T> sort(final DirectedGraph<T> graph) {
 		final DirectedGraph<T> reversedGraph = reverseGraph(graph);
 
-		final List<T> result = new ArrayList<T>();
-		final Set<T> visited = new HashSet<T>();
+		final List<T> result = new ArrayList<>();
+		final Set<T> visited = new HashSet<>();
 
         /* We'll also maintain a third set consisting of all nodes that have
 		 * been fully expanded.  If the graph contains a cycle, then we can
          * detect this by noting that a node has been explored but not fully
          * expanded.
          */
-		final Set<T> expanded = new HashSet<T>();
+		final Set<T> expanded = new HashSet<>();
 
 		// Fire off a Depth-First Search from each node in the graph
 		for (final T node : reversedGraph) {
@@ -65,7 +65,7 @@ public class TopologicalSort {
 	}
 
 	private static <T> DirectedGraph<T> reverseGraph(final DirectedGraph<T> graph) {
-		final DirectedGraph<T> result = new DirectedGraph<T>();
+		final DirectedGraph<T> result = new DirectedGraph<>();
 
 		// Add all the nodes from the original graph
 		for (final T node : graph) {
@@ -86,14 +86,14 @@ public class TopologicalSort {
 	public static class DirectedGraph<T> implements Iterable<T> {
 
 		// key is a Node, value is a set of Nodes connected by outgoing edges from the key
-		private final Map<T, Set<T>> graph = new HashMap<T, Set<T>>();
+		private final Map<T, Set<T>> graph = new HashMap<>();
 
 		public boolean addNode(final T node) {
 			if (graph.containsKey(node)) {
 				return false;
 			}
 
-			graph.put(node, new HashSet<T>());
+			graph.put(node, new HashSet<>());
 			return true;
 		}
 

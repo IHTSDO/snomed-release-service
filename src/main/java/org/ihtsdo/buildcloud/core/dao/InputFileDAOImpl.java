@@ -19,8 +19,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 @Service
 public class InputFileDAOImpl implements InputFileDAO {
 
@@ -62,7 +60,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	public String getManifestPath(final String releaseCenterKey, final String productKey) {
 		final String manifestDirectoryPath = s3PathHelper.getProductManifestDirectoryPath(releaseCenterKey, productKey);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
-		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
+		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).toList();
 		if (xmlFiles.isEmpty()) {
 			return null;
 		}
@@ -75,7 +73,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	public String getManifestPath(final String releaseCenterKey, final String productKey, final String buildId) {
 		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId);
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
-		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).collect(Collectors.toList());
+		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).toList();
 		if (xmlFiles.isEmpty()) {
 			return null;
 		}

@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
 import org.ihtsdo.buildcloud.core.entity.Notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

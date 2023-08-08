@@ -452,11 +452,11 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private Map<SchemeIdType, Collection<String>> getLegacyIdsFromFile(final InputStream inputStream) throws IOException {
-		Map<SchemeIdType, Collection<String>> result = new HashMap<SchemeIdType, Collection<String>>();
-		result.put(SchemeIdType.CTV3ID, new HashSet<String>());
-		result.put(SchemeIdType.SNOMEDID, new HashSet<String>());
+		Map<SchemeIdType, Collection<String>> result = new HashMap<>();
+		result.put(SchemeIdType.CTV3ID, new HashSet<>());
+		result.put(SchemeIdType.SNOMEDID, new HashSet<>());
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
-			String line = null;
+			String line;
 			boolean isFirstLine = true;
 			while ((line = reader.readLine()) != null) {
 				if (isFirstLine) {
@@ -584,7 +584,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 	
 	private Map<String, List<Long>> groupSctIdsByNamespace(List<Long> assignedIds) {
-		Map<String, List<Long>> result = new HashMap<String, List<Long>>();
+		Map<String, List<Long>> result = new HashMap<>();
 		for (Long sctId : assignedIds) {
 			int total = String.valueOf(sctId).length();
 			String partitionId = String.valueOf(sctId).substring(total-3,total-1);
@@ -614,7 +614,7 @@ public class PublishServiceImpl implements PublishService {
 	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {
 		Set<Long> sctIds = new HashSet<>();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFileStream, RF2Constants.UTF_8))) {
-			String line = null;
+			String line;
 			boolean isFirstLine = true;
 			while ((line = reader.readLine()) != null) {
 				if (isFirstLine) {
@@ -632,7 +632,7 @@ public class PublishServiceImpl implements PublishService {
 		try {
 			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
 			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
-			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase() + "_");
+			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase()).append("_");
 			outputPathBuilder.append(releaseFileName);
 			srsFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
 		} catch (Exception e) {
@@ -707,7 +707,7 @@ public class PublishServiceImpl implements PublishService {
 					final String[] keyParts = key.split("/");
 					final String dateString = keyParts[keyParts.length - 2];
 					final String status = keyParts[keyParts.length - 1].split(":")[1];
-					if (!builds.stream().anyMatch(b -> b.getId().equals(dateString))) {
+					if (builds.stream().noneMatch(b -> b.getId().equals(dateString))) {
 						final Build build = new Build(dateString, releaseCenterKey, productKey, status);
 						foundBuilds.add(build);
 					}

@@ -19,7 +19,7 @@ public class TopologicalSortTest {
 		sctIdAnParentMap.put("uuid3","uuid2");
 		sctIdAnParentMap.put("uuid4","uuid3");
 		sctIdAnParentMap.put("uuid5","uuid4");
-		final DirectedGraph<String> graph = new DirectedGraph<String>();
+		final DirectedGraph<String> graph = new DirectedGraph<>();
 		for (final String key : sctIdAnParentMap.keySet()) {
 			final String parent = sctIdAnParentMap.get(key);
 			graph.addNode(parent);
