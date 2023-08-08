@@ -21,11 +21,13 @@ public class RVFClientTest {
 
 	@Test
 	public void testProcessResponseNoFailures() throws Exception {
-		String response = "Result\tRow-Column\tFile Name\tFile Path\tColumn Name\tTest Type\tTest Pattern\tFailure Details\tNumber of occurences\n" +
-				"\n" +
-				"Number of tests run: 37362\n" +
-				"Total number of failures: 0\n" +
-				"Total number of successes: 37362\n";
+		String response = """
+                Result\tRow-Column\tFile Name\tFile Path\tColumn Name\tTest Type\tTest Pattern\tFailure Details\tNumber of occurences
+
+                Number of tests run: 37362
+                Total number of failures: 0
+                Total number of successes: 37362
+                """;
 
 		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseNoFailures");
@@ -35,11 +37,13 @@ public class RVFClientTest {
 
 	@Test
 	public void testProcessResponseFailures() throws Exception {
-		String response = "Result\tRow-Column\tFile Name\tFile Path\tColumn Name\tTest Type\tTest Pattern\tFailure Details\tNumber of occurences\n" +
-				"\n" +
-				"Number of tests run: 37362\n" +
-				"Total number of failures: 2\n" +
-				"Total number of successes: 37360\n";
+		String response = """
+                Result\tRow-Column\tFile Name\tFile Path\tColumn Name\tTest Type\tTest Pattern\tFailure Details\tNumber of occurences
+
+                Number of tests run: 37362
+                Total number of failures: 2
+                Total number of successes: 37360
+                """;
 
 		RVFFailDetail failDetail = rvfClient.processResponse(new BufferedReader(new StringReader(response)),
 				new BufferedWriter(new StringWriter()), "Occured during testProcessResponseFailures");

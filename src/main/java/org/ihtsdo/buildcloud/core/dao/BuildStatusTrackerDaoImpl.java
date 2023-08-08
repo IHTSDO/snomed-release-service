@@ -15,11 +15,11 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 
 	@Override
 	public List<BuildStatusTracker> findByProductAndStatus(String productKey, String... status) {
-		Query query = getCurrentSession().createQuery(
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.status in (:status)");
+						" and statusTracker.status in (:status)", BuildStatusTracker.class);
 		query.setParameter("productKey", productKey);
 		query.setParameterList("status", status);
 		return query.list();
@@ -27,23 +27,23 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 
 	@Override
 	public BuildStatusTracker findByRvfRunId(String rvfRunId) {
-		Query query = getCurrentSession().createQuery(
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
-						"where statusTracker.rvfRunId = :rvfRunId");
+						"where statusTracker.rvfRunId = :rvfRunId", BuildStatusTracker.class);
 		query.setParameter("rvfRunId", rvfRunId);
-		return (BuildStatusTracker) query.uniqueResult();
+		return query.uniqueResult();
 	}
 
 	@Override
 	public BuildStatusTracker findByProductKeyAndBuildId(String productKey, String buildId) {
-		Query query = getCurrentSession().createQuery(
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.buildId = :buildId");
+						" and statusTracker.buildId = :buildId", BuildStatusTracker.class);
 		query.setParameter("productKey", productKey);
 		query.setParameter("buildId", buildId);
-		return (BuildStatusTracker) query.uniqueResult();
+		return query.uniqueResult();
 	}
 }

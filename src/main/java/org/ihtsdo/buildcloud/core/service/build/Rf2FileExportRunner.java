@@ -9,13 +9,11 @@ import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.core.service.build.database.Rf2FileWriter;
@@ -67,9 +65,10 @@ public class Rf2FileExportRunner {
 					if (configuration.isBetaRelease()) {
 						cleanFileName = thisFile.substring(1);
 					}
-					final boolean newFile = newRF2InputFiles.contains(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					String filenameToCheck = cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX);
+					final boolean newFile = newRF2InputFiles.contains(filenameToCheck);
 					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
-					Set<String> includedFilesInNewFile = includedFilesMap.get(cleanFileName.replace(RF2Constants.SCT2, RF2Constants.INPUT_FILE_PREFIX).replace(RF2Constants.DER2, RF2Constants.INPUT_FILE_PREFIX));
+					Set<String> includedFilesInNewFile = includedFilesMap.get(filenameToCheck);
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease, includedFilesInNewFile);
 					success = true;
 				} catch (final Exception e) {

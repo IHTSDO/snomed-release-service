@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.core.service.build.database.map;
 
+import java.util.Objects;
+
 public class SCTIDKey implements Key {
 
 	private final Long id;
@@ -31,10 +33,10 @@ public class SCTIDKey implements Key {
 
 		SCTIDKey sctidKey = (SCTIDKey) o;
 
-		if (effectiveTime != null ? !effectiveTime.equals(sctidKey.effectiveTime) : sctidKey.effectiveTime != null) {
+		if (!Objects.equals(effectiveTime, sctidKey.effectiveTime)) {
 			return false;
 		}
-		return id != null ? id.equals(sctidKey.id) : sctidKey.id == null;
+		return Objects.equals(id, sctidKey.id);
 	}
 
 	@Override

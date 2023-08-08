@@ -14,24 +14,23 @@ public class ReleaseCenterDAOImpl extends EntityDAOImpl<ReleaseCenter> implement
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public List<ReleaseCenter> findAll() {
-		Query query = getCurrentSession().createQuery(
+		Query<ReleaseCenter> query = getCurrentSession().createQuery(
 				"select releaseCenter " +
 						"from ReleaseCenter releaseCenter " +
-						"order by releaseCenter.id ");
+						"order by releaseCenter.id ", ReleaseCenter.class);
 		return query.list();
 	}
 
 	@Override
 	public ReleaseCenter find(String businessKey) {
-		Query query = getCurrentSession().createQuery(
+		Query<ReleaseCenter> query = getCurrentSession().createQuery(
 				"select releaseCenter " +
 						"from ReleaseCenter releaseCenter " +
 						"where releaseCenter.businessKey = :businessKey " +
-						"order by releaseCenter.id ");
+						"order by releaseCenter.id ", ReleaseCenter.class);
 		query.setParameter("businessKey", businessKey);
-		return (ReleaseCenter) query.uniqueResult();
+		return query.uniqueResult();
 	}
 
 

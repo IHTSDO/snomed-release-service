@@ -1,7 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.security.core.Authentication;
 

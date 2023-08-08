@@ -50,7 +50,7 @@ public class LegacyIdTransformationService {
 		}
 		LOGGER.info("Total new concepts:" + conceptIds.size());
 		
-		Map<Long,UUID> sctIdAndUuidMap = new HashMap<>();
+		Map<Long,UUID> sctIdAndUuidMap;
 		try {
 			sctIdAndUuidMap = idRestClient.getUuidsForSctIds(conceptIds);
 		} catch (RestClientException e) {
@@ -59,7 +59,7 @@ public class LegacyIdTransformationService {
 		
 		//Generate CTV3 ID
 		LOGGER.info("Start CTV3ID generation");
-		Map<UUID, String> uuidCtv3IdMap = new HashMap<>();
+		Map<UUID, String> uuidCtv3IdMap;
 		List<UUID> uuids = new ArrayList<>(sctIdAndUuidMap.values());
 		try {
 			uuidCtv3IdMap = idRestClient.getOrCreateSchemeIds(uuids,SchemeIdType.CTV3ID, build.getUniqueId());
@@ -112,7 +112,7 @@ public class LegacyIdTransformationService {
 							writer.write(RF2Constants.LINE_ENDING);
 							if (!SUPPRESS_SNOMED_ID) {
 								final String snomedId = uuidAndSnomedIdMap.get(uuid);
-								if (snomedId != null && !snomedId.equals("")) {
+								if (snomedId != null && !snomedId.isEmpty()) {
 									writer.write(constructSimpleRefsetMapDeltaLine(uuidGenerator.uuid(), effectiveDate, CORE_MODULE_ID, RF2Constants.SNOMED_ID_REFSET_ID, sctId, snomedId));
 									writer.write(RF2Constants.LINE_ENDING);
 								} else {
@@ -130,20 +130,18 @@ public class LegacyIdTransformationService {
 	}
 
 	private String constructSimpleRefsetMapDeltaLine(final String componentId, final String effectiveDate, final String moduleId, final String refsetId, final Long sctId, final String mapTarget) {
-		final StringBuilder builder = new StringBuilder();
-		builder.append(componentId);
-		builder.append(TAB);
-		builder.append(effectiveDate);
-		builder.append(TAB);
-		builder.append("1");
-		builder.append(TAB);
-		builder.append(moduleId);
-		builder.append(TAB);
-		builder.append(refsetId);
-		builder.append(TAB);
-		builder.append(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING);
-		builder.append(TAB);
-		builder.append(mapTarget);
-		return builder.toString();
+        return componentId +
+				TAB +
+				effectiveDate +
+				TAB +
+				"1" +
+				TAB +
+				moduleId +
+				TAB +
+				refsetId +
+				TAB +
+				(sctId != null ? sctId.toString() : RF2Constants.NULL_STRING) +
+				TAB +
+				mapTarget;
 	}
 }

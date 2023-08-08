@@ -157,11 +157,11 @@ public class BuildConfiguration {
 	}
 
 	public Map<String, List<Integer>> getCustomRefsetCompositeKeys() {
-		final Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
+		final Map<String, List<Integer>> map = new HashMap<>();
 		if (refsetCompositeKeys != null) {
 			for (final RefsetCompositeKey refsetCompositeKey : refsetCompositeKeys) {
 				final String[] split = refsetCompositeKey.getFieldIndexes().split(",");
-				final List<Integer> indexes = new ArrayList<Integer>();
+				final List<Integer> indexes = new ArrayList<>();
 				for (final String s : split) {
 					indexes.add(Integer.parseInt(s.trim()));
 				}
@@ -190,7 +190,7 @@ public class BuildConfiguration {
 
 	@JsonIgnore
 	public Set<String> getNewRF2InputFileSet() {
-		final Set<String> files = new HashSet<String>();
+		final Set<String> files = new HashSet<>();
 		if (newRF2InputFiles != null) {
 			for (String newInputile :newRF2InputFiles.split("\\|")) {
 				if (!Normalizer.isNormalized(newInputile, Form.NFC)) {

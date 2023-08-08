@@ -35,7 +35,7 @@ public class Condition {
 		return check.isTrue(columnValues);
 	}
 
-	private abstract class Check {
+	private abstract static class Check {
 		abstract boolean isTrue(String[] line);
 	}
 

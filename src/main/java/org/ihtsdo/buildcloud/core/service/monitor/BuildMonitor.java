@@ -2,7 +2,6 @@ package org.ihtsdo.buildcloud.core.service.monitor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Notification;
 import org.ihtsdo.buildcloud.core.entity.Product;

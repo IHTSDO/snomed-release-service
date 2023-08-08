@@ -169,7 +169,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	private PreparedStatement getInsertStatement(TableSchema schema, String tableName) throws SQLException {
-		StringBuilder producter = new StringBuilder()
+		StringBuilder producer = new StringBuilder()
 				.append("insert into ")
 				.append(tableName)
 				.append(" (");
@@ -179,25 +179,25 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 			if (firstField) {
 				firstField = false;
 			} else {
-				producter.append(", ");
+				producer.append(", ");
 			}
-			producter.append(field.getName());
+			producer.append(field.getName());
 		}
-		producter.append(")");
+		producer.append(")");
 
-		producter.append(" values (");
+		producer.append(" values (");
 		firstField = true;
 		for (Field field : schema.getFields()) {
 			if (firstField) {
 				firstField = false;
 			} else {
-				producter.append(", ");
+				producer.append(", ");
 			}
-			producter.append("?");
+			producer.append("?");
 		}
-		producter.append(")");
+		producer.append(")");
 
-		return connection.prepareStatement(producter.toString());
+		return connection.prepareStatement(producer.toString());
 	}
 
 	void insertData(BufferedReader reader, TableSchema tableSchema, PreparedStatement insertStatement) throws IOException, SQLException,

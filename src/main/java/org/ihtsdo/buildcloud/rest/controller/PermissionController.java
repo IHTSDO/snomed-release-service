@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/permissions")
@@ -39,19 +41,18 @@ public class PermissionController {
     @Operation(summary = "Returns a list all roles for a logged in user",
             description = "Returns a list of all roles visible to the currently logged in user")
     @ResponseBody
-    public ResponseEntity getCurrentRoles(HttpServletRequest request) {
+    public ResponseEntity<Map<String, Set<String>>> getCurrentRoles(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication() ;
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             throw new AccessDeniedException("Access is denied");
         }
-
-        return new ResponseEntity(permissionService.getRolesForLoggedInUser(), HttpStatus.OK);
+        return new ResponseEntity<>(permissionService.getRolesForLoggedInUser(), HttpStatus.OK);
     }
 
     @PostMapping(value = "/clearCache")
     @IsAuthenticatedAsGlobalAdmin
-    public ResponseEntity clearCache(HttpServletRequest request) {
+    public ResponseEntity<Void> clearCache(HttpServletRequest request) {
         permissionServiceCache.clearCache();
-        return new ResponseEntity(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

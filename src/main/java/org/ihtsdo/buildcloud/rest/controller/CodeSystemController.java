@@ -32,15 +32,14 @@ public class CodeSystemController {
     @Operation(summary = "List code systems",
             description = "List all code systems")
     @ResponseBody
-    public ResponseEntity listCodeSystems(HttpServletRequest request) {
+    public ResponseEntity<List<CodeSystem>> listCodeSystems(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             throw new AccessDeniedException("Access is denied");
         }
         List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-        codeSystems.stream().forEach(codeSystem -> codeSystem.setUserRoles(Collections.emptySet()));
-
-        return new ResponseEntity(codeSystems, HttpStatus.OK);
+        codeSystems.forEach(codeSystem -> codeSystem.setUserRoles(Collections.emptySet()));
+        return new ResponseEntity<>(codeSystems, HttpStatus.OK);
     }
 
 }

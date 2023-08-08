@@ -9,7 +9,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
@@ -100,7 +99,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 
 	@Override
 	public RF2TableResults selectNone(final TableSchema tableSchema) {
-		return new RF2TableResultsMapImpl(new TreeMap<Key, String>());
+		return new RF2TableResultsMapImpl(new TreeMap<>());
 	}
 
 	@Override
@@ -221,7 +220,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 			}
 		}
 		//remove any rows with empty value id as not existing in previous file
-		if (emptyValueKeys.size() > 0) {
+		if (!emptyValueKeys.isEmpty()) {
 			LOGGER.info("Found total number of rows with empty value id but member id doesn't exist in previous snapshot file:" + emptyValueKeys.size());
 		}
 		for (final Key k : emptyValueKeys) {
@@ -294,7 +293,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 		}
 	}
 
-	private Pattern getRefsetCompositeKeyPattern(final TableSchema tableSchema, final String refsetId) throws DatabasePopulatorException, BadConfigurationException {
+	private Pattern getRefsetCompositeKeyPattern(final TableSchema tableSchema, final String refsetId) throws BadConfigurationException {
 		if (tableSchema.getComponentType() == ComponentType.REFSET) {
 			if (!refsetCompositeKeyPatternCache.containsKey(refsetId)) {
 				refsetCompositeKeyPatternCache.put(refsetId, refsetCompositeKeyPatternFactory.getRefsetCompositeKeyPattern(tableSchema, refsetId));
@@ -308,11 +307,11 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	private String getCompositeKey(final Pattern keyPattern, final String line) throws DatabasePopulatorException {
 		final Matcher matcher = keyPattern.matcher(line);
 		if (matcher.matches()) {
-			String key = "";
+			StringBuilder key = new StringBuilder();
 			for (int a = 0; a < matcher.groupCount(); a++) {
-				key += matcher.group(a + 1);
+				key.append(matcher.group(a + 1));
 			}
-			return key;
+			return key.toString();
 		} else {
 			throw new DatabasePopulatorException("No composite key match in line '" + line + "'");
 		}

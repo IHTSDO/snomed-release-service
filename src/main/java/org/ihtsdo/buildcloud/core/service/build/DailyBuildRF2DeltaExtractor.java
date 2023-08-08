@@ -57,22 +57,11 @@ public class DailyBuildRF2DeltaExtractor {
 		File updatedZip = new File(deltaZip.getParent(), deltaZip.getName().replace(".zip", "_updated.zip"));
 		try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(deltaZip));
 			ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(updatedZip), RF2Constants.UTF_8)) {
-			ZipEntry zipEntry = null;
+			ZipEntry zipEntry;
 			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
 				zipOutputStream.putNextEntry(zipEntry);
 				if (!zipEntry.isDirectory()) {
-					BufferedReader reader = new BufferedReader(new InputStreamReader(zipInputStream));
-					OutputStreamWriter writer = new OutputStreamWriter(zipOutputStream, RF2Constants.UTF_8);
-					String line = reader.readLine();
-					writer.append(line);
-					writer.append(RF2Constants.LINE_ENDING);
-					while ((line = reader.readLine()) != null) {
-						String[] splits = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
-						if (effectiveTimeFormatted.equals(splits[1])) {
-							writer.append(line);
-							writer.append(RF2Constants.LINE_ENDING);
-						}
-					}
+					OutputStreamWriter writer = getOutputStreamWriter(effectiveTimeFormatted, zipInputStream, zipOutputStream);
 					writer.flush();
 				}
 			}
@@ -80,7 +69,23 @@ public class DailyBuildRF2DeltaExtractor {
 		}
 		return updatedZip;
 	}
-	
+
+	private static OutputStreamWriter getOutputStreamWriter(String effectiveTimeFormatted, ZipInputStream zipInputStream, ZipOutputStream zipOutputStream) throws IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(zipInputStream));
+		OutputStreamWriter writer = new OutputStreamWriter(zipOutputStream, RF2Constants.UTF_8);
+		String line = reader.readLine();
+		writer.append(line);
+		writer.append(RF2Constants.LINE_ENDING);
+		while ((line = reader.readLine()) != null) {
+			String[] splits = line.split(RF2Constants.COLUMN_SEPARATOR, -1);
+			if (effectiveTimeFormatted.equals(splits[1])) {
+				writer.append(line);
+				writer.append(RF2Constants.LINE_ENDING);
+			}
+		}
+		return writer;
+	}
+
 	private void uploadDailyBuildToS3(Build build, File zipPackage, ResourceManager resourceManager) throws IOException {
 		String codeSystem = RF2Constants.SNOMEDCT;
 		String branchPath = build.getConfiguration().getBranchPath();

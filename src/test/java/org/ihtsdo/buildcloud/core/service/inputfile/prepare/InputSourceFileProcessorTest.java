@@ -247,7 +247,6 @@ public class InputSourceFileProcessorTest {
 	public void testSourcesDefinedBothInFileTypeAndRefset() throws Exception {
 		validateManifest("manifest_with_sources_in_fileType_and_refset.xml");
 		InputStream manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
-		manifestStream = getClass().getResourceAsStream("manifest_with_sources_in_fileType_and_refset.xml");
 		processor = new InputSourceFileProcessor(fileHelper, s3PathHelper, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), true);
 		SourceFileProcessingReport report = processor.processFiles(manifestStream, Collections.emptyList(), build.getId(),null);
 		assertNotNull(report);

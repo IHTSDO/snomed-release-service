@@ -26,7 +26,7 @@ public class MonitorServiceImpl implements MonitorService {
 
 	private static final int PAUSE_SECONDS = 120;
 
-	private boolean started;
+	private volatile boolean started;
 
 	private final Set<Monitor> monitors = ConcurrentHashMap.newKeySet();
 
@@ -72,9 +72,9 @@ public class MonitorServiceImpl implements MonitorService {
 		new Thread(() -> {
 			try {
 				while (true) {
-					Iterator iterator = this.monitors.iterator();
-					while(iterator.hasNext()) {
-						Monitor monitor = (Monitor) iterator.next();
+					Iterator<Monitor> iterator = this.monitors.iterator();
+					while (iterator.hasNext()) {
+						Monitor monitor = iterator.next();
 						if (monitor != null) {
 							try {
 								final Notification notification = monitor.runOnce();

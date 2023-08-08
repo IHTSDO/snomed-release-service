@@ -27,19 +27,19 @@ public class ParentSctIdFinder {
 		if (input != null) {
 			try (final BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
 				//find the line matches isA relationship
-				String line = null;
+				String line;
 				while (!sourceIdsToFind.isEmpty() && (line = reader.readLine()) != null) {
 					final Matcher matcher = IS_A_RELATIONSHIP_PATTERN.matcher(line);
 					if (matcher.matches()) {
 						final String sourceId = matcher.group(1);
 						if (sourceIdsToFind.contains(Long.valueOf(sourceId))) {
 							result.put(Long.valueOf(sourceId), Long.valueOf(matcher.group(2)));
-							sourceIdsToFind.remove(sourceId);
+							sourceIdsToFind.remove(Long.parseLong(sourceId));
 						}
 					}
 				}
 			} catch (final IOException e) {
-				throw new TransformationException("Failed to read from inputsteam", e);
+				throw new TransformationException("Failed to read from inputStream", e);
 			}
 		}
 		return result;

@@ -122,7 +122,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	}
 
 	private String accquireToken() throws RestClientException {
-		String securityToken = null;
+		String securityToken;
 		if (!isServiceRunning()) {
 			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
 		}
@@ -561,7 +561,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		int attempt = 1;
 		boolean isDone = false;
 		while (!isDone) {
-				JSONResource response = null;
+				JSONResource response;
 				try {
 					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
@@ -600,7 +600,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		int attempt = 1;
 		boolean isDone = false;
 		while (!isDone) {
-				JSONResource response = null;
+				JSONResource response;
 				try {
 					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
@@ -638,7 +638,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		int attempt = 1;
 		boolean isDone = false;
 		while (!isDone) {
-				JSONResource response = null;
+				JSONResource response;
 				try {
 					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
 					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
@@ -701,9 +701,9 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 	@Override
 	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Map<Long,UUID> sctIdSystemIdMap, Integer namespaceId, String comment) throws RestClientException {
-		LOGGER.debug("Start registering sctIds with batch size {} for namespace {} and partitionId {}", sctIdsToRegister.size(), namespaceId);
+		LOGGER.debug("Start registering sctIds with batch size {} for namespace {}", sctIdsToRegister.size(), namespaceId);
 		List<Long> result = new ArrayList<>();
-		if (sctIdsToRegister == null || sctIdsToRegister.isEmpty()) {
+		if (sctIdsToRegister.isEmpty()) {
 			LOGGER.warn("No sctIds submitted for requesting sctIds");
 			return result;
 		}

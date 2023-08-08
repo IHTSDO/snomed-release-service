@@ -56,10 +56,10 @@ public class PermissionService {
         return contains;
     }
 
-    public Map getRolesForLoggedInUser() {
-        Map rolesMap = new HashMap();
-        Set <String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
-        Map <String, Set <String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
+    public Map<String, Set<String>> getRolesForLoggedInUser() {
+        Map<String, Set<String>> rolesMap = new HashMap<>();
+        Set<String> globalRoles = permissionServiceCache.getGlobalRoles(SecurityUtil.getAuthenticationToken());
+        Map<String, Set<String>> codeSystemToRolesMap = permissionServiceCache.getCodeSystemRoles(SecurityUtil.getAuthenticationToken());
         if (!globalRoles.isEmpty()) {
             globalRoles = globalRoles.stream()
                     .filter(line -> Role.RELEASE_ADMIN.name().equals(line)
@@ -83,7 +83,6 @@ public class PermissionService {
                 rolesMap.put(codeSystem, roles);
             });
         }
-
         return rolesMap;
     }
 }

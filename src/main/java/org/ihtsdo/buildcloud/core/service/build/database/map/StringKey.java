@@ -36,8 +36,7 @@ public class StringKey implements Key {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj != null && obj instanceof StringKey) {
-			StringKey objStringKey = (StringKey) obj;
+		if (obj instanceof StringKey objStringKey) {
 			return compKey.equals(objStringKey.compKey);
 		} else {
 			return false;

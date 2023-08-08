@@ -8,7 +8,6 @@ import org.ihtsdo.buildcloud.core.service.build.compare.ComponentComparison;
 import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparisonReport;
 import org.ihtsdo.buildcloud.core.service.build.compare.ValidationComparisonReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Service;
@@ -18,9 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class RVFReportComparison extends ComponentComparison {

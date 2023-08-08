@@ -74,7 +74,7 @@ public class ManifestCheck extends PreconditionCheck {
 					}
 				}
 
-				final String invalidFileFormatMsg = validateFileFormat(manifestListing, releaseVersion);
+				final String invalidFileFormatMsg = validateFileFormat(manifestListing);
 				if (StringUtils.hasLength(invalidFileFormatMsg)) {
 					fail(invalidFileFormatMsg);
 					return;
@@ -103,8 +103,7 @@ public class ManifestCheck extends PreconditionCheck {
 			}
 			pass();
 		} catch (ResourceNotFoundException | JAXBException | IOException e) {
-			LOGGER.error("Exception thrown when validating manifest file for build:{}", build.getId());
-			e.printStackTrace();
+			LOGGER.error(String.format("Exception thrown when validating manifest file for build %s", build.getId()), e);
 			fatalError("Build manifest is missing or invalid: " + e.getMessage());
 		}
 	}
@@ -154,19 +153,19 @@ public class ManifestCheck extends PreconditionCheck {
 			if (!fileName.startsWith(RF2Constants.README_FILENAME_PREFIX)
 				&& !fileName.startsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_PREFIX)
 				&& !fileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) {
-				if (invalidFileNameMsgBuilder.length() > 0) {
+				if (!invalidFileNameMsgBuilder.isEmpty()) {
 					invalidFileNameMsgBuilder.append(COMMA);
 				}
 				invalidFileNameMsgBuilder.append(fileName);
 			}
 		}
-		if (invalidFileNameMsgBuilder.length() > 0) {
-			return String.format(INVALID_FILE_NAME_AGAINST_BETA_RELEASE_MSG, invalidFileNameMsgBuilder.toString());
+		if (!invalidFileNameMsgBuilder.isEmpty()) {
+			return String.format(INVALID_FILE_NAME_AGAINST_BETA_RELEASE_MSG, invalidFileNameMsgBuilder);
 		}
 		return "";
 	}
 
-	private String validateFileFormat(final ListingType manifestListing, final String releaseVersion) {
+	private String validateFileFormat(final ListingType manifestListing) {
 		final StringBuilder invalidFileNameMsgBuilder = new StringBuilder();
 		//check that sct2 and der2 file names have got the same date as the release date/version
 		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
@@ -174,7 +173,7 @@ public class ManifestCheck extends PreconditionCheck {
 		int emptyFileNameCount = 0;
 		for (final String fileName : fileNames) {
 			//check file name is not empty
-			if (fileName == null || fileName.trim().length() == 0) {
+			if (fileName == null || fileName.trim().isEmpty()) {
 				emptyFileNameCount++;
 				continue;
 			}
@@ -188,19 +187,18 @@ public class ManifestCheck extends PreconditionCheck {
 			if (fileName.startsWith(RF2Constants.SCT2) || fileName.startsWith(RF2Constants.DER2) || fileName.startsWith(SCT1) || fileName.startsWith(DER1)) {
 				final String[] tokens = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 				if (tokens.length != 5) {
-					if (invalidFileNameMsgBuilder.length() > 0) {
+					if (!invalidFileNameMsgBuilder.isEmpty()) {
 						invalidFileNameMsgBuilder.append(COMMA);
 					}
 					invalidFileNameMsgBuilder.append(fileName);
 				}
-				continue;
-			}
+            }
 		}
 
 
 		final StringBuilder result = new StringBuilder();
-		if (invalidFileNameMsgBuilder.length() > 0) {
-			result.append(String.format(INVALID_RELEASE_FILE_FORMAT_MSG,invalidFileNameMsgBuilder.toString(), FILE_NAME_CONVENTION));
+		if (!invalidFileNameMsgBuilder.isEmpty()) {
+			result.append(String.format(INVALID_RELEASE_FILE_FORMAT_MSG, invalidFileNameMsgBuilder, FILE_NAME_CONVENTION));
 		}
 		if (!isReadmeFound) {
 			result.append(README_FILE_NOT_FOUND_MSG);
@@ -208,7 +206,7 @@ public class ManifestCheck extends PreconditionCheck {
 		if (emptyFileNameCount > 0) {
 			result.append(String.format(EMPTY_FILE_NAME_MSG, emptyFileNameCount));
 		}
-		if (result.length() > 0) {
+		if (!result.isEmpty()) {
 			return result.toString();
 		}
 		return null;
@@ -225,13 +223,13 @@ public class ManifestCheck extends PreconditionCheck {
 		final List<String> fileNames = ManifestFileListingHelper.listAllFiles(manifestListing);
 		for (final String fileName : fileNames) {
 			//check file name is not empty
-			if (fileName == null || fileName.trim().length() == 0) {
+			if (fileName == null || fileName.trim().isEmpty()) {
 				continue;
 			}
 			if (fileName.startsWith(RF2Constants.README_FILENAME_PREFIX) && fileName.endsWith(RF2Constants.README_FILENAME_EXTENSION)) {
 				if (fileName.split(RF2Constants.FILE_NAME_SEPARATOR).length >= 2) {
 					if (!fileName.contains(releaseVersion)) {
-						if (releaseVersionMsgBuilder.length() > 0) {
+						if (!releaseVersionMsgBuilder.isEmpty()) {
 							releaseVersionMsgBuilder.append(COMMA);
 						}
 						releaseVersionMsgBuilder.append(fileName);
@@ -243,21 +241,20 @@ public class ManifestCheck extends PreconditionCheck {
 			if (fileName.startsWith(RF2Constants.SCT2) || fileName.startsWith(RF2Constants.DER2) || fileName.startsWith(SCT1) || fileName.startsWith(DER1)) {
 				final String[] tokens = fileName.split(RF2Constants.FILE_NAME_SEPARATOR);
 				if (!tokens[tokens.length - 1].contains(releaseVersion)) {
-					if (releaseVersionMsgBuilder.length() > 0) {
+					if (!releaseVersionMsgBuilder.isEmpty()) {
 						releaseVersionMsgBuilder.append(COMMA);
 					}
 					releaseVersionMsgBuilder.append(fileName);
 				}
-				continue;
-			}
+            }
 		}
 
 
 		final StringBuilder result = new StringBuilder();
-		if (releaseVersionMsgBuilder.length() > 0) {
-			result.append(String.format(RELEASE_DATE_NOT_MATCHED_MSG, releaseVersionMsgBuilder.toString(), releaseVersion));
+		if (!releaseVersionMsgBuilder.isEmpty()) {
+			result.append(String.format(RELEASE_DATE_NOT_MATCHED_MSG, releaseVersionMsgBuilder, releaseVersion));
 		}
-		if (result.length() > 0) {
+		if (!result.isEmpty()) {
 			return result.toString();
 		}
 		return null;
@@ -292,9 +289,8 @@ public class ManifestCheck extends PreconditionCheck {
 				if (!invalidFileNames.isEmpty()) {
 					result.append(String.format(INVALID_FILES_IN_FOLDER, RF2Constants.FULL, String.join(COMMA, invalidFileNames)));
 				}
-			} else  {
-				// do nothing
-			}
+			}   // do nothing
+
 		}
 
 		return  result.toString();

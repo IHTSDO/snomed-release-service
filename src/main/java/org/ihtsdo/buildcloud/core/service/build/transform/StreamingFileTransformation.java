@@ -82,8 +82,7 @@ public class StreamingFileTransformation {
 		int listSize = columnValuesList.size();
 
 		for (Transformation transformation : transformations) {
-			if (transformation instanceof BatchLineTransformation) {
-				BatchLineTransformation batchLineTransform = (BatchLineTransformation) transformation;
+			if (transformation instanceof BatchLineTransformation batchLineTransform) {
 				try {
 					batchLineTransform.transformLines(columnValuesList);
 				} catch (TransformationException e) {

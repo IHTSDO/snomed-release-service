@@ -73,7 +73,7 @@ public class FolderType {
      */
     public List<FileType> getFile() {
         if (file == null) {
-            file = new ArrayList<FileType>();
+            file = new ArrayList<>();
         }
         return this.file;
     }
@@ -102,7 +102,7 @@ public class FolderType {
      */
     public List<FolderType> getFolder() {
         if (folder == null) {
-            folder = new ArrayList<FolderType>();
+            folder = new ArrayList<>();
         }
         return this.folder;
     }

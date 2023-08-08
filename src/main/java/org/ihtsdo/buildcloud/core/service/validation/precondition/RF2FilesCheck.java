@@ -35,19 +35,19 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 			return;
 		}
 		try (RVFClient rvfClient = new RVFClient(rvfUrl)) {
-			String errorMessage = "";
+			StringBuilder errorMessage = new StringBuilder();
 			for (String inputFile : buildDAO.listInputFileNames(build)) {
 				if (inputFile.startsWith(RF2Constants.INPUT_FILE_PREFIX) && inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 					InputStream inputFileStream = buildDAO.getInputFileStream(build, inputFile);
 					AsyncPipedStreamBean logFileOutputStream = buildDAO.getLogFileOutputStream(build, "precheck-rvf-" + inputFile + ".log");
 					String error = rvfClient.checkInputFile(inputFileStream, inputFile, logFileOutputStream);
 					if (error != null) {
-						errorMessage += error + ".";
+						errorMessage.append(error).append(".");
 					}
 				}
 			}
-			if (StringUtils.hasLength(errorMessage)) {
-				fail(errorMessage);
+			if (StringUtils.hasLength(errorMessage.toString())) {
+				fail(errorMessage.toString());
 			} else {
 				pass();
 			}

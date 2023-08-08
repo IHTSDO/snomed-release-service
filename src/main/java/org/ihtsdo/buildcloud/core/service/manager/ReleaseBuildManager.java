@@ -28,6 +28,7 @@ import javax.jms.Queue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 
@@ -104,7 +105,7 @@ public class ReleaseBuildManager {
 
 		List<String> userRoles = null;
 		if (!ENV_LOCAL.equals(envShortname)) {
-			Map<String, List<String>> rolesToCodeSystemMap = permissionService.getRolesForLoggedInUser();
+			Map<String, Set<String>> rolesToCodeSystemMap = permissionService.getRolesForLoggedInUser();
 			if (!rolesToCodeSystemMap.isEmpty() && StringUtils.hasLength(product.getReleaseCenter().getCodeSystem())) {
 				userRoles = new ArrayList<>(rolesToCodeSystemMap.get(product.getReleaseCenter().getCodeSystem()));
 			}

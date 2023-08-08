@@ -46,7 +46,7 @@ public class BuildComparisonManager {
         DELETED, ADD_NEW, RESULT_MISMATCH, CONTENT_MISMATCH, NOT_FOUND, FAILED;
     }
 
-    private Comparator<ComponentComparison> orderTestComparator = Comparator.comparing(component -> component.getTestOrder());
+    private Comparator<ComponentComparison> orderTestComparator = Comparator.comparing(ComponentComparison::getTestOrder);
 
     @Autowired
     private List<ComponentComparison> componentComparisonChecks;

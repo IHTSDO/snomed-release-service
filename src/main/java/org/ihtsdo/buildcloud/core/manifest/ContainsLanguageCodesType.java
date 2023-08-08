@@ -68,7 +68,7 @@ public class ContainsLanguageCodesType {
      */
     public List<String> getCode() {
         if (code == null) {
-            code = new ArrayList<String>();
+            code = new ArrayList<>();
         }
         return this.code;
     }

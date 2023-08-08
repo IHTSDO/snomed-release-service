@@ -165,9 +165,9 @@ public class ProductController {
 	@ResponseBody
 	@Operation(summary = "Update visibility for product",
 			description = "Update an existing product with the visibility flag")
-	public ResponseEntity updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
+	public ResponseEntity<Void> updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													   @RequestParam(required = true, defaultValue = "true") boolean visibility) {
 		productService.updateVisibility(releaseCenterKey, productKey, visibility);
-		return new ResponseEntity(HttpStatus.OK);
+		return new ResponseEntity<>(HttpStatus.OK);
 	}
 }

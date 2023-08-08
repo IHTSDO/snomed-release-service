@@ -185,7 +185,7 @@ public class RVFClient implements Closeable {
 			// read all other lines
 			boolean endOfValuesReached = false; // Optimisation so we don't inspect every line.
 			while ((line = responseReader.readLine()) != null) {
-				if (!line.isEmpty() && line.startsWith(FAILED)) {
+				if (line.startsWith(FAILED)) {
 					failedDetails = failedDetails == null ? line.replaceAll("\t", " ") : failedDetails + ", " + line.replaceAll("\t", " ");
 				}
 				if (endOfValuesReached) {
@@ -252,7 +252,7 @@ public class RVFClient implements Closeable {
 
 		multiPartBuilder.addTextBody(RUN_ID, request.getRunId() );
 		Integer failureExportMax = request.getFailureExportMax();
-		if (failureExportMax != null && failureExportMax.intValue() != 0) {
+		if (failureExportMax != null && failureExportMax != 0) {
 			multiPartBuilder.addTextBody(FAILURE_EXPORT_MAX, String.valueOf(failureExportMax));
 		}
 

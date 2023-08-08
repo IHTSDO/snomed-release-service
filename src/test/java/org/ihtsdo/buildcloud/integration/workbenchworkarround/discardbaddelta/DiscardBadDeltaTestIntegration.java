@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.integration.workbenchworkarround.discardbaddelta;
 import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.controller.helper.IntegrationTestHelper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.zip.ZipFile;

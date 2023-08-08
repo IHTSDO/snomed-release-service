@@ -107,12 +107,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 		List<Build> builds = buildService.findAllDesc(releaseCenterKey, productKeySource, false, false, false, null);
 		Build latestPublishedBuild = null;
-		for (int i = 0; i < builds.size(); i++) {
-			if (builds.get(i).getTags() != null && builds.get(i).getTags().contains(Build.Tag.PUBLISHED)) {
-				latestPublishedBuild = builds.get(i);
-				break;
-			}
-		}
+        for (Build build : builds) {
+            if (build.getTags() != null && build.getTags().contains(Build.Tag.PUBLISHED)) {
+                latestPublishedBuild = build;
+                break;
+            }
+        }
 		if (latestPublishedBuild != null) {
 			latestPublishedBuild = buildService.find(releaseCenterKey, productKeySource, latestPublishedBuild.getId(), true, false, false, null);
 			BuildConfiguration configuration = latestPublishedBuild.getConfiguration();

@@ -60,35 +60,17 @@ public class TransformationFactory {
 	}
 
 	public StreamingFileTransformation getSteamingFileTransformation(final TableSchema tableSchema) throws FileRecognitionException, NoSuchAlgorithmException {
-		StreamingFileTransformation transformation;
+		StreamingFileTransformation transformation = switch (tableSchema.getComponentType()) {
+            case CONCEPT -> getConceptFileTransformation();
+            case DESCRIPTION -> getDescriptionFileTransformation();
+            case TEXT_DEFINITION -> getTextDefinitionFileTransformation();
+            case STATED_RELATIONSHIP -> getStatedRelationshipFileTransformation();
+            case RELATIONSHIP, RELATIONSHIP_CONCRETE_VALUES -> getInferredRelationshipFileTransformation();
+            case IDENTIFIER -> getIdentifierFileTransformation();
+            case REFSET -> createRefsetTransformation(tableSchema);
+        };
 
-		switch (tableSchema.getComponentType()) {
-			case CONCEPT:
-				transformation = getConceptFileTransformation();
-				break;
-			case DESCRIPTION:
-				transformation = getDescriptionFileTransformation();
-				break;
-			case TEXT_DEFINITION:
-				transformation = getTextDefinitionFileTransformation();
-				break;
-			case STATED_RELATIONSHIP:
-				transformation = getStatedRelationshipFileTransformation();
-				break;
-			case RELATIONSHIP:
-			case RELATIONSHIP_CONCRETE_VALUES:
-				transformation = getInferredRelationshipFileTransformation();
-				break;
-			case IDENTIFIER:
-				transformation = getIdentifierFileTransformation();
-				break;
-			case REFSET:
-				transformation = createRefsetTransformation(tableSchema);
-				break;
-			default:
-				throw new FileRecognitionException("No transformation available for table type " + tableSchema);
-		}
-		return transformation;
+        return transformation;
 	}
 
 	public void setReplaceEffectiveTime(boolean replaceEffectiveTime) {
@@ -343,24 +325,19 @@ public class TransformationFactory {
 	}
 	
 	private String getPartionId(String namespaceId, PARTITION_ID_TYPE idType) {
-		String result = null;
+		String result;
 		boolean isShort = false;
 		if (String.valueOf(RF2Constants.INTERNATIONAL_NAMESPACE_ID).equals(namespaceId)) {
 			isShort = true;
 		}
-		switch (idType) {
-		case CONCEPT :
-			result = isShort ? ShortFormatSCTIDPartitionIdentifier.CONCEPT : LongFormatSCTIDPartitionIdentifier.CONCEPT;
-			break;
-		case DESCRIPTION :
-			result = isShort ? ShortFormatSCTIDPartitionIdentifier.DESCRIPTION : LongFormatSCTIDPartitionIdentifier.DESCRIPTION;
-			break;
-		case RELATIONSHIP :
-			result = isShort ? ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP : LongFormatSCTIDPartitionIdentifier.RELATIONSHIP;
-			break;
-		default : result = null;
-		break;
-		}
+        result = switch (idType) {
+            case CONCEPT ->
+                    isShort ? ShortFormatSCTIDPartitionIdentifier.CONCEPT : LongFormatSCTIDPartitionIdentifier.CONCEPT;
+            case DESCRIPTION ->
+                    isShort ? ShortFormatSCTIDPartitionIdentifier.DESCRIPTION : LongFormatSCTIDPartitionIdentifier.DESCRIPTION;
+            case RELATIONSHIP ->
+                    isShort ? ShortFormatSCTIDPartitionIdentifier.RELATIONSHIP : LongFormatSCTIDPartitionIdentifier.RELATIONSHIP;
+        };
 		return result;
 	}
 }

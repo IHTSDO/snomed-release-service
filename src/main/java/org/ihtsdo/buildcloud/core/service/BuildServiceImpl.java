@@ -552,21 +552,13 @@ public class BuildServiceImpl implements BuildService {
 
 	public void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
 		// Assert status workflow position
-		switch (newStatus) {
-			case BUILDING:
-				dao.assertStatus(build, Status.BEFORE_TRIGGER);
-				break;
-			case BUILT:
-				dao.assertStatus(build, Status.BUILDING);
-				break;
-			case RELEASE_COMPLETE_WITH_WARNINGS:
-			case RELEASE_COMPLETE:
-				dao.assertStatus(build, Boolean.TRUE.equals(offlineMode) ? Status.BUILDING : Status.RVF_RUNNING);
-				break;
-			case CANCELLED:
-				dao.assertStatus(build, Status.CANCEL_REQUESTED);
-				break;
-		}
+        switch (newStatus) {
+            case BUILDING -> dao.assertStatus(build, Status.BEFORE_TRIGGER);
+            case BUILT -> dao.assertStatus(build, Status.BUILDING);
+            case RELEASE_COMPLETE_WITH_WARNINGS, RELEASE_COMPLETE ->
+                    dao.assertStatus(build, Boolean.TRUE.equals(offlineMode) ? Status.BUILDING : Status.RVF_RUNNING);
+            case CANCELLED -> dao.assertStatus(build, Status.CANCEL_REQUESTED);
+        }
 
 		dao.updateStatus(build, newStatus);
 	}
@@ -765,7 +757,7 @@ public class BuildServiceImpl implements BuildService {
 	private void generateReleasePackageFile(Build build, String releaseFilename) throws BusinessServiceException {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
-			Map releasePackageInformationMap = getReleasePackageInformationMap(build);
+			Map<String, Object> releasePackageInformationMap = getReleasePackageInformationMap(build);
 			FileWriter fileWriter = null;
 			File releasePackageInfoFile;
 			try {
@@ -843,8 +835,8 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private Map getReleasePackageInformationMap(Build build) {
-		Map<String, Object> result = new LinkedHashMap();
+	private Map<String, Object> getReleasePackageInformationMap(Build build) {
+		Map<String, Object> result = new LinkedHashMap<>();
 
 		BuildConfiguration buildConfig = build.getConfiguration();
 		List<RefsetType> languagesRefsets = getLanguageRefsets(build);
@@ -858,52 +850,49 @@ public class BuildServiceImpl implements BuildService {
 			}
 			for (String key : result.keySet()) {
 				if (JSONObject.NULL.equals(result.get(key))) {
-					switch (key.trim()) {
-						case "effectiveTime":
-							result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
-							break;
-						case "deltaFromDate":
-							Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
-							result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
-							break;
-						case "deltaToDate":
-							Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
-							result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
-							break;
-						case "previousPublishedPackage":
-							result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
-							break;
-						case "includedModules":
-							Set<String> extensionModules = buildConfig.getExtensionConfig() != null ? buildConfig.getExtensionConfig().getModuleIdsSet() : null;
-							if (extensionModules != null) {
-								List<ConceptMini> list = new ArrayList<>();
-								for (String moduleId : extensionModules) {
-									ConceptMini conceptMini = new ConceptMini();
-									moduleId = moduleId.trim();
-									conceptMini.setId(moduleId);
-									conceptMini.setTerm(preferredTermMap.containsKey(moduleId) ? preferredTermMap.get(moduleId) : "");
-									list.add(conceptMini);
-								}
-								result.put("includedModules", list);
-							}
-							break;
-						case "languageRefsets":
-							List<ConceptMini> list = new ArrayList<>();
-							for (RefsetType refsetType : languagesRefsets) {
-								ConceptMini conceptMini = new ConceptMini();
-								String languageRefsetId = String.valueOf(refsetType.getId()).trim();
-								conceptMini.setId(languageRefsetId);
-								conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
-								list.add(conceptMini);
-							}
-							result.put("languageRefsets", list);
-							break;
-						case "licenceStatement":
-							result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? buildConfig.getLicenceStatement() : "");
-							break;
-						default:
-							break;
-					}
+                    switch (key.trim()) {
+                        case "effectiveTime" ->
+                                result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
+                        case "deltaFromDate" -> {
+                            Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
+                            result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+                        }
+                        case "deltaToDate" -> {
+                            Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
+                            result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
+                        }
+                        case "previousPublishedPackage" ->
+                                result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
+                        case "includedModules" -> {
+                            Set<String> extensionModules = buildConfig.getExtensionConfig() != null ? buildConfig.getExtensionConfig().getModuleIdsSet() : null;
+                            if (extensionModules != null) {
+                                List<ConceptMini> list = new ArrayList<>();
+                                for (String moduleId : extensionModules) {
+                                    ConceptMini conceptMini = new ConceptMini();
+                                    moduleId = moduleId.trim();
+                                    conceptMini.setId(moduleId);
+                                    conceptMini.setTerm(preferredTermMap.getOrDefault(moduleId, ""));
+                                    list.add(conceptMini);
+                                }
+                                result.put("includedModules", list);
+                            }
+                        }
+                        case "languageRefsets" -> {
+                            List<ConceptMini> list = new ArrayList<>();
+                            for (RefsetType refsetType : languagesRefsets) {
+                                ConceptMini conceptMini = new ConceptMini();
+                                String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+                                conceptMini.setId(languageRefsetId);
+                                conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
+                                list.add(conceptMini);
+                            }
+                            result.put("languageRefsets", list);
+                        }
+                        case "licenceStatement" ->
+                                result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? buildConfig.getLicenceStatement() : "");
+                        default -> {
+                        }
+                    }
 				}
 			}
 		}
@@ -963,9 +952,7 @@ public class BuildServiceImpl implements BuildService {
 									for (FileType fileType : fileTypes) {
 										ContainsReferenceSetsType refset = fileType.getContainsReferenceSets();
 										if (refset != null) {
-											for (RefsetType refsetType : refset.getRefset()) {
-												languagesRefsets.add(refsetType);
-											}
+											languagesRefsets.addAll(refset.getRefset());
 										}
 									}
 									break;

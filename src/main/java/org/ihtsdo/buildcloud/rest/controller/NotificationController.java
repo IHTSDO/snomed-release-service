@@ -56,20 +56,20 @@ public class NotificationController {
 
 	@DeleteMapping
 	@Operation(summary = "Delete a list of notifications")
-	public ResponseEntity deleteNotifications(@RequestParam(required = false) List<Long> notificationIds) {
+	public ResponseEntity<Map<String, List<Long>>> deleteNotifications(@RequestParam(required = false) List<Long> notificationIds) {
 		Map<String, List<Long>> response = new HashMap<>();
 		List<Long> result = notificationService.removeNotifications(notificationIds);
 		response.put("removedNotifications", result);
-		return new ResponseEntity(response, HttpStatus.OK);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 	@PutMapping("/bulk-mark-as-read")
 	@Operation(summary = "Mark a list of notifications as 'read'")
-	public ResponseEntity markNotificationAsRead(@RequestParam List<Long> notificationIds) {
+	public ResponseEntity<Map<String, List<Long>>> markNotificationAsRead(@RequestParam List<Long> notificationIds) {
 		Map<String, List<Long>> response = new HashMap<>();
 		List<Long> result = notificationService.markNotificationsAsRead(notificationIds);
 		response.put("readNotifications", result);
-		return new ResponseEntity(response, HttpStatus.OK);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 }

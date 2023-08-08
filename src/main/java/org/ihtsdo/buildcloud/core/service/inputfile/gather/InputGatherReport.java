@@ -14,7 +14,7 @@ public class InputGatherReport {
         RUNNING, COMPLETED, ERROR
     }
 
-    public class Details {
+    public static class Details {
         String message;
         Status status;
 

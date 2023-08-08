@@ -6,6 +6,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @Table(name="extension_config")
 public class ExtensionConfig implements Serializable {
 	
+	@Serial
 	private static final long serialVersionUID = 2315869111370910808L;
 
 	@Id

@@ -39,7 +39,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -53,7 +52,6 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -81,7 +79,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final Rf2FileNameTransformation rf2FileNameTransformation;
 
-	private S3Client s3Client;
+	private final S3Client s3Client;
 
 	@Autowired
 	private MessagingHelper messagingHelper;
@@ -92,7 +90,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Autowired
 	private S3PathHelper pathHelper;
 
-	private String buildBucketName;
+	private final String buildBucketName;
 
 	@Autowired
 	private InputFileDAO inputFileDAO;
@@ -338,12 +336,12 @@ public class BuildDAOImpl implements BuildDAO {
 		if (CollectionUtils.isEmpty(tags)) {
 			tags = new ArrayList<>();
 		} else {
-			String oldTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
+			String oldTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
 			s3Client.deleteObject(buildBucketName, oldTagFilePath);
 		}
 		tags.add(tag);
 		build.setTags(tags);
-		final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
+		final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
 		putFile(newTagFilePath, BLANK);
 	}
 
@@ -351,12 +349,12 @@ public class BuildDAOImpl implements BuildDAO {
 	public void saveTags(Build build, List<Tag> tags) {
 		List<Tag> oldTags = build.getTags();
 		if (!CollectionUtils.isEmpty(oldTags)) {
-			String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
+			String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
 			s3Client.deleteObject(buildBucketName, oldTagFilePath);
 		}
 		build.setTags(tags);
 		if (!CollectionUtils.isEmpty(tags)) {
-			final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(t -> t.name()).collect(Collectors.joining(",")));
+			final String newTagFilePath = pathHelper.getTagFilePath(build, tags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
 			putFile(newTagFilePath, BLANK);
 		}
 	}
@@ -417,7 +415,6 @@ public class BuildDAOImpl implements BuildDAO {
 	public void copyBuildToAnother(String sourceBucketName,String sourceBuildPath, String destinationBucketName , String destBuildPath, String folder) {
 		final String sourceFolder = sourceBuildPath + folder;
 		final String destFolder = destBuildPath + folder;
-		final List<String> buildInputFilePaths = srsFileHelper.listFiles(sourceFolder);
 		ObjectListing objectListing = this.s3Client.listObjects(sourceBucketName, sourceFolder);
 		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
 			String filename = summary.getKey().substring(sourceFolder.length());
@@ -511,20 +508,17 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public List<String> listOutputFilePaths(String bucketName, String buildPath) {
-		ArrayList files = new ArrayList();
+		ArrayList<String> files = new ArrayList<>();
 
 		try {
 			ObjectListing objectListing = this.s3Client.listObjects(bucketName, buildPath);
-			Iterator var4 = objectListing.getObjectSummaries().iterator();
 
-			while(var4.hasNext()) {
-				S3ObjectSummary summary = (S3ObjectSummary)var4.next();
-				files.add(summary.getKey().substring(buildPath.length()));
-			}
+            for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
+                files.add(summary.getKey().substring(buildPath.length()));
+            }
 		} catch (AmazonServiceException e) {
 			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", buildPath, e.getLocalizedMessage());
 		}
-
 		return files;
 	}
 
@@ -578,11 +572,10 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
 		LOGGER.debug("targetFileName:" + targetFileName);
-		String targetFileNameStripped = targetFileName;
+		String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 		if (!Normalizer.isNormalized(targetFileNameStripped, Normalizer.Form.NFC)) {
 			targetFileNameStripped = Normalizer.normalize(targetFileNameStripped, Normalizer.Form.NFC);
 		}
-		targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 
 		final List<String> filePaths = srsFileHelper.listFiles(publishedExtractedZipPath);
 		for (final String filePath : filePaths) {
@@ -597,7 +590,7 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 		if (filePaths.isEmpty()) {
-			LOGGER.error("No files found in the previous published package", previousPublishedPackage);
+			LOGGER.error("No files found in the previous published package {}", previousPublishedPackage);
 		} else {
 			LOGGER.warn("No file found in the previous published package {} containing {}", previousPublishedPackage, targetFileNameStripped);
 		}
@@ -708,38 +701,38 @@ public class BuildDAOImpl implements BuildDAO {
 		Comparator<Build> comparator = Comparator.nullsLast(null);
 		Sort sort = pageRequest.getSort();
 		for (Sort.Order order : sort.toList()) {
-			switch (order.getProperty()) {
-				case "buildName":
-					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.reverseOrder()));
-					} else {
-						comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.naturalOrder()));
-					}
-					break;
-				case "creationTime":
-					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.reverseOrder()));
-					} else {
-						comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.naturalOrder()));
-					}
-					break;
-				case "status":
-					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.reverseOrder()));
-					} else {
-						comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.naturalOrder()));
-					}
-					break;
-				case "buildUser":
-					if (order.getDirection().isDescending()) {
-						comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.reverseOrder()));
-					} else {
-						comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.naturalOrder()));
-					}
-					break;
-				default:
-					break;
-			}
+            switch (order.getProperty()) {
+                case "buildName" -> {
+                    if (order.getDirection().isDescending()) {
+                        comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.reverseOrder()));
+                    } else {
+                        comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.naturalOrder()));
+                    }
+                }
+                case "creationTime" -> {
+                    if (order.getDirection().isDescending()) {
+                        comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.reverseOrder()));
+                    } else {
+                        comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.naturalOrder()));
+                    }
+                }
+                case "status" -> {
+                    if (order.getDirection().isDescending()) {
+                        comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.reverseOrder()));
+                    } else {
+                        comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.naturalOrder()));
+                    }
+                }
+                case "buildUser" -> {
+                    if (order.getDirection().isDescending()) {
+                        comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.reverseOrder()));
+                    } else {
+                        comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.naturalOrder()));
+                    }
+                }
+                default -> {
+                }
+            }
 		}
 		allBuilds.sort(comparator);
 	}
@@ -792,37 +785,34 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private List<Build> filterByViewMode(List<Build> allBuilds, List<String> tagPaths, BuildService.View viewMode) {
-		switch (viewMode) {
-			case PUBLISHED:
-				allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
-				break;
-			case UNPUBLISHED:
-				allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) == null || !getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
-				break;
-			case ALL_RELEASES:
-				break;
-			case DEFAULT:
-				List<Build> copy = new ArrayList<>(allBuilds);
-				Collections.reverse(copy);
-				Build latestPublishedBuild = null;
-				List<Build> publishedBuilds = new ArrayList<>();
-				for (int i = 0; i < copy.size(); i++) {
-					Build build = copy.get(i);
-					if (getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
-						if (latestPublishedBuild == null) {
-							latestPublishedBuild = build;
-						} else {
-							publishedBuilds.add(build);
-						}
-					}
-				}
-				if (latestPublishedBuild != null) {
-					allBuilds = copy.subList(0, copy.indexOf(latestPublishedBuild) + 1);
-					allBuilds.addAll(publishedBuilds);
-					Collections.reverse(allBuilds);
-				}
-				break;
-		}
+        switch (viewMode) {
+            case PUBLISHED ->
+                    allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
+            case UNPUBLISHED ->
+                    allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) == null || !getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
+            case ALL_RELEASES -> {
+            }
+            case DEFAULT -> {
+                List<Build> copy = new ArrayList<>(allBuilds);
+                Collections.reverse(copy);
+                Build latestPublishedBuild = null;
+                List<Build> publishedBuilds = new ArrayList<>();
+                for (Build build : copy) {
+                    if (getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
+                        if (latestPublishedBuild == null) {
+                            latestPublishedBuild = build;
+                        } else {
+                            publishedBuilds.add(build);
+                        }
+                    }
+                }
+                if (latestPublishedBuild != null) {
+                    allBuilds = copy.subList(0, copy.indexOf(latestPublishedBuild) + 1);
+                    allBuilds.addAll(publishedBuilds);
+                    Collections.reverse(allBuilds);
+                }
+            }
+        }
 		return allBuilds;
 	}
 
@@ -1007,7 +997,7 @@ public class BuildDAOImpl implements BuildDAO {
 		for (final String key : visibilityPaths) {
 			final String[] keyParts = key.split("/");
 			final String dateString = keyParts[keyParts.length - 2];
-			final boolean visibility = Boolean.valueOf(keyParts[keyParts.length - 1].split(":")[1]);
+			final boolean visibility = Boolean.parseBoolean(keyParts[keyParts.length - 1].split(":")[1]);
 			if (!visibility) {
 				result.add(dateString);
 			}
@@ -1021,14 +1011,11 @@ public class BuildDAOImpl implements BuildDAO {
 		final PipedInputStream pipedInputStream = new PipedInputStream();
 		final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
-		final Future<String> future = executorService.submit(new Callable<String>() {
-			@Override
-			public String call() throws Exception {
-				srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
-				LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
-				return buildOutputFilePath;
-			}
-		});
+		final Future<String> future = executorService.submit(() -> {
+            srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+            LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
+            return buildOutputFilePath;
+        });
 
 		return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
 	}
@@ -1038,12 +1025,7 @@ public class BuildDAOImpl implements BuildDAO {
 				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
 	}
 
-	@Required
-	public void setBuildBucketName(final String buildBucketName) {
-		this.buildBucketName = buildBucketName;
-	}
-
-	private File getLocalFile(final String transformedFilePath) throws FileNotFoundException {
+	private File getLocalFile(final String transformedFilePath) {
 		return new File(tempDir, transformedFilePath);
 	}
 
