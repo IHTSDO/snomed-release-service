@@ -2,31 +2,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.8</version>
-	</parent>
-
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
 	<version>6.0.0-SNAPSHOT</version>
-	<properties>
-		<java.version>17</java.version>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<packageName>${project.artifactId}</packageName>
 
-		<otf-common.version>5.8.0</otf-common.version>
-		<snomed-utilities.version>1.5.0</snomed-utilities.version>
-		<ihtsdo-spring-sso.version>3.1.2</ihtsdo-spring-sso.version>
-		<spring-cloud.version>2021.0.3</spring-cloud.version>
-		<spring-cloud-aws-version>2.2.6.RELEASE</spring-cloud-aws-version>
-		<joda-time.version>2.8.1</joda-time.version>
-		<jmockit.version>1.49</jmockit.version>
-		<easymock.version>4.3</easymock.version>
-	</properties>
+	<parent>
+		<groupId>org.snomed</groupId>
+		<artifactId>snomed-parent-bom</artifactId>
+		<version>2.0.0-SNAPSHOT</version>
+	</parent>
 
 	<scm>
 		<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
@@ -40,12 +24,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>ch.qos.logback</groupId>
-					<artifactId>logback-classic</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -72,42 +50,35 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-aws-autoconfigure</artifactId>
-			<version>${spring-cloud-aws-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-aws-context</artifactId>
-			<version>${spring-cloud-aws-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-aws-core</artifactId>
-			<version>${spring-cloud-aws-version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.ihtsdo.snomed.util</groupId>
 			<artifactId>snomed-utilities</artifactId>
-			<version>${snomed-utilities.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
 			<artifactId>otf-common</artifactId>
-			<version>${otf-common.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.ihtsdo.otf.common</groupId>
 			<artifactId>resource-manager</artifactId>
-			<version>${otf-common.version}</version>
 		</dependency>
 
 		<!-- Jira -->
 		<dependency>
 			<groupId>net.rcarz</groupId>
 			<artifactId>jira-client</artifactId>
-			<version>0.6.4-IHTSDO</version>
 		</dependency>
 
 		<!-- SSO Integration -->
@@ -142,30 +113,14 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.junit.vintage</groupId>
-					<artifactId>junit-vintage-engine</artifactId>
-				</exclusion>
-				<!-- Exclude to avoid multiple occurrences of org.json.JSONObject on the class path -->
-				<exclusion>
-					<groupId>com.vaadin.external.google</groupId>
-					<artifactId>android-json</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jmockit</groupId>
 			<artifactId>jmockit</artifactId>
-			<version>${jmockit.version}</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
-			<version>${easymock.version}</version>
-			<scope>test</scope>
 		</dependency>
 
 		<!-- Logging -->
@@ -178,7 +133,6 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
-			<version>1.6.6</version>
 		</dependency>
 
 		<!--Misc-->
@@ -189,27 +143,22 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
-			<version>1.10.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.java-diff-utils</groupId>
 			<artifactId>java-diff-utils</artifactId>
-			<version>4.11</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-fileupload</groupId>
 			<artifactId>commons-fileupload</artifactId>
-			<version>1.5</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.11.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
-			<version>1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -236,7 +185,6 @@
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-kahadb-store</artifactId>
-			<scope>runtime</scope>
 		</dependency>
 
 		<!-- S3 -->
@@ -244,7 +192,6 @@
 			<!-- Adding in own right otherwise aws will pull incompatible version 1.3 -->
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
-			<version>1.9</version>
 		</dependency>
 
 		<!-- Consul and Vault -->
@@ -342,6 +289,7 @@
 			</plugin>
 		</plugins>
 	</build>
+
 	<profiles>
 		<profile>
 			<id>deb</id>
@@ -358,7 +306,7 @@
 									<goal>jdeb</goal>
 								</goals>
 								<configuration>
-									<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
+									<deb>${project.build.directory}/${project.artifactId}-${project.version}-all.deb</deb>
 									<controlDir>${basedir}/src/deb/control</controlDir>
 									<snapshotExpand>true</snapshotExpand>
 									<snapshotEnv>BUILD_NUMBER</snapshotEnv>
@@ -368,26 +316,26 @@
 									<dataSet>
 										<data>
 											<src>${project.build.directory}/${project.build.finalName}.jar</src>
-											<dst>${packageName}.jar</dst>
+											<dst>${project.artifactId}.jar</dst>
 											<type>file</type>
 											<mapper>
 												<type>perm</type>
-												<prefix>/opt/${packageName}/</prefix>
-												<user>${packageName}</user>
-												<group>${packageName}</group>
+												<prefix>/opt/${project.artifactId}/</prefix>
+												<user>${project.artifactId}</user>
+												<group>${project.artifactId}</group>
 												<dirmode>0750</dirmode>
 												<filemode>0750</filemode>
 											</mapper>
 										</data>
 										<data>
 											<src>${basedir}/src/deb/supervisor.conf</src>
-											<dst>/etc/supervisor/conf.d/${packageName}.conf</dst>
+											<dst>/etc/supervisor/conf.d/${project.artifactId}.conf</dst>
 											<type>file</type>
 										</data>
 										<data>
 											<type>template</type>
 											<paths>
-												<path>/opt/${packageName}</path>
+												<path>/opt/${project.artifactId}</path>
 											</paths>
 										</data>
 									</dataSet>
