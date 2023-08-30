@@ -30,6 +30,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
@@ -83,6 +85,20 @@ public class RVFFailureJiraAssociationService {
 	@Autowired
 	private ProductService productService;
 
+	private Map<String, String> jiraCustomFields;
+
+	@Autowired
+	public RVFFailureJiraAssociationService(@Value("${jira.ticket.customField.product.release.date}") final String productReleaseDate,
+											@Value("${jira.ticket.customField.reporting.entity}") final String reportingEntity,
+											@Value("${jira.ticket.customField.reporting.stage}") final String reportingStage,
+											@Value("${jira.ticket.customField.snomedct.product}") final String snomedCtProduct) {
+		jiraCustomFields = new HashMap<>();
+		jiraCustomFields.put(productReleaseDate, "Product Release Date");
+		jiraCustomFields.put(reportingEntity, "Reporting entity");
+		jiraCustomFields.put(reportingStage, "Reporting stage");
+		jiraCustomFields.put(snomedCtProduct, "SNOMED CT Product");
+	}
+
 	public List<RVFFailureJiraAssociation> findByBuildKey(String centerKey, String productKey, String buildKey) {
 		return rvfFailureJiraAssociationDAO.findByBuildKey(centerKey, productKey, buildKey);
 	}
@@ -124,14 +140,16 @@ public class RVFFailureJiraAssociationService {
 		for (String assertionId : validAssertionIds) {
 			ValidationReport.RvfValidationResult.TestResult.TestRunItem found = assertionsFailedAndWarning.stream().filter(item -> item.getAssertionUuid() != null && item.getAssertionUuid().equals(assertionId)).findAny().orElse(null);
 			if (found != null) {
-				Issue jiraIssue = createJiraIssue(product.getReleaseCenter(), generateSummary(product, build, found), generateDescription(build, found), build.getConfiguration().getEffectiveTimeFormatted());
-				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
-				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
-				jiraIssue.addAttachments(attachments);
-
+				Issue jiraIssue = createJiraIssue(generateSummary(product, build, found), generateDescription(build, found));
 				final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, build.getConfiguration().getEffectiveTime(), found.getAssertionUuid(), jiraUrl + "browse/" + jiraIssue.getKey());
 				rvfFailureJiraAssociationDAO.save(association);
 				associations.add(association);
+
+				// Add attachment and update JIRA custom fields
+				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
+				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
+				jiraIssue.addAttachments(attachments);
+				updateJiraIssue(product.getReleaseCenter(), build.getConfiguration().getEffectiveTimeFormatted(), jiraIssue);
 			} else {
 				logger.error("No failure found for the assertion {} for the build {}", assertionId, build.getId());
 			}
@@ -193,7 +211,7 @@ public class RVFFailureJiraAssociationService {
 		return assertionsFailedAndWarning;
 	}
 
-	private Issue createJiraIssue(ReleaseCenter releaseCenter, String summary, String description, String releaseDate) throws BusinessServiceException {
+	private Issue createJiraIssue(String summary, String description) throws BusinessServiceException {
 		Issue jiraIssue;
 		try {
 			jiraIssue = getJiraClient().createIssue(project, issueType)
@@ -201,6 +219,16 @@ public class RVFFailureJiraAssociationService {
 					.field(Field.DESCRIPTION, description)
 					.field(Field.ASSIGNEE, getUsername())
 					.execute();
+
+		} catch (JiraException e) {
+			logger.error(e.getMessage());
+			throw new BusinessServiceException("Failed to create Jira ticket. Error: " + extractJiraException(e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
+		}
+		return jiraIssue;
+	}
+
+	private void updateJiraIssue(ReleaseCenter releaseCenter, String releaseDate, Issue jiraIssue) throws BusinessServiceException {
+		try {
 			final Issue.FluentUpdate updateRequest = jiraIssue.update();
 			updateRequest.field(Field.PRIORITY, priority);
 			updateRequest.field(productReleaseDate, releaseDate);
@@ -215,10 +243,28 @@ public class RVFFailureJiraAssociationService {
 			updateRequest.execute();
 		} catch (JiraException e) {
 			logger.error(e.getMessage());
-			throw new BusinessServiceException("Failed to create Jira task. Error: " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
+			throw new BusinessServiceException("Jira ticket has been created successfully but failed to update. Error: " + extractJiraException(e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 		}
+	}
 
-		return jiraIssue;
+	private String extractJiraException(String message) {
+		if (StringUtils.hasLength(message)) {
+			String patternStr = "\"%s\":\"Option id 'null' is not valid\"";
+			String invalidCustomField = "";
+			for (String field : jiraCustomFields.keySet()) {
+				Pattern pattern = Pattern.compile(String.format(patternStr, field));
+				Matcher matcher = pattern.matcher(message);
+				boolean matchFound = matcher.find();
+				if(matchFound) {
+					invalidCustomField = field;
+					break;
+				}
+			}
+			if (StringUtils.hasLength(invalidCustomField)) {
+				return String.format("The JIRA custom field '%s' is empty or invalid. Please contact Admin for support.", jiraCustomFields.get(invalidCustomField));
+			}
+		}
+		return message;
 	}
 
 	private ValidationReport getRVFReport(String url) throws IOException {
