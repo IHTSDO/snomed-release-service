@@ -12,6 +12,10 @@
 		<version>2.0.0-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<packageName>${project.artifactId}</packageName>
+	</properties>
+
 	<scm>
 		<connection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</connection>
 		<developerConnection>scm:git:git@github.com:IHTSDO/snomed-release-service.git</developerConnection>
@@ -307,7 +311,7 @@
 									<goal>jdeb</goal>
 								</goals>
 								<configuration>
-									<deb>${project.build.directory}/${project.artifactId}-${project.version}-all.deb</deb>
+									<deb>${project.build.directory}/${packageName}-${project.version}-all.deb</deb>
 									<controlDir>${basedir}/src/deb/control</controlDir>
 									<snapshotExpand>true</snapshotExpand>
 									<snapshotEnv>BUILD_NUMBER</snapshotEnv>
@@ -317,26 +321,26 @@
 									<dataSet>
 										<data>
 											<src>${project.build.directory}/${project.build.finalName}.jar</src>
-											<dst>${project.artifactId}.jar</dst>
+											<dst>${packageName}.jar</dst>
 											<type>file</type>
 											<mapper>
 												<type>perm</type>
-												<prefix>/opt/${project.artifactId}/</prefix>
-												<user>${project.artifactId}</user>
-												<group>${project.artifactId}</group>
+												<prefix>/opt/${packageName}/</prefix>
+												<user>${packageName}</user>
+												<group>${packageName}</group>
 												<dirmode>0750</dirmode>
 												<filemode>0750</filemode>
 											</mapper>
 										</data>
 										<data>
 											<src>${basedir}/src/deb/supervisor.conf</src>
-											<dst>/etc/supervisor/conf.d/${project.artifactId}.conf</dst>
+											<dst>/etc/supervisor/conf.d/${packageName}.conf</dst>
 											<type>file</type>
 										</data>
 										<data>
 											<type>template</type>
 											<paths>
-												<path>/opt/${project.artifactId}</path>
+												<path>/opt/${packageName}</path>
 											</paths>
 										</data>
 									</dataSet>
