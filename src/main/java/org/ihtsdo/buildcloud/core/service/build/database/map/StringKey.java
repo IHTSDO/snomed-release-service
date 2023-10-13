@@ -4,8 +4,16 @@ public class StringKey implements Key {
 
 	private final String compKey;
 
+	private String effectiveTime;
+
 	public StringKey(String compKey) {
 		this.compKey = compKey;
+		this.effectiveTime = null;
+	}
+
+	public StringKey(String compKey, String effectiveTime) {
+		this(compKey);
+		this.effectiveTime = effectiveTime;
 	}
 
 	@Override
@@ -26,7 +34,7 @@ public class StringKey implements Key {
 
 	@Override
 	public String getDate() {
-		return null;
+		return this.effectiveTime;
 	}
 
 	@Override

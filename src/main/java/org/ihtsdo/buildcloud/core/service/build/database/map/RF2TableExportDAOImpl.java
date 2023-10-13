@@ -270,7 +270,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 				// skip data from previous release
 				continue;
 			}
-			key = getKey(parts[0], parts[1]);
+			key = tableSchema.getComponentType() == ComponentType.IDENTIFIER ?  new StringKey(parts[0], parts[1]) : getKey(parts[0], parts[1]);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
 				// Get refset id
 				refsetIdMatcher = REFSET_ID_PATTERN.matcher(line);
