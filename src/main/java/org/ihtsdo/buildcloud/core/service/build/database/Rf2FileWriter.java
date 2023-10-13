@@ -43,9 +43,9 @@ public class Rf2FileWriter {
 				String[] lineParts;
 				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(tableSchema.getComponentType())) {
-					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 4);
-					// effective time is on the third column
-					currentId = lineParts[0] + lineParts[1];
+					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
+					// effective time is on the second column
+					currentId = lineParts[0] + lineParts[4];
 				} else {
 					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches()) {
 						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
@@ -97,10 +97,10 @@ public class Rf2FileWriter {
 				String[] lineParts;
 				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
-					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 4);
-					// effective time is on the third column
-					currentId = lineParts[0] + lineParts[1];
-					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
+					// effective time is on the second column
+					currentId = lineParts[0] + lineParts[4];
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
 				} else {
 					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(schema.getFilename()).matches()) {
 						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
