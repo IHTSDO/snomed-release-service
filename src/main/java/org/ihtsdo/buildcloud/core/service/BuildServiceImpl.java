@@ -629,7 +629,8 @@ public class BuildServiceImpl implements BuildService {
 
 		// analyze report to check whether there is fatal error for all packages
 		for (final PostConditionCheckReport report : reports) {
-			if (report.getResult() == PostConditionCheckReport.State.FATAL) {
+			if (report.getResult() == PostConditionCheckReport.State.FATAL
+			 || report.getResult() == PostConditionCheckReport.State.FAILED) {
 				// Need to alert release manager of fatal post-condition check error.
 				buildStatus = Status.FAILED_POST_CONDITIONS;
 				break;
@@ -680,11 +681,11 @@ public class BuildServiceImpl implements BuildService {
 		}
 		if (dao.isBuildCancelRequested(build)) return;
 
-		if (Boolean.FALSE.equals(offlineMode)) {
-			LOGGER.info("Start classification cross check");
-			List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
-			dao.updatePostConditionCheckReport(build, reports);
-		}
+//		if (Boolean.FALSE.equals(offlineMode)) {
+//			LOGGER.info("Start classification cross check");
+//			List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
+//			dao.updatePostConditionCheckReport(build, reports);
+//		}
 
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
