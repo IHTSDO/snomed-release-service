@@ -65,7 +65,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
 
 	@Override
-	public void runReleaseBuild(Build build, Authentication authentication) {
+	public void runReleaseBuild(Build build, Authentication authentication) throws IOException {
 		if (buildDAO.isBuildCancelRequested(build)) return;
 
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
@@ -275,7 +275,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return filename.replaceAll("PRODUCTION", "DAILYBUILD_BETA");
 	}
 
-	private boolean prepareInputFiles(Build build) throws BusinessServiceException {
+	private boolean prepareInputFiles(Build build) throws BusinessServiceException, IOException {
 		// Prepare input files from sources when available
 		SourceFileProcessingReport sourceFileProcessingReport = inputFileService.prepareInputFiles(build, true);
 		if (sourceFileProcessingReport.getDetails().get(ReportType.ERROR) != null) {

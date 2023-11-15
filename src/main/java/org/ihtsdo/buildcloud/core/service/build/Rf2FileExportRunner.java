@@ -24,8 +24,6 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.AmazonClientException;
-
 import static org.ihtsdo.buildcloud.core.entity.BuildConfiguration.BETA_PREFIX;
 import static org.ihtsdo.buildcloud.core.service.build.RF2Constants.*;
 
@@ -317,7 +315,7 @@ public class Rf2FileExportRunner {
 
 	private boolean isNetworkRelated(final Throwable cause) {
 		boolean isNetworkRelated = false;
-		if (cause instanceof IOException || cause instanceof AmazonClientException) {
+		if (cause instanceof IOException) {
 			isNetworkRelated = true;
 		}
 		return isNetworkRelated;

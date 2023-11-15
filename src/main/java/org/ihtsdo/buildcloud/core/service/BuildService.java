@@ -10,6 +10,7 @@ import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.data.domain.PageRequest;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public interface BuildService {
 	 * @return
 	 * @throws BusinessServiceException
 	 */
-	Build triggerBuild(Build build, Boolean enableTelemetryStream);
+	Build triggerBuild(Build build, Boolean enableTelemetryStream) throws IOException;
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 
@@ -37,7 +38,7 @@ public interface BuildService {
 
 	Build find(String releaseCenterKey, String productKey, String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 
-	void markBuildAsDeleted(Build build);
+	void markBuildAsDeleted(Build build) throws IOException;
 
 	void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
@@ -63,7 +64,7 @@ public interface BuildService {
 
 	InputStream getBuildInputFilesPrepareReport(String releaseCenterKey, String productKey, String buildId);
 
-	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException;
+	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException, IOException;
 
 	InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId);
 
@@ -75,11 +76,11 @@ public interface BuildService {
 
 	InputStream getClassificationResultOutputFile(String releaseCenterKey, String productKey, String buildId, String inputFileName) throws ResourceNotFoundException;
 
-	void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility);
+	void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility) throws IOException;
 
-	void updateVisibility(Build build, boolean visibility);
+	void updateVisibility(Build build, boolean visibility) throws IOException;
 
-	void saveTags(Build build, List<Build.Tag> tags);
+	void saveTags(Build build, List<Build.Tag> tags) throws IOException;
 
 	Build cloneBuild(String releaseCenterKey, String productKey, String buildId, String username) throws BusinessServiceException;
 

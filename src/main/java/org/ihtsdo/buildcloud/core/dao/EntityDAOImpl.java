@@ -21,7 +21,7 @@ public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
 
 	@Override
 	public void save(T entity) {
-		getCurrentSession().save(entity);
+		getCurrentSession().persist(entity);
 	}
 
 	@Override
@@ -31,12 +31,12 @@ public abstract class EntityDAOImpl<T> implements EntityDAO<T> {
 
 	@Override
 	public void update(T entity) {
-		getCurrentSession().update(entity);
+		getCurrentSession().merge(entity);
 	}
 
 	@Override
 	public void delete(T entity) {
-		getCurrentSession().delete(entity);
+		getCurrentSession().remove(entity);
 	}
 
 	protected Session getCurrentSession() {

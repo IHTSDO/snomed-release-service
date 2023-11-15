@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +17,6 @@ import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
@@ -41,6 +39,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -117,9 +118,8 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	public PublishServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
-			final S3Client s3Client,
-			final S3ClientHelper s3ClientHelper) {
-		this.srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+			final S3Client s3Client) {
+		this.srsFileHelper = new FileHelper(storageBucketName, s3Client);
 		this.s3Client = s3Client;
 	}
 
@@ -669,52 +669,59 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private void findPublishedBuildPathMap(String storageBucketName, Map<String, String> buildPathMap, String buildBckUpPath) {
-		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
-		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-		boolean firstPass = true;
-		while (firstPass || objectListing.isTruncated()) {
-			if (!firstPass) {
-				objectListing = s3Client.listNextBatchOfObjects(objectListing);
-			}
-			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			for (final S3ObjectSummary objectSummary : objectSummaries) {
-				final String key = objectSummary.getKey();
+		ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(storageBucketName).prefix(buildBckUpPath).maxKeys(10000).build();
+
+		boolean done = false;
+		while (!done) {
+			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+			for (S3Object s3Object : listObjectsResponse.contents()) {
+				String key = s3Object.key();
 				if (key.contains("/status:")) {
-					final String[] keyParts = key.split("/");
-					final String dateString = keyParts[keyParts.length - 2];
+					String[] keyParts = key.split("/");
+					String dateString = keyParts[keyParts.length - 2];
 					if (!buildPathMap.containsKey(dateString)) {
 						buildPathMap.put(dateString, storageBucketName + S3PathHelper.SEPARATOR + buildBckUpPath + dateString + S3PathHelper.SEPARATOR);
 					}
 				}
 			}
-			firstPass = false;
+
+			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+				String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
+				listObjectsRequest = ListObjectsRequest.builder().bucket(storageBucketName).prefix(buildBckUpPath).maxKeys(10000).marker(nextMarker).build();
+			} else {
+				done = true;
+			}
 		}
 	}
 
 	private void findPublishedBuilds(String storageBucketName, String releaseCenterKey, String productKey, List<Build> builds, String buildBckUpPath) {
 		List<Build> foundBuilds = new ArrayList<>();
-		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(storageBucketName, buildBckUpPath, null, null, 10000);
-		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-		boolean firstPass = true;
-		while (firstPass || objectListing.isTruncated()) {
-			if (!firstPass) {
-				objectListing = s3Client.listNextBatchOfObjects(objectListing);
-			}
-			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			for (final S3ObjectSummary objectSummary : objectSummaries) {
-				final String key = objectSummary.getKey();
+		ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(storageBucketName).prefix(buildBckUpPath).maxKeys(10000).build();
+
+		boolean done = false;
+		while (!done) {
+			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+			for (S3Object s3Object : listObjectsResponse.contents()) {
+				String key = s3Object.key();
 				if (key.contains("/status:")) {
-					final String[] keyParts = key.split("/");
-					final String dateString = keyParts[keyParts.length - 2];
-					final String status = keyParts[keyParts.length - 1].split(":")[1];
+					String[] keyParts = key.split("/");
+					String dateString = keyParts[keyParts.length - 2];
+					String status = keyParts[keyParts.length - 1].split(":")[1];
 					if (builds.stream().noneMatch(b -> b.getId().equals(dateString))) {
-						final Build build = new Build(dateString, releaseCenterKey, productKey, status);
+						Build build = new Build(dateString, releaseCenterKey, productKey, status);
 						foundBuilds.add(build);
 					}
 				}
 			}
-			firstPass = false;
+
+			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+				String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
+				listObjectsRequest = ListObjectsRequest.builder().bucket(storageBucketName).prefix(buildBckUpPath).maxKeys(10000).marker(nextMarker).build();
+			} else {
+				done = true;
+			}
 		}
+
 		foundBuilds.forEach(build -> {
 			if (build.getStatus().equals(Build.Status.BUILT)
 					|| build.getStatus().equals(Build.Status.RVF_QUEUED)
@@ -758,49 +765,26 @@ public class PublishServiceImpl implements PublishService {
 
 	private void loadBuildConfiguration(final String storageBucketName, final String buildBckUpPath,final Build build) throws IOException {
 		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.CONFIG_JSON);
-		try {
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
-				build.setConfiguration(buildConfiguration);
-			}
-		} catch (AmazonS3Exception e) {
-			if (404 == e.getStatusCode()) {
-				throw new ResourceNotFoundException("Build configuration file is missing from the build '" + build.getId()+ "'.");
-			} else {
-				throw e;
-			}
+		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
+		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+			final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+			build.setConfiguration(buildConfiguration);
 		}
 	}
 
 	private void loadQaTestConfig(final String storageBucketName, final String buildBckUpPath, final Build build) throws IOException {
 		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.QA_CONFIG_JSON);
-		try {
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
-				build.setQaTestConfig(qaTestConfig);
-			}
-
-		} catch (AmazonS3Exception e) {
-			if (404 == e.getStatusCode()) {
-				throw new ResourceNotFoundException("QA Configuration file is missing from the build '" + build.getId()+ "'.");
-			} else {
-				throw e;
-			}
+		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
+		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+			final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+			build.setQaTestConfig(qaTestConfig);
 		}
 	}
 
 	private InputStream getFileStream(String bucketName, String filePath) {
-		try {
-			S3Object s3Object = this.s3Client.getObject(bucketName, filePath);
-			if (s3Object != null) {
-				return s3Object.getObjectContent();
-			}
-		} catch (AmazonS3Exception ex) {
-			if (404 != ex.getStatusCode()) {
-				throw ex;
-			}
+		InputStream s3Object = this.s3Client.getObject(bucketName, filePath);
+		if (s3Object != null) {
+			return s3Object;
 		}
 
 		return null;

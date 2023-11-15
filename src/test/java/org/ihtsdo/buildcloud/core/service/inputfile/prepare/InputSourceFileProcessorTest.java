@@ -14,7 +14,6 @@ import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.manifest.ManifestValidator;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +44,6 @@ public class InputSourceFileProcessorTest {
 	@Autowired
 	private S3Client s3Client;
 	
-	@Autowired
-	private S3ClientHelper s3ClientHelper;
-	
 	private FileHelper fileHelper;
 	private InputSourceFileProcessor processor;
 	private Product product;
@@ -55,7 +51,7 @@ public class InputSourceFileProcessorTest {
 	
 	@BeforeEach
 	public void setUp() {
-		fileHelper = new FileHelper(buildBucketName, s3Client, s3ClientHelper);
+		fileHelper = new FileHelper(buildBucketName, s3Client);
 		product = new Product(getClass().getName());
 		ReleaseCenter releaseCenter = new ReleaseCenter("International", "int");
 		product.setReleaseCenter(releaseCenter);

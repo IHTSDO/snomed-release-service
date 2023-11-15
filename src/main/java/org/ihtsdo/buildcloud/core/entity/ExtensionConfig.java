@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.type.YesNoConverter;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
@@ -38,8 +40,8 @@ public class ExtensionConfig implements Serializable {
 	
 	@Column(name="dependency_release")
 	private String dependencyRelease;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="release_as_edition")
 	private boolean releaseAsAnEdition;
 

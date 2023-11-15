@@ -41,8 +41,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -94,7 +94,7 @@ public class BuildController {
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@RequestBody final BuildRequestPojo buildRequestPojo,
-			final HttpServletRequest request) throws BusinessServiceException {
+			final HttpServletRequest request) throws BusinessServiceException, IOException {
 		final String username = SecurityUtil.getUsername();
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 		final Build newBuild = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, username);
@@ -127,7 +127,7 @@ public class BuildController {
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
-			final HttpServletRequest request) throws BusinessServiceException {
+			final HttpServletRequest request) throws BusinessServiceException, IOException {
 		final String username = SecurityUtil.getUsername();
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 
@@ -146,7 +146,7 @@ public class BuildController {
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
-			final HttpServletRequest request) throws BusinessServiceException {
+			final HttpServletRequest request) throws BusinessServiceException, IOException {
 
 		// Verify if the build exists
 		Build newBuild  = buildService.find(releaseCenterKey, productKey, buildId, true, true, null , null);
@@ -162,7 +162,7 @@ public class BuildController {
 			description = "Delete a build for given product key and release center key and build id")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> deleteBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException {
+														   @PathVariable final String buildId, final HttpServletRequest request) throws BusinessServiceException, IOException {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 
 		ifBuildIsNullThrow(productKey, buildId, build);
@@ -426,7 +426,7 @@ public class BuildController {
 	@Operation(summary = "Update visibility for build",
 			description = "Update an existing build with the visibility flag")
 	public ResponseEntity<Void> updateVisibility(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-										   @PathVariable final String buildId, @RequestParam(required = true, defaultValue = "true") boolean visibility) {
+										   @PathVariable final String buildId, @RequestParam(required = true, defaultValue = "true") boolean visibility) throws IOException {
 		buildService.updateVisibility(releaseCenterKey, productKey, buildId, visibility);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -437,7 +437,7 @@ public class BuildController {
 	@Operation(summary = "Update tags for build",
 			description = "Update an existing build with the tags")
 	public ResponseEntity<Void> updateTags(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-										   @PathVariable final String buildId, @RequestParam(required = true) List<Build.Tag> tags) {
+										   @PathVariable final String buildId, @RequestParam(required = true) List<Build.Tag> tags) throws IOException {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		buildService.saveTags(build, tags);
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -592,7 +592,7 @@ public class BuildController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Cancel a running build job")
 	public void requestCancelBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException {
+								   @PathVariable final String buildId, final HttpServletResponse response) throws ResourceNotFoundException, BadConfigurationException, IOException {
 		buildService.requestCancelBuild(releaseCenterKey, productKey, buildId);
 		response.setStatus(HttpStatus.OK.value());
 	}
