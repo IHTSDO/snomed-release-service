@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.YesNoConverter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status;
 
@@ -42,11 +43,11 @@ public class Product {
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private QATestConfig qaTestConfig;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "legacy_product")
 	private boolean isLegacyProduct;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "visibility")
 	private boolean visibility;
 

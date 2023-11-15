@@ -5,9 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -15,16 +18,19 @@ public class SecurityContextConfiguration {
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-		http.authorizeRequests()
-				.antMatchers("/snomed-release-service-websocket/**/*",
+		http.httpBasic(withDefaults());
+		http.csrf(AbstractHttpConfigurer::disable);
+		http.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		http.addFilterBefore(new RequestHeaderAuthenticationDecorator(), FilterSecurityInterceptor.class);
+		http.authorizeHttpRequests((authorize) -> authorize.requestMatchers(
+				"/snomed-release-service-websocket/**",
 						"/version",
 						"/swagger-ui/**",
-						"/v3/api-docs/**").permitAll()
+						"/v3/api-docs/**")
+				.permitAll()
 				.anyRequest().authenticated()
-				.and().httpBasic();
-		http.csrf().disable();
-		http.addFilterBefore(new RequestHeaderAuthenticationDecorator(), FilterSecurityInterceptor.class);
+		);
+
 		return http.build();
 	}
 }

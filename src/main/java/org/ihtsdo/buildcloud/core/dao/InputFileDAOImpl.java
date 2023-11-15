@@ -7,7 +7,6 @@ import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +30,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Autowired
 	public InputFileDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
-							final S3Client s3Client,
-							final S3ClientHelper s3ClientHelper) {
-		fileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+							final S3Client s3Client) {
+		fileHelper = new FileHelper(storageBucketName, s3Client);
 	}
 
 	@Override
