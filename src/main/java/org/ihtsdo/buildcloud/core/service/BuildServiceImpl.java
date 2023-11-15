@@ -48,8 +48,6 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,8 +59,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
-import javax.jms.JMSException;
+import jakarta.annotation.PostConstruct;
+import jakarta.jms.JMSException;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
+
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -341,7 +342,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(Build build, Boolean enableTelemetryStream) {
+	public Build triggerBuild(Build build, Boolean enableTelemetryStream) throws IOException {
 		if (dao.isBuildCancelRequested(build)) return build;
 
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
@@ -383,7 +384,7 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private void performOfflineBuild(Build build, Status status) throws BadConfigurationException {
+	private void performOfflineBuild(Build build, Status status) throws BadConfigurationException, IOException {
 		final BuildReport report = build.getBuildReport();
 		String resultStatus = "completed";
 		String resultMessage = "Process completed successfully";
@@ -411,7 +412,7 @@ public class BuildServiceImpl implements BuildService {
 		setReportStatusAndPersist(build, status, report, resultStatus, resultMessage);
 	}
 
-	private void performPreconditionTesting(final Build build) throws BusinessServiceException {
+	private void performPreconditionTesting(final Build build) throws BusinessServiceException, IOException {
 		if (!build.getConfiguration().isJustPackage()) {
 			final Status preStatus = build.getStatus();
 			if (build.getConfiguration().isInputFilesFixesRequired()) {
@@ -421,7 +422,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private boolean checkSourceFile(final Build build) throws BadConfigurationException {
+	private boolean checkSourceFile(final Build build) throws BadConfigurationException, IOException {
 		boolean isAbandoned = false;
 		try (InputStream reportStream = dao.getBuildInputFilesPrepareReportStream(build)) {
 			//check source file prepare report
@@ -445,7 +446,7 @@ public class BuildServiceImpl implements BuildService {
 		return isAbandoned;
 	}
 
-	private void executeBuild(final Build build, final boolean isAbandoned) throws BadConfigurationException {
+	private void executeBuild(final Build build, final boolean isAbandoned) throws BadConfigurationException, IOException {
 		if (!isAbandoned) {
 			Status status = Status.BUILDING;
 			String resultStatus = "completed";
@@ -466,14 +467,14 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	public void setReportStatusAndPersist(final Build build, final Status status, final BuildReport report, final String resultStatus,
-			final String resultMessage) throws BadConfigurationException {
+			final String resultMessage) throws BadConfigurationException, IOException {
 		report.add(PROGRESS_STATUS, resultStatus);
 		report.add(MESSAGE, resultMessage);
 		dao.persistReport(build);
 		updateStatusWithChecks(build, status);
 	}
 
-	private void performPreConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {
+	private void performPreConditionsCheck(Build build, Status preStatus) throws BusinessServiceException, IOException {
 		final Status newStatus = runPreconditionChecks(build);
 		try {
 			dao.updatePreConditionCheckReport(build);
@@ -485,7 +486,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private void performPostConditionsCheck(Build build, Status preStatus) throws BusinessServiceException {
+	private void performPostConditionsCheck(Build build, Status preStatus) throws BusinessServiceException, IOException {
 		final Status newStatus = runPostconditionChecks(build);
 		if (newStatus != preStatus) {
 			dao.updateStatus(build, newStatus);
@@ -526,7 +527,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public void markBuildAsDeleted(Build build) {
+	public void markBuildAsDeleted(Build build) throws IOException {
 		dao.markBuildAsDeleted(build);
 	}
 
@@ -550,7 +551,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	public void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException {
+	public void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException, IOException {
 		// Assert status workflow position
         switch (newStatus) {
             case BUILDING -> dao.assertStatus(build, Status.BEFORE_TRIGGER);
@@ -783,8 +784,10 @@ public class BuildServiceImpl implements BuildService {
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to generate release package information file.", e);
-		}
-	}
+		} catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 	private <K, V> String mapToString(Map<K, V> map) {
 		return map.entrySet()
@@ -836,7 +839,7 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private Map<String, Object> getReleasePackageInformationMap(Build build) {
+	private Map<String, Object> getReleasePackageInformationMap(Build build) throws JSONException {
 		Map<String, Object> result = new LinkedHashMap<>();
 
 		BuildConfiguration buildConfig = build.getConfiguration();
@@ -846,7 +849,8 @@ public class BuildServiceImpl implements BuildService {
 
 		if (StringUtils.hasLength(buildConfig.getAdditionalReleaseInformationFields())) {
 			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
-			for(Object key: jsonObject.keySet()) {
+			while(jsonObject.keys().hasNext()) {
+				Object key = jsonObject.keys().next();
 				result.put((String) key, jsonObject.get((String) key));
 			}
 			for (String key : result.keySet()) {
@@ -1101,7 +1105,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
-	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) {
+	private String runRVFPostConditionCheck(final Build build, final String s3ZipFilePath, String manifestFileS3Path, Integer failureExportMax) throws IOException {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
 		String rvfResponse = null;
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
@@ -1319,7 +1323,7 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException {
+	public void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException, IOException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		//Only cancel build if the status is "QUEUED" or "BEFORE_TRIGGER" or "BUILDING"
 		if (Status.BUILDING != build.getStatus() && Status.QUEUED != build.getStatus() && Status.BEFORE_TRIGGER != build.getStatus() ) {
@@ -1361,18 +1365,18 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility) {
+	public void updateVisibility(String releaseCenterKey, String productKey, String buildId, boolean visibility) throws IOException {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		updateVisibility(build, visibility);
 	}
 
 	@Override
-	public void updateVisibility(Build build, boolean visibility) {
+	public void updateVisibility(Build build, boolean visibility) throws IOException {
 		dao.updateVisibility(build, visibility);
 	}
 
 	@Override
-	public void saveTags(Build build, List<Build.Tag> tags) {
+	public void saveTags(Build build, List<Build.Tag> tags) throws IOException {
 		dao.saveTags(build, tags);
 	}
 

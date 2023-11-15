@@ -2,9 +2,9 @@ package org.ihtsdo.buildcloud.telemetry.core;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Session;
+import jakarta.jms.Connection;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
 
 public class JmsFactory {
 

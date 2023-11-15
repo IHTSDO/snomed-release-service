@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.config;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.Queue;
 import liquibase.integration.spring.SpringLiquibase;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
@@ -12,7 +14,6 @@ import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
 import org.ihtsdo.otf.dao.s3.S3ClientImpl;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.Cache;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
-import org.springframework.cloud.aws.autoconfigure.context.ContextInstanceDataAutoConfiguration;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -35,19 +35,18 @@ import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Queue;
 import java.io.IOException;
 import java.util.Arrays;
 
 @SpringBootApplication(exclude = {
-		ContextInstanceDataAutoConfiguration.class,
 		HibernateJpaAutoConfiguration.class}
 )
 @PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
@@ -82,6 +81,21 @@ public abstract class Config extends BaseConfiguration {
 		return threadPoolTaskExecutor;
 	}
 
+	@Bean(name = "entityManagerFactory")
+	public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+			@Value("${spring.datasource.driver-class-name}") final String driverClassName,
+			@Value("${spring.datasource.url}") final String url,
+			@Value("${spring.datasource.username}") final String username,
+			@Value("${spring.datasource.password}") final String password,
+			@Value("${spring.jpa.database-platform}") final String dialect)
+	{
+		LocalContainerEntityManagerFactoryBean bean=new LocalContainerEntityManagerFactoryBean();
+		bean.setDataSource(getBasicDataSource(driverClassName, url, username, password));
+		bean.setPackagesToScan(new String[] {"org.ihtsdo.buildcloud.core.entity"});
+		bean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+		return bean;
+	}
+
 	@Bean(name = "sessionFactory")
 	public LocalSessionFactoryBean sessionFactory(
 			@Value("${spring.datasource.driver-class-name}") final String driverClassName,
@@ -106,11 +120,9 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public S3ClientFactory s3ClientFactory(@Value("${aws.key}") final String accessKey,
-	                                       @Value("${aws.privateKey}") final String privateKey,
-	                                       @Value("${srs.build.s3.offline.directory}") final String directory) throws IOException {
+	public S3ClientFactory s3ClientFactory(@Value("${srs.build.s3.offline.directory}") final String directory) throws IOException {
 		s3ClientFactory = new S3ClientFactory();
-		s3ClientFactory.setOnlineImplementation(new S3ClientImpl(new BasicAWSCredentials(accessKey, privateKey)));
+		s3ClientFactory.setOnlineImplementation(new S3ClientImpl(software.amazon.awssdk.services.s3.S3Client.builder().region(DefaultAwsRegionProviderChain.builder().build().getRegion()).build()));
 		s3ClientFactory.setOfflineImplementation(new OfflineS3ClientImpl(directory));
 		return s3ClientFactory;
 	}
@@ -129,16 +141,10 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Primary
-	@Bean
+	@Bean(name = "org.ihtsdo.otf.dao.s3.s3Client")
 	@DependsOn("s3ClientFactory")
 	public S3Client s3Client(@Value("${srs.build.offlineMode}") final boolean offlineMode) {
 		return s3ClientFactory.getClient(offlineMode);
-	}
-
-	@Bean
-	@DependsOn("s3ClientFactory")
-	public S3ClientHelper s3ClientHelper(@Value("${srs.build.offlineMode}") final boolean offlineMode) {
-		return new S3ClientHelper(s3Client(offlineMode));
 	}
 
 	@Bean

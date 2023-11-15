@@ -22,9 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
-import javax.jms.JMSException;
-import javax.jms.Queue;
+import jakarta.annotation.PostConstruct;
+import jakarta.jms.JMSException;
+import jakarta.jms.Queue;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,16 +79,24 @@ public class ReleaseBuildManager {
 	@Value("${srs.environment.shortname}")
 	private String envShortname;
 
+	@Value("${srs.build.offlineMode}")
+	private boolean offlineMode;
+
+	@Value("${srs.manager}")
+	private boolean isSrsManager;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
 	@PostConstruct
 	public void initialise() {
-		try {
-			Build build = new Build(EPOCH_TIME, null, null, Build.Status.UNKNOWN.name());
-			CreateReleasePackageBuildRequest buildRequest = new CreateReleasePackageBuildRequest(build, null, null);
-			convertAndSend(buildRequest);
-		} catch (BusinessServiceException e) {
-			LOGGER.error("Failed to send EMPTY request", e);
+		if (!offlineMode && isSrsManager) {
+			try {
+				Build build = new Build(EPOCH_TIME, null, null, Build.Status.UNKNOWN.name());
+				CreateReleasePackageBuildRequest buildRequest = new CreateReleasePackageBuildRequest(build, null, null);
+				convertAndSend(buildRequest);
+			} catch (BusinessServiceException | IOException e) {
+				LOGGER.error("Failed to send EMPTY request", e);
+			}
 		}
 	}
 
@@ -114,7 +124,7 @@ public class ReleaseBuildManager {
 		return buildService.createBuildFromProduct(releaseCenter, product.getBusinessKey(), buildRequestPojo, currentUser, userRoles);
 	}
 
-	public void queueBuild(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException {
+	public void queueBuild(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException, IOException {
 		if (buildRequest != null) {
 			buildDAO.updateStatus(buildRequest.getBuild(), QUEUED);
 			convertAndSend(buildRequest);
@@ -123,13 +133,14 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	private void convertAndSend(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException {
+	private void convertAndSend(final CreateReleasePackageBuildRequest buildRequest) throws BusinessServiceException, IOException {
 		try {
 			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(buildRequest));
 			LOGGER.info("Build {} has been sent to the {}.", buildRequest, srsQueue.getQueueName());
 		} catch (JmsException | JsonProcessingException | JMSException e) {
-			buildDAO.updateStatus(buildRequest.getBuild(), Build.Status.FAILED);
+			LOGGER.error("Failed to send serialized build. Message: {}", e.getMessage());
 			LOGGER.error("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
+			buildDAO.updateStatus(buildRequest.getBuild(), Build.Status.FAILED);
 			throw new BusinessServiceException("Failed to send serialized build to the build queue. Build ID: " + buildRequest.getBuild().getId(), e);
 		}
 	}

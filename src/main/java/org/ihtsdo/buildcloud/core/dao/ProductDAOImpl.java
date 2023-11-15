@@ -58,14 +58,14 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 	}
 
 	private static String constructFilter(String releaseCenterKey, Set<FilterOption> filterOptions) {
-		String filter = "product.visibility = 'Y' ";
+		String filter = "product.visibility = TRUE ";
 		if (filterOptions != null && filterOptions.contains(FilterOption.INCLUDE_REMOVED)) {
             filter += " and ";
-            filter += " ( removed = 'N' or removed is null) ";
+            filter += " ( removed = FALSE or removed is null) ";
 		}
 		if (filterOptions == null || !filterOptions.contains(FilterOption.INCLUDE_LEGACY)) {
             filter += " and ";
-            filter += " product.isLegacyProduct = 'N' ";
+            filter += " product.isLegacyProduct = FALSE ";
 		}
 		if (releaseCenterKey != null) {
             filter += " and ";
@@ -76,7 +76,7 @@ public class ProductDAOImpl extends EntityDAOImpl<Product> implements ProductDAO
 
 	@Override
 	public Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable) {
-		String filter = "(product.isLegacyProduct = 'Y' or product.visibility = 'N') and releaseCenter.businessKey = :releaseCenterBusinessKey ";
+		String filter = "(product.isLegacyProduct = TRUE or product.visibility = FALSE) and releaseCenter.businessKey = :releaseCenterBusinessKey ";
 		String fromClause = "from Product product join product.releaseCenter releaseCenter ";
 		String queryString = "select product " +
 				fromClause +

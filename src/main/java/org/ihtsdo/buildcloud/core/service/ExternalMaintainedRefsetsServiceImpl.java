@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +31,8 @@ public class ExternalMaintainedRefsetsServiceImpl implements ExternalMaintainedR
 
     @Autowired
     public ExternalMaintainedRefsetsServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
-                                                final S3Client s3Client,
-                                                final S3ClientHelper s3ClientHelper) {
-        fileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+                                                final S3Client s3Client) {
+        fileHelper = new FileHelper(storageBucketName, s3Client);
     }
 
     @Override

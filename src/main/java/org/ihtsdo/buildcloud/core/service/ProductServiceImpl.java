@@ -13,8 +13,6 @@ import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.*;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -205,7 +206,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public void updateVisibility(final String releaseCenterKey, final String productKey, final boolean visibility) {
+	public void updateVisibility(final String releaseCenterKey, final String productKey, final boolean visibility) throws IOException {
 		Product product = find(releaseCenterKey, productKey, false);
 		if (product == null) {
 			throw new ResourceNotFoundException("No product found for product key:" + productKey);

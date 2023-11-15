@@ -6,7 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.type.YesNoConverter;
+
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.text.ParseException;
@@ -35,12 +37,12 @@ public class BuildConfiguration {
 	
 	@Column(name="readme_end_date")
 	private String readmeEndDate;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="first_time_release")
 	private boolean firstTimeRelease = false;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="beta_release")
 	private boolean betaRelease = false;
 	
@@ -49,20 +51,20 @@ public class BuildConfiguration {
 
 	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="just_package")
 	private boolean justPackage = false;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="require_wb_data_fix")
 	private boolean workbenchDataFixesRequired = false;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="require_input_files_fix")
 	private boolean inputFilesFixesRequired = false;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name="create_legacy_ids")
 	private boolean createLegacyIds = false;
 
@@ -81,12 +83,12 @@ public class BuildConfiguration {
 
 	@Column(name = "exclude_language_refset_ids")
 	private String excludeLanguageRefsetIds;
-	
-	@Type(type="yes_no")
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "daily_build")
 	private boolean dailyBuild;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "classify_output_files")
 	private boolean classifyOutputFiles;
 
@@ -99,7 +101,7 @@ public class BuildConfiguration {
 	@Column(name="additional_release_information_fields")
 	private String additionalReleaseInformationFields;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "use_classifier_precondition_checks")
 	private boolean useClassifierPreConditionChecks;
 

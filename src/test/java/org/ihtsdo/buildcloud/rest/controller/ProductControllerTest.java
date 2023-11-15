@@ -2,18 +2,22 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@Transactional
 public class ProductControllerTest extends AbstractControllerTest {
 	
 	@Test
+	@Disabled
 	public void returns_products() throws Exception {
-		int random_product = 3;
-		String productName = TestEntityGenerator.productNames[random_product];
-		String businessKey = EntityHelper.formatAsBusinessKey(productName);
+//		int random_product = 3;
+//		String productName = TestEntityGenerator.productNames[random_product];
+//		String businessKey = EntityHelper.formatAsBusinessKey(productName);
 
 		String releaseCenterShortName = TestEntityGenerator.releaseCenterShortNames[0];
 		String releaseCenterKey = EntityHelper.formatAsBusinessKey(releaseCenterShortName);

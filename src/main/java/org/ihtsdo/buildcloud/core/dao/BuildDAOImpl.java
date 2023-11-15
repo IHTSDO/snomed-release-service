@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -11,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
+import io.awspring.cloud.s3.ObjectMetadata;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
@@ -28,7 +27,6 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -45,6 +43,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -103,11 +102,10 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	public BuildDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
-			final S3Client s3Client,
-			final S3ClientHelper s3ClientHelper) {
+			final S3Client s3Client) {
 		executorService = Executors.newCachedThreadPool();
 		buildBucketName = storageBucketName;
-		srsFileHelper = new FileHelper(storageBucketName, s3Client, s3ClientHelper);
+		srsFileHelper = new FileHelper(storageBucketName, s3Client);
 		this.tempDir = Files.createTempDir();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
 		this.s3Client = s3Client;
@@ -132,8 +130,8 @@ public class BuildDAOImpl implements BuildDAO {
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
 			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, new ObjectMetadata());
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
@@ -167,7 +165,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
 			s3Client.deleteObject(buildBucketName, pathHelper.getQATestConfigFilePath(build));
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (qaConfigJson != null) {
 				qaConfigJson.delete();
@@ -180,7 +178,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File configJson = toJson(build.getConfiguration());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson)) {
 			s3Client.deleteObject(buildBucketName, pathHelper.getBuildConfigFilePath(build));
-			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
@@ -225,13 +223,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void delete(String releaseCenterKey, String productKey, String buildId) {
 		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
-		for (S3ObjectSummary file : s3Client.listObjects(buildBucketName, buildDirectoryPath).getObjectSummaries()) {
-			s3Client.deleteObject(buildBucketName, file.getKey());
+		for (S3Object file : s3Client.listObjects(buildBucketName, buildDirectoryPath).contents()) {
+			s3Client.deleteObject(buildBucketName, file.key());
 		}
 	}
 
 	@Override
-	public void markBuildAsDeleted(Build build) {
+	public void markBuildAsDeleted(Build build) throws IOException {
 		final String newTagFilePath = pathHelper.getBuildPath(build).append(S3PathHelper.MARK_AS_DELETED).toString();
 		putFile(newTagFilePath, BLANK);
 	}
@@ -240,15 +238,14 @@ public class BuildDAOImpl implements BuildDAO {
 	public void loadBuildConfiguration(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
 		try {
-			final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath);
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
 				build.setConfiguration(buildConfiguration);
 			}
-		} catch (AmazonS3Exception e) {
-			if (404 == e.getStatusCode()) {
+		} catch (S3Exception e) {
+			if (404 == e.statusCode()) {
 				throw new ResourceNotFoundException("Build configuration file is missing from the build '" + build.getId()+ "'.");
 			} else {
 				throw e;
@@ -261,16 +258,15 @@ public class BuildDAOImpl implements BuildDAO {
 	public void loadQaTestConfig(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
 		try {
-			final S3Object s3Object = s3Client.getObject(buildBucketName, configFilePath);
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath);
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
 				build.setQaTestConfig(qaTestConfig);
 			}
 
-		} catch (AmazonS3Exception e) {
-			if (404 == e.getStatusCode()) {
+		} catch (S3Exception e) {
+			if (404 == e.statusCode()) {
 				throw new ResourceNotFoundException("QA Configuration file is missing from the build '" + build.getId()+ "'.");
 			} else {
 				throw e;
@@ -279,18 +275,18 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void updateStatus(final Build build, final Build.Status newStatus) {
+	public void updateStatus(final Build build, final Build.Status newStatus) throws IOException {
 		String buildStatusPath = pathHelper.getStatusFilePath(build, build.getStatus());
 		Build.Status origStatus = build.getStatus();
 		if (origStatus != null) {
 			boolean isLatestStatus = false;
 			try {
-				S3Object s3Object = s3Client.getObject(buildBucketName, buildStatusPath);
-				if (s3Object != null) {
+				InputStream inputStream = s3Client.getObject(buildBucketName, buildStatusPath);
+				if (inputStream != null) {
 					isLatestStatus = true;
 				}
-			} catch (AmazonS3Exception e) {
-				if (404 != e.getStatusCode()) {
+			} catch (S3Exception e) {
+				if (404 != e.statusCode()) {
 					throw e;
 				}
 			}
@@ -331,7 +327,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void addTag(Build build, Tag tag) {
+	public void addTag(Build build, Tag tag) throws IOException {
 		List<Tag> tags = build.getTags();
 		if (CollectionUtils.isEmpty(tags)) {
 			tags = new ArrayList<>();
@@ -346,7 +342,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void saveTags(Build build, List<Tag> tags) {
+	public void saveTags(Build build, List<Tag> tags) throws IOException {
 		List<Tag> oldTags = build.getTags();
 		if (!CollectionUtils.isEmpty(oldTags)) {
 			String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
@@ -415,9 +411,9 @@ public class BuildDAOImpl implements BuildDAO {
 	public void copyBuildToAnother(String sourceBucketName,String sourceBuildPath, String destinationBucketName , String destBuildPath, String folder) {
 		final String sourceFolder = sourceBuildPath + folder;
 		final String destFolder = destBuildPath + folder;
-		ObjectListing objectListing = this.s3Client.listObjects(sourceBucketName, sourceFolder);
-		for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-			String filename = summary.getKey().substring(sourceFolder.length());
+		ListObjectsResponse objectListing = this.s3Client.listObjects(sourceBucketName, sourceFolder);
+		for (S3Object s3Object : objectListing.contents()) {
+			String filename = s3Object.key().substring(sourceFolder.length());
 			this.s3Client.copyObject(sourceBucketName, sourceFolder + filename, destinationBucketName, destFolder + filename);
 		}
 	}
@@ -436,12 +432,12 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) {
 		try {
-			S3Object s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
+			InputStream s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
 			if (s3Object != null) {
-				return s3Object.getObjectContent();
+				return s3Object;
 			}
-		} catch (AmazonS3Exception e) {
-			if (404 != e.getStatusCode()) {
+		} catch (S3Exception e) {
+			if (404 != e.statusCode()) {
 				throw e;
 			}
 		}
@@ -511,12 +507,12 @@ public class BuildDAOImpl implements BuildDAO {
 		ArrayList<String> files = new ArrayList<>();
 
 		try {
-			ObjectListing objectListing = this.s3Client.listObjects(bucketName, buildPath);
+			ListObjectsResponse objectListing = this.s3Client.listObjects(bucketName, buildPath);
 
-            for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
-                files.add(summary.getKey().substring(buildPath.length()));
+            for (S3Object s3Object : objectListing.contents()) {
+                files.add(s3Object.key().substring(buildPath.length()));
             }
-		} catch (AmazonServiceException e) {
+		} catch (S3Exception e) {
 			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", buildPath, e.getLocalizedMessage());
 		}
 		return files;
@@ -740,16 +736,20 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Build> getAllBuildsFromS3(String productDirectoryPath, String releaseCenterKey, String productKey, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> visibilityPaths, List<String> buildsMarkAsDeleted) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, productDirectoryPath);
 		List<Build> builds = new ArrayList<>();
-		final ListObjectsRequest listObjectsRequest = new ListObjectsRequest(buildBucketName, productDirectoryPath, null, null, 10000);
-		ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
-		boolean firstPass = true;
-		while (firstPass || objectListing.isTruncated()) {
-			if (!firstPass) {
-				objectListing = s3Client.listNextBatchOfObjects(objectListing);
+		ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(productDirectoryPath).maxKeys(10000).build();
+
+		boolean done = false;
+		while (!done) {
+			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+			List<S3Object> s3Objects = listObjectsResponse.contents();
+			findBuilds(releaseCenterKey, productKey, s3Objects, builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
+
+			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+				String nextMarker = s3Objects.get(s3Objects.size() - 1).key();
+				listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(productDirectoryPath).maxKeys(10000).marker(nextMarker).build();
+			} else {
+				done = true;
 			}
-			final List<S3ObjectSummary> objectSummaries = objectListing.getObjectSummaries();
-			findBuilds(releaseCenterKey, productKey, objectSummaries, builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
-			firstPass = false;
 		}
 
 		LOGGER.debug("Found {} Builds in {}, {}.", builds.size(), buildBucketName, productDirectoryPath);
@@ -924,9 +924,9 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3ObjectSummary> objectSummaries, final List<Build> builds, final List<String> userPaths, final List<String> userRolesPaths, final List<String> tagPaths, final List<String> visibilityPaths, final List<String> buildsMarkAsDeleted) {
-		for (final S3ObjectSummary objectSummary : objectSummaries) {
-			final String key = objectSummary.getKey();
+	private void findBuilds(final String releaseCenterKey, final String productKey, final List<S3Object> s3Objects, final List<Build> builds, final List<String> userPaths, final List<String> userRolesPaths, final List<String> tagPaths, final List<String> visibilityPaths, final List<String> buildsMarkAsDeleted) {
+		for (final S3Object s3Object : s3Objects) {
+			final String key = s3Object.key();
 			if (key.contains("/status:")) {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[keyParts.length - 2];
@@ -1020,9 +1020,9 @@ public class BuildDAOImpl implements BuildDAO {
 		return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
 	}
 
-	private PutObjectResult putFile(final String filePath, final String contents) {
-		return s3Client.putObject(buildBucketName, filePath,
-				new ByteArrayInputStream(contents.getBytes()), new ObjectMetadata());
+	private PutObjectResponse putFile(final String filePath, final String contents) {
+		InputStream inputStream = new ByteArrayInputStream(contents.getBytes());
+		return s3Client.putObject(buildBucketName, filePath, inputStream, ObjectMetadata.builder().build());
 	}
 
 	private File getLocalFile(final String transformedFilePath) {
@@ -1132,7 +1132,8 @@ public class BuildDAOImpl implements BuildDAO {
 		File preConditionChecksReport = null;
 		try {
 			preConditionChecksReport = toJson(build.getPreConditionCheckReports());
-			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), new FileInputStream(preConditionChecksReport), new ObjectMetadata());
+			InputStream reportInputStream = new FileInputStream(preConditionChecksReport);
+			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (preConditionChecksReport != null) {
 				preConditionChecksReport.delete();
@@ -1145,7 +1146,8 @@ public class BuildDAOImpl implements BuildDAO {
 		File postConditionChecksReport = null;
 		try {
 			postConditionChecksReport = toJson(object);
-			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), new FileInputStream(postConditionChecksReport), new ObjectMetadata());
+			InputStream reportInputStream = new FileInputStream(postConditionChecksReport);
+			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (postConditionChecksReport != null) {
 				postConditionChecksReport.delete();
@@ -1168,10 +1170,9 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(String reportPath) throws IOException {
 		List<PreConditionCheckReport> reports = new ArrayList<>();
-		final S3Object s3Object = s3Client.getObject(buildBucketName, reportPath);
+		final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
 			}
@@ -1183,10 +1184,9 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(String bucketName, String reportPath) throws IOException {
 		List<PreConditionCheckReport> reports = new ArrayList<>();
-		final S3Object s3Object = s3Client.getObject(bucketName, reportPath);
+		final InputStream s3Object = s3Client.getObject(bucketName, reportPath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
 			}
@@ -1210,10 +1210,9 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String reportPath) throws IOException {
 		List<PostConditionCheckReport> reports = new ArrayList<>();
-		final S3Object s3Object = s3Client.getObject(buildBucketName, reportPath);
+		final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
 			}
@@ -1225,10 +1224,9 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String bucketName, String reportPath) throws IOException {
 		List<PostConditionCheckReport> reports = new ArrayList<>();
-		final S3Object s3Object = s3Client.getObject(bucketName, reportPath);
+		final InputStream s3Object = s3Client.getObject(bucketName, reportPath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
 			}
@@ -1261,7 +1259,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void updateVisibility(Build build, boolean visibility) {
+	public void updateVisibility(Build build, boolean visibility) throws IOException {
 		// Deleting old regardless the visibility is true or false, or not being set yet
 		String origStatusFilePath = pathHelper.getVisibilityFilePath(build, true);
 		s3Client.deleteObject(buildBucketName, origStatusFilePath);
@@ -1283,7 +1281,7 @@ public class BuildDAOImpl implements BuildDAO {
 	public void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();
@@ -1301,10 +1299,9 @@ public class BuildDAOImpl implements BuildDAO {
 	public BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException {
 		BuildComparisonReport report = null;
 		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
+		final InputStream s3Object = s3Client.getObject(buildBucketName, filePath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				report = jsonParser.readValueAs(BuildComparisonReport.class);
 			}
@@ -1324,7 +1321,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
 			String reportFileName = report.getFileName().replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, new ObjectMetadata());
+			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, ObjectMetadata.builder().build());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();
@@ -1338,10 +1335,9 @@ public class BuildDAOImpl implements BuildDAO {
 		FileDiffReport report = null;
 		String reportFileName = fileName.replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
 		String filePath = pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName);
-		final S3Object s3Object = s3Client.getObject(buildBucketName, filePath);
+		final InputStream s3Object = s3Client.getObject(buildBucketName, filePath);
 		if (s3Object != null) {
-			final S3ObjectInputStream objectContent = s3Object.getObjectContent();
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(objectContent, RF2Constants.UTF_8));// Closes stream
+			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
 				report = jsonParser.readValueAs(FileDiffReport.class);
 			}

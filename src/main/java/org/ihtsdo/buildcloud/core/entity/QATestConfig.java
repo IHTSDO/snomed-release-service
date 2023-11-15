@@ -3,7 +3,8 @@ package org.ihtsdo.buildcloud.core.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.type.YesNoConverter;
 
 @Entity
 @Table(name="qa_config")
@@ -28,11 +29,11 @@ public class QATestConfig {
 	@Column(name = "storage_location")
 	private String storageLocation;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "enable_drools")
 	private boolean enableDrools = false;
 
-	@Type(type = "yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "enable_mrcm_validation")
 	private boolean enableMRCMValidation;
 

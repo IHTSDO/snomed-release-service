@@ -10,7 +10,7 @@ import java.text.ParseException;
 
 public interface ReleaseService {
 
-    void runReleaseBuild(Build build, Authentication authentication);
+    void runReleaseBuild(Build build, Authentication authentication) throws IOException;
 
     void startNewAuthoringCycle(String releaseCenterKey, String productKey, String effectiveTime, String productKeySource, String dependencyPackage) throws ParseException, JAXBException, IOException, BusinessServiceException;
 }

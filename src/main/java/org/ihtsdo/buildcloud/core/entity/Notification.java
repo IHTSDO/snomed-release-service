@@ -2,7 +2,8 @@ package org.ihtsdo.buildcloud.core.entity;
 
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+import org.hibernate.type.YesNoConverter;
 
 import java.util.Date;
 
@@ -31,7 +32,7 @@ public class Notification {
 	@Column(name = "created_date")
 	private Date createdDate;
 
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "is_read")
 	private Boolean read;
 

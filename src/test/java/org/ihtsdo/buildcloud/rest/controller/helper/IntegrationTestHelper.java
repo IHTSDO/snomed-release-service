@@ -100,7 +100,7 @@ public class IntegrationTestHelper {
 		assertNotNull(resourceAsStream, deltaFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", deltaFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
-				fileUpload(getBuildUrl() + "/inputfiles")
+				multipart(getBuildUrl() + "/inputfiles")
 						.file(deltaFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -113,7 +113,7 @@ public class IntegrationTestHelper {
 		assertNotNull(resourceAsStream, sourceFileName + " stream is null.");
 		final MockMultipartFile deltaFile = new MockMultipartFile("file", sourceFileName, "text/plain", resourceAsStream);
 		mockMvc.perform(
-				fileUpload(getBuildUrl() + "/sourcefiles/" + sourceName)
+						multipart(getBuildUrl() + "/sourcefiles/" + sourceName)
 						.file(deltaFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -146,7 +146,7 @@ public class IntegrationTestHelper {
 	public void publishFile(final String publishFileName, final Class<?> classpathResourceOwner, final HttpStatus expectedStatus) throws Exception {
 		final MockMultipartFile publishFile = new MockMultipartFile("file", publishFileName, "text/plain", classpathResourceOwner.getResourceAsStream(publishFileName));
 		mockMvc.perform(
-				fileUpload(CENTER_URL + "/published")
+				multipart(CENTER_URL + "/published")
 						.file(publishFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)
@@ -170,7 +170,7 @@ public class IntegrationTestHelper {
 	public void uploadManifest(final String manifestFileName, final Class<?> classpathResourceOwner) throws Exception {
 		final MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
 		mockMvc.perform(
-				fileUpload(getProductUrl() + "/manifest")
+						multipart(getProductUrl() + "/manifest")
 						.file(manifestFile)
 						.header("Authorization", getBasicDigestHeaderValue())
 		)

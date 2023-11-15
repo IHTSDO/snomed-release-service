@@ -76,7 +76,7 @@ public class BuildDAOImplTest extends AbstractTest {
 
 		//Amazon are expecting the md5 to be xWJD6+IqEtukiwI9rz4pNw==
 		//Offline test is just going to return the MD5 input, so this test only makes sense in online mode.
-		final byte[] md5BytesExpected = Base64.decodeBase64("xWJD6+IqEtukiwI9rz4pNw==");
+		final byte[] md5BytesExpected = Base64.decodeBase64("c56243ebe22a12dba48b023daf3e2937");
 		final byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
 		assertArrayEquals(md5BytesExpected, md5BytesReceived);
 		

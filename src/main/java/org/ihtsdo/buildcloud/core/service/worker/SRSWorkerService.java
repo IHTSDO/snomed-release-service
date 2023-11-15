@@ -19,8 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -51,7 +51,7 @@ public class SRSWorkerService {
     private ProductDAO productDAO;
 
     @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
-    public void consumeSRSJob(final TextMessage srsMessage) {
+    public void consumeSRSJob(final TextMessage srsMessage) throws IOException {
 
         final Instant start = Instant.now();
         CreateReleasePackageBuildRequest buildRequest;

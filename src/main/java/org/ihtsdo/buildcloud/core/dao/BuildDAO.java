@@ -34,11 +34,11 @@ public interface BuildDAO {
 
 	void loadBuildConfiguration(Build build) throws IOException;
 
-	void updateStatus(Build build, Build.Status newStatus);
+	void updateStatus(Build build, Build.Status newStatus) throws IOException;
 
-	void addTag(Build build, Build.Tag tag);
+	void addTag(Build build, Build.Tag tag) throws IOException;
 
-	void saveTags(Build build, List<Build.Tag> tags);
+	void saveTags(Build build, List<Build.Tag> tags) throws IOException;
 
 	void assertStatus(Build build, Build.Status ensureStatus) throws BadConfigurationException;
 
@@ -144,7 +144,7 @@ public interface BuildDAO {
 
 	InputStream getClassificationResultOutputFileStream(Build build, String relativeFilePath);
 
-	void updateVisibility(Build build, boolean visibility);
+	void updateVisibility(Build build, boolean visibility) throws IOException;
 
 	void putManifestFile(Build build, InputStream inputStream);
 
@@ -160,5 +160,5 @@ public interface BuildDAO {
 
 	FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
 
-	void markBuildAsDeleted(Build build);
+	void markBuildAsDeleted(Build build) throws IOException;
 }

@@ -9,7 +9,6 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.dao.s3.helper.S3ClientHelper;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +59,7 @@ public class ZipperTest  extends AbstractTest {
 		build = new Build(new Date(), product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 
 		//We're going to locally copy a manifest file for the test
-		FileHelper fileHelper = new FileHelper(buildBucketName, s3client, new S3ClientHelper(s3client));
+		FileHelper fileHelper = new FileHelper(buildBucketName, s3client);
 		String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 		assertFalse(new File(buildManifestDirectoryPath).exists());
 		fileHelper.putFile(getClass().getResourceAsStream("zip_simple_refset_manifest.xml"), buildManifestDirectoryPath + "zip_simple_refset_manifest.xml");
