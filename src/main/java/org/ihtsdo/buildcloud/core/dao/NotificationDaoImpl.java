@@ -42,7 +42,7 @@ public class NotificationDaoImpl extends EntityDAOImpl<Notification> implements 
 		Query<Long> queryTotal = getCurrentSession().createQuery(
 				"select count(notification.id) " +
 						"from Notification notification " +
-						"where notification.recipient = :recipient and notification.read = 'N'", Long.class);
+						"where notification.recipient = :recipient and notification.read = FALSE", Long.class);
 		queryTotal.setParameter("recipient", recipient);
 
 		return queryTotal.uniqueResult();

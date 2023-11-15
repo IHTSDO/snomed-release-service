@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,7 +60,7 @@ public interface ProductService extends EntityService<Product> {
 
 	Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
 
-    void updateVisibility(String releaseCenterKey, String productKey, boolean visibility);
+    void updateVisibility(String releaseCenterKey, String productKey, boolean visibility) throws IOException;
 
     void upgradeDependantVersion(String releaseCenterKey, String productKey) throws BusinessServiceException;
 }

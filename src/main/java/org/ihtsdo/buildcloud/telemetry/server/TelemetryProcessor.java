@@ -14,9 +14,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.jms.IllegalStateException;
-import javax.jms.*;
+import jakarta.annotation.PostConstruct;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;

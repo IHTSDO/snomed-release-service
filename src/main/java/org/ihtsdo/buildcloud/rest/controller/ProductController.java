@@ -24,7 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+
+import java.io.IOException;
 import java.util.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
@@ -166,7 +168,7 @@ public class ProductController {
 	@Operation(summary = "Update visibility for product",
 			description = "Update an existing product with the visibility flag")
 	public ResponseEntity<Void> updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-													   @RequestParam(required = true, defaultValue = "true") boolean visibility) {
+													   @RequestParam(required = true, defaultValue = "true") boolean visibility) throws IOException {
 		productService.updateVisibility(releaseCenterKey, productKey, visibility);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}

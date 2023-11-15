@@ -18,8 +18,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
@@ -74,16 +74,16 @@ public class BuildStatusListenerService {
 					updateStatus(message);
 				}
 			}
-		} catch (JMSException | JsonProcessingException | BadConfigurationException e) {
+		} catch (JMSException | IOException | BadConfigurationException e) {
 			LOGGER.error("Error occurred while trying to obtain the build status.", e);
 		}
-	}
+    }
 
 	private boolean propertiesExist(final Map<String, Object> message, final List<String> properties) {
 		return properties.stream().allMatch(message::containsKey);
 	}
 
-	private void processRVFStatusResponse(final Map<String, Object> message) throws JsonProcessingException, BadConfigurationException {
+	private void processRVFStatusResponse(final Map<String, Object> message) throws IOException, BadConfigurationException {
 		final Long runId = (Long) message.get(RUN_ID_KEY);
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
 		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunId(String.valueOf(runId));

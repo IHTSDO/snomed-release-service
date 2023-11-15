@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.YesNoConverter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -40,7 +41,7 @@ public class ReleaseCenter {
 	@OneToMany(mappedBy = "releaseCenter")
 	@JsonIgnore
 	private final List<Product> products;
-	@Type(type="yes_no")
+	@Convert(converter = YesNoConverter.class)
 	private boolean removed = false;
 
 	public ReleaseCenter() {
