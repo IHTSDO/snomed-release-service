@@ -18,9 +18,9 @@ public interface InputFileDAO {
 
 	String getManifestPath(String releaseCenterKey, String productKey, String buildId);
 
-	void putManifestFile(String releaseCenterKey, String productKey, InputStream inputStream, String originalFilename, long fileSize);
+	void putManifestFile(String releaseCenterKey, String productKey, InputStream inputStream, String originalFilename, long fileSize) throws IOException;
 
-	void putManifestFile(String releaseCenterKey, String productKey, String buildId, InputStream inputStream, String originalFilename, long fileSize);
+	void putManifestFile(String releaseCenterKey, String productKey, String buildId, InputStream inputStream, String originalFilename, long fileSize) throws IOException;
 
 	void deleteManifest(String releaseCenterKey, String productKey);
 

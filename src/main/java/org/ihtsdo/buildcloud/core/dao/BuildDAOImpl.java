@@ -1020,7 +1020,7 @@ public class BuildDAOImpl implements BuildDAO {
 		return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
 	}
 
-	private PutObjectResponse putFile(final String filePath, final String contents) {
+	private PutObjectResponse putFile(final String filePath, final String contents) throws IOException {
 		InputStream inputStream = new ByteArrayInputStream(contents.getBytes());
 		return s3Client.putObject(buildBucketName, filePath, inputStream, ObjectMetadata.builder().build());
 	}
@@ -1272,7 +1272,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void putManifestFile(Build build, InputStream inputStream) {
+	public void putManifestFile(Build build, InputStream inputStream) throws IOException {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(build);
 		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
 	}

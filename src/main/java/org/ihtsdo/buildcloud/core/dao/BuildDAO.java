@@ -146,7 +146,7 @@ public interface BuildDAO {
 
 	void updateVisibility(Build build, boolean visibility) throws IOException;
 
-	void putManifestFile(Build build, InputStream inputStream);
+	void putManifestFile(Build build, InputStream inputStream) throws IOException;
 
 	void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException;
 
