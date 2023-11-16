@@ -14,7 +14,7 @@ import java.util.Set;
 
 public interface InputFileService {
 
-	void putManifestFile(String centerKey, String productKey, InputStream inputStream, String originalFilename, long fileSize) throws ResourceNotFoundException;
+	void putManifestFile(String centerKey, String productKey, InputStream inputStream, String originalFilename, long fileSize) throws ResourceNotFoundException, IOException;
 
 	String getManifestFileName(String centerKey, String productKey) throws ResourceNotFoundException;
 

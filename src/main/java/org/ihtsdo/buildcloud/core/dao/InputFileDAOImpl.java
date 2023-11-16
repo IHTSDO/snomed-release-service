@@ -82,7 +82,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(final String releaseCenterKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) {
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException {
 		// Fist delete any existing manifest files
 		deleteManifest(releaseCenterKey, productKey);
 		// Put new manifest file
@@ -91,7 +91,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) {
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException {
 		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId) + "manifest.xml";
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
