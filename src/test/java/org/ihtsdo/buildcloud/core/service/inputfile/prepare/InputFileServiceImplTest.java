@@ -90,14 +90,14 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 
 
 	@Test
-	public void testPutSourceFile() throws IOException, ResourceNotFoundException {
+	public void testPutSourceFile() throws IOException, ResourceNotFoundException, DecoderException {
 		addTestArchiveFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED);
 		List<String> fileList = inputFileService.listSourceFilePaths(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId());
 		assertTrue(fileList.size() > 0);
 	}
 
 	@Test
-	public void listSourceFilePaths() throws ResourceNotFoundException, IOException {
+	public void listSourceFilePaths() throws ResourceNotFoundException, IOException, DecoderException {
 		addEmptyFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, "test1.txt");
 		addEmptyFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, "test2.txt");
 		addEmptyFileToSourceDirectory(SRC_MAPPING_TOOL, "test3.txt");
@@ -108,7 +108,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 	}
 
 	@Test
-	public void listSourceFilePathsInSubDirectories() throws ResourceNotFoundException, IOException {
+	public void listSourceFilePathsInSubDirectories() throws ResourceNotFoundException, IOException, DecoderException {
 		addEmptyFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, "test1.txt");
 		addEmptyFileToSourceDirectory(SRC_EXERTNALLY_MAINTAINED, "test2.txt");
 		addEmptyFileToSourceDirectory(SRC_MAPPING_TOOL, "test3.txt");
@@ -472,7 +472,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		System.out.println(fileProcessingReport);
 	}
 
-	protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException {
+	protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException, DecoderException {
 		final File tempFile = File.createTempFile("testTemp", ".txt");
 		try (InputStream inputStream = new FileInputStream(tempFile)) {
 			inputFileService.putSourceFile(sourceName,product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), inputStream, filename, 0L);
@@ -481,12 +481,12 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		}
 	}
 
-	protected void addTestArchiveFileToSourceDirectory(final String sourceName) throws ResourceNotFoundException, IOException {
+	protected void addTestArchiveFileToSourceDirectory(final String sourceName) throws ResourceNotFoundException, IOException, DecoderException {
 		InputStream inputStream = new FileInputStream(testArchive);
 		inputFileService.putSourceFile(sourceName, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), inputStream, TEST_ARCHIVE_FILE, 0L);
 	}
 
-	protected void addTestFileToSourceDirectory(final String sourceName, File zipFile ) throws ResourceNotFoundException, IOException {
+	protected void addTestFileToSourceDirectory(final String sourceName, File zipFile ) throws ResourceNotFoundException, IOException, DecoderException {
 		InputStream inputStream = new FileInputStream(zipFile);
 		inputFileService.putSourceFile(sourceName, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), build.getId(), inputStream, zipFile.getName(), 0L);
 	}

@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service.validation.precondition;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
@@ -123,11 +124,11 @@ public abstract class PreconditionCheckTest extends AbstractTest {
 		return testResult;
 	}
 
-	protected void loadManifest(final String filename) throws IOException {
+	protected void loadManifest(final String filename) throws IOException, DecoderException {
 		loadManifest(filename, false);
 	}
 
-	protected void loadManifest(final String filename, final boolean isBetaRelease) throws IOException {
+	protected void loadManifest(final String filename, final boolean isBetaRelease) throws IOException, DecoderException {
 		if (filename != null) {
 			createNewBuild(isBetaRelease);
 			final String testFilePath = getClass().getResource(filename).getFile();

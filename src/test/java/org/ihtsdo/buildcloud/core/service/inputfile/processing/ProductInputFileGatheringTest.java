@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service.inputfile.processing;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
@@ -74,7 +75,7 @@ public class ProductInputFileGatheringTest {
 
 	@Test
 	@Disabled
-	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException {
+	public void testGetTermServerExportSucceeded() throws BusinessServiceException, IOException, DecoderException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(testArchive);
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
 		buildConfiguration.setLoadTermServerData(true);
@@ -94,7 +95,7 @@ public class ProductInputFileGatheringTest {
 
 	@Test
 	@Disabled
-	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException {
+	public void testGetTermServerExportFailed() throws BusinessServiceException, IOException, DecoderException {
 		when(termServerService.export(anyString(), anyString(), anySet(), any(SnowstormRestClient.ExportCategory.class))).thenReturn(failedExportArchive);
 		BuildConfiguration buildConfiguration = new BuildConfiguration();
 		buildConfiguration.setLoadTermServerData(true);

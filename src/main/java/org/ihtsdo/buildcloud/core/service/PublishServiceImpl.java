@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -194,7 +195,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	@Override
-	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
+	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException, DecoderException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 
 		ProcessingStatus currentStatus = concurrentPublishingBuildStatus.get(getBuildUniqueKey(build));
@@ -343,7 +344,7 @@ public class PublishServiceImpl implements PublishService {
 					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | DecoderException e) {
 			throw new BusinessServiceException("Failed to publish ad-hoc file.", e);
 		} finally {
 			// Delete temp zip file
@@ -373,7 +374,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	// Publish extracted entries in a directory of the same name
-	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException {
+	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException, DecoderException {
 		String zipExtractPath = publishFilePath.replace(".zip", S3PathHelper.SEPARATOR);
 		LOGGER.info("Start: Upload extracted package to {}", zipExtractPath);
 		try (ZipInputStream zipInputStream = new ZipInputStream(fileStream)) {

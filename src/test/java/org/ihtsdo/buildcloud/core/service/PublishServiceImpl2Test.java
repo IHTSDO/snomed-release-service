@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.EnumSet;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
@@ -112,7 +113,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		boolean expectedExceptionThrown = false;
 		try {
 			publishService.publishBuild(build, true, null);
-		} catch (EntityAlreadyExistsException eaee) {
+		} catch (EntityAlreadyExistsException | DecoderException eaee) {
 			expectedExceptionThrown = true;
 		}
 

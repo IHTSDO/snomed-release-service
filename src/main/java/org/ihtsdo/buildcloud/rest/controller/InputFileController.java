@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.rest.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
@@ -62,7 +63,7 @@ public class InputFileController {
 	@ResponseBody
 	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
 													 @PathVariable final String productKey,
-													 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+													 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		inputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
 		InputStream manifestInputStream = inputFileService.getManifestStream(releaseCenterKey, productKey);
 		String validationStatus = ManifestValidator.validate(manifestInputStream);
@@ -119,7 +120,7 @@ public class InputFileController {
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey,
 													@PathVariable final String productKey,
 													@PathVariable final String buildId,
-													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		String inputFileName = file.getOriginalFilename();
 		LOGGER.debug("uploading input file:" + inputFileName);
 		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
@@ -150,7 +151,7 @@ public class InputFileController {
 												 @PathVariable final String productKey,
 												 @PathVariable String buildId,
 												 @PathVariable String source,
-												 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException {
+												 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		if (file != null) {
 			String inputFileName = file.getOriginalFilename();
 			LOGGER.debug("uploading source file:" + inputFileName);
@@ -160,7 +161,7 @@ public class InputFileController {
 			try (InputStream inputStream = file.getInputStream()) {
 				inputFileService.putSourceFile(source, releaseCenterKey, productKey, buildId, inputStream, inputFileName,file.getSize());
 			}
-			return new ResponseEntity<>(HttpStatus.CREATED);
+            return new ResponseEntity<>(HttpStatus.CREATED);
 		}
 		throw new IllegalArgumentException("No input source file specified.");
 	}
