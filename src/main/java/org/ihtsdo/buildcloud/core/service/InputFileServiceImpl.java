@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -75,7 +76,7 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putManifestFile(final String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException, IOException {
+	public void putManifestFile(final String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException, IOException, DecoderException {
 		inputFileDAO.putManifestFile(centerKey, productKey, inputStream, originalFilename, fileSize);
 	}
 
@@ -90,13 +91,13 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public void putInputFile(final String centerKey, final String productKey, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException {
+	public void putInputFile(final String centerKey, final String productKey, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException, DecoderException {
 		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(centerKey, productKey, buildId).toString();
 		putFile(filename, inputStream, buildInputFilesPath, fileSize);
 	}
 
 	@Override
-	public void putSourceFile(String sourceName, String centerKey, String productKey, String buildId, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException {
+	public void putSourceFile(String sourceName, String centerKey, String productKey, String buildId, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException, DecoderException {
 		if (StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 
 		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(centerKey, productKey, buildId, sourceName).toString();
@@ -167,7 +168,7 @@ public class InputFileServiceImpl implements InputFileService {
 		}
 	}
 
-	private void putFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException {
+	private void putFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException, DecoderException {
 		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
 			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
 			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
@@ -190,7 +191,7 @@ public class InputFileServiceImpl implements InputFileService {
 		}
 	}
 
-	private void putSourceFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException {
+	private void putSourceFile(String filename, InputStream inputStream, String filePath, long fileSize) throws IOException, DecoderException {
 		if (filename.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
 			Path tempFile = Files.createTempFile(getClass().getCanonicalName(), ".zip");
 			try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {

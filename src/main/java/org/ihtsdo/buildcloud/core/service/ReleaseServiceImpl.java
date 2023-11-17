@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import com.google.gson.Gson;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -231,7 +232,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 				}
 			}
 			inputFileService.putManifestFile(releaseCenterKey, productKey, new FileInputStream(tmpFile), "manifest.xml", tmpFile.length());
-		} catch (JAXBException e) {
+		} catch (JAXBException | DecoderException e) {
 			LOGGER.error(e.getMessage());
 
 		} finally {

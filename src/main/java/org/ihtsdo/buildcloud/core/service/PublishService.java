@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
@@ -23,7 +24,7 @@ public interface PublishService {
 
 	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 
-	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException;
+	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException, DecoderException;
 
 	void publishBuildAsync(Build build, boolean publishComponentIds, String env);
 

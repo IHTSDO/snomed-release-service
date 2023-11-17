@@ -600,10 +600,10 @@ public class BuildDAOImpl implements BuildDAO {
 		String buildReportJSON = build.getBuildReport().toString();
 		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
 			srsFileHelper.putFile(is, buildReportJSON.length(), reportPath);
-		} catch (final IOException e) {
+		} catch (final IOException | DecoderException e) {
 			LOGGER.error("Unable to persist build report", e);
 		}
-	}
+    }
 
 	@Override
 	public void renameTransformedFile(final Build build, final String sourceFileName, final String targetFileName, boolean deleteOriginal) {

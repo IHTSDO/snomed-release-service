@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.dao;
 
 import org.apache.commons.codec.CharEncoding;
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
@@ -82,7 +83,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(final String releaseCenterKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException {
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException, DecoderException {
 		// Fist delete any existing manifest files
 		deleteManifest(releaseCenterKey, productKey);
 		// Put new manifest file
@@ -91,7 +92,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	}
 
 	@Override
-	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException {
+	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException, DecoderException {
 		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId) + "manifest.xml";
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}

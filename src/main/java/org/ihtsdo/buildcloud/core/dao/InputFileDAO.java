@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
+import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 
@@ -18,9 +19,9 @@ public interface InputFileDAO {
 
 	String getManifestPath(String releaseCenterKey, String productKey, String buildId);
 
-	void putManifestFile(String releaseCenterKey, String productKey, InputStream inputStream, String originalFilename, long fileSize) throws IOException;
+	void putManifestFile(String releaseCenterKey, String productKey, InputStream inputStream, String originalFilename, long fileSize) throws IOException, DecoderException;
 
-	void putManifestFile(String releaseCenterKey, String productKey, String buildId, InputStream inputStream, String originalFilename, long fileSize) throws IOException;
+	void putManifestFile(String releaseCenterKey, String productKey, String buildId, InputStream inputStream, String originalFilename, long fileSize) throws IOException, DecoderException;
 
 	void deleteManifest(String releaseCenterKey, String productKey);
 
