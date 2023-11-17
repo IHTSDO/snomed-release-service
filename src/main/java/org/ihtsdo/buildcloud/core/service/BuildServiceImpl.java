@@ -849,9 +849,10 @@ public class BuildServiceImpl implements BuildService {
 
 		if (StringUtils.hasLength(buildConfig.getAdditionalReleaseInformationFields())) {
 			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
-			while(jsonObject.keys().hasNext()) {
-				Object key = jsonObject.keys().next();
-				result.put((String) key, jsonObject.get((String) key));
+			Iterator iterator = jsonObject.keys();
+			while(iterator.hasNext()) {
+				String key = iterator.next().toString();
+				result.put(key, jsonObject.get(key.toString()));
 			}
 			for (String key : result.keySet()) {
 				if (JSONObject.NULL.equals(result.get(key))) {
