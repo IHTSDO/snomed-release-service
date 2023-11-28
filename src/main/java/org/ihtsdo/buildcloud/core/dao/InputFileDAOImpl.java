@@ -26,6 +26,10 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	private final FileHelper fileHelper;
 
+	private final String buildBucketName;
+
+	private final S3Client s3Client;
+
 	@Autowired
 	private S3PathHelper s3PathHelper;
 
@@ -33,6 +37,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 	public InputFileDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
 							final S3Client s3Client) {
 		fileHelper = new FileHelper(storageBucketName, s3Client);
+		buildBucketName = storageBucketName;
+		this.s3Client = s3Client;
 	}
 
 	@Override
@@ -132,12 +138,14 @@ public class InputFileDAOImpl implements InputFileDAO {
 	@Override
 	public void persistInputPrepareReport(final String releaseCenterKey, final String productKey, final String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
 		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId);
-		fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
+		//fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
+		s3Client.putObject(buildBucketName, reportPath, IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8).readAllBytes());
 	}
 
 	@Override
 	public void persistSourcesGatherReport(final String releaseCenterKey, final String productKey, final String buildId, InputGatherReport inputGatherReport) throws IOException {
 		String reportPath = s3PathHelper.getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId);
-		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
+//		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
+		s3Client.putObject(buildBucketName, reportPath, IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8).readAllBytes());
 	}
 }
