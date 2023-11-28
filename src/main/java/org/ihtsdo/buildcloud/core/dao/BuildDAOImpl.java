@@ -130,8 +130,8 @@ public class BuildDAOImpl implements BuildDAO {
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
 			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build());
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build(), configJson.length());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build(), qaConfigJson.length());
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
@@ -165,7 +165,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File qaConfigJson = toJson(build.getQaTestConfig());
 		try (FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
 			s3Client.deleteObject(buildBucketName, pathHelper.getQATestConfigFilePath(build));
-			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build(), qaConfigJson.length());
 		} finally {
 			if (qaConfigJson != null) {
 				qaConfigJson.delete();
@@ -178,7 +178,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File configJson = toJson(build.getConfiguration());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson)) {
 			s3Client.deleteObject(buildBucketName, pathHelper.getBuildConfigFilePath(build));
-			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build(), configJson.length());
 		} finally {
 			if (configJson != null) {
 				configJson.delete();
@@ -1012,7 +1012,9 @@ public class BuildDAOImpl implements BuildDAO {
 		final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
 		final Future<String> future = executorService.submit(() -> {
-            srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+//            srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+			s3Client.putObject(buildBucketName, buildOutputFilePath, pipedInputStream.readAllBytes());
+
             LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
             return buildOutputFilePath;
         });
@@ -1022,7 +1024,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private PutObjectResponse putFile(final String filePath, final String contents) throws IOException {
 		InputStream inputStream = new ByteArrayInputStream(contents.getBytes());
-		return s3Client.putObject(buildBucketName, filePath, inputStream, ObjectMetadata.builder().build());
+		return s3Client.putObject(buildBucketName, filePath, inputStream.readAllBytes());
 	}
 
 	private File getLocalFile(final String transformedFilePath) {
@@ -1133,7 +1135,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try {
 			preConditionChecksReport = toJson(build.getPreConditionCheckReports());
 			InputStream reportInputStream = new FileInputStream(preConditionChecksReport);
-			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), preConditionChecksReport.length());
 		} finally {
 			if (preConditionChecksReport != null) {
 				preConditionChecksReport.delete();
@@ -1147,7 +1149,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try {
 			postConditionChecksReport = toJson(object);
 			InputStream reportInputStream = new FileInputStream(postConditionChecksReport);
-			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), postConditionChecksReport.length());
 		} finally {
 			if (postConditionChecksReport != null) {
 				postConditionChecksReport.delete();
@@ -1274,14 +1276,15 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void putManifestFile(Build build, InputStream inputStream) throws IOException {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(build);
-		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
+//		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
+		s3Client.putObject(buildBucketName, filePath + "manifest.xml", inputStream.readAllBytes());
 	}
 
 	@Override
 	public void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();
@@ -1321,7 +1324,7 @@ public class BuildDAOImpl implements BuildDAO {
 		File reportFile = toJson(report);
 		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
 			String reportFileName = report.getFileName().replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, ObjectMetadata.builder().build());
+			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
 		} finally {
 			if (reportFile != null) {
 				reportFile.delete();

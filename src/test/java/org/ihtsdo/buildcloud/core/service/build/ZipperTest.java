@@ -62,7 +62,8 @@ public class ZipperTest  extends AbstractTest {
 		FileHelper fileHelper = new FileHelper(buildBucketName, s3client);
 		String buildManifestDirectoryPath = pathHelper.getBuildManifestDirectoryPath(build);
 		assertFalse(new File(buildManifestDirectoryPath).exists());
-		fileHelper.putFile(getClass().getResourceAsStream("zip_simple_refset_manifest.xml"), buildManifestDirectoryPath + "zip_simple_refset_manifest.xml");
+		s3client.putObject(buildBucketName, buildManifestDirectoryPath + "zip_simple_refset_manifest.xml", getClass().getResourceAsStream("zip_simple_refset_manifest.xml").readAllBytes());
+		//fileHelper.putFile(getClass().getResourceAsStream("zip_simple_refset_manifest.xml"), buildManifestDirectoryPath + "zip_simple_refset_manifest.xml");
 
 		//And also a refset file to copy down from the output (NOT INPUT!) directory
 		URL deltaFileURL = getClass().getResource("der2_Refset_SimpleDelta_INT_20140831.txt");
