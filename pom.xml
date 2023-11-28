@@ -60,21 +60,6 @@
 			<artifactId>spring-boot-configuration-processor</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.junit.vintage</groupId>
-					<artifactId>junit-vintage-engine</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>net.minidev</groupId>
-					<artifactId>json-smart</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>io.awspring.cloud</groupId>
 			<artifactId>spring-cloud-aws-autoconfigure</artifactId>
 		</dependency>
@@ -111,11 +96,6 @@
 			<artifactId>javassist</artifactId>
 			<version>3.25.0-GA</version>
 		</dependency>
-		<dependency>
-			<artifactId>netty-nio-client</artifactId>
-			<groupId>software.amazon.awssdk</groupId>
-			<scope>runtime</scope>
-		</dependency>
 
 		<!-- Jira -->
 		<dependency>
@@ -139,6 +119,7 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<!--  MYSQL -->
@@ -152,6 +133,11 @@
 		</dependency>
 
 		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
@@ -175,29 +161,13 @@
 		<dependency>
 			<groupId>org.jmockit</groupId>
 			<artifactId>jmockit</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>s3-transfer-manager</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>net.minidev</groupId>
-			<artifactId>asm</artifactId>
-			<version>1.0.2</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.minidev</groupId>
-			<artifactId>json-smart</artifactId>
-			<version>2.2.1</version>
-			<scope>test</scope>
-		</dependency>
-
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -249,6 +219,7 @@
 		</dependency>
 
 		<!-- ActiveMQ -->
+		<!-- workaround for activemq no vm support in current spring boot activemq -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jms</artifactId>
@@ -271,6 +242,8 @@
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-client-jakarta</artifactId>
 		</dependency>
+		<!-- end of workaround -->
+
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-kahadb-store</artifactId>
