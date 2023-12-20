@@ -237,8 +237,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void loadBuildConfiguration(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
-		try {
-			final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath);
+		try (final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath)){
 			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
@@ -257,14 +256,12 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void loadQaTestConfig(final Build build) throws IOException {
 		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
-		try {
-			final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath);
+		try (final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath)){
 			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
 			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
 				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
 				build.setQaTestConfig(qaTestConfig);
 			}
-
 		} catch (S3Exception e) {
 			if (404 == e.statusCode()) {
 				throw new ResourceNotFoundException("QA Configuration file is missing from the build '" + build.getId()+ "'.");
@@ -280,8 +277,7 @@ public class BuildDAOImpl implements BuildDAO {
 		Build.Status origStatus = build.getStatus();
 		if (origStatus != null) {
 			boolean isLatestStatus = false;
-			try {
-				InputStream inputStream = s3Client.getObject(buildBucketName, buildStatusPath);
+			try (InputStream inputStream = s3Client.getObject(buildBucketName, buildStatusPath)) {
 				if (inputStream != null) {
 					isLatestStatus = true;
 				}
@@ -430,9 +426,8 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) {
-		try {
-			InputStream s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
+	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) throws IOException {
+		try (InputStream s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name)){
 			if (s3Object != null) {
 				return s3Object;
 			}
@@ -743,7 +738,6 @@ public class BuildDAOImpl implements BuildDAO {
 			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
 			List<S3Object> s3Objects = listObjectsResponse.contents();
 			findBuilds(releaseCenterKey, productKey, s3Objects, builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
-
 			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
 				String nextMarker = s3Objects.get(s3Objects.size() - 1).key();
 				listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(productDirectoryPath).maxKeys(10000).marker(nextMarker).build();
@@ -1077,8 +1071,8 @@ public class BuildDAOImpl implements BuildDAO {
 	public boolean isBuildCancelRequested(final Build build) {
 		if (Build.Status.CANCEL_REQUESTED.equals(build.getStatus())) return true;
 		String cancelledRequestedPath = pathHelper.getStatusFilePath(build, Build.Status.CANCEL_REQUESTED);
-		try {
-			if (s3Client.getObject(buildBucketName, cancelledRequestedPath) != null) {
+		try (final InputStream inputStream = s3Client.getObject(buildBucketName, cancelledRequestedPath)){
+			if (inputStream != null) {
 				build.setStatus(Build.Status.CANCEL_REQUESTED);
 				LOGGER.warn("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
 				return true;
@@ -1172,11 +1166,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(String reportPath) throws IOException {
 		List<PreConditionCheckReport> reports = new ArrayList<>();
-		final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
+		try (final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					reports = jsonParser.readValueAs(new TypeReference <List <PreConditionCheckReport>>() {
+					});
+				}
 			}
 		}
 
@@ -1186,11 +1182,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(String bucketName, String reportPath) throws IOException {
 		List<PreConditionCheckReport> reports = new ArrayList<>();
-		final InputStream s3Object = s3Client.getObject(bucketName, reportPath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				reports = jsonParser.readValueAs(new TypeReference<List<PreConditionCheckReport>>(){});
+		try (final InputStream s3Object = s3Client.getObject(bucketName, reportPath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					reports = jsonParser.readValueAs(new TypeReference <List <PreConditionCheckReport>>() {
+					});
+				}
 			}
 		}
 
@@ -1212,11 +1210,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String reportPath) throws IOException {
 		List<PostConditionCheckReport> reports = new ArrayList<>();
-		final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
+		try (final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					reports = jsonParser.readValueAs(new TypeReference <List <PostConditionCheckReport>>() {
+					});
+				}
 			}
 		}
 
@@ -1226,11 +1226,13 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String bucketName, String reportPath) throws IOException {
 		List<PostConditionCheckReport> reports = new ArrayList<>();
-		final InputStream s3Object = s3Client.getObject(bucketName, reportPath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				reports = jsonParser.readValueAs(new TypeReference<List<PostConditionCheckReport>>(){});
+		try (final InputStream s3Object = s3Client.getObject(bucketName, reportPath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					reports = jsonParser.readValueAs(new TypeReference <List <PostConditionCheckReport>>() {
+					});
+				}
 			}
 		}
 
@@ -1302,11 +1304,12 @@ public class BuildDAOImpl implements BuildDAO {
 	public BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException {
 		BuildComparisonReport report = null;
 		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
-		final InputStream s3Object = s3Client.getObject(buildBucketName, filePath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				report = jsonParser.readValueAs(BuildComparisonReport.class);
+		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					report = jsonParser.readValueAs(BuildComparisonReport.class);
+				}
 			}
 		}
 
@@ -1338,11 +1341,12 @@ public class BuildDAOImpl implements BuildDAO {
 		FileDiffReport report = null;
 		String reportFileName = fileName.replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
 		String filePath = pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName);
-		final InputStream s3Object = s3Client.getObject(buildBucketName, filePath);
-		if (s3Object != null) {
-			final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-				report = jsonParser.readValueAs(FileDiffReport.class);
+		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
+			if (s3Object != null) {
+				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
+				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+					report = jsonParser.readValueAs(FileDiffReport.class);
+				}
 			}
 		}
 

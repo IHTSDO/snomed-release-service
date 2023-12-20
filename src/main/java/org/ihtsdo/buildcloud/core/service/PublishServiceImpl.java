@@ -685,7 +685,6 @@ public class PublishServiceImpl implements PublishService {
 					}
 				}
 			}
-
 			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
 				String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
 				listObjectsRequest = ListObjectsRequest.builder().bucket(storageBucketName).prefix(buildBckUpPath).maxKeys(10000).marker(nextMarker).build();
@@ -729,21 +728,24 @@ public class PublishServiceImpl implements PublishService {
 					|| build.getStatus().equals(Build.Status.RVF_RUNNING)
 					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
 					|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS)) {
-				InputStream buildReportStream = getBuildReportFileStream(storageBucketName, buildBckUpPath, build);
-				if (buildReportStream != null) {
-					JSONParser jsonParser = new JSONParser();
-					try {
-						JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
-						if (jsonObject.containsKey("rvf_response")) {
-							build.setRvfURL(jsonObject.get("rvf_response").toString());
+				try (InputStream buildReportStream = getBuildReportFileStream(storageBucketName, buildBckUpPath, build)) {
+					if (buildReportStream != null) {
+						JSONParser jsonParser = new JSONParser();
+						try {
+							JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+							if (jsonObject.containsKey("rvf_response")) {
+								build.setRvfURL(jsonObject.get("rvf_response").toString());
+							}
+						} catch (IOException e) {
+							LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+						} catch (ParseException e) {
+							LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
 						}
-					} catch (IOException e) {
-						LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
-					} catch (ParseException e) {
-						LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
 					}
-				}
-			}
+				} catch (IOException e) {
+					LOGGER.error("Error retrieving RVF rport for build {}. Error: {}", build.getId(), e.getMessage());
+                }
+            }
 			try {
 				this.loadBuildConfiguration(storageBucketName, buildBckUpPath, build);
 			} catch (IOException e) {
@@ -759,7 +761,7 @@ public class PublishServiceImpl implements PublishService {
 		builds.addAll(foundBuilds);
 	}
 
-	private InputStream getBuildReportFileStream(final String storageBucketName, final String buildBckUpPath, final Build build) {
+	private InputStream getBuildReportFileStream(final String storageBucketName, final String buildBckUpPath, final Build build) throws IOException {
 		final String reportFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.BUILD_REPORT_JSON);
 		return getFileStream(storageBucketName, reportFilePath);
 	}
@@ -782,12 +784,12 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private InputStream getFileStream(String bucketName, String filePath) {
-		InputStream s3Object = this.s3Client.getObject(bucketName, filePath);
-		if (s3Object != null) {
-			return s3Object;
+	private InputStream getFileStream(String bucketName, String filePath) throws IOException {
+		try (InputStream s3Object = this.s3Client.getObject(bucketName, filePath)) {
+			if (s3Object != null) {
+				return s3Object;
+			}
 		}
-
 		return null;
 	}
 
