@@ -62,7 +62,7 @@ public interface BuildDAO {
 
 	InputStream getOutputFileInputStream(String buildPath, String name);
 
-	InputStream getOutputFileInputStream(String bucketName, String buildPath, String name);
+	InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) throws IOException;
 
 	String putOutputFile(Build build, File file, boolean calcMD5) throws IOException;
 
