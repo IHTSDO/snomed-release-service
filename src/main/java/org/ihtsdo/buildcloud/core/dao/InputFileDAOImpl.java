@@ -126,7 +126,7 @@ public class InputFileDAOImpl implements InputFileDAO {
 	@Override
 	public List<String> listRelativeSourceFilePaths(final String releaseCenterKey, final String productKey, final String buildId, final Set<String> subDirectories) {
 		List<String> filesPath = new ArrayList<>();
-		if(subDirectories != null && !subDirectories.isEmpty()) {
+		if (subDirectories != null && !subDirectories.isEmpty()) {
 			for (String subDirectory : subDirectories) {
 				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(releaseCenterKey, productKey, buildId, subDirectory).toString();
 				filesPath.addAll(fileHelper.listFiles(sourcePath));
@@ -138,14 +138,16 @@ public class InputFileDAOImpl implements InputFileDAO {
 	@Override
 	public void persistInputPrepareReport(final String releaseCenterKey, final String productKey, final String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
 		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId);
-		//fileHelper.putFile(IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8), reportPath);
-		s3Client.putObject(buildBucketName, reportPath, IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8).readAllBytes());
+		try (InputStream inputStream = IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8)) {
+			s3Client.putObject(buildBucketName, reportPath, inputStream);
+		}
 	}
 
 	@Override
 	public void persistSourcesGatherReport(final String releaseCenterKey, final String productKey, final String buildId, InputGatherReport inputGatherReport) throws IOException {
 		String reportPath = s3PathHelper.getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId);
-//		fileHelper.putFile(IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8), reportPath);
-		s3Client.putObject(buildBucketName, reportPath, IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8).readAllBytes());
+		try (InputStream inputStream = IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8)) {
+			s3Client.putObject(buildBucketName, reportPath, inputStream);
+		}
 	}
 }

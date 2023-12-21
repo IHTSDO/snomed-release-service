@@ -65,12 +65,13 @@ public class InputFileController {
 													 @PathVariable final String productKey,
 													 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		inputFileService.putManifestFile(releaseCenterKey, productKey, file.getInputStream(), file.getOriginalFilename(), file.getSize());
-		InputStream manifestInputStream = inputFileService.getManifestStream(releaseCenterKey, productKey);
-		String validationStatus = ManifestValidator.validate(manifestInputStream);
-		if (validationStatus == null) {
-			return new ResponseEntity<>(HttpStatus.CREATED);
-		} else {
-			return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_ENTITY);
+		try (InputStream manifestInputStream = file.getInputStream()) {
+			String validationStatus = ManifestValidator.validate(manifestInputStream);
+			if (validationStatus == null) {
+				return new ResponseEntity<>(HttpStatus.CREATED);
+			} else {
+				return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_ENTITY);
+			}
 		}
 	}
 
