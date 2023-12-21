@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class ValidationComparisonReport {
     public enum Status {
-        RUNNING, PASS, FAILED, FAILED_TO_COMPARE;
+        RUNNING, PASS, FAILED, FAILED_TO_COMPARE
     }
 
     private String compareId;

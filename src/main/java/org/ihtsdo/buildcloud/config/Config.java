@@ -91,7 +91,7 @@ public abstract class Config extends BaseConfiguration {
 	{
 		LocalContainerEntityManagerFactoryBean bean=new LocalContainerEntityManagerFactoryBean();
 		bean.setDataSource(getBasicDataSource(driverClassName, url, username, password));
-		bean.setPackagesToScan(new String[] {"org.ihtsdo.buildcloud.core.entity"});
+		bean.setPackagesToScan("org.ihtsdo.buildcloud.core.entity");
 		bean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 		return bean;
 	}
