@@ -585,7 +585,7 @@ public class BuildDAOImpl implements BuildDAO {
 		String buildReportJSON = build.getBuildReport().toString();
 		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
 			srsFileHelper.putFile(is, buildReportJSON.length(), reportPath);
-		} catch (final IOException | DecoderException e) {
+		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
 		}
     }
