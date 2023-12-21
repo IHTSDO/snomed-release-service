@@ -191,7 +191,7 @@ public class ReleasePackageComparison extends ComponentComparison {
                     Path p = Paths.get(ze.getName());
                     String extractedFileName = p.getFileName().toString();
                     File extractedFile = new File(targetDir, extractedFileName);
-                    try (OutputStream out = new FileOutputStream(extractedFile);) {
+                    try (OutputStream out = new FileOutputStream(extractedFile)) {
                         IOUtils.copy(zis, out);
                     }
                 }

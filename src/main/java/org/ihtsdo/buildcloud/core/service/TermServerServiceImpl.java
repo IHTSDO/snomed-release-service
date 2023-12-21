@@ -150,15 +150,14 @@ public class TermServerServiceImpl implements TermServerService {
 			throw new BusinessServiceException(targetDir + " is not a viable directory in which to extract archive");
 		}
 
-		try (
-			ZipInputStream zis = new ZipInputStream(new FileInputStream(archive));) {
+		try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archive))) {
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
 				if (!ze.isDirectory()) {
 					Path p = Paths.get(ze.getName());
 					String extractedFileName = p.getFileName().toString();
 					File extractedFile = new File(targetDir, extractedFileName);
-					try (OutputStream out = new FileOutputStream(extractedFile);) {
+					try (OutputStream out = new FileOutputStream(extractedFile)) {
 						IOUtils.copy(zis, out);
 					}
 				}

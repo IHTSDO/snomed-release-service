@@ -97,7 +97,7 @@ public class AutomatedTestController {
         Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
 
         if (!StringUtils.hasLength(compareId)) {
-            compareId = UUID.randomUUID().toString();;
+            compareId = UUID.randomUUID().toString();
         }
         automatedTestService.compareFiles(leftBuild, rightBuild, fileName, compareId, ignoreIdComparison);
         MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();

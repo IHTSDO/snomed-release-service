@@ -185,7 +185,7 @@ public class TelemetryProcessor {
 					resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
 					temporaryFile.delete();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOGGER.error("Error occurred while trying to upload the file to S3.", e);
 				}
 			}
 		});

@@ -262,7 +262,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				String fileName = automatePromoteProcess.getFileName();
 				LOGGER.info("Staring file comparison for: {}", fileName);
 				try (InputStream leftInputStream = buildDAO.getOutputFileInputStream(leftBuild, fileName);
-					 InputStream rightInputStream = buildDAO.getOutputFileInputStream(rightBuild, fileName);) {
+					 InputStream rightInputStream = buildDAO.getOutputFileInputStream(rightBuild, fileName)) {
 					List<String> leftList = new BufferedReader(new InputStreamReader(leftInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
 					List<String> rightList = new BufferedReader(new InputStreamReader(rightInputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.toList());
 
