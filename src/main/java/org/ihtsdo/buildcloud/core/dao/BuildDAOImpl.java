@@ -426,18 +426,8 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) throws IOException {
-		try (InputStream s3Object = this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name)){
-			if (s3Object != null) {
-				return s3Object;
-			}
-		} catch (S3Exception e) {
-			if (404 != e.statusCode()) {
-				throw e;
-			}
-		}
-
-		return null;
+	public InputStream getOutputFileInputStream(String bucketName, String buildPath, String name) {
+		return this.s3Client.getObject(bucketName, buildPath + S3PathHelper.OUTPUT_FILES + S3PathHelper.SEPARATOR + name);
 	}
 
 	@Override
@@ -939,8 +929,6 @@ public class BuildDAOImpl implements BuildDAO {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[keyParts.length - 2];
 				buildsMarkAsDeleted.add(dateString);
-			} else {
-				// do nothing
 			}
 		}
 	}
@@ -1006,19 +994,15 @@ public class BuildDAOImpl implements BuildDAO {
 		final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
 		final Future<String> future = executorService.submit(() -> {
-//            srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
-			s3Client.putObject(buildBucketName, buildOutputFilePath, pipedInputStream.readAllBytes());
-
-            LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
-            return buildOutputFilePath;
+			srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+			LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
+			return buildOutputFilePath;
         });
-
 		return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
 	}
 
-	private PutObjectResponse putFile(final String filePath, final String contents) throws IOException {
-		InputStream inputStream = new ByteArrayInputStream(contents.getBytes());
-		return s3Client.putObject(buildBucketName, filePath, inputStream.readAllBytes());
+	private PutObjectResponse putFile(final String filePath, final String contents) {
+		return s3Client.putObject(buildBucketName, filePath, contents.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private File getLocalFile(final String transformedFilePath) {
@@ -1278,8 +1262,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void putManifestFile(Build build, InputStream inputStream) throws IOException {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(build);
-//		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
-		s3Client.putObject(buildBucketName, filePath + "manifest.xml", inputStream.readAllBytes());
+		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
 	}
 
 	@Override

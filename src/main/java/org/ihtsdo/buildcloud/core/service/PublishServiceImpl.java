@@ -92,7 +92,7 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private S3PathHelper s3PathHelper;
 
-	private S3Client s3Client;
+	private final S3Client s3Client;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -147,8 +147,6 @@ public class PublishServiceImpl implements PublishService {
 				buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
 				findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
 			}
-		} else {
-
 		}
 		return builds;
 	}
@@ -762,38 +760,43 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private InputStream getBuildReportFileStream(final String storageBucketName, final String buildBckUpPath, final Build build) throws IOException {
-		final String reportFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.BUILD_REPORT_JSON);
+		final String reportFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, S3PathHelper.BUILD_REPORT_JSON);
 		return getFileStream(storageBucketName, reportFilePath);
 	}
 
 	private void loadBuildConfiguration(final String storageBucketName, final String buildBckUpPath,final Build build) throws IOException {
-		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.CONFIG_JSON);
-		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
-		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-			final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
-			build.setConfiguration(buildConfiguration);
+		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, S3PathHelper.CONFIG_JSON);
+		try (InputStream inputStream = getFileStream(storageBucketName, configFilePath)) {
+			if (inputStream == null) {
+				throw new IOException("Configuration file not found for build " + build.getId());
+			}
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
+				build.setConfiguration(buildConfiguration);
+			}
 		}
 	}
 
 	private void loadQaTestConfig(final String storageBucketName, final String buildBckUpPath, final Build build) throws IOException {
-		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, s3PathHelper.QA_CONFIG_JSON);
-		final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(getFileStream(storageBucketName, configFilePath), RF2Constants.UTF_8));// Closes stream
-		try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
-			final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
-			build.setQaTestConfig(qaTestConfig);
+		final String configFilePath = getPublishedReleaseFilePath(buildBckUpPath, build, S3PathHelper.QA_CONFIG_JSON);
+		try (InputStream inputStream = getFileStream(storageBucketName, configFilePath)) {
+			if (inputStream == null) {
+				throw new IOException("QA Configuration file not found for build " + build.getId());
+			}
+			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));
+			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
+				build.setQaTestConfig(qaTestConfig);
+			}
 		}
 	}
 
-	private InputStream getFileStream(String bucketName, String filePath) throws IOException {
-		try (InputStream s3Object = this.s3Client.getObject(bucketName, filePath)) {
-			if (s3Object != null) {
-				return s3Object;
-			}
-		}
-		return null;
+	private InputStream getFileStream(String bucketName, String filePath) {
+		return this.s3Client.getObject(bucketName, filePath);
 	}
 
 	private String getPublishedReleaseFilePath(String buildBckUpPath, Build build, String fileName) {
-		return buildBckUpPath + build.getId() + s3PathHelper.SEPARATOR + fileName;
+		return buildBckUpPath + build.getId() + S3PathHelper.SEPARATOR + fileName;
 	}
 }
