@@ -218,31 +218,15 @@
 			<artifactId>jackson-annotations</artifactId>
 		</dependency>
 
-		<!-- ActiveMQ -->
-		<!-- workaround for activemq no vm support in current spring boot activemq -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jms</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>javax.jms</groupId>
-			<artifactId>javax.jms-api</artifactId>
-		</dependency>
+
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.activemq</groupId>
-					<artifactId>activemq-client</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-client-jakarta</artifactId>
-		</dependency>
-		<!-- end of workaround -->
 
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
