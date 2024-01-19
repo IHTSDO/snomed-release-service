@@ -131,6 +131,9 @@ public class BuildConfiguration {
 	@Transient
 	private boolean replaceExistingEffectiveTime;
 
+	@Transient
+	private boolean standAloneProduct;
+
 	public BuildConfiguration() {
 	}
 
@@ -416,6 +419,14 @@ public class BuildConfiguration {
 
 	public void setReplaceExistingEffectiveTime(boolean replaceExistingEffectiveTime) {
 		this.replaceExistingEffectiveTime = replaceExistingEffectiveTime;
+	}
+
+	public boolean isStandAloneProduct() {
+		return standAloneProduct;
+	}
+
+	public void setStandAloneProduct(boolean standAloneProduct) {
+		this.standAloneProduct = standAloneProduct;
 	}
 
 	@Override

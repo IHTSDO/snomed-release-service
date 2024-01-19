@@ -206,7 +206,7 @@ public class BuildServiceImpl implements BuildService {
 					configuration.setEffectiveTime(effectiveTime);
 				}
 				configuration.setBuildPackageName(getBuildPackageName(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey()));
-
+				configuration.setStandAloneProduct(product.isStandAloneProduct());
 				if (buildRequest != null) {
 					configuration.setBranchPath(buildRequest.getBranchPath());
 					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
@@ -1112,7 +1112,7 @@ public class BuildServiceImpl implements BuildService {
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
-			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().length() == 0) {
+			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().isEmpty()) {
 				final String storageLocation = build.getReleaseCenterKey()
 						+ "/" + build.getProductKey()
 						+ "/" + build.getId();
@@ -1151,6 +1151,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setFailureExportMax(failureExportMax);
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
+			request.setStandAloneProduct(buildConfiguration.isStandAloneProduct());
 			request.setDailyBuild(buildConfiguration.isDailyBuild());
 			request.setDefaultModuleId(defaultModuleId);
 			request.setIncludedModuleIds(includedModuleIdsStr);

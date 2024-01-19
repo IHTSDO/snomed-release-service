@@ -20,6 +20,8 @@ public class ValidationRequest {
 	
 	private boolean releaseAsAnEdition;
 
+	private boolean standAloneProduct;
+
 	private boolean dailyBuild;
 
 	private String defaultModuleId;
@@ -112,6 +114,14 @@ public class ValidationRequest {
 
 	public void setReleaseAsAnEdition(boolean releaseAsAnEdition) {
 		this.releaseAsAnEdition = releaseAsAnEdition;
+	}
+
+	public boolean isStandAloneProduct() {
+		return standAloneProduct;
+	}
+
+	public void setStandAloneProduct(boolean standAloneProduct) {
+		this.standAloneProduct = standAloneProduct;
 	}
 
 	public String getDefaultModuleId() {

@@ -51,6 +51,10 @@ public class Product {
 	@Column(name = "visibility")
 	private boolean visibility;
 
+	@Convert(converter = YesNoConverter.class)
+	@Column(name = "standalone_product")
+	private boolean standAloneProduct;
+
 	public Product() {
 	}
 
@@ -148,6 +152,14 @@ public class Product {
 
 	public void setVisibility(boolean visibility) {
 		this.visibility = visibility;
+	}
+
+	public boolean isStandAloneProduct() {
+		return standAloneProduct;
+	}
+
+	public void setStandAloneProduct(boolean standAloneProduct) {
+		this.standAloneProduct = standAloneProduct;
 	}
 
 	@Override
