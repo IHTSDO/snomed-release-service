@@ -67,6 +67,8 @@ public class RVFClient implements Closeable {
 
 	private static final String RELEASE_AS_AN_EDITION = "releaseAsAnEdition";
 
+	private static final String STAND_ALONE_PRODUCT = "standAloneProduct";
+
 	private static final String GROUPS = "groups";
 
 	private static final String ENABLE_DROOLS = "enableDrools";
@@ -229,6 +231,7 @@ public class RVFClient implements Closeable {
 		multiPartBuilder.addTextBody(ENABLE_DROOLS, Boolean.toString(qaTestConfig.isEnableDrools()));
 		multiPartBuilder.addTextBody(GROUPS, qaTestConfig.getAssertionGroupNames());
 		multiPartBuilder.addTextBody(RELEASE_AS_AN_EDITION, Boolean.toString(request.isReleaseAsAnEdition()));
+		multiPartBuilder.addTextBody(STAND_ALONE_PRODUCT, Boolean.toString(request.isStandAloneProduct()));
 		multiPartBuilder.addTextBody(ENABLE_MRCM_VALIDATION, Boolean.toString(qaTestConfig.isEnableMRCMValidation()));
 
 		String previousPublishedPackage = request.getPreviousPublishedPackage();

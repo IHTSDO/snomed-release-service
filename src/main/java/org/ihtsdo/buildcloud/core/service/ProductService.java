@@ -34,6 +34,7 @@ public interface ProductService extends EntityService<Product> {
 	String DEFAULT_MODULE_ID = "defaultModuleId";
 	String MODULE_IDS = "moduleIds";
 	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
+	String STAND_ALONE_PRODUCT = "standAloneProduct";
 	String ENABLE_DROOLS = "enableDrools";
 	String ENABLE_MRCM = "enableMRCMValidation";
 	String INCLUDED_PREV_RELEASE_FILES = "includePrevReleaseFiles";

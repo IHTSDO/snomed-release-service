@@ -199,8 +199,14 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (product == null) {
 			throw new ResourceNotFoundException("No product found for product key:" + productKey);
 		}
+
 		updateProductBuildConfiguration(newPropertyValues, product);
 		updateProductQaTestConfig(newPropertyValues, product);
+
+		if (newPropertyValues.containsKey(STAND_ALONE_PRODUCT)) {
+			product.setStandAloneProduct(TRUE.equals(newPropertyValues.get(STAND_ALONE_PRODUCT)));
+		}
+
 		productDAO.update(product);
 		return product;
 	}
@@ -273,9 +279,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 		if (newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
 			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
-		}
-		if (newPropertyValues.containsKey(ENABLE_MRCM)) {
-			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
 		}
 	}
 
