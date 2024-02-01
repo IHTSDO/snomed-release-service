@@ -86,6 +86,9 @@ public class PublishServiceImpl implements PublishService {
 	@Value("${srs.storage.bucketName}")
 	private String storageBucketName;
 
+	@Value("srs.publish.batch.size")
+	private int BATCH_SIZE;
+
 	@Autowired
 	private TermServerService termServerService;
 
@@ -108,9 +111,7 @@ public class PublishServiceImpl implements PublishService {
 	
 	@Autowired
 	private SchemaFactory schemaFactory;
-	
-	private static final int BATCH_SIZE = 5000;
-	
+
 	private static final int MAX_FAILURE = 100;
 
 	public enum Status {
