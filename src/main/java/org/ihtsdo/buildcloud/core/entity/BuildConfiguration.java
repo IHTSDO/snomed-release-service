@@ -110,7 +110,7 @@ public class BuildConfiguration {
 	@Column(name="default_branch_path")
 	private String defaultBranchPath;
 
-	@OneToMany(mappedBy = "buildConfiguration", cascade=CascadeType.ALL)
+	@OneToMany(mappedBy = "buildConfiguration", fetch = FetchType.EAGER, cascade=CascadeType.ALL)
 	private List<BuildAdditionalPackage> additionalPackages;
 
 	@Transient
