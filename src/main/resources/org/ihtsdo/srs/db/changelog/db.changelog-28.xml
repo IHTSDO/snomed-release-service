@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="20240131" author="QLY">
+      <createTable tableName="build_additional_package_mapping">
+         <column autoIncrement="true" name="id" type="BIGINT">
+            <constraints primaryKey="true"/>
+         </column>
+         <column name="build_config_id" type="BIGINT">
+            <constraints nullable="false"/>
+         </column>
+         <column name="release_center_key" type="VARCHAR(255)"/>
+         <column name="additional_package_name" type="VARCHAR(255)"/>
+      </createTable>
+   </changeSet>
+</databaseChangeLog>

@@ -110,6 +110,9 @@ public class BuildConfiguration {
 	@Column(name="default_branch_path")
 	private String defaultBranchPath;
 
+	@OneToMany(mappedBy = "buildConfiguration", cascade=CascadeType.ALL)
+	private List<BuildAdditionalPackage> additionalPackages;
+
 	@Transient
 	private String branchPath;
 
@@ -135,6 +138,10 @@ public class BuildConfiguration {
 	private boolean standAloneProduct;
 
 	public BuildConfiguration() {
+	}
+
+	public long getId() {
+		return id;
 	}
 
 	@JsonIgnore
@@ -427,6 +434,14 @@ public class BuildConfiguration {
 
 	public void setStandAloneProduct(boolean standAloneProduct) {
 		this.standAloneProduct = standAloneProduct;
+	}
+
+	public List<BuildAdditionalPackage> getAdditionalPackages() {
+		return additionalPackages;
+	}
+
+	public void setAdditionalPackages(List<BuildAdditionalPackage> additionalPackages) {
+		this.additionalPackages = additionalPackages;
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.ihtsdo.buildcloud.core.dao.BuildAdditionalPackageDAO;
 import org.ihtsdo.buildcloud.core.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
@@ -43,6 +44,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Autowired
 	private ExtensionConfigDAO extensionConfigDAO;
+
+	@Autowired
+	private BuildAdditionalPackageDAO buildAdditionalPackageDAO;
 
 	@Autowired
 	private ReleaseCenterDAO releaseCenterDAO;
@@ -383,6 +387,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			}
 		}
 
+		if (newPropertyValues.containsKey(ADDITIONAL_PACKAGES)) {
+			setBuildAdditionalPackage(configuration, newPropertyValues.get(ADDITIONAL_PACKAGES));
+		}
+
 		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
 			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
 			try {
@@ -438,6 +446,52 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 
 		setExtensionConfig(newPropertyValues, configuration);
+	}
+
+	private void setBuildAdditionalPackage(BuildConfiguration configuration, String additionalPackagesStr) {
+		if (StringUtils.hasLength(additionalPackagesStr)) {
+			String[] additionalPackageArr = Arrays.stream(additionalPackagesStr.split(",")).map(String::trim).toArray(String[]::new);
+			List<BuildAdditionalPackage> existingBuildAdditionalPackages = buildAdditionalPackageDAO.findByBuildConfigId(configuration.getId());
+			List<Long> existingIds = new ArrayList<>();
+			for (String additionalPackage : additionalPackageArr) {
+				BuildAdditionalPackage entity;
+				String[] array = Arrays.stream(additionalPackage.split("|")).map(String::trim).toArray(String[]::new);
+				if (array.length != 0) {
+					switch (array.length) {
+						case 3:
+							// id|release_center_key|additional_package
+						 	entity = buildAdditionalPackageDAO.load(array[0]);
+							 if (entity != null) {
+								 entity.setReleaseCenterKey(array[1]);
+								 entity.setAdditionalPackageName(array[2]);
+								 entity.setBuildConfiguration(configuration);
+								 buildAdditionalPackageDAO.save(entity);
+								 existingIds.add(entity.getId());
+							 }
+							break;
+						case 2:
+							// release_center_key|additional_package
+							entity = new BuildAdditionalPackage();
+							entity.setReleaseCenterKey(array[0]);
+							entity.setAdditionalPackageName(array[1]);
+							entity.setBuildConfiguration(configuration);
+							buildAdditionalPackageDAO.save(entity);
+							break;
+						default:
+							// do nothing
+					}
+				}
+			}
+			if (!existingBuildAdditionalPackages.isEmpty() && !existingIds.isEmpty()) {
+				existingBuildAdditionalPackages.forEach(item -> {
+					if (!existingIds.contains(item.getId())) {
+						buildAdditionalPackageDAO.delete(item);
+					}
+				});
+			}
+		} else {
+			configuration.setAdditionalPackages(null);
+		}
 	}
 
 	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
