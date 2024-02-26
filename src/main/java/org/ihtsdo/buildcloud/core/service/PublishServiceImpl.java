@@ -86,7 +86,7 @@ public class PublishServiceImpl implements PublishService {
 	@Value("${srs.storage.bucketName}")
 	private String storageBucketName;
 
-	@Value("srs.publish.batch.size")
+	@Value("${srs.publish.batch.size}")
 	private int BATCH_SIZE;
 
 	@Autowired
