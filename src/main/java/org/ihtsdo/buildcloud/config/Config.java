@@ -15,7 +15,10 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
 import org.ihtsdo.otf.dao.s3.S3ClientImpl;
 import org.ihtsdo.otf.jms.MessagingHelper;
+import org.ihtsdo.otf.resourcemanager.ResourceConfiguration;
+import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.snomed.module.storage.ModuleStorageCoordinator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,6 +28,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.*;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
@@ -204,6 +208,20 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
 		return getActiveMQTextMessage(queue);
+	}
+
+	@Bean
+	public ResourceManager resourceManager(@Autowired ModuleStorageResourceConfig resourceConfiguration, @Autowired ResourceLoader cloudResourceLoader) {
+		return new ResourceManager(resourceConfiguration, cloudResourceLoader);
+	}
+
+	@Bean
+	public ModuleStorageCoordinator moduleStorageCoordinator(@Autowired ResourceManager resourceManager,  @Value("${srs.environment.shortname}") final String envShortname) {
+        return switch (envShortname) {
+            case "prod" -> ModuleStorageCoordinator.initProd(resourceManager);
+            case "uat" -> ModuleStorageCoordinator.initUat(resourceManager);
+            default -> ModuleStorageCoordinator.initDev(resourceManager);
+        };
 	}
 
 	private ActiveMQTextMessage getActiveMQTextMessage(final String queue) throws JMSException {
