@@ -223,8 +223,9 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void delete(String releaseCenterKey, String productKey, String buildId) {
 		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
-		for (S3Object file : s3Client.listObjects(buildBucketName, buildDirectoryPath).contents()) {
-			s3Client.deleteObject(buildBucketName, file.key());
+		List<String> filenames = srsFileHelper.listFiles(buildDirectoryPath);
+		for (String filename : filenames) {
+			s3Client.deleteObject(buildBucketName, buildDirectoryPath + filename);
 		}
 	}
 
@@ -407,9 +408,8 @@ public class BuildDAOImpl implements BuildDAO {
 	public void copyBuildToAnother(String sourceBucketName,String sourceBuildPath, String destinationBucketName , String destBuildPath, String folder) {
 		final String sourceFolder = sourceBuildPath + folder;
 		final String destFolder = destBuildPath + folder;
-		ListObjectsResponse objectListing = this.s3Client.listObjects(sourceBucketName, sourceFolder);
-		for (S3Object s3Object : objectListing.contents()) {
-			String filename = s3Object.key().substring(sourceFolder.length());
+		List<String> filenames = listFiles(sourceBucketName, sourceFolder);
+		for (String filename : filenames) {
 			this.s3Client.copyObject(sourceBucketName, sourceFolder + filename, destinationBucketName, destFolder + filename);
 		}
 	}
@@ -488,19 +488,8 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public List<String> listOutputFilePaths(String bucketName, String buildPath) {
-		ArrayList<String> files = new ArrayList<>();
-
-		try {
-			ListObjectsResponse objectListing = this.s3Client.listObjects(bucketName, buildPath);
-
-            for (S3Object s3Object : objectListing.contents()) {
-                files.add(s3Object.key().substring(buildPath.length()));
-            }
-		} catch (S3Exception e) {
-			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", buildPath, e.getLocalizedMessage());
-		}
-		return files;
+	public List<String> listOutputFilePaths(String bucketName, String path) {
+		return listFiles(bucketName, path);
 	}
 
 	@Override
@@ -1334,5 +1323,29 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 		return report;
+	}
+
+	private List<String> listFiles(String bucketName, String path) {
+		List<String> files = new ArrayList<>();
+
+		try {
+			ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(bucketName).prefix(path).maxKeys(10000).build();
+			boolean done = false;
+			while (!done) {
+				ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+				for (S3Object s3Object : listObjectsResponse.contents()) {
+					files.add(s3Object.key().substring(path.length()));
+				}
+				if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+					String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
+					listObjectsRequest = ListObjectsRequest.builder().bucket(bucketName).prefix(path).maxKeys(10000).marker(nextMarker).build();
+				} else {
+					done = true;
+				}
+			}
+		} catch (S3Exception e) {
+			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", path, e.getLocalizedMessage());
+		}
+		return files;
 	}
 }
