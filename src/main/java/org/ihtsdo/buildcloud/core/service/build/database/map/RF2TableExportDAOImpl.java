@@ -270,7 +270,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 				// skip data from previous release
 				continue;
 			}
-			key = tableSchema.getComponentType() == ComponentType.IDENTIFIER ?  new StringKey(parts[0], parts[1]) : getKey(parts[0], parts[1]);
+			key = tableSchema.getComponentType() == ComponentType.IDENTIFIER ? getIdentifierCompositeKey(line) : getKey(parts[0], parts[1]);
 			if (workbenchDataFixesRequired && deltaData && tableSchema.getComponentType() == ComponentType.REFSET) {
 				// Get refset id
 				refsetIdMatcher = REFSET_ID_PATTERN.matcher(line);
@@ -315,6 +315,11 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 		} else {
 			throw new DatabasePopulatorException("No composite key match in line '" + line + "'");
 		}
+	}
+
+	private Key getIdentifierCompositeKey(final String line) {
+		String[] parts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
+		return new StringKey(parts[0] + RF2Constants.COLUMN_SEPARATOR + parts[4], parts[1]);
 	}
 
 	private Key getKey(final String part0, final String part1) {
