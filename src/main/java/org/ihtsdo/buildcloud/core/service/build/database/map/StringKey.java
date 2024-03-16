@@ -24,6 +24,9 @@ public class StringKey implements Key {
 		} else {
 			StringKey otherStringKey = (StringKey) other;
 			result = compKey.compareTo(otherStringKey.compKey);
+			if (result == 0 && effectiveTime != null) {
+				result = effectiveTime.compareTo(other.getDate());
+			}
 		}
 		return result;
 	}
@@ -44,16 +47,35 @@ public class StringKey implements Key {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof StringKey objStringKey) {
-			return compKey.equals(objStringKey.compKey);
-		} else {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
 			return false;
 		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		StringKey other = (StringKey) obj;
+		if (effectiveTime == null) {
+			if (other.getDate() != null) {
+				return false;
+			}
+		} else if (!effectiveTime.equals(other.getDate())) {
+			return false;
+		}
+		if (compKey == null) {
+			return other.getIdString() == null;
+		} else return compKey.equals(other.getIdString());
 	}
 
 	@Override
 	public int hashCode() {
-		return compKey.hashCode();
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((effectiveTime == null) ? 0 : effectiveTime.hashCode());
+		result = prime * result + ((compKey == null) ? 0 : compKey.hashCode());
+		return result;
 	}
 
 }

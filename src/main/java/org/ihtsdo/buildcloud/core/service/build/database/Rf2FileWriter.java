@@ -44,8 +44,9 @@ public class Rf2FileWriter {
 				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(tableSchema.getComponentType())) {
 					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
-					// effective time is on the second column
-					currentId = lineParts[0] + lineParts[4];
+					currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
+					// Replace the composite key by identifierSchemeId
+					line = line.replace(currentId, lineParts[0]);
 				} else {
 					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches()) {
 						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
@@ -54,12 +55,11 @@ public class Rf2FileWriter {
 						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
 					}
 					currentId = lineParts[0];
-				}
-				if ((tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
-					|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId))) {
-					continue;
-				}
 
+					if (isRF2LineExcluded(tableSchema, currentId, languageRefsetId)) {
+						continue;
+					}
+				}
 				deltaWriter.append(line);
 				deltaWriter.append(RF2Constants.LINE_ENDING);
 			}
@@ -98,9 +98,11 @@ public class Rf2FileWriter {
 				String languageRefsetId = null;
 				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
 					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
-					// effective time is on the second column
-					currentId = lineParts[0] + lineParts[4];
-					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
+					currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
+					// effective time is on the third column
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
+					// Replace the composite key by identifierSchemeId
+					currentLine = currentLine.replace(currentId, lineParts[0]);
 				} else {
 					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(schema.getFilename()).matches()) {
 						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
@@ -110,11 +112,12 @@ public class Rf2FileWriter {
 					}
 
 					currentId = lineParts[0];
+					// effective time is on the second column
 					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
-				}
-				if ((schema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
-					|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId))) {
-					continue;
+
+					if (isRF2LineExcluded(schema, currentId, languageRefsetId)) {
+						continue;
+					}
 				}
 
 				// Write to Full file
@@ -161,6 +164,11 @@ public class Rf2FileWriter {
 				fullWriter.append(RF2Constants.LINE_ENDING);
 			}
 		}
+	}
+
+	private boolean isRF2LineExcluded(TableSchema tableSchema, String currentId, String languageRefsetId) {
+		return (tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
+				|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId));
 	}
 
 	private String productHeader(List<Field> fields) {
