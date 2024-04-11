@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.core.service;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import io.swagger.v3.core.util.Constants;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.MDC;
@@ -18,7 +20,9 @@ import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
+import org.ihtsdo.otf.exception.ScriptException;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
@@ -33,6 +37,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snomed.module.storage.ModuleStorageCoordinator;
+import org.snomed.module.storage.ModuleStorageCoordinatorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -112,7 +118,12 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private SchemaFactory schemaFactory;
 
+	@Autowired
+	private ModuleStorageCoordinator moduleStorageCoordinator;
+
 	private static final int MAX_FAILURE = 100;
+
+	private record ReleaseFile(String releaseFileName, String md5FileName) {}
 
 	public enum Status {
 		RUNNING, FAILED, COMPLETED
@@ -205,55 +216,28 @@ public class PublishServiceImpl implements PublishService {
 		try {
 			String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
 			List<String> filesFound = srsFileHelper.listFiles(pkgOutPutDir);
-			String releaseFileName = null;
-			String md5FileName = null;
-			for (String fileName : filesFound) {
-				if (releaseFileName == null && FileUtils.isZip(fileName)) {
-					releaseFileName = fileName;
-					//only one zip file per package
-				}
-				if (md5FileName == null && FileUtils.isMD5(fileName)) {
-					//expected to be only one MD5 file.
-					md5FileName = fileName;
-				}
-			}
+			ReleaseFile releaseFiles = getReleaseFiles(filesFound);
 
-			if (releaseFileName == null) {
+			if (releaseFiles.releaseFileName() == null) {
 				String errorMessage = "No zip file found for build: " + build.getUniqueId();
 				LOGGER.error(errorMessage);
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
 			} else {
-				String fileLock = releaseFileName.intern();
+				String fileLock = releaseFiles.releaseFileName().intern();
 				synchronized (fileLock) {
+					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
 
-					// verify if the published file already exists for this product
-					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFileName);
-					if (srsFileHelper.exists(publishFilePath)) {
-						String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
-						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
-						throw new EntityAlreadyExistsException(errorMessage);
-					}
+					// validate the release file
+					validateReleaseFile(build, publishFilePath);
 
 					// publish component ids
 					if (publishComponentIds) {
-						try {
-							LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
-							String buildOutputDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
-							boolean isBetaRelease = build.getConfiguration().isBetaRelease();
-							publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
-							LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
-						} catch (Exception e) {
-							concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
-							throw e;
-						}
+						publishComponentIds(build, releaseFiles.releaseFileName());
 					}
 
+					// copy the release package to published and versioned folders
 					try {
-						String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
-						srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
-						LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
-						publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
-						copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+						copyReleaseFileToPublishedAndVersionedDirectory(build, env, releaseFiles.releaseFileName(), publishFilePath);
 
 						// mark the build as Published
 						buildDao.addTag(build, Build.Tag.PUBLISHED);
@@ -264,11 +248,16 @@ public class PublishServiceImpl implements PublishService {
 				}
 
 				// copy MD5 file if available
-				if (md5FileName != null) {
-					String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
-					String target = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), md5FileName);
-					srsFileHelper.copyFile(source, target);
-					LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
+				if (releaseFiles.md5FileName() != null) {
+					copyMd5FileToPublishedDirectory(build, releaseFiles.md5FileName());
+				}
+
+				// upload to new versioned content bucket which will be used by Module Storage Coordinator
+				try {
+					uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles);
+				} catch (Exception e) {
+					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to upload to new versioned content bucket (Module Storage Coordinator).  Error message: " + e.getMessage()));
+					throw new BusinessServiceException("Failed to to upload to new versioned content bucket (Module Storage Coordinator)", e);
 				}
 
 				// copy build info to the backup published storage path
@@ -281,25 +270,150 @@ public class PublishServiceImpl implements PublishService {
 
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
-					try {
-						List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-						ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
-						CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
-								.findAny()
-								.orElse(null);
-						if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
-							LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-							termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-						}
-					} catch (Exception e) {
-						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
-						throw new BusinessServiceException("Failed to update Code System Version Package", e);
-					}
+					updateCodeSystemVersion(build, releaseFiles.releaseFileName());
 				}
 				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} finally {
 			MDC.remove(BuildService.MDC_BUILD_KEY);
+		}
+	}
+
+	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles) throws IOException, RestClientException, ModuleStorageCoordinatorException.InvalidArgumentsException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.DuplicateResourceException, ModuleStorageCoordinatorException.OperationFailedException, ScriptException {
+		List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+		ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
+		CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
+				.findAny()
+				.orElse(null);
+		if (codeSystem != null) {
+			File releaseFile = File.createTempFile("temp", RF2Constants.ZIP_FILE_EXTENSION);
+			try {
+				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
+					 FileOutputStream out = new FileOutputStream(releaseFile)) {
+					StreamUtils.copy(inputFileStream, out);
+				}
+
+				String moduleId = null;
+				if (!StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
+					Map<String, Object> metadata = getBranchMetadataIncludeInherited(build.getConfiguration().getBranchPath());
+					moduleId = (String) metadata.get("defaultModuleId");
+				}
+				if (!StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
+					String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
+					if (!StringUtils.isEmpty(moduleIdsStr)) {
+						moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
+					}
+				}
+				if (!StringUtils.isEmpty(moduleId)) {
+					moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
+				}
+				moduleStorageCoordinator.upload(codeSystem.getShortName(), moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile);
+			} finally {
+				org.apache.commons.io.FileUtils.forceDelete(releaseFile);
+			}
+		}
+	}
+
+	public Map<String, Object> getBranchMetadataIncludeInherited(String path) throws RestClientException {
+		Map<String, Object> mergedMetadata = null;
+		List<String> stackPaths = getBranchPathStack(path);
+		for (String stackPath : stackPaths) {
+			final Branch branch = termServerService.getBranch(stackPath);
+			final Map<String, Object> metadata = branch.getMetadata();
+			if (mergedMetadata == null) {
+				mergedMetadata = metadata;
+			} else {
+				// merge metadata
+				for (String key : metadata.keySet()) {
+					if (!key.equals("lock") || stackPath.equals(path)) { // Only copy lock info from the deepest branch
+						mergedMetadata.put(key, metadata.get(key));
+					}
+				}
+			}
+		}
+		return mergedMetadata;
+	}
+
+	private List<String> getBranchPathStack(String path) {
+		List<String> paths = new ArrayList<>();
+		paths.add(path);
+		int index;
+		while ((index = path.lastIndexOf("/")) != -1) {
+			path = path.substring(0, index);
+			paths.add(path);
+		}
+		return Lists.reverse(paths);
+	}
+
+	private static ReleaseFile getReleaseFiles(List<String> filesFound) {
+		String releaseFileName = null;
+		String md5FileName = null;
+		for (String fileName : filesFound) {
+			if (releaseFileName == null && FileUtils.isZip(fileName)) {
+				releaseFileName = fileName;
+				//only one zip file per package
+			}
+			if (md5FileName == null && FileUtils.isMD5(fileName)) {
+				//expected to be only one MD5 file.
+				md5FileName = fileName;
+			}
+		}
+		return new ReleaseFile(releaseFileName, md5FileName);
+	}
+
+
+
+	private void validateReleaseFile(Build build, String publishFilePath) throws EntityAlreadyExistsException {
+		// verify if the published file already exists for this product
+		if (srsFileHelper.exists(publishFilePath)) {
+			String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
+			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
+			throw new EntityAlreadyExistsException(errorMessage);
+		}
+	}
+
+	private void publishComponentIds(Build build, String releaseFileName) throws BusinessServiceException {
+		try {
+			LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
+			String buildOutputDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
+			boolean isBetaRelease = build.getConfiguration().isBetaRelease();
+			publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
+			LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
+		} catch (Exception e) {
+			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
+			throw e;
+		}
+	}
+
+	private void copyReleaseFileToPublishedAndVersionedDirectory(Build build, String env, String releaseFileName, String publishFilePath) throws IOException, DecoderException, BusinessServiceException {
+		String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+		srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
+		LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
+		publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
+		copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+	}
+
+	private void copyMd5FileToPublishedDirectory(Build build, String md5FileName) {
+		String source = s3PathHelper.getBuildOutputFilePath(build, md5FileName);
+		String target = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), md5FileName);
+		srsFileHelper.copyFile(source, target);
+		LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
+	}
+
+	private void updateCodeSystemVersion(Build build, String releaseFileName) throws BusinessServiceException {
+		try {
+			List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+			ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
+			CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
+					.findAny()
+					.orElse(null);
+			if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
+				LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+				termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+			}
+		} catch (Exception e) {
+			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
+			throw new BusinessServiceException("Failed to update Code System Version Package", e);
 		}
 	}
 
