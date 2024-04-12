@@ -65,6 +65,8 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final String PUBLISHED_BUILD = "published_build_backup";
 
+	private static final String SNOMEDCT = "SNOMEDCT";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
 	private final FileHelper srsFileHelper;
@@ -286,7 +288,7 @@ public class PublishServiceImpl implements PublishService {
 				.findAny()
 				.orElse(null);
 		if (codeSystem != null) {
-			File releaseFile = File.createTempFile("temp", RF2Constants.ZIP_FILE_EXTENSION);
+			File releaseFile = new File(releaseFiles.releaseFileName());
 			try {
 				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
 					 FileOutputStream out = new FileOutputStream(releaseFile)) {
@@ -298,16 +300,17 @@ public class PublishServiceImpl implements PublishService {
 					Map<String, Object> metadata = getBranchMetadataIncludeInherited(build.getConfiguration().getBranchPath());
 					moduleId = (String) metadata.get("defaultModuleId");
 				}
-				if (!StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
+				if (StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
 					String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
 					if (!StringUtils.isEmpty(moduleIdsStr)) {
 						moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
 					}
 				}
-				if (!StringUtils.isEmpty(moduleId)) {
+				if (StringUtils.isEmpty(moduleId)) {
 					moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
 				}
-				moduleStorageCoordinator.upload(codeSystem.getShortName(), moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile);
+				String codeSystemShortname = SNOMEDCT.equals(codeSystem.getShortName()) ? RF2Constants.INT : codeSystem.getShortName().substring(codeSystem.getShortName().indexOf('-') + 1);
+				moduleStorageCoordinator.upload(codeSystemShortname, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile);
 			} finally {
 				org.apache.commons.io.FileUtils.forceDelete(releaseFile);
 			}
