@@ -162,7 +162,8 @@ public abstract class Config extends BaseConfiguration {
 		cacheManager.setCaches(Arrays.asList(
 				getCache("release-center-records"),
 				getCache("global-roles"),
-				getCache("code-system-roles")));
+				getCache("code-system-roles"),
+				getCache("build-records")));
 		return cacheManager;
 	}
 
