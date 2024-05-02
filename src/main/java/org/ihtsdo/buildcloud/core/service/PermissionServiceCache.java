@@ -6,9 +6,7 @@ import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -27,9 +25,6 @@ public class PermissionServiceCache {
 
     @Autowired
     private TermServerService termServerService;
-
-    @Autowired
-    private CacheManager cacheManager;
 
     @Cacheable(value = "global-roles", key = "#token")
     public Set<String> getGlobalRoles(String token) {
@@ -53,10 +48,5 @@ public class PermissionServiceCache {
         }
 
         return Collections.emptyMap();
-    }
-
-    @Scheduled(cron = "0 0 0 * * SUN")
-    public void clearCache() {
-        cacheManager.getCacheNames().parallelStream().forEach(name -> cacheManager.getCache(name).clear());
     }
 }

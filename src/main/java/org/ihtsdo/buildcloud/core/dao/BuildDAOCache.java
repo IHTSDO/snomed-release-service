@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.dao;
 
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,12 +11,16 @@ import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BuildDAOCache {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BuildDAOCache.class);
+
+    private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", S3PathHelper.MARK_AS_DELETED);
 
     @Cacheable(value = "build-records", key="#releaseCenterKey.concat('-').concat(#productKey)")
     public List<S3Object> getAllS3ObjectKeysWithCache(final S3Client s3Client, String buildBucketName, String prefix, String releaseCenterKey, String productKey) {
@@ -41,6 +46,7 @@ public class BuildDAOCache {
                 done = true;
             }
         }
-        return s3Objects;
+
+        return s3Objects.stream().filter(s3Object -> requiredFileExtensions.stream().anyMatch(item -> s3Object.key().contains("/" + item))).collect(Collectors.toList());
     }
 }
