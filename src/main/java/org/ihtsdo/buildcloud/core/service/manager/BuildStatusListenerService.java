@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
+import org.ihtsdo.buildcloud.core.service.CacheService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.slf4j.Logger;
@@ -60,6 +61,9 @@ public class BuildStatusListenerService {
 	@Autowired
 	private BuildStatusTrackerDao statusTrackerDao;
 
+	@Autowired
+	private CacheService cacheService;
+
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
 	public void consumeBuildStatus(final TextMessage textMessage) {
@@ -111,6 +115,7 @@ public class BuildStatusListenerService {
 					BUILD_ID_KEY, build.getId(),
 					BUILD_STATUS_KEY, buildStatus.name()));
 		}
+		cacheService.clearBuildsCache(build.getReleaseCenterKey(), build.getProductKey());
 	}
 
 	private Build.Status resolveBuildStatusWithResultsFromRvf(final Map<String, Object> message, final Build build, final Product product) {
@@ -198,6 +203,7 @@ public class BuildStatusListenerService {
 		}
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
+		cacheService.clearBuildsCache(tracker.getReleaseCenterKey(), tracker.getProductKey());
 	}
 
 
@@ -209,5 +215,6 @@ public class BuildStatusListenerService {
 		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
 		tracker.setRvfRunId(String.valueOf(rvfRunId));
 		statusTrackerDao.update(tracker);
+		cacheService.clearBuildsCache(tracker.getReleaseCenterKey(), tracker.getProductKey());
 	}
 }
