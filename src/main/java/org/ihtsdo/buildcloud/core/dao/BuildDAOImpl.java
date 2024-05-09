@@ -29,6 +29,7 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.json.simple.JSONObject;
@@ -38,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -52,6 +52,7 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -90,9 +91,6 @@ public class BuildDAOImpl implements BuildDAO {
 	@Autowired
 	private S3PathHelper pathHelper;
 
-	@Autowired
-	private BuildDAOCache buildDAOCache;
-
 	private final String buildBucketName;
 
 	@Autowired
@@ -104,6 +102,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Value("${srs.publish.job.storage.path}")
 	private String publishJobStoragePath;
 
+	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", S3PathHelper.MARK_AS_DELETED);
 
 	private record BuildRequestParameter (
 			String releaseCenterKey,
@@ -113,6 +112,7 @@ public class BuildDAOImpl implements BuildDAO {
 			Boolean includeRvfURL,
 			Boolean visibility,
 			BuildService.View viewMode,
+			List<Integer> forYears,
 			PageRequest pageRequest) {}
 	private record BuildResponse (
 			List<Build> builds,
@@ -146,7 +146,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void save(final Build build) throws IOException {
 		// Save config file
 		LOGGER.debug("Saving build {} for product {}", build.getId(), build.getProductKey());
@@ -224,22 +223,22 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public List<Build> findAllDesc(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String productDirectoryPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
-		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, null, null);
-		return findBuildsDesc(productDirectoryPath, true, requestParameter);
+		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, null, null, null);
+		return findBuildsDesc(productDirectoryPath, requestParameter);
 	}
 
 	@Override
-	public BuildPage<Build> findAll(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, PageRequest pageRequest) {
+	public BuildPage<Build> findAll(final String releaseCenterKey, final String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility, BuildService.View viewMode, List<Integer> forYears, PageRequest pageRequest) {
 		final String productDirectoryPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
-		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, pageRequest);
+		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, viewMode, forYears, pageRequest);
 		return findBuilds(productDirectoryPath, requestParameter);
 	}
 
 	@Override
 	public Build find(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
 		final String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
-		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, null, null);
-		final List<Build> builds = findBuildsDesc(buildDirectoryPath, false, requestParameter);
+		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, null, null, null);
+		final List<Build> builds = findBuildsDesc(buildDirectoryPath, requestParameter);
 		if (!builds.isEmpty()) {
 			return builds.get(0);
 		} else {
@@ -248,7 +247,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#releaseCenterKey.concat('-').concat(#productKey)")
 	public void delete(String releaseCenterKey, String productKey, String buildId) {
 		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
 		List<String> filenames = srsFileHelper.listFiles(buildDirectoryPath);
@@ -258,7 +256,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void markBuildAsDeleted(Build build) throws IOException {
 		final String newTagFilePath = pathHelper.getBuildPath(build).append(S3PathHelper.MARK_AS_DELETED).toString();
 		putFile(newTagFilePath, BLANK);
@@ -302,7 +299,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void updateStatus(final Build build, final Build.Status newStatus) throws IOException {
 		String buildStatusPath = pathHelper.getStatusFilePath(build, build.getStatus());
 		Build.Status origStatus = build.getStatus();
@@ -354,7 +350,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void addTag(Build build, Tag tag) throws IOException {
 		List<Tag> tags = build.getTags();
 		if (CollectionUtils.isEmpty(tags)) {
@@ -370,7 +365,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void saveTags(Build build, List<Tag> tags) throws IOException {
 		List<Tag> oldTags = build.getTags();
 		if (!CollectionUtils.isEmpty(oldTags)) {
@@ -494,10 +488,10 @@ public class BuildDAOImpl implements BuildDAO {
 	public InputStream getManifestStream(final Build build) {
 		String manifestFilePath = getManifestFilePath(build);
 		if (manifestFilePath != null) {
-			LOGGER.info("Opening manifest file found at " + manifestFilePath);
+			LOGGER.info("Opening manifest file found at {}", manifestFilePath);
 			return srsFileHelper.getFileStream(manifestFilePath);
 		} else {
-			LOGGER.error("Failed to find manifest file for " + build.getId());
+			LOGGER.error("Failed to find manifest file for {}", build.getId());
 			return null;
 		}
 	}
@@ -573,7 +567,7 @@ public class BuildDAOImpl implements BuildDAO {
 			publishedZipPath = pathHelper.getPublishJobFilePath(releaseCenterKey, previousPublishedPackage);
 		}
 		final String publishedExtractedZipPath = publishedZipPath.replace(".zip", "/");
-		LOGGER.debug("targetFileName:" + targetFileName);
+		LOGGER.debug("targetFileName: {}", targetFileName);
 		String targetFileNameStripped = rf2FileNameTransformation.transformFilename(targetFileName);
 		if (!Normalizer.isNormalized(targetFileNameStripped, Normalizer.Form.NFC)) {
 			targetFileNameStripped = Normalizer.normalize(targetFileNameStripped, Normalizer.Form.NFC);
@@ -621,7 +615,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private List<Build> findBuildsDesc(final String directoryPathPrefix, boolean useCache, BuildRequestParameter requestParameter) {
+	private List<Build> findBuildsDesc(final String directoryPathPrefix, BuildRequestParameter requestParameter) {
 
 		// Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
 		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
@@ -630,7 +624,7 @@ public class BuildDAOImpl implements BuildDAO {
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, directoryPathPrefix);
-		BuildResponse response = getAllBuildsFromS3(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey, useCache);
+		BuildResponse response = getAllBuildsFromS3(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
 		List<Build> builds = response.builds();
 		builds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, builds);
 		builds = removeBuildsMarkAsDeleted(response.buildsMarkAsDeleted, builds);
@@ -651,7 +645,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 
 		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
-		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, true);
+		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
 		List<Build> allBuilds = response.builds();
 		allBuilds = filterByViewMode(allBuilds, response.tagPaths, requestParameter.viewMode);
 		allBuilds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, allBuilds);
@@ -731,17 +725,17 @@ public class BuildDAOImpl implements BuildDAO {
 		allBuilds.sort(comparator);
 	}
 
-	private BuildResponse getAllBuildsFromS3(String directoryPathPrefix, String releaseCenterKey, String productKey, boolean useCache) {
+	private BuildResponse getAllBuildsFromS3(String directoryPathPrefix, String releaseCenterKey, String productKey, List<Integer> forYears) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, directoryPathPrefix);
-		List<S3Object> s3Objects;
-		if (useCache) {
-			s3Objects = buildDAOCache.getAllS3ObjectKeysWithCache(s3Client, buildBucketName, directoryPathPrefix, releaseCenterKey, productKey);
-		} else {
-			s3Objects = buildDAOCache.getAllS3ObjectKeysNoCache(s3Client, buildBucketName, directoryPathPrefix);
-		}
-		BuildResponse response = findBuilds(releaseCenterKey, productKey, s3Objects);
-		LOGGER.debug("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
-		return response;
+        List<S3Object> s3Objects;
+        try {
+            s3Objects = getS3Objects(buildBucketName, directoryPathPrefix, forYears);
+			BuildResponse response = findBuilds(releaseCenterKey, productKey, s3Objects);
+			LOGGER.debug("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
+			return response;
+        } catch (ExecutionException | InterruptedException  e) {
+            throw new BusinessServiceRuntimeException(e);
+        }
 	}
 
 	private List<Build> removeInvisibleBuilds(Boolean visibility, List<String> visibilityPaths, List<Build> builds) {
@@ -1044,7 +1038,7 @@ public class BuildDAOImpl implements BuildDAO {
 					.orElse(null);
 			if (fileName != null) {
 				final String manifestFilePath = directoryPath + fileName;
-				LOGGER.info("manifest file found at " + manifestFilePath);
+				LOGGER.info("manifest file found at {}", manifestFilePath);
 				return manifestFilePath;
 			}
 		}
@@ -1259,7 +1253,6 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	@CacheEvict(value = "build-records", key="#build.releaseCenterKey.concat('-').concat(#build.productKey)")
 	public void updateVisibility(Build build, boolean visibility) throws IOException {
 		// Deleting old regardless the visibility is true or false, or not being set yet
 		String origStatusFilePath = pathHelper.getVisibilityFilePath(build, true);
@@ -1371,5 +1364,49 @@ public class BuildDAOImpl implements BuildDAO {
 			LOGGER.info("Probable attempt to get listing on non-existent directory: {} error {}", path, e.getLocalizedMessage());
 		}
 		return files;
+	}
+
+	private List<S3Object> getS3Objects(String buildBucketName, String prefix, List<Integer> forYears) throws ExecutionException, InterruptedException {
+		List<S3Object> s3Objects = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(forYears)) {
+			List<Future<Collection<S3Object>>> tasks = new ArrayList<>();
+			Set<Integer> forYearSet = new HashSet<>(forYears);
+			for (final Integer year : forYearSet) {
+				Future<Collection<S3Object>> future = executorService.submit(() -> {
+					List<S3Object> result = new ArrayList<>();
+					ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + year).maxKeys(10000).build();
+					boolean done = false;
+					while (!done) {
+						ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+						result.addAll(listObjectsResponse.contents());
+						if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+							String nextMarker = result.get(result.size() - 1).key();
+							listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + year).maxKeys(10000).marker(nextMarker).build();
+						} else {
+							done = true;
+						}
+					}
+					return result;
+				});
+				tasks.add(future);
+			}
+			for (Future<Collection<S3Object>> task : tasks) {
+				s3Objects.addAll(task.get());
+			}
+		} else {
+			ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).build();
+			boolean done = false;
+			while (!done) {
+				ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+				s3Objects.addAll(listObjectsResponse.contents());
+				if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+					String nextMarker = s3Objects.get(s3Objects.size() - 1).key();
+					listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).marker(nextMarker).build();
+				} else {
+					done = true;
+				}
+			}
+		}
+		return s3Objects.stream().filter(s3Object -> requiredFileExtensions.stream().anyMatch(item -> s3Object.key().contains("/" + item))).collect(Collectors.toList());
 	}
 }
