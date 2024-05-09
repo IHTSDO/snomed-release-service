@@ -195,6 +195,7 @@ public class BuildController {
 											   @RequestParam(required = false) boolean includeQAConfiguration,
 											   @RequestParam(required = false) Boolean visibility,
 											   @RequestParam(defaultValue = "DEFAULT") BuildService.View viewMode,
+											   @RequestParam(required = false) List<Integer> forYears,
 											   @RequestParam(defaultValue = "0") Integer pageNumber,
 											   @RequestParam(defaultValue = "10") Integer pageSize,
 											   @RequestParam(required = false) String[] sort,
@@ -206,7 +207,7 @@ public class BuildController {
 		} else {
 			pageRequest = PageRequest.of(pageNumber, pageSize);
 		}
-		BuildPage<Build> builds = buildService.findAll(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, viewMode, pageRequest);
+		BuildPage<Build> builds = buildService.findAll(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, true, visibility, viewMode, forYears, pageRequest);
 		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(builds.getContent(), request, BUILD_LINKS);
 
 		return new PageImpl<>(result, PageRequest.of(pageNumber, pageSize), builds.getTotalElements());
@@ -238,8 +239,7 @@ public class BuildController {
 
 		ifBuildIsNullThrow(productKey, buildId, build);
 
-		final boolean currentResource = true;
-		return hypermediaGenerator.getEntityHypermedia(build, currentResource, request, BUILD_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(build, true, request, BUILD_LINKS);
 	}
 
 	@GetMapping(value = "/builds/{buildId}/manifest", produces = "application/json")

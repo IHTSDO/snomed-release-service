@@ -16,9 +16,4 @@ public class CacheService {
     public void clearAllCache() {
         cacheManager.getCacheNames().parallelStream().forEach(name -> cacheManager.getCache(name).clear());
     }
-
-    @CacheEvict(value = "build-records", key="#releaseCenterKey.concat('-').concat(#productKey)")
-    public void clearBuildsCache(String releaseCenterKey, String productKey) {
-        // do nothing
-    }
 }

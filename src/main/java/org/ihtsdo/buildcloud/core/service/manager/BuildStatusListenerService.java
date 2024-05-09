@@ -115,7 +115,6 @@ public class BuildStatusListenerService {
 					BUILD_ID_KEY, build.getId(),
 					BUILD_STATUS_KEY, buildStatus.name()));
 		}
-		cacheService.clearBuildsCache(build.getReleaseCenterKey(), build.getProductKey());
 	}
 
 	private Build.Status resolveBuildStatusWithResultsFromRvf(final Map<String, Object> message, final Build build, final Product product) {
@@ -203,7 +202,6 @@ public class BuildStatusListenerService {
 		}
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
-		cacheService.clearBuildsCache(tracker.getReleaseCenterKey(), tracker.getProductKey());
 	}
 
 
@@ -215,6 +213,5 @@ public class BuildStatusListenerService {
 		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
 		tracker.setRvfRunId(String.valueOf(rvfRunId));
 		statusTrackerDao.update(tracker);
-		cacheService.clearBuildsCache(tracker.getReleaseCenterKey(), tracker.getProductKey());
 	}
 }
