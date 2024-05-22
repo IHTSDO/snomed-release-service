@@ -119,21 +119,18 @@ public class Rf2FileExportRunner {
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
 
 			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaseAsAnEdition()) {
-				// Add the international delta for extension edition release.
-				Date previousDependencyEffectiveDate = configuration.getExtensionConfig().getPreviousEditionDependencyEffectiveDate();
-				// in yyyyMMdd format
-				String previousDependencyEffectiveDateStr = RF2Constants.DATE_FORMAT.format(previousDependencyEffectiveDate);
-				LOGGER.info("Previous edition dependency effective date is re-formatted to {} ", previousDependencyEffectiveDateStr);
 				if (StringUtils.isBlank(configuration.getExtensionConfig().getDependencyRelease())) {
 					String msg = "No dependency release package is specified but it is required for edition builds";
 					LOGGER.error(msg);
 					throw new ReleaseFileGenerationException(msg);
 				}
+				// Add the international delta for extension edition release.
 				InputStream intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(), transformedDeltaDataFile);
 				if (intDeltaInputStream != null) {
 					rf2TableDAO.appendData(tableSchema, intDeltaInputStream, workbenchDataFixesRequired);
 				} else {
-					if (previousDependencyEffectiveDate == null) {
+					Date previousDependencyEffectiveDate = configuration.getExtensionConfig().getPreviousEditionDependencyEffectiveDate();
+					if (!configuration.isFirstTimeRelease() && previousDependencyEffectiveDate == null) {
 						String msg = "No previous dependency effective date specified to generate delta for edition release.";
 						LOGGER.error(msg);
 						throw new ReleaseFileGenerationException(msg);
@@ -142,6 +139,8 @@ public class Rf2FileExportRunner {
 					// Filter delta from dependency full
 					InputStream intFullStream = getEquivalentInternationalFull(configuration.getExtensionConfig(), transformedDeltaDataFile);
 					if (intFullStream != null) {
+						// in yyyyMMdd format
+						String previousDependencyEffectiveDateStr = previousDependencyEffectiveDate != null ? RF2Constants.DATE_FORMAT.format(previousDependencyEffectiveDate) : null;
 						rf2TableDAO.appendData(tableSchema, intFullStream, previousDependencyEffectiveDateStr);
 					} else {
 						//  Refset files specific to extensions will not have equivalent files in the international release.
