@@ -235,7 +235,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		 assertFileNameExist(inputFileList,"rel2_cRefset_AttributeValueDelta_SE1000052_20170531.txt");
 		 assertFileNameExist(inputFileList,"rel2_cRefset_AssociationReferenceDelta_SE1000052_20170531.txt");
 		 assertEquals(14, report.getDetails().get(ReportType.ERROR).size());
-		 assertEquals(12, report.getDetails().get(ReportType.WARNING).size());
+		 assertEquals(22, report.getDetails().get(ReportType.WARNING).size());
 
 	}
 
@@ -304,7 +304,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 //		assertNotNull(report.getDetails().get(ReportType.ERROR));
 //		assertEquals(1,report.getDetails().get(ReportType.ERROR).size());
 		assertNotNull(report.getDetails().get(ReportType.WARNING));
-		assertEquals(7,report.getDetails().get(ReportType.WARNING).size());
+		assertEquals(8,report.getDetails().get(ReportType.WARNING).size());
 	}
 
 
@@ -343,7 +343,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		assertFileNameExist(inputFileList,fileNames);
 		assertNull(report.getDetails().get(ReportType.ERROR));
 		assertNotNull(report.getDetails().get(ReportType.WARNING));
-		assertEquals(6,report.getDetails().get(ReportType.WARNING).size());
+		assertEquals(7,report.getDetails().get(ReportType.WARNING).size());
 	}
 
 	@Test
@@ -389,7 +389,7 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		assertNotNull(report.getDetails().get(ReportType.ERROR));
 		assertEquals(22, report.getDetails().get(ReportType.ERROR).size());
 		assertNotNull(report.getDetails().get(ReportType.WARNING));
-		assertEquals(2, report.getDetails().get(ReportType.WARNING).size());
+		assertEquals(22, report.getDetails().get(ReportType.WARNING).size());
 	}
 
 
