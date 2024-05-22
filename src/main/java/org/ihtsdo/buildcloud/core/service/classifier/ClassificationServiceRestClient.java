@@ -1,123 +1,85 @@
 package org.ihtsdo.buildcloud.core.service.classifier;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
+import java.io.FileOutputStream;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Optional;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.tomcat.util.http.fileupload.util.Streams;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.resty.HttpEntityContent;
-import org.ihtsdo.otf.rest.client.resty.RestyHelper;
-import org.ihtsdo.otf.rest.client.resty.RestyServiceHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import com.google.common.base.Strings;
-
-import us.monoid.json.JSONException;
-import us.monoid.web.BinaryResource;
-import us.monoid.web.JSONResource;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResponseExtractor;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class ClassificationServiceRestClient {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClassificationServiceRestClient.class);
-
-	private final String classificationServiceUrl;
-	private final String username;
-	private final String password;
-	public static final String ANY_CONTENT_TYPE = "*/*";
-	protected static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
-	private final RestyHelper resty;
-	private static final String STATUS = "status";
+	private final RestTemplate restTemplate;
 
 	@Value("${classification-service.timeoutInSeconds:300}")
 	private int timeoutInSeconds = 300;
+
+	private static final HttpHeaders MULTIPART_HEADERS = new HttpHeaders();
+	static {
+		MULTIPART_HEADERS.setContentType(MediaType.MULTIPART_FORM_DATA);
+	}
 	
 	public ClassificationServiceRestClient(@Value("${classification-service.url}") final String serviceUrl,
 			@Value("${classification-service.username}") final String username, @Value("${classification-service.password}") final String password) {
-		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
-		this.classificationServiceUrl = serviceUrl;
-		this.username = username;
-		this.password = password;
+		restTemplate = new RestTemplateBuilder()
+				.rootUri(serviceUrl)
+				.basicAuthentication(username, password)
+				.build();
 	}
-	
-	
+
 	public File classify( File rf2DeltaZipFile, String previousPackage, String dependencyPackage) throws BusinessServiceException {
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(classificationServiceUrl + "/classifications");
-		if (!Strings.isNullOrEmpty(previousPackage)) {
-			builder.queryParam("previousPackage", previousPackage);
+		MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
+		if (StringUtils.hasLength(previousPackage)) {
+			params.put("previousPackage", Collections.singletonList(previousPackage));
 		}
-		if (!Strings.isNullOrEmpty(dependencyPackage)) {
-			builder.queryParam("dependencyPackage", dependencyPackage);
+		if (StringUtils.hasLength(dependencyPackage)) {
+			params.put("dependencyPackage", Collections.singletonList(dependencyPackage));
 		}
-		URI uri = builder.build().toUri();
-		LOGGER.info("External classifier request url=" + uri.toString());
-		MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
-		multipartEntityBuilder.addBinaryBody("rf2Delta", rf2DeltaZipFile, ContentType.create(CONTENT_TYPE_MULTIPART), rf2DeltaZipFile.getName());
-		multipartEntityBuilder.setCharset(StandardCharsets.UTF_8);
-		multipartEntityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		HttpEntity httpEntity = multipartEntityBuilder.build();
-		resty.authenticate(classificationServiceUrl, username, password.toCharArray());
-		resty.withHeader("Accept", ANY_CONTENT_TYPE);
-		
-		String statusUrl;
-		try {
-			JSONResource response = resty.json(uri, new HttpEntityContent(httpEntity));
-			RestyServiceHelper.ensureSuccessfull(response);
-			statusUrl = response.http().getHeaderField("location");
-			LOGGER.info("classification request is submitted." + statusUrl );
-		} catch (IOException | JSONException e) {
-			throw new BusinessServiceException("Failed to send classification request.", e);
-		}
-	
+		params.put("rf2Delta", Collections.singletonList(new FileSystemResource(rf2DeltaZipFile)));
+		ResponseEntity<Void> response = restTemplate.postForEntity("/classifications", new HttpEntity<>(params, MULTIPART_HEADERS), Void.class);
+		String statusUrl = response.getHeaders().getLocation().toString();
+		String classificationId = statusUrl.substring(statusUrl.lastIndexOf("/") + 1);
 		try {
 			//wait for the classification to finish
-			waitForCompleteStatus(statusUrl, timeoutInSeconds);
+			waitForCompleteStatus(statusUrl, classificationId, timeoutInSeconds);
 		} catch(Exception e) {
-			throw new BusinessServiceException("Error occured when polling classification status:" + statusUrl, e);
+			throw new BusinessServiceException("Error occurred when polling classification status:" + statusUrl, e);
 		}
-		
+
+		// Download RF2 results
 		try {
-			// retrieve results when status is completed
-			String classificationId = getClassificationId(statusUrl);
-			String resultUrl = classificationServiceUrl + "/classifications/" + classificationId + "/results/rf2";
-			LOGGER.info("Classification result:" + resultUrl);
 			File archive = File.createTempFile("result_", classificationId + ".zip");
-			BinaryResource archiveResults = resty.bytes(resultUrl);
-			archiveResults.save(archive);
-			LOGGER.info("Result is archived " + archive.getAbsolutePath());
+			ResponseExtractor<Void> responseExtractor = rf2ResultsRresponse -> {
+				try (FileOutputStream outputStream = new FileOutputStream(archive)) {
+					Streams.copy(rf2ResultsRresponse.getBody(), outputStream, true);
+					return null;
+				}
+			};
+			restTemplate.execute("/classifications/{classificationId}/results/rf2", HttpMethod.GET, clientHttpRequest -> {}, responseExtractor, classificationId);
 			return archive;
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to download classification result via " + uri, e);
+			throw new BusinessServiceException("Failed to download classification result for id " + classificationId, e);
 		}
 	}
 
-	private String getClassificationId(String locationUrl) throws RestClientException {
-		if (locationUrl != null) {
-			try {
-				URL url = new URL(locationUrl);
-				return Paths.get(url.getPath()).getFileName().toString();
-			} catch (MalformedURLException e) {
-				throw new RestClientException("Not a valid URL:" + locationUrl, e);
-			}
-		}
-		return null;
-	}
-
-	private String waitForCompleteStatus(String classificationStatusUrl, int timeoutInSeconds)
+	private void waitForCompleteStatus(String statusUrl, String classificationId, int timeoutInSeconds)
 			throws RestClientException, InterruptedException {
 		long startTime = new Date().getTime();
 		String status = null;
@@ -126,32 +88,38 @@ public class ClassificationServiceRestClient {
 		String developerMsg = null;
 		while (!isDone) {
 			try {
-				JSONResource response = resty.json(classificationStatusUrl);
-				status = response.get(STATUS) != null ? response.get(STATUS).toString() : null;
-				if ("FAILED".equalsIgnoreCase(status)) {
-					errorMsg = response.get("errorMessage") != null ? response.get("errorMessage").toString() : null;
-					developerMsg = response.get("developerMessage") != null ? response.get("developerMessage").toString() : null;
+				Optional<ClassificationStatusResponse> response = getStatusChange(classificationId);
+				if (response.isPresent()) {
+					ClassificationStatusResponse classificationStatusResponse = response.get();
+					status = classificationStatusResponse.getStatus() != null ? classificationStatusResponse.getStatus() : null;
+					if ("FAILED".equalsIgnoreCase(status)) {
+						errorMsg = classificationStatusResponse.getErrorMessage();
+						developerMsg = classificationStatusResponse.getDeveloperMessage();
+					}
 				}
 			} catch (Exception e) {
-				String msg = "Error occurred when checking the classification status:" + classificationStatusUrl;
+				String msg = "Error occurred when checking the classification status:" + statusUrl;
 				LOGGER.error(msg, e);
 				throw new RestClientException(msg, e);
 			}
 			isDone = (!"SCHEDULED".equalsIgnoreCase(status) && !"RUNNING".equalsIgnoreCase(status));
-			if (!isDone && ((new Date().getTime() - startTime) > timeoutInSeconds *1000)) {
-				String message = "Timeout after waiting " + timeoutInSeconds + " seconds for classification to finish:" + classificationStatusUrl;
+			if (!isDone && ((new Date().getTime() - startTime) > (timeoutInSeconds * 1000L))) {
+				String message = "Timeout after waiting " + timeoutInSeconds + " seconds for classification to finish:" + statusUrl;
 				LOGGER.warn(message);
 				throw new RestClientException(message);
 			}
 			if (!isDone) {
-				Thread.sleep(1000 * 10);
+				Thread.sleep(1000 * 10L);
 			}
 		}
 
-		if (isDone && "FAILED".equalsIgnoreCase(status)) {
+		if ("FAILED".equalsIgnoreCase(status)) {
 			throw new RestClientException("Classification failed with error message:" + errorMsg + " developer message:" + developerMsg);
 		}
-		return status;
+	}
+
+	public Optional<ClassificationStatusResponse> getStatusChange(String classificationId) {
+		return Optional.ofNullable(restTemplate.getForObject("/classifications/{classificationId}", ClassificationStatusResponse.class, classificationId));
 	}
 
 	public int getTimeoutInSeconds() {
