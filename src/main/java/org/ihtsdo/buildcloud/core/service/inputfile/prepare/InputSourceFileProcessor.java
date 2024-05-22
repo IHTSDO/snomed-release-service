@@ -348,7 +348,7 @@ public class InputSourceFileProcessor {
 					} else {
 						if(this.copyFilesDefinedInManifest) {
 							String deltaFileName = this.isDeltaFolderExistInManifest ? fileType.getName() : replaceSnapshotByDelta(fileType.getName());
-							logger.debug("Add file to copy:" + deltaFileName);
+							logger.debug("Add file to copy: {}", deltaFileName);
 							deltaFileName = (deltaFileName.startsWith(RF2Constants.BETA_RELEASE_PREFIX)) ? deltaFileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "") : deltaFileName;
 							if (fileType.getSources() != null) {
 								this.filesToCopyFromSource.put(deltaFileName, fileType.getSources().getSource());
@@ -531,6 +531,27 @@ public class InputSourceFileProcessor {
 		String inputFilename = FilenameUtils.getName(inFileName);
 		if (lines == null || lines.isEmpty()) {
 			fileProcessingReport.add(ReportType.INFO, inputFilename, null, sourceName, NO_DATA_FOUND);
+		} else {
+			Set<String> refsetInUsed = new HashSet<>();
+			for (String line : lines) {
+				String[] splits = line.split(TAB);
+				String refsetId = splits[REFSETID_COL];
+				refsetInUsed.add(refsetId);
+			}
+			Set<String> refsetIdsInManifest = this.refsetFileProcessingConfigs.keySet();
+			refsetInUsed.forEach(refsetId -> {
+				if (!refsetIdsInManifest.contains(refsetId)) {
+					String warningMsg = "This Reference Set is not included in the Manifest.";
+					fileProcessingReport.add(ReportType.WARNING, inputFilename, refsetId, sourceName, warningMsg);
+				}
+			});
+			for (Map.Entry<String, FileProcessingConfig> entry : refsetFileProcessingConfigs.entrySet()) {
+				if (refsetInUsed.contains(entry.getKey()) && entry.getValue() != null
+					&& entry.getValue().getSpecificSources() != null && !entry.getValue().getSpecificSources().contains(sourceName)) {
+					String warningMsg = String.format("The Manifest states that this Reference Set content should come from the following sources: %s.", String.join(", ", entry.getValue().getSpecificSources()));
+					fileProcessingReport.add(ReportType.WARNING, entry.getValue().getTargetFileName(), entry.getKey(), sourceName, warningMsg);
+				}
+			}
 		}
 		try {
 			if (filesToCopyFromSource.containsKey(inputFilename) && (filesToCopyFromSource.get(inputFilename).isEmpty()
