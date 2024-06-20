@@ -182,8 +182,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 							}
 						}
 					}
-				} catch (RestClientException e) {
-					LOGGER.error("Unable to find branch path {}", codeSystem.getBranchPath());
+				} catch (Exception e) {
+					String errorMsg = String.format("Failed to detect the branch metadata from code system branch %s. Error: %s", codeSystem.getBranchPath(), e.getMessage());
+					LOGGER.error(errorMsg);
+					throw new BusinessServiceException(errorMsg);
 				}
 			}
 			this.update(releaseCenter.getBusinessKey(), product.getBusinessKey(), propertyValues);
@@ -199,15 +201,20 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (product == null) {
 			throw new ResourceNotFoundException("No product found for product key:" + productKey);
 		}
+		try {
+			updateProductBuildConfiguration(newPropertyValues, product);
+			updateProductQaTestConfig(newPropertyValues, product);
 
-		updateProductBuildConfiguration(newPropertyValues, product);
-		updateProductQaTestConfig(newPropertyValues, product);
+			if (newPropertyValues.containsKey(STAND_ALONE_PRODUCT)) {
+				product.setStandAloneProduct(TRUE.equals(newPropertyValues.get(STAND_ALONE_PRODUCT)));
+			}
 
-		if (newPropertyValues.containsKey(STAND_ALONE_PRODUCT)) {
-			product.setStandAloneProduct(TRUE.equals(newPropertyValues.get(STAND_ALONE_PRODUCT)));
+			productDAO.update(product);
+		} catch (Exception e) {
+			String errorMsg = String.format("Failed to update product %s. Error: %s", product.getName(), e.getMessage());
+			LOGGER.error(errorMsg);
+			throw new BusinessServiceException(errorMsg);
 		}
-
-		productDAO.update(product);
 		return product;
 	}
 
