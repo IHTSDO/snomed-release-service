@@ -124,7 +124,8 @@ public class ProductController {
 		}
 
 		String name = json.get(ProductService.NAME);
-		Product product = productService.create(releaseCenterKey, name.trim());
+		String overriddenSnomedCtProduct = json.get(ProductService.OVERRIDDEN_SNOMEDCT_PRODUCT);
+		Product product = productService.create(releaseCenterKey, name.trim(), overriddenSnomedCtProduct);
 		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, false, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
 	}
 

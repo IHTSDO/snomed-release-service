@@ -49,15 +49,15 @@ public interface ProductService extends EntityService<Product> {
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";
 	String DEFAULT_BRANCH_PATH = "defaultBranchPath";
 	String INTERNATIONAL = "international";
-	String SNOMEDCT = "SNOMEDCT";
-	
+	String OVERRIDDEN_SNOMEDCT_PRODUCT = "overriddenSnomedCtProduct";
+
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags);
 
 	Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable);
 
 	Product find(String releaseCenterKey, String productKey, boolean includedLatestBuildStatusAndTags);
 
-	Product create(String releaseCenterKey, String name) throws BusinessServiceException;
+	Product create(String releaseCenterKey, String name, String overriddenSnomedCtProduct) throws BusinessServiceException;
 
 	Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
 
