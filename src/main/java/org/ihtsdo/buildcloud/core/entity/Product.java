@@ -55,6 +55,9 @@ public class Product {
 	@Column(name = "standalone_product")
 	private boolean standAloneProduct;
 
+	@Column(name="overridden_snomed_ct_product")
+	private String overriddenSnomedCtProduct;
+
 	public Product() {
 	}
 
@@ -160,6 +163,14 @@ public class Product {
 
 	public void setStandAloneProduct(boolean standAloneProduct) {
 		this.standAloneProduct = standAloneProduct;
+	}
+
+	public void setOverriddenSnomedCtProduct(String overriddenSnomedCtProduct) {
+		this.overriddenSnomedCtProduct = overriddenSnomedCtProduct;
+	}
+
+	public String getOverriddenSnomedCtProduct() {
+		return overriddenSnomedCtProduct;
 	}
 
 	@Override

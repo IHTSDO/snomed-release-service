@@ -91,7 +91,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	@Override
-	public Product create(final String releaseCenterKey, final String productName) throws BusinessServiceException {
+	public Product create(final String releaseCenterKey, final String productName, final String overriddenSnomedCtProduct) throws BusinessServiceException {
 		LOGGER.info("create product, releaseCenterBusinessKey: {}", releaseCenterKey);
 		final ReleaseCenter releaseCenter = releaseCenterDAO.find(releaseCenterKey);
 
@@ -114,6 +114,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		final Product product = new Product(productName);
 		product.setVisibility(true);
+		if (StringUtils.hasLength(overriddenSnomedCtProduct)) {
+			product.setOverriddenSnomedCtProduct(overriddenSnomedCtProduct);
+		}
 		releaseCenter.addProduct(product);
 		productDAO.save(product);
 
@@ -207,6 +210,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 			if (newPropertyValues.containsKey(STAND_ALONE_PRODUCT)) {
 				product.setStandAloneProduct(TRUE.equals(newPropertyValues.get(STAND_ALONE_PRODUCT)));
+			}
+
+			if (newPropertyValues.containsKey(OVERRIDDEN_SNOMEDCT_PRODUCT)) {
+				product.setOverriddenSnomedCtProduct(newPropertyValues.get(OVERRIDDEN_SNOMEDCT_PRODUCT));
 			}
 
 			productDAO.update(product);

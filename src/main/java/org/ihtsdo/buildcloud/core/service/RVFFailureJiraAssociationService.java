@@ -149,7 +149,7 @@ public class RVFFailureJiraAssociationService {
 				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
 				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
 				jiraIssue.addAttachments(attachments);
-				updateJiraIssue(product.getReleaseCenter(), build.getConfiguration().getEffectiveTimeFormatted(), jiraIssue);
+				updateJiraIssue(product, build.getConfiguration().getEffectiveTimeFormatted(), jiraIssue);
 			} else {
 				logger.error("No failure found for the assertion {} for the build {}", assertionId, build.getId());
 			}
@@ -227,7 +227,8 @@ public class RVFFailureJiraAssociationService {
 		return jiraIssue;
 	}
 
-	private void updateJiraIssue(ReleaseCenter releaseCenter, String releaseDate, Issue jiraIssue) throws BusinessServiceException {
+	private void updateJiraIssue(Product product, String releaseDate, Issue jiraIssue) throws BusinessServiceException {
+		ReleaseCenter releaseCenter = product.getReleaseCenter();
 		try {
 			final Issue.FluentUpdate updateRequest = jiraIssue.update();
 			updateRequest.field(Field.PRIORITY, priority);
@@ -237,8 +238,9 @@ public class RVFFailureJiraAssociationService {
 			if (StringUtils.hasLength(assignee)) {
 				updateRequest.field(Field.ASSIGNEE, assignee);
 			}
-			if (StringUtils.hasLength(releaseCenter.getSnomedCtProduct())) {
-				updateRequest.field(snomedCtProduct, List.of(releaseCenter.getSnomedCtProduct().trim()));
+			String snomedCtProductValue = StringUtils.hasLength(product.getOverriddenSnomedCtProduct()) ? product.getOverriddenSnomedCtProduct() : releaseCenter.getSnomedCtProduct();
+			if (StringUtils.hasLength(snomedCtProductValue)) {
+				updateRequest.field(snomedCtProduct, List.of(snomedCtProductValue.trim()));
 			}
 			updateRequest.execute();
 		} catch (JiraException e) {
