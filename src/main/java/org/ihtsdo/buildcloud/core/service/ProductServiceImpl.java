@@ -22,11 +22,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.util.*;
 
@@ -142,49 +144,8 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			}
 			if (codeSystem != null && StringUtils.hasLength(codeSystem.getBranchPath())) {
 				try {
-					Branch branch = termServerService.getBranch(codeSystem.getBranchPath());
-					if (branch.getMetadata() != null) {
-						Map<String, Object> metaData = branch.getMetadata();
-						propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
-
-						Set<String> modules = termServerService.getModulesForBranch(codeSystem.getBranchPath());
-						if (modules != null) {
-							propertyValues.put(MODULE_IDS, String.join(",", modules));
-						}
-
-						if (metaData.containsKey("previousPackage")) {
-							propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get("previousPackage").toString());
-						}
-						else {
-							propertyValues.put(FIRST_TIME_RELEASE, TRUE);
-						}
-						if (metaData.containsKey("defaultNamespace")) {
-							propertyValues.put(NAMESPACE_ID, metaData.get("defaultNamespace").toString());
-						}
-						if (metaData.containsKey("defaultModuleId")) {
-							propertyValues.put(DEFAULT_MODULE_ID, metaData.get("defaultModuleId").toString());
-						}
-						if (metaData.containsKey("assertionGroupNames")) {
-							String assertionGroupNames = metaData.get("assertionGroupNames").toString();
-							propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
-						}
-
-						if (metaData.containsKey("releaseAssertionGroupNames")) {
-							String releaseAssertionGroupNames = metaData.get("releaseAssertionGroupNames").toString();
-							propertyValues.put(ASSERTION_GROUP_NAMES, releaseAssertionGroupNames);
-						}
-					}
-
-					branch = termServerService.getBranch(PermissionServiceCache.BRANCH_ROOT);
-					if (branch.getMetadata() != null) {
-						Map<String, Object> metaData = branch.getMetadata();
-						if (metaData.containsKey("previousPackage")) {
-							String latestInternationalPackage = metaData.get("previousPackage").toString();
-							if (!INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
-								propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
-							}
-						}
-					}
+					addValuesFromCodeSystem(codeSystem, propertyValues);
+					addValuesFromBranchRoot(releaseCenter, propertyValues);
 				} catch (Exception e) {
 					String errorMsg = String.format("Failed to detect the branch metadata from code system branch %s. Error: %s", codeSystem.getBranchPath(), e.getMessage());
 					LOGGER.error(errorMsg);
@@ -195,6 +156,53 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 
 		return product;
+	}
+
+	private void addValuesFromBranchRoot(ReleaseCenter releaseCenter, Map<String, String> propertyValues) throws RestClientException {
+		Branch branch = termServerService.getBranch(PermissionServiceCache.BRANCH_ROOT);
+		if (branch.getMetadata() != null) {
+			Map<String, Object> metaData = branch.getMetadata();
+			if (metaData.containsKey(PREVIOUS_PACKAGE)) {
+				String latestInternationalPackage = metaData.get(PREVIOUS_PACKAGE).toString();
+				if (!INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
+					propertyValues.put(EXTENSION_DEPENDENCY_RELEASE, latestInternationalPackage);
+				}
+			}
+		}
+	}
+
+	private void addValuesFromCodeSystem(CodeSystem codeSystem, Map<String, String> propertyValues) throws RestClientException {
+		Branch branch = termServerService.getBranch(codeSystem.getBranchPath());
+		if (branch.getMetadata() != null) {
+			Map<String, Object> metaData = branch.getMetadata();
+			propertyValues.put(DEFAULT_BRANCH_PATH, codeSystem.getBranchPath());
+
+			Set<String> modules = termServerService.getModulesForBranch(codeSystem.getBranchPath());
+			if (modules != null) {
+				propertyValues.put(MODULE_IDS, String.join(",", modules));
+			}
+
+			if (metaData.containsKey(PREVIOUS_PACKAGE)) {
+				propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get(PREVIOUS_PACKAGE).toString());
+			}
+			else {
+				propertyValues.put(FIRST_TIME_RELEASE, TRUE);
+			}
+			if (metaData.containsKey(DEFAULT_NAMESPACE)) {
+				propertyValues.put(NAMESPACE_ID, metaData.get(DEFAULT_NAMESPACE).toString());
+			}
+			if (metaData.containsKey(DEFAULT_MODULE_ID)) {
+				propertyValues.put(DEFAULT_MODULE_ID, metaData.get(DEFAULT_MODULE_ID).toString());
+			}
+			if (metaData.containsKey(ASSERTION_GROUP_NAMES)) {
+				String assertionGroupNames = metaData.get(ASSERTION_GROUP_NAMES).toString();
+				propertyValues.put(DROOLS_RULES_GROUP_NAMES, assertionGroupNames);
+			}
+			if (metaData.containsKey(RELEASE_ASSERTION_GROUP_NAMES)) {
+				String releaseAssertionGroupNames = metaData.get(RELEASE_ASSERTION_GROUP_NAMES).toString();
+				propertyValues.put(ASSERTION_GROUP_NAMES, releaseAssertionGroupNames);
+			}
+		}
 	}
 
 	@Override
@@ -259,7 +267,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			throw new BusinessServiceException("Code System with name " + product.getReleaseCenter().getCodeSystem() + " not found");
 		}
 
-		List<CodeSystemVersion> intCodeSystemVersions = termServerService.getCodeSystemVersions("SNOMEDCT", false, false);
+		List<CodeSystemVersion> intCodeSystemVersions = termServerService.getCodeSystemVersions(RF2Constants.SNOMEDCT, false, false);
 		CodeSystemVersion newDependantVersion = intCodeSystemVersions.stream().filter(cv -> cv.getEffectiveDate().compareTo(codeSystem.getDependantVersionEffectiveTime()) == 0).findAny().orElse(null);
 		if (newDependantVersion == null) {
 			throw new ResourceNotFoundException("Could not find any dependant version with effectiveTime " + codeSystem.getDependantVersionEffectiveTime());
@@ -297,13 +305,77 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
-			throws ResourceNotFoundException, BusinessServiceException {
+			throws ResourceNotFoundException, BusinessServiceException, NoSuchFieldException {
 		BuildConfiguration configuration = product.getBuildConfiguration();
 		if (configuration == null) {
 			configuration = new BuildConfiguration();
 			configuration.setProduct(product);
 			product.setBuildConfiguration(configuration);
 		}
+		updateEffectiveTime(newPropertyValues, configuration);
+		setConfigurationValueIfPresent(newPropertyValues, JUST_PACKAGE, configuration, JUST_PACKAGE, true);
+		setConfigurationValueIfPresent(newPropertyValues, FIRST_TIME_RELEASE, configuration, FIRST_TIME_RELEASE, true);
+		setConfigurationValueIfPresent(newPropertyValues, BETA_RELEASE, configuration, BETA_RELEASE, true);
+		setConfigurationValueIfPresent(newPropertyValues, DAILY_BUILD, configuration, DAILY_BUILD, true);
+		setConfigurationValueIfPresent(newPropertyValues, WORKBENCH_DATA_FIXES_REQUIRED, configuration, WORKBENCH_DATA_FIXES_REQUIRED, true);
+		setConfigurationValueIfPresent(newPropertyValues, INPUT_FILES_FIXES_REQUIRED, configuration, INPUT_FILES_FIXES_REQUIRED, true);
+		setConfigurationValueIfPresent(newPropertyValues, CREATE_LEGACY_IDS, configuration, CREATE_LEGACY_IDS, true);
+		setConfigurationValueIfPresent(newPropertyValues, CLASSIFY_OUTPUT_FILES, configuration, CLASSIFY_OUTPUT_FILES, true);
+		setConfigurationValueIfPresent(newPropertyValues, LICENSE_STATEMENT, configuration, LICENCE_STATEMENT, false);
+		setConfigurationValueIfPresent(newPropertyValues, CONCEPT_PREFERRED_TERMS, configuration, CONCEPT_PREFERRED_TERMS, false);
+		setConfigurationValueIfPresent(newPropertyValues, RELEASE_INFORMATION_FIELDS, configuration, RELEASE_INFORMATION_FIELDS, false);
+		updateAdditionalReleaseInformationFields(newPropertyValues, configuration);
+		setConfigurationValueIfPresent(newPropertyValues, USE_CLASSIFIER_PRECONDITION_CHECKS, configuration, USE_CLASSIFIER_PRECONDITION_CHECKS, true);
+		updateDefaultBranch(newPropertyValues, product, configuration);
+		updatePreviousPublishedPackage(newPropertyValues, product, configuration);
+		setConfigurationValueIfPresent(newPropertyValues, README_HEADER, configuration, README_HEADER, false);
+		setConfigurationValueIfPresent(newPropertyValues, README_END_DATE, configuration, README_END_DATE, false);
+		setConfigurationValueIfPresent(newPropertyValues, NEW_RF2_INPUT_FILES, configuration, NEW_RF2_INPUT_FILES, false);
+		setConfigurationValueIfPresent(newPropertyValues, INCLUDED_PREV_RELEASE_FILES, configuration, INCLUDED_PREV_RELEASE_FILES, false);
+		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, configuration, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, false);
+		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_LANGUAGE_REFSET_IDS, configuration, EXCLUDE_LANGUAGE_REFSET_IDS, false);
+		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
+			updateCustomRefsetCompositeKeys(newPropertyValues, configuration);
+		}
+
+		setExtensionConfig(newPropertyValues, configuration);
+	}
+
+	private void updateAdditionalReleaseInformationFields(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BusinessServiceException {
+		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
+			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
+			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
+				throw new BusinessServiceException("The additional release information is not valid JSON String");
+			}
+			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
+		}
+	}
+
+	private void updateDefaultBranch(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) throws BusinessServiceException {
+		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
+			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
+			if (!StringUtils.hasLength(newDefaultBranchPath)) {
+				configuration.setDefaultBranchPath(null);
+			} else {
+				newDefaultBranchPath = newDefaultBranchPath.toUpperCase();
+				if (!Objects.equals(configuration.getDefaultBranchPath(), newDefaultBranchPath)) {
+					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+					CodeSystem codeSystem = codeSystems.stream()
+							.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
+							.findAny()
+							.orElse(null);
+					assert codeSystem != null;
+					if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
+						throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+					}
+					configuration.setDefaultBranchPath(newDefaultBranchPath);
+				}
+			}
+
+		}
+	}
+
+	private void updateEffectiveTime(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
 		if (newPropertyValues.containsKey(EFFECTIVE_TIME)) {
 			try {
 				final Date date = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(newPropertyValues.get(EFFECTIVE_TIME));
@@ -312,68 +384,37 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				throw new BadRequestException("Invalid " + EFFECTIVE_TIME + " format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
 			}
 		}
-		if (newPropertyValues.containsKey(JUST_PACKAGE)) {
-			configuration.setJustPackage(TRUE.equals(newPropertyValues.get(JUST_PACKAGE)));
-		}
-		if (newPropertyValues.containsKey(FIRST_TIME_RELEASE)) {
-			configuration.setFirstTimeRelease(TRUE.equals(newPropertyValues.get(FIRST_TIME_RELEASE)));
-		}
-		if (newPropertyValues.containsKey(BETA_RELEASE)) {
-			configuration.setBetaRelease(TRUE.equals(newPropertyValues.get(BETA_RELEASE)));
-		}
-		if (newPropertyValues.containsKey(DAILY_BUILD)) {
-			configuration.setDailyBuild(TRUE.equals(newPropertyValues.get(DAILY_BUILD)));
-		}
-		if (newPropertyValues.containsKey(WORKBENCH_DATA_FIXES_REQUIRED)) {
-			configuration.setWorkbenchDataFixesRequired(TRUE.equals(newPropertyValues.get(WORKBENCH_DATA_FIXES_REQUIRED)));
-		}
-		if (newPropertyValues.containsKey(INPUT_FILES_FIXES_REQUIRED)) {
-			configuration.setInputFilesFixesRequired(TRUE.equals(newPropertyValues.get(INPUT_FILES_FIXES_REQUIRED)));
-		}
-		if (newPropertyValues.containsKey(CREATE_LEGACY_IDS)) {
-			configuration.setCreateLegacyIds(TRUE.equals(newPropertyValues.get(CREATE_LEGACY_IDS)));
-		}
-		if (newPropertyValues.containsKey(CLASSIFY_OUTPUT_FILES)) {
-			configuration.setClassifyOutputFiles(TRUE.equals(newPropertyValues.get(CLASSIFY_OUTPUT_FILES)));
-		}
-		if (newPropertyValues.containsKey(LICENSE_STATEMENT)) {
-			configuration.setLicenceStatement(newPropertyValues.get(LICENSE_STATEMENT));
-		}
-		if (newPropertyValues.containsKey(CONCEPT_PREFERRED_TERMS)) {
-			configuration.setConceptPreferredTerms(newPropertyValues.get(CONCEPT_PREFERRED_TERMS));
-		}
-		if (newPropertyValues.containsKey(RELEASE_INFORMATION_FIELDS)) {
-			configuration.setReleaseInformationFields(newPropertyValues.get(RELEASE_INFORMATION_FIELDS));
-		}
-		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
-			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
-			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
-				throw new BusinessServiceException("The additional release information is not valid JSON String");
-			}
-			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
-		}
-		if (newPropertyValues.containsKey(USE_CLASSIFIER_PRECONDITION_CHECKS)) {
-			configuration.setUseClassifierPreConditionChecks(TRUE.equals(newPropertyValues.get(USE_CLASSIFIER_PRECONDITION_CHECKS)));
-		}
-		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
-			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
-			if (newDefaultBranchPath != null && !Objects.equals(configuration.getDefaultBranchPath(), newDefaultBranchPath.toUpperCase())) {
-				if (StringUtils.hasLength(newDefaultBranchPath)) {
-					List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-					CodeSystem codeSystem = codeSystems.stream()
-							.filter(c -> product.getReleaseCenter().getCodeSystem().equals(c.getShortName()))
-							.findAny()
-							.orElse(null);
-                    assert codeSystem != null;
-                    if (!newDefaultBranchPath.startsWith(codeSystem.getBranchPath())) {
-						throw new BusinessServiceException(String.format("The new default branch must be resided within the same code system branch %s", codeSystem.getBranchPath()));
+	}
+
+	private void updateCustomRefsetCompositeKeys(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadConfigurationException {
+		final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
+		try {
+			final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
+			if (StringUtils.hasLength(refsetCompositeKeyIndexes)) {
+				final String[] split = refsetCompositeKeyIndexes.split("\\|");
+				for (String refsetKeyAndIndexes : split) {
+					refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
+					if (!refsetKeyAndIndexes.isEmpty()) {
+						final String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
+						final String refsetKey = keyAndIndexes[0].trim();
+						final List<Integer> indexes = new ArrayList<>();
+						final String value = keyAndIndexes[1];
+						final String[] indexStrings = value.split(",");
+						for (final String indexString : indexStrings) {
+							final String trim = indexString.trim();
+							indexes.add(Integer.parseInt(trim));
+						}
+						refsetCompositeKeyMap.put(refsetKey, indexes);
 					}
 				}
-				configuration.setDefaultBranchPath(newDefaultBranchPath.toUpperCase());
-			} else {
-				configuration.setDefaultBranchPath(null);
 			}
+		} catch (final NumberFormatException e) {
+			throw new BadConfigurationException("Failed to parse " + CUSTOM_REFSET_COMPOSITE_KEYS);
 		}
+		configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
+	}
+
+	private void updatePreviousPublishedPackage(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) {
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
 			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
@@ -396,83 +437,43 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				}
 			}
 		}
-
-		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
-			final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
-			try {
-				final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
-				if (StringUtils.hasLength(refsetCompositeKeyIndexes)) {
-					final String[] split = refsetCompositeKeyIndexes.split("\\|");
-					for (String refsetKeyAndIndexes : split) {
-						refsetKeyAndIndexes = refsetKeyAndIndexes.trim();
-						if (!refsetKeyAndIndexes.isEmpty()) {
-							final String[] keyAndIndexes = refsetKeyAndIndexes.split("=", 2);
-							final String refsetKey = keyAndIndexes[0].trim();
-							final List<Integer> indexes = new ArrayList<>();
-							final String value = keyAndIndexes[1];
-							final String[] indexStrings = value.split(",");
-							for (final String indexString : indexStrings) {
-								final String trim = indexString.trim();
-								indexes.add(Integer.parseInt(trim));
-							}
-							refsetCompositeKeyMap.put(refsetKey, indexes);
-						}
-					}
-				}
-			} catch (final NumberFormatException e) {
-				throw new BadConfigurationException("Failed to parse " + CUSTOM_REFSET_COMPOSITE_KEYS);
-			}
-			configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
-		}
-
-		if (newPropertyValues.containsKey(README_HEADER)) {
-			final String readmeHeader = newPropertyValues.get(README_HEADER);
-			configuration.setReadmeHeader(readmeHeader);
-		}
-
-		if (newPropertyValues.containsKey(README_END_DATE)) {
-			final String readmeEndDate = newPropertyValues.get(README_END_DATE);
-			configuration.setReadmeEndDate(readmeEndDate);
-		}
-
-		if (newPropertyValues.containsKey(NEW_RF2_INPUT_FILES)) {
-			configuration.setNewRF2InputFiles(newPropertyValues.get(NEW_RF2_INPUT_FILES));
-		}
-
-		if (newPropertyValues.containsKey(INCLUDED_PREV_RELEASE_FILES)) {
-			configuration.setIncludePrevReleaseFiles(newPropertyValues.get(INCLUDED_PREV_RELEASE_FILES));
-		}
-
-		if (newPropertyValues.containsKey(EXCLUDE_REFSET_DESCRIPTOR_MEMBERS)) {
-			configuration.setExcludeRefsetDescriptorMembers(newPropertyValues.get(EXCLUDE_REFSET_DESCRIPTOR_MEMBERS));
-		}
-
-		if (newPropertyValues.containsKey(EXCLUDE_LANGUAGE_REFSET_IDS)) {
-			configuration.setExcludeLanguageRefsetIds(newPropertyValues.get(EXCLUDE_LANGUAGE_REFSET_IDS));
-		}
-
-		setExtensionConfig(newPropertyValues, configuration);
 	}
 
-	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException {
-		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)
-			|| newPropertyValues.containsKey(MODULE_IDS)
-			|| newPropertyValues.containsKey(DEFAULT_MODULE_ID)
-			|| newPropertyValues.containsKey(NAMESPACE_ID)
-			|| newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)
-			|| newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
+	private void setConfigurationValueIfPresent(final Map<String, String> newPropertyValues, String propertyName, Object configuration, String fieldName, boolean isBooleanField) throws NoSuchFieldException {
+		if (newPropertyValues.containsKey(propertyName)) {
+			Field field = configuration.getClass().getDeclaredField(fieldName);
+			ReflectionUtils.makeAccessible(field);
+			if (isBooleanField) {
+				boolean fieldValue = TRUE.equals(newPropertyValues.get(propertyName));
+				ReflectionUtils.setField(field, configuration, fieldValue);
+			} else {
+				String fieldValue = newPropertyValues.get(propertyName);
+				ReflectionUtils.setField(field, configuration, StringUtils.hasLength(fieldValue) ? fieldValue : null);
+			}
+		}
+	}
+
+	private void setExtensionConfig(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadRequestException, NoSuchFieldException {
+		boolean isExtensionConfigFieldPresent = newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)
+				|| newPropertyValues.containsKey(MODULE_IDS)
+				|| newPropertyValues.containsKey(DEFAULT_MODULE_ID)
+				|| newPropertyValues.containsKey(NAMESPACE_ID)
+				|| newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)
+				|| newPropertyValues.containsKey(RELEASE_EXTENSION_AS_AN_EDITION);
+		if (isExtensionConfigFieldPresent) {
 			String dependencyPackageRelease = newPropertyValues.get(EXTENSION_DEPENDENCY_RELEASE);
 			String defaultModuleId = newPropertyValues.get(DEFAULT_MODULE_ID);
 			String moduleIds = newPropertyValues.get(MODULE_IDS);
 			String namespaceID = newPropertyValues.get(NAMESPACE_ID);
-			String releaseAsEdition = newPropertyValues.get(RELEASE_AS_AN_EDITION);
+			String releaseAsEdition = newPropertyValues.get(RELEASE_EXTENSION_AS_AN_EDITION);
 			String previousEditionDependencyEffectiveDate = newPropertyValues.get(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE);
 
-			if (!StringUtils.hasLength(dependencyPackageRelease)
-				&& !StringUtils.hasLength(moduleIds)
-				&& !StringUtils.hasLength(defaultModuleId)
-				&& !StringUtils.hasLength(namespaceID)
-				&& (!StringUtils.hasLength(releaseAsEdition) || !TRUE.equals(releaseAsEdition))) {
+			boolean isInvalidExtensionConfigValues = !StringUtils.hasLength(dependencyPackageRelease)
+					&& !StringUtils.hasLength(moduleIds)
+					&& !StringUtils.hasLength(defaultModuleId)
+					&& !StringUtils.hasLength(namespaceID)
+					&& (!StringUtils.hasLength(releaseAsEdition) || !TRUE.equals(releaseAsEdition));
+			if (isInvalidExtensionConfigValues) {
 				if (configuration.getExtensionConfig() != null) {
 					ExtensionConfig extensionConfig = configuration.getExtensionConfig();
 					extensionConfig.setBuildConfiguration(configuration);
@@ -486,69 +487,52 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					extConfig.setBuildConfiguration(configuration);
 				}
 
-				if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
-					if (!StringUtils.hasLength(dependencyPackageRelease)) {
-						configuration.getExtensionConfig().setDependencyRelease(null);
-					} else {
-						final ReleaseCenter releaseCenter = new ReleaseCenter();
-						releaseCenter.setShortName("International");
-						//Validate that a file of that name actually exists
-						boolean pppExists = false;
-						Exception rootCause = new Exception("No further information");
-						try {
-							pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
-						} catch (final Exception e) {
-							rootCause = e;
-						}
-						if (pppExists) {
-							configuration.getExtensionConfig().setDependencyRelease(dependencyPackageRelease);
-						} else {
-							throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
-						}
-					}
-				}
+				setExtensionDependencyPackage(newPropertyValues, configuration, dependencyPackageRelease);
+				setConfigurationValueIfPresent(newPropertyValues, MODULE_IDS, configuration.getExtensionConfig(), MODULE_IDS, false);
+				setConfigurationValueIfPresent(newPropertyValues, DEFAULT_MODULE_ID, configuration.getExtensionConfig(), DEFAULT_MODULE_ID, false);
+				setConfigurationValueIfPresent(newPropertyValues, NAMESPACE_ID, configuration.getExtensionConfig(), NAMESPACE_ID, false);
+				setConfigurationValueIfPresent(newPropertyValues, RELEASE_EXTENSION_AS_AN_EDITION, configuration.getExtensionConfig(), RELEASE_AS_AN_EDITION, true);
+				setPreviousEditionDependencyEffectiveDate(newPropertyValues, configuration, previousEditionDependencyEffectiveDate);
+			}
+		}
+	}
 
-				if (newPropertyValues.containsKey(MODULE_IDS)) {
-					if (!StringUtils.hasLength(moduleIds)) {
-						configuration.getExtensionConfig().setModuleIds(null);
-					} else {
-						configuration.getExtensionConfig().setModuleIds(moduleIds);
-					}
+	private void setPreviousEditionDependencyEffectiveDate(Map<String, String> newPropertyValues, BuildConfiguration configuration, String previousEditionDependencyEffectiveDate) throws BadRequestException {
+		if (newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)) {
+			Date previousDependencyDate;
+			try {
+				if (previousEditionDependencyEffectiveDate.contains("-")) {
+					previousDependencyDate = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
+				} else {
+					previousDependencyDate = RF2Constants.DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
 				}
+				configuration.getExtensionConfig().setPreviousEditionDependencyEffectiveDate(previousDependencyDate);
+			} catch (ParseException e) {
+				throw new BadRequestException("Invalid " + previousEditionDependencyEffectiveDate + " format." +
+						" Expecting format in either" + ISO_DATE_FORMAT.getPattern() + " or " + RF2Constants.DATE_FORMAT.getPattern(), e);
+			}
+		}
+	}
 
-				if (newPropertyValues.containsKey(DEFAULT_MODULE_ID)) {
-					if (!StringUtils.hasLength(defaultModuleId)) {
-						configuration.getExtensionConfig().setDefaultModuleId(null);
-					} else {
-						configuration.getExtensionConfig().setDefaultModuleId(defaultModuleId);
-					}
+	private void setExtensionDependencyPackage(Map<String, String> newPropertyValues, BuildConfiguration configuration, String dependencyPackageRelease) {
+		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
+			if (!StringUtils.hasLength(dependencyPackageRelease)) {
+				configuration.getExtensionConfig().setDependencyRelease(null);
+			} else {
+				final ReleaseCenter releaseCenter = new ReleaseCenter();
+				releaseCenter.setShortName(INTERNATIONAL);
+				//Validate that a file of that name actually exists
+				boolean pppExists = false;
+				Exception rootCause = new Exception("No further information");
+				try {
+					pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
+				} catch (final Exception e) {
+					rootCause = e;
 				}
-
-				if (newPropertyValues.containsKey(NAMESPACE_ID)) {
-					if (!StringUtils.hasLength(namespaceID)) {
-						configuration.getExtensionConfig().setNamespaceId(null);
-					} else {
-						configuration.getExtensionConfig().setNamespaceId(namespaceID);
-					}
-				}
-
-				if (newPropertyValues.containsKey(RELEASE_AS_AN_EDITION)) {
-					configuration.getExtensionConfig().setReleaseAsAnEdition(TRUE.equals(releaseAsEdition));
-				}
-
-				if (newPropertyValues.containsKey(PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE)) {
-					Date previousDependencyDate;
-					try {
-						if (previousEditionDependencyEffectiveDate.contains("-")) {
-							previousDependencyDate = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
-						} else {
-							previousDependencyDate = RF2Constants.DATE_FORMAT.parse(previousEditionDependencyEffectiveDate);
-						}
-						configuration.getExtensionConfig().setPreviousEditionDependencyEffectiveDate(previousDependencyDate);
-					} catch (ParseException e) {
-						throw new BadRequestException("Invalid " + previousEditionDependencyEffectiveDate + " format." +
-								" Expecting format in either" + ISO_DATE_FORMAT.getPattern() + " or " + RF2Constants.DATE_FORMAT.getPattern(), e);
-					}
+				if (pppExists) {
+					configuration.getExtensionConfig().setDependencyRelease(dependencyPackageRelease);
+				} else {
+					throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
 				}
 			}
 		}

@@ -19,6 +19,7 @@ public interface ProductService extends EntityService<Product> {
 	String FIRST_TIME_RELEASE = "firstTimeRelease";
 	String BETA_RELEASE = "betaRelease";
 	String DAILY_BUILD = "dailyBuild";
+	String PREVIOUS_PACKAGE = "previousPackage";
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";
 	String WORKBENCH_DATA_FIXES_REQUIRED = "workbenchDataFixesRequired";
@@ -28,12 +29,15 @@ public interface ProductService extends EntityService<Product> {
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
 	String TRUE = "true";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
+	String RELEASE_ASSERTION_GROUP_NAMES = "releaseAssertionGroupNames";
 	String EXTENSION_DEPENDENCY_RELEASE = "extensionDependencyRelease";
 	String PREVIOUS_EDITION_DEPENDENCY_EFFECTIVE_DATE = "previousEditionDependencyEffectiveDate";
+	String DEFAULT_NAMESPACE = "defaultNamespace";
 	String NAMESPACE_ID = "namespaceId";
 	String DEFAULT_MODULE_ID = "defaultModuleId";
 	String MODULE_IDS = "moduleIds";
-	String RELEASE_AS_AN_EDITION = "releaseExtensionAsAnEdition";
+	String RELEASE_EXTENSION_AS_AN_EDITION = "releaseExtensionAsAnEdition";
+	String RELEASE_AS_AN_EDITION = "releaseAsAnEdition";
 	String STAND_ALONE_PRODUCT = "standAloneProduct";
 	String ENABLE_DROOLS = "enableDrools";
 	String ENABLE_MRCM = "enableMRCMValidation";
@@ -43,6 +47,7 @@ public interface ProductService extends EntityService<Product> {
 	String DROOLS_RULES_GROUP_NAMES = "droolsRulesGroupNames";
 	String CLASSIFY_OUTPUT_FILES = "classifyOutputFiles";
 	String LICENSE_STATEMENT = "licenseStatement";
+	String LICENCE_STATEMENT = "licenceStatement";
 	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String ADDITIONAL_RELEASE_INFORMATION_FIELDS = "additionalReleaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
