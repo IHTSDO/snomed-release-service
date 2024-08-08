@@ -17,14 +17,13 @@ public class ModuleStorageCoordinatorCache {
     @Autowired
     private ModuleStorageCoordinator moduleStorageCoordinator;
 
-    @Cacheable(value = "published-releases", key="#page.concat('-').concat(#size)")
-    public Map<String, List<ModuleMetadata>> getAllReleases(String page, String size) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
-        return moduleStorageCoordinator.getAllReleases(Integer.parseInt(page), Integer.parseInt(size));
+    @Cacheable(value = "published-releases")
+    public Map<String, List<ModuleMetadata>> getAllReleases() throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
+        return moduleStorageCoordinator.getAllReleases();
     }
 
     @CacheEvict(value = "published-releases", allEntries = true)
     public void clearCachedReleases() {
         // do nothing
     }
-
 }
