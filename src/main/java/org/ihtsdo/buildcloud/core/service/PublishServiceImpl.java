@@ -123,6 +123,9 @@ public class PublishServiceImpl implements PublishService {
 	@Autowired
 	private ModuleStorageCoordinator moduleStorageCoordinator;
 
+	@Autowired
+	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
+
 	private static final int MAX_FAILURE = 100;
 
 	private record ReleaseFile(String releaseFileName, String md5FileName) {}
@@ -257,6 +260,7 @@ public class PublishServiceImpl implements PublishService {
 				// upload to new versioned content bucket which will be used by Module Storage Coordinator
 				try {
 					uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles);
+					moduleStorageCoordinatorCache.clearCachedReleases();
 				} catch (Exception e) {
 					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to upload to new versioned content bucket (Module Storage Coordinator).  Error message: " + e.getMessage()));
 					throw new BusinessServiceException("Failed to to upload to new versioned content bucket (Module Storage Coordinator)", e);

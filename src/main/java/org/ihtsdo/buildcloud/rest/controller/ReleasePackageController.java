@@ -2,8 +2,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.ihtsdo.buildcloud.core.service.ModuleStorageCoordinatorCache;
 import org.snomed.module.storage.ModuleMetadata;
-import org.snomed.module.storage.ModuleStorageCoordinator;
 import org.snomed.module.storage.ModuleStorageCoordinatorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -18,7 +18,7 @@ import java.util.Map;
 public class ReleasePackageController {
 
     @Autowired
-    private ModuleStorageCoordinator moduleStorageCoordinator;
+    private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
     @GetMapping(value = "/releases")
     @Operation(summary = "Returns the list all release packages")
@@ -27,11 +27,13 @@ public class ReleasePackageController {
             @RequestParam(value = "page", required = false) String page,
             @RequestParam(value = "size", required = false) String size
     ) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
-        return moduleStorageCoordinator.getAllReleases(asIntegerOrFallback(page, 1), asIntegerOrFallback(size, 6));
+        String pageNumber = String.valueOf(asIntegerOrFallback(page, 1));
+        String pageSize = String.valueOf(asIntegerOrFallback(size, 6));
+        return moduleStorageCoordinatorCache.getAllReleases(pageNumber, pageSize);
     }
 
     private Integer asIntegerOrFallback(String integer, Integer fallback) {
-        if (integer == null || integer.isEmpty()) {
+        if (integer == null || integer.trim().isEmpty()) {
             return fallback;
         }
 
