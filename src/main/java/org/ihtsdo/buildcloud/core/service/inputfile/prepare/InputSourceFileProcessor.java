@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.ArrayList;
@@ -453,9 +454,14 @@ public class InputSourceFileProcessor {
 			List<String> fileList = sourceFilesMap.get(source);
 			for (String fileName : fileList) {
 				logger.info("Start processing file {}", fileName);
+				if (!fileName.endsWith(".txt")) {
+					logger.info("Skip processing file {}", fileName);
+					addFileToSkippedList(source, fileName);
+					continue;
+				}
 				File sourceFile = new File(fileName);
 				try {
-					List<String> lines = FileUtils.readLines(sourceFile, CharEncoding.UTF_8);
+					List<String> lines = FileUtils.readLines(sourceFile, StandardCharsets.UTF_8);
 					if (lines != null && !lines.isEmpty()) {
 						String header = lines.get(0);
 						//remove header before processing

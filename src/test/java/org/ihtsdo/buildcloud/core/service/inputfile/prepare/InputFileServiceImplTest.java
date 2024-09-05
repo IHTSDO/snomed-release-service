@@ -205,15 +205,6 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		 SourceFileProcessingReport report = inputFileService.prepareInputFiles(build, true);
 		 printReport(report);
 		 List<String> inputFileList = buildDAO.listInputFileNames(build);
-//		 assertNotNull(report.getDetails().get(ReportType.ERROR));
-//		 assertEquals(3,report.getDetails().get(ReportType.ERROR).size());
-//		 String [] fileNameReportedWithError = {"sct2_Concept_Delta_DK1000005_20170731.txt",
-//				 "sct2_Relationship_Delta_DK1000005_20170731.txt",
-//				 "sct2_StatedRelationship_Delta_DK1000005_20170731.txt"};
-//		 for (FileProcessingReportDetail detail : report.getDetails().get(ReportType.ERROR)) {
-//			 assertTrue("must contain" + detail.getFileName(),  Arrays.asList(fileNameReportedWithError).contains(detail.getFileName()));
-//			 assertEquals("Required by manifest but not found in any source.", detail.getMessage());
-//		 }
 		 assertEquals(8, inputFileList.size());
 	}
 
@@ -301,8 +292,6 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 				"rel2_cRefset_AttributeValueDelta_DK1000005_20170731.txt"};
 		assertEquals(fileNames.length, inputFileList.size());
 		assertFileNameExist(inputFileList,fileNames);
-//		assertNotNull(report.getDetails().get(ReportType.ERROR));
-//		assertEquals(1,report.getDetails().get(ReportType.ERROR).size());
 		assertNotNull(report.getDetails().get(ReportType.WARNING));
 		assertEquals(8,report.getDetails().get(ReportType.WARNING).size());
 	}
@@ -455,21 +444,18 @@ public class InputFileServiceImplTest extends TestEntityGenerator {
 		String[] missingRefsets = {"900000000000523009","900000000000531004","900000000000489007"};
 		int countMissingRefset = 0;
 		Map<ReportType,List<FileProcessingReportDetail>> reportDetails = fileProcessingReport.getDetails();
-		//for (FileProcessingReportDetail reportDetail : reportDetails) {
-			if(reportDetails.containsKey(ReportType.WARNING)) {
-				for (FileProcessingReportDetail reportDetail : reportDetails.get(ReportType.WARNING)) {
-					String message = reportDetail.getMessage();
-					for (String missingRefset : missingRefsets) {
-						if (message.contains(missingRefset)) {
-							countMissingRefset++;
-							break;
-						}
+		if(reportDetails.containsKey(ReportType.WARNING)) {
+			for (FileProcessingReportDetail reportDetail : reportDetails.get(ReportType.WARNING)) {
+				String message = reportDetail.getMessage();
+				for (String missingRefset : missingRefsets) {
+					if (message.contains(missingRefset)) {
+						countMissingRefset++;
+						break;
 					}
 				}
 			}
-		//}
+		}
 		assertEquals(3, countMissingRefset);
-		System.out.println(fileProcessingReport);
 	}
 
 	protected void addEmptyFileToSourceDirectory(final String sourceName, final String filename) throws ResourceNotFoundException, IOException, DecoderException {
