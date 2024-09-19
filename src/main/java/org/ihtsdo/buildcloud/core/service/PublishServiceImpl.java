@@ -245,14 +245,6 @@ public class PublishServiceImpl implements PublishService {
 					throw new BusinessServiceException("Failed to to upload to new versioned content bucket (Module Storage Coordinator)", e);
 				}
 
-				// copy build info to the backup published storage path
-				try {
-					backupPublishedBuild(build);
-				} catch (Exception e) {
-					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to copy to Backup published storage.  Error message: " + e.getMessage()));
-					throw new BusinessServiceException("Failed to copy to Backup published storage", e);
-				}
-
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
 					updateCodeSystemVersion(build, releaseFiles.releaseFileName());
@@ -739,20 +731,6 @@ public class PublishServiceImpl implements PublishService {
 			LOGGER.error("Failed to copy release file {} to versioned contents repository because of error: {}", releaseFileName, e.getMessage());
 			throw new BusinessServiceException(String.format("Failed to copy release file %s to versioned contents repository", releaseFileName), e);
 		}
-	}
-
-	private void backupPublishedBuild(Build build) {
-		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
-		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
-		String buildBckUpPath;
-		buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
-				+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
-				+ build.getProductKey() + S3PathHelper.SEPARATOR
-				+ build.getId() + S3PathHelper.SEPARATOR;
-		for (String filename : buildFiles) {
-			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
-		}
-		LOGGER.info("Build: {} is copied to path: {}", build.getProductKey() + build.getId(), buildBckUpPath);
 	}
 
 	private String getBuildUniqueKey(Build build) {
