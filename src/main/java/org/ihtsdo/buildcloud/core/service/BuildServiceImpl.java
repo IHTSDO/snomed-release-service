@@ -123,9 +123,6 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private S3PathHelper pathHelper;
 
-	@Value("${srs.publish.job.useOwnBackupBucket}")
-	private Boolean useOwnBackupBucket;
-
 	@Value("${srs.file-processing.failureMaxRetry}")
 	private Integer fileProcessingFailureMaxRetry;
 
@@ -137,9 +134,6 @@ public class BuildServiceImpl implements BuildService {
 
 	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
-
-	@Value("${srs.publish.job.backup.storage.bucketName}")
-	private String publishJobBackupStorageBucketName;
 
 	@Value("${srs.jms.queue.prefix}.build-job-status")
 	private String queue;

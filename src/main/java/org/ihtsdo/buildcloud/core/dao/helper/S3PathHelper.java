@@ -25,9 +25,6 @@ public class S3PathHelper {
 	@Value("${srs.publish.job.storage.path}")
 	private String publishJobStoragePath;
 
-	@Value("${srs.publish.job.backup.storage.path}")
-	private String publishJobBackupStoragePath;
-
 	@Value("${srs.externally-maintained.storage.path}")
 	private String externallyMaintainedStoragePath;
 
@@ -154,10 +151,6 @@ public class S3PathHelper {
 
 	public String getPublishJobDirectoryPath(final String releaseCenterKey) {
 		return getReleaseCenterPath(releaseCenterKey, publishJobStoragePath).toString();
-	}
-
-	public String getPublishJobBackupDirectoryPath(final String releaseCenterKey) {
-		return getReleaseCenterPath(releaseCenterKey, publishJobBackupStoragePath).toString();
 	}
 
 	public String getPublishJobFilePath(final String releaseCenterKey, final String fileName) {

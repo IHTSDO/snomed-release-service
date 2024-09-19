@@ -73,12 +73,6 @@ public class PublishServiceImpl implements PublishService {
 
 	private static final Map<String, ProcessingStatus> concurrentPublishingBuildStatus = new ConcurrentHashMap<>();
 
-	@Value("${srs.publish.job.useOwnBackupBucket}")
-	private Boolean useOwnBackupBucket;
-
-	@Value("${srs.publish.job.backup.storage.bucketName}")
-	private String publishJobBackupStorageBucketName;
-
 	@Value("${srs.published.releases.storage.path}")
 	private String publishedReleasesStoragePath;
 
@@ -157,14 +151,6 @@ public class PublishServiceImpl implements PublishService {
 			findPublishedBuilds(this.storageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
 		}
 
-		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
-			if (includeProdPublishedReleases) {
-				buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
-				findPublishedBuilds(this.publishJobBackupStorageBucketName, releaseCenterKey, productKey, builds, buildBckUpPath);
-			}
-		}
 		return builds;
 	}
 
@@ -175,13 +161,6 @@ public class PublishServiceImpl implements PublishService {
 		findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
 		buildBckUpPath = s3PathHelper.getPublishedReleasesDirectoryPath(releaseCenterKey) + PUBLISHED_BUILD + S3PathHelper.SEPARATOR + productKey + S3PathHelper.SEPARATOR;
 		findPublishedBuildPathMap(this.storageBucketName, buildPathMap, buildBckUpPath);
-
-		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
-			buildBckUpPath = s3PathHelper.getPublishedReleasesBackupDirectoryPath(releaseCenterKey) + productKey + S3PathHelper.SEPARATOR;
-			findPublishedBuildPathMap(this.publishJobBackupStorageBucketName, buildPathMap, buildBckUpPath);
-		}
 		return buildPathMap;
 	}
 
@@ -766,21 +745,12 @@ public class PublishServiceImpl implements PublishService {
 		String originalBuildPath = s3PathHelper.getBuildPath(build).toString();
 		List<String> buildFiles = srsFileHelper.listFiles(originalBuildPath);
 		String buildBckUpPath;
-		if (Boolean.TRUE.equals(useOwnBackupBucket)) {
-			buildBckUpPath = s3PathHelper.getPublishJobBackupDirectoryPath(build.getReleaseCenterKey())
-					+ build.getProductKey() + S3PathHelper.SEPARATOR
-					+ build.getId() + S3PathHelper.SEPARATOR;
-			for (String filename : buildFiles) {
-				srsFileHelper.copyFile(originalBuildPath + filename, publishJobBackupStorageBucketName, buildBckUpPath + filename);
-			}
-		} else {
-			buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
-					+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
-					+ build.getProductKey() + S3PathHelper.SEPARATOR
-					+ build.getId() + S3PathHelper.SEPARATOR;
-			for (String filename : buildFiles) {
-				srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
-			}
+		buildBckUpPath = s3PathHelper.getPublishJobDirectoryPath(build.getReleaseCenterKey())
+				+ PUBLISHED_BUILD + S3PathHelper.SEPARATOR
+				+ build.getProductKey() + S3PathHelper.SEPARATOR
+				+ build.getId() + S3PathHelper.SEPARATOR;
+		for (String filename : buildFiles) {
+			srsFileHelper.copyFile(originalBuildPath + filename, buildBckUpPath + filename);
 		}
 		LOGGER.info("Build: {} is copied to path: {}", build.getProductKey() + build.getId(), buildBckUpPath);
 	}
