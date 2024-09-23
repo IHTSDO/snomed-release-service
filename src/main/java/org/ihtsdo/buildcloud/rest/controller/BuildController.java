@@ -219,9 +219,8 @@ public class BuildController {
 			description = "Returns a list of published builds from the published releases directory")
 	@ResponseBody
 	public List<Map<String, Object>> getPublishedBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-														@RequestParam(required = false, defaultValue = "false") boolean includeProdPublishedReleases,
 											   final HttpServletRequest request) throws ResourceNotFoundException {
-		List<Build> builds = publishService.findPublishedBuilds(releaseCenterKey, productKey, includeProdPublishedReleases);
+		List<Build> builds = publishService.findPublishedBuilds(releaseCenterKey, productKey);
 		return hypermediaGenerator.getEntityCollectionHypermediaOfAction(builds, request, BUILD_LINKS, null);
 	}
 

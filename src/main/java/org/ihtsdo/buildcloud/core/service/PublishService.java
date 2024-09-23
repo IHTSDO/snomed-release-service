@@ -20,7 +20,7 @@ public interface PublishService {
 
 	List<String> getPublishedPackages(ReleaseCenter releaseCenter);
 
-	List<Build> findPublishedBuilds(String releaseCenterKey, String productKey, boolean includeProdPublishedReleases) throws ResourceNotFoundException;
+	List<Build> findPublishedBuilds(String releaseCenterKey, String productKey) throws ResourceNotFoundException;
 
 	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 

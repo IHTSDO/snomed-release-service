@@ -161,4 +161,6 @@ public interface BuildDAO {
 	FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
 
 	void markBuildAsDeleted(Build build) throws IOException;
+
+	void clearBuildIdsCache();
 }

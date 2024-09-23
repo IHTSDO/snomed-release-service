@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.rest.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.service.CacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,10 +22,14 @@ public class CacheController {
     @Autowired
     private CacheService cacheService;
 
+    @Autowired
+    private BuildDAO buildDAO;
+
     @Operation(summary = "Clear all cache", description = "-")
     @PostMapping(value = "/clear-all")
     public ResponseEntity<Void> clearCache(HttpServletRequest request) {
         cacheService.clearAllCache();
+        buildDAO.clearBuildIdsCache();
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

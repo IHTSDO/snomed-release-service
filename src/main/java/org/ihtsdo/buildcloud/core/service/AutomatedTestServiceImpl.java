@@ -396,7 +396,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		try {
 			build = buildService.find(releaseCenterKey, productKey, buildId, false, false, includeRvfURL , null);
 		} catch (ResourceNotFoundException e) {
-			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey, true);
+			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey);
 			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
 			if (build == null) {
 				throw e;

@@ -1386,7 +1386,7 @@ public class BuildServiceImpl implements BuildService {
 			sourceBuildPath = pathHelper.getBuildPath(build).toString();
 			sourceBucketName = this.buildBucketName;
 		} catch (ResourceNotFoundException e) {
-			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey, true);
+			List<Build> publishedBuilds = publishService.findPublishedBuilds(releaseCenterKey, productKey);
 			build = publishedBuilds.stream().filter(b -> b.getId().equals(buildId)).findAny().orElse(null);
 			if (build != null) {
 				Map<String, String> buildPathMap = publishService.getPublishedBuildPathMap(releaseCenterKey, productKey);

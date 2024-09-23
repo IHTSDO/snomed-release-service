@@ -29,7 +29,6 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.json.simple.JSONObject;
@@ -52,7 +51,7 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -102,6 +101,8 @@ public class BuildDAOImpl implements BuildDAO {
 	@Value("${srs.publish.job.storage.path}")
 	private String publishJobStoragePath;
 
+	private final Map<String, Set<String>> buildIdsToProductMap = new ConcurrentHashMap<>();
+
 	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", S3PathHelper.MARK_AS_DELETED);
 
 	private record BuildRequestParameter (
@@ -121,6 +122,11 @@ public class BuildDAOImpl implements BuildDAO {
 			List<String> tagPaths,
 			List<String> visibilityPaths,
 			List<String> buildsMarkAsDeleted
+	) {}
+
+	private record GetS3ObjectResponse (
+			List<S3Object> s3Objects,
+			Boolean isGetAllBuild
 	) {}
 
 	@Autowired
@@ -180,6 +186,8 @@ public class BuildDAOImpl implements BuildDAO {
 		final String newStatusFilePath = pathHelper.getStatusFilePath(build, build.getStatus());
 		// Put new status before deleting old to avoid there being none.
 		putFile(newStatusFilePath, BLANK);
+
+		this.buildIdsToProductMap.computeIfAbsent(build.getReleaseCenterKey() + org.ihtsdo.otf.RF2Constants.DASH + build.getProductKey(), k -> new HashSet<>()).add(build.getId());
 		LOGGER.debug("Saved build {}", build.getId());
 	}
 
@@ -259,6 +267,11 @@ public class BuildDAOImpl implements BuildDAO {
 	public void markBuildAsDeleted(Build build) throws IOException {
 		final String newTagFilePath = pathHelper.getBuildPath(build).append(S3PathHelper.MARK_AS_DELETED).toString();
 		putFile(newTagFilePath, BLANK);
+	}
+
+	@Override
+	public void clearBuildIdsCache() {
+		this.buildIdsToProductMap.clear();
 	}
 
 	@Override
@@ -727,16 +740,14 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private BuildResponse getAllBuildsFromS3(String directoryPathPrefix, String releaseCenterKey, String productKey, List<Integer> forYears) {
 		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, directoryPathPrefix);
-        List<S3Object> s3Objects;
-        try {
-            s3Objects = getS3Objects(buildBucketName, directoryPathPrefix, forYears);
-			BuildResponse response = findBuilds(releaseCenterKey, productKey, s3Objects);
-			LOGGER.debug("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
-			return response;
-        } catch (ExecutionException | InterruptedException  e) {
-            throw new BusinessServiceRuntimeException(e);
+        GetS3ObjectResponse getS3ObjectResponse = getS3Objects(buildBucketName, releaseCenterKey, productKey, directoryPathPrefix, forYears);
+        BuildResponse response = findBuilds(releaseCenterKey, productKey, getS3ObjectResponse.s3Objects());
+        if (Boolean.TRUE.equals(getS3ObjectResponse.isGetAllBuild())) {
+            this.buildIdsToProductMap.put(releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey, response.builds.stream().map(Build::getId).collect(Collectors.toSet()));
         }
-	}
+        LOGGER.debug("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
+        return response;
+    }
 
 	private List<Build> removeInvisibleBuilds(Boolean visibility, List<String> visibilityPaths, List<Build> builds) {
 		LOGGER.debug("Removing invisible Builds.");
@@ -773,6 +784,7 @@ public class BuildDAOImpl implements BuildDAO {
             case UNPUBLISHED ->
                     allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) == null || !getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
             case ALL_RELEASES -> {
+				// do nothing
             }
             case DEFAULT -> {
                 List<Build> copy = new ArrayList<>(allBuilds);
@@ -936,6 +948,7 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 
+		builds.sort((Comparator.comparing(Build::getId)));
 		return new BuildResponse(builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
 	}
 
@@ -1366,47 +1379,65 @@ public class BuildDAOImpl implements BuildDAO {
 		return files;
 	}
 
-	private List<S3Object> getS3Objects(String buildBucketName, String prefix, List<Integer> forYears) throws ExecutionException, InterruptedException {
-		List<S3Object> s3Objects = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(forYears)) {
-			List<Future<Collection<S3Object>>> tasks = new ArrayList<>();
-			Set<Integer> forYearSet = new HashSet<>(forYears);
-			for (final Integer year : forYearSet) {
-				Future<Collection<S3Object>> future = executorService.submit(() -> {
-					List<S3Object> result = new ArrayList<>();
-					ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + year).maxKeys(10000).build();
-					boolean done = false;
-					while (!done) {
-						ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
-						result.addAll(listObjectsResponse.contents());
-						if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
-							String nextMarker = result.get(result.size() - 1).key();
-							listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + year).maxKeys(10000).marker(nextMarker).build();
-						} else {
-							done = true;
-						}
-					}
-					return result;
-				});
-				tasks.add(future);
+	private GetS3ObjectResponse getS3Objects(String buildBucketName, String releaseCenterKey, String productKey, String prefix, List<Integer> forYears) {
+		final List<S3Object> s3Objects;
+		boolean isGetAllBuilds = false;
+		boolean isGetBuildsForProduct = prefix.endsWith(productKey) || prefix.endsWith(productKey + S3PathHelper.SEPARATOR);
+		String key = releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey;
+		if (isGetBuildsForProduct && buildIdsToProductMap.containsKey(key) && !buildIdsToProductMap.get(key).isEmpty()) {
+			Set<String> buildIds = buildIdsToProductMap.get(key);
+			if (!CollectionUtils.isEmpty(forYears)) {
+				buildIds = buildIds.stream() .filter(item -> forYears.stream().anyMatch(year -> item.startsWith(String.valueOf(year)))).collect(Collectors.toSet());
 			}
-			for (Future<Collection<S3Object>> task : tasks) {
-				s3Objects.addAll(task.get());
-			}
+			s3Objects = new ArrayList<>();
+			buildIds.stream().parallel().forEach(buildId ->
+				s3Objects.addAll(doGetS3ObjectsByBuildId(buildBucketName, prefix, buildId))
+			);
 		} else {
-			ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).build();
-			boolean done = false;
-			while (!done) {
-				ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
-				s3Objects.addAll(listObjectsResponse.contents());
-				if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
-					String nextMarker = s3Objects.get(s3Objects.size() - 1).key();
-					listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).marker(nextMarker).build();
-				} else {
-					done = true;
-				}
+			if (isGetBuildsForProduct && !CollectionUtils.isEmpty(forYears)) {
+				s3Objects = new ArrayList<>();
+				forYears.stream().parallel().forEach(year ->
+					s3Objects.addAll(doGetS3Objects(buildBucketName, prefix + year))
+				);
+			} else {
+				if (isGetBuildsForProduct) isGetAllBuilds = true;
+				s3Objects = doGetS3Objects(buildBucketName, prefix);
 			}
 		}
-		return s3Objects.stream().filter(s3Object -> requiredFileExtensions.stream().anyMatch(item -> s3Object.key().contains("/" + item))).collect(Collectors.toList());
+		return new GetS3ObjectResponse(s3Objects.stream().filter(s3Object -> requiredFileExtensions.stream().anyMatch(item -> s3Object.key().contains(item))).toList(), isGetAllBuilds);
+	}
+
+	private List<S3Object> doGetS3Objects(String buildBucketName, String prefix) {
+		List<S3Object> s3Objects = new ArrayList<>();
+		ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).build();
+		boolean done = false;
+		while (!done) {
+			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+			s3Objects.addAll(listObjectsResponse.contents());
+			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+				String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
+				listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix).maxKeys(10000).marker(nextMarker).build();
+			} else {
+				done = true;
+			}
+		}
+		return s3Objects;
+	}
+
+	private List<S3Object> doGetS3ObjectsByBuildId(String buildBucketName, String prefix, String buildId) {
+		List<S3Object> s3Objects = new ArrayList<>();
+		ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + buildId + S3PathHelper.SEPARATOR).delimiter("/").maxKeys(10000).build();
+		boolean done = false;
+		while (!done) {
+			ListObjectsResponse listObjectsResponse = s3Client.listObjects(listObjectsRequest);
+			s3Objects.addAll(listObjectsResponse.contents());
+			if (Boolean.TRUE.equals(listObjectsResponse.isTruncated())) {
+				String nextMarker = listObjectsResponse.contents().get(listObjectsResponse.contents().size() - 1).key();
+				listObjectsRequest = ListObjectsRequest.builder().bucket(buildBucketName).prefix(prefix + buildId + S3PathHelper.SEPARATOR).delimiter("/").maxKeys(10000).marker(nextMarker).build();
+			} else {
+				done = true;
+			}
+		}
+		return s3Objects;
 	}
 }
