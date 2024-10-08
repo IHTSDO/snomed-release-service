@@ -11,7 +11,7 @@ public class Rf2FileNameTransformation implements FileNameTransformation {
 	@Override
 	public String transformFilename(String inputFileName) {
 		//Strip out any 8 digit numbers starting with an underscore eg _20140131
-		return inputFileName.replaceAll("_[0-9]{8}", "").replace(RF2Constants.TXT_FILE_EXTENSION, "");
+		return inputFileName.replaceAll("_\\d{8}" + RF2Constants.TXT_FILE_EXTENSION + "$", "");
 	}
 
 }
