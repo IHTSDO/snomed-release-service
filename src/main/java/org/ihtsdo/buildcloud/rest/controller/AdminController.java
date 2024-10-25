@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.PublishService;
@@ -21,17 +20,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.ParseException;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
-@Controller
+@RestController
 @RequestMapping("/centers/{releaseCenterKey}")
 @Tag(name = "Admin", description = "-")
 public class AdminController {
@@ -50,11 +46,9 @@ public class AdminController {
 
     @PostMapping(value = "/products/{productKey}/new-authoring-cycle")
     @IsAuthenticatedAsAdmin
-    @ResponseBody
-    @Operation(summary = "Start new authoring cycle. However, This endpoint will be replaced by the new one /post-release",
+    @Operation(summary = "Start new authoring cycle",
             description = "This API is for Daily Build only",
             deprecated = true)
-    @Deprecated(forRemoval = true)
     public ResponseEntity<Void> startNewAuthoringCycle(@PathVariable String releaseCenterKey,
                                                        @PathVariable String productKey,
                                                        @Parameter(description = "New effective time. Required format: yyyy-MM-dd", required = true)
@@ -75,7 +69,6 @@ public class AdminController {
 
     @PostMapping(value = "/products/{productKey}/upgrade-dependant-version")
     @IsAuthenticatedAsAdminOrReleaseManager
-    @ResponseBody
     @Operation(summary = "Upgrade dependant version for daily build product",
             description = "This API is for Daily Build only")
     public ResponseEntity<Void> upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
@@ -85,7 +78,6 @@ public class AdminController {
 
     @PostMapping(value = "/post-release", consumes = MediaType.ALL_VALUE)
     @IsAuthenticatedAsAdminOrReleaseManager
-    @ResponseBody
     public ResponseEntity<Object> doPostReleaseTask(@PathVariable String releaseCenterKey,
                                                     @RequestBody final PostReleaseRequest request) throws IOException, DecoderException, BusinessServiceException {
 
@@ -94,4 +86,5 @@ public class AdminController {
         releaseService.startNewAuthoringCycle(releaseCenterKey, request.dailyBuildProductKey(), build, request.nextCycleEffectiveTime(), publishedReleaseFileName, request.newDependencyPackage());
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
 }

@@ -123,7 +123,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
 			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
-			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""), true);
+			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replace("-", ""), true);
 			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
@@ -133,7 +133,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Override
 	public void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException, IOException {
 		replaceManifestFile(releaseCenterKey, dailyBuildProductKey, publishedBuild, nextCycleEffectiveTime, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat());
-		externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat(), nextCycleEffectiveTime.replaceAll("-", ""), true);
+		externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat(), nextCycleEffectiveTime.replace("-", ""), true);
 		updateProduct(releaseCenterKey, dailyBuildProductKey, nextCycleEffectiveTime, dependencyPackage, previousRelease);
 	}
 
