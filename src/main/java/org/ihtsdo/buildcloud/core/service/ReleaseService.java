@@ -13,4 +13,6 @@ public interface ReleaseService {
     void runReleaseBuild(Build build, Authentication authentication) throws IOException;
 
     void startNewAuthoringCycle(String releaseCenterKey, String productKey, String effectiveTime, String productKeySource, String dependencyPackage) throws ParseException, JAXBException, IOException, BusinessServiceException;
+
+    void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException, IOException;
 }

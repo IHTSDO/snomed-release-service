@@ -130,6 +130,13 @@ public class ReleaseServiceImpl implements ReleaseService {
 		}
 	}
 
+	@Override
+	public void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException, IOException {
+		replaceManifestFile(releaseCenterKey, dailyBuildProductKey, publishedBuild, nextCycleEffectiveTime, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat());
+		externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat(), nextCycleEffectiveTime.replaceAll("-", ""), true);
+		updateProduct(releaseCenterKey, dailyBuildProductKey, nextCycleEffectiveTime, dependencyPackage, previousRelease);
+	}
+
 	private void updateProduct(String releaseCenterKey, String productKey, String effectiveTime, String dependencyPackage, String previousPackage) throws BusinessServiceException {
 		Map<String, String> changes = new HashMap<>();
 		changes.put(ProductService.DAILY_BUILD, ProductService.TRUE);
