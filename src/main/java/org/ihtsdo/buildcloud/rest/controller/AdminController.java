@@ -46,7 +46,7 @@ public class AdminController {
 
     @PostMapping(value = "/products/{productKey}/new-authoring-cycle")
     @IsAuthenticatedAsAdmin
-    @Operation(summary = "Start new authoring cycle",
+    @Operation(summary = "Start new authoring cycle. However, this endpoint will be replaced by the new one '/post-release'",
             description = "This API is for Daily Build only",
             deprecated = true)
     public ResponseEntity<Void> startNewAuthoringCycle(@PathVariable String releaseCenterKey,
@@ -78,6 +78,7 @@ public class AdminController {
 
     @PostMapping(value = "/post-release", consumes = MediaType.ALL_VALUE)
     @IsAuthenticatedAsAdminOrReleaseManager
+    @Operation(summary = "Run post-release task which will update the daily build for the new authoring cycle")
     public ResponseEntity<Object> doPostReleaseTask(@PathVariable String releaseCenterKey,
                                                     @RequestBody final PostReleaseRequest request) throws IOException, DecoderException, BusinessServiceException {
 
