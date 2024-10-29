@@ -37,6 +37,8 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,11 +125,25 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
 			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
-			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replaceAll("-", ""), true);
+			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replace("-", ""), true);
 			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
 		}
+	}
+
+	@Override
+	public void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException {
+        try {
+            replaceManifestFile(releaseCenterKey, dailyBuildProductKey, publishedBuild, nextCycleEffectiveTime.replace("-", ""), publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat());
+			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat(), nextCycleEffectiveTime.replace("-", ""), true);
+
+			SimpleDateFormat rf2DateFormat = new SimpleDateFormat(Product.SNOMED_DATE_FORMAT);
+			Date effectiveDate = rf2DateFormat.parse(nextCycleEffectiveTime.replace("-", ""));
+			updateProduct(releaseCenterKey, dailyBuildProductKey, DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(effectiveDate), dependencyPackage, previousRelease);
+        } catch (IOException | ParseException e) {
+            throw new BusinessServiceException(e);
+        }
 	}
 
 	private void updateProduct(String releaseCenterKey, String productKey, String effectiveTime, String dependencyPackage, String previousPackage) throws BusinessServiceException {

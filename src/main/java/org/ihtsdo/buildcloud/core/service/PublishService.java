@@ -33,4 +33,9 @@ public interface PublishService {
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 
 	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
+
+	void copyReleaseFileToPublishedStore(Build build) throws BusinessServiceException;
+
+	void copyReleaseFileToVersionedContentStore(Build build) throws BusinessServiceException;
+
 }

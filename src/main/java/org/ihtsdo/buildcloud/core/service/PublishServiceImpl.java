@@ -274,6 +274,41 @@ public class PublishServiceImpl implements PublishService {
 		return mergedMetadata;
 	}
 
+	@Override
+	public void copyReleaseFileToPublishedStore(Build build) throws BusinessServiceException {
+		String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
+		List<String> filesFound = srsFileHelper.listFiles(pkgOutPutDir);
+		ReleaseFile releaseFiles = getReleaseFiles(filesFound);
+
+		String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
+		String releaseFileName = releaseFiles.releaseFileName();
+		String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+
+		srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
+		LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
+        try {
+            publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
+        } catch (IOException | DecoderException e) {
+            throw new BusinessServiceException(e);
+        }
+
+        // copy MD5 file if available
+		if (releaseFiles.md5FileName() != null) {
+			copyMd5FileToPublishedDirectory(build, releaseFiles.md5FileName());
+		}
+	}
+
+	@Override
+	public void copyReleaseFileToVersionedContentStore(Build build) throws BusinessServiceException {
+		String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
+		List<String> filesFound = srsFileHelper.listFiles(pkgOutPutDir);
+		ReleaseFile releaseFiles = getReleaseFiles(filesFound);
+		String releaseFileName = releaseFiles.releaseFileName();
+
+		String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+		copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, null);
+	}
+
 	private List<String> getBranchPathStack(String path) {
 		List<String> paths = new ArrayList<>();
 		paths.add(path);
