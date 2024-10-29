@@ -94,7 +94,7 @@ public class AdminController {
         List<String> fileNames = buildService.getOutputFilePaths(releaseCenterKey, productKey, buildKey);
         for (String fileName : fileNames) {
             if (fileName.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-                return fileName.substring(fileName.lastIndexOf("/" + 1));
+                return fileName;
             }
         }
         throw new BusinessServiceException("Could not find the release package file for build " + buildKey);
