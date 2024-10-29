@@ -175,11 +175,11 @@ public class BuildServiceImpl implements BuildService {
 		final Product product = getProduct(releaseCenterKey, productKey);
 
 		if (!product.isVisibility()) {
-			throw new BusinessServiceException("Could not create build from invisible product with key: " + product.getBusinessKey());
+			throw new BusinessServiceException("Could not create build from a invisible product with key: " + product.getBusinessKey());
 		}
 
 		Date effectiveTime = null;
-		if (buildRequest != null) {
+		if (buildRequest != null && buildRequest.getEffectiveDate() != null) {
 			try {
 				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
 			} catch (ParseException e) {
@@ -204,28 +204,22 @@ public class BuildServiceImpl implements BuildService {
 				}
 				configuration.setBuildPackageName(getBuildPackageName(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey()));
 				configuration.setStandAloneProduct(product.isStandAloneProduct());
-				if (buildRequest != null) {
-					configuration.setBranchPath(buildRequest.getBranchPath());
-					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
-					configuration.setBuildName(buildRequest.getBuildName());
-					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
-					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
-					configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
-				}
+                configuration.setBranchPath(buildRequest.getBranchPath());
+                configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
+                configuration.setBuildName(buildRequest.getBuildName());
+                configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
+                configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
+                configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
 
-				build.setConfiguration(configuration);
+                build.setConfiguration(configuration);
 			}
 			build.setQaTestConfig(product.getQaTestConfig());
 			if (build.getQaTestConfig() != null) {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
-				if (buildRequest != null) {
-					qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
-					qaTestConfig.setEnableTraceabilityValidation(buildRequest.isEnableTraceabilityValidation());
-				} else {
-					qaTestConfig.setMaxFailureExport(100);
-				}
+                qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
+                qaTestConfig.setEnableTraceabilityValidation(buildRequest.isEnableTraceabilityValidation());
 
-				build.setQaTestConfig(qaTestConfig);
+                build.setQaTestConfig(qaTestConfig);
 			}
 			build.setBuildUser(user);
 			build.setUserRoles(userRoles);
