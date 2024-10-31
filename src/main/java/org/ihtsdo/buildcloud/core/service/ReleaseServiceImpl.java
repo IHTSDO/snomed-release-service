@@ -109,7 +109,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 						}
 					}
 				} catch (IOException e) {
-					LOGGER.error("Error copying object {} to temp file. Message: {}", sourceFilePath, e.getMessage());
 					throw new BusinessServiceException("Error copying object " + sourceFilePath + " to temp file. Message: " + e.getMessage(), e);
 				}
 				putFile(tmpFile, targetFilePath);
@@ -226,8 +225,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Override
 	public void replaceManifestFile(String releaseCenterKey, String productKey, Build build, String effectiveTime, String previousEffectiveTime) throws IOException {
 		File tmpFile = File.createTempFile("manifest", ".xml");
-		try {
-			final InputStream manifestStream = buildDAO.getManifestStream(build);
+		try (final InputStream manifestStream = buildDAO.getManifestStream(build)) {
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
 			FolderType rootFolder = manifestListing.getFolder();
@@ -245,65 +243,75 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			boolean isDeltaFolderExistInManifest = isDeltaFolderExistInManifest(rootFolder);
 			if (!isDeltaFolderExistInManifest) {
-				FolderType fullFolder = null;
-				FolderType snapshotFolder = null;
-				String newFileName = replaceReleasePackageName(rootFolder.getName());
-				newFileName = replaceEffectiveTime(newFileName, previousEffectiveTime, effectiveTime);
-				rootFolder.setName(newFileName);
-				for (FileType fileType : rootFolder.getFile()) {
-					fileType.setName(replaceEffectiveTime(fileType.getName(), previousEffectiveTime, effectiveTime));
-				}
-				for (FolderType subFolder : rootFolder.getFolder()) {
-					if (RF2Constants.FULL.equals(subFolder.getName())) {
-						fullFolder = subFolder;
-					}
-					if (RF2Constants.SNAPSHOT.equals(subFolder.getName())) {
-						snapshotFolder = subFolder;
-					}
-				}
-
-				// Re-use SNAPSHOT as DELTA
-				if (snapshotFolder != null) {
-					snapshotFolder.setName(RF2Constants.DELTA);
-					renameFileName(snapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.SNAPSHOT, RF2Constants.DELTA);
-				}
-
-				// Copy all Full files and rename to Snapshot files
-				if (fullFolder != null) {
-					// update effective time for Full files
-					renameFileName(fullFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.FULL);
-
-					Gson gson = new Gson();
-					FolderType newSnapshotFolder = gson.fromJson(gson.toJson(fullFolder), FolderType.class);
-					newSnapshotFolder.setName(RF2Constants.SNAPSHOT);
-					renameFileName(newSnapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.SNAPSHOT);
-					rootFolder.getFolder().add(newSnapshotFolder);
-				}
-				manifestListing.setFolder(rootFolder);
-
-				Marshaller marshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createMarshaller();
-				marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-				marshaller.marshal(manifestListing, tmpFile);
+				replaceManifestFileNoDelta(effectiveTime, previousEffectiveTime, rootFolder, manifestListing, tmpFile);
 			} else {
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(buildDAO.getManifestStream(build)));
-					 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
-					String str;
-					while ((str = reader.readLine()) != null) {
-						str = replaceReleasePackageName(str);
-						str = replaceEffectiveTime(str, previousEffectiveTime, effectiveTime);
-						writer.println(str);
-					}
-				} catch (FileNotFoundException e) {
-					LOGGER.error(e.getMessage());
-				}
+				replaceManifestFileWithDelta(build, effectiveTime, previousEffectiveTime, tmpFile);
 			}
-			inputFileService.putManifestFile(releaseCenterKey, productKey, new FileInputStream(tmpFile), "manifest.xml", tmpFile.length());
+			try (FileInputStream inputStream = new FileInputStream(tmpFile)) {
+				inputFileService.putManifestFile(releaseCenterKey, productKey, inputStream, "manifest.xml", tmpFile.length());
+			}
 		} catch (JAXBException | DecoderException e) {
 			LOGGER.error(e.getMessage());
 
 		} finally {
 			FileUtils.forceDelete(tmpFile);
 		}
+	}
+
+	private void replaceManifestFileWithDelta(Build build, String effectiveTime, String previousEffectiveTime, File tmpFile) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(buildDAO.getManifestStream(build)));
+			 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)));) {
+			String str;
+			while ((str = reader.readLine()) != null) {
+				str = replaceReleasePackageName(str);
+				str = replaceEffectiveTime(str, previousEffectiveTime, effectiveTime);
+				writer.println(str);
+			}
+		} catch (FileNotFoundException e) {
+			LOGGER.error(e.getMessage());
+		}
+	}
+
+	private void replaceManifestFileNoDelta(String effectiveTime, String previousEffectiveTime, FolderType rootFolder, ListingType manifestListing, File tmpFile) throws JAXBException {
+		FolderType fullFolder = null;
+		FolderType snapshotFolder = null;
+		String newFileName = replaceReleasePackageName(rootFolder.getName());
+		newFileName = replaceEffectiveTime(newFileName, previousEffectiveTime, effectiveTime);
+		rootFolder.setName(newFileName);
+		for (FileType fileType : rootFolder.getFile()) {
+			fileType.setName(replaceEffectiveTime(fileType.getName(), previousEffectiveTime, effectiveTime));
+		}
+		for (FolderType subFolder : rootFolder.getFolder()) {
+			if (RF2Constants.FULL.equals(subFolder.getName())) {
+				fullFolder = subFolder;
+			}
+			if (RF2Constants.SNAPSHOT.equals(subFolder.getName())) {
+				snapshotFolder = subFolder;
+			}
+		}
+
+		// Re-use SNAPSHOT as DELTA
+		if (snapshotFolder != null) {
+			snapshotFolder.setName(RF2Constants.DELTA);
+			renameFileName(snapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.SNAPSHOT, RF2Constants.DELTA);
+		}
+
+		// Copy all Full files and rename to Snapshot files
+		if (fullFolder != null) {
+			// update effective time for Full files
+			renameFileName(fullFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.FULL);
+
+			Gson gson = new Gson();
+			FolderType newSnapshotFolder = gson.fromJson(gson.toJson(fullFolder), FolderType.class);
+			newSnapshotFolder.setName(RF2Constants.SNAPSHOT);
+			renameFileName(newSnapshotFolder, previousEffectiveTime, effectiveTime, RF2Constants.FULL, RF2Constants.SNAPSHOT);
+			rootFolder.getFolder().add(newSnapshotFolder);
+		}
+		manifestListing.setFolder(rootFolder);
+
+		Marshaller marshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createMarshaller();
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+		marshaller.marshal(manifestListing, tmpFile);
 	}
 
 	private boolean isDeltaFolderExistInManifest(FolderType rootFolder) {
@@ -335,11 +343,11 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	private String replaceEffectiveTime(String filename, String previousEffectiveTime, String effectiveTime) {
-		return filename.replaceAll("_" + previousEffectiveTime, "_" + effectiveTime.replaceAll("-", ""));
+		return filename.replaceAll("_" + previousEffectiveTime, "_" + effectiveTime.replace("-", ""));
 	}
 
 	private String replaceReleasePackageName(String filename) {
-		return filename.replaceAll("PRODUCTION", "DAILYBUILD_BETA");
+		return filename.replace("PRODUCTION", "DAILYBUILD_BETA");
 	}
 
 	private boolean prepareInputFiles(Build build) throws BusinessServiceException, IOException {
@@ -386,7 +394,6 @@ public class ReleaseServiceImpl implements ReleaseService {
 		try {
 			fileHelper.putFile(file, targetFilePath);
 		} catch (NoSuchAlgorithmException | IOException | DecoderException e) {
-			LOGGER.error("Error putting object to target {}. Message: {}", targetFilePath, e.getMessage());
 			throw new BusinessServiceException("Error putting object to target. Message: " + e.getMessage(), e);
 		}
 	}
