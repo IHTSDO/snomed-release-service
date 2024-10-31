@@ -34,6 +34,8 @@ public interface PublishService {
 
 	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
 
+	InputStream downloadPublishedRelease(final String releaseCenterKey, final String releasePackageFileName);
+
 	void copyReleaseFileToPublishedStore(Build build) throws BusinessServiceException;
 
 	void copyReleaseFileToVersionedContentStore(Build build) throws BusinessServiceException;

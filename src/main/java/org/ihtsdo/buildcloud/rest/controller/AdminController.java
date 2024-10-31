@@ -4,27 +4,29 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.time.DateFormatUtils;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.service.BuildService;
+import org.ihtsdo.buildcloud.core.service.AdminService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.rest.controller.helper.ControllerHelper;
+import org.ihtsdo.buildcloud.rest.pojo.BrowserUpdateJob;
+import org.ihtsdo.buildcloud.rest.pojo.BrowserUpdateRequest;
 import org.ihtsdo.buildcloud.rest.pojo.PostReleaseRequest;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdmin;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
+import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.List;
+import java.util.UUID;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @RestController
@@ -39,12 +41,8 @@ public class AdminController {
     private ReleaseService releaseService;
 
     @Autowired
-    private PublishService publishService;
+    private AdminService adminService;
 
-    @Autowired
-    private BuildService buildService;
-
-    @PostMapping(value = "/products/{productKey}/new-authoring-cycle")
     @IsAuthenticatedAsAdmin
     @Operation(summary = "Start new authoring cycle. However, this endpoint will be replaced by the new one '/post-release'",
             description = "This API is for Daily Build only",
@@ -76,28 +74,31 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @PostMapping(value = "/post-release")
+    @PostMapping(value = "/run-post-release-task")
     @IsAuthenticatedAsAdminOrReleaseManager
     @Operation(summary = "Run post-release task which will update the daily build for the new authoring cycle")
-    public ResponseEntity<Void> doPostReleaseTask(@PathVariable String releaseCenterKey,
-                                                  @RequestBody PostReleaseRequest request) throws BusinessServiceException {
-        Build build = buildService.find(releaseCenterKey, request.releasedSourceProductKey(), request.releasedSourceBuildKey(), true, null, null, null);
-
-        String publishedReleaseFileName = getReleaseFileName(releaseCenterKey, request.releasedSourceProductKey(), request.releasedSourceBuildKey());
-        publishService.copyReleaseFileToPublishedStore(build);
-        publishService.copyReleaseFileToVersionedContentStore(build);
-        releaseService.startNewAuthoringCycle(releaseCenterKey, request.dailyBuildProductKey(), build, request.nextCycleEffectiveTime(), publishedReleaseFileName, request.newDependencyPackage());
+    public ResponseEntity<Void> runPostReleaseTask(@PathVariable String releaseCenterKey,
+                                                   @RequestBody PostReleaseRequest request) throws BusinessServiceException, RestClientException, IOException {
+        adminService.runPostReleaseTask(releaseCenterKey, request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private String getReleaseFileName(String releaseCenterKey, String productKey, String buildKey) throws BusinessServiceException {
-        List<String> fileNames = buildService.getOutputFilePaths(releaseCenterKey, productKey, buildKey);
-        for (String fileName : fileNames) {
-            if (fileName.endsWith(RF2Constants.ZIP_FILE_EXTENSION)) {
-                return fileName;
-            }
-        }
-        throw new BusinessServiceException("Could not find the release package file for build " + buildKey);
+    @PostMapping(value = "/trigger-browser-update")
+    @IsAuthenticatedAsAdminOrReleaseManager
+    @Operation(summary = "Run post-release task which will update the daily build for the new authoring cycle")
+    public ResponseEntity<Void> triggerBrowserUpdate(@PathVariable String releaseCenterKey,
+                                                     @RequestBody BrowserUpdateRequest request) {
+        String browserUpdateId = UUID.randomUUID().toString();
+        adminService.triggerBrowserUpdate(releaseCenterKey, request, SecurityContextHolder.getContext(), browserUpdateId);
+        return ControllerHelper.getCreatedResponse(browserUpdateId);
     }
 
+    @GetMapping(value = "/trigger-browser-update/{jobId}")
+    @IsAuthenticatedAsAdminOrReleaseManager
+    @Operation(summary = "Retrieve a browser update job.",
+            description = "Retrieves the latest state of a browser update job. Used to check its status.")
+    public ResponseEntity<BrowserUpdateJob> triggerBrowserUpdate(@PathVariable String releaseCenterKey,
+                                                                 @PathVariable String jobId) {
+        return new ResponseEntity<>(adminService.getBrowserUpdateJob(jobId), HttpStatus.OK);
+    }
 }
