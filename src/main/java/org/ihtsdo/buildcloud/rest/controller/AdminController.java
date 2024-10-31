@@ -43,6 +43,7 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
+    @PostMapping(value = "/products/{productKey}/new-authoring-cycle")
     @IsAuthenticatedAsAdmin
     @Operation(summary = "Start new authoring cycle. However, this endpoint will be replaced by the new one '/trigger-post-release-task'",
             description = "This API is for Daily Build only",
