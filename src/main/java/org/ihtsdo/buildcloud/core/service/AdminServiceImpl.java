@@ -126,12 +126,14 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void runPostReleaseTask(String releaseCenterKey, PostReleaseRequest request) throws BusinessServiceException, RestClientException, IOException {
-        Build build = buildService.find(releaseCenterKey, request.releasedSourceProductKey(), request.releasedSourceBuildKey(), true, null, null, null);
-        String publishedReleaseFileName = getReleaseFileName(releaseCenterKey, request.releasedSourceProductKey(), request.releasedSourceBuildKey());
+    public void runPostReleaseTask(String releaseCenterKey, PostReleaseRequest request) throws BusinessServiceException, IOException {
+        Build build = buildService.find(releaseCenterKey, request.releasedProductKey(), request.releasedBuildKey(), true, null, null, null);
+        String publishedReleaseFileName = getReleaseFileName(releaseCenterKey, request.releasedProductKey(), request.releasedBuildKey());
         publishService.copyReleaseFileToPublishedStore(build);
         publishService.copyReleaseFileToVersionedContentStore(build);
-        releaseService.startNewAuthoringCycle(releaseCenterKey, request.dailyBuildProductKey(), build, request.nextCycleEffectiveTime(), publishedReleaseFileName, request.newDependencyPackage());
+        releaseService.replaceManifestFile(releaseCenterKey, request.dailyBuildProductKey(), build, request.nextCycleEffectiveTime().replace("-", ""), build.getConfiguration().getEffectiveTimeSnomedFormat());
+        releaseService.copyExternallyMaintainedFiles(releaseCenterKey, build.getConfiguration().getEffectiveTimeSnomedFormat(), request.nextCycleEffectiveTime().replace("-", ""), true);
+        releaseService.startNewAuthoringCycleV2(releaseCenterKey, request.dailyBuildProductKey(), build, request.nextCycleEffectiveTime(), publishedReleaseFileName);
     }
 
     private File getImportFile(BrowserUpdateRequest request, List<CodeSystemVersion> versions, String releaseCenterKey, String codeSystemShortName, File prospectiveReleaseFile, String publishedReleaseFileName) throws BusinessServiceException, IOException, ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {

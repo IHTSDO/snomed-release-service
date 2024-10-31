@@ -14,5 +14,9 @@ public interface ReleaseService {
 
     void startNewAuthoringCycle(String releaseCenterKey, String productKey, String effectiveTime, String productKeySource, String dependencyPackage) throws ParseException, JAXBException, IOException, BusinessServiceException;
 
-    void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException;
+    void startNewAuthoringCycleV2(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease) throws BusinessServiceException;
+
+    void replaceManifestFile(String releaseCenterKey, String productKey, Build build, String effectiveTime, String previousEffectiveTime) throws IOException;
+
+    void copyExternallyMaintainedFiles(String releaseCenterKey, String source, String target, boolean isHeaderOnly) throws BusinessServiceException, IOException;
 }

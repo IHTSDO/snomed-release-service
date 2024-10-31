@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
@@ -19,12 +20,15 @@ import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReport
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
 import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
@@ -36,6 +40,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,6 +50,12 @@ import java.util.Map;
 
 @Service
 public class ReleaseServiceImpl implements ReleaseService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
+
+	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
+
+	private final FileHelper fileHelper;
 
 	private static final String TRACKER_ID = "trackerId";
 
@@ -61,11 +72,52 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private BuildService buildService;
 
 	@Autowired
-	private ExternalMaintainedRefsetsService externalMaintainedRefsetsService;
+	private S3PathHelper s3PathHelper;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseServiceImpl.class);
+	@Autowired
+	public ReleaseServiceImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
+												final S3Client s3Client) {
+		fileHelper = new FileHelper(storageBucketName, s3Client);
+	}
 
-	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
+	@Override
+	public void copyExternallyMaintainedFiles(String releaseCenterKey, String source, String target, boolean isHeaderOnly) throws BusinessServiceException, IOException {
+		String sourceDirPath = s3PathHelper.getExternallyMaintainedDirectoryPath(releaseCenterKey, source);
+		String targetDirPath = s3PathHelper.getExternallyMaintainedDirectoryPath(releaseCenterKey, target);
+
+		List<String> externalFiles = fileHelper.listFiles(sourceDirPath);
+		for (String externalFile : externalFiles) {
+			// Skip if current object is a directory
+			if (StringUtils.isBlank(externalFile) || externalFile.endsWith(S3PathHelper.SEPARATOR)) {
+				continue;
+			}
+			String sourceFilePath = sourceDirPath + externalFile;
+			String targetFilePath = targetDirPath + externalFile.replaceAll(source, target);
+
+			File tmpFile = File.createTempFile("sct2-file", ".txt");
+			try {
+				InputStream inputStream = fileHelper.getFileStream(sourceFilePath);
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+					 PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(tmpFile)))) {
+					String str = reader.readLine();
+					if (str != null) {
+						writer.println(str);
+						if (!isHeaderOnly) {
+							while ((str = reader.readLine()) != null) {
+								writer.println(str);
+							}
+						}
+					}
+				} catch (IOException e) {
+					LOGGER.error("Error copying object {} to temp file. Message: {}", sourceFilePath, e.getMessage());
+					throw new BusinessServiceException("Error copying object " + sourceFilePath + " to temp file. Message: " + e.getMessage(), e);
+				}
+				putFile(tmpFile, targetFilePath);
+			} finally {
+				FileUtils.forceDelete(tmpFile);
+			}
+		}
+	}
 
 	@Override
 	public void runReleaseBuild(Build build, Authentication authentication) throws IOException {
@@ -125,7 +177,7 @@ public class ReleaseServiceImpl implements ReleaseService {
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
 			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
-			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replace("-", ""), true);
+			copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replace("-", ""), true);
 			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
@@ -133,15 +185,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
-	public void startNewAuthoringCycle(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease, String dependencyPackage) throws BusinessServiceException {
+	public void startNewAuthoringCycleV2(String releaseCenterKey, String dailyBuildProductKey, Build publishedBuild, String nextCycleEffectiveTime, String previousRelease) throws BusinessServiceException {
         try {
-            replaceManifestFile(releaseCenterKey, dailyBuildProductKey, publishedBuild, nextCycleEffectiveTime.replace("-", ""), publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat());
-			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, publishedBuild.getConfiguration().getEffectiveTimeSnomedFormat(), nextCycleEffectiveTime.replace("-", ""), true);
-
 			SimpleDateFormat rf2DateFormat = new SimpleDateFormat(Product.SNOMED_DATE_FORMAT);
 			Date effectiveDate = rf2DateFormat.parse(nextCycleEffectiveTime.replace("-", ""));
-			updateProduct(releaseCenterKey, dailyBuildProductKey, DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(effectiveDate), dependencyPackage, previousRelease);
-        } catch (IOException | ParseException e) {
+			updateProduct(releaseCenterKey, dailyBuildProductKey, DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(effectiveDate), null, previousRelease);
+        } catch (ParseException e) {
             throw new BusinessServiceException(e);
         }
 	}
@@ -174,7 +223,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return latestPackageName;
 	}
 
-	private void replaceManifestFile(String releaseCenterKey, String productKey, Build build, String effectiveTime, String previousEffectiveTime) throws IOException {
+	@Override
+	public void replaceManifestFile(String releaseCenterKey, String productKey, Build build, String effectiveTime, String previousEffectiveTime) throws IOException {
 		File tmpFile = File.createTempFile("manifest", ".xml");
 		try {
 			final InputStream manifestStream = buildDAO.getManifestStream(build);
@@ -327,5 +377,17 @@ public class ReleaseServiceImpl implements ReleaseService {
 			return false;
 		}
 		return true;
+	}
+
+	private void putFile(File file, String targetFilePath) throws BusinessServiceException {
+		if (fileHelper.exists(targetFilePath)) {
+			fileHelper.deleteFile(targetFilePath);
+		}
+		try {
+			fileHelper.putFile(file, targetFilePath);
+		} catch (NoSuchAlgorithmException | IOException | DecoderException e) {
+			LOGGER.error("Error putting object to target {}. Message: {}", targetFilePath, e.getMessage());
+			throw new BusinessServiceException("Error putting object to target. Message: " + e.getMessage(), e);
+		}
 	}
 }

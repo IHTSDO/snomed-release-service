@@ -44,7 +44,7 @@ public class AdminController {
     private AdminService adminService;
 
     @IsAuthenticatedAsAdmin
-    @Operation(summary = "Start new authoring cycle. However, this endpoint will be replaced by the new one '/post-release'",
+    @Operation(summary = "Start new authoring cycle. However, this endpoint will be replaced by the new one '/trigger-post-release-task'",
             description = "This API is for Daily Build only",
             deprecated = true)
     public ResponseEntity<Void> startNewAuthoringCycle(@PathVariable String releaseCenterKey,
@@ -74,10 +74,10 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @PostMapping(value = "/run-post-release-task")
+    @PostMapping(value = "/trigger-post-release-task")
     @IsAuthenticatedAsAdminOrReleaseManager
     @Operation(summary = "Run post-release task which will update the daily build for the new authoring cycle")
-    public ResponseEntity<Void> runPostReleaseTask(@PathVariable String releaseCenterKey,
+    public ResponseEntity<Void> triggerPostReleaseTask(@PathVariable String releaseCenterKey,
                                                    @RequestBody PostReleaseRequest request) throws BusinessServiceException, RestClientException, IOException {
         adminService.runPostReleaseTask(releaseCenterKey, request);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -85,7 +85,8 @@ public class AdminController {
 
     @PostMapping(value = "/trigger-browser-update")
     @IsAuthenticatedAsAdminOrReleaseManager
-    @Operation(summary = "Run post-release task which will update the daily build for the new authoring cycle")
+    @Operation(summary = "Trigger the browser update job",
+            description = "The job will be trying to create a new version in the Browser Update box.")
     public ResponseEntity<Void> triggerBrowserUpdate(@PathVariable String releaseCenterKey,
                                                      @RequestBody BrowserUpdateRequest request) {
         String browserUpdateId = UUID.randomUUID().toString();
