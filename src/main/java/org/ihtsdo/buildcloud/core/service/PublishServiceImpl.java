@@ -243,24 +243,7 @@ public class PublishServiceImpl implements PublishService {
 					StreamUtils.copy(inputFileStream, out);
 				}
 
-				String moduleId = null;
-				if (!StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
-					Map<String, Object> metadata = getBranchMetadataIncludeInherited(build.getConfiguration().getBranchPath());
-					moduleId = (String) metadata.get("defaultModuleId");
-				}
-				if (StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
-					if (!StringUtils.isEmpty(build.getConfiguration().getExtensionConfig().getDefaultModuleId())) {
-						moduleId = build.getConfiguration().getExtensionConfig().getDefaultModuleId();
-					} else {
-						String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
-						if (!StringUtils.isEmpty(moduleIdsStr)) {
-							moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
-						}
-					}
-				}
-				if (StringUtils.isEmpty(moduleId)) {
-					moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
-				}
+				String moduleId = getModuleId(build);
 				String codeSystemShortname = SNOMEDCT.equals(codeSystem.getShortName()) ? RF2Constants.INT : codeSystem.getShortName().substring(codeSystem.getShortName().indexOf('-') + 1);
 				moduleStorageCoordinator.upload(codeSystemShortname, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile);
 			} finally {
@@ -708,6 +691,28 @@ public class PublishServiceImpl implements PublishService {
 			LOGGER.error("Failed to copy release file {} to versioned contents repository because of error: {}", releaseFileName, e.getMessage());
 			throw new BusinessServiceException(String.format("Failed to copy release file %s to versioned contents repository", releaseFileName), e);
 		}
+	}
+
+	private String getModuleId(Build build) throws RestClientException {
+		String moduleId = null;
+		if (!StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
+			Map<String, Object> metadata = getBranchMetadataIncludeInherited(build.getConfiguration().getBranchPath());
+			moduleId = (String) metadata.get("defaultModuleId");
+		}
+		if (StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
+			if (!StringUtils.isEmpty(build.getConfiguration().getExtensionConfig().getDefaultModuleId())) {
+				moduleId = build.getConfiguration().getExtensionConfig().getDefaultModuleId();
+			} else {
+				String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
+				if (!StringUtils.isEmpty(moduleIdsStr)) {
+					moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
+				}
+			}
+		}
+		if (StringUtils.isEmpty(moduleId)) {
+			moduleId = RF2Constants.INTERNATIONAL_CORE_MODULE_ID;
+		}
+		return moduleId;
 	}
 
 	private String getBuildUniqueKey(Build build) {
