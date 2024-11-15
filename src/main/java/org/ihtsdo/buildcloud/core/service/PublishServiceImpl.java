@@ -249,9 +249,13 @@ public class PublishServiceImpl implements PublishService {
 					moduleId = (String) metadata.get("defaultModuleId");
 				}
 				if (StringUtils.isEmpty(moduleId) && build.getConfiguration().getExtensionConfig() != null) {
-					String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
-					if (!StringUtils.isEmpty(moduleIdsStr)) {
-						moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
+					if (!StringUtils.isEmpty(build.getConfiguration().getExtensionConfig().getDefaultModuleId())) {
+						moduleId = build.getConfiguration().getExtensionConfig().getDefaultModuleId();
+					} else {
+						String moduleIdsStr = build.getConfiguration().getExtensionConfig().getModuleIds();
+						if (!StringUtils.isEmpty(moduleIdsStr)) {
+							moduleId = moduleIdsStr.split(Constants.COMMA)[0].trim();
+						}
 					}
 				}
 				if (StringUtils.isEmpty(moduleId)) {
