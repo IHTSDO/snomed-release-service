@@ -545,6 +545,22 @@ public class BuildServiceImpl implements BuildService {
 		}
 	}
 
+	@Override
+	public BuildConfiguration updateBuildConfiguration(String releaseCenterKey, String productKey, String buildId, Map<String, String> requestBody) throws IOException {
+		Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId, true, null, null, null);
+		BuildConfiguration buildConfiguration = build.getConfiguration();
+
+		if (requestBody.containsKey("buildName")) {
+			buildConfiguration.setBuildName(requestBody.get("buildName"));
+		} else {
+			LOGGER.info("Other properties have not been supported to update");
+			return build.getConfiguration(); 
+		}
+
+		dao.updateBuildConfiguration(build);
+		return build.getConfiguration();
+	}
+
 	public void updateStatusWithChecks(final Build build, final Status newStatus) throws BadConfigurationException, IOException {
 		// Assert status workflow position
         switch (newStatus) {
@@ -1236,6 +1252,14 @@ public class BuildServiceImpl implements BuildService {
 
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Build build = dao.find(releaseCenterKey, productKey, buildId, null, null, null, null);
+		if (build == null) {
+			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+		}
+		return build;
+	}
+
+	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException {
+		final Build build = dao.find(releaseCenterKey, productKey, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 		if (build == null) {
 			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
 		}

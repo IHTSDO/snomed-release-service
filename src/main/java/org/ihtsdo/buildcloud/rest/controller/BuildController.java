@@ -76,10 +76,10 @@ public class BuildController {
 	@Autowired
 	private MonitorService monitorService;
 
-	private static final String[] BUILD_LINKS = {"manifest", "configuration","qaTestConfig", "inputfiles","inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
+	private static final String[] BUILD_LINKS = {"manifest", "configuration", "qaTestConfig", "inputfiles", "inputGatherReport", "inputPrepareReport", "outputfiles", "buildReport", "logs", "buildLogs", "preConditionCheckReports", "postConditionCheckReports", "classificationResultsOutputFiles"};
 
-	@Operation(summary="Re-initialise")
-	@RequestMapping(value="/builds/initialise", method= RequestMethod.GET)
+	@Operation(summary = "Re-initialise")
+	@RequestMapping(value = "/builds/initialise", method = RequestMethod.GET)
 	public ResponseEntity<Void> initialise() throws BusinessServiceException {
 		releaseBuildManager.initialise();
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -111,7 +111,7 @@ public class BuildController {
 	public ResponseEntity<Map<String, Object>> createBuild(@PathVariable final String releaseCenterKey,
 														   @PathVariable final String productKey,
 														   @RequestBody final BuildRequestPojo buildRequestPojo,
-															final HttpServletRequest request) throws BusinessServiceException {
+														   final HttpServletRequest request) throws BusinessServiceException {
 		final String currentUser = SecurityUtil.getUsername();
 		final Build build = releaseBuildManager.createBuild(releaseCenterKey, productKey, buildRequestPojo, currentUser);
 		monitorService.startMonitorBuild(build, currentUser);
@@ -149,7 +149,7 @@ public class BuildController {
 			final HttpServletRequest request) throws BusinessServiceException, IOException {
 
 		// Verify if the build exists
-		Build newBuild  = buildService.find(releaseCenterKey, productKey, buildId, true, true, null , null);
+		Build newBuild = buildService.find(releaseCenterKey, productKey, buildId, true, true, null, null);
 		final String username = SecurityUtil.getUsername();
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
@@ -219,7 +219,7 @@ public class BuildController {
 			description = "Returns a list of published builds from the published releases directory")
 	@ResponseBody
 	public List<Map<String, Object>> getPublishedBuilds(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-											   final HttpServletRequest request) throws ResourceNotFoundException {
+														final HttpServletRequest request) throws ResourceNotFoundException {
 		List<Build> builds = publishService.findPublishedBuilds(releaseCenterKey, productKey);
 		return hypermediaGenerator.getEntityCollectionHypermediaOfAction(builds, request, BUILD_LINKS, null);
 	}
@@ -287,10 +287,27 @@ public class BuildController {
 	@Operation(summary = "Retrieves configuration details",
 			description = "Retrieves configuration details for given product key, release center key, and build id")
 	public Map<String, Object> getConfiguration(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
-			final HttpServletRequest request) throws IOException, BusinessServiceException {
+												final HttpServletRequest request) throws IOException, BusinessServiceException {
 		final BuildConfiguration buildConfiguration = buildService.loadBuildConfiguration(releaseCenterKey, productKey, buildId);
-		final Map<String,Object> result = new HashMap<>();
-		if (buildConfiguration != null ) {
+		final Map<String, Object> result = new HashMap<>();
+		if (buildConfiguration != null) {
+			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request));
+		}
+		return result;
+	}
+
+	@PutMapping(value = "/builds/{buildId}/configuration", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+	@ResponseBody
+	@Operation(summary = "Update build configuration",
+			description = "Updates an existing build configuration with new details and returns updated config")
+	public Map<String, Object> updateBuildConfiguration(@PathVariable String releaseCenterKey, @PathVariable String productKey, @PathVariable String buildId,
+											 @RequestBody Map<String, String> requestBody,
+											 HttpServletRequest request) throws BusinessServiceException, IOException {
+		buildService.updateBuildConfiguration(releaseCenterKey, productKey, buildId, requestBody);
+		final BuildConfiguration buildConfiguration = buildService.loadBuildConfiguration(releaseCenterKey, productKey, buildId);
+		final Map<String, Object> result = new HashMap<>();
+		if (buildConfiguration != null) {
 			result.putAll(hypermediaGenerator.getEntityHypermedia(buildConfiguration, true, request));
 		}
 		return result;

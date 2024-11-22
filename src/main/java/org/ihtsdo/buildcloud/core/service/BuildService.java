@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 public interface BuildService {
 
@@ -43,6 +44,8 @@ public interface BuildService {
 	void delete(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 
 	BuildConfiguration loadBuildConfiguration(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
+
+	BuildConfiguration updateBuildConfiguration(String releaseCenterKey, String productKey, String buildId, Map<String, String> requestBody) throws BusinessServiceException, IOException;
 	
 	QATestConfig loadQATestConfig(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException;
 
