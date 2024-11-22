@@ -85,6 +85,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class BuildServiceImpl implements BuildService {
+
+	private static final String BUILD_NOT_FOUND_MSG = "Unable to find build: %s for product: %s";
 	private static final String HYPHEN = "-";
 
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
@@ -95,6 +97,7 @@ public class BuildServiceImpl implements BuildService {
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 	public static final String PROGRESS_STATUS = "Progress Status";
 	public static final String MESSAGE = "Message";
+
 
 	@Autowired
 	private BuildDAO dao;
@@ -514,7 +517,7 @@ public class BuildServiceImpl implements BuildService {
 
 		final Build build = dao.find(releaseCenterKey, productKey, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, useVisibilityFlag);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+			throw new ResourceNotFoundException(String.format(BUILD_NOT_FOUND_MSG, buildId, productKey));
 		}
 
 		return build;
@@ -554,7 +557,7 @@ public class BuildServiceImpl implements BuildService {
 			buildConfiguration.setBuildName(requestBody.get("buildName"));
 		} else {
 			LOGGER.info("Other properties have not been supported to update");
-			return build.getConfiguration(); 
+			return build.getConfiguration();
 		}
 
 		dao.updateBuildConfiguration(build);
@@ -1253,7 +1256,7 @@ public class BuildServiceImpl implements BuildService {
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId) throws ResourceNotFoundException {
 		final Build build = dao.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+			throw new ResourceNotFoundException(String.format(BUILD_NOT_FOUND_MSG, buildId, productKey));
 		}
 		return build;
 	}
@@ -1261,7 +1264,7 @@ public class BuildServiceImpl implements BuildService {
 	private Build getBuildOrThrow(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException {
 		final Build build = dao.find(releaseCenterKey, productKey, buildId, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility);
 		if (build == null) {
-			throw new ResourceNotFoundException("Unable to find build: " + buildId + " for product: " + productKey);
+			throw new ResourceNotFoundException(String.format(BUILD_NOT_FOUND_MSG, buildId, productKey));
 		}
 		return build;
 	}
