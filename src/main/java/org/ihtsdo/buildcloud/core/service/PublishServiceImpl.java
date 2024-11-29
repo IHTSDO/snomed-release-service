@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static org.ihtsdo.buildcloud.core.service.PermissionServiceCache.BRANCH_ROOT;
+
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
@@ -345,7 +347,8 @@ public class PublishServiceImpl implements PublishService {
 			CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
 					.findAny()
 					.orElse(null);
-			if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())) {
+			if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())
+			&& (!BRANCH_ROOT.equals(codeSystem.getBranchPath()) || !build.getConfiguration().getBranchPath().contains("SNOMEDCT-"))) {
 				LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 				termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 			}
