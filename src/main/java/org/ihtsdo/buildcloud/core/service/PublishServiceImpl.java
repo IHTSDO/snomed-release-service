@@ -462,23 +462,6 @@ public class PublishServiceImpl implements PublishService {
 		return exists;
 	}
 
-	@Override
-	public InputStream downloadPublishedRelease(final String releaseCenterKey, final String releasePackageFileName) {
-		String path = s3PathHelper.getPublishedReleasesFilePath(releaseCenterKey, releasePackageFileName);
-		boolean exists = srsFileHelper.exists(path);
-		if (exists) {
-			return srsFileHelper.getFileStream(path);
-		}
-
-		if (!publishedReleasesStoragePath.equals(publishJobStoragePath)) {
-			path = s3PathHelper.getPublishJobFilePath(releaseCenterKey, releasePackageFileName);
-			if(srsFileHelper.exists(path)) {
-				return srsFileHelper.getFileStream(path);
-			}
-		}
-		return null;
-	}
-
 	// Publish extracted entries in a directory of the same name
 	private void publishExtractedVersionOfPackage(final String publishFilePath, final InputStream fileStream) throws IOException, DecoderException {
 		String zipExtractPath = publishFilePath.replace(".zip", S3PathHelper.SEPARATOR);

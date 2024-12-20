@@ -1,16 +1,16 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import org.apache.commons.codec.DecoderException;
+import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
+import org.ihtsdo.otf.rest.exception.BusinessServiceException;
+import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.codec.DecoderException;
-import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
-import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
-import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
 /**
  * Service to publish a product release after verification tests are
@@ -33,8 +33,6 @@ public interface PublishService {
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 
 	boolean exists(ReleaseCenter releaseCenter, String previouslyPublishedPackageName);
-
-	InputStream downloadPublishedRelease(final String releaseCenterKey, final String releasePackageFileName);
 
 	void copyReleaseFileToPublishedStore(Build build) throws BusinessServiceException;
 
