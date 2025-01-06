@@ -307,6 +307,14 @@ public class PublishServiceImpl implements PublishService {
 
 		String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
 		copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, null);
+
+		// upload to new versioned content bucket which will be used by Module Storage Coordinator
+		try {
+			uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles);
+			moduleStorageCoordinatorCache.clearCachedReleases();
+		} catch (Exception e) {
+			throw new BusinessServiceException("Failed to to upload to new versioned content bucket (Module Storage Coordinator)", e);
+		}
 	}
 
 	private List<String> getBranchPathStack(String path) {
@@ -320,7 +328,7 @@ public class PublishServiceImpl implements PublishService {
 		return Lists.reverse(paths);
 	}
 
-	private static ReleaseFile getReleaseFiles(List<String> filesFound) {
+	private ReleaseFile getReleaseFiles(List<String> filesFound) {
 		String releaseFileName = null;
 		String md5FileName = null;
 		for (String fileName : filesFound) {
