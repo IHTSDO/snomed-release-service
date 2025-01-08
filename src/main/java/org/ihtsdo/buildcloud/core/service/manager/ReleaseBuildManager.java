@@ -214,13 +214,9 @@ public class ReleaseBuildManager {
 			throw new BadRequestException("Build configurations must not be null.");
 		}
 
-		if (qaTestConfig != null) {
-			if (!StringUtils.hasLength(qaTestConfig.getAssertionGroupNames())) {
-				throw new BadRequestException("RVF Assertion group name must not be empty.");
-			}
-			if (qaTestConfig.isEnableDrools() && !StringUtils.hasLength(qaTestConfig.getDroolsRulesGroupNames())) {
+		if (qaTestConfig != null && (qaTestConfig.isEnableDrools() && !StringUtils.hasLength(qaTestConfig.getDroolsRulesGroupNames()))) {
 				throw new BadRequestException("Drool rule assertion group Name must not be empty.");
-			}
+
 		}
 	}
 
