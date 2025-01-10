@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.core.service.build.compare.type;
 
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.compare.ComponentComparison;
 import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparisonReport;
@@ -37,5 +39,10 @@ public class BuildStatusComparison extends ComponentComparison {
         } else {
             fail(dto);
         }
+    }
+
+    @Override
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+        return new BuildStatusComparison();
     }
 }

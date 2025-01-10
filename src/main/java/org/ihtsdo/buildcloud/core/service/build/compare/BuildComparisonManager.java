@@ -1,9 +1,12 @@
 package org.ihtsdo.buildcloud.core.service.build.compare;
 
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -51,12 +54,22 @@ public class BuildComparisonManager {
     @Autowired
     private List<ComponentComparison> componentComparisonChecks;
 
+    @Autowired
+    private BuildDAO buildDAO;
+
+    @Autowired
+    private PublishService publishService;
+
+    @Value("${rvf.url}")
+    private String releaseValidationFrameworkUrl;
+
     public List<HighLevelComparisonReport> runBuildComparisons(final Build leftBuild, final Build rightBuild) throws IOException {
         List<HighLevelComparisonReport> reports = new ArrayList<>();
         componentComparisonChecks.sort(orderTestComparator);
         for (ComponentComparison thisCheck : componentComparisonChecks) {
-            thisCheck.findDiff(leftBuild, rightBuild);
-            reports.add(thisCheck.getReport());
+            ComponentComparison instance = thisCheck.newInstance(buildDAO, publishService, releaseValidationFrameworkUrl);
+            instance.findDiff(leftBuild, rightBuild);
+            reports.add(instance.getReport());
         }
 
         return reports;

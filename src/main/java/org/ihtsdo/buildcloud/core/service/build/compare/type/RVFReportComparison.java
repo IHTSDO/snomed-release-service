@@ -2,7 +2,9 @@ package org.ihtsdo.buildcloud.core.service.build.compare.type;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonManager;
 import org.ihtsdo.buildcloud.core.service.build.compare.ComponentComparison;
 import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparisonReport;
@@ -24,8 +26,12 @@ public class RVFReportComparison extends ComponentComparison {
 
     public static final String REPORTS = "reports";
 
-    @Value("${rvf.url}")
+
     private String releaseValidationFrameworkUrl;
+
+    public RVFReportComparison(@Value("${rvf.url}") String releaseValidationFrameworkUrl) {
+        this.releaseValidationFrameworkUrl = releaseValidationFrameworkUrl;
+    }
 
     public enum RVFTestName {
         REPORT_URL("RVF report URL"), STATUS("RVF status"), TOTAL_FAILURES("RVF total failures"), TOTAL_WARNINGS("RVF total warnings");
@@ -84,6 +90,11 @@ public class RVFReportComparison extends ComponentComparison {
                 fail(reports);
             }
         }
+    }
+
+    @Override
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+        return new RVFReportComparison(releaseValidationFrameworkUrl);
     }
 
     private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException, JsonProcessingException {

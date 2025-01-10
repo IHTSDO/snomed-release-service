@@ -24,11 +24,15 @@ public class PreConditionCheckComparison extends ComponentComparison {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PreConditionCheckComparison.class);
 
-    @Autowired
-    private BuildDAO buildDAO;
+    private final BuildDAO buildDAO;
+
+    private final PublishService publishService;
 
     @Autowired
-    private PublishService publishService;
+    public PreConditionCheckComparison(BuildDAO buildDAO, PublishService publishService) {
+        this.buildDAO = buildDAO;
+        this.publishService = publishService;
+    }
 
     @Override
     public String getTestName() {
@@ -114,6 +118,11 @@ public class PreConditionCheckComparison extends ComponentComparison {
                 fail(reports);
             }
         }
+    }
+
+    @Override
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+        return new PreConditionCheckComparison(buildDAO, publishService);
     }
 
     private List<PreConditionCheckReport> getPreConditionCheckReport(Build build) throws IOException {

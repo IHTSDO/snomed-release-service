@@ -1,6 +1,8 @@
 package org.ihtsdo.buildcloud.core.service.build.compare;
 
+import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.service.PublishService;
 
 import java.io.IOException;
 
@@ -11,6 +13,8 @@ public abstract class ComponentComparison {
 	private Object details;
 
 	public abstract void findDiff(Build leftBuild, Build rightBuild) throws IOException;
+
+	public abstract ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl);
 
 	protected void pass() {
 		this.state = HighLevelComparisonReport.State.PASS;
@@ -30,7 +34,7 @@ public abstract class ComponentComparison {
 		HighLevelComparisonReport report = new HighLevelComparisonReport();
 		report.setTestName(getTestName());
 		report.setTestShortName(getTestNameShortname());
-		report.setResult(state);
+		report.setResult(this.state);
 		report.setDetails(this.details);
 		return report;
 	}

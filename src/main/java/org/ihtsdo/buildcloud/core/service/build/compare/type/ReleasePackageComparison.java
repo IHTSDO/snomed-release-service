@@ -47,11 +47,15 @@ public class ReleasePackageComparison extends ComponentComparison {
         }
     }
 
-    @Autowired
-    private BuildDAO buildDAO;
+    private final BuildDAO buildDAO;
+
+    private final PublishService publishService;
 
     @Autowired
-    private PublishService publishService;
+    public ReleasePackageComparison(BuildDAO buildDAO, PublishService publishService) {
+        this.buildDAO = buildDAO;
+        this.publishService =publishService;
+    }
 
     @Override
     public String getTestName() {
@@ -116,6 +120,11 @@ public class ReleasePackageComparison extends ComponentComparison {
             if (leftDir != null) FileUtils.forceDelete(leftDir);
             if (rightDir != null) FileUtils.forceDelete(rightDir);
         }
+    }
+
+    @Override
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+        return new ReleasePackageComparison(buildDAO, publishService);
     }
 
     private void compareFiles(File leftDir, File rightDir, List<DefaultComponentComparisonReport> result) throws IOException {

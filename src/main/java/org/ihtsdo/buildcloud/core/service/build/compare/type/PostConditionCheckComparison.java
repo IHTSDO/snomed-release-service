@@ -24,11 +24,9 @@ public class PostConditionCheckComparison extends ComponentComparison {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostConditionCheckComparison.class);
 
-    @Autowired
-    private BuildDAO buildDAO;
+    private final BuildDAO buildDAO;
 
-    @Autowired
-    private PublishService publishService;
+    private final PublishService publishService;
 
     @Override
     public String getTestName() {
@@ -43,6 +41,12 @@ public class PostConditionCheckComparison extends ComponentComparison {
     @Override
     public int getTestOrder() {
         return BuildComparisonManager.TestType.POST_CONDITION_TEST.getTestOrder();
+    }
+
+    @Autowired
+    public PostConditionCheckComparison(BuildDAO buildDAO, PublishService publishService) {
+        this.buildDAO = buildDAO;
+        this.publishService = publishService;
     }
 
     @Override
@@ -114,6 +118,11 @@ public class PostConditionCheckComparison extends ComponentComparison {
                 fail(reports);
             }
         }
+    }
+
+    @Override
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+        return  new PostConditionCheckComparison(buildDAO, publishService);
     }
 
     private List<PostConditionCheckReport> getPostConditionCheckReport(Build build) throws IOException {
