@@ -55,9 +55,6 @@ public class RVFFailureJiraAssociationService {
 	@Value("${jira.ticket.assignee}")
 	private String assignee;
 
-	@Value("${jira.ticket.priority}")
-	private String priority;
-
 	@Value("${jira.ticket.customField.product.release.date}")
 	private String productReleaseDate;
 
@@ -231,7 +228,6 @@ public class RVFFailureJiraAssociationService {
 		ReleaseCenter releaseCenter = product.getReleaseCenter();
 		try {
 			final Issue.FluentUpdate updateRequest = jiraIssue.update();
-			updateRequest.field(Field.PRIORITY, priority);
 			updateRequest.field(productReleaseDate, releaseDate);
 			updateRequest.field(reportingEntity, Collections.singletonList(reportingEntityDefaultValue));
 			updateRequest.field(reportingStage, Collections.singletonList(reportingStageDefaultValue));
