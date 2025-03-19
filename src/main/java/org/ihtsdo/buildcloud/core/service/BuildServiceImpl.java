@@ -171,6 +171,10 @@ public class BuildServiceImpl implements BuildService {
 
 	@Override
 	public Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user, List<String> userRoles) throws BusinessServiceException {
+		if (buildRequest == null) {
+			throw new BusinessServiceException("Build criteria (effective time, build name, branch path...) must be provided");
+		}
+
 		final Date creationDate = new Date();
 		final Product product = getProduct(releaseCenterKey, productKey);
 
@@ -178,15 +182,7 @@ public class BuildServiceImpl implements BuildService {
 			throw new BusinessServiceException("Could not create build from invisible product with key: " + product.getBusinessKey());
 		}
 
-		Date effectiveTime = null;
-		if (buildRequest != null) {
-			try {
-				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
-			} catch (ParseException e) {
-				throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
-			}
-		}
-
+		Date effectiveTime = parseEffectiveTimeOrThrow(buildRequest);
 		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, buildRequest.getBranchPath());
 		Build build;
 		try {
@@ -204,27 +200,20 @@ public class BuildServiceImpl implements BuildService {
 				}
 				configuration.setBuildPackageName(getBuildPackageName(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey()));
 				configuration.setStandAloneProduct(product.isStandAloneProduct());
-				if (buildRequest != null) {
-					configuration.setBranchPath(buildRequest.getBranchPath());
-					configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
-					configuration.setBuildName(buildRequest.getBuildName());
-					configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
-					configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
-					configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
-				}
+				configuration.setBranchPath(buildRequest.getBranchPath());
+				configuration.setExportType(buildRequest.getExportCategory() != null ? buildRequest.getExportCategory().name() : null);
+				configuration.setBuildName(buildRequest.getBuildName());
+				configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
+				configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
+				configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
 
 				build.setConfiguration(configuration);
 			}
 			build.setQaTestConfig(product.getQaTestConfig());
 			if (build.getQaTestConfig() != null) {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
-				if (buildRequest != null) {
-					qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
-					qaTestConfig.setEnableTraceabilityValidation(buildRequest.isEnableTraceabilityValidation());
-				} else {
-					qaTestConfig.setMaxFailureExport(100);
-				}
-
+				qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
+				qaTestConfig.setEnableTraceabilityValidation(buildRequest.isEnableTraceabilityValidation());
 				build.setQaTestConfig(qaTestConfig);
 			}
 			build.setBuildUser(user);
@@ -250,6 +239,18 @@ public class BuildServiceImpl implements BuildService {
 			MDC.remove(MDC_BUILD_KEY);
 		}
 		return build;
+	}
+
+	private Date parseEffectiveTimeOrThrow(BuildRequestPojo buildRequest) {
+		Date effectiveTime = null;
+		if (buildRequest != null) {
+			try {
+				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
+			} catch (ParseException e) {
+				throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
+			}
+		}
+		return effectiveTime;
 	}
 
 	private void validateBuildConfig(BuildConfiguration buildConfiguration, Date buildEffectiveTime, String branchPath) throws BadConfigurationException {

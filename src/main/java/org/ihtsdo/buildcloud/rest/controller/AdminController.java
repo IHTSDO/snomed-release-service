@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.xml.bind.JAXBException;
@@ -22,7 +21,7 @@ import java.io.IOException;
 import java.text.ParseException;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
-@Controller
+@RestController
 @RequestMapping("/centers/{releaseCenterKey}/products")
 @Tag(name = "Admin", description = "-")
 public class AdminController {
@@ -35,7 +34,6 @@ public class AdminController {
 
 	@PostMapping(value = "/{productKey}/new-authoring-cycle")
 	@IsAuthenticatedAsAdmin
-	@ResponseBody
 	@Operation(summary = "Start new authoring cycle",
 			description = "This API is for Daily Build only")
 	public ResponseEntity<Void> startNewAuthoringCycle(@PathVariable String releaseCenterKey,
@@ -58,10 +56,9 @@ public class AdminController {
 
 	@PostMapping(value = "/{productKey}/upgrade-dependant-version")
 	@IsAuthenticatedAsAdminOrReleaseManager
-	@ResponseBody
 	@Operation(summary = "Upgrade dependant version for daily build product",
 			description = "This API is for Daily Build only")
-	public ResponseEntity<Void> upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException, IOException, ParseException, JAXBException {
+	public ResponseEntity<Void> upgradeDependantVersion(@PathVariable String releaseCenterKey, @PathVariable String productKey) throws BusinessServiceException {
 		productService.upgradeDependantVersion(releaseCenterKey.trim(), productKey.trim());
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}
