@@ -481,7 +481,7 @@ public class PublishServiceImpl implements PublishService {
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
 								ComponentType type = schemaFactory.createSchemaBean(filenameToCheck).getComponentType();
-								if (ComponentType.REFSET != type) {
+								if (ComponentType.REFSET != type && ComponentType.IDENTIFIER != type) {
 									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
 								}
 							} catch (IOException | RestClientException | FileRecognitionException e) {
